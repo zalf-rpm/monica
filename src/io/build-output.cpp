@@ -133,7 +133,7 @@ vector<OId> monica::parseOutputIds(const J11Array& oidArray) {
       auto it = name2metadata.find(names[0]);
       if (it != name2metadata.end()) {
         auto data = it->second;
-        OId oid(data.id);
+        OId oid = makeOId(data.id);
         oid.name = data.name;
         oid.displayName = names[1];
         oid.unit = data.unit;
@@ -200,11 +200,11 @@ template <typename T, typename Vector>
 void store(OId oid, Vector& into, function<T(int)> getValue, int roundToDigits = 0) {
   Vector multipleValues;
   vector<double> vs;
-  if (oid.isOrgan()) oid.toLayer = oid.fromLayer = int(oid.organ);
+  if (monica::oid::isOrgan(&oid)) oid.toLayer = oid.fromLayer = int(oid.organ);
 
   for (int i = oid.fromLayer; i <= oid.toLayer; i++) {
     T v = 0;
-    if (i < 0) debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Returning 0." << endl;
+    if (i < 0) debug() << "Error: " << monica::oid::toString(&oid, true) << " has no or negative layer defined! Returning 0." << endl;
     else v = getValue(i);
     if (oid.layerAggOp == OId::NONE) multipleValues.push_back(Tools::round(v, roundToDigits));
     else vs.push_back(v);
@@ -218,11 +218,11 @@ template <typename T>
 Json getComplexValues(OId oid, function<T(int)> getValue, int roundToDigits = 0) {
   J11Array multipleValues;
   vector<double> vs;
-  if (oid.isOrgan()) oid.toLayer = oid.fromLayer = int(oid.organ);
+  if (monica::oid::isOrgan(&oid)) oid.toLayer = oid.fromLayer = int(oid.organ);
 
   for (int i = oid.fromLayer; i <= oid.toLayer; i++) {
     T v = 0;
-    if (i < 0) debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Returning 0." << endl;
+    if (i < 0) debug() << "Error: " << monica::oid::toString(&oid, true) << " has no or negative layer defined! Returning 0." << endl;
     else v = getValue(i);
     if (oid.layerAggOp == OId::NONE) multipleValues.push_back(Tools::round(v, roundToDigits));
     else vs.push_back(v);
@@ -237,7 +237,7 @@ Json getComplexValues(OId oid, function<T(int)> getValue, int roundToDigits = 0)
 }
 
 void setComplexValues(OId oid, function<void(int, json11::Json)> setValue, Json value) {
-  if (oid.isOrgan()) oid.toLayer = oid.fromLayer = int(oid.organ);
+  if (monica::oid::isOrgan(&oid)) oid.toLayer = oid.fromLayer = int(oid.organ);
 
   J11Array values;
   if (value.is_object() || value.is_null()) return;
@@ -246,7 +246,7 @@ void setComplexValues(OId oid, function<void(int, json11::Json)> setValue, Json 
   assert(values.size() <= INT_MAX);
   for (int i = oid.fromLayer, k = 0, vsize = (int)values.size(); i <= oid.toLayer, k < vsize; i++, k++) {
     if (i < 0)
-      debug() << "Error: " << oid.toString(true) << " has no or negative layer defined! Can't set value." <<
+      debug() << "Error: " << monica::oid::toString(&oid, true) << " has no or negative layer defined! Can't set value." <<
         endl;
     else setValue(i, values[k]);
   }
@@ -439,7 +439,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "OrgBiom", "kgDM ha-1", "get_OrganBiomass(i)"},
             [](const MonicaModel& monica, OId oid) {
-              if (oid.isOrgan()
+              if (monica::oid::isOrgan(&oid)
                   && monica.currentCropModule.get()
                   && monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
                 return round(monica.currentCropModule.get()->vc_OrganBiomass[oid.organ], 1);
@@ -448,7 +448,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "OrgGreenBiom", "kgDM ha-1", "get_OrganGreenBiomass(i)"},
             [](const MonicaModel& monica, OId oid) {
-              if (oid.isOrgan()
+              if (monica::oid::isOrgan(&oid)
                   && monica.currentCropModule.get()
                   && monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
                 return round(monica.currentCropModule.get()->vc_OrganGreenBiomass[oid.organ], 1);
@@ -661,7 +661,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "NPP-Organs", "kgC ha-1", "organ specific NPP"},
             [](const MonicaModel& monica, OId oid) {
-              if (oid.isOrgan()
+              if (monica::oid::isOrgan(&oid)
                   && monica.currentCropModule.get()
                   && monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
                 return round(cropmodule::getOrganSpecificNPP(monica.currentCropModule.get(), oid.organ), 4);
@@ -690,7 +690,7 @@ BOTRes& monica::buildOutputTable() {
 
       build({id++, "Ra-Organs", "kgC ha-1", "organ specific autotrophic respiration"},
             [](const MonicaModel& monica, OId oid) {
-              if (oid.isOrgan()
+              if (monica::oid::isOrgan(&oid)
                   && monica.currentCropModule.get()
                   && monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
                 return round(cropmodule::getOrganSpecificTotalRespired(monica.currentCropModule.get(), oid.organ), 4);

@@ -590,12 +590,12 @@ void monica::serveZmqMonicaFull(zmq::context_t* zmqContext,
 
                 if (isIC) {
                   auto outs = json11::Json(J11Object({
-                                                       {"1", out.to_json()},
-                                                       {"2", out2.to_json()}
+                                                       {"1", output::to_json(&out)},
+                                                       {"2", output::to_json(&out2)}
                                                      }));
                   s_send(distinctSendSocket ? sendSocket : socket, outs.dump());
                 } else {
-                  s_send(distinctSendSocket ? sendSocket : socket, out.to_json().dump());
+                  s_send(distinctSendSocket ? sendSocket : socket, output::to_json(&out).dump());
                 }
               } catch (const zmq::error_t& e) {
                 cerr << "Exception on trying to reply with result message on zmq socket with address: ";

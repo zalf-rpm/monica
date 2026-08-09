@@ -413,7 +413,7 @@ void storeResultsObj(const vector<OId> &outputIds,
   J11Object result;
   for (auto oid: outputIds) {
     auto ofi = ofs.find(oid.id);
-    if (ofi != ofs.end()) result[oid.outputName()] = ofi->second(monica, oid);
+    if (ofi != ofs.end()) result[::monica::oid::outputName(&oid)] = ofi->second(monica, oid);
   }
   results.push_back(result);
 };
@@ -463,15 +463,15 @@ void monica::store_data_aggregate_results_obj(StoreData* sd) {
         if (ivs.front().is_string()) {
           switch (oid.timeAggOp) {
             case OId::FIRST:
-              result[oid.outputName()] = ivs.front();
+              result[monica::oid::outputName(&oid)] = ivs.front();
               break;
             case OId::LAST:
-              result[oid.outputName()] = ivs.back();
+              result[monica::oid::outputName(&oid)] = ivs.back();
               break;
             default:
-              result[oid.outputName()] = ivs.front();
+              result[monica::oid::outputName(&oid)] = ivs.front();
           }
-        } else result[oid.outputName()] = applyOIdOP(oid.timeAggOp, ivs);
+        } else result[monica::oid::outputName(&oid)] = applyOIdOP(oid.timeAggOp, ivs);
 
         sd->intermediateResults[i].clear();
       }

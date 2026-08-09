@@ -49,8 +49,8 @@ void monica::writeOutputHeaderRows(ostream& out,
   for(auto oid : outputIds)
   {
     int fromLayer = oid.fromLayer, toLayer = oid.toLayer;
-    bool isOrgan = oid.isOrgan();
-    bool isRange = oid.isRange() && oid.layerAggOp == OId::NONE;
+    bool isOrgan = monica::oid::isOrgan(&oid);
+    bool isRange = monica::oid::isRange(&oid) && oid.layerAggOp == OId::NONE;
     if(isOrgan)
       toLayer = fromLayer = int(oid.organ); // organ is being represented just by the value of fromLayer currently
     else if(isRange)
@@ -62,7 +62,7 @@ void monica::writeOutputHeaderRows(ostream& out,
     {
       ostringstream oss11;
       if(isOrgan)
-        oss11 << (oid.displayName.empty() ? oid.name + "/" + oid.toString(oid.organ) : oid.displayName);
+        oss11 << (oid.displayName.empty() ? oid.name + "/" + monica::oid::toString(&oid, oid.organ) : oid.displayName);
       else if(isRange)
         oss11 << (oid.displayName.empty() ? oid.name + "_" + to_string(i) : oid.displayName);
       else
@@ -71,7 +71,7 @@ void monica::writeOutputHeaderRows(ostream& out,
       oss1 << (oss11.str().find_first_of(escapeTokens) == string::npos ? oss11.str() : "\""_s + oss11.str() + "\""_s) << csvSep_;
       auto os2 = "["_s + oid.unit + "]"_s;
       oss2 << (os2.find_first_of(escapeTokens) == string::npos ? os2 : "\""_s + os2 + "\""_s) << csvSep_;
-      auto os3 = "m:"_s + oid.toString(includeTimeAgg);
+      auto os3 = "m:"_s + monica::oid::toString(&oid, includeTimeAgg);
       oss3 << (os3.find_first_of(escapeTokens) == string::npos ? os3 : "\""_s + os3 + "\""_s) << csvSep_;
       auto os4 = "j:"_s + replace(oid.jsonInput, "\"", "");
       oss4 << (os4.find_first_of(escapeTokens) == string::npos ? os4 : "\""_s + os4 + "\""_s) << csvSep_;
@@ -169,7 +169,7 @@ void monica::writeOutputObj(ostream& out,
       for(auto oid : outputIds)
       {
         auto csvSep_ = i + 1 == oidsSize ? "" : csvSep;
-        auto oi = o.find(oid.outputName());
+        auto oi = o.find(monica::oid::outputName(&oid));
         if(oi != o.end())
         {
           Json j = oi->second;

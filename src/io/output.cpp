@@ -3,13 +3,13 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
-Authors: 
+Authors:
 Michael Berg-Mohnicke <michael.berg@zalf.de>
 
-Maintainers: 
+Maintainers:
 Currently maintained by the authors.
 
-This file is part of the MONICA model. 
+This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
@@ -30,140 +30,182 @@ using namespace std;
 using namespace json11;
 
 
-OId::OId(json11::Json j)
-{
-  merge(j);
+OId monica::makeOId(int id) {
+  OId oid;
+  oid.id = id;
+  return oid;
 }
 
-Errors OId::merge(json11::Json j)
+OId monica::makeOId(int id, OId::ORGAN organ) {
+  OId oid;
+  oid.id = id;
+  oid.organ = organ;
+  return oid;
+}
+
+OId monica::makeOId(int id, OId::OP layerAgg) {
+  OId oid;
+  oid.id = id;
+  oid.layerAggOp = layerAgg;
+  oid.fromLayer = 0;
+  oid.toLayer = 20;
+  return oid;
+}
+
+OId monica::makeOId(int id, OId::OP layerAgg, OId::OP timeAgg) {
+  OId oid;
+  oid.id = id;
+  oid.layerAggOp = layerAgg;
+  oid.timeAggOp = timeAgg;
+  oid.fromLayer = 0;
+  oid.toLayer = 20;
+  return oid;
+}
+
+OId monica::makeOId(int id, int from, int to, OId::OP layerAgg) {
+  OId oid;
+  oid.id = id;
+  oid.layerAggOp = layerAgg;
+  oid.fromLayer = from;
+  oid.toLayer = to;
+  return oid;
+}
+
+OId monica::makeOId(int id, int from, int to, OId::OP layerAgg, OId::OP timeAgg) {
+  OId oid;
+  oid.id = id;
+  oid.layerAggOp = layerAgg;
+  oid.timeAggOp = timeAgg;
+  oid.fromLayer = from;
+  oid.toLayer = to;
+  return oid;
+}
+
+OId monica::makeOId(json11::Json object) {
+  OId oid;
+  oid::merge(&oid, object);
+  return oid;
+}
+
+Errors oid::merge(OId* oid, json11::Json j)
 {
-  set_int_value(id, j, "id");
-  set_string_value(name, j, "name");
-  set_string_value(displayName, j, "displayName");
-  set_string_value(unit, j, "unit");
-  set_string_value(jsonInput, j, "jsonInput");
+  set_int_value(oid->id, j, "id");
+  set_string_value(oid->name, j, "name");
+  set_string_value(oid->displayName, j, "displayName");
+  set_string_value(oid->unit, j, "unit");
+  set_string_value(oid->jsonInput, j, "jsonInput");
 
-  layerAggOp = OP(int_valueD(j, "layerAggOp", NONE));
-  timeAggOp = OP(int_valueD(j, "timeAggOp", AVG));
+  oid->layerAggOp = OId::OP(int_valueD(j, "layerAggOp", OId::NONE));
+  oid->timeAggOp = OId::OP(int_valueD(j, "timeAggOp", OId::AVG));
 
-  organ = ORGAN(int_valueD(j, "organ", _UNDEFINED_ORGAN_));
+  oid->organ = OId::ORGAN(int_valueD(j, "organ", OId::_UNDEFINED_ORGAN_));
 
-  set_int_value(fromLayer, j, "fromLayer");
-  set_int_value(toLayer, j, "toLayer");
+  set_int_value(oid->fromLayer, j, "fromLayer");
+  set_int_value(oid->toLayer, j, "toLayer");
 
   return{};
 }
 
-json11::Json OId::to_json() const
+json11::Json oid::to_json(const OId* oid)
 {
   return json11::Json::object
   {{"type", "OId"}
-  ,{"id", id}
-  ,{"name", name}
-  ,{"displayName", displayName}
-  ,{"unit", unit}
-  ,{"jsonInput", jsonInput}
-  ,{"layerAggOp", int(layerAggOp)}
-  ,{"timeAggOp", int(timeAggOp)}
-  ,{"organ", int(organ)}
-  ,{"fromLayer", fromLayer}
-  ,{"toLayer", toLayer}
+  ,{"id", oid->id}
+  ,{"name", oid->name}
+  ,{"displayName", oid->displayName}
+  ,{"unit", oid->unit}
+  ,{"jsonInput", oid->jsonInput}
+  ,{"layerAggOp", int(oid->layerAggOp)}
+  ,{"timeAggOp", int(oid->timeAggOp)}
+  ,{"organ", int(oid->organ)}
+  ,{"fromLayer", oid->fromLayer}
+  ,{"toLayer", oid->toLayer}
   };
 }
 
 
-std::string OId::toString(bool includeTimeAgg) const
+std::string oid::toString(const OId* oid, bool includeTimeAgg)
 {
   ostringstream oss;
   oss << "[";
-  oss << name;
-  if(isOrgan())
-    oss << ", " << toString(organ);
-  else if(isRange())
-    oss << ", [" << (fromLayer + 1) << ", " << (toLayer + 1)
-    << (layerAggOp != OId::NONE ? string(", ") + toString(layerAggOp) : "")
+  oss << oid->name;
+  if(isOrgan(oid))
+    oss << ", " << toString(oid, oid->organ);
+  else if(isRange(oid))
+    oss << ", [" << (oid->fromLayer + 1) << ", " << (oid->toLayer + 1)
+    << (oid->layerAggOp != OId::NONE ? string(", ") + toString(oid, oid->layerAggOp) : "")
     << "]";
-  else if(fromLayer >= 0)
-    oss << ", " << (fromLayer + 1);
+  else if(oid->fromLayer >= 0)
+    oss << ", " << (oid->fromLayer + 1);
   if(includeTimeAgg)
-    oss << ", " << toString(timeAggOp);
+    oss << ", " << toString(oid, oid->timeAggOp);
   oss << "]";
 
   return oss.str();
 }
 
-std::string OId::toString(OId::OP op) const
+std::string oid::toString(const OId* oid, OId::OP op)
 {
   string res("undef");
   switch(op)
   {
-  case AVG: res = "AVG"; break;
-  case MEDIAN: res = "MEDIAN"; break;
-  case SUM: res = "SUM"; break;
-  case MIN: res = "MIN"; break;
-  case MAX: res = "MAX"; break;
-  case FIRST: res = "FIRST"; break;
-  case LAST: res = "LAST"; break;
-  case NONE: res = "NONE"; break;
-  case _UNDEFINED_OP_:
+  case OId::AVG: res = "AVG"; break;
+  case OId::MEDIAN: res = "MEDIAN"; break;
+  case OId::SUM: res = "SUM"; break;
+  case OId::MIN: res = "MIN"; break;
+  case OId::MAX: res = "MAX"; break;
+  case OId::FIRST: res = "FIRST"; break;
+  case OId::LAST: res = "LAST"; break;
+  case OId::NONE: res = "NONE"; break;
+  case OId::_UNDEFINED_OP_:
   default:;
   }
   return res;
 }
 
-std::string OId::toString(OId::ORGAN organ) const
+std::string oid::toString(const OId* oid, OId::ORGAN organ)
 {
   string res("undef");
   switch(organ)
   {
-  case ROOT: res = "Root"; break;
-  case LEAF: res = "Leaf"; break;
-  case SHOOT: res = "Shoot"; break;
-  case FRUIT: res = "Fruit"; break;
-  case STRUCT: res = "Struct"; break;
-  case SUGAR: res = "Sugar"; break;
-  case _UNDEFINED_ORGAN_:
+  case OId::ROOT: res = "Root"; break;
+  case OId::LEAF: res = "Leaf"; break;
+  case OId::SHOOT: res = "Shoot"; break;
+  case OId::FRUIT: res = "Fruit"; break;
+  case OId::STRUCT: res = "Struct"; break;
+  case OId::SUGAR: res = "Sugar"; break;
+  case OId::_UNDEFINED_ORGAN_:
   default:;
   }
   return res;
 }
 
-std::string OId::outputName() const 
+std::string oid::outputName(const OId* oid)
 {
-  string outName = name;
-  if(isOrgan()) outName = outName + "/" + toString(organ);
-  if(!displayName.empty())
-    outName = displayName;
+  string outName = oid->name;
+  if(isOrgan(oid)) outName = outName + "/" + toString(oid, oid->organ);
+  if(!oid->displayName.empty())
+    outName = oid->displayName;
   return outName;
 }
 
-Output::Output(json11::Json j)
-{
-  merge(j);
+Output monica::makeOutput(std::string error) {
+  Output output;
+  output.errors.push_back(error);
+  return output;
 }
 
-namespace
-{
-  template<typename Vector>
-  Errors extractAndStore(Json jv, Vector& vec)
-  {
-    Errors es;
-    vec.clear();
-    for(Json cmj : jv.array_items())
-    {
-      typename Vector::value_type v;
-      es.append(v.merge(cmj));
-      vec.push_back(v);
-    }
-    return es;
-  }
+Output monica::makeOutput(json11::Json object) {
+  Output output;
+  output::merge(&output, object);
+  return output;
 }
 
-Errors Output::merge(json11::Json j)
+Errors output::merge(Output* output, json11::Json j)
 {
   Errors es;
 
-  customId = j["customId"];// .string_value();
+  output->customId = j["customId"];// .string_value();
 
   for(const auto& d : j["data"].array_items())
   {
@@ -176,19 +218,26 @@ Errors Output::merge(json11::Json j)
       else if(j.is_object())
         os.push_back(j.object_items());
     }
-    data.push_back({d["origSpec"].string_value(), toVector<OId>(d["outputIds"]), vs, os});
+    vector<OId> outputIds;
+    for(Json oidj : d["outputIds"].array_items())
+    {
+      OId o;
+      es.append(oid::merge(&o, oidj));
+      outputIds.push_back(o);
+    }
+    output->data.push_back({d["origSpec"].string_value(), outputIds, vs, os});
   }
 
-  errors = toStringVector(j["errors"]);
-  warnings = toStringVector(j["warnings"]);
+  output->errors = toStringVector(j["errors"]);
+  output->warnings = toStringVector(j["warnings"]);
 
   return es;
 }
 
-json11::Json Output::to_json() const
+json11::Json output::to_json(const Output* output)
 {
   J11Array ds;
-  for(const auto& d : data)
+  for(const auto& d : output->data)
   {
     J11Array rs;
     if(!d.results.empty())
@@ -197,18 +246,20 @@ json11::Json Output::to_json() const
     else if(!d.resultsObj.empty())
       for(auto o : d.resultsObj)
         rs.push_back(o);
+    J11Array outputIds;
+    for(const auto& o : d.outputIds) outputIds.push_back(oid::to_json(&o));
     ds.push_back(J11Object
     {{"origSpec", d.origSpec}
-    ,{"outputIds", toJsonArray(d.outputIds)}
+    ,{"outputIds", outputIds}
     ,{"results", rs}
     });
   }
 
   return json11::Json::object
   {{"type", "Output"}
-  ,{"customId", customId}
+  ,{"customId", output->customId}
   ,{"data", ds}
-  ,{"errors", toPrimJsonArray(errors)}
-  ,{"warnings", toPrimJsonArray(warnings)}
+  ,{"errors", toPrimJsonArray(output->errors)}
+  ,{"warnings", toPrimJsonArray(output->warnings)}
   };
 }

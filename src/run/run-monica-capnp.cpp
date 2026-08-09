@@ -67,7 +67,7 @@ kj::Promise<void> RunMonica::run(RunContext context) {
     std::string err;
     auto rest = envR.getRest();
     if (rest.getType() != mas::schema::common::StructuredText::Type::JSON) {
-      return monica::Output(std::string("Error: 'rest' field is not valid JSON!"));
+      return monica::makeOutput(std::string("Error: 'rest' field is not valid JSON!"));
     }
 
     const Json& envJson = Json::parse(rest.getValue().cStr(), err);
@@ -167,7 +167,7 @@ kj::Promise<void> RunMonica::run(RunContext context) {
                                                  auto rs = context.getResults();
                                                  auto res = rs.initResult();
                                                  res.setType(mas::schema::common::StructuredText::Type::JSON);
-                                                 res.setValue(out.toString());
+                                                 res.setValue(output::to_json(&out).dump());
                                                }, [context](auto&& e) mutable {
                                                  KJ_LOG(INFO,
                                                         "Error while trying to gather soil and/or time series data: ",
