@@ -140,7 +140,20 @@ those members. Check off each once it's built, regression-tested, committed, and
    (`p_NMinUserParams`, including the bare-in-`J11Object` case from goal #10). Note:
    `SoilColumn::DelayedNMinApplicationParams` (`soilcolumn.h`) is an unrelated, differently-named
    type despite the similar name — not touched by this item.
-7. [ ] `IrrigationParameters` — leaf; base of `AutomaticIrrigationParameters`.
+7. [x] `IrrigationParameters` — leaf; base of `AutomaticIrrigationParameters` (still unconverted,
+   item 8). Since `AutomaticIrrigationParameters : public IrrigationParameters` and previously
+   inherited `Json11Serializable` only transitively (through `IrrigationParameters`), converting
+   the base meant `AutomaticIrrigationParameters` lost that base too — its own `virtual merge`/
+   `to_json` are now non-overriding (harmless, no polymorphic use anywhere) but its bodies had to
+   be rewired: `IrrigationParameters::deserialize/serialize/merge/to_json(...)` (explicit
+   base-class-qualified calls, not instance calls, so a different grep shape than usual) became
+   `irrigationparameters::...(this, ...)`, `Json11Serializable::merge(j)` became
+   `defaultMerge(j, [this](json11::Json j2){ return merge(j2); })`, and the base-class constructor
+   initializer `: IrrigationParameters(nc, sc)` became `: IrrigationParameters{nc, sc}` (brace
+   aggregate-init instead of a removed 2-arg constructor call). Also fixed `Irrigation::merge`/
+   `to_json` in `cultivation-method.cpp` (`set_value_obj_value(_params, ...)` and bare `_params` in
+   a JSON literal, goal #10) — `AutomaticIrrigation::params` in the same file is
+   `AutomaticIrrigationParameters` (item 8's type), left untouched.
 8. [ ] `AutomaticIrrigationParameters` — needs `IrrigationParameters` done (inherits it).
 9. [ ] `MeasuredGroundwaterTableInformation` — leaf; has one real method,
    `getGroundwaterInformation(Tools::Date)`, that becomes a free function.

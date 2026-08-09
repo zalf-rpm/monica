@@ -801,45 +801,51 @@ json11::Json nminapplicationparameters::to_json(const NMinApplicationParameters*
 }
 
 
-IrrigationParameters::IrrigationParameters(double nitrateConcentration,
-                                           double sulfateConcentration)
-: nitrateConcentration(nitrateConcentration)
-, sulfateConcentration(sulfateConcentration) {}
-
-// IrrigationParameters::IrrigationParameters(json11::Json j) {
-//   merge(j);
-// }
-
-void IrrigationParameters::deserialize(mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader) {
-  nitrateConcentration = reader.getNitrateConcentration();
-  sulfateConcentration = reader.getSulfateConcentration();
+IrrigationParameters monica::makeIrrigationParameters(double nitrateConcentration, double sulfateConcentration) {
+  IrrigationParameters ip;
+  ip.nitrateConcentration = nitrateConcentration;
+  ip.sulfateConcentration = sulfateConcentration;
+  return ip;
 }
 
-void IrrigationParameters::serialize(
-  mas::schema::model::monica::Params::Irrigation::Parameters::Builder builder) const {
-  builder.setNitrateConcentration(nitrateConcentration);
-  builder.setSulfateConcentration(sulfateConcentration);
+IrrigationParameters monica::makeIrrigationParameters(
+  mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader) {
+  IrrigationParameters ip;
+  irrigationparameters::deserialize(&ip, reader);
+  return ip;
 }
 
-Errors IrrigationParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+void irrigationparameters::deserialize(IrrigationParameters* ip,
+  mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader) {
+  ip->nitrateConcentration = reader.getNitrateConcentration();
+  ip->sulfateConcentration = reader.getSulfateConcentration();
+}
 
-  set_double_value(nitrateConcentration, j, "nitrateConcentration");
-  set_double_value(sulfateConcentration, j, "sulfateConcentration");
-  set_bool_value(isDripIrrigation, j, "isDripIrrigation");
-  if (j["fw"].is_number()) fw = std::max(0.0, std::min(1.0, j["fw"].number_value()));
+void irrigationparameters::serialize(const IrrigationParameters* ip,
+  mas::schema::model::monica::Params::Irrigation::Parameters::Builder builder) {
+  builder.setNitrateConcentration(ip->nitrateConcentration);
+  builder.setSulfateConcentration(ip->sulfateConcentration);
+}
+
+Errors irrigationparameters::merge(IrrigationParameters* ip, json11::Json j) {
+  Errors res = defaultMerge(j, [ip](json11::Json j2) { return merge(ip, j2); });
+
+  set_double_value(ip->nitrateConcentration, j, "nitrateConcentration");
+  set_double_value(ip->sulfateConcentration, j, "sulfateConcentration");
+  set_bool_value(ip->isDripIrrigation, j, "isDripIrrigation");
+  if (j["fw"].is_number()) ip->fw = std::max(0.0, std::min(1.0, j["fw"].number_value()));
 
   return res;
 }
 
-json11::Json IrrigationParameters::to_json() const {
+json11::Json irrigationparameters::to_json(const IrrigationParameters* ip) {
   return json11::Json::object
   {
     {"type", "IrrigationParameters"},
-    {"nitrateConcentration", J11Array{nitrateConcentration, "mg dm-3"}},
-    {"sulfateConcentration", J11Array{sulfateConcentration, "mg dm-3"}},
-    {"isDripIrrigation", isDripIrrigation},
-    {"fw", fw}
+    {"nitrateConcentration", J11Array{ip->nitrateConcentration, "mg dm-3"}},
+    {"sulfateConcentration", J11Array{ip->sulfateConcentration, "mg dm-3"}},
+    {"isDripIrrigation", ip->isDripIrrigation},
+    {"fw", ip->fw}
   };
 }
 
@@ -848,7 +854,7 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a,
                                                              double t,
                                                              double nc,
                                                              double sc)
-: IrrigationParameters(nc, sc)
+: IrrigationParameters{nc, sc}
 , amount(a)
 , threshold(t) {}
 
@@ -858,7 +864,7 @@ AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a,
 
 void AutomaticIrrigationParameters::deserialize(
   mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader) {
-  IrrigationParameters::deserialize(reader.getParams());
+  irrigationparameters::deserialize(this, reader.getParams());
   amount = reader.getAmount();
   threshold = reader.getThreshold();
   //percentNFC = reader.getPercentNfc();
@@ -866,16 +872,16 @@ void AutomaticIrrigationParameters::deserialize(
 
 void AutomaticIrrigationParameters::serialize(
   mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) const {
-  IrrigationParameters::serialize(builder.initParams());
+  irrigationparameters::serialize(this, builder.initParams());
   builder.setAmount(amount);
   builder.setThreshold(threshold);
   //builder.setPercentNfc(percentNFC);
 }
 
 Errors AutomaticIrrigationParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+  Errors res = defaultMerge(j, [this](json11::Json j2) { return merge(j2); });
 
-  res.append(IrrigationParameters::merge(j["irrigationParameters"]));
+  res.append(irrigationparameters::merge(this, j["irrigationParameters"]));
   set_iso_date_value(startDate, j, "startDate");
   set_iso_date_value(endDate, j, "stopDate");
   set_double_value(amount, j, "amount");
@@ -894,7 +900,7 @@ json11::Json AutomaticIrrigationParameters::to_json() const {
   {
     {"type", "AutomaticIrrigationParameters"},
     {"startDate", startDate.toIsoDateString()},
-    {"irrigationParameters", IrrigationParameters::to_json()},
+    {"irrigationParameters", irrigationparameters::to_json(this)},
     {"trigger_if_nFC_below_%", J11Array{threshold * 100.0, "%"}},
     {"calc_nFC_until_depth_m", J11Array{criticalMoistureDepthM, "m"}},
     {"minDaysBetweenIrrigationEvents", J11Array{minDaysBetweenIrrigationEvents, "d"}}

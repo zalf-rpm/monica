@@ -319,32 +319,7 @@ DLL_API json11::Json to_json(const NMinApplicationParameters* nap);
 
 } // namespace nminapplicationparameters
 
-struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
-  IrrigationParameters() {}
-
-  IrrigationParameters(double nitrateConcentration,
-                       double sulfateConcentration);
-
-  IrrigationParameters(
-      mas::schema::model::monica::Params::Irrigation::Parameters::Reader
-          reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::Params::Irrigation::Parameters::Reader
-                  reader);
-
-  // IrrigationParameters(json11::Json object);
-
-  void
-  serialize(mas::schema::model::monica::Params::Irrigation::Parameters::Builder
-                builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API IrrigationParameters {
   double nitrateConcentration{0.0}; //!< nitrate concentration [mg dm-3]
   double sulfateConcentration{0.0}; //!< sulfate concentration [mg dm-3]
 
@@ -353,6 +328,21 @@ struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
       false};     //!< true = drip irrigation (shading adjustment applied)
   double fw{1.0}; //!< fraction of wetted soil surface [0-1]
 };
+
+DLL_API IrrigationParameters makeIrrigationParameters(double nitrateConcentration, double sulfateConcentration);
+DLL_API IrrigationParameters makeIrrigationParameters(
+    mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
+
+namespace irrigationparameters {
+
+DLL_API void deserialize(IrrigationParameters* ip,
+                         mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
+DLL_API void serialize(const IrrigationParameters* ip,
+                       mas::schema::model::monica::Params::Irrigation::Parameters::Builder builder);
+DLL_API Tools::Errors merge(IrrigationParameters* ip, json11::Json j);
+DLL_API json11::Json to_json(const IrrigationParameters* ip);
+
+} // namespace irrigationparameters
 
 struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   AutomaticIrrigationParameters() {}

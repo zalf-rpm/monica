@@ -1336,7 +1336,7 @@ Errors Irrigation::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   set_double_value(_amount, j, "amount");
   if (j["parameters"].is_object()) {
-    set_value_obj_value(_params, j, "parameters");
+    irrigationparameters::merge(&_params, j["parameters"]);
   }
   return res;
 }
@@ -1345,7 +1345,7 @@ json11::Json Irrigation::to_json() const {
   return json11::Json::object{{"type", type()},
                               {"date", date().toIsoDateString()},
                               {"amount", _amount},
-                              {"parameters", _params}};
+                              {"parameters", irrigationparameters::to_json(&_params)}};
 }
 
 bool Irrigation::apply(MonicaModel *model) {
