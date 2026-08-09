@@ -161,8 +161,14 @@ those members. Check off each once it's built, regression-tested, committed, and
    `SimulationParameters` (`p_AutoIrrigationParams`, all four usual spots) and
    `AutomaticIrrigation` in `cultivation-method.cpp` (`set_value_obj_value(params, ...)` and
    `params.to_json()`, goal #10).
-9. [ ] `MeasuredGroundwaterTableInformation` — leaf; has one real method,
-   `getGroundwaterInformation(Tools::Date)`, that becomes a free function.
+9. [x] `MeasuredGroundwaterTableInformation` — leaf; `getGroundwaterInformation(Tools::Date)` became
+   `measuredgroundwatertableinformation::getGroundwaterInformation(gwi, date)`. `merge()` doesn't
+   call the base `Json11Serializable::merge(j)` (like `YieldComponent`), so no `defaultMerge`
+   wrapper needed. The dead, commented-out `readInGroundwaterInformation(std::string path)` member
+   (declaration already commented in the header, body still in a `/* ... */` block in the .cpp) was
+   left untouched. Leak-forward fixed in `MonicaModel` (`monica-model.cpp`:
+   `deserialize`/`serialize`/the `getGroundwaterInformation` call) and
+   `CentralParameterProvider::merge` (item 24, still unconverted).
 10. [ ] `SiteParameters` — leaf (holds `Soil::SoilPMs` / `Soil::SoilParameters` opaquely,
     unconverted, that's fine).
 11. [ ] `AutomaticHarvestParameters` — leaf.

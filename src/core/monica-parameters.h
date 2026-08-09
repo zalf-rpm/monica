@@ -369,37 +369,26 @@ DLL_API json11::Json to_json(const AutomaticIrrigationParameters* aip);
 
 } // namespace automaticirrigationparameters
 
-struct DLL_API MeasuredGroundwaterTableInformation
-    : public Tools::Json11Serializable {
-  MeasuredGroundwaterTableInformation() {}
-
-  MeasuredGroundwaterTableInformation(
-      mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader
-          reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader
-          reader);
-
-  // MeasuredGroundwaterTableInformation(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder
-          builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
-  // void readInGroundwaterInformation(std::string path);
-
-  std::pair<bool, double> getGroundwaterInformation(Tools::Date gwDate) const;
-
+struct DLL_API MeasuredGroundwaterTableInformation {
   bool groundwaterInformationAvailable{false};
   std::map<Tools::Date, double> groundwaterInfo;
 };
+
+DLL_API MeasuredGroundwaterTableInformation makeMeasuredGroundwaterTableInformation(
+    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader);
+
+namespace measuredgroundwatertableinformation {
+
+DLL_API void deserialize(MeasuredGroundwaterTableInformation* gwi,
+    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader);
+DLL_API void serialize(const MeasuredGroundwaterTableInformation* gwi,
+    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder);
+DLL_API Tools::Errors merge(MeasuredGroundwaterTableInformation* gwi, json11::Json j);
+DLL_API json11::Json to_json(const MeasuredGroundwaterTableInformation* gwi);
+DLL_API std::pair<bool, double> getGroundwaterInformation(
+    const MeasuredGroundwaterTableInformation* gwi, Tools::Date gwDate);
+
+} // namespace measuredgroundwatertableinformation
 
 struct DLL_API SiteParameters : public Tools::Json11Serializable {
   SiteParameters() {}

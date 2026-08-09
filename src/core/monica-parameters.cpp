@@ -914,51 +914,54 @@ json11::Json automaticirrigationparameters::to_json(const AutomaticIrrigationPar
   return o;
 }
 
-void MeasuredGroundwaterTableInformation::deserialize(
+MeasuredGroundwaterTableInformation monica::makeMeasuredGroundwaterTableInformation(
   mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
-  groundwaterInformationAvailable = reader.getGroundwaterInformationAvailable();
-  groundwaterInfo.clear();
-  for (auto gi : reader.getGroundwaterInfo()) groundwaterInfo[Date(gi.getDate())] = gi.getValue();
+  MeasuredGroundwaterTableInformation gwi;
+  measuredgroundwatertableinformation::deserialize(&gwi, reader);
+  return gwi;
 }
 
-void MeasuredGroundwaterTableInformation::serialize(
-  mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder) const {
-  builder.setGroundwaterInformationAvailable(groundwaterInformationAvailable);
-  auto gis = builder.initGroundwaterInfo((capnp::uint)groundwaterInfo.size());
+void measuredgroundwatertableinformation::deserialize(MeasuredGroundwaterTableInformation* gwi,
+  mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader) {
+  gwi->groundwaterInformationAvailable = reader.getGroundwaterInformationAvailable();
+  gwi->groundwaterInfo.clear();
+  for (auto gi : reader.getGroundwaterInfo()) gwi->groundwaterInfo[Date(gi.getDate())] = gi.getValue();
+}
+
+void measuredgroundwatertableinformation::serialize(const MeasuredGroundwaterTableInformation* gwi,
+  mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder) {
+  builder.setGroundwaterInformationAvailable(gwi->groundwaterInformationAvailable);
+  auto gis = builder.initGroundwaterInfo((capnp::uint)gwi->groundwaterInfo.size());
   capnp::uint i = 0;
-  for (auto p : groundwaterInfo) {
+  for (auto p : gwi->groundwaterInfo) {
     p.first.serialize(gis[i].initDate());
     gis[i].setValue(p.second);
   }
 }
 
-// MeasuredGroundwaterTableInformation::MeasuredGroundwaterTableInformation(json11::Json j) {
-//   merge(j);
-// }
-
-Errors MeasuredGroundwaterTableInformation::merge(json11::Json j) {
+Errors measuredgroundwatertableinformation::merge(MeasuredGroundwaterTableInformation* gwi, json11::Json j) {
   Errors res;
 
-  set_bool_value(groundwaterInformationAvailable, j, "groundwaterInformationAvailable");
+  set_bool_value(gwi->groundwaterInformationAvailable, j, "groundwaterInformationAvailable");
 
   string err = "";
   if (j.has_shape({{"groundwaterInfo", json11::Json::OBJECT}}, err))
     for (auto p : j["groundwaterInfo"].
          object_items())
-      groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
+      gwi->groundwaterInfo[Tools::Date::fromIsoDateString(p.first)] = p.second.number_value();
   else res.errors.push_back(string("Couldn't read 'groundwaterInfo' key from JSON object:\n") + j.dump());
 
   return res;
 }
 
-json11::Json MeasuredGroundwaterTableInformation::to_json() const {
+json11::Json measuredgroundwatertableinformation::to_json(const MeasuredGroundwaterTableInformation* gwi) {
   json11::Json::object gi;
-  for (auto p : groundwaterInfo) gi[p.first.toIsoDateString()] = p.second;
+  for (auto p : gwi->groundwaterInfo) gi[p.first.toIsoDateString()] = p.second;
 
   return json11::Json::object
   {
     {"type", "MeasuredGroundwaterTableInformation"},
-    {"groundwaterInformationAvailable", groundwaterInformationAvailable},
+    {"groundwaterInformationAvailable", gwi->groundwaterInformationAvailable},
     {"groundwaterInfo", gi}
   };
 }
@@ -996,10 +999,11 @@ void MeasuredGroundwaterTableInformation::readInGroundwaterInformation(std::stri
 }
  */
 
-std::pair<bool, double> MeasuredGroundwaterTableInformation::getGroundwaterInformation(Tools::Date gwDate) const {
-  if (groundwaterInformationAvailable && !groundwaterInfo.empty()) {
-    auto it = groundwaterInfo.find(gwDate);
-    if (it != groundwaterInfo.end()) return make_pair(true, it->second);
+std::pair<bool, double> measuredgroundwatertableinformation::getGroundwaterInformation(
+  const MeasuredGroundwaterTableInformation* gwi, Tools::Date gwDate) {
+  if (gwi->groundwaterInformationAvailable && !gwi->groundwaterInfo.empty()) {
+    auto it = gwi->groundwaterInfo.find(gwDate);
+    if (it != gwi->groundwaterInfo.end()) return make_pair(true, it->second);
   }
   return make_pair(false, 0);
 }
@@ -2540,7 +2544,7 @@ Errors CentralParameterProvider::merge(json11::Json j) {
   res.append(simulationParameters.merge(j["simulationParameters"]));
   res.append(siteParameters.merge(j["siteParameters"]));
   if (!j["groundwaterInformation"].is_null()) {
-    res.append(groundwaterInformation.merge(j["groundwaterInformation"]));
+    res.append(measuredgroundwatertableinformation::merge(&groundwaterInformation, j["groundwaterInformation"]));
   }
 
   //set_bool_value(_writeOutputFiles, j, "writeOutputFiles");

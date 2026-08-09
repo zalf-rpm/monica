@@ -145,7 +145,7 @@ void monica::monicamodel::deserialize(
   envPs.deserialize(reader.getEnvPs());
   cropPs.deserialize(reader.getCropPs());
   simPs.deserialize(reader.getSimPs());
-  groundwaterInformation.deserialize(reader.getGroundwaterInformation());
+  measuredgroundwatertableinformation::deserialize(&groundwaterInformation, reader.getGroundwaterInformation());
 
   if (soilColumn)
     soilcolumn::deserialize(soilColumn.get(), reader.getSoilColumn());
@@ -302,7 +302,7 @@ void monica::monicamodel::serialize(
   envPs.serialize(builder.initEnvPs());
   cropPs.serialize(builder.initCropPs());
   simPs.serialize(builder.initSimPs());
-  groundwaterInformation.serialize(builder.initGroundwaterInformation());
+  measuredgroundwatertableinformation::serialize(&groundwaterInformation, builder.initGroundwaterInformation());
   soilcolumn::serialize(soilColumn.get(), builder.initSoilColumn());
   soiltemperature::serialize(soilTemperature.get(),
                              builder.initSoilTemperature());
@@ -963,7 +963,7 @@ void monica::monicamodel::generalStep(MonicaModel *model) {
                         : dailyClimate.at(Climate::relhumid);
 
   // test if simulated gw or measured values should be used
-  auto gw_value_p = groundwaterInformation.getGroundwaterInformation(date);
+  auto gw_value_p = measuredgroundwatertableinformation::getGroundwaterInformation(&groundwaterInformation, date);
   //  cout << "vs_GroundwaterDepth:\t" << envPs.p_MinGroundwaterDepth << "\t" <<
   //  envPs.p_MaxGroundwaterDepth << endl;
   vs_GroundwaterDepth =
