@@ -3,7 +3,7 @@
     "label": "Debug monica-run",
     "adapter": "CodeLLDB",
     "request": "launch",
-    "program": "$ZED_WORKTREE_ROOT/_cmake_debug_ninja/monica-run.exe",
+    "program": "$ZED_WORKTREE_ROOT/build/monica-run.exe",
     "args": [],
     "cwd": "$ZED_WORKTREE_ROOT",
     "build": "CMake Build",
@@ -25,5 +25,13 @@
     "args": [],
     "cwd": "$ZED_WORKTREE_ROOT",
     "build": "CMake Build",
+  },
+  {
+    "label": "Debug: monica-run (attach)",
+    "adapter": "CodeLLDB",
+    "request": "attach",
+    "program": "$ZED_WORKTREE_ROOT/build/monica-run.exe",
+    "pid": 20316,
+    "stopOnEntry": false,
   },
 ]

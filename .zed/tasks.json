@@ -20,19 +20,19 @@
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
-    "label": "Debug monica-run",
+    "label": "Raddbg: monica-run",
     "command": "raddbg build/monica-run.exe -m installer/Hohenfinow2/sim-min.json",
     "cwd": "$ZED_WORKTREE_ROOT",
     "env": {
       "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/../monica-parameters",
-    }
+    },
   },
   {
-    "label": "Run monica-run",
+    "label": "Run: monica-run",
     "command": "build/monica-run.exe -m installer/Hohenfinow2/sim-min.json",
     "cwd": "$ZED_WORKTREE_ROOT",
     "env": {
       "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/../monica-parameters",
-    }
+    },
   },
 ]
