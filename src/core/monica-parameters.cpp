@@ -47,45 +47,50 @@ using namespace json11;
 
 /**
  * @brief Constructor
- * @param oid organ ID
- * @param yp Yield percentage
+ * @param organId organ ID
+ * @param yieldPercentage Yield percentage
  */
-YieldComponent::YieldComponent(int oid, double yp, double ydm)
-: organId(oid)
-, yieldPercentage(yp)
-, yieldDryMatter(ydm) {}
-
-// YieldComponent::YieldComponent(json11::Json j) {
-//   merge(j);
-// }
-
-void YieldComponent::deserialize(mas::schema::model::monica::YieldComponent::Reader reader) {
-  organId = (int)reader.getOrganId();
-  yieldPercentage = reader.getYieldPercentage();
-  yieldDryMatter = reader.getYieldDryMatter();
+YieldComponent monica::makeYieldComponent(int organId, double yieldPercentage, double yieldDryMatter) {
+  YieldComponent yc;
+  yc.organId = organId;
+  yc.yieldPercentage = yieldPercentage;
+  yc.yieldDryMatter = yieldDryMatter;
+  return yc;
 }
 
-void YieldComponent::serialize(mas::schema::model::monica::YieldComponent::Builder builder) const {
-  builder.setOrganId(organId);
-  builder.setYieldPercentage(yieldPercentage);
-  builder.setYieldDryMatter(yieldDryMatter);
+YieldComponent monica::makeYieldComponent(mas::schema::model::monica::YieldComponent::Reader reader) {
+  YieldComponent yc;
+  yieldcomponent::deserialize(&yc, reader);
+  return yc;
 }
 
-Errors YieldComponent::merge(json11::Json j) {
-  set_int_value(organId, j, "organId");
-  set_double_value(yieldPercentage, j, "yieldPercentage");
-  set_double_value(yieldDryMatter, j, "yieldDryMatter");
+void yieldcomponent::deserialize(YieldComponent* yc, mas::schema::model::monica::YieldComponent::Reader reader) {
+  yc->organId = (int)reader.getOrganId();
+  yc->yieldPercentage = reader.getYieldPercentage();
+  yc->yieldDryMatter = reader.getYieldDryMatter();
+}
+
+void yieldcomponent::serialize(const YieldComponent* yc, mas::schema::model::monica::YieldComponent::Builder builder) {
+  builder.setOrganId(yc->organId);
+  builder.setYieldPercentage(yc->yieldPercentage);
+  builder.setYieldDryMatter(yc->yieldDryMatter);
+}
+
+Errors yieldcomponent::merge(YieldComponent* yc, json11::Json j) {
+  set_int_value(yc->organId, j, "organId");
+  set_double_value(yc->yieldPercentage, j, "yieldPercentage");
+  set_double_value(yc->yieldDryMatter, j, "yieldDryMatter");
 
   return {};
 }
 
-json11::Json YieldComponent::to_json() const {
+json11::Json yieldcomponent::to_json(const YieldComponent* yc) {
   return json11::Json::object
   {
     {"type", "YieldComponent"},
-    {"organId", organId},
-    {"yieldPercentage", yieldPercentage},
-    {"yieldDryMatter", yieldDryMatter}
+    {"organId", yc->organId},
+    {"yieldPercentage", yc->yieldPercentage},
+    {"yieldDryMatter", yc->yieldDryMatter}
   };
 }
 
@@ -415,9 +420,14 @@ void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParamet
   pc_LowTemperatureExposure = reader.getLowTemperatureExposure();
   pc_RespiratoryStress = reader.getRespiratoryStress();
   pc_LatestHarvestDoy = reader.getLatestHarvestDoy();
-  setFromComplexCapnpList(pc_OrganIdsForPrimaryYield, reader.getOrganIdsForPrimaryYield());
-  setFromComplexCapnpList(pc_OrganIdsForSecondaryYield, reader.getOrganIdsForSecondaryYield());
-  setFromComplexCapnpList(pc_OrganIdsForCutting, reader.getOrganIdsForCutting());
+  auto deserializeYieldComponents = [](std::vector<YieldComponent>& ycs, auto listReader) {
+    ycs.resize(listReader.size());
+    uint32_t i = 0;
+    for (auto& yc : ycs) yieldcomponent::deserialize(&yc, listReader[i++]);
+  };
+  deserializeYieldComponents(pc_OrganIdsForPrimaryYield, reader.getOrganIdsForPrimaryYield());
+  deserializeYieldComponents(pc_OrganIdsForSecondaryYield, reader.getOrganIdsForSecondaryYield());
+  deserializeYieldComponents(pc_OrganIdsForCutting, reader.getOrganIdsForCutting());
   pc_EarlyRefLeafExp = reader.getEarlyRefLeafExp();
   pc_RefLeafExp = reader.getRefLeafExp();
   pc_MinTempDev_WE = reader.getMinTempDevWE();
@@ -470,12 +480,16 @@ void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameter
   builder.setLowTemperatureExposure(pc_LowTemperatureExposure);
   builder.setRespiratoryStress(pc_RespiratoryStress);
   builder.setLatestHarvestDoy(pc_LatestHarvestDoy);
-  setComplexCapnpList(pc_OrganIdsForPrimaryYield,
-                      builder.initOrganIdsForPrimaryYield((capnp::uint)pc_OrganIdsForPrimaryYield.size()));
-  setComplexCapnpList(pc_OrganIdsForSecondaryYield,
-                      builder.initOrganIdsForSecondaryYield((capnp::uint)pc_OrganIdsForSecondaryYield.size()));
-  setComplexCapnpList(pc_OrganIdsForCutting,
-                      builder.initOrganIdsForCutting((capnp::uint)pc_OrganIdsForCutting.size()));
+  auto serializeYieldComponents = [](const std::vector<YieldComponent>& ycs, auto listBuilder) {
+    uint32_t i = 0;
+    for (const auto& yc : ycs) yieldcomponent::serialize(&yc, listBuilder[i++]);
+  };
+  serializeYieldComponents(pc_OrganIdsForPrimaryYield,
+                           builder.initOrganIdsForPrimaryYield((capnp::uint)pc_OrganIdsForPrimaryYield.size()));
+  serializeYieldComponents(pc_OrganIdsForSecondaryYield,
+                           builder.initOrganIdsForSecondaryYield((capnp::uint)pc_OrganIdsForSecondaryYield.size()));
+  serializeYieldComponents(pc_OrganIdsForCutting,
+                           builder.initOrganIdsForCutting((capnp::uint)pc_OrganIdsForCutting.size()));
   builder.setEarlyRefLeafExp(pc_EarlyRefLeafExp);
   builder.setRefLeafExp(pc_RefLeafExp);
   builder.setMinTempDevWE(pc_MinTempDev_WE);
@@ -487,22 +501,27 @@ void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameter
 Errors CultivarParameters::merge(json11::Json j) {
   Errors res = Json11Serializable::merge(j);
 
+  auto mergeYieldComponents = [](json11::Json arr) {
+    std::vector<YieldComponent> ycs;
+    for (json11::Json jyc : arr.array_items()) {
+      YieldComponent yc;
+      yieldcomponent::merge(&yc, jyc);
+      ycs.push_back(yc);
+    }
+    return ycs;
+  };
+
   string err;
   if (j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForPrimaryYield = toVector<
-      YieldComponent>(j[
-                        "OrganIdsForPrimaryYield"]);
+    pc_OrganIdsForPrimaryYield = mergeYieldComponents(j["OrganIdsForPrimaryYield"]);
   else res.errors.push_back(string("Couldn't read 'OrganIdsForPrimaryYield' key from JSON object:\n") + j.dump());
 
   if (j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForSecondaryYield = toVector<
-      YieldComponent>(j[
-                        "OrganIdsForSecondaryYield"]);
+    pc_OrganIdsForSecondaryYield = mergeYieldComponents(j["OrganIdsForSecondaryYield"]);
   else res.errors.push_back(string("Couldn't read 'OrganIdsForSecondaryYield' key from JSON object:\n") + j.dump());
 
   if (j.has_shape({{"OrganIdsForCutting", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForCutting = toVector<
-      YieldComponent>(j["OrganIdsForCutting"]);
+    pc_OrganIdsForCutting = mergeYieldComponents(j["OrganIdsForCutting"]);
   else res.warnings.push_back(string("Couldn't read 'OrganIdsForCutting' key from JSON object:\n") + j.dump());
 
   set_string_value(pc_CultivarId, j, "CultivarName");
@@ -567,6 +586,12 @@ json11::Json CultivarParameters::to_json() const {
   J11Array osrs;
   for (auto v : pc_OrganSenescenceRate) osrs.push_back(toPrimJsonArray(v));
 
+  auto yieldComponentsToJson = [](const std::vector<YieldComponent>& ycs) {
+    J11Array a;
+    for (const auto& yc : ycs) a.push_back(yieldcomponent::to_json(&yc));
+    return a;
+  };
+
   auto cultivar = J11Object
   {
     {"type", "CultivarParameters"},
@@ -601,9 +626,9 @@ json11::Json CultivarParameters::to_json() const {
     {"LowTemperatureExposure", pc_LowTemperatureExposure},
     {"RespiratoryStress", pc_RespiratoryStress},
     {"LatestHarvestDoy", pc_LatestHarvestDoy},
-    {"OrganIdsForPrimaryYield", toJsonArray(pc_OrganIdsForPrimaryYield)},
-    {"OrganIdsForSecondaryYield", toJsonArray(pc_OrganIdsForSecondaryYield)},
-    {"OrganIdsForCutting", toJsonArray(pc_OrganIdsForCutting)},
+    {"OrganIdsForPrimaryYield", yieldComponentsToJson(pc_OrganIdsForPrimaryYield)},
+    {"OrganIdsForSecondaryYield", yieldComponentsToJson(pc_OrganIdsForSecondaryYield)},
+    {"OrganIdsForCutting", yieldComponentsToJson(pc_OrganIdsForCutting)},
     {"EarlyRefLeafExp", pc_EarlyRefLeafExp},
     {"RefLeafExp", pc_RefLeafExp},
     {"MinTempDev_WE", pc_MinTempDev_WE},

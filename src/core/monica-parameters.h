@@ -54,30 +54,23 @@ enum Eva2_Nutzung {
 /**
  * @brief
  */
-struct DLL_API YieldComponent : public Tools::Json11Serializable {
-  YieldComponent() {}
-
-  YieldComponent(int organId, double yieldPercentage, double yieldDryMatter);
-
-  YieldComponent(mas::schema::model::monica::YieldComponent::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::YieldComponent::Reader reader);
-
-  void
-  serialize(mas::schema::model::monica::YieldComponent::Builder builder) const;
-
-  // YieldComponent(json11::Json object);
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API YieldComponent {
   int organId{-1};
   double yieldPercentage{0.0};
   double yieldDryMatter{0.0};
 };
+
+DLL_API YieldComponent makeYieldComponent(int organId, double yieldPercentage, double yieldDryMatter);
+DLL_API YieldComponent makeYieldComponent(mas::schema::model::monica::YieldComponent::Reader reader);
+
+namespace yieldcomponent {
+
+DLL_API void deserialize(YieldComponent* yc, mas::schema::model::monica::YieldComponent::Reader reader);
+DLL_API void serialize(const YieldComponent* yc, mas::schema::model::monica::YieldComponent::Builder builder);
+DLL_API Tools::Errors merge(YieldComponent* yc, json11::Json j);
+DLL_API json11::Json to_json(const YieldComponent* yc);
+
+} // namespace yieldcomponent
 
 struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   SpeciesParameters() {}

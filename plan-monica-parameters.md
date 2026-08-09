@@ -1,0 +1,140 @@
+# Plan: `monica-parameters.h` proceduralization
+
+Companion plan to `plan.md`, scoped to just `src/core/monica-parameters.h` /
+`monica-parameters.cpp`. Kept as a separate file because this is a big, multi-session piece of
+work: convert one struct, build, run the regression check, commit, push, tick it off below, then
+**stop and ask the user before starting the next one**. That way work can be resumed cleanly
+across sessions/usage-limit resets.
+
+## Goals
+
+Same overall philosophy as `plan.md`, applied to the 24 `Tools::Json11Serializable`-derived
+structs in `monica-parameters.h`:
+
+1. Drop the `: public Tools::Json11Serializable` inheritance; the struct becomes a plain
+   aggregate (data members only, default member initializers instead of constructor bodies where
+   possible).
+2. Replace every non-default constructor (reader-based, field-based, json-based) with a
+   `makeXxx(...)` free function, **declared directly in `monica`** (leaner pattern from `plan.md`
+   goal #6 — no nesting, no alias).
+3. Convert the former `virtual`/`override` interface methods (`merge`, `to_json`) and the plain
+   methods (`deserialize`, `serialize`, plus any non-trivial member method like
+   `pc_NumberOfDevelopmentalStages()`, `getGroundwaterInformation(...)`) into free functions taking
+   `Xxx*` / `const Xxx*` as first argument.
+4. Move *only those free procedures* (not the struct, not `makeXxx`) into a lower-case namespace
+   named after the struct (e.g. `SoilOrganicModuleParameters` -> `monica::soilorganicmoduleparameters`),
+   matching the convention already used for `soilorganic`, `cropmodule`, `soilcolumn`, etc.
+5. Where a struct's `merge()` currently starts with `Json11Serializable::merge(j)` (the
+   "DEFAULT"/"=" unwrap), replace that with the free-function equivalent already scaffolded for
+   this in `mas_cpp_misc/json11/json11-helper.h`: `Tools::defaultMerge(j, [x](json11::Json j2){
+   return merge(x, j2); })`. (`Tools::defaultToJson()` / `Tools::defaultToString(...)` exist too
+   but none of these 24 structs currently need them — none override `toString()`.)
+6. Struct-level (not interface-level) inheritance is fine to keep as plain-struct inheritance — it
+   already works for `SoilColumn : public std::vector<SoilLayer>`. `AutomaticIrrigationParameters
+   : public IrrigationParameters`, `OrganicFertilizerParameters : public OrganicMatterParameters`,
+   and `CropResidueParameters : public OrganicMatterParameters` keep their base class; their free
+   `merge`/`serialize`/`deserialize`/`to_json` call into the base's free functions via the implicit
+   upcast (mirrors today's `Base::merge(j)` calls, just non-virtual now).
+7. Trivial one-line accessors get inlined at call sites and removed, per the usual rule; only
+   genuinely non-trivial methods get a free-function equivalent.
+8. `DLL_API` currently expands to nothing unless `USE_DLL` is defined (see
+   `mas_cpp_misc/common/dll-exports.h`) — true in this build (static lib) — so it's low-risk either
+   way, but keep it on whichever declarations are the new public API surface (the free function
+   declarations in the header) for correctness in a hypothetical DLL build, rather than dropping it.
+9. A handful of these structs are read via `.toString()` from *outside* `monica-parameters.h`
+   (`MineralFertilizerParameters` in `soilcolumn.cpp`, `OrganicMatterParameters` in
+   `soilorganic.cpp`, `CropParameters`/`CropResidueParameters` in `crop.cpp`). Since none of them
+   need a real `toString` override, just inline those call sites to
+   `namespacename::to_json(&x).dump()` instead of adding a `toString` free function nobody else needs.
+
+## Not in scope
+
+- `Tools::Json11Serializable` itself (`mas_cpp_misc/json11/json11-helper.h`) — shared base used by
+  other unrelated types (`Workstep`, `CultivationMethod`, `Output`, `Soil::SoilParameters`,
+  `Crop`, `DataAccessor`, `CSVViaHeaderOptions`); not touched by this plan.
+- `Soil::SoilParameters` / `Soil::SoilPMs` (`mas_cpp_misc/soil/soil.h`) — used as an opaque value
+  member of `SiteParameters`; lives in the shared `mas_cpp_misc` library, out of scope here.
+- `struct Intercropping` at the bottom of the file — already a plain struct with no
+  constructor/merge/serialize/deserialize to convert; nothing to do.
+- Confirmed (via grep across `src/` and `mas_cpp_misc/`) that none of these 24 structs are ever
+  used polymorphically through a `Json11Serializable*`/`&` — dropping the inheritance is safe.
+
+## Conversion order (dependency-ordered)
+
+Composite structs (that hold another struct from this file as a value member) must be converted
+*after* the structs they contain, since their `deserialize`/`merge`/`to_json` construct/traverse
+those members. Check off each once it's built, regression-tested, committed, and pushed.
+
+1. [x] `YieldComponent` — leaf; used by `CultivarParameters`. Note: `CultivarParameters`'s
+   `deserialize`/`serialize`/`merge`/`to_json` used the generic `setComplexCapnpList` /
+   `setFromComplexCapnpList` / `toVector<T>` / `toJsonArray` templates on its
+   `std::vector<YieldComponent> pc_OrganIdsForXxx` members — those templates call `.merge()` /
+   `.to_json()` / `.serialize()` / `.deserialize()` as *member* functions, so they no longer compile
+   for a plain-struct `YieldComponent`. Replaced with small local lambdas calling the new
+   `yieldcomponent::...` free functions, in both `CultivarParameters` (still otherwise
+   member/OOP-based, unconverted) and `CropModule` (`crop-module.cpp`, which keeps its own copies
+   of the same three vectors). This same pattern (generic template call sites touching a
+   just-converted struct's vector members) will recur for any other struct held in a
+   `std::vector<T>` processed via these templates — check for it before converting.
+2. [ ] `SpeciesParameters` — leaf; used by `CropParameters`. Note: the header-declared
+   `SpeciesParameters(json11::Json j)` constructor has no definition anywhere (dead) — drop it
+   rather than port it.
+3. [ ] `CultivarParameters` — needs `YieldComponent` done (holds
+   `std::vector<YieldComponent>` members).
+4. [ ] `CropParameters` — needs `SpeciesParameters` + `CultivarParameters` done (holds both by
+   value). Has two `merge` overloads (`merge(j)` and `merge(sj, cj)`). Fix `.toString()` call site
+   in `crop.cpp`.
+5. [ ] `MineralFertilizerParameters` — leaf; already had its trivial accessors inlined in an
+   earlier pass (see `plan.md`), constructors/merge/serialize/deserialize/to_json still pending.
+   Fix `.toString()` call site in `soilcolumn.cpp`.
+6. [ ] `NMinApplicationParameters` — leaf.
+7. [ ] `IrrigationParameters` — leaf; base of `AutomaticIrrigationParameters`.
+8. [ ] `AutomaticIrrigationParameters` — needs `IrrigationParameters` done (inherits it).
+9. [ ] `MeasuredGroundwaterTableInformation` — leaf; has one real method,
+   `getGroundwaterInformation(Tools::Date)`, that becomes a free function.
+10. [ ] `SiteParameters` — leaf (holds `Soil::SoilPMs` / `Soil::SoilParameters` opaquely,
+    unconverted, that's fine).
+11. [ ] `AutomaticHarvestParameters` — leaf.
+12. [ ] `NMinCropParameters` — leaf.
+13. [ ] `OrganicMatterParameters` — leaf; base of `OrganicFertilizerParameters` and
+    `CropResidueParameters`.
+14. [ ] `OrganicFertilizerParameters` — needs `OrganicMatterParameters` done (inherits it).
+15. [ ] `CropResidueParameters` — needs `OrganicMatterParameters` done (inherits it). Fix
+    `.toString()` call site in `crop.cpp`.
+16. [ ] `SimulationParameters` — needs `AutomaticIrrigationParameters`,
+    `MineralFertilizerParameters`, `NMinApplicationParameters` done (holds all three by value).
+17. [ ] `CropModuleParameters` — leaf.
+18. [ ] `EnvironmentParameters` — leaf.
+19. [ ] `SoilMoistureModuleParameters` — leaf. Its non-inline default constructor
+    (`SoilMoistureModuleParameters::SoilMoistureModuleParameters()`) only sets a default lambda
+    for `getCapillaryRiseRate`; fold that into a default member initializer so the struct needs no
+    custom default construction at all.
+20. [ ] `SoilTemperatureModuleParameters` — leaf.
+21. [ ] `SoilTransportModuleParameters` — leaf.
+22. [ ] `SticsParameters` — leaf; used by `SoilOrganicModuleParameters`.
+23. [ ] `SoilOrganicModuleParameters` — needs `SticsParameters` done (holds it by value).
+24. [ ] `CentralParameterProvider` — convert **last**; holds almost every struct above by value.
+    Has real methods `getPrecipCorrectionValue`/`setPrecipCorrectionValue`/`pathToOutputDir()` that
+    become free functions (or get inlined if trivial enough once looked at directly).
+
+## Per-item workflow (repeat for every checklist entry)
+
+1. Convert the one struct in `monica-parameters.h` + `monica-parameters.cpp` per the goals above.
+2. Grep the whole repo for the struct's constructors / `.merge(` / `.to_json(` / `.serialize(` /
+   `.deserialize(` / `.toString(` call sites and rewire them to the new free functions.
+3. Build (`cmake --build build --parallel`, via the VS dev shell as usual).
+4. Run the `monica-run` task and diff `sim-min-out_section_crop.csv` +
+   `sim-min-out_section_daily.csv` against the `_3.6.60` baselines — must be identical.
+5. Tick the item off above (`[ ]` -> `[x]`).
+6. Commit and push just that struct's change.
+7. **Stop and ask the user whether to start the next item** — do not chain multiple structs in one
+   go.
+
+## Validation baseline
+
+Same as `plan.md`:
+
+`cmake --build build --parallel` (via the VS dev shell), then run the **"Run monica-run"** task
+(`.zed/tasks.json`), then compare `sim-min-out_section_crop.csv` / `sim-min-out_section_daily.csv`
+against `sim-min-out_section_crop_3.6.60.csv` / `sim-min-out_section_daily_3.6.60.csv` — must be
+byte-identical.

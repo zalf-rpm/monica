@@ -564,12 +564,17 @@ void monica::cropmodule::deserialize(
                    reader.getOrganGrowthIncrement());
   setFromCapnpList(cm->pc_OrganGrowthRespiration,
                    reader.getPcOrganGrowthRespiration());
-  setFromComplexCapnpList(cm->pc_OrganIdsForPrimaryYield,
-                          reader.getPcOrganIdsForPrimaryYield());
-  setFromComplexCapnpList(cm->pc_OrganIdsForSecondaryYield,
-                          reader.getPcOrganIdsForSecondaryYield());
-  setFromComplexCapnpList(cm->pc_OrganIdsForCutting,
-                          reader.getPcOrganIdsForCutting());
+  auto deserializeYieldComponents = [](std::vector<YieldComponent>& ycs, auto listReader) {
+    ycs.resize(listReader.size());
+    uint32_t i = 0;
+    for (auto& yc : ycs) yieldcomponent::deserialize(&yc, listReader[i++]);
+  };
+  deserializeYieldComponents(cm->pc_OrganIdsForPrimaryYield,
+                             reader.getPcOrganIdsForPrimaryYield());
+  deserializeYieldComponents(cm->pc_OrganIdsForSecondaryYield,
+                             reader.getPcOrganIdsForSecondaryYield());
+  deserializeYieldComponents(cm->pc_OrganIdsForCutting,
+                             reader.getPcOrganIdsForCutting());
   setFromCapnpList(cm->pc_OrganMaintenanceRespiration,
                    reader.getPcOrganMaintenanceRespiration());
   setFromCapnpList(cm->vc_OrganSenescenceIncrement,
@@ -884,16 +889,20 @@ void monica::cropmodule::serialize(
   setCapnpList(cm->pc_OrganGrowthRespiration,
                builder.initPcOrganGrowthRespiration(
                    (capnp::uint)cm->pc_OrganGrowthRespiration.size()));
-  setComplexCapnpList(cm->pc_OrganIdsForPrimaryYield,
-                      builder.initPcOrganIdsForPrimaryYield(
-                          (capnp::uint)cm->pc_OrganIdsForPrimaryYield.size()));
-  setComplexCapnpList(
+  auto serializeYieldComponents = [](const std::vector<YieldComponent>& ycs, auto listBuilder) {
+    uint32_t i = 0;
+    for (const auto& yc : ycs) yieldcomponent::serialize(&yc, listBuilder[i++]);
+  };
+  serializeYieldComponents(cm->pc_OrganIdsForPrimaryYield,
+                           builder.initPcOrganIdsForPrimaryYield(
+                               (capnp::uint)cm->pc_OrganIdsForPrimaryYield.size()));
+  serializeYieldComponents(
       cm->pc_OrganIdsForSecondaryYield,
       builder.initPcOrganIdsForSecondaryYield(
           (capnp::uint)cm->pc_OrganIdsForSecondaryYield.size()));
-  setComplexCapnpList(cm->pc_OrganIdsForCutting,
-                      builder.initPcOrganIdsForCutting(
-                          (capnp::uint)cm->pc_OrganIdsForCutting.size()));
+  serializeYieldComponents(cm->pc_OrganIdsForCutting,
+                           builder.initPcOrganIdsForCutting(
+                               (capnp::uint)cm->pc_OrganIdsForCutting.size()));
   setCapnpList(cm->pc_OrganMaintenanceRespiration,
                builder.initPcOrganMaintenanceRespiration(
                    (capnp::uint)cm->pc_OrganMaintenanceRespiration.size()));
