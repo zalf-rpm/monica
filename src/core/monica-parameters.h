@@ -170,30 +170,7 @@ DLL_API size_t numberOfOrgans(const SpeciesParameters* sp);
 
 typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
 
-struct DLL_API CultivarParameters : public Tools::Json11Serializable {
-  CultivarParameters() {}
-
-  CultivarParameters(
-      mas::schema::model::monica::CultivarParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::CultivarParameters::Reader reader);
-
-  // CultivarParameters(json11::Json object);
-
-  void serialize(
-      mas::schema::model::monica::CultivarParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
-  size_t pc_NumberOfDevelopmentalStages() const {
-    return pc_BaseDaylength.size();
-  }
-
+struct DLL_API CultivarParameters {
   std::string pc_CultivarId;
   std::string pc_Description;
   bool pc_Perennial{false};
@@ -250,6 +227,20 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
 
   bool winterCrop{false};
 };
+
+DLL_API CultivarParameters makeCultivarParameters(mas::schema::model::monica::CultivarParameters::Reader reader);
+
+namespace cultivarparameters {
+
+DLL_API void deserialize(CultivarParameters* cp, mas::schema::model::monica::CultivarParameters::Reader reader);
+DLL_API void serialize(const CultivarParameters* cp, mas::schema::model::monica::CultivarParameters::Builder builder);
+DLL_API Tools::Errors merge(CultivarParameters* cp, json11::Json j);
+DLL_API json11::Json to_json(const CultivarParameters* cp);
+inline size_t numberOfDevelopmentalStages(const CultivarParameters* cp) {
+  return cp->pc_BaseDaylength.size();
+}
+
+} // namespace cultivarparameters
 
 typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 

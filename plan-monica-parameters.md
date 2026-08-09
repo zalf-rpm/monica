@@ -86,8 +86,15 @@ those members. Check off each once it's built, regression-tested, committed, and
    call sites to the new free functions without otherwise converting `CultivarParameters`/
    `CropParameters` yet. Also touched two `crop-module.cpp` sites doing the same
    `speciesParams.pc_NumberOfDevelopmentalStages()`/`.pc_NumberOfOrgans()` calls directly.
-3. [ ] `CultivarParameters` — needs `YieldComponent` done (holds
-   `std::vector<YieldComponent>` members).
+3. [x] `CultivarParameters` — needs `YieldComponent` done (holds
+   `std::vector<YieldComponent>` members). `pc_NumberOfDevelopmentalStages()` was a trivial
+   one-liner (`return pc_BaseDaylength.size();`) with zero external callers, but kept it as an
+   `inline` free function `cultivarparameters::numberOfDevelopmentalStages` for interface
+   completeness (matches `soilcolumn::numberOfLayers` precedent: computed-but-trivial methods stay
+   as free functions rather than being deleted or inlined at call sites). Same leak-forward pattern
+   as before: `CropParameters::deserialize`/`serialize`/`merge`/`to_json` (still unconverted) called
+   `cultivarParams.deserialize/serialize/merge/to_json(...)` as member functions — rewired to
+   `cultivarparameters::...` free functions without otherwise converting `CropParameters` yet.
 4. [ ] `CropParameters` — needs `SpeciesParameters` + `CultivarParameters` done (holds both by
    value). Has two `merge` overloads (`merge(j)` and `merge(sj, cj)`). Fix `.toString()` call site
    in `crop.cpp`.

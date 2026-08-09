@@ -374,24 +374,30 @@ size_t speciesparameters::numberOfOrgans(const SpeciesParameters* sp) {
 //   merge(j);
 // }
 
-void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParameters::Reader reader) {
-  pc_CultivarId = reader.getCultivarId();
-  pc_Description = reader.getDescription();
-  pc_Perennial = reader.getPerennial();
-  pc_MaxAssimilationRate = reader.getMaxAssimilationRate();
-  pc_MaxCropHeight = reader.getMaxCropHeight();
-  pc_ResidueNRatio = reader.getResidueNRatio();
-  pc_LT50cultivar = reader.getLt50cultivar();
-  pc_CropHeightP1 = reader.getCropHeightP1();
-  pc_CropHeightP2 = reader.getCropHeightP2();
-  pc_CropSpecificMaxRootingDepth = reader.getCropSpecificMaxRootingDepth();
+CultivarParameters monica::makeCultivarParameters(mas::schema::model::monica::CultivarParameters::Reader reader) {
+  CultivarParameters cp;
+  cultivarparameters::deserialize(&cp, reader);
+  return cp;
+}
+
+void cultivarparameters::deserialize(CultivarParameters* cp, mas::schema::model::monica::CultivarParameters::Reader reader) {
+  cp->pc_CultivarId = reader.getCultivarId();
+  cp->pc_Description = reader.getDescription();
+  cp->pc_Perennial = reader.getPerennial();
+  cp->pc_MaxAssimilationRate = reader.getMaxAssimilationRate();
+  cp->pc_MaxCropHeight = reader.getMaxCropHeight();
+  cp->pc_ResidueNRatio = reader.getResidueNRatio();
+  cp->pc_LT50cultivar = reader.getLt50cultivar();
+  cp->pc_CropHeightP1 = reader.getCropHeightP1();
+  cp->pc_CropHeightP2 = reader.getCropHeightP2();
+  cp->pc_CropSpecificMaxRootingDepth = reader.getCropSpecificMaxRootingDepth();
 
   {
     const auto listReader = reader.getAssimilatePartitioningCoeff();
     for (const auto lr : listReader) {
       vector<double> v;
       setFromCapnpList(v, lr);
-      pc_AssimilatePartitioningCoeff.emplace_back(v);
+      cp->pc_AssimilatePartitioningCoeff.emplace_back(v);
     }
   }
 
@@ -400,108 +406,108 @@ void CultivarParameters::deserialize(mas::schema::model::monica::CultivarParamet
     for (const auto lr : listReader) {
       vector<double> v;
       setFromCapnpList(v, lr);
-      pc_OrganSenescenceRate.emplace_back(v);
+      cp->pc_OrganSenescenceRate.emplace_back(v);
     }
   }
 
-  setFromCapnpList(pc_BaseDaylength, reader.getBaseDaylength());
-  setFromCapnpList(pc_OptimumTemperature, reader.getOptimumTemperature());
-  setFromCapnpList(pc_DaylengthRequirement, reader.getDaylengthRequirement());
-  setFromCapnpList(pc_DroughtStressThreshold, reader.getDroughtStressThreshold());
-  setFromCapnpList(pc_SpecificLeafArea, reader.getSpecificLeafArea());
-  setFromCapnpList(pc_StageKcFactor, reader.getStageKcFactor());
-  setFromCapnpList(pc_StageTemperatureSum, reader.getStageTemperatureSum());
-  setFromCapnpList(pc_VernalisationRequirement, reader.getVernalisationRequirement());
-  pc_HeatSumIrrigationStart = reader.getHeatSumIrrigationStart();
-  pc_HeatSumIrrigationEnd = reader.getHeatSumIrrigationEnd();
-  pc_CriticalTemperatureHeatStress = reader.getCriticalTemperatureHeatStress();
-  pc_BeginSensitivePhaseHeatStress = reader.getBeginSensitivePhaseHeatStress();
-  pc_EndSensitivePhaseHeatStress = reader.getEndSensitivePhaseHeatStress();
-  pc_FrostHardening = reader.getFrostHardening();
-  pc_FrostDehardening = reader.getFrostDehardening();
-  pc_LowTemperatureExposure = reader.getLowTemperatureExposure();
-  pc_RespiratoryStress = reader.getRespiratoryStress();
-  pc_LatestHarvestDoy = reader.getLatestHarvestDoy();
+  setFromCapnpList(cp->pc_BaseDaylength, reader.getBaseDaylength());
+  setFromCapnpList(cp->pc_OptimumTemperature, reader.getOptimumTemperature());
+  setFromCapnpList(cp->pc_DaylengthRequirement, reader.getDaylengthRequirement());
+  setFromCapnpList(cp->pc_DroughtStressThreshold, reader.getDroughtStressThreshold());
+  setFromCapnpList(cp->pc_SpecificLeafArea, reader.getSpecificLeafArea());
+  setFromCapnpList(cp->pc_StageKcFactor, reader.getStageKcFactor());
+  setFromCapnpList(cp->pc_StageTemperatureSum, reader.getStageTemperatureSum());
+  setFromCapnpList(cp->pc_VernalisationRequirement, reader.getVernalisationRequirement());
+  cp->pc_HeatSumIrrigationStart = reader.getHeatSumIrrigationStart();
+  cp->pc_HeatSumIrrigationEnd = reader.getHeatSumIrrigationEnd();
+  cp->pc_CriticalTemperatureHeatStress = reader.getCriticalTemperatureHeatStress();
+  cp->pc_BeginSensitivePhaseHeatStress = reader.getBeginSensitivePhaseHeatStress();
+  cp->pc_EndSensitivePhaseHeatStress = reader.getEndSensitivePhaseHeatStress();
+  cp->pc_FrostHardening = reader.getFrostHardening();
+  cp->pc_FrostDehardening = reader.getFrostDehardening();
+  cp->pc_LowTemperatureExposure = reader.getLowTemperatureExposure();
+  cp->pc_RespiratoryStress = reader.getRespiratoryStress();
+  cp->pc_LatestHarvestDoy = reader.getLatestHarvestDoy();
   auto deserializeYieldComponents = [](std::vector<YieldComponent>& ycs, auto listReader) {
     ycs.resize(listReader.size());
     uint32_t i = 0;
     for (auto& yc : ycs) yieldcomponent::deserialize(&yc, listReader[i++]);
   };
-  deserializeYieldComponents(pc_OrganIdsForPrimaryYield, reader.getOrganIdsForPrimaryYield());
-  deserializeYieldComponents(pc_OrganIdsForSecondaryYield, reader.getOrganIdsForSecondaryYield());
-  deserializeYieldComponents(pc_OrganIdsForCutting, reader.getOrganIdsForCutting());
-  pc_EarlyRefLeafExp = reader.getEarlyRefLeafExp();
-  pc_RefLeafExp = reader.getRefLeafExp();
-  pc_MinTempDev_WE = reader.getMinTempDevWE();
-  pc_OptTempDev_WE = reader.getOptTempDevWE();
-  pc_MaxTempDev_WE = reader.getMaxTempDevWE();
-  winterCrop = reader.getWinterCrop();
+  deserializeYieldComponents(cp->pc_OrganIdsForPrimaryYield, reader.getOrganIdsForPrimaryYield());
+  deserializeYieldComponents(cp->pc_OrganIdsForSecondaryYield, reader.getOrganIdsForSecondaryYield());
+  deserializeYieldComponents(cp->pc_OrganIdsForCutting, reader.getOrganIdsForCutting());
+  cp->pc_EarlyRefLeafExp = reader.getEarlyRefLeafExp();
+  cp->pc_RefLeafExp = reader.getRefLeafExp();
+  cp->pc_MinTempDev_WE = reader.getMinTempDevWE();
+  cp->pc_OptTempDev_WE = reader.getOptTempDevWE();
+  cp->pc_MaxTempDev_WE = reader.getMaxTempDevWE();
+  cp->winterCrop = reader.getWinterCrop();
 }
 
-void CultivarParameters::serialize(mas::schema::model::monica::CultivarParameters::Builder builder) const {
-  builder.setCultivarId(pc_CultivarId);
-  builder.setDescription(pc_Description);
-  builder.setPerennial(pc_Perennial);
-  builder.setMaxAssimilationRate(pc_MaxAssimilationRate);
-  builder.setMaxCropHeight(pc_MaxCropHeight);
-  builder.setResidueNRatio(pc_ResidueNRatio);
-  builder.setLt50cultivar(pc_LT50cultivar);
-  builder.setCropHeightP1(pc_CropHeightP1);
-  builder.setCropHeightP2(pc_CropHeightP2);
-  builder.setCropSpecificMaxRootingDepth(pc_CropSpecificMaxRootingDepth);
+void cultivarparameters::serialize(const CultivarParameters* cp, mas::schema::model::monica::CultivarParameters::Builder builder) {
+  builder.setCultivarId(cp->pc_CultivarId);
+  builder.setDescription(cp->pc_Description);
+  builder.setPerennial(cp->pc_Perennial);
+  builder.setMaxAssimilationRate(cp->pc_MaxAssimilationRate);
+  builder.setMaxCropHeight(cp->pc_MaxCropHeight);
+  builder.setResidueNRatio(cp->pc_ResidueNRatio);
+  builder.setLt50cultivar(cp->pc_LT50cultivar);
+  builder.setCropHeightP1(cp->pc_CropHeightP1);
+  builder.setCropHeightP2(cp->pc_CropHeightP2);
+  builder.setCropSpecificMaxRootingDepth(cp->pc_CropSpecificMaxRootingDepth);
 
   {
-    auto listBuilder = builder.initAssimilatePartitioningCoeff((capnp::uint)pc_AssimilatePartitioningCoeff.size());
+    auto listBuilder = builder.initAssimilatePartitioningCoeff((capnp::uint)cp->pc_AssimilatePartitioningCoeff.size());
     capnp::uint i = 0;
-    for (const auto& v : pc_AssimilatePartitioningCoeff) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
+    for (const auto& v : cp->pc_AssimilatePartitioningCoeff) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
   }
 
   {
-    auto listBuilder = builder.initOrganSenescenceRate((capnp::uint)pc_OrganSenescenceRate.size());
+    auto listBuilder = builder.initOrganSenescenceRate((capnp::uint)cp->pc_OrganSenescenceRate.size());
     capnp::uint i = 0;
-    for (const auto& v : pc_OrganSenescenceRate) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
+    for (const auto& v : cp->pc_OrganSenescenceRate) setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
   }
 
-  setCapnpList(pc_BaseDaylength, builder.initBaseDaylength((capnp::uint)pc_BaseDaylength.size()));
-  setCapnpList(pc_OptimumTemperature, builder.initOptimumTemperature((capnp::uint)pc_OptimumTemperature.size()));
-  setCapnpList(pc_DaylengthRequirement, builder.initDaylengthRequirement((capnp::uint)pc_DaylengthRequirement.size()));
-  setCapnpList(pc_DroughtStressThreshold,
-               builder.initDroughtStressThreshold((capnp::uint)pc_DroughtStressThreshold.size()));
-  setCapnpList(pc_SpecificLeafArea, builder.initSpecificLeafArea((capnp::uint)pc_SpecificLeafArea.size()));
-  setCapnpList(pc_StageKcFactor, builder.initStageKcFactor((capnp::uint)pc_StageKcFactor.size()));
-  setCapnpList(pc_StageTemperatureSum, builder.initStageTemperatureSum((capnp::uint)pc_StageTemperatureSum.size()));
-  setCapnpList(pc_VernalisationRequirement,
-               builder.initVernalisationRequirement((capnp::uint)pc_VernalisationRequirement.size()));
-  builder.setHeatSumIrrigationStart(pc_HeatSumIrrigationStart);
-  builder.setHeatSumIrrigationEnd(pc_HeatSumIrrigationEnd);
-  builder.setCriticalTemperatureHeatStress(pc_CriticalTemperatureHeatStress);
-  builder.setBeginSensitivePhaseHeatStress(pc_BeginSensitivePhaseHeatStress);
-  builder.setEndSensitivePhaseHeatStress(pc_EndSensitivePhaseHeatStress);
-  builder.setFrostHardening(pc_FrostHardening);
-  builder.setFrostDehardening(pc_FrostDehardening);
-  builder.setLowTemperatureExposure(pc_LowTemperatureExposure);
-  builder.setRespiratoryStress(pc_RespiratoryStress);
-  builder.setLatestHarvestDoy(pc_LatestHarvestDoy);
+  setCapnpList(cp->pc_BaseDaylength, builder.initBaseDaylength((capnp::uint)cp->pc_BaseDaylength.size()));
+  setCapnpList(cp->pc_OptimumTemperature, builder.initOptimumTemperature((capnp::uint)cp->pc_OptimumTemperature.size()));
+  setCapnpList(cp->pc_DaylengthRequirement, builder.initDaylengthRequirement((capnp::uint)cp->pc_DaylengthRequirement.size()));
+  setCapnpList(cp->pc_DroughtStressThreshold,
+               builder.initDroughtStressThreshold((capnp::uint)cp->pc_DroughtStressThreshold.size()));
+  setCapnpList(cp->pc_SpecificLeafArea, builder.initSpecificLeafArea((capnp::uint)cp->pc_SpecificLeafArea.size()));
+  setCapnpList(cp->pc_StageKcFactor, builder.initStageKcFactor((capnp::uint)cp->pc_StageKcFactor.size()));
+  setCapnpList(cp->pc_StageTemperatureSum, builder.initStageTemperatureSum((capnp::uint)cp->pc_StageTemperatureSum.size()));
+  setCapnpList(cp->pc_VernalisationRequirement,
+               builder.initVernalisationRequirement((capnp::uint)cp->pc_VernalisationRequirement.size()));
+  builder.setHeatSumIrrigationStart(cp->pc_HeatSumIrrigationStart);
+  builder.setHeatSumIrrigationEnd(cp->pc_HeatSumIrrigationEnd);
+  builder.setCriticalTemperatureHeatStress(cp->pc_CriticalTemperatureHeatStress);
+  builder.setBeginSensitivePhaseHeatStress(cp->pc_BeginSensitivePhaseHeatStress);
+  builder.setEndSensitivePhaseHeatStress(cp->pc_EndSensitivePhaseHeatStress);
+  builder.setFrostHardening(cp->pc_FrostHardening);
+  builder.setFrostDehardening(cp->pc_FrostDehardening);
+  builder.setLowTemperatureExposure(cp->pc_LowTemperatureExposure);
+  builder.setRespiratoryStress(cp->pc_RespiratoryStress);
+  builder.setLatestHarvestDoy(cp->pc_LatestHarvestDoy);
   auto serializeYieldComponents = [](const std::vector<YieldComponent>& ycs, auto listBuilder) {
     uint32_t i = 0;
     for (const auto& yc : ycs) yieldcomponent::serialize(&yc, listBuilder[i++]);
   };
-  serializeYieldComponents(pc_OrganIdsForPrimaryYield,
-                           builder.initOrganIdsForPrimaryYield((capnp::uint)pc_OrganIdsForPrimaryYield.size()));
-  serializeYieldComponents(pc_OrganIdsForSecondaryYield,
-                           builder.initOrganIdsForSecondaryYield((capnp::uint)pc_OrganIdsForSecondaryYield.size()));
-  serializeYieldComponents(pc_OrganIdsForCutting,
-                           builder.initOrganIdsForCutting((capnp::uint)pc_OrganIdsForCutting.size()));
-  builder.setEarlyRefLeafExp(pc_EarlyRefLeafExp);
-  builder.setRefLeafExp(pc_RefLeafExp);
-  builder.setMinTempDevWE(pc_MinTempDev_WE);
-  builder.setOptTempDevWE(pc_OptTempDev_WE);
-  builder.setMaxTempDevWE(pc_MaxTempDev_WE);
-  builder.setWinterCrop(winterCrop);
+  serializeYieldComponents(cp->pc_OrganIdsForPrimaryYield,
+                           builder.initOrganIdsForPrimaryYield((capnp::uint)cp->pc_OrganIdsForPrimaryYield.size()));
+  serializeYieldComponents(cp->pc_OrganIdsForSecondaryYield,
+                           builder.initOrganIdsForSecondaryYield((capnp::uint)cp->pc_OrganIdsForSecondaryYield.size()));
+  serializeYieldComponents(cp->pc_OrganIdsForCutting,
+                           builder.initOrganIdsForCutting((capnp::uint)cp->pc_OrganIdsForCutting.size()));
+  builder.setEarlyRefLeafExp(cp->pc_EarlyRefLeafExp);
+  builder.setRefLeafExp(cp->pc_RefLeafExp);
+  builder.setMinTempDevWE(cp->pc_MinTempDev_WE);
+  builder.setOptTempDevWE(cp->pc_OptTempDev_WE);
+  builder.setMaxTempDevWE(cp->pc_MaxTempDev_WE);
+  builder.setWinterCrop(cp->winterCrop);
 }
 
-Errors CultivarParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+Errors cultivarparameters::merge(CultivarParameters* cp, json11::Json j) {
+  Errors res = defaultMerge(j, [cp](json11::Json j2) { return merge(cp, j2); });
 
   auto mergeYieldComponents = [](json11::Json arr) {
     std::vector<YieldComponent> ycs;
@@ -515,78 +521,78 @@ Errors CultivarParameters::merge(json11::Json j) {
 
   string err;
   if (j.has_shape({{"OrganIdsForPrimaryYield", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForPrimaryYield = mergeYieldComponents(j["OrganIdsForPrimaryYield"]);
+    cp->pc_OrganIdsForPrimaryYield = mergeYieldComponents(j["OrganIdsForPrimaryYield"]);
   else res.errors.push_back(string("Couldn't read 'OrganIdsForPrimaryYield' key from JSON object:\n") + j.dump());
 
   if (j.has_shape({{"OrganIdsForSecondaryYield", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForSecondaryYield = mergeYieldComponents(j["OrganIdsForSecondaryYield"]);
+    cp->pc_OrganIdsForSecondaryYield = mergeYieldComponents(j["OrganIdsForSecondaryYield"]);
   else res.errors.push_back(string("Couldn't read 'OrganIdsForSecondaryYield' key from JSON object:\n") + j.dump());
 
   if (j.has_shape({{"OrganIdsForCutting", json11::Json::ARRAY}}, err))
-    pc_OrganIdsForCutting = mergeYieldComponents(j["OrganIdsForCutting"]);
+    cp->pc_OrganIdsForCutting = mergeYieldComponents(j["OrganIdsForCutting"]);
   else res.warnings.push_back(string("Couldn't read 'OrganIdsForCutting' key from JSON object:\n") + j.dump());
 
-  set_string_value(pc_CultivarId, j, "CultivarName");
-  set_string_value(pc_Description, j, "Description");
-  set_bool_value(pc_Perennial, j, "Perennial");
-  set_double_value(pc_MaxAssimilationRate, j, "MaxAssimilationRate");
-  set_double_value(pc_LightExtinctionCoefficient, j, "LightExtinctionCoefficient");
-  set_double_value(pc_MaxCropHeight, j, "MaxCropHeight");
-  set_double_value(pc_ResidueNRatio, j, "ResidueNRatio");
-  set_double_value(pc_LT50cultivar, j, "LT50cultivar");
-  set_double_value(pc_CropHeightP1, j, "CropHeightP1");
-  set_double_value(pc_CropHeightP2, j, "CropHeightP2");
-  set_double_value(pc_CropSpecificMaxRootingDepth, j, "CropSpecificMaxRootingDepth");
-  set_double_vector(pc_BaseDaylength, j, "BaseDaylength");
-  set_double_vector(pc_OptimumTemperature, j, "OptimumTemperature");
-  set_double_vector(pc_DaylengthRequirement, j, "DaylengthRequirement");
-  set_double_vector(pc_DroughtStressThreshold, j, "DroughtStressThreshold");
-  set_double_vector(pc_SpecificLeafArea, j, "SpecificLeafArea");
-  set_double_vector(pc_StageKcFactor, j, "StageKcFactor");
-  set_double_vector(pc_StageTemperatureSum, j, "StageTemperatureSum");
-  set_double_vector(pc_VernalisationRequirement, j, "VernalisationRequirement");
-  set_double_value(pc_HeatSumIrrigationStart, j, "HeatSumIrrigationStart");
-  set_double_value(pc_HeatSumIrrigationEnd, j, "HeatSumIrrigationEnd");
-  set_double_value(pc_CriticalTemperatureHeatStress, j, "CriticalTemperatureHeatStress");
-  set_double_value(pc_BeginSensitivePhaseHeatStress, j, "BeginSensitivePhaseHeatStress");
-  set_double_value(pc_EndSensitivePhaseHeatStress, j, "EndSensitivePhaseHeatStress");
-  set_double_value(pc_FrostHardening, j, "FrostHardening");
-  set_double_value(pc_FrostDehardening, j, "FrostDehardening");
-  set_double_value(pc_LowTemperatureExposure, j, "LowTemperatureExposure");
-  set_double_value(pc_RespiratoryStress, j, "RespiratoryStress");
-  set_int_value(pc_LatestHarvestDoy, j, "LatestHarvestDoy");
-  set_bool_value(winterCrop, j, "WinterCrop");
+  set_string_value(cp->pc_CultivarId, j, "CultivarName");
+  set_string_value(cp->pc_Description, j, "Description");
+  set_bool_value(cp->pc_Perennial, j, "Perennial");
+  set_double_value(cp->pc_MaxAssimilationRate, j, "MaxAssimilationRate");
+  set_double_value(cp->pc_LightExtinctionCoefficient, j, "LightExtinctionCoefficient");
+  set_double_value(cp->pc_MaxCropHeight, j, "MaxCropHeight");
+  set_double_value(cp->pc_ResidueNRatio, j, "ResidueNRatio");
+  set_double_value(cp->pc_LT50cultivar, j, "LT50cultivar");
+  set_double_value(cp->pc_CropHeightP1, j, "CropHeightP1");
+  set_double_value(cp->pc_CropHeightP2, j, "CropHeightP2");
+  set_double_value(cp->pc_CropSpecificMaxRootingDepth, j, "CropSpecificMaxRootingDepth");
+  set_double_vector(cp->pc_BaseDaylength, j, "BaseDaylength");
+  set_double_vector(cp->pc_OptimumTemperature, j, "OptimumTemperature");
+  set_double_vector(cp->pc_DaylengthRequirement, j, "DaylengthRequirement");
+  set_double_vector(cp->pc_DroughtStressThreshold, j, "DroughtStressThreshold");
+  set_double_vector(cp->pc_SpecificLeafArea, j, "SpecificLeafArea");
+  set_double_vector(cp->pc_StageKcFactor, j, "StageKcFactor");
+  set_double_vector(cp->pc_StageTemperatureSum, j, "StageTemperatureSum");
+  set_double_vector(cp->pc_VernalisationRequirement, j, "VernalisationRequirement");
+  set_double_value(cp->pc_HeatSumIrrigationStart, j, "HeatSumIrrigationStart");
+  set_double_value(cp->pc_HeatSumIrrigationEnd, j, "HeatSumIrrigationEnd");
+  set_double_value(cp->pc_CriticalTemperatureHeatStress, j, "CriticalTemperatureHeatStress");
+  set_double_value(cp->pc_BeginSensitivePhaseHeatStress, j, "BeginSensitivePhaseHeatStress");
+  set_double_value(cp->pc_EndSensitivePhaseHeatStress, j, "EndSensitivePhaseHeatStress");
+  set_double_value(cp->pc_FrostHardening, j, "FrostHardening");
+  set_double_value(cp->pc_FrostDehardening, j, "FrostDehardening");
+  set_double_value(cp->pc_LowTemperatureExposure, j, "LowTemperatureExposure");
+  set_double_value(cp->pc_RespiratoryStress, j, "RespiratoryStress");
+  set_int_value(cp->pc_LatestHarvestDoy, j, "LatestHarvestDoy");
+  set_bool_value(cp->winterCrop, j, "WinterCrop");
 
   if (j["AssimilatePartitioningCoeff"].is_array()) {
     auto apcs = j["AssimilatePartitioningCoeff"].array_items();
     int i = 0;
-    pc_AssimilatePartitioningCoeff.resize(apcs.size());
-    for (auto js : apcs) pc_AssimilatePartitioningCoeff[i++] = double_vector(js);
+    cp->pc_AssimilatePartitioningCoeff.resize(apcs.size());
+    for (auto js : apcs) cp->pc_AssimilatePartitioningCoeff[i++] = double_vector(js);
   }
   if (j["OrganSenescenceRate"].is_array()) {
     auto osrs = j["OrganSenescenceRate"].array_items();
     int i = 0;
-    pc_OrganSenescenceRate.resize(osrs.size());
-    for (auto js : osrs) pc_OrganSenescenceRate[i++] = double_vector(js);
+    cp->pc_OrganSenescenceRate.resize(osrs.size());
+    for (auto js : osrs) cp->pc_OrganSenescenceRate[i++] = double_vector(js);
   }
 
-  set_double_value(pc_EarlyRefLeafExp, j, "EarlyRefLeafExp");
-  set_double_value(pc_RefLeafExp, j, "RefLeafExp");
+  set_double_value(cp->pc_EarlyRefLeafExp, j, "EarlyRefLeafExp");
+  set_double_value(cp->pc_RefLeafExp, j, "RefLeafExp");
 
-  set_double_value(pc_MinTempDev_WE, j, "MinTempDev_WE");
-  set_double_value(pc_OptTempDev_WE, j, "OptTempDev_WE");
-  set_double_value(pc_MaxTempDev_WE, j, "MaxTempDev_WE");
+  set_double_value(cp->pc_MinTempDev_WE, j, "MinTempDev_WE");
+  set_double_value(cp->pc_OptTempDev_WE, j, "OptTempDev_WE");
+  set_double_value(cp->pc_MaxTempDev_WE, j, "MaxTempDev_WE");
 
 
   return res;
 }
 
-json11::Json CultivarParameters::to_json() const {
+json11::Json cultivarparameters::to_json(const CultivarParameters* cp) {
   J11Array apcs;
-  for (auto v : pc_AssimilatePartitioningCoeff) apcs.push_back(toPrimJsonArray(v));
+  for (auto v : cp->pc_AssimilatePartitioningCoeff) apcs.push_back(toPrimJsonArray(v));
 
   J11Array osrs;
-  for (auto v : pc_OrganSenescenceRate) osrs.push_back(toPrimJsonArray(v));
+  for (auto v : cp->pc_OrganSenescenceRate) osrs.push_back(toPrimJsonArray(v));
 
   auto yieldComponentsToJson = [](const std::vector<YieldComponent>& ycs) {
     J11Array a;
@@ -597,46 +603,46 @@ json11::Json CultivarParameters::to_json() const {
   auto cultivar = J11Object
   {
     {"type", "CultivarParameters"},
-    {"CultivarName", pc_CultivarId},
-    {"Description", pc_Description},
-    {"Perennial", pc_Perennial},
-    {"MaxAssimilationRate", pc_MaxAssimilationRate},
-    {"LightExtinctionCoefficient", pc_LightExtinctionCoefficient},
-    {"MaxCropHeight", J11Array{pc_MaxCropHeight, "m"}},
-    {"ResidueNRatio", pc_ResidueNRatio},
-    {"LT50cultivar", pc_LT50cultivar},
-    {"CropHeightP1", pc_CropHeightP1},
-    {"CropHeightP2", pc_CropHeightP2},
-    {"CropSpecificMaxRootingDepth", pc_CropSpecificMaxRootingDepth},
+    {"CultivarName", cp->pc_CultivarId},
+    {"Description", cp->pc_Description},
+    {"Perennial", cp->pc_Perennial},
+    {"MaxAssimilationRate", cp->pc_MaxAssimilationRate},
+    {"LightExtinctionCoefficient", cp->pc_LightExtinctionCoefficient},
+    {"MaxCropHeight", J11Array{cp->pc_MaxCropHeight, "m"}},
+    {"ResidueNRatio", cp->pc_ResidueNRatio},
+    {"LT50cultivar", cp->pc_LT50cultivar},
+    {"CropHeightP1", cp->pc_CropHeightP1},
+    {"CropHeightP2", cp->pc_CropHeightP2},
+    {"CropSpecificMaxRootingDepth", cp->pc_CropSpecificMaxRootingDepth},
     {"AssimilatePartitioningCoeff", apcs},
     {"OrganSenescenceRate", osrs},
-    {"BaseDaylength", J11Array{toPrimJsonArray(pc_BaseDaylength), "h"}},
-    {"OptimumTemperature", J11Array{toPrimJsonArray(pc_OptimumTemperature), "°C"}},
-    {"DaylengthRequirement", J11Array{toPrimJsonArray(pc_DaylengthRequirement), "h"}},
-    {"DroughtStressThreshold", toPrimJsonArray(pc_DroughtStressThreshold)},
-    {"SpecificLeafArea", J11Array{toPrimJsonArray(pc_SpecificLeafArea), "ha kg-1"}},
-    {"StageKcFactor", J11Array{toPrimJsonArray(pc_StageKcFactor), "1;0"}},
-    {"StageTemperatureSum", J11Array{toPrimJsonArray(pc_StageTemperatureSum), "°C d"}},
-    {"VernalisationRequirement", toPrimJsonArray(pc_VernalisationRequirement)},
-    {"HeatSumIrrigationStart", pc_HeatSumIrrigationStart},
-    {"HeatSumIrrigationEnd", pc_HeatSumIrrigationEnd},
-    {"CriticalTemperatureHeatStress", J11Array{pc_CriticalTemperatureHeatStress, "°C"}},
-    {"BeginSensitivePhaseHeatStress", J11Array{pc_BeginSensitivePhaseHeatStress, "°C d"}},
-    {"EndSensitivePhaseHeatStress", J11Array{pc_EndSensitivePhaseHeatStress, "°C d"}},
-    {"FrostHardening", pc_FrostHardening},
-    {"FrostDehardening", pc_FrostDehardening},
-    {"LowTemperatureExposure", pc_LowTemperatureExposure},
-    {"RespiratoryStress", pc_RespiratoryStress},
-    {"LatestHarvestDoy", pc_LatestHarvestDoy},
-    {"OrganIdsForPrimaryYield", yieldComponentsToJson(pc_OrganIdsForPrimaryYield)},
-    {"OrganIdsForSecondaryYield", yieldComponentsToJson(pc_OrganIdsForSecondaryYield)},
-    {"OrganIdsForCutting", yieldComponentsToJson(pc_OrganIdsForCutting)},
-    {"EarlyRefLeafExp", pc_EarlyRefLeafExp},
-    {"RefLeafExp", pc_RefLeafExp},
-    {"MinTempDev_WE", pc_MinTempDev_WE},
-    {"OptTempDev_WE", pc_OptTempDev_WE},
-    {"MaxTempDev_WE", pc_MaxTempDev_WE},
-    {"WinterCrop", winterCrop}
+    {"BaseDaylength", J11Array{toPrimJsonArray(cp->pc_BaseDaylength), "h"}},
+    {"OptimumTemperature", J11Array{toPrimJsonArray(cp->pc_OptimumTemperature), "°C"}},
+    {"DaylengthRequirement", J11Array{toPrimJsonArray(cp->pc_DaylengthRequirement), "h"}},
+    {"DroughtStressThreshold", toPrimJsonArray(cp->pc_DroughtStressThreshold)},
+    {"SpecificLeafArea", J11Array{toPrimJsonArray(cp->pc_SpecificLeafArea), "ha kg-1"}},
+    {"StageKcFactor", J11Array{toPrimJsonArray(cp->pc_StageKcFactor), "1;0"}},
+    {"StageTemperatureSum", J11Array{toPrimJsonArray(cp->pc_StageTemperatureSum), "°C d"}},
+    {"VernalisationRequirement", toPrimJsonArray(cp->pc_VernalisationRequirement)},
+    {"HeatSumIrrigationStart", cp->pc_HeatSumIrrigationStart},
+    {"HeatSumIrrigationEnd", cp->pc_HeatSumIrrigationEnd},
+    {"CriticalTemperatureHeatStress", J11Array{cp->pc_CriticalTemperatureHeatStress, "°C"}},
+    {"BeginSensitivePhaseHeatStress", J11Array{cp->pc_BeginSensitivePhaseHeatStress, "°C d"}},
+    {"EndSensitivePhaseHeatStress", J11Array{cp->pc_EndSensitivePhaseHeatStress, "°C d"}},
+    {"FrostHardening", cp->pc_FrostHardening},
+    {"FrostDehardening", cp->pc_FrostDehardening},
+    {"LowTemperatureExposure", cp->pc_LowTemperatureExposure},
+    {"RespiratoryStress", cp->pc_RespiratoryStress},
+    {"LatestHarvestDoy", cp->pc_LatestHarvestDoy},
+    {"OrganIdsForPrimaryYield", yieldComponentsToJson(cp->pc_OrganIdsForPrimaryYield)},
+    {"OrganIdsForSecondaryYield", yieldComponentsToJson(cp->pc_OrganIdsForSecondaryYield)},
+    {"OrganIdsForCutting", yieldComponentsToJson(cp->pc_OrganIdsForCutting)},
+    {"EarlyRefLeafExp", cp->pc_EarlyRefLeafExp},
+    {"RefLeafExp", cp->pc_RefLeafExp},
+    {"MinTempDev_WE", cp->pc_MinTempDev_WE},
+    {"OptTempDev_WE", cp->pc_OptTempDev_WE},
+    {"MaxTempDev_WE", cp->pc_MaxTempDev_WE},
+    {"WinterCrop", cp->winterCrop}
   };
 
   return cultivar;
@@ -653,12 +659,12 @@ json11::Json CultivarParameters::to_json() const {
 
 void CropParameters::deserialize(mas::schema::model::monica::CropParameters::Reader reader) {
   speciesparameters::deserialize(&speciesParams, reader.getSpeciesParams());
-  cultivarParams.deserialize(reader.getCultivarParams());
+  cultivarparameters::deserialize(&cultivarParams, reader.getCultivarParams());
 }
 
 void CropParameters::serialize(mas::schema::model::monica::CropParameters::Builder builder) const {
   speciesparameters::serialize(&speciesParams, builder.initSpeciesParams());
-  cultivarParams.serialize(builder.initCultivarParams());
+  cultivarparameters::serialize(&cultivarParams, builder.initCultivarParams());
 }
 
 Errors CropParameters::merge(json11::Json j) {
@@ -670,7 +676,7 @@ Errors CropParameters::merge(json11::Json j) {
 Errors CropParameters::merge(json11::Json sj, json11::Json cj) {
   Errors res;
   res.append(speciesparameters::merge(&speciesParams, sj));
-  res.append(cultivarParams.merge(cj));
+  res.append(cultivarparameters::merge(&cultivarParams, cj));
   return res;
 }
 
@@ -679,7 +685,7 @@ json11::Json CropParameters::to_json() const {
   {
     {"type", "CropParameters"},
     {"species", speciesparameters::to_json(&speciesParams)},
-    {"cultivar", cultivarParams.to_json()}
+    {"cultivar", cultivarparameters::to_json(&cultivarParams)}
   };
 }
 
