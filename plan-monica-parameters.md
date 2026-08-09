@@ -76,9 +76,16 @@ those members. Check off each once it's built, regression-tested, committed, and
    of the same three vectors). This same pattern (generic template call sites touching a
    just-converted struct's vector members) will recur for any other struct held in a
    `std::vector<T>` processed via these templates — check for it before converting.
-2. [ ] `SpeciesParameters` — leaf; used by `CropParameters`. Note: the header-declared
-   `SpeciesParameters(json11::Json j)` constructor has no definition anywhere (dead) — drop it
-   rather than port it.
+2. [x] `SpeciesParameters` — leaf; used by `CropParameters`. Dropped the dead
+   `SpeciesParameters(json11::Json j)` constructor declaration (no definition anywhere). Same
+   leak-forward issue as `YieldComponent`: `CultivarParameters::deserialize`/`merge` (still
+   unconverted) call `cps->speciesParams.pc_NumberOfDevelopmentalStages()`/`.pc_NumberOfOrgans()`
+   (now free `speciesparameters::numberOfDevelopmentalStages`/`numberOfOrgans`), and
+   `CropParameters::deserialize`/`serialize`/`merge`/`to_json` (also unconverted) call
+   `speciesParams.deserialize/serialize/merge/to_json(...)` as member functions — rewired those
+   call sites to the new free functions without otherwise converting `CultivarParameters`/
+   `CropParameters` yet. Also touched two `crop-module.cpp` sites doing the same
+   `speciesParams.pc_NumberOfDevelopmentalStages()`/`.pc_NumberOfOrgans()` calls directly.
 3. [ ] `CultivarParameters` — needs `YieldComponent` done (holds
    `std::vector<YieldComponent>` members).
 4. [ ] `CropParameters` — needs `SpeciesParameters` + `CultivarParameters` done (holds both by

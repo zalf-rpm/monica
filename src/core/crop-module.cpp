@@ -97,7 +97,7 @@ void monica::cropmodule::initializeFromCropParameters(CropModule *cm) {
   cm->pc_CropSpecificMaxRootingDepth =
       cps->cultivarParams.pc_CropSpecificMaxRootingDepth;
   cm->vc_CurrentTemperatureSum = std::vector<double>(
-      cps->speciesParams.pc_NumberOfDevelopmentalStages(), 0.0);
+      speciesparameters::numberOfDevelopmentalStages(&cps->speciesParams), 0.0);
   cm->pc_CuttingDelayDays = cps->speciesParams.pc_CuttingDelayDays;
   cm->pc_DaylengthRequirement = cps->cultivarParams.pc_DaylengthRequirement;
   cm->pc_DefaultRadiationUseEfficiency =
@@ -147,15 +147,15 @@ void monica::cropmodule::initializeFromCropParameters(CropModule *cm) {
   cm->pc_NConcentrationRoot = cps->speciesParams.pc_NConcentrationRoot;
   cm->pc_NitrogenResponseOn = simPs.pc_NitrogenResponseOn;
   cm->pc_NumberOfDevelopmentalStages =
-      cps->speciesParams.pc_NumberOfDevelopmentalStages();
-  cm->pc_NumberOfOrgans = cps->speciesParams.pc_NumberOfOrgans();
+      speciesparameters::numberOfDevelopmentalStages(&cps->speciesParams);
+  cm->pc_NumberOfOrgans = speciesparameters::numberOfOrgans(&cps->speciesParams);
   cm->vc_NUptakeFromLayer = std::vector<double>(cm->soilColumn->size(), 0.0);
   cm->pc_OptimumTemperature = cps->cultivarParams.pc_OptimumTemperature;
   cm->vc_OrganBiomass = std::vector<double>(cm->pc_NumberOfOrgans, 0.0);
   cm->vc_OrganDeadBiomass =
-      std::vector<double>(cps->speciesParams.pc_NumberOfOrgans(), 0.0);
+      std::vector<double>(speciesparameters::numberOfOrgans(&cps->speciesParams), 0.0);
   cm->vc_OrganGreenBiomass =
-      std::vector<double>(cps->speciesParams.pc_NumberOfOrgans(), 0.0);
+      std::vector<double>(speciesparameters::numberOfOrgans(&cps->speciesParams), 0.0);
   cm->vc_OrganGrowthIncrement = std::vector<double>(cm->pc_NumberOfOrgans, 0.0);
   cm->pc_OrganGrowthRespiration = cps->speciesParams.pc_OrganGrowthRespiration;
   cm->pc_OrganIdsForPrimaryYield =
@@ -5762,10 +5762,10 @@ void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule *cm) {
       cm->perennialCropParams->speciesParams.pc_NConcentrationPN;
   cm->pc_NConcentrationRoot =
       cm->perennialCropParams->speciesParams.pc_NConcentrationRoot;
-  cm->pc_NumberOfDevelopmentalStages =
-      cm->perennialCropParams->speciesParams.pc_NumberOfDevelopmentalStages();
+  cm->pc_NumberOfDevelopmentalStages = speciesparameters::numberOfDevelopmentalStages(
+      &cm->perennialCropParams->speciesParams);
   cm->pc_NumberOfOrgans =
-      cm->perennialCropParams->speciesParams.pc_NumberOfOrgans();
+      speciesparameters::numberOfOrgans(&cm->perennialCropParams->speciesParams);
   cm->pc_OptimumTemperature =
       cm->perennialCropParams->cultivarParams.pc_OptimumTemperature;
   cm->pc_OrganGrowthRespiration =

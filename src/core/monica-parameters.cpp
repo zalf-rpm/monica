@@ -95,277 +95,279 @@ json11::Json yieldcomponent::to_json(const YieldComponent* yc) {
 }
 
 
-// SpeciesParameters::SpeciesParameters(json11::Json j) {
-//   merge(j);
-// }
-
-void SpeciesParameters::deserialize(mas::schema::model::monica::SpeciesParameters::Reader reader) {
-  pc_SpeciesId = reader.getSpeciesId();
-  pc_CarboxylationPathway = reader.getCarboxylationPathway();
-  pc_DefaultRadiationUseEfficiency = reader.getDefaultRadiationUseEfficiency();
-  pc_PartBiologicalNFixation = reader.getPartBiologicalNFixation();
-  pc_InitialKcFactor = reader.getInitialKcFactor();
-  pc_LuxuryNCoeff = reader.getLuxuryNCoeff();
-  pc_MaxCropDiameter = reader.getMaxCropDiameter();
-  pc_StageAtMaxHeight = reader.getStageAtMaxHeight();
-  pc_StageAtMaxDiameter = reader.getStageAtMaxDiameter();
-  pc_MinimumNConcentration = reader.getMinimumNConcentration();
-  pc_MinimumTemperatureForAssimilation = reader.getMinimumTemperatureForAssimilation();
-  pc_OptimumTemperatureForAssimilation = reader.getOptimumTemperatureForAssimilation();
-  pc_MaximumTemperatureForAssimilation = reader.getMaximumTemperatureForAssimilation();
-  pc_NConcentrationAbovegroundBiomass = reader.getNConcentrationAbovegroundBiomass();
-  pc_NConcentrationB0 = reader.getNConcentrationB0();
-  pc_NConcentrationPN = reader.getNConcentrationPN();
-  pc_NConcentrationRoot = reader.getNConcentrationRoot();
-  pc_DevelopmentAccelerationByNitrogenStress = reader.getDevelopmentAccelerationByNitrogenStress();
-  pc_FieldConditionModifier = reader.getFieldConditionModifier();
-  pc_AssimilateReallocation = reader.getAssimilateReallocation();
-  setFromCapnpList(pc_BaseTemperature, reader.getBaseTemperature());
-  setFromCapnpList(pc_OrganMaintenanceRespiration, reader.getOrganMaintenanceRespiration());
-  setFromCapnpList(pc_OrganGrowthRespiration, reader.getOrganGrowthRespiration());
-  setFromCapnpList(pc_StageMaxRootNConcentration, reader.getStageMaxRootNConcentration());
-  setFromCapnpList(pc_InitialOrganBiomass, reader.getInitialOrganBiomass());
-  setFromCapnpList(pc_CriticalOxygenContent, reader.getCriticalOxygenContent());
-  setFromCapnpList(pc_StageMobilFromStorageCoeff, reader.getStageMobilFromStorageCoeff());
-  if (pc_StageMobilFromStorageCoeff.empty()) {
-    pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
-  }
-  setFromCapnpList(pc_AbovegroundOrgan, reader.getAbovegroundOrgan());
-  setFromCapnpList(pc_StorageOrgan, reader.getStorageOrgan());
-  pc_SamplingDepth = reader.getSamplingDepth();
-  pc_TargetNSamplingDepth = reader.getTargetNSamplingDepth();
-  pc_TargetN30 = reader.getTargetN30();
-  pc_MaxNUptakeParam = reader.getMaxNUptakeParam();
-  pc_RootDistributionParam = reader.getRootDistributionParam();
-  pc_PlantDensity = reader.getPlantDensity();
-  pc_RootGrowthLag = reader.getRootGrowthLag();
-  pc_MinimumTemperatureRootGrowth = reader.getMinimumTemperatureRootGrowth();
-  pc_InitialRootingDepth = reader.getInitialRootingDepth();
-  pc_RootPenetrationRate = reader.getRootPenetrationRate();
-  pc_RootFormFactor = reader.getRootFormFactor();
-  pc_SpecificRootLength = reader.getSpecificRootLength();
-  pc_StageAfterCut = reader.getStageAfterCut();
-  pc_LimitingTemperatureHeatStress = reader.getLimitingTemperatureHeatStress();
-  pc_CuttingDelayDays = reader.getCuttingDelayDays();
-  pc_DroughtImpactOnFertilityFactor = reader.getDroughtImpactOnFertilityFactor();
-  EF_MONO = reader.getEfMono();
-  EF_MONOS = reader.getEfMonos();
-  EF_ISO = reader.getEfIso();
-  VCMAX25 = reader.getVcMax25();
-  AEKC = reader.getAekc();
-  AEKO = reader.getAeko();
-  AEVC = reader.getAevc();
-  KC25 = reader.getKc25();
-  KO25 = reader.getKo25();
-  pc_TransitionStageLeafExp = reader.getTransitionStageLeafExp();
+SpeciesParameters monica::makeSpeciesParameters(mas::schema::model::monica::SpeciesParameters::Reader reader) {
+  SpeciesParameters sp;
+  speciesparameters::deserialize(&sp, reader);
+  return sp;
 }
 
-void SpeciesParameters::serialize(mas::schema::model::monica::SpeciesParameters::Builder builder) const {
-  builder.setSpeciesId(pc_SpeciesId);
-  builder.setCarboxylationPathway(pc_CarboxylationPathway);
-  builder.setDefaultRadiationUseEfficiency(pc_DefaultRadiationUseEfficiency);
-  builder.setPartBiologicalNFixation(pc_PartBiologicalNFixation);
-  builder.setInitialKcFactor(pc_InitialKcFactor);
-  builder.setLuxuryNCoeff(pc_LuxuryNCoeff);
-  builder.setMaxCropDiameter(pc_MaxCropDiameter);
-  builder.setStageAtMaxHeight(pc_StageAtMaxHeight);
-  builder.setStageAtMaxDiameter(pc_StageAtMaxDiameter);
-  builder.setMinimumNConcentration(pc_MinimumNConcentration);
-  builder.setMinimumTemperatureForAssimilation(pc_MinimumTemperatureForAssimilation);
-  builder.setOptimumTemperatureForAssimilation(pc_OptimumTemperatureForAssimilation);
-  builder.setMaximumTemperatureForAssimilation(pc_MaximumTemperatureForAssimilation);
-  builder.setNConcentrationAbovegroundBiomass(pc_NConcentrationAbovegroundBiomass);
-  builder.setNConcentrationB0(pc_NConcentrationB0);
-  builder.setNConcentrationPN(pc_NConcentrationPN);
-  builder.setNConcentrationRoot(pc_NConcentrationRoot);
-  builder.setDevelopmentAccelerationByNitrogenStress(pc_DevelopmentAccelerationByNitrogenStress);
-  builder.setFieldConditionModifier(pc_FieldConditionModifier);
-  builder.setAssimilateReallocation(pc_AssimilateReallocation);
-  setCapnpList(pc_BaseTemperature, builder.initBaseTemperature((capnp::uint)pc_BaseTemperature.size()));
-  setCapnpList(pc_OrganMaintenanceRespiration,
-               builder.initOrganMaintenanceRespiration((capnp::uint)pc_OrganMaintenanceRespiration.size()));
-  setCapnpList(pc_OrganGrowthRespiration,
-               builder.initOrganGrowthRespiration((capnp::uint)pc_OrganGrowthRespiration.size()));
-  setCapnpList(pc_StageMaxRootNConcentration,
-               builder.initStageMaxRootNConcentration((capnp::uint)pc_StageMaxRootNConcentration.size()));
-  setCapnpList(pc_InitialOrganBiomass, builder.initInitialOrganBiomass((capnp::uint)pc_InitialOrganBiomass.size()));
-  setCapnpList(pc_CriticalOxygenContent,
-               builder.initCriticalOxygenContent((capnp::uint)pc_CriticalOxygenContent.size()));
-  setCapnpList(pc_StageMobilFromStorageCoeff,
-               builder.initStageMobilFromStorageCoeff((capnp::uint)pc_StageMobilFromStorageCoeff.size()));
-  setCapnpList(pc_AbovegroundOrgan, builder.initAbovegroundOrgan((capnp::uint)pc_AbovegroundOrgan.size()));
-  setCapnpList(pc_StorageOrgan, builder.initStorageOrgan((capnp::uint)pc_StorageOrgan.size()));
-  builder.setSamplingDepth(pc_SamplingDepth);
-  builder.setTargetNSamplingDepth(pc_TargetNSamplingDepth);
-  builder.setTargetN30(pc_TargetN30);
-  builder.setMaxNUptakeParam(pc_MaxNUptakeParam);
-  builder.setRootDistributionParam(pc_RootDistributionParam);
-  builder.setPlantDensity(pc_PlantDensity);
-  builder.setRootGrowthLag(pc_RootGrowthLag);
-  builder.setMinimumTemperatureRootGrowth(pc_MinimumTemperatureRootGrowth);
-  builder.setInitialRootingDepth(pc_InitialRootingDepth);
-  builder.setRootPenetrationRate(pc_RootPenetrationRate);
-  builder.setRootFormFactor(pc_RootFormFactor);
-  builder.setSpecificRootLength(pc_SpecificRootLength);
-  builder.setStageAfterCut(pc_StageAfterCut);
-  builder.setLimitingTemperatureHeatStress(pc_LimitingTemperatureHeatStress);
-  builder.setCuttingDelayDays(pc_CuttingDelayDays);
-  builder.setDroughtImpactOnFertilityFactor(pc_DroughtImpactOnFertilityFactor);
-  builder.setEfMono(EF_MONO);
-  builder.setEfMonos(EF_MONOS);
-  builder.setEfIso(EF_ISO);
-  builder.setVcMax25(VCMAX25);
-  builder.setAekc(AEKC);
-  builder.setAeko(AEKO);
-  builder.setAevc(AEVC);
-  builder.setKc25(KC25);
-  builder.setKo25(KO25);
-  builder.setTransitionStageLeafExp(pc_TransitionStageLeafExp);
+void speciesparameters::deserialize(SpeciesParameters* sp, mas::schema::model::monica::SpeciesParameters::Reader reader) {
+  sp->pc_SpeciesId = reader.getSpeciesId();
+  sp->pc_CarboxylationPathway = reader.getCarboxylationPathway();
+  sp->pc_DefaultRadiationUseEfficiency = reader.getDefaultRadiationUseEfficiency();
+  sp->pc_PartBiologicalNFixation = reader.getPartBiologicalNFixation();
+  sp->pc_InitialKcFactor = reader.getInitialKcFactor();
+  sp->pc_LuxuryNCoeff = reader.getLuxuryNCoeff();
+  sp->pc_MaxCropDiameter = reader.getMaxCropDiameter();
+  sp->pc_StageAtMaxHeight = reader.getStageAtMaxHeight();
+  sp->pc_StageAtMaxDiameter = reader.getStageAtMaxDiameter();
+  sp->pc_MinimumNConcentration = reader.getMinimumNConcentration();
+  sp->pc_MinimumTemperatureForAssimilation = reader.getMinimumTemperatureForAssimilation();
+  sp->pc_OptimumTemperatureForAssimilation = reader.getOptimumTemperatureForAssimilation();
+  sp->pc_MaximumTemperatureForAssimilation = reader.getMaximumTemperatureForAssimilation();
+  sp->pc_NConcentrationAbovegroundBiomass = reader.getNConcentrationAbovegroundBiomass();
+  sp->pc_NConcentrationB0 = reader.getNConcentrationB0();
+  sp->pc_NConcentrationPN = reader.getNConcentrationPN();
+  sp->pc_NConcentrationRoot = reader.getNConcentrationRoot();
+  sp->pc_DevelopmentAccelerationByNitrogenStress = reader.getDevelopmentAccelerationByNitrogenStress();
+  sp->pc_FieldConditionModifier = reader.getFieldConditionModifier();
+  sp->pc_AssimilateReallocation = reader.getAssimilateReallocation();
+  setFromCapnpList(sp->pc_BaseTemperature, reader.getBaseTemperature());
+  setFromCapnpList(sp->pc_OrganMaintenanceRespiration, reader.getOrganMaintenanceRespiration());
+  setFromCapnpList(sp->pc_OrganGrowthRespiration, reader.getOrganGrowthRespiration());
+  setFromCapnpList(sp->pc_StageMaxRootNConcentration, reader.getStageMaxRootNConcentration());
+  setFromCapnpList(sp->pc_InitialOrganBiomass, reader.getInitialOrganBiomass());
+  setFromCapnpList(sp->pc_CriticalOxygenContent, reader.getCriticalOxygenContent());
+  setFromCapnpList(sp->pc_StageMobilFromStorageCoeff, reader.getStageMobilFromStorageCoeff());
+  if (sp->pc_StageMobilFromStorageCoeff.empty()) {
+    sp->pc_StageMobilFromStorageCoeff = vector<double>(sp->pc_CriticalOxygenContent.size(), 0);
+  }
+  setFromCapnpList(sp->pc_AbovegroundOrgan, reader.getAbovegroundOrgan());
+  setFromCapnpList(sp->pc_StorageOrgan, reader.getStorageOrgan());
+  sp->pc_SamplingDepth = reader.getSamplingDepth();
+  sp->pc_TargetNSamplingDepth = reader.getTargetNSamplingDepth();
+  sp->pc_TargetN30 = reader.getTargetN30();
+  sp->pc_MaxNUptakeParam = reader.getMaxNUptakeParam();
+  sp->pc_RootDistributionParam = reader.getRootDistributionParam();
+  sp->pc_PlantDensity = reader.getPlantDensity();
+  sp->pc_RootGrowthLag = reader.getRootGrowthLag();
+  sp->pc_MinimumTemperatureRootGrowth = reader.getMinimumTemperatureRootGrowth();
+  sp->pc_InitialRootingDepth = reader.getInitialRootingDepth();
+  sp->pc_RootPenetrationRate = reader.getRootPenetrationRate();
+  sp->pc_RootFormFactor = reader.getRootFormFactor();
+  sp->pc_SpecificRootLength = reader.getSpecificRootLength();
+  sp->pc_StageAfterCut = reader.getStageAfterCut();
+  sp->pc_LimitingTemperatureHeatStress = reader.getLimitingTemperatureHeatStress();
+  sp->pc_CuttingDelayDays = reader.getCuttingDelayDays();
+  sp->pc_DroughtImpactOnFertilityFactor = reader.getDroughtImpactOnFertilityFactor();
+  sp->EF_MONO = reader.getEfMono();
+  sp->EF_MONOS = reader.getEfMonos();
+  sp->EF_ISO = reader.getEfIso();
+  sp->VCMAX25 = reader.getVcMax25();
+  sp->AEKC = reader.getAekc();
+  sp->AEKO = reader.getAeko();
+  sp->AEVC = reader.getAevc();
+  sp->KC25 = reader.getKc25();
+  sp->KO25 = reader.getKo25();
+  sp->pc_TransitionStageLeafExp = reader.getTransitionStageLeafExp();
 }
 
-Errors SpeciesParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+void speciesparameters::serialize(const SpeciesParameters* sp, mas::schema::model::monica::SpeciesParameters::Builder builder) {
+  builder.setSpeciesId(sp->pc_SpeciesId);
+  builder.setCarboxylationPathway(sp->pc_CarboxylationPathway);
+  builder.setDefaultRadiationUseEfficiency(sp->pc_DefaultRadiationUseEfficiency);
+  builder.setPartBiologicalNFixation(sp->pc_PartBiologicalNFixation);
+  builder.setInitialKcFactor(sp->pc_InitialKcFactor);
+  builder.setLuxuryNCoeff(sp->pc_LuxuryNCoeff);
+  builder.setMaxCropDiameter(sp->pc_MaxCropDiameter);
+  builder.setStageAtMaxHeight(sp->pc_StageAtMaxHeight);
+  builder.setStageAtMaxDiameter(sp->pc_StageAtMaxDiameter);
+  builder.setMinimumNConcentration(sp->pc_MinimumNConcentration);
+  builder.setMinimumTemperatureForAssimilation(sp->pc_MinimumTemperatureForAssimilation);
+  builder.setOptimumTemperatureForAssimilation(sp->pc_OptimumTemperatureForAssimilation);
+  builder.setMaximumTemperatureForAssimilation(sp->pc_MaximumTemperatureForAssimilation);
+  builder.setNConcentrationAbovegroundBiomass(sp->pc_NConcentrationAbovegroundBiomass);
+  builder.setNConcentrationB0(sp->pc_NConcentrationB0);
+  builder.setNConcentrationPN(sp->pc_NConcentrationPN);
+  builder.setNConcentrationRoot(sp->pc_NConcentrationRoot);
+  builder.setDevelopmentAccelerationByNitrogenStress(sp->pc_DevelopmentAccelerationByNitrogenStress);
+  builder.setFieldConditionModifier(sp->pc_FieldConditionModifier);
+  builder.setAssimilateReallocation(sp->pc_AssimilateReallocation);
+  setCapnpList(sp->pc_BaseTemperature, builder.initBaseTemperature((capnp::uint)sp->pc_BaseTemperature.size()));
+  setCapnpList(sp->pc_OrganMaintenanceRespiration,
+               builder.initOrganMaintenanceRespiration((capnp::uint)sp->pc_OrganMaintenanceRespiration.size()));
+  setCapnpList(sp->pc_OrganGrowthRespiration,
+               builder.initOrganGrowthRespiration((capnp::uint)sp->pc_OrganGrowthRespiration.size()));
+  setCapnpList(sp->pc_StageMaxRootNConcentration,
+               builder.initStageMaxRootNConcentration((capnp::uint)sp->pc_StageMaxRootNConcentration.size()));
+  setCapnpList(sp->pc_InitialOrganBiomass, builder.initInitialOrganBiomass((capnp::uint)sp->pc_InitialOrganBiomass.size()));
+  setCapnpList(sp->pc_CriticalOxygenContent,
+               builder.initCriticalOxygenContent((capnp::uint)sp->pc_CriticalOxygenContent.size()));
+  setCapnpList(sp->pc_StageMobilFromStorageCoeff,
+               builder.initStageMobilFromStorageCoeff((capnp::uint)sp->pc_StageMobilFromStorageCoeff.size()));
+  setCapnpList(sp->pc_AbovegroundOrgan, builder.initAbovegroundOrgan((capnp::uint)sp->pc_AbovegroundOrgan.size()));
+  setCapnpList(sp->pc_StorageOrgan, builder.initStorageOrgan((capnp::uint)sp->pc_StorageOrgan.size()));
+  builder.setSamplingDepth(sp->pc_SamplingDepth);
+  builder.setTargetNSamplingDepth(sp->pc_TargetNSamplingDepth);
+  builder.setTargetN30(sp->pc_TargetN30);
+  builder.setMaxNUptakeParam(sp->pc_MaxNUptakeParam);
+  builder.setRootDistributionParam(sp->pc_RootDistributionParam);
+  builder.setPlantDensity(sp->pc_PlantDensity);
+  builder.setRootGrowthLag(sp->pc_RootGrowthLag);
+  builder.setMinimumTemperatureRootGrowth(sp->pc_MinimumTemperatureRootGrowth);
+  builder.setInitialRootingDepth(sp->pc_InitialRootingDepth);
+  builder.setRootPenetrationRate(sp->pc_RootPenetrationRate);
+  builder.setRootFormFactor(sp->pc_RootFormFactor);
+  builder.setSpecificRootLength(sp->pc_SpecificRootLength);
+  builder.setStageAfterCut(sp->pc_StageAfterCut);
+  builder.setLimitingTemperatureHeatStress(sp->pc_LimitingTemperatureHeatStress);
+  builder.setCuttingDelayDays(sp->pc_CuttingDelayDays);
+  builder.setDroughtImpactOnFertilityFactor(sp->pc_DroughtImpactOnFertilityFactor);
+  builder.setEfMono(sp->EF_MONO);
+  builder.setEfMonos(sp->EF_MONOS);
+  builder.setEfIso(sp->EF_ISO);
+  builder.setVcMax25(sp->VCMAX25);
+  builder.setAekc(sp->AEKC);
+  builder.setAeko(sp->AEKO);
+  builder.setAevc(sp->AEVC);
+  builder.setKc25(sp->KC25);
+  builder.setKo25(sp->KO25);
+  builder.setTransitionStageLeafExp(sp->pc_TransitionStageLeafExp);
+}
 
-  set_string_value(pc_SpeciesId, j, "SpeciesName");
-  set_int_value(pc_CarboxylationPathway, j, "CarboxylationPathway");
-  set_double_value(pc_DefaultRadiationUseEfficiency, j, "DefaultRadiationUseEfficiency");
-  set_double_value(pc_PartBiologicalNFixation, j, "PartBiologicalNFixation");
-  set_double_value(pc_InitialKcFactor, j, "InitialKcFactor");
-  set_double_value(pc_LuxuryNCoeff, j, "LuxuryNCoeff");
-  set_double_value(pc_MaxCropDiameter, j, "MaxCropDiameter");
-  set_double_value(pc_StageAtMaxHeight, j, "StageAtMaxHeight");
-  set_double_value(pc_StageAtMaxDiameter, j, "StageAtMaxDiameter");
-  set_double_value(pc_MinimumNConcentration, j, "MinimumNConcentration");
-  set_double_value(pc_MinimumTemperatureForAssimilation, j, "MinimumTemperatureForAssimilation");
-  set_double_value(pc_OptimumTemperatureForAssimilation, j, "OptimumTemperatureForAssimilation");
-  set_double_value(pc_MaximumTemperatureForAssimilation, j, "MaximumTemperatureForAssimilation");
-  set_double_value(pc_NConcentrationAbovegroundBiomass, j, "NConcentrationAbovegroundBiomass");
-  set_double_value(pc_NConcentrationB0, j, "NConcentrationB0");
-  set_double_value(pc_NConcentrationPN, j, "NConcentrationPN");
-  set_double_value(pc_NConcentrationRoot, j, "NConcentrationRoot");
-  set_int_value(pc_DevelopmentAccelerationByNitrogenStress, j, "DevelopmentAccelerationByNitrogenStress");
-  set_double_value(pc_FieldConditionModifier, j, "FieldConditionModifier");
-  set_double_value(pc_AssimilateReallocation, j, "AssimilateReallocation");
-  set_double_vector(pc_BaseTemperature, j, "BaseTemperature");
-  set_double_vector(pc_OrganMaintenanceRespiration, j, "OrganMaintenanceRespiration");
-  set_double_vector(pc_OrganGrowthRespiration, j, "OrganGrowthRespiration");
-  set_double_vector(pc_StageMaxRootNConcentration, j, "StageMaxRootNConcentration");
-  set_double_vector(pc_InitialOrganBiomass, j, "InitialOrganBiomass");
-  set_double_vector(pc_CriticalOxygenContent, j, "CriticalOxygenContent");
+Errors speciesparameters::merge(SpeciesParameters* sp, json11::Json j) {
+  Errors res = defaultMerge(j, [sp](json11::Json j2) { return merge(sp, j2); });
 
-  set_double_vector(pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff");
-  if (pc_StageMobilFromStorageCoeff.empty()) {
-    pc_StageMobilFromStorageCoeff = vector<double>(pc_CriticalOxygenContent.size(), 0);
+  set_string_value(sp->pc_SpeciesId, j, "SpeciesName");
+  set_int_value(sp->pc_CarboxylationPathway, j, "CarboxylationPathway");
+  set_double_value(sp->pc_DefaultRadiationUseEfficiency, j, "DefaultRadiationUseEfficiency");
+  set_double_value(sp->pc_PartBiologicalNFixation, j, "PartBiologicalNFixation");
+  set_double_value(sp->pc_InitialKcFactor, j, "InitialKcFactor");
+  set_double_value(sp->pc_LuxuryNCoeff, j, "LuxuryNCoeff");
+  set_double_value(sp->pc_MaxCropDiameter, j, "MaxCropDiameter");
+  set_double_value(sp->pc_StageAtMaxHeight, j, "StageAtMaxHeight");
+  set_double_value(sp->pc_StageAtMaxDiameter, j, "StageAtMaxDiameter");
+  set_double_value(sp->pc_MinimumNConcentration, j, "MinimumNConcentration");
+  set_double_value(sp->pc_MinimumTemperatureForAssimilation, j, "MinimumTemperatureForAssimilation");
+  set_double_value(sp->pc_OptimumTemperatureForAssimilation, j, "OptimumTemperatureForAssimilation");
+  set_double_value(sp->pc_MaximumTemperatureForAssimilation, j, "MaximumTemperatureForAssimilation");
+  set_double_value(sp->pc_NConcentrationAbovegroundBiomass, j, "NConcentrationAbovegroundBiomass");
+  set_double_value(sp->pc_NConcentrationB0, j, "NConcentrationB0");
+  set_double_value(sp->pc_NConcentrationPN, j, "NConcentrationPN");
+  set_double_value(sp->pc_NConcentrationRoot, j, "NConcentrationRoot");
+  set_int_value(sp->pc_DevelopmentAccelerationByNitrogenStress, j, "DevelopmentAccelerationByNitrogenStress");
+  set_double_value(sp->pc_FieldConditionModifier, j, "FieldConditionModifier");
+  set_double_value(sp->pc_AssimilateReallocation, j, "AssimilateReallocation");
+  set_double_vector(sp->pc_BaseTemperature, j, "BaseTemperature");
+  set_double_vector(sp->pc_OrganMaintenanceRespiration, j, "OrganMaintenanceRespiration");
+  set_double_vector(sp->pc_OrganGrowthRespiration, j, "OrganGrowthRespiration");
+  set_double_vector(sp->pc_StageMaxRootNConcentration, j, "StageMaxRootNConcentration");
+  set_double_vector(sp->pc_InitialOrganBiomass, j, "InitialOrganBiomass");
+  set_double_vector(sp->pc_CriticalOxygenContent, j, "CriticalOxygenContent");
+
+  set_double_vector(sp->pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff");
+  if (sp->pc_StageMobilFromStorageCoeff.empty()) {
+    sp->pc_StageMobilFromStorageCoeff = vector<double>(sp->pc_CriticalOxygenContent.size(), 0);
   }
 
-  set_bool_vector(pc_AbovegroundOrgan, j, "AbovegroundOrgan");
-  set_bool_vector(pc_StorageOrgan, j, "StorageOrgan");
-  set_double_value(pc_SamplingDepth, j, "SamplingDepth");
-  set_double_value(pc_TargetNSamplingDepth, j, "TargetNSamplingDepth");
-  set_double_value(pc_TargetN30, j, "TargetN30");
-  set_double_value(pc_MaxNUptakeParam, j, "MaxNUptakeParam");
-  set_double_value(pc_RootDistributionParam, j, "RootDistributionParam");
-  set_int_value(pc_PlantDensity, j, "PlantDensity");
-  set_double_value(pc_RootGrowthLag, j, "RootGrowthLag");
-  set_double_value(pc_MinimumTemperatureRootGrowth, j, "MinimumTemperatureRootGrowth");
-  set_double_value(pc_InitialRootingDepth, j, "InitialRootingDepth");
-  set_double_value(pc_RootPenetrationRate, j, "RootPenetrationRate");
-  set_double_value(pc_RootFormFactor, j, "RootFormFactor");
-  set_double_value(pc_SpecificRootLength, j, "SpecificRootLength");
-  set_int_value(pc_StageAfterCut, j, "StageAfterCut");
-  set_double_value(pc_LimitingTemperatureHeatStress, j, "LimitingTemperatureHeatStress");
-  set_int_value(pc_CuttingDelayDays, j, "CuttingDelayDays");
-  set_double_value(pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor");
+  set_bool_vector(sp->pc_AbovegroundOrgan, j, "AbovegroundOrgan");
+  set_bool_vector(sp->pc_StorageOrgan, j, "StorageOrgan");
+  set_double_value(sp->pc_SamplingDepth, j, "SamplingDepth");
+  set_double_value(sp->pc_TargetNSamplingDepth, j, "TargetNSamplingDepth");
+  set_double_value(sp->pc_TargetN30, j, "TargetN30");
+  set_double_value(sp->pc_MaxNUptakeParam, j, "MaxNUptakeParam");
+  set_double_value(sp->pc_RootDistributionParam, j, "RootDistributionParam");
+  set_int_value(sp->pc_PlantDensity, j, "PlantDensity");
+  set_double_value(sp->pc_RootGrowthLag, j, "RootGrowthLag");
+  set_double_value(sp->pc_MinimumTemperatureRootGrowth, j, "MinimumTemperatureRootGrowth");
+  set_double_value(sp->pc_InitialRootingDepth, j, "InitialRootingDepth");
+  set_double_value(sp->pc_RootPenetrationRate, j, "RootPenetrationRate");
+  set_double_value(sp->pc_RootFormFactor, j, "RootFormFactor");
+  set_double_value(sp->pc_SpecificRootLength, j, "SpecificRootLength");
+  set_int_value(sp->pc_StageAfterCut, j, "StageAfterCut");
+  set_double_value(sp->pc_LimitingTemperatureHeatStress, j, "LimitingTemperatureHeatStress");
+  set_int_value(sp->pc_CuttingDelayDays, j, "CuttingDelayDays");
+  set_double_value(sp->pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor");
 
-  set_double_value(EF_MONO, j, "EF_MONO");
-  set_double_value(EF_MONOS, j, "EF_MONOS");
-  set_double_value(EF_ISO, j, "EF_ISO");
-  set_double_value(VCMAX25, j, "VCMAX25");
-  set_double_value(AEKC, j, "AEKC");
-  set_double_value(AEVC, j, "AEVC");
-  set_double_value(AEKO, j, "AEKO");
-  set_double_value(KC25, j, "KC25");
-  set_double_value(KO25, j, "KO25");
+  set_double_value(sp->EF_MONO, j, "EF_MONO");
+  set_double_value(sp->EF_MONOS, j, "EF_MONOS");
+  set_double_value(sp->EF_ISO, j, "EF_ISO");
+  set_double_value(sp->VCMAX25, j, "VCMAX25");
+  set_double_value(sp->AEKC, j, "AEKC");
+  set_double_value(sp->AEVC, j, "AEVC");
+  set_double_value(sp->AEKO, j, "AEKO");
+  set_double_value(sp->KC25, j, "KC25");
+  set_double_value(sp->KO25, j, "KO25");
 
-  set_int_value(pc_TransitionStageLeafExp, j, "TransitionStageLeafExp");
-  set_int_value(dormancyStartDoy, j, "DormancyStartDoy");
-  set_int_value(dormancyEndDoy, j, "DormancyEndDoy");
+  set_int_value(sp->pc_TransitionStageLeafExp, j, "TransitionStageLeafExp");
+  set_int_value(sp->dormancyStartDoy, j, "DormancyStartDoy");
+  set_int_value(sp->dormancyEndDoy, j, "DormancyEndDoy");
 
   return res;
 }
 
-json11::Json SpeciesParameters::to_json() const {
+json11::Json speciesparameters::to_json(const SpeciesParameters* sp) {
   auto species = J11Object
   {
     {"type", "SpeciesParameters"},
-    {"SpeciesName", pc_SpeciesId},
-    {"CarboxylationPathway", pc_CarboxylationPathway},
-    {"DefaultRadiationUseEfficiency", pc_DefaultRadiationUseEfficiency},
-    {"PartBiologicalNFixation", pc_PartBiologicalNFixation},
-    {"InitialKcFactor", pc_InitialKcFactor},
-    {"LuxuryNCoeff", pc_LuxuryNCoeff},
-    {"MaxCropDiameter", pc_MaxCropDiameter},
-    {"StageAtMaxHeight", pc_StageAtMaxHeight},
-    {"StageAtMaxDiameter", pc_StageAtMaxDiameter},
-    {"MinimumNConcentration", pc_MinimumNConcentration},
-    {"MinimumTemperatureForAssimilation", pc_MinimumTemperatureForAssimilation},
-    {"OptimumTemperatureForAssimilation", pc_OptimumTemperatureForAssimilation},
-    {"MaximumTemperatureForAssimilation", pc_MaximumTemperatureForAssimilation},
-    {"NConcentrationAbovegroundBiomass", pc_NConcentrationAbovegroundBiomass},
-    {"NConcentrationB0", pc_NConcentrationB0},
-    {"NConcentrationPN", pc_NConcentrationPN},
-    {"NConcentrationRoot", pc_NConcentrationRoot},
-    {"DevelopmentAccelerationByNitrogenStress", pc_DevelopmentAccelerationByNitrogenStress},
-    {"FieldConditionModifier", pc_FieldConditionModifier},
-    {"AssimilateReallocation", pc_AssimilateReallocation},
-    {"BaseTemperature", toPrimJsonArray(pc_BaseTemperature)},
-    {"OrganMaintenanceRespiration", toPrimJsonArray(pc_OrganMaintenanceRespiration)},
-    {"OrganGrowthRespiration", toPrimJsonArray(pc_OrganGrowthRespiration)},
-    {"StageMaxRootNConcentration", toPrimJsonArray(pc_StageMaxRootNConcentration)},
-    {"InitialOrganBiomass", toPrimJsonArray(pc_InitialOrganBiomass)},
-    {"CriticalOxygenContent", toPrimJsonArray(pc_CriticalOxygenContent)},
-    {"StageMobilFromStorageCoeff", toPrimJsonArray(pc_StageMobilFromStorageCoeff)},
-    {"AbovegroundOrgan", toPrimJsonArray(pc_AbovegroundOrgan)},
-    {"StorageOrgan", toPrimJsonArray(pc_StorageOrgan)},
-    {"SamplingDepth", pc_SamplingDepth},
-    {"TargetNSamplingDepth", pc_TargetNSamplingDepth},
-    {"TargetN30", pc_TargetN30},
-    {"MaxNUptakeParam", pc_MaxNUptakeParam},
-    {"RootDistributionParam", pc_RootDistributionParam},
-    {"PlantDensity", J11Array{pc_PlantDensity, "plants m-2"}},
-    {"RootGrowthLag", pc_RootGrowthLag},
-    {"MinimumTemperatureRootGrowth", pc_MinimumTemperatureRootGrowth},
-    {"InitialRootingDepth", pc_InitialRootingDepth},
-    {"RootPenetrationRate", pc_RootPenetrationRate},
-    {"RootFormFactor", pc_RootFormFactor},
-    {"SpecificRootLength", pc_SpecificRootLength},
-    {"StageAfterCut", pc_StageAfterCut},
-    {"LimitingTemperatureHeatStress", pc_LimitingTemperatureHeatStress},
-    {"CuttingDelayDays", pc_CuttingDelayDays},
-    {"DroughtImpactOnFertilityFactor", pc_DroughtImpactOnFertilityFactor},
-    {"EF_MONO", J11Array{EF_MONO, "ug gDW-1 h-1"}},
-    {"EF_MONOS", J11Array{EF_MONOS, "ug gDW-1 h-1"}},
-    {"EF_ISO", J11Array{EF_ISO, "ug gDW-1 h-1"}},
-    {"VCMAX25", J11Array{VCMAX25, "umol m-2 s-1"}},
-    {"AEKC", J11Array{AEKC, "J mol-1"}},
-    {"AEKO", J11Array{AEKO, "J mol-1"}},
-    {"AEVC", J11Array{AEVC, "J mol-1"}},
-    {"KC25", J11Array{KC25, "umol mol-1 ubar-1"}},
-    {"KO25", J11Array{KO25, "mmol mol-1 mbar-1"}},
-    {"TransitionStageLeafExp", J11Array{pc_TransitionStageLeafExp, "1-7"}},
-    {"DormancyStartDoy", dormancyStartDoy},
-    {"DormancyEndDoy", dormancyEndDoy}
+    {"SpeciesName", sp->pc_SpeciesId},
+    {"CarboxylationPathway", sp->pc_CarboxylationPathway},
+    {"DefaultRadiationUseEfficiency", sp->pc_DefaultRadiationUseEfficiency},
+    {"PartBiologicalNFixation", sp->pc_PartBiologicalNFixation},
+    {"InitialKcFactor", sp->pc_InitialKcFactor},
+    {"LuxuryNCoeff", sp->pc_LuxuryNCoeff},
+    {"MaxCropDiameter", sp->pc_MaxCropDiameter},
+    {"StageAtMaxHeight", sp->pc_StageAtMaxHeight},
+    {"StageAtMaxDiameter", sp->pc_StageAtMaxDiameter},
+    {"MinimumNConcentration", sp->pc_MinimumNConcentration},
+    {"MinimumTemperatureForAssimilation", sp->pc_MinimumTemperatureForAssimilation},
+    {"OptimumTemperatureForAssimilation", sp->pc_OptimumTemperatureForAssimilation},
+    {"MaximumTemperatureForAssimilation", sp->pc_MaximumTemperatureForAssimilation},
+    {"NConcentrationAbovegroundBiomass", sp->pc_NConcentrationAbovegroundBiomass},
+    {"NConcentrationB0", sp->pc_NConcentrationB0},
+    {"NConcentrationPN", sp->pc_NConcentrationPN},
+    {"NConcentrationRoot", sp->pc_NConcentrationRoot},
+    {"DevelopmentAccelerationByNitrogenStress", sp->pc_DevelopmentAccelerationByNitrogenStress},
+    {"FieldConditionModifier", sp->pc_FieldConditionModifier},
+    {"AssimilateReallocation", sp->pc_AssimilateReallocation},
+    {"BaseTemperature", toPrimJsonArray(sp->pc_BaseTemperature)},
+    {"OrganMaintenanceRespiration", toPrimJsonArray(sp->pc_OrganMaintenanceRespiration)},
+    {"OrganGrowthRespiration", toPrimJsonArray(sp->pc_OrganGrowthRespiration)},
+    {"StageMaxRootNConcentration", toPrimJsonArray(sp->pc_StageMaxRootNConcentration)},
+    {"InitialOrganBiomass", toPrimJsonArray(sp->pc_InitialOrganBiomass)},
+    {"CriticalOxygenContent", toPrimJsonArray(sp->pc_CriticalOxygenContent)},
+    {"StageMobilFromStorageCoeff", toPrimJsonArray(sp->pc_StageMobilFromStorageCoeff)},
+    {"AbovegroundOrgan", toPrimJsonArray(sp->pc_AbovegroundOrgan)},
+    {"StorageOrgan", toPrimJsonArray(sp->pc_StorageOrgan)},
+    {"SamplingDepth", sp->pc_SamplingDepth},
+    {"TargetNSamplingDepth", sp->pc_TargetNSamplingDepth},
+    {"TargetN30", sp->pc_TargetN30},
+    {"MaxNUptakeParam", sp->pc_MaxNUptakeParam},
+    {"RootDistributionParam", sp->pc_RootDistributionParam},
+    {"PlantDensity", J11Array{sp->pc_PlantDensity, "plants m-2"}},
+    {"RootGrowthLag", sp->pc_RootGrowthLag},
+    {"MinimumTemperatureRootGrowth", sp->pc_MinimumTemperatureRootGrowth},
+    {"InitialRootingDepth", sp->pc_InitialRootingDepth},
+    {"RootPenetrationRate", sp->pc_RootPenetrationRate},
+    {"RootFormFactor", sp->pc_RootFormFactor},
+    {"SpecificRootLength", sp->pc_SpecificRootLength},
+    {"StageAfterCut", sp->pc_StageAfterCut},
+    {"LimitingTemperatureHeatStress", sp->pc_LimitingTemperatureHeatStress},
+    {"CuttingDelayDays", sp->pc_CuttingDelayDays},
+    {"DroughtImpactOnFertilityFactor", sp->pc_DroughtImpactOnFertilityFactor},
+    {"EF_MONO", J11Array{sp->EF_MONO, "ug gDW-1 h-1"}},
+    {"EF_MONOS", J11Array{sp->EF_MONOS, "ug gDW-1 h-1"}},
+    {"EF_ISO", J11Array{sp->EF_ISO, "ug gDW-1 h-1"}},
+    {"VCMAX25", J11Array{sp->VCMAX25, "umol m-2 s-1"}},
+    {"AEKC", J11Array{sp->AEKC, "J mol-1"}},
+    {"AEKO", J11Array{sp->AEKO, "J mol-1"}},
+    {"AEVC", J11Array{sp->AEVC, "J mol-1"}},
+    {"KC25", J11Array{sp->KC25, "umol mol-1 ubar-1"}},
+    {"KO25", J11Array{sp->KO25, "mmol mol-1 mbar-1"}},
+    {"TransitionStageLeafExp", J11Array{sp->pc_TransitionStageLeafExp, "1-7"}},
+    {"DormancyStartDoy", sp->dormancyStartDoy},
+    {"DormancyEndDoy", sp->dormancyEndDoy}
   };
 
   return species;
 }
 
-size_t SpeciesParameters::pc_NumberOfDevelopmentalStages() const {
-  return pc_BaseTemperature.size();
+size_t speciesparameters::numberOfDevelopmentalStages(const SpeciesParameters* sp) {
+  return sp->pc_BaseTemperature.size();
 }
 
-size_t SpeciesParameters::pc_NumberOfOrgans() const {
-  return pc_OrganGrowthRespiration.size();
+size_t speciesparameters::numberOfOrgans(const SpeciesParameters* sp) {
+  return sp->pc_OrganGrowthRespiration.size();
 }
 
 // CultivarParameters::CultivarParameters(json11::Json j) {
@@ -650,12 +652,12 @@ json11::Json CultivarParameters::to_json() const {
 // }
 
 void CropParameters::deserialize(mas::schema::model::monica::CropParameters::Reader reader) {
-  speciesParams.deserialize(reader.getSpeciesParams());
+  speciesparameters::deserialize(&speciesParams, reader.getSpeciesParams());
   cultivarParams.deserialize(reader.getCultivarParams());
 }
 
 void CropParameters::serialize(mas::schema::model::monica::CropParameters::Builder builder) const {
-  speciesParams.serialize(builder.initSpeciesParams());
+  speciesparameters::serialize(&speciesParams, builder.initSpeciesParams());
   cultivarParams.serialize(builder.initCultivarParams());
 }
 
@@ -667,7 +669,7 @@ Errors CropParameters::merge(json11::Json j) {
 
 Errors CropParameters::merge(json11::Json sj, json11::Json cj) {
   Errors res;
-  res.append(speciesParams.merge(sj));
+  res.append(speciesparameters::merge(&speciesParams, sj));
   res.append(cultivarParams.merge(cj));
   return res;
 }
@@ -676,7 +678,7 @@ json11::Json CropParameters::to_json() const {
   return J11Object
   {
     {"type", "CropParameters"},
-    {"species", speciesParams.to_json()},
+    {"species", speciesparameters::to_json(&speciesParams)},
     {"cultivar", cultivarParams.to_json()}
   };
 }

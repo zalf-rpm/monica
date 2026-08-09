@@ -72,31 +72,7 @@ DLL_API json11::Json to_json(const YieldComponent* yc);
 
 } // namespace yieldcomponent
 
-struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
-  SpeciesParameters() {}
-
-  SpeciesParameters(json11::Json j);
-
-  SpeciesParameters(
-      mas::schema::model::monica::SpeciesParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void
-  deserialize(mas::schema::model::monica::SpeciesParameters::Reader reader);
-
-  void serialize(
-      mas::schema::model::monica::SpeciesParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
-  size_t pc_NumberOfDevelopmentalStages() const;
-
-  size_t pc_NumberOfOrgans() const;
-
-  // members
+struct DLL_API SpeciesParameters {
   std::string pc_SpeciesId;
   int pc_CarboxylationPathway{0};
   double pc_DefaultRadiationUseEfficiency{0.0};
@@ -178,6 +154,19 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   //!< end dormancy of perennial crops at that DOY, start accumulating
   //!< temperature sums (0 = unset)
 };
+
+DLL_API SpeciesParameters makeSpeciesParameters(mas::schema::model::monica::SpeciesParameters::Reader reader);
+
+namespace speciesparameters {
+
+DLL_API void deserialize(SpeciesParameters* sp, mas::schema::model::monica::SpeciesParameters::Reader reader);
+DLL_API void serialize(const SpeciesParameters* sp, mas::schema::model::monica::SpeciesParameters::Builder builder);
+DLL_API Tools::Errors merge(SpeciesParameters* sp, json11::Json j);
+DLL_API json11::Json to_json(const SpeciesParameters* sp);
+DLL_API size_t numberOfDevelopmentalStages(const SpeciesParameters* sp);
+DLL_API size_t numberOfOrgans(const SpeciesParameters* sp);
+
+} // namespace speciesparameters
 
 typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
 
