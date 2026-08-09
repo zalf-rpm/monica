@@ -119,7 +119,7 @@ Env monica::makeEnv(CentralParameterProvider &&cpp) {
 Errors monica::env_merge(Env* env, json11::Json j) {
   Errors es;
 
-  es.append(env->params.merge(j["params"]));
+  es.append(centralparameterprovider::merge(&env->params, j["params"]));
 
   es.append(env->climateData.merge(j["climateData"]));
 
@@ -185,7 +185,7 @@ json11::Json monica::env_to_json(const Env* env) {
 
   return J11Object
       {{"type",                "Env"},
-       {"params",              env->params.to_json()},
+       {"params",              centralparameterprovider::to_json(&env->params)},
        {"cropRotation",        cr},
        {"cropRotation2",       cr2},
        {"cropRotations",       crs},
@@ -294,7 +294,7 @@ climateDataForStep(const Climate::DataAccessor& da,
 
 void writeDebugInputs(const Env &env, string fileName = "inputs.json") {
   ofstream pout;
-  string path = Tools::fixSystemSeparator(env.params.pathToOutputDir());
+  string path = Tools::fixSystemSeparator(centralparameterprovider::pathToOutputDir(&env.params));
   if (Tools::ensureDirExists(path)) {
     string pathToFile = path + "/" + fileName;
     pout.open(pathToFile);

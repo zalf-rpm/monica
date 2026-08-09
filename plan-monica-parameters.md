@@ -283,9 +283,27 @@ those members. Check off each once it's built, regression-tested, committed, and
     (`SoilOrganic{soilColumn, kj::mv(params)}` and `SoilOrganic{soilColumn}`) position-depend on
     `SoilOrganicModuleParameters` as `SoilOrganic`'s 2nd member — both keep working unchanged as
     plain-aggregate init/default-init, no fix needed.
-24. [ ] `CentralParameterProvider` — convert **last**; holds almost every struct above by value.
-    Has real methods `getPrecipCorrectionValue`/`setPrecipCorrectionValue`/`pathToOutputDir()` that
-    become free functions (or get inlined if trivial enough once looked at directly).
+24. [x] `CentralParameterProvider` — converted last, as planned; held every struct above by value, but
+    every internal `.merge`/`.to_json` call on those members had already been rewired to the free
+    `xxxparameters::` functions during items 17–23's leak-forward fixes, so this step was purely the
+    shell: `getPrecipCorrectionValue`/`setPrecipCorrectionValue` became real free functions
+    (`centralparameterprovider::...`, bounds-asserts + vector lookup/write kept as-is);
+    `pathToOutputDir()` (a one-line ternary, not a pure passthrough) became an `inline` free function
+    matching the `cropparameters::cropName`/`cultivarparameters::numberOfDevelopmentalStages`
+    precedent (item 3/4) rather than being deleted. The custom default constructor
+    (`_pathToOutputDir(".")`, `precipCorrectionValues(12, 1.0)`) folded into default member
+    initializers — note the `std::vector<double> precipCorrectionValues{std::vector<double>(12, 1.0)}`
+    double-paren/brace shape: a bare `{12, 1.0}` default member initializer would invoke the
+    `initializer_list<double>` constructor (a 2-element vector `{12.0, 1.0}`) instead of the intended
+    "12 elements of 1.0" `(size_t, T)` constructor, so the inner `std::vector<double>(12, 1.0)`
+    parenthesized temporary is required to preserve behavior. External leak-forward fixed in
+    `run-monica.cpp` (`env->params.merge`/`.to_json` in `env_merge`/`env_to_json`,
+    `env.params.pathToOutputDir()` in the output-path setup) — all other external touch points
+    (`env.params.userXxxParameters...`, `cpp.siteParameters = site;`, etc., across
+    `run-monica-capnp.cpp`, `monica-run-main.cpp`, `daily-monica-fbp-component-main.cpp`,
+    `serve-monica-zmq.cpp`, `monica-model.cpp`) are plain field reads/writes, unaffected by the
+    aggregate conversion. `Tools::Json11Serializable` no longer appears anywhere in
+    `monica-parameters.h`/`.cpp` — this file's conversion (all 24 items) is complete.
 
 ## Per-item workflow (repeat for every checklist entry)
 

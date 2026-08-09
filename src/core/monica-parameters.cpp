@@ -2613,47 +2613,43 @@ json11::Json soilorganicmoduleparameters::to_json(const SoilOrganicModuleParamet
   };
 }
 
-CentralParameterProvider::CentralParameterProvider()
-: _pathToOutputDir(".")
-, precipCorrectionValues(12, 1.0) {}
-
 // CentralParameterProvider::CentralParameterProvider(json11::Json j) {
 //   merge(j);
 // }
 
-Errors CentralParameterProvider::merge(json11::Json j) {
+Errors centralparameterprovider::merge(CentralParameterProvider* cpp, json11::Json j) {
   Errors res;
 
-  res.append(cropmoduleparameters::merge(&userCropParameters, j["userCropParameters"]));
-  res.append(environmentparameters::merge(&userEnvironmentParameters, j["userEnvironmentParameters"]));
-  res.append(soilmoisturemoduleparameters::merge(&userSoilMoistureParameters, j["userSoilMoistureParameters"]));
-  res.append(soiltemperaturemoduleparameters::merge(&userSoilTemperatureParameters, j["userSoilTemperatureParameters"]));
-  res.append(soiltransportmoduleparameters::merge(&userSoilTransportParameters, j["userSoilTransportParameters"]));
-  res.append(soilorganicmoduleparameters::merge(&userSoilOrganicParameters, j["userSoilOrganicParameters"]));
-  res.append(simulationparameters::merge(&simulationParameters, j["simulationParameters"]));
-  res.append(siteparameters::merge(&siteParameters, j["siteParameters"]));
+  res.append(cropmoduleparameters::merge(&cpp->userCropParameters, j["userCropParameters"]));
+  res.append(environmentparameters::merge(&cpp->userEnvironmentParameters, j["userEnvironmentParameters"]));
+  res.append(soilmoisturemoduleparameters::merge(&cpp->userSoilMoistureParameters, j["userSoilMoistureParameters"]));
+  res.append(soiltemperaturemoduleparameters::merge(&cpp->userSoilTemperatureParameters, j["userSoilTemperatureParameters"]));
+  res.append(soiltransportmoduleparameters::merge(&cpp->userSoilTransportParameters, j["userSoilTransportParameters"]));
+  res.append(soilorganicmoduleparameters::merge(&cpp->userSoilOrganicParameters, j["userSoilOrganicParameters"]));
+  res.append(simulationparameters::merge(&cpp->simulationParameters, j["simulationParameters"]));
+  res.append(siteparameters::merge(&cpp->siteParameters, j["siteParameters"]));
   if (!j["groundwaterInformation"].is_null()) {
-    res.append(measuredgroundwatertableinformation::merge(&groundwaterInformation, j["groundwaterInformation"]));
+    res.append(measuredgroundwatertableinformation::merge(&cpp->groundwaterInformation, j["groundwaterInformation"]));
   }
 
-  //set_bool_value(_writeOutputFiles, j, "writeOutputFiles");
+  //set_bool_value(cpp->_writeOutputFiles, j, "writeOutputFiles");
 
   return res;
 }
 
-json11::Json CentralParameterProvider::to_json() const {
+json11::Json centralparameterprovider::to_json(const CentralParameterProvider* cpp) {
   return json11::Json::object
   {
     {"type", "CentralParameterProvider"},
-    {"userCropParameters", cropmoduleparameters::to_json(&userCropParameters)},
-    {"userEnvironmentParameters", environmentparameters::to_json(&userEnvironmentParameters)},
-    {"userSoilMoistureParameters", soilmoisturemoduleparameters::to_json(&userSoilMoistureParameters)},
-    {"userSoilTemperatureParameters", soiltemperaturemoduleparameters::to_json(&userSoilTemperatureParameters)},
-    {"userSoilTransportParameters", soiltransportmoduleparameters::to_json(&userSoilTransportParameters)},
-    {"userSoilOrganicParameters", soilorganicmoduleparameters::to_json(&userSoilOrganicParameters)},
-    {"simulationParameters", simulationparameters::to_json(&simulationParameters)},
-    {"siteParameters", siteparameters::to_json(&siteParameters)}
-    //, {"groundwaterInformation", groundwaterInformation.to_json()}
+    {"userCropParameters", cropmoduleparameters::to_json(&cpp->userCropParameters)},
+    {"userEnvironmentParameters", environmentparameters::to_json(&cpp->userEnvironmentParameters)},
+    {"userSoilMoistureParameters", soilmoisturemoduleparameters::to_json(&cpp->userSoilMoistureParameters)},
+    {"userSoilTemperatureParameters", soiltemperaturemoduleparameters::to_json(&cpp->userSoilTemperatureParameters)},
+    {"userSoilTransportParameters", soiltransportmoduleparameters::to_json(&cpp->userSoilTransportParameters)},
+    {"userSoilOrganicParameters", soilorganicmoduleparameters::to_json(&cpp->userSoilOrganicParameters)},
+    {"simulationParameters", simulationparameters::to_json(&cpp->simulationParameters)},
+    {"siteParameters", siteparameters::to_json(&cpp->siteParameters)}
+    //, {"groundwaterInformation", measuredgroundwatertableinformation::to_json(&cpp->groundwaterInformation)}
     //, {"writeOutputFiles", writeOutputFiles()}
   };
 }
@@ -2663,11 +2659,11 @@ json11::Json CentralParameterProvider::to_json() const {
  * @param month Month
  * @return Correction value that should be applied to precipitation value read from database.
  */
-double CentralParameterProvider::getPrecipCorrectionValue(int month) const {
+double centralparameterprovider::getPrecipCorrectionValue(const CentralParameterProvider* cpp, int month) {
   assert(month < 12);
   assert(month >= 0);
 
-  return precipCorrectionValues.at(month);
+  return cpp->precipCorrectionValues.at(month);
   //cerr << "Requested correction value for precipitation for an invalid month.\nMust be in range of 0<=value<12." << endl;
   //return 1.0;
 }
@@ -2677,10 +2673,10 @@ double CentralParameterProvider::getPrecipCorrectionValue(int month) const {
  * @param month Month the value should be used for.
  * @param value Correction value that should be added.
  */
-void CentralParameterProvider::setPrecipCorrectionValue(int month, double value) {
+void centralparameterprovider::setPrecipCorrectionValue(CentralParameterProvider* cpp, int month, double value) {
   assert(month < 12);
   assert(month >= 0);
-  precipCorrectionValues[month] = value;
+  cpp->precipCorrectionValues[month] = value;
 
   // debug
   //  cout << "Added precip correction value for month " << month << ":\t " << value << endl;

@@ -965,15 +965,7 @@ DLL_API json11::Json to_json(const SoilOrganicModuleParameters* sop);
  *
  * @author Xenia Specka
  */
-struct DLL_API CentralParameterProvider : public Tools::Json11Serializable {
-  CentralParameterProvider();
-
-  //  CentralParameterProvider(json11::Json object);
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API CentralParameterProvider {
   CropModuleParameters userCropParameters;
   EnvironmentParameters userEnvironmentParameters;
   SoilMoistureModuleParameters userSoilMoistureParameters;
@@ -987,21 +979,27 @@ struct DLL_API CentralParameterProvider : public Tools::Json11Serializable {
 
   MeasuredGroundwaterTableInformation groundwaterInformation;
 
-  double getPrecipCorrectionValue(int month) const;
-  void setPrecipCorrectionValue(int month, double value);
-
   // bool writeOutputFiles() const { return _writeOutputFiles; }
   // void setWriteOutputFiles(bool write) { _writeOutputFiles = write; }
 
-  std::string pathToOutputDir() const {
-    return _pathToOutputDir.empty() ? "./" : _pathToOutputDir;
-  }
-
   // bool _writeOutputFiles{false};
-  std::string _pathToOutputDir;
+  std::string _pathToOutputDir{"."};
 
-  std::vector<double> precipCorrectionValues;
+  std::vector<double> precipCorrectionValues{std::vector<double>(12, 1.0)};
 };
+
+namespace centralparameterprovider {
+
+DLL_API Tools::Errors merge(CentralParameterProvider* cpp, json11::Json j);
+DLL_API json11::Json to_json(const CentralParameterProvider* cpp);
+DLL_API double getPrecipCorrectionValue(const CentralParameterProvider* cpp, int month);
+DLL_API void setPrecipCorrectionValue(CentralParameterProvider* cpp, int month, double value);
+
+inline std::string pathToOutputDir(const CentralParameterProvider* cpp) {
+  return cpp->_pathToOutputDir.empty() ? "./" : cpp->_pathToOutputDir;
+}
+
+} // namespace centralparameterprovider
 
 struct Intercropping {
   typedef mas::schema::model::monica::ICData ICD;
