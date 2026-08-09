@@ -458,7 +458,7 @@ public:
                 if (of.hasParams() && of.getParams().hasParams()) {
                   KJ_LOG(INFO, "received organic fertilization event at", eventDate.toIsoDateString());
                   monicamodel::applyOrganicFertiliser(monica.get(),
-                                                    OrganicMatterParameters(of.getParams().getParams()),
+                                                    makeOrganicMatterParameters(of.getParams().getParams()),
                                                     of.getAmount(),
                                                     of.getIncorporation());
                   monica->currentEvents.insert("OrganicFertilization");

@@ -236,7 +236,7 @@ void addOrganicMatter(SoilOrganic* so,
                                          const OrganicMatterParameters& params,
                                          const map<size_t, double>& layer2addedOrganicMatterAmount,
                                          double addedOrganicMatterNConcentration) {
-  debug() << "SoilOrganic: addOrganicMatter: " << params.toString() << endl;
+  debug() << "SoilOrganic: addOrganicMatter: " << organicmatterparameters::to_json(&params).dump() << endl;
 
   auto nools = so->soilColumn._vs_NumberOfOrganicLayers;
   double layerThickness = so->soilColumn.at(0).vs_LayerThickness;

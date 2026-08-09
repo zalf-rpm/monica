@@ -1208,75 +1208,78 @@ json11::Json nmincropparameters::to_json(const NMinCropParameters* ncp) {
 }
 
 
-void OrganicMatterParameters::deserialize(
+OrganicMatterParameters monica::makeOrganicMatterParameters(
   mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
-  vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
-  vo_AOM_NH4Content = reader.getAomNH4Content();
-  vo_AOM_NO3Content = reader.getAomNO3Content();
-  vo_AOM_CarbamidContent = reader.getAomCarbamidContent();
-  vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
-  vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
-  vo_PartAOM_to_AOM_Slow = reader.getPartAOMToAOMSlow();
-  vo_PartAOM_to_AOM_Fast = reader.getPartAOMToAOMFast();
-  vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
-  vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
-  vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowToSMBSlow();
-  vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowToSMBFast();
-  vo_NConcentration = reader.getNConcentration();
+  OrganicMatterParameters omp;
+  organicmatterparameters::deserialize(&omp, reader);
+  return omp;
+}
+
+void organicmatterparameters::deserialize(OrganicMatterParameters* omp,
+  mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader) {
+  omp->vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
+  omp->vo_AOM_NH4Content = reader.getAomNH4Content();
+  omp->vo_AOM_NO3Content = reader.getAomNO3Content();
+  omp->vo_AOM_CarbamidContent = reader.getAomCarbamidContent();
+  omp->vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
+  omp->vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
+  omp->vo_PartAOM_to_AOM_Slow = reader.getPartAOMToAOMSlow();
+  omp->vo_PartAOM_to_AOM_Fast = reader.getPartAOMToAOMFast();
+  omp->vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
+  omp->vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
+  omp->vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowToSMBSlow();
+  omp->vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowToSMBFast();
+  omp->vo_NConcentration = reader.getNConcentration();
   //vo_CorgContent = reader.getCorgContent();
 }
 
-void OrganicMatterParameters::serialize(
-  mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) const {
-  builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
-  builder.setAomNH4Content(vo_AOM_NH4Content);
-  builder.setAomNO3Content(vo_AOM_NO3Content);
-  builder.setAomCarbamidContent(vo_AOM_CarbamidContent);
-  builder.setAomSlowDecCoeffStandard(vo_AOM_SlowDecCoeffStandard);
-  builder.setAomFastDecCoeffStandard(vo_AOM_FastDecCoeffStandard);
-  builder.setPartAOMToAOMSlow(vo_PartAOM_to_AOM_Slow);
-  builder.setPartAOMToAOMFast(vo_PartAOM_to_AOM_Fast);
-  builder.setCnRatioAOMSlow(vo_CN_Ratio_AOM_Slow);
-  builder.setCnRatioAOMFast(vo_CN_Ratio_AOM_Fast);
-  builder.setPartAOMSlowToSMBSlow(vo_PartAOM_Slow_to_SMB_Slow);
-  builder.setPartAOMSlowToSMBFast(vo_PartAOM_Slow_to_SMB_Fast);
-  builder.setNConcentration(vo_NConcentration);
+void organicmatterparameters::serialize(const OrganicMatterParameters* omp,
+  mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder) {
+  builder.setAomDryMatterContent(omp->vo_AOM_DryMatterContent);
+  builder.setAomNH4Content(omp->vo_AOM_NH4Content);
+  builder.setAomNO3Content(omp->vo_AOM_NO3Content);
+  builder.setAomCarbamidContent(omp->vo_AOM_CarbamidContent);
+  builder.setAomSlowDecCoeffStandard(omp->vo_AOM_SlowDecCoeffStandard);
+  builder.setAomFastDecCoeffStandard(omp->vo_AOM_FastDecCoeffStandard);
+  builder.setPartAOMToAOMSlow(omp->vo_PartAOM_to_AOM_Slow);
+  builder.setPartAOMToAOMFast(omp->vo_PartAOM_to_AOM_Fast);
+  builder.setCnRatioAOMSlow(omp->vo_CN_Ratio_AOM_Slow);
+  builder.setCnRatioAOMFast(omp->vo_CN_Ratio_AOM_Fast);
+  builder.setPartAOMSlowToSMBSlow(omp->vo_PartAOM_Slow_to_SMB_Slow);
+  builder.setPartAOMSlowToSMBFast(omp->vo_PartAOM_Slow_to_SMB_Fast);
+  builder.setNConcentration(omp->vo_NConcentration);
   //builder.setCorgContent(vo_CorgContent);
 }
 
-// OrganicMatterParameters::OrganicMatterParameters(json11::Json j) {
-//   merge(j);
-// }
+Errors organicmatterparameters::merge(OrganicMatterParameters* omp, json11::Json j) {
+  Errors res = defaultMerge(j, [omp](json11::Json j2) { return merge(omp, j2); });
 
-Errors OrganicMatterParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
-
-  set_double_value(vo_AOM_DryMatterContent, j, "AOM_DryMatterContent");
-  set_double_value(vo_AOM_NH4Content, j, "AOM_NH4Content");
-  set_double_value(vo_AOM_NO3Content, j, "AOM_NO3Content");
-  set_double_value(vo_AOM_CarbamidContent, j, "AOM_CarbamidContent");
-  set_double_value(vo_AOM_SlowDecCoeffStandard, j, "AOM_SlowDecCoeffStandard");
-  set_double_value(vo_AOM_FastDecCoeffStandard, j, "AOM_FastDecCoeffStandard");
-  set_double_value(vo_PartAOM_to_AOM_Slow, j, "PartAOM_to_AOM_Slow");
-  set_double_value(vo_PartAOM_to_AOM_Fast, j, "PartAOM_to_AOM_Fast");
-  set_double_value(vo_CN_Ratio_AOM_Slow, j, "CN_Ratio_AOM_Slow");
-  set_double_value(vo_CN_Ratio_AOM_Fast, j, "CN_Ratio_AOM_Fast");
-  set_double_value(vo_PartAOM_Slow_to_SMB_Slow, j, "PartAOM_Slow_to_SMB_Slow");
-  set_double_value(vo_PartAOM_Slow_to_SMB_Fast, j, "PartAOM_Slow_to_SMB_Fast");
-  set_double_value(vo_NConcentration, j, "NConcentration");
-  set_double_value(vo_CorgContent, j, "CorgContent");
+  set_double_value(omp->vo_AOM_DryMatterContent, j, "AOM_DryMatterContent");
+  set_double_value(omp->vo_AOM_NH4Content, j, "AOM_NH4Content");
+  set_double_value(omp->vo_AOM_NO3Content, j, "AOM_NO3Content");
+  set_double_value(omp->vo_AOM_CarbamidContent, j, "AOM_CarbamidContent");
+  set_double_value(omp->vo_AOM_SlowDecCoeffStandard, j, "AOM_SlowDecCoeffStandard");
+  set_double_value(omp->vo_AOM_FastDecCoeffStandard, j, "AOM_FastDecCoeffStandard");
+  set_double_value(omp->vo_PartAOM_to_AOM_Slow, j, "PartAOM_to_AOM_Slow");
+  set_double_value(omp->vo_PartAOM_to_AOM_Fast, j, "PartAOM_to_AOM_Fast");
+  set_double_value(omp->vo_CN_Ratio_AOM_Slow, j, "CN_Ratio_AOM_Slow");
+  set_double_value(omp->vo_CN_Ratio_AOM_Fast, j, "CN_Ratio_AOM_Fast");
+  set_double_value(omp->vo_PartAOM_Slow_to_SMB_Slow, j, "PartAOM_Slow_to_SMB_Slow");
+  set_double_value(omp->vo_PartAOM_Slow_to_SMB_Fast, j, "PartAOM_Slow_to_SMB_Fast");
+  set_double_value(omp->vo_NConcentration, j, "NConcentration");
+  set_double_value(omp->vo_CorgContent, j, "CorgContent");
 
   return res;
 }
 
-json11::Json OrganicMatterParameters::to_json() const {
+json11::Json organicmatterparameters::to_json(const OrganicMatterParameters* omp) {
   return J11Object
   {
     {"type", "OrganicMatterParameters"},
     {
       "AOM_DryMatterContent",
       J11Array{
-        vo_AOM_DryMatterContent,
+        omp->vo_AOM_DryMatterContent,
         "kg DM kg FM-1",
         "Dry matter content of added organic matter"
       }
@@ -1284,7 +1287,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "AOM_NH4Content",
       J11Array{
-        vo_AOM_NH4Content,
+        omp->vo_AOM_NH4Content,
         "kg N kg DM-1",
         "Ammonium content in added organic matter"
       }
@@ -1292,7 +1295,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "AOM_NO3Content",
       J11Array{
-        vo_AOM_NO3Content,
+        omp->vo_AOM_NO3Content,
         "kg N kg DM-1",
         "Nitrate content in added organic matter"
       }
@@ -1300,7 +1303,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "AOM_NO3Content",
       J11Array{
-        vo_AOM_NO3Content,
+        omp->vo_AOM_NO3Content,
         "kg N kg DM-1",
         "Carbamide content in added organic matter"
       }
@@ -1308,7 +1311,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "AOM_SlowDecCoeffStandard",
       J11Array{
-        vo_AOM_SlowDecCoeffStandard,
+        omp->vo_AOM_SlowDecCoeffStandard,
         "d-1",
         "Decomposition rate coefficient of slow AOM at standard conditions"
       }
@@ -1316,7 +1319,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "AOM_FastDecCoeffStandard",
       J11Array{
-        vo_AOM_FastDecCoeffStandard,
+        omp->vo_AOM_FastDecCoeffStandard,
         "d-1",
         "Decomposition rate coefficient of fast AOM at standard conditions"
       }
@@ -1324,7 +1327,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "PartAOM_to_AOM_Slow",
       J11Array{
-        vo_PartAOM_to_AOM_Slow,
+        omp->vo_PartAOM_to_AOM_Slow,
         "kg kg-1",
         "Part of AOM that is assigned to the slowly decomposing pool"
       }
@@ -1332,7 +1335,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "PartAOM_to_AOM_Fast",
       J11Array{
-        vo_PartAOM_to_AOM_Fast,
+        omp->vo_PartAOM_to_AOM_Fast,
         "kg kg-1",
         "Part of AOM that is assigned to the rapidly decomposing pool"
       }
@@ -1340,7 +1343,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "CN_Ratio_AOM_Slow",
       J11Array{
-        vo_CN_Ratio_AOM_Slow,
+        omp->vo_CN_Ratio_AOM_Slow,
         "",
         "C to N ratio of the slowly decomposing AOM pool"
       }
@@ -1348,7 +1351,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "CN_Ratio_AOM_Fast",
       J11Array{
-        vo_CN_Ratio_AOM_Fast,
+        omp->vo_CN_Ratio_AOM_Fast,
         "",
         "C to N ratio of the rapidly decomposing AOM pool"
       }
@@ -1356,7 +1359,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "PartAOM_Slow_to_SMB_Slow",
       J11Array{
-        vo_PartAOM_Slow_to_SMB_Slow,
+        omp->vo_PartAOM_Slow_to_SMB_Slow,
         "kg kg-1",
         "Part of AOM slow consumed by slow soil microbial biomass"
       }
@@ -1364,7 +1367,7 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "PartAOM_Slow_to_SMB_Fast",
       J11Array{
-        vo_PartAOM_Slow_to_SMB_Fast,
+        omp->vo_PartAOM_Slow_to_SMB_Fast,
         "kg kg-1",
         "Part of AOM slow consumed by fast soil microbial biomass"
       }
@@ -1372,25 +1375,25 @@ json11::Json OrganicMatterParameters::to_json() const {
     {
       "NConcentration",
       J11Array{
-        vo_NConcentration,
+        omp->vo_NConcentration,
         "kg N kg DM-1",
         "Nitrogen content in added organic matter"
       }
     },
-    {"CorgContent", J11Array{vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter"}}
+    {"CorgContent", J11Array{omp->vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter"}}
   };
 }
 
 void OrganicFertilizerParameters::deserialize(
   mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader) {
-  OrganicMatterParameters::deserialize(reader.getParams());
+  organicmatterparameters::deserialize(this, reader.getParams());
   id = reader.getId();
   name = reader.getName();
 }
 
 void OrganicFertilizerParameters::serialize(
   mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder) const {
-  OrganicMatterParameters::serialize(builder.initParams());
+  organicmatterparameters::serialize(this, builder.initParams());
   builder.setId(id);
   builder.setName(name);
 }
@@ -1400,9 +1403,9 @@ void OrganicFertilizerParameters::serialize(
 // }
 
 Errors OrganicFertilizerParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+  Errors res = defaultMerge(j, [this](json11::Json j2) { return merge(j2); });
 
-  res.append(OrganicMatterParameters::merge(j));
+  res.append(organicmatterparameters::merge(this, j));
 
   set_string_value(id, j, "id");
   set_string_value(name, j, "name");
@@ -1411,7 +1414,7 @@ Errors OrganicFertilizerParameters::merge(json11::Json j) {
 }
 
 json11::Json OrganicFertilizerParameters::to_json() const {
-  auto omp = OrganicMatterParameters::to_json().object_items();
+  auto omp = organicmatterparameters::to_json(this).object_items();
   omp["type"] = "OrganicFertilizerParameters";
   omp["id"] = id;
   omp["name"] = name;
@@ -1419,13 +1422,13 @@ json11::Json OrganicFertilizerParameters::to_json() const {
 }
 
 void CropResidueParameters::deserialize(mas::schema::model::monica::CropResidueParameters::Reader reader) {
-  OrganicMatterParameters::deserialize(reader.getParams());
+  organicmatterparameters::deserialize(this, reader.getParams());
   species = reader.getSpecies();
   residueType = reader.getResidueType();
 }
 
 void CropResidueParameters::serialize(mas::schema::model::monica::CropResidueParameters::Builder builder) const {
-  OrganicMatterParameters::serialize(builder.initParams());
+  organicmatterparameters::serialize(this, builder.initParams());
   builder.setSpecies(species);
   builder.setResidueType(residueType);
 }
@@ -1435,9 +1438,9 @@ void CropResidueParameters::serialize(mas::schema::model::monica::CropResiduePar
 // }
 
 Errors CropResidueParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+  Errors res = defaultMerge(j, [this](json11::Json j2) { return merge(j2); });
 
-  res.append(OrganicMatterParameters::merge(j));
+  res.append(organicmatterparameters::merge(this, j));
   set_string_value(species, j, "species");
   set_string_value(residueType, j, "residueType");
 
@@ -1445,7 +1448,7 @@ Errors CropResidueParameters::merge(json11::Json j) {
 }
 
 json11::Json CropResidueParameters::to_json() const {
-  auto omp = OrganicMatterParameters::to_json().object_items();
+  auto omp = organicmatterparameters::to_json(this).object_items();
   omp["type"] = "CropResidueParameters";
   omp["species"] = species;
   omp["residueType"] = residueType;

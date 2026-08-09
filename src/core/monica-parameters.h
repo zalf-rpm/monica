@@ -477,27 +477,7 @@ DLL_API json11::Json to_json(const NMinCropParameters* ncp);
 
 } // namespace nmincropparameters
 
-struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
-  OrganicMatterParameters() = default;
-
-  explicit OrganicMatterParameters(
-      mas::schema::model::monica::Params::OrganicFertilization::
-          OrganicMatterParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(mas::schema::model::monica::Params::OrganicFertilization::
-                       OrganicMatterParameters::Reader reader);
-
-  // explicit OrganicMatterParameters(json11::Json object);
-
-  void serialize(mas::schema::model::monica::Params::OrganicFertilization::
-                     OrganicMatterParameters::Builder builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API OrganicMatterParameters {
   double vo_AOM_DryMatterContent{
       0.0}; //!< Dry matter content of added organic matter [kg DM kg FM-1]
   double vo_AOM_NH4Content{
@@ -535,6 +515,20 @@ struct DLL_API OrganicMatterParameters : public Tools::Json11Serializable {
 
   double vo_NConcentration{0.0};
 };
+
+DLL_API OrganicMatterParameters makeOrganicMatterParameters(
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader);
+
+namespace organicmatterparameters {
+
+DLL_API void deserialize(OrganicMatterParameters* omp,
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader reader);
+DLL_API void serialize(const OrganicMatterParameters* omp,
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder builder);
+DLL_API Tools::Errors merge(OrganicMatterParameters* omp, json11::Json j);
+DLL_API json11::Json to_json(const OrganicMatterParameters* omp);
+
+} // namespace organicmatterparameters
 
 typedef std::shared_ptr<OrganicMatterParameters> OrganicMatterParametersPtr;
 

@@ -1126,7 +1126,7 @@ OrganicFertilization::OrganicFertilization(json11::Json j) {
 
 Errors OrganicFertilization::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
-  _params.merge(j["parameters"]);
+  organicmatterparameters::merge(&_params, j["parameters"]);
   set_double_value(_amount, j, "amount");
   set_int_value(_incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
   _incorporateIntoLayerNo = max(1, _incorporateIntoLayerNo);
@@ -1139,7 +1139,7 @@ json11::Json OrganicFertilization::to_json() const {
       {"type", type()},
       {"date", date().toIsoDateString()},
       {"amount", _amount},
-      {"parameters", _params.to_json()},
+      {"parameters", organicmatterparameters::to_json(&_params)},
       {"incorporateIntoLayerNo", _incorporateIntoLayerNo},
       {"incorporation", _incorporation}};
 }

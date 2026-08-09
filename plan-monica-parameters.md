@@ -192,8 +192,21 @@ those members. Check off each once it's built, regression-tested, committed, and
     `.merge`/`.to_json`/`.serialize`/`.deserialize` call sites anywhere. Only fix needed was three
     field-based constructor call sites (`NMinCropParameters(a, b, c)` -> `makeNMinCropParameters(a,
     b, c)`) in `monica-model.cpp` (x2) and `cultivation-method.cpp`.
-13. [ ] `OrganicMatterParameters` — leaf; base of `OrganicFertilizerParameters` and
-    `CropResidueParameters`.
+13. [x] `OrganicMatterParameters` — leaf; base of `OrganicFertilizerParameters` and
+    `CropResidueParameters` (both still unconverted, items 14/15). Same transitive-base-loss pattern
+    as `IrrigationParameters`/`AutomaticIrrigationParameters` (items 7/8): both derived structs'
+    `deserialize`/`serialize`/`merge`/`to_json` had `OrganicMatterParameters::method(...)`
+    base-class-qualified calls rewired to `organicmatterparameters::method(this, ...)`, and their
+    `Json11Serializable::merge(j)` calls became `defaultMerge(j, [this](json11::Json j2){ return
+    merge(j2); })`. New wrinkle this time: `Crop::toString()` in `crop.cpp` calls
+    `residueParameters().toString()` — since `Json11Serializable::toString()`'s *default*
+    implementation (`return to_json().dump();`) was inherited transitively through
+    `CropResidueParameters -> OrganicMatterParameters -> Json11Serializable`, losing the base broke
+    that too, even though `CropResidueParameters::to_json()` itself is untouched (still a member,
+    item 15's job). Fixed by calling `.to_json().dump()` directly instead of the now-gone
+    `.toString()`. Also fixed the known `soilorganic.cpp` `.toString()` site (goal #9) and
+    leak-forward in `OrganicFertilization` (`cultivation-method.cpp`) plus a reader-based
+    direct-construction site in `daily-monica-fbp-component-main.cpp`.
 14. [ ] `OrganicFertilizerParameters` — needs `OrganicMatterParameters` done (inherits it).
 15. [ ] `CropResidueParameters` — needs `OrganicMatterParameters` done (inherits it). Fix
     `.toString()` call site in `crop.cpp`.

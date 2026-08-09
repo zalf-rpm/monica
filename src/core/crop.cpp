@@ -266,7 +266,7 @@ string Crop::toString(bool detailed) const {
       << "CropParameters: " << endl
       << cropparameters::to_json(&cropParameters()).dump() << endl
       << "ResidueParameters: " << endl
-      << residueParameters().toString() << endl;
+      << residueParameters().to_json().dump() << endl;
 
   return s.str();
 }
