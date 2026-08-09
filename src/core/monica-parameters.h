@@ -345,27 +345,6 @@ DLL_API json11::Json to_json(const IrrigationParameters* ip);
 } // namespace irrigationparameters
 
 struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
-  AutomaticIrrigationParameters() {}
-
-  AutomaticIrrigationParameters(double a, double t, double nc, double sc);
-
-  AutomaticIrrigationParameters(
-      mas::schema::model::monica::AutomaticIrrigationParameters::Reader
-          reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
-
-  void
-  serialize(mas::schema::model::monica::AutomaticIrrigationParameters::Builder
-                builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
   Tools::Date startDate;
   Tools::Date endDate;
   double amount{-1.0};
@@ -374,6 +353,21 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   double criticalMoistureDepthM{0.3};
   int minDaysBetweenIrrigationEvents{0};
 };
+
+DLL_API AutomaticIrrigationParameters makeAutomaticIrrigationParameters(double a, double t, double nc, double sc);
+DLL_API AutomaticIrrigationParameters makeAutomaticIrrigationParameters(
+    mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
+
+namespace automaticirrigationparameters {
+
+DLL_API void deserialize(AutomaticIrrigationParameters* aip,
+                         mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
+DLL_API void serialize(const AutomaticIrrigationParameters* aip,
+                       mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder);
+DLL_API Tools::Errors merge(AutomaticIrrigationParameters* aip, json11::Json j);
+DLL_API json11::Json to_json(const AutomaticIrrigationParameters* aip);
+
+} // namespace automaticirrigationparameters
 
 struct DLL_API MeasuredGroundwaterTableInformation
     : public Tools::Json11Serializable {

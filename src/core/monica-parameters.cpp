@@ -850,63 +850,67 @@ json11::Json irrigationparameters::to_json(const IrrigationParameters* ip) {
 }
 
 
-AutomaticIrrigationParameters::AutomaticIrrigationParameters(double a,
-                                                             double t,
-                                                             double nc,
-                                                             double sc)
-: IrrigationParameters{nc, sc}
-, amount(a)
-, threshold(t) {}
+AutomaticIrrigationParameters monica::makeAutomaticIrrigationParameters(double a, double t, double nc, double sc) {
+  AutomaticIrrigationParameters aip;
+  aip.nitrateConcentration = nc;
+  aip.sulfateConcentration = sc;
+  aip.amount = a;
+  aip.threshold = t;
+  return aip;
+}
 
-// AutomaticIrrigationParameters::AutomaticIrrigationParameters(json11::Json j) {
-//   merge(j);
-// }
-
-void AutomaticIrrigationParameters::deserialize(
+AutomaticIrrigationParameters monica::makeAutomaticIrrigationParameters(
   mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader) {
-  irrigationparameters::deserialize(this, reader.getParams());
-  amount = reader.getAmount();
-  threshold = reader.getThreshold();
+  AutomaticIrrigationParameters aip;
+  automaticirrigationparameters::deserialize(&aip, reader);
+  return aip;
+}
+
+void automaticirrigationparameters::deserialize(AutomaticIrrigationParameters* aip,
+  mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader) {
+  irrigationparameters::deserialize(aip, reader.getParams());
+  aip->amount = reader.getAmount();
+  aip->threshold = reader.getThreshold();
   //percentNFC = reader.getPercentNfc();
 }
 
-void AutomaticIrrigationParameters::serialize(
-  mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) const {
-  irrigationparameters::serialize(this, builder.initParams());
-  builder.setAmount(amount);
-  builder.setThreshold(threshold);
+void automaticirrigationparameters::serialize(const AutomaticIrrigationParameters* aip,
+  mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder) {
+  irrigationparameters::serialize(aip, builder.initParams());
+  builder.setAmount(aip->amount);
+  builder.setThreshold(aip->threshold);
   //builder.setPercentNfc(percentNFC);
 }
 
-Errors AutomaticIrrigationParameters::merge(json11::Json j) {
-  Errors res = defaultMerge(j, [this](json11::Json j2) { return merge(j2); });
+Errors automaticirrigationparameters::merge(AutomaticIrrigationParameters* aip, json11::Json j) {
+  Errors res = defaultMerge(j, [aip](json11::Json j2) { return merge(aip, j2); });
 
-  res.append(irrigationparameters::merge(this, j["irrigationParameters"]));
-  set_iso_date_value(startDate, j, "startDate");
-  set_iso_date_value(endDate, j, "stopDate");
-  set_double_value(amount, j, "amount");
-  set_double_value(percentNFC, j, "set_to_%nFC");
-  set_double_value(threshold, j, "threshold", transformIfPercent(j, "threshold"));
-  set_double_value(threshold, j, "trigger_if_nFC_below_%", [](double v) { return v / 100.0; });
-  set_double_value(criticalMoistureDepthM, j, "calc_nFC_until_depth_m",
+  res.append(irrigationparameters::merge(aip, j["irrigationParameters"]));
+  set_iso_date_value(aip->startDate, j, "startDate");
+  set_iso_date_value(aip->endDate, j, "stopDate");
+  set_double_value(aip->amount, j, "amount");
+  set_double_value(aip->percentNFC, j, "set_to_%nFC");
+  set_double_value(aip->threshold, j, "threshold", transformIfPercent(j, "threshold"));
+  set_double_value(aip->threshold, j, "trigger_if_nFC_below_%", [](double v) { return v / 100.0; });
+  set_double_value(aip->criticalMoistureDepthM, j, "calc_nFC_until_depth_m",
                    transformIfNotMeters(j, "calc_nFC_until_depth_m"));
-  set_int_value(minDaysBetweenIrrigationEvents, j, "minDaysBetweenIrrigationEvents");
+  set_int_value(aip->minDaysBetweenIrrigationEvents, j, "minDaysBetweenIrrigationEvents");
 
   return res;
 }
 
-json11::Json AutomaticIrrigationParameters::to_json() const {
+json11::Json automaticirrigationparameters::to_json(const AutomaticIrrigationParameters* aip) {
   auto o = json11::Json::object
   {
     {"type", "AutomaticIrrigationParameters"},
-    {"startDate", startDate.toIsoDateString()},
-    {"irrigationParameters", irrigationparameters::to_json(this)},
-    {"trigger_if_nFC_below_%", J11Array{threshold * 100.0, "%"}},
-    {"calc_nFC_until_depth_m", J11Array{criticalMoistureDepthM, "m"}},
-    {"minDaysBetweenIrrigationEvents", J11Array{minDaysBetweenIrrigationEvents, "d"}}
+    {"startDate", aip->startDate.toIsoDateString()},
+    {"irrigationParameters", irrigationparameters::to_json(aip)},
+    {"trigger_if_nFC_below_%", J11Array{aip->threshold * 100.0, "%"}},
+    {"calc_nFC_until_depth_m", J11Array{aip->criticalMoistureDepthM, "m"}},
+    {"minDaysBetweenIrrigationEvents", J11Array{aip->minDaysBetweenIrrigationEvents, "d"}}
   };
-  if (amount > 0) o["amount"] = J11Array{amount, "mm"};
-  else o["set_to_%nFC"] = J11Array{percentNFC, "%"};
+  if (aip->amount > 0) o["amount"] = J11Array{aip->amount, "mm"};
+  else o["set_to_%nFC"] = J11Array{aip->percentNFC, "%"};
   return o;
 }
 
@@ -1441,7 +1445,7 @@ void SimulationParameters::deserialize(mas::schema::model::monica::SimulationPar
   pc_FrostKillOn = reader.getFrostKillOn();
 
   p_UseAutomaticIrrigation = reader.getUseAutomaticIrrigation();
-  p_AutoIrrigationParams.deserialize(reader.getAutoIrrigationParams());
+  automaticirrigationparameters::deserialize(&p_AutoIrrigationParams, reader.getAutoIrrigationParams());
 
   p_UseNMinMineralFertilisingMethod = reader.getUseNMinMineralFertilisingMethod();
   mineralfertilizerparameters::deserialize(&p_NMinFertiliserPartition, reader.getNMinFertiliserPartition());
@@ -1468,7 +1472,7 @@ void SimulationParameters::serialize(mas::schema::model::monica::SimulationParam
   builder.setFrostKillOn(pc_FrostKillOn);
 
   builder.setUseAutomaticIrrigation(p_UseAutomaticIrrigation);
-  p_AutoIrrigationParams.serialize(builder.initAutoIrrigationParams());
+  automaticirrigationparameters::serialize(&p_AutoIrrigationParams, builder.initAutoIrrigationParams());
 
   builder.setUseNMinMineralFertilisingMethod(p_UseNMinMineralFertilisingMethod);
   mineralfertilizerparameters::serialize(&p_NMinFertiliserPartition, builder.initNMinFertiliserPartition());
@@ -1501,7 +1505,7 @@ Errors SimulationParameters::merge(json11::Json j) {
   set_bool_value(pc_FrostKillOn, j, "FrostKillOn");
 
   set_bool_value(p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation");
-  p_AutoIrrigationParams.merge(j["AutoIrrigationParams"]);
+  automaticirrigationparameters::merge(&p_AutoIrrigationParams, j["AutoIrrigationParams"]);
 
   set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
   mineralfertilizerparameters::merge(&p_NMinFertiliserPartition, j["NMinFertiliserPartition"]);
@@ -1550,7 +1554,7 @@ json11::Json SimulationParameters::to_json() const {
     {"EmergenceMoistureControlOn", pc_EmergenceMoistureControlOn},
     {"FrostKillOn", pc_FrostKillOn},
     {"UseAutomaticIrrigation", p_UseAutomaticIrrigation},
-    {"AutoIrrigationParams", p_AutoIrrigationParams},
+    {"AutoIrrigationParams", automaticirrigationparameters::to_json(&p_AutoIrrigationParams)},
     {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
     {"NMinFertiliserPartition", mineralfertilizerparameters::to_json(&p_NMinFertiliserPartition)},
     {"NMinUserParams", nminapplicationparameters::to_json(&p_NMinUserParams)},

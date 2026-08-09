@@ -1389,7 +1389,7 @@ Errors AutomaticIrrigation::merge(json11::Json j) {
     irrigateCrop = true;
 
   if (j["parameters"].is_object()) {
-    set_value_obj_value(params, j, "parameters");
+    automaticirrigationparameters::merge(&params, j["parameters"]);
   }
 
   return res;
@@ -1398,7 +1398,7 @@ Errors AutomaticIrrigation::merge(json11::Json j) {
 json11::Json AutomaticIrrigation::to_json() const {
   auto o = json11::Json::object{{"type", type()},
                                 {"irrigateCrop", irrigateCrop},
-                                {"parameters", params.to_json()}};
+                                {"parameters", automaticirrigationparameters::to_json(&params)}};
   if (startStage > -1)
     o["startStage"] = startStage + 1;
   if (endStage > -1)

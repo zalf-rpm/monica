@@ -154,7 +154,13 @@ those members. Check off each once it's built, regression-tested, committed, and
    `to_json` in `cultivation-method.cpp` (`set_value_obj_value(_params, ...)` and bare `_params` in
    a JSON literal, goal #10) — `AutomaticIrrigation::params` in the same file is
    `AutomaticIrrigationParameters` (item 8's type), left untouched.
-8. [ ] `AutomaticIrrigationParameters` — needs `IrrigationParameters` done (inherits it).
+8. [x] `AutomaticIrrigationParameters` — needed `IrrigationParameters` done (inherits it, kept as
+   plain-struct inheritance). Mostly mechanical since item 7 had already rewired its internal calls
+   to the base class's free functions; this step converted the shell (constructors ->
+   `makeAutomaticIrrigationParameters(...)`, `this->` becomes `aip->`). Leak-forward fixed in
+   `SimulationParameters` (`p_AutoIrrigationParams`, all four usual spots) and
+   `AutomaticIrrigation` in `cultivation-method.cpp` (`set_value_obj_value(params, ...)` and
+   `params.to_json()`, goal #10).
 9. [ ] `MeasuredGroundwaterTableInformation` — leaf; has one real method,
    `getGroundwaterInformation(Tools::Date)`, that becomes a free function.
 10. [ ] `SiteParameters` — leaf (holds `Soil::SoilPMs` / `Soil::SoilParameters` opaquely,
