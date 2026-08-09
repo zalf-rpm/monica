@@ -751,47 +751,52 @@ json11::Json mineralfertilizerparameters::to_json(const MineralFertilizerParamet
   };
 }
 
-NMinApplicationParameters::NMinApplicationParameters(double min,
-                                                     double max,
-                                                     int delayInDays)
-: min(min)
-, max(max)
-, delayInDays(delayInDays) {}
-
-// NMinApplicationParameters::NMinApplicationParameters(json11::Json j) {
-//   merge(j);
-// }
-
-void NMinApplicationParameters::deserialize(mas::schema::model::monica::NMinApplicationParameters::Reader reader) {
-  min = reader.getMin();
-  max = reader.getMax();
-  delayInDays = reader.getDelayInDays();
+NMinApplicationParameters monica::makeNMinApplicationParameters(double min, double max, int delayInDays) {
+  NMinApplicationParameters nap;
+  nap.min = min;
+  nap.max = max;
+  nap.delayInDays = delayInDays;
+  return nap;
 }
 
-void NMinApplicationParameters::serialize(
-  mas::schema::model::monica::NMinApplicationParameters::Builder builder) const {
-  builder.setMin(min);
-  builder.setMax(max);
-  builder.setDelayInDays(delayInDays);
+NMinApplicationParameters monica::makeNMinApplicationParameters(
+  mas::schema::model::monica::NMinApplicationParameters::Reader reader) {
+  NMinApplicationParameters nap;
+  nminapplicationparameters::deserialize(&nap, reader);
+  return nap;
 }
 
-Errors NMinApplicationParameters::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
+void nminapplicationparameters::deserialize(NMinApplicationParameters* nap,
+  mas::schema::model::monica::NMinApplicationParameters::Reader reader) {
+  nap->min = reader.getMin();
+  nap->max = reader.getMax();
+  nap->delayInDays = reader.getDelayInDays();
+}
 
-  set_double_value(min, j, "min");
-  set_double_value(max, j, "max");
-  set_int_value(delayInDays, j, "delayInDays");
+void nminapplicationparameters::serialize(const NMinApplicationParameters* nap,
+  mas::schema::model::monica::NMinApplicationParameters::Builder builder) {
+  builder.setMin(nap->min);
+  builder.setMax(nap->max);
+  builder.setDelayInDays(nap->delayInDays);
+}
+
+Errors nminapplicationparameters::merge(NMinApplicationParameters* nap, json11::Json j) {
+  Errors res = defaultMerge(j, [nap](json11::Json j2) { return merge(nap, j2); });
+
+  set_double_value(nap->min, j, "min");
+  set_double_value(nap->max, j, "max");
+  set_int_value(nap->delayInDays, j, "delayInDays");
 
   return res;
 }
 
-json11::Json NMinApplicationParameters::to_json() const {
+json11::Json nminapplicationparameters::to_json(const NMinApplicationParameters* nap) {
   return json11::Json::object
   {
     {"type", "NMinApplicationParameters"},
-    {"min", min},
-    {"max", max},
-    {"delayInDays", delayInDays}
+    {"min", nap->min},
+    {"max", nap->max},
+    {"delayInDays", nap->delayInDays}
   };
 }
 
@@ -1434,7 +1439,7 @@ void SimulationParameters::deserialize(mas::schema::model::monica::SimulationPar
 
   p_UseNMinMineralFertilisingMethod = reader.getUseNMinMineralFertilisingMethod();
   mineralfertilizerparameters::deserialize(&p_NMinFertiliserPartition, reader.getNMinFertiliserPartition());
-  p_NMinUserParams.deserialize(reader.getNMinApplicationParams());
+  nminapplicationparameters::deserialize(&p_NMinUserParams, reader.getNMinApplicationParams());
 
   p_UseSecondaryYields = reader.getUseSecondaryYields();
   p_UseAutomaticHarvestTrigger = reader.getUseAutomaticHarvestTrigger();
@@ -1461,7 +1466,7 @@ void SimulationParameters::serialize(mas::schema::model::monica::SimulationParam
 
   builder.setUseNMinMineralFertilisingMethod(p_UseNMinMineralFertilisingMethod);
   mineralfertilizerparameters::serialize(&p_NMinFertiliserPartition, builder.initNMinFertiliserPartition());
-  p_NMinUserParams.serialize(builder.initNMinApplicationParams());
+  nminapplicationparameters::serialize(&p_NMinUserParams, builder.initNMinApplicationParams());
 
   builder.setUseSecondaryYields(p_UseSecondaryYields);
   builder.setUseAutomaticHarvestTrigger(p_UseAutomaticHarvestTrigger);
@@ -1494,7 +1499,7 @@ Errors SimulationParameters::merge(json11::Json j) {
 
   set_bool_value(p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod");
   mineralfertilizerparameters::merge(&p_NMinFertiliserPartition, j["NMinFertiliserPartition"]);
-  p_NMinUserParams.merge(j["NMinUserParams"]);
+  nminapplicationparameters::merge(&p_NMinUserParams, j["NMinUserParams"]);
   set_int_value(p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising");
 
   set_bool_value(p_UseSecondaryYields, j, "UseSecondaryYields");
@@ -1542,7 +1547,7 @@ json11::Json SimulationParameters::to_json() const {
     {"AutoIrrigationParams", p_AutoIrrigationParams},
     {"UseNMinMineralFertilisingMethod", p_UseNMinMineralFertilisingMethod},
     {"NMinFertiliserPartition", mineralfertilizerparameters::to_json(&p_NMinFertiliserPartition)},
-    {"NMinUserParams", p_NMinUserParams},
+    {"NMinUserParams", nminapplicationparameters::to_json(&p_NMinUserParams)},
     {"JulianDayAutomaticFertilising", p_JulianDayAutomaticFertilising},
     {"UseSecondaryYields", p_UseSecondaryYields},
     {"UseAutomaticHarvestTrigger", p_UseAutomaticHarvestTrigger},

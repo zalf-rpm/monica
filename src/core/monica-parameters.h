@@ -298,32 +298,26 @@ DLL_API json11::Json to_json(const MineralFertilizerParameters* fp);
 
 } // namespace mineralfertilizerparameters
 
-struct DLL_API NMinApplicationParameters : public Tools::Json11Serializable {
-  NMinApplicationParameters() {}
-
-  NMinApplicationParameters(double min, double max, int delayInDays);
-
-  NMinApplicationParameters(
-      mas::schema::model::monica::NMinApplicationParameters::Reader reader) {
-    deserialize(reader);
-  }
-
-  void deserialize(
-      mas::schema::model::monica::NMinApplicationParameters::Reader reader);
-
-  // NMinApplicationParameters(json11::Json object);
-
-  void serialize(mas::schema::model::monica::NMinApplicationParameters::Builder
-                     builder) const;
-
-  virtual Tools::Errors merge(json11::Json j);
-
-  virtual json11::Json to_json() const;
-
+struct DLL_API NMinApplicationParameters {
   double min{0.0};
   double max{0.0};
   int delayInDays{0};
 };
+
+DLL_API NMinApplicationParameters makeNMinApplicationParameters(double min, double max, int delayInDays);
+DLL_API NMinApplicationParameters makeNMinApplicationParameters(
+    mas::schema::model::monica::NMinApplicationParameters::Reader reader);
+
+namespace nminapplicationparameters {
+
+DLL_API void deserialize(NMinApplicationParameters* nap,
+                         mas::schema::model::monica::NMinApplicationParameters::Reader reader);
+DLL_API void serialize(const NMinApplicationParameters* nap,
+                       mas::schema::model::monica::NMinApplicationParameters::Builder builder);
+DLL_API Tools::Errors merge(NMinApplicationParameters* nap, json11::Json j);
+DLL_API json11::Json to_json(const NMinApplicationParameters* nap);
+
+} // namespace nminapplicationparameters
 
 struct DLL_API IrrigationParameters : public Tools::Json11Serializable {
   IrrigationParameters() {}

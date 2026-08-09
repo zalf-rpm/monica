@@ -134,7 +134,12 @@ those members. Check off each once it's built, regression-tested, committed, and
    (`set_value_obj_value(_partition, ...)` and bare `_partition` in JSON literals) and
    `daily-monica-fbp-component-main.cpp` (`applyMineralFertiliser(monica.get(), mf.getPartition(),
    ...)` relying on the now-removed implicit reader-constructor).
-6. [ ] `NMinApplicationParameters` — leaf.
+6. [x] `NMinApplicationParameters` — leaf. Straightforward: only one external usage
+   (`monica-model.cpp`, a plain const-ref field-access alias, no method calls), plus the usual
+   leak-forward into `SimulationParameters::deserialize`/`serialize`/`merge`/`to_json`
+   (`p_NMinUserParams`, including the bare-in-`J11Object` case from goal #10). Note:
+   `SoilColumn::DelayedNMinApplicationParams` (`soilcolumn.h`) is an unrelated, differently-named
+   type despite the similar name — not touched by this item.
 7. [ ] `IrrigationParameters` — leaf; base of `AutomaticIrrigationParameters`.
 8. [ ] `AutomaticIrrigationParameters` — needs `IrrigationParameters` done (inherits it).
 9. [ ] `MeasuredGroundwaterTableInformation` — leaf; has one real method,
