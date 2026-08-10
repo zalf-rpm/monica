@@ -18,6 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "workstep.h"
 
 #include <algorithm>
+#include <iostream>
 #include <numeric>
 #include <utility>
 
@@ -1026,6 +1027,58 @@ bool workstep::apply(CuttingData *c, WorkstepV2 *ws, MonicaModel *model) {
                            c->cutMaxAssimilationRateFraction);
   c->organId2cuttingSpec = fromOldCuttingSpec(oldSpec);
   model->currentEvents.insert("Cutting");
+
+  return true;
+}
+
+WorkstepV2 monica::makeMineralFertilizationWorkstep(const Tools::Date &at,
+                                                    MineralFertilizerParameters partition,
+                                                    double amount) {
+  WorkstepV2 ws;
+  ws.date = at;
+  MineralFertilizationData mf;
+  mf.partition = partition;
+  mf.amount = amount;
+  ws.data = mf;
+  return ws;
+}
+
+WorkstepV2 monica::makeMineralFertilizationWorkstep(json11::Json j) {
+  WorkstepV2 ws;
+  ws.data = MineralFertilizationData{};
+  Errors res = workstep::mergeCommon(&ws, j);
+  res.append(workstep::merge(&std::get<MineralFertilizationData>(ws.data), j));
+  ws.errors = res;
+  return ws;
+}
+
+Errors workstep::merge(MineralFertilizationData *mf, json11::Json j) {
+  Errors res;
+  {
+    string err;
+    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err))
+      mineralfertilizerparameters::merge(&mf->partition, j["partition"]);
+    if (!err.empty())
+      cerr << "Error @ MineralFertilization::merge: " << err << endl;
+  }
+  set_double_value(mf->amount, j, "amount");
+  return res;
+}
+
+json11::Json workstep::to_json(const MineralFertilizationData *mf, const WorkstepV2 *ws) {
+  return json11::Json::object{
+      {"type", "MineralFertilization"},
+      {"date", ws->date.toIsoDateString()},
+      {"amount", mf->amount},
+      {"partition", mineralfertilizerparameters::to_json(&mf->partition)}};
+}
+
+bool workstep::apply(MineralFertilizationData *mf, WorkstepV2 *ws, MonicaModel *model) {
+  workstep::applyCommon(ws, model);
+
+  debug() << workstep::to_json(mf, ws).dump() << endl;
+  monicamodel::applyMineralFertiliser(model, mf->partition, mf->amount);
+  model->currentEvents.insert("MineralFertilization");
 
   return true;
 }

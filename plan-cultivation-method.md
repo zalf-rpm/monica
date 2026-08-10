@@ -376,7 +376,24 @@ validation per step is **build-only**, not a regression run.
    with a comment flagging it, same treatment as item 6's comma-operator bug.
    `set_double_value(...)`'s 4-arg transform-lambda overload (`json11-helper.h:267-272`) verified before
    use for `cut-max-assimilation-rate`'s `/100.0` conversion.
-8. [ ] `MineralFertilizationData` — leaf.
+8. [x] `MineralFertilizationData` — leaf. No cross-file bridging needed here (unlike items 5/7):
+   `monicamodel::applyMineralFertiliser(MonicaModel*, MineralFertilizerParameters, double)`
+   (`monica-model.h:146-148`) already takes the *already-converted* plain-struct
+   `MineralFertilizerParameters` from the `monica-parameters.h` work, by value — straightforward
+   pass-through. Ported both constructors: the JSON one and the field-based
+   `(const Tools::Date&, MineralFertilizerParameters, double)` one (`makeMineralFertilizationWorkstep`
+   overloaded on parameter shape) — kept for interface completeness even though, per the step-4/5/7
+   research, nothing outside `cultivation-method.cpp` constructs any subtype directly today (matches the
+   `plan-monica-parameters.md` precedent of porting zero-caller overloads, e.g. its item 11). Another
+   leak-forward `toString()` case, same shape as `plan-monica-parameters.md`'s `CropModuleParameters`
+   items: `MineralFertilization::apply` calls `debug() << toString() << endl;`, and `MineralFertilization`
+   never overrides `toString()`, so this was always really `to_json().dump()` (the `Json11Serializable`
+   default) — **not** the CultivationMethod-style real/human-readable `toString()` override (that one's
+   still coming in phase 3, don't confuse the two) — became
+   `debug() << workstep::to_json(mf, ws).dump() << endl;`, calling this step's own `to_json` directly (no
+   need for the not-yet-built top-level `workstep::to_json(const WorkstepV2*)` dispatcher). Added
+   `<iostream>` to `workstep.cpp`'s includes (needed for `cerr`, used by the partition-merge error log;
+   was previously arriving only transitively).
 9. [ ] `NDemandFertilizationData` — leaf.
 10. [ ] `OrganicFertilizationData` — leaf.
 11. [ ] `TillageData` — leaf.
