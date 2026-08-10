@@ -1192,3 +1192,56 @@ bool workstep::reinit(NDemandFertilizationData *nd, WorkstepV2 *ws, Tools::Date 
   return false; // NOTE: original NDemandFertilization::reinit computes addedYear but always returns
                 // false unconditionally - preserved exactly, not a mistake on my part.
 }
+
+WorkstepV2 monica::makeOrganicFertilizationWorkstep(const Tools::Date &at,
+                                                    const OrganicMatterParameters &params,
+                                                    double amount, bool incorp) {
+  WorkstepV2 ws;
+  ws.date = at;
+  OrganicFertilizationData of;
+  of.params = params;
+  of.amount = amount;
+  of.incorporation = incorp;
+  ws.data = of;
+  return ws;
+}
+
+WorkstepV2 monica::makeOrganicFertilizationWorkstep(json11::Json j) {
+  WorkstepV2 ws;
+  ws.data = OrganicFertilizationData{};
+  Errors res = workstep::mergeCommon(&ws, j);
+  res.append(workstep::merge(&std::get<OrganicFertilizationData>(ws.data), j));
+  ws.errors = res;
+  return ws;
+}
+
+Errors workstep::merge(OrganicFertilizationData *of, json11::Json j) {
+  Errors res;
+  organicmatterparameters::merge(&of->params, j["parameters"]);
+  set_double_value(of->amount, j, "amount");
+  set_int_value(of->incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
+  of->incorporateIntoLayerNo = max(1, of->incorporateIntoLayerNo);
+  set_bool_value(of->incorporation, j, "incorporation");
+  return res;
+}
+
+json11::Json workstep::to_json(const OrganicFertilizationData *of, const WorkstepV2 *ws) {
+  return json11::Json::object{
+      {"type", "OrganicFertilization"},
+      {"date", ws->date.toIsoDateString()},
+      {"amount", of->amount},
+      {"parameters", organicmatterparameters::to_json(&of->params)},
+      {"incorporateIntoLayerNo", of->incorporateIntoLayerNo},
+      {"incorporation", of->incorporation}};
+}
+
+bool workstep::apply(OrganicFertilizationData *of, WorkstepV2 *ws, MonicaModel *model) {
+  workstep::applyCommon(ws, model);
+
+  debug() << workstep::to_json(of, ws).dump() << endl;
+  monicamodel::applyOrganicFertiliser(model, of->params, of->amount, of->incorporation,
+                                      of->incorporateIntoLayerNo - 1);
+  model->currentEvents.insert("OrganicFertilization");
+
+  return true;
+}

@@ -413,7 +413,13 @@ validation per step is **build-only**, not a regression run.
    Ported all 3 original constructors (JSON, `(int stage, double depth, MineralFertilizerParameters,
    double Ndemand)`, `(Tools::Date date, double depth, MineralFertilizerParameters, double Ndemand)`) as
    overloaded `makeNDemandFertilizationWorkstep(...)` factories.
-10. [ ] `OrganicFertilizationData` — leaf.
+10. [x] `OrganicFertilizationData` — leaf. Straightforward, no quirks found — `merge`/`to_json` both
+   ws-shaped exactly like `MineralFertilizationData` (item 8: `to_json` needs `ws` for the common date,
+   `merge` doesn't). `monicamodel::applyOrganicFertiliser(MonicaModel*, const OrganicMatterParameters&,
+   double, bool, int)` (`monica-model.h:149-152`) already takes the converted plain-struct
+   `OrganicMatterParameters` — no cross-file bridging needed, same story as item 8. Same
+   `toString()`-is-really-`to_json().dump()` leak-forward in `apply` as items 8/9. Ported both
+   constructors (JSON and field-based).
 11. [ ] `TillageData` — leaf.
 12. [ ] `SetValueData` — leaf. Uses `parseOutputIds`/`buildOutputTable`/`oid::` (already free-function
     style, from `build-output.h`/`output.h`) — no leak-forward concerns, just call them.

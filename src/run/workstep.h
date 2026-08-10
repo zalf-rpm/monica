@@ -321,6 +321,11 @@ DLL_API bool condition(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel
 DLL_API bool reinit(NDemandFertilizationData *nd, WorkstepV2 *ws, Tools::Date date,
                     bool addYear = false, bool forceInitYear = false);
 
+// OrganicFertilizationData
+DLL_API Tools::Errors merge(OrganicFertilizationData *of, json11::Json j);
+DLL_API json11::Json to_json(const OrganicFertilizationData *of, const WorkstepV2 *ws);
+DLL_API bool apply(OrganicFertilizationData *of, WorkstepV2 *ws, MonicaModel *model);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
@@ -340,5 +345,9 @@ DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(int stage, double depth,
 DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
                                                     MineralFertilizerParameters partition,
                                                     double Ndemand);
+DLL_API WorkstepV2 makeOrganicFertilizationWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeOrganicFertilizationWorkstep(const Tools::Date &at,
+                                                    const OrganicMatterParameters &params,
+                                                    double amount, bool incorp = true);
 
 } // namespace monica
