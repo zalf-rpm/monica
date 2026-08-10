@@ -189,6 +189,8 @@ add_library(monica_lib
         src/io/build-output.h
         src/io/build-output.cpp
 
+        src/run/workstep.h
+        src/run/workstep.cpp
         src/run/cultivation-method.h
         src/run/cultivation-method.cpp
         src/run/run-monica.h
