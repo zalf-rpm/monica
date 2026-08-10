@@ -349,6 +349,14 @@ DLL_API Tools::Errors merge(IrrigationData *i, json11::Json j);
 DLL_API json11::Json to_json(const IrrigationData *i, const WorkstepV2 *ws);
 DLL_API bool apply(IrrigationData *i, WorkstepV2 *ws, MonicaModel *model);
 
+// AutomaticIrrigationData
+DLL_API Tools::Errors merge(AutomaticIrrigationData *ai, json11::Json j);
+DLL_API json11::Json to_json(const AutomaticIrrigationData *ai);
+DLL_API bool apply(AutomaticIrrigationData *ai, MonicaModel *model);
+DLL_API bool condition(AutomaticIrrigationData *ai, MonicaModel *model);
+DLL_API bool reinit(AutomaticIrrigationData *ai, WorkstepV2 *ws, Tools::Date date,
+                    bool addYear = false, bool forceInitYear = false);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
@@ -384,5 +392,6 @@ DLL_API WorkstepV2 makeSaveMonicaStateWorkstep(const Tools::Date &at,
 DLL_API WorkstepV2 makeIrrigationWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeIrrigationWorkstep(const Tools::Date &at, double amount,
                                           IrrigationParameters params = IrrigationParameters());
+DLL_API WorkstepV2 makeAutomaticIrrigationWorkstep(json11::Json object);
 
 } // namespace monica

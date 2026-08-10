@@ -463,8 +463,30 @@ validation per step is **build-only**, not a regression run.
     (`monicamodel::applyIrrigation(MonicaModel*, double, double, ...)` takes plain values). Inlined the
     trivial `nitrateConcentration()` accessor at its one call site (`i->params.nitrateConcentration`),
     per the usual rule.
-15. [ ] `AutomaticIrrigationData` — leaf. Note `apply` always `return false` (never "finishes" on its
-    own — relies on `condition`/`reinit`'s `done` flag) — preserve exactly.
+15. [x] `AutomaticIrrigationData` — leaf. `apply` confirmed to always `return false` unless `done` was
+    *already* true at entry (never "finishes" via its own return value — relies on
+    `condition`/`reinit`'s `done` flag instead) — preserved exactly, and also confirmed `apply` never
+    calls `applyCommon`/touches `ws` at all (unlike every other subtype), so its new signature is
+    `apply(AutomaticIrrigationData*, MonicaModel*)`, no `WorkstepV2*`. Same story for `to_json`,
+    `condition`, and `merge` — none of the three touch any common field, so all are ws-less too
+    (`to_json` skips `"date"` again, joining `Transplant`/`SaveMonicaState`). Only `reinit` needs `ws`
+    (chains to `reinitCommon`/`setDate`) — so this subtype is the first with only *one* of its five
+    functions needing `ws`, everything else ws-less. **Another preserved-not-fixed discrepancy**:
+    `merge`'s `startStage`/`endStage` 1-based-to-0-based conversion uses
+    `std::max(0, startStage--)`/`std::min(7, endStage--)` — the post-decrement's side effect (setting
+    `startStage` to `startStage-1`) is immediately **clobbered** by the enclosing assignment
+    (`startStage = std::max(0, <the pre-decrement value>)`), so the `--` has **no net effect** — net
+    result is exactly `startStage = std::max(0, startStage)`, decrement-free. Verified by careful
+    sequencing analysis (C++17 guarantees the RHS, including the `--`'s side effect, fully evaluates
+    before the assignment). Almost certainly an original bug (probably meant `--startStage` or
+    `startStage - 1`), preserved literally with an explanatory comment, not fixed. Only one field-less
+    constructor exists for this subtype (default + JSON, no field-based overload), so only
+    `makeAutomaticIrrigationWorkstep(json11::Json)` was added (default aggregate-init already covers
+    the no-args case, no separate factory needed, matching precedent from earlier plans).
+
+**Phase 1 complete**: all 14 subtypes now have full `workstep::` free functions in `workstep.cpp`/
+`workstep.h`, still entirely self-contained and unreachable from any live code path. Next is phase 2
+(central dispatch, step 16).
 
 ### Phase 2 — central dispatch (single step, after all 14 payload structs above exist)
 
