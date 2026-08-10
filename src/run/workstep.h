@@ -286,10 +286,17 @@ DLL_API Tools::Errors merge(TransplantData *t, json11::Json j);
 DLL_API json11::Json to_json(const TransplantData *t, bool includeFullCropParameters = true);
 DLL_API bool apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model);
 
+// HarvestData
+DLL_API Tools::Errors merge(HarvestData *h, json11::Json j);
+DLL_API json11::Json to_json(const HarvestData *h, const WorkstepV2 *ws,
+                             bool includeFullCropParameters = true);
+DLL_API bool apply(HarvestData *h, WorkstepV2 *ws, MonicaModel *model);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeAutomaticSowingWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeTransplantWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeHarvestWorkstep(json11::Json object);
 
 } // namespace monica

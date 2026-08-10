@@ -303,9 +303,34 @@ validation per step is **build-only**, not a regression run.
    `Sowing` (item 2). So `cropToPlant` is always null today and both the `to_json` ternary and the new
    `setDate` guard are currently dead branches — preserved as-is (not my job to fix or simplify a
    pre-existing unused code path during a straight-translation pass).
-5. [ ] `HarvestData` — leaf. `sowing` field type is `SowingData*` (raw, non-owning — decision #4). Note
+5. [x] `HarvestData` — leaf. `sowing` field type is `SowingData*` (raw, non-owning — decision #4). Note
    `setSowing`/`sowing()` trivial accessors get inlined (decision #7) — just set/read the field directly
-   from `CultivationMethod::merge`'s new version (phase 3).
+   from `CultivationMethod::merge`'s new version (phase 3). `setDate` does **not** need an explicit
+   `HARVEST` case in the `workstep::setDate` dispatcher: `Harvest::setDate` was already a no-op beyond
+   the common `_date = date` assignment (the extra `_sowing->crop()->setHarvestDate(date)` line was
+   already commented out in the original), so it's behaviorally identical to `default:` — left the
+   dispatcher as-is (`SOWING`/`AUTOMATIC_SOWING`/`TRANSPLANT` + `default:`).
+   **Real blocker hit and resolved**: `Harvest::apply` calls `monicamodel::harvestCurrentCrop(model,
+   exported, spec, optCarbMgmtData, layerIdx)`, and that function's signature (`monica-model.h:140-144`)
+   still takes the *old* `Harvest::Spec`/`Harvest::OptCarbonManagementData` types — can't change that
+   signature yet without breaking the still-live old `Harvest::apply()` too (final cutover's job, per
+   decision #12). Since `HarvestData::Spec`/`OptCarbonManagementData` are structurally identical but a
+   *different, unrelated* C++ type with no implicit conversion, added two small anonymous-namespace
+   conversion helpers in `workstep.cpp` (`toOldHarvestSpec`, `toOldOptCarbMgmtData`) that build the old
+   types from the new ones, purely as a temporary bridge — deleted at step 18 once
+   `harvestCurrentCrop`'s signature itself switches to the new types (no more conversion needed then).
+   This works with **zero new includes**: the old `Harvest` class is already visible in `workstep.cpp`
+   transitively via `monica-model.h` -> `cultivation-method.h` (the same include that originally forced
+   the `Workstep`->`WorkstepV2` rename), and `Harvest`/`Harvest::Spec`/etc. don't collide with any new
+   name (only bare `Workstep`/`WSPtr` did — every subtype class name like `Harvest`/`Sowing`/etc. was
+   never reused, since the new payload structs are named `HarvestData`/`SowingData`/etc.). Also moved
+   the file-local `organIdFromName`/`organNameFromId` helpers (used by both `Harvest`'s and, from step 7,
+   `Cutting`'s merge/to_json) into `workstep.cpp`'s anonymous namespace — the *originals* in
+   `cultivation-method.cpp` have external linkage at global scope (not wrapped in an anonymous namespace
+   or `static`), so bare copies in `workstep.cpp` would have been a duplicate-symbol **link** error once
+   both files are compiled into `monica_lib`; the anonymous-namespace wrapping (already used for
+   `makeInitAbsDate`/`isSoilMoistureOk`/etc. since step 2-3) sidesteps this via internal linkage.
+   Build succeeded with no duplicate-symbol errors, confirming this.
 6. [ ] `AutomaticHarvestData` — needs `HarvestData` done (item 5). `apply`/`condition`/`reinit` call into
    `cropmodule::maturityReached`, `isSoilMoistureOk`/`isPrecipitationOk` (the file-local helpers from
    item 3 — check whether these are actually shared between `AutomaticSowing` and `AutomaticHarvest` in

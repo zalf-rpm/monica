@@ -47,6 +47,77 @@ std::pair<Date, bool> makeInitAbsDate(Date date, Date initDate, bool addYear,
 
   return make_pair(absDate, addedYear);
 }
+
+int organIdFromName(const string &organName, Tools::Errors &err) {
+  string os = toLower(organName);
+  if (os == "root")
+    return 0;
+  else if (os == "leaf")
+    return 1;
+  else if (os == "shoot")
+    return 2;
+  else if (os == "fruit")
+    return 3;
+  else if (os == "struct")
+    return 4;
+  else if (os == "sugar")
+    return 5;
+  err.append(Errors(Errors::ERR, "organ id could not be resolved"));
+  return -1; // default error
+}
+
+string organNameFromId(int organId) {
+  string res = "unknown";
+  switch (organId) {
+  case 0:
+    res = "Root";
+    break;
+  case 1:
+    res = "Leaf";
+    break;
+  case 2:
+    res = "Shoot";
+    break;
+  case 3:
+    res = "Fruit";
+    break;
+  case 4:
+    res = "Struct";
+    break;
+  case 5:
+    res = "Sugar";
+    break;
+  default:
+    "unknown";
+  }
+  return res;
+}
+
+// Harvest::Spec/OptCarbonManagementData are structurally identical to the new HarvestData::Spec/
+// OptCarbonManagementData, but monicamodel::harvestCurrentCrop's signature still takes the old types
+// (updating it to the new ones is a step-18/final-cutover change, since the old Harvest class it also
+// serves is still live until then) - convert on the way in rather than touching monica-model.h early.
+Harvest::Spec toOldHarvestSpec(const HarvestData::Spec &spec) {
+  Harvest::Spec old;
+  for (const auto &p : spec.organ2specVal) {
+    Harvest::Spec::Value v;
+    v.exportPercentage = p.second.exportPercentage;
+    v.incorporate = p.second.incorporate;
+    old.organ2specVal[p.first] = v;
+  }
+  return old;
+}
+
+Harvest::OptCarbonManagementData toOldOptCarbMgmtData(const HarvestData::OptCarbonManagementData &d) {
+  Harvest::OptCarbonManagementData old;
+  old.optCarbonConservation = d.optCarbonConservation;
+  old.cropImpactOnHumusBalance = d.cropImpactOnHumusBalance;
+  old.maxResidueRecoverFraction = d.maxResidueRecoverFraction;
+  old.cropUsage = d.cropUsage == HarvestData::greenManure ? Harvest::greenManure : Harvest::biomassProduction;
+  old.residueHeq = d.residueHeq;
+  old.organicFertilizerHeq = d.organicFertilizerHeq;
+  return old;
+}
 } // namespace
 
 Errors workstep::mergeCommon(WorkstepV2 *ws, json11::Json j) {
@@ -590,6 +661,86 @@ bool workstep::apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model) {
     cropModule->vc_Kcb_ini = t->initialKcb;
 
   model->currentEvents.insert("Transplant");
+
+  return true;
+}
+
+WorkstepV2 monica::makeHarvestWorkstep(json11::Json j) {
+  WorkstepV2 ws;
+  ws.data = HarvestData{};
+  Errors res = workstep::mergeCommon(&ws, j);
+  res.append(workstep::merge(&std::get<HarvestData>(ws.data), j));
+  ws.errors = res;
+  return ws;
+}
+
+Errors workstep::merge(HarvestData *h, json11::Json j) {
+  Errors res;
+
+  set_int_value(h->incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
+  h->incorporateIntoLayerNo = max(1, h->incorporateIntoLayerNo);
+  set_bool_value(h->exported, j, "exported");
+  set_bool_value(h->optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
+  set_double_value(h->optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
+  auto cu = j["crop-usage"].string_value();
+  if (cu == "green-manure")
+    h->optCarbMgmtData.cropUsage = HarvestData::greenManure;
+  else
+    h->optCarbMgmtData.cropUsage = HarvestData::biomassProduction;
+  set_double_value(h->optCarbMgmtData.residueHeq, j, "residue-heq");
+  set_double_value(h->optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq");
+  set_double_value(h->optCarbMgmtData.maxResidueRecoverFraction, j, "max-residue-recover-fraction");
+
+  for (const string &organName : {"leaf", "shoot", "fruit", "struct", "sugar"}) {
+    for (const auto &kv : j.object_items()) {
+      if (toLower(kv.first) == organName && kv.second.is_object()) {
+        HarvestData::Spec::Value sv;
+        set_double_value(sv.exportPercentage, kv.second, "export");
+        h->spec.organ2specVal[organIdFromName(kv.first, res)] = sv;
+      }
+    }
+  }
+
+  return res;
+}
+
+json11::Json workstep::to_json(const HarvestData *h, const WorkstepV2 *ws,
+                               bool includeFullCropParameters) {
+  auto jo = json11::Json::object{
+      {"type", "Harvest"},
+      {"date", ws->date.toIsoDateString()},
+      {"incorporateIntoLayerNo", h->incorporateIntoLayerNo},
+      {"exported", h->exported},
+      {"opt-carbon-conservation", h->optCarbMgmtData.optCarbonConservation},
+      {"crop-impact-on-humus-balance", h->optCarbMgmtData.cropImpactOnHumusBalance},
+      {"crop-usage", h->optCarbMgmtData.cropUsage == HarvestData::greenManure
+                         ? "green-manure"
+                         : "biomass-production"},
+      {"residue-heq", h->optCarbMgmtData.residueHeq},
+      {"organic-fertilizer-heq", h->optCarbMgmtData.organicFertilizerHeq},
+      {"max-residue-recover-fraction", h->optCarbMgmtData.maxResidueRecoverFraction}};
+
+  for (const auto &p : h->spec.organ2specVal) {
+    jo[organNameFromId(p.first)] =
+        J11Object{{"export", J11Array{p.second.exportPercentage, "%"}},
+                  {"incorporate", p.second.incorporate}};
+  }
+
+  return jo;
+}
+
+bool workstep::apply(HarvestData *h, WorkstepV2 *ws, MonicaModel *model) {
+  workstep::applyCommon(ws, model);
+
+  if (model->currentCropModule) {
+    monicamodel::harvestCurrentCrop(model, h->exported, toOldHarvestSpec(h->spec),
+                                    toOldOptCarbMgmtData(h->optCarbMgmtData),
+                                    h->incorporateIntoLayerNo - 1);
+    if (h->sowing)
+      debug() << "harvesting crop: " << cropparameters::cropName(&h->sowing->cropParams)
+              << " at: " << ws->date.toString() << endl;
+    model->currentEvents.insert("Harvest");
+  }
 
   return true;
 }
