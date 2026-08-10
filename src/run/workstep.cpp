@@ -123,6 +123,44 @@ toOldOptCarbMgmtData(const HarvestData::OptCarbonManagementData &d) {
   old.organicFertilizerHeq = d.organicFertilizerHeq;
   return old;
 }
+
+// Same bridging story as toOldHarvestSpec above, for cropmodule::applyCutting's still-old-typed
+// std::map<int, Cutting::Value>& parameter. Unlike Harvest::Spec, this parameter is a *mutable*
+// reference the function can fill in (e.g. when the caller passes an empty map, applyCutting
+// populates it from pc_OrganIdsForCutting) - the original CuttingData::organId2cuttingSpec member
+// would see that mutation directly (passed by reference), so the new code round-trips through
+// toOldCuttingSpec/fromOldCuttingSpec to preserve that, not just convert one-way and discard.
+std::map<int, Cutting::Value> toOldCuttingSpec(const std::map<int, CuttingData::Value> &spec) {
+  std::map<int, Cutting::Value> old;
+  for (const auto &p : spec) {
+    Cutting::Value v;
+    v.value = p.second.value;
+    v.unit = p.second.unit == CuttingData::percentage ? Cutting::percentage
+             : p.second.unit == CuttingData::biomass  ? Cutting::biomass
+                                                       : Cutting::LAI;
+    v.cut_or_left = p.second.cut_or_left == CuttingData::cut    ? Cutting::cut
+                    : p.second.cut_or_left == CuttingData::left ? Cutting::left
+                                                                 : Cutting::none;
+    old[p.first] = v;
+  }
+  return old;
+}
+
+std::map<int, CuttingData::Value> fromOldCuttingSpec(const std::map<int, Cutting::Value> &old) {
+  std::map<int, CuttingData::Value> spec;
+  for (const auto &p : old) {
+    CuttingData::Value v;
+    v.value = p.second.value;
+    v.unit = p.second.unit == Cutting::percentage ? CuttingData::percentage
+             : p.second.unit == Cutting::biomass  ? CuttingData::biomass
+                                                   : CuttingData::LAI;
+    v.cut_or_left = p.second.cut_or_left == Cutting::cut    ? CuttingData::cut
+                    : p.second.cut_or_left == Cutting::left ? CuttingData::left
+                                                             : CuttingData::none;
+    spec[p.first] = v;
+  }
+  return spec;
+}
 } // namespace
 
 Errors workstep::mergeCommon(WorkstepV2 *ws, json11::Json j) {
@@ -882,4 +920,112 @@ bool workstep::reinit(AutomaticHarvestData *ah, WorkstepV2 *ws,
       makeInitAbsDate(ah->latestDate, date, addYear, forceInitYear);
 
   return addedYear;
+}
+
+WorkstepV2 monica::makeCuttingWorkstep(json11::Json j) {
+  WorkstepV2 ws;
+  ws.data = CuttingData{};
+  Errors res = workstep::mergeCommon(&ws, j);
+  res.append(workstep::merge(&std::get<CuttingData>(ws.data), j));
+  ws.errors = res;
+  return ws;
+}
+
+Errors workstep::merge(CuttingData *c, json11::Json j) {
+  Errors errors;
+
+  bool export_ = j["export"].is_bool() ? j["export"].bool_value() : true;
+
+  for (auto p : j["organs"].object_items()) {
+    int oid = organIdFromName(p.first, errors);
+    if (oid == -1)
+      continue;
+    CuttingData::Value v;
+    auto arr = p.second.array_items();
+    if (arr.size() > 0)
+      v.value = double_valueD(arr[0].number_value(), 0);
+    if (arr.size() > 1) {
+      v.unit = CuttingData::percentage;
+      auto p2 = arr[1].string_value();
+      if (p2 == "kg ha-1")
+        v.unit = CuttingData::biomass;
+      else if (p2 == "m2 m-2" && oid == 1)
+        v.unit = CuttingData::LAI;
+      else if (p2 == "%")
+        v.value = v.value / 100.0;
+      else {
+        // treat no unit as percentage
+        v.value = v.value / 100.0;
+        errors.append(string("Unknown unit: ") + p2 + " in Cutting workstep: " + j.dump());
+      }
+    }
+    if (arr.size() > 2) {
+      auto col = arr[2].string_value();
+      if (col == "cut")
+        v.cut_or_left = CuttingData::cut;
+      else if (col == "left")
+        v.cut_or_left = CuttingData::left;
+      else
+        v.cut_or_left = CuttingData::none;
+    }
+
+    c->organId2cuttingSpec[oid] = v;
+    c->organId2exportFraction[oid] = export_ ? 1 : 0;
+  }
+
+  for (auto p : j["export"].object_items()) {
+    int oid = organIdFromName(p.first, errors);
+    if (oid == -1)
+      continue;
+    c->organId2exportFraction[oid] = int_valueD(p.second, 0) / 100.0;
+  }
+
+  set_double_value(c->cutMaxAssimilationRateFraction, j, "cut-max-assimilation-rate",
+                   [](double v) { return v / 100.0; });
+
+  return errors;
+}
+
+json11::Json workstep::to_json(const CuttingData *c, const WorkstepV2 *ws) {
+  J11Object organs;
+  for (auto p : c->organId2cuttingSpec)
+    organs[organNameFromId(p.first)] =
+        J11Array{p.second.value * (p.second.unit == CuttingData::percentage ? 100.0 : 1.0),
+                 p.second.unit == CuttingData::percentage
+                     ? "%"
+                     : (p.second.unit == CuttingData::biomass ? "kg ha-1" : "m2 m-2"),
+                 p.second.cut_or_left == CuttingData::cut ? "cut" : "left"};
+
+  // NOTE: computed but never actually included in the returned JSON below - matches the original
+  // Cutting::to_json exactly (organsBiomAfterCutting is built and then discarded there too).
+  J11Object organsBiomAfterCutting;
+  for (auto p : c->organId2biomAfterCutting)
+    organsBiomAfterCutting[organNameFromId(p.first)] = J11Array{int(p.second), "kg ha-1"};
+
+  J11Object exports;
+  for (auto p : c->organId2exportFraction)
+    exports[organNameFromId(p.first)] = J11Array{int(p.second * 100.0), "%"};
+
+  return json11::Json::object{
+      {"type", "Cutting"},
+      {"date", ws->date.toIsoDateString()},
+      {"organs", organs},
+      {"exports", exports},
+      {"cut-max-assimilation-rate", J11Array{int(c->cutMaxAssimilationRateFraction * 100.0), "%"}}};
+}
+
+bool workstep::apply(CuttingData *c, WorkstepV2 *ws, MonicaModel *model) {
+  workstep::applyCommon(ws, model);
+
+  assert(model->currentCropModule);
+  debug() << "Cutting crop: " << cropparameters::cropName(&model->currentCropModule->cropParams)
+          << " at: " << ws->date.toString() << endl;
+
+  auto oldSpec = toOldCuttingSpec(c->organId2cuttingSpec);
+  cropmodule::applyCutting(model->currentCropModule, oldSpec, c->organId2exportFraction,
+                           c->cutMaxAssimilationRateFraction);
+  c->organId2cuttingSpec = fromOldCuttingSpec(oldSpec);
+  model->currentEvents.insert("Cutting");
+
+  return true;
 }

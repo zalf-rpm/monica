@@ -352,11 +352,30 @@ validation per step is **build-only**, not a regression run.
      (literally kept the comma-operator syntax, with an explanatory comment) rather than "fixing" it to
      `=` — straight translation, not a cleanup pass; flagging clearly in case a future simplification
      pass wants to decide whether to fix this real bug or intentionally keep matching legacy output.
-7. [ ] `CuttingData` — leaf. Has its own nested `enum CL`/`enum Unit`/`struct Value` — keep nested inside
-   `CuttingData` (or hoist to `workstep.h` top-level if that reads better once you're looking at it;
-   don't over-think, either is fine, prefer keeping nested to match the original scoping/avoid
-   name-collisions with other `Value` structs already used elsewhere — e.g. `Harvest::Spec::Value` is a
-   *different* `Value`).
+7. [x] `CuttingData` — leaf. Kept `enum CL`/`enum Unit`/`struct Value` nested inside `CuttingData`
+   (matching the original's scoping, avoids any name clash with `HarvestData::Spec::Value`, a different
+   `Value`). Reused `organIdFromName`/`organNameFromId` from item 5's anonymous namespace.
+   **Same cross-file old/new-type bridging problem as item 5's `harvestCurrentCrop`, one level trickier**:
+   `cropmodule::applyCutting(CropModule*, std::map<int, Cutting::Value>&, std::map<int, double>&,
+   double)` (`crop-module.h:503`) still takes the old `Cutting::Value` type, **by mutable reference** —
+   and unlike `harvestCurrentCrop`'s `Harvest::Spec` (read-only), `applyCutting`'s implementation
+   actually *writes back* into the `organs` map (fills it from `pc_OrganIdsForCutting` when the caller
+   passes it empty — `crop-module.cpp:5539-5545`), and the original `Cutting::apply` passes its own
+   `_organId2cuttingSpec` member by reference, so that mutation persists on the object. A one-way
+   `toOldCuttingSpec` conversion (mirroring item 5's `toOldHarvestSpec`) would silently drop that
+   persistence. Added `toOldCuttingSpec`/`fromOldCuttingSpec` (both in the anonymous namespace) and
+   round-tripped through them in `workstep::apply(CuttingData*, ...)`: convert to the old type, call
+   `applyCutting`, convert the (possibly now-filled-in) result back into `c->organId2cuttingSpec`. The
+   `exports` parameter (`std::map<int, double>&`) needed **no** conversion at all — same concrete type
+   in old and new code, passed straight through by reference (mutations naturally propagate). Both
+   bridging helpers get deleted at step 18 alongside item 5's, once `applyCutting`'s signature itself
+   switches to `CuttingData::Value`.
+   **Another preserved-not-fixed discrepancy, found by close re-reading**: `Cutting::to_json()` builds a
+   full `organsBiomAfterCutting` J11Object from `_organId2biomAfterCutting` but **never includes it** in
+   the JSON object literal it returns — the computation is dead. Preserved exactly (computed, discarded),
+   with a comment flagging it, same treatment as item 6's comma-operator bug.
+   `set_double_value(...)`'s 4-arg transform-lambda overload (`json11-helper.h:267-272`) verified before
+   use for `cut-max-assimilation-rate`'s `/100.0` conversion.
 8. [ ] `MineralFertilizationData` — leaf.
 9. [ ] `NDemandFertilizationData` — leaf.
 10. [ ] `OrganicFertilizationData` — leaf.

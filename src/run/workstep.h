@@ -301,6 +301,11 @@ DLL_API bool condition(AutomaticHarvestData *ah, MonicaModel *model);
 DLL_API bool reinit(AutomaticHarvestData *ah, WorkstepV2 *ws, Tools::Date date, bool addYear = false,
                     bool forceInitYear = false);
 
+// CuttingData
+DLL_API Tools::Errors merge(CuttingData *c, json11::Json j);
+DLL_API json11::Json to_json(const CuttingData *c, const WorkstepV2 *ws);
+DLL_API bool apply(CuttingData *c, WorkstepV2 *ws, MonicaModel *model);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
@@ -308,5 +313,6 @@ DLL_API WorkstepV2 makeAutomaticSowingWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeTransplantWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeHarvestWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeAutomaticHarvestWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeCuttingWorkstep(json11::Json object);
 
 } // namespace monica
