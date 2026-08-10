@@ -37,6 +37,21 @@ This document only calls out what's *different* for the union case.
    `CultivationMethod` struct + free functions only (matching the file's actual name/concern),
    `#include`-ing `workstep.h`. This mirrors how `output.h` and `monica-parameters.h` are already split
    by concern.
+   **Correction discovered at step 2**: the new struct is actually named `WorkstepV2` (and `WSPtr` ->
+   `WSPtrV2`), not `Workstep`/`WSPtr`, for the *entire* phase 0-3 duration — not just `CultivationMethod`.
+   Reason: `workstep.cpp` needs `MonicaModel`'s full definition (to write `apply`/`condition`/etc bodies
+   that touch `model->soilOrganic`/`model->currentEvents`/etc.), so it must `#include
+   "../core/monica-model.h"` — which transitively `#include`s the *old* `cultivation-method.h` (needed
+   there for `Harvest::Spec` in `harvestCurrentCrop`'s signature and other old-Workstep-family types).
+   That makes both the old `class Workstep` and the new `struct Workstep` visible as `monica::Workstep`
+   in the *same translation unit* (`workstep.cpp`) — a hard redefinition error, not just a shadowing
+   concern like the `oid`/`output` namespace-collision from the previous conversion. Renamed the new
+   struct to `WorkstepV2` / `WSPtrV2` throughout `workstep.h`/`.cpp` (step 1's file was corrected
+   retroactively as part of step 2) to route around this; rename back to `Workstep`/`WSPtr` at final
+   cutover (step 18) once the old class is deleted and the collision no longer exists. All references
+   below in this document that say `Workstep`/`WSPtr` for the *new* type should be mentally read as
+   `WorkstepV2`/`WSPtrV2` until step 18 renames them back — not rewriting every occurrence in this
+   already-long document, but flagging it once, prominently, here.
 4. **`WSPtr` stays `std::shared_ptr<Workstep>`**, now pointing at the new plain struct instead of the
    old polymorphic base. This preserves pointer/reference stability for the one place that needs it:
    `HarvestData::sowing` (formerly `Harvest::_sowing`) is a raw, non-owning `SowingData*` pointing into
@@ -212,16 +227,65 @@ already-converted free-function subsystems (`cropparameters::`, `cropresiduepara
 new functions are called from anywhere yet (dead code, only reachable once phase 2 wires them in) — so
 validation per step is **build-only**, not a regression run.
 
-2. [ ] `SowingData` — leaf (no struct-inheritance dependency). Constructors: JSON only
-   (`Sowing(json11::Json)`). Note the *dead* commented-out reader-based constructor/deserialize/serialize
-   stubs at the top of the class — leave untouched/dropped like other dead code in this codebase (no
-   capnp reader for Sowing currently wired up).
-3. [ ] `AutomaticSowingData` — needs `SowingData` done (item 2). Also produces
-   `merge(AutomaticSowingData*, ...)` calling `merge(static_cast<SowingData*>(as), ...)` first (decision
-   #5). Has real logic in `apply`/`condition`/`reinit`/`registerDailyFunction` plus 3 free-standing
-   helper functions in the `.cpp` (`isSoilMoistureOk`, `isPrecipitationOk`, `isSoilTemperatureOk`,
-   currently anonymous/file-local free functions, not methods — port them unchanged, they don't touch
-   `this`).
+**Signature conventions settled at steps 2/3 (apply to every remaining phase-1 step)**:
+- All per-payload free functions live in `namespace workstep`, overloaded by first-parameter type (14
+  types' worth of `merge`/`to_json`/`apply`/etc. coexist there via ordinary C++ overload resolution — no
+  need for 14 more per-type namespaces; the struct + `make*Workstep` factories stay bare in `monica`,
+  matching the plan.md goal #6 convention).
+- `merge(XxxData*, json11::Json)` — **no** `Workstep*` parameter; subtype-specific field merging never
+  touches common Workstep fields (those are handled once, separately, by `workstep::mergeCommon`).
+- `to_json(const XxxData*, const WorkstepV2*, bool includeFullCropParameters = true)` — **does** need
+  `ws` (every subtype's `to_json` embeds `"date"` from the common field). The `includeFullCropParameters`
+  bool turned out to be a real (if mostly-inert) parameter, not dead: `Sowing`/`AutomaticSowing`/
+  `Harvest`/`AutomaticHarvest`'s own bodies never read it, but **`Transplant::to_json` does** — forwards
+  it into `Crop::to_json(bool)` (`crop.cpp:238`) which genuinely branches on it. Kept the parameter on
+  all 5 `to_json` overloads that originally had it, for exact fidelity, even where currently a no-op.
+- `apply`/`reinit(XxxData*, WorkstepV2*, ...)` — need `ws` whenever the body chains to
+  `workstep::applyCommon`/`workstep::reinitCommon`/`workstep::setDate` (i.e. whenever the original called
+  `Workstep::apply(model)`/`Workstep::reinit(...)`/`setDate(...)` as part of its own override) — check
+  the actual body per subtype rather than assuming.
+- `condition`/`registerDailyFunction` — only take `WorkstepV2*` if the body actually touches a common
+  field; `AutomaticSowingData`'s versions of both don't (verified by reading the body), so they're
+  `(AutomaticSowingData*, MonicaModel*)` / `(AutomaticSowingData*, std::function<...>)` with no `ws` at
+  all. Don't force a uniform signature shape across functions that don't need it.
+- Byte-fidelity gotcha: `AutomaticSowing::to_json`'s unit strings for `min-temp`/`temp-sum-above-base-
+  temp`/`base-temp`/`avg-soil-temp.Tavg` contain what *looks* like "°C" but is actually the 3-byte UTF-8
+  encoding of U+FFFD (the REPLACEMENT CHARACTER, `EF BF BD`) followed by `C` — verified via raw hex dump
+  of `cultivation-method.cpp`, not a real degree sign (probably a historical mojibake artifact from a
+  bad encoding round-trip). Preserved the exact same bytes in the port (`"\xEF\xBF\xBD" "C"` — note the
+  string-literal-concatenation split is required, `"\xEF\xBF\xBDC"` mis-parses as a single 3-hex-digit
+  `\xBDC` escape which is out of `char` range and fails to compile) rather than "fixing" it to a real °,
+  since this is meant to be a straight translation.
+- **Discovered at step 2, corrects step 1 retroactively**: the "Workstep-level common infrastructure"
+  (`workstep::mergeCommon`, `workstep::applyCommon`, `workstep::conditionCommon`, `workstep::reinitCommon`,
+  `workstep::setDate`) was originally planned for phase 2 (step 16), but `AutomaticSowingData::reinit`
+  genuinely needs `workstep::reinitCommon` (chains to old `Workstep::reinit`) and `workstep::setDate`
+  (chains to old `Sowing::setDate`, called by `AutomaticSowing::reinit`) *right now* — these don't
+  require every subtype to exist first (the struct types were all already fully defined in step 1, only
+  their merge/apply/etc. *functions* are added incrementally), so they were built early, in step 2, as
+  shared infrastructure. `setDate` in particular is now the *actual, permanent* central dispatcher (not
+  a "Common" stand-in) — unlike merge/apply/condition/reinit, it has no single shared body since 3 of 14
+  subtypes override it, so it was always going to be a switch; it's just populated incrementally
+  (currently: `SOWING`/`AUTOMATIC_SOWING` cases + `default:`) rather than written all at once in step 16.
+  `workstep::mergeCommon`/`applyCommon`/`conditionCommon`/`reinitCommon` remain as planned: true "common
+  body" helpers, reused by both phase-1 factories and step 16's dispatcher.
+
+2. [x] `SowingData` — leaf (no struct-inheritance dependency). Constructor: JSON only
+   (`makeSowingWorkstep(json11::Json)`, factory sets `ws.data = SowingData{}` then calls
+   `workstep::mergeCommon` + `workstep::merge(&sowingData, j)`). The *dead* commented-out reader-based
+   constructor/deserialize/serialize stubs at the top of the old `Sowing` class were dropped (not
+   ported), matching how other dead code has been handled throughout this codebase's conversions.
+   `workstep::merge`/`to_json`/`apply` all ported 1:1 from `Sowing::merge`/`to_json(bool)`/`apply`.
+3. [x] `AutomaticSowingData` — needed `SowingData` done (item 2). `workstep::merge(AutomaticSowingData*,
+   ...)` calls `workstep::merge(static_cast<SowingData*>(as), ...)` first (decision #5). Ported
+   `apply`/`condition`/`reinit`/`registerDailyFunction` plus the 3 file-local helper functions
+   (`isSoilMoistureOk`, `isPrecipitationOk`, `isSoilTemperatureOk` — already free functions in the
+   original, not methods, moved unchanged into an anonymous namespace in `workstep.cpp`, shared by both
+   `AutomaticSowing` and — per the original code — `AutomaticHarvest`, which will need them again at
+   step 6). `AutomaticSowing::reinit`'s two subtleties preserved exactly: it calls the base reinit with
+   only `(date, addYear)` — never forwarding `forceInitYear` to it even though `AutomaticSowing::reinit`
+   itself receives one — and it computes `absLatestDate` *before* `absEarliestDate`, feeding
+   `forceInitYear || !addedYear1` (not just `forceInitYear`) into the earliest-date computation.
 4. [ ] `TransplantData` — needs `SowingData` done (item 2). `apply` calls `Sowing::apply` first — becomes
    `apply(static_cast<SowingData*>(&t), ws, model)` then Transplant-specific logic
    (`cropmodule::forceTransplantState`).

@@ -124,7 +124,7 @@ struct DLL_API HarvestData {
     std::map<int, Value> organ2specVal;
   };
 
-  SowingData *sowing{nullptr}; // non-owning, points into another Workstep's variant payload
+  SowingData *sowing{nullptr}; // non-owning, points into another workstep's variant payload
   bool exported{true};
   Spec spec;
   OptCarbonManagementData optCarbMgmtData;
@@ -219,7 +219,12 @@ using WorkstepData = std::variant<
     MineralFertilizationData, NDemandFertilizationData, OrganicFertilizationData, TillageData,
     SetValueData, SaveMonicaStateData, IrrigationData, AutomaticIrrigationData>;
 
-struct DLL_API Workstep {
+// NOTE: temporarily named WorkstepV2 (not Workstep) because the old, still-live OOP `class Workstep`
+// in cultivation-method.h is transitively pulled in by monica-model.h (needed here for MonicaModel's
+// full definition) - both can't be named `monica::Workstep` in the same translation unit. Renamed to
+// `Workstep` (and WSPtrV2 -> WSPtr) at final cutover once the old class is deleted, per
+// plan-cultivation-method.md.
+struct DLL_API WorkstepV2 {
   Tools::Date date;
   Tools::Date absDate;
   int applyNoOfDaysAfterEvent{0};
@@ -233,10 +238,50 @@ struct DLL_API Workstep {
   WorkstepData data;
 };
 
-typedef std::shared_ptr<Workstep> WSPtr;
+typedef std::shared_ptr<WorkstepV2> WSPtrV2;
 
-inline WorkstepType type(const Workstep *ws) {
+namespace workstep {
+
+inline WorkstepType type(const WorkstepV2 *ws) {
   return static_cast<WorkstepType>(ws->data.index());
 }
+
+inline bool isDynamicWorkstep(const WorkstepV2 *ws) { return !ws->date.isValid(); }
+
+// Common (former base-class, non-overridden-by-default) Workstep behavior. Used both by the phase-1
+// per-subtype make*Workstep(...) factories below and (later, once built) by the central dispatchers'
+// default/fallback cases for the many subtypes that don't override a given piece of behavior.
+DLL_API Tools::Errors mergeCommon(WorkstepV2 *ws, json11::Json j);
+DLL_API bool applyCommon(WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool conditionCommon(WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool reinitCommon(WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+                          bool forceInitYear = false);
+// setDate is inherently per-subtype dispatching (3 of the 14 subtypes override it), so unlike
+// merge/apply/condition/reinit there's no single "common" body to factor out - this is already the
+// full (if still incrementally-populated - see the per-step notes in plan-cultivation-method.md)
+// dispatcher, not a "Common" helper.
+DLL_API void setDate(WorkstepV2 *ws, Tools::Date date);
+
+// SowingData
+DLL_API Tools::Errors merge(SowingData *s, json11::Json j);
+DLL_API json11::Json to_json(const SowingData *s, const WorkstepV2 *ws,
+                             bool includeFullCropParameters = true);
+DLL_API bool apply(SowingData *s, WorkstepV2 *ws, MonicaModel *model);
+
+// AutomaticSowingData
+DLL_API Tools::Errors merge(AutomaticSowingData *as, json11::Json j);
+DLL_API json11::Json to_json(const AutomaticSowingData *as, const WorkstepV2 *ws,
+                             bool includeFullCropParameters = true);
+DLL_API bool apply(AutomaticSowingData *as, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool condition(AutomaticSowingData *as, MonicaModel *model);
+DLL_API bool reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+                    bool forceInitYear = false);
+DLL_API std::function<double(MonicaModel *)>
+registerDailyFunction(AutomaticSowingData *as, std::function<std::vector<double> &()> getDailyValues);
+
+} // namespace workstep
+
+DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeAutomaticSowingWorkstep(json11::Json object);
 
 } // namespace monica
