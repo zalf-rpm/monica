@@ -490,23 +490,56 @@ validation per step is **build-only**, not a regression run.
 
 ### Phase 2 — central dispatch (single step, after all 14 payload structs above exist)
 
-16. [ ] Write the `workstep::...` dispatcher free functions in `workstep.cpp` (declared in `workstep.h`):
-    `merge`, `to_json` (+ the `bool` overload forwarding with `includeFullCropParameters = true`
-    default, matching today's `to_json() const override { return to_json(true); }` pattern for the 5
-    subtypes that have it — the other 9 just have a single `to_json`), `type`/`typeName`, `date`,
-    `absDate`, `earliestDate`, `absEarliestDate`, `latestDate`, `absLatestDate`, `setDate`,
-    `isDynamicWorkstep`, `isActive`, `reinit`, `apply`, `applyWithPossibleCondition`, `condition`,
-    `registerDailyFunction`. Each is a `switch (type(ws)) { case WorkstepType::SOWING: ...
-    std::get<SowingData>(ws->data) ...; break; ... }` over all 14 cases (or a `default:` falling through
-    to the base-`Workstep` behavior for the many functions where most subtypes *don't* override —
-    still write all 14 cases explicitly for `apply`/`merge`/`to_json`/`type` since every subtype
-    overrides those; for the ones only 2-4 subtypes override, e.g. `condition`/`reinit`/`isActive`, use a
-    `default: <base behavior>;` plus explicit cases only for the overriding subtypes — this is closer to
-    a "straight translation" of the actual override structure than writing all 14 cases identically).
-    Also write the top-level JSON factory `makeWorkstepV2(json11::Json object)` — temporary name to avoid
-    colliding with the still-live old `monica::makeWorkstep` — mirroring the old `if (type == "Sowing" ||
-    type == "Seed") ...` if-chain including every deprecated alias, calling the phase-1 `make*Workstep`
-    functions. **Build-only validation.**
+16. [x] Wrote the `workstep::...` dispatcher free functions in `workstep.cpp` (declared in `workstep.h`).
+    Diverged from the original sketch above in a few ways, each for a concrete reason found while
+    actually writing it:
+    - **Fixed a real gap discovered from phase 1**: none of the 14 `make*Workstep(json11::Json)`
+      factories ever applied the `Tools::defaultMerge` DEFAULT/"=" JSON-unwrap that the original
+      `Workstep::merge` did via `Json11Serializable::merge(j)` — every phase-1 factory called
+      `mergeCommon` (no wrap) then the per-payload `merge` directly, skipping it entirely. Fixed by
+      adding the `defaultMerge` wrap to `workstep::mergeCommon` itself (retroactively editing the
+      function built in step 2) rather than adding it to the new top-level `workstep::merge(WorkstepV2*,
+      json11::Json)` dispatcher as decision #11 originally sketched — `mergeCommon` is the actual
+      "called exactly once, first, for every subtype" entry point in this design (every one of the 14
+      factories already calls it first), exactly mirroring how the original's `Json11Serializable::merge`
+      call happened exactly once per external invocation regardless of how many levels of subtype
+      chaining sat above it in the original class hierarchy. This one-line fix in `mergeCommon`
+      automatically fixes all 14 already-built factories with no changes needed to them.
+    - **Dropped `typeName()` entirely** (the string-returning form of `type()`) — the 2026-08-10 research
+      pass confirmed zero external callers of `.type()` anywhere in the repo, and its only internal uses
+      (`CultivationMethod::merge`'s `wsType` string comparisons, `allDynamicWorkstepsFinished`) become
+      cleaner `WorkstepType` enum comparisons in phase 3 instead, so no string form is needed at all.
+      Every per-subtype `to_json` already hardcodes its own literal type string directly (e.g.
+      `{"type", "Sowing"}`), so the central `to_json` dispatcher doesn't need one either.
+    - **Also skipped building free functions for `date()`/`noOfDaysAfterEvent()`/`afterEvent()`/
+      `runAtStartOfDay()`/`errors()`** — all five are trivial, never-overridden field reads, so every
+      call site (mostly phase 3's job) just becomes `ws->date`/`ws->applyNoOfDaysAfterEvent`/
+      `ws->afterEvent`/`ws->runAtStartOfDay`/`ws->errors` directly, per the usual trivial-accessor rule.
+      `absDate()` **does** get a function (`inline Tools::Date absDate(const WorkstepV2*)` in the header)
+      since it has real logic (`date.isAbsoluteDate() ? date : absDate`) despite never being overridden.
+    - **`makeWorkstepV2(json11::Json)` returns `WSPtrV2` (`shared_ptr<WorkstepV2>`), not a bare
+      `WorkstepV2`** — a correction from the initial phrasing above. The original `monica::makeWorkstep`
+      returns `WSPtr` and returns `{}` (null) for an unrecognized `"type"` string, which
+      `CultivationMethod::merge` checks via `if (!ws) continue;`. A bare-`WorkstepV2`-returning factory
+      can't represent "no workstep" the same way, so `makeWorkstepV2` wraps each phase-1
+      `make<Type>Workstep(j)` result via `make_shared<WorkstepV2>(...)` and returns `{}` for unrecognized
+      types, matching the original's nullable-return shape exactly (and conveniently already producing
+      the `WSPtrV2` that `CultivationMethodV2::_allWorksteps` will hold in phase 3).
+    - **Deliberately did *not* refactor the 14 phase-1 factories to route through the new
+      `workstep::merge(WorkstepV2*, json11::Json)`** (which would collapse each factory's
+      `mergeCommon(...); merge(&payload, ...);` pair into one call) — the `mergeCommon` fix above already
+      makes them correct without touching them, and reworking 14 already-built/committed functions adds
+      diff/risk to a step that's supposed to be about wiring, not refactoring. Left as a candidate for a
+      later simplification pass, not done now.
+    Every other function (`merge`, `to_json`, `isActive`, `apply`, `applyWithPossibleCondition`,
+    `condition`, `reinit`, `registerDailyFunction`, `earliestDate`, `absEarliestDate`, `latestDate`,
+    `absLatestDate`) matches the original sketch: a `switch (type(ws))` with explicit cases for every
+    subtype that overrides that piece of behavior and a `default:` (or, for the 2 functions where every
+    subtype except `AUTOMATIC_SOWING` shares the base behavior, an `if`) falling through to the relevant
+    `*Common` helper or the trivial base expression. `makeWorkstepV2`'s if-chain mirrors the original
+    `monica::makeWorkstep` exactly, including every deprecated type-string alias.
+    Builds clean on the first attempt. **Build-only validation**, as planned — still nothing external
+    calls into any of this.
 
 ### Phase 3 — CultivationMethod (single step, after phase 2)
 

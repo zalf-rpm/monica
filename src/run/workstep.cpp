@@ -172,7 +172,12 @@ std::map<int, CuttingData::Value> fromOldCuttingSpec(const std::map<int, Cutting
 } // namespace
 
 Errors workstep::mergeCommon(WorkstepV2 *ws, json11::Json j) {
-  Errors res;
+  // The DEFAULT/"=" JSON-unwrap wrap belongs here, not repeated in every per-payload merge(XxxData*,
+  // ...): mergeCommon is the "called exactly once, first, for every subtype" entry point in this
+  // design, exactly mirroring how the original Workstep::merge (which every subtype's merge() always
+  // chained to, directly or transitively) was the sole place Json11Serializable::merge(j) got called
+  // per external invocation, however many levels of subtype-chaining happened above it.
+  Errors res = defaultMerge(j, [ws](json11::Json j2) { return mergeCommon(ws, j2); });
 
   set_iso_date_value(ws->date, j, "date");
   // at is a shortcut for after=event and days=1
@@ -1640,4 +1645,277 @@ bool workstep::reinit(AutomaticIrrigationData *ai, WorkstepV2 *ws, Tools::Date d
   ai->done = false;
 
   return startAddedYear;
+}
+
+// --------------------------------------------------------------------
+// Central dispatch (phase 2, step 16) - switches on type(ws) to reach the right per-payload function
+// above. See workstep.h for what's deliberately NOT ported here (trivial never-overridden accessors,
+// the string-returning type()).
+
+Tools::Date workstep::earliestDate(const WorkstepV2 *ws) {
+  if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
+    return std::get<AutomaticSowingData>(ws->data).earliestDate;
+  return ws->date;
+}
+
+Tools::Date workstep::absEarliestDate(const WorkstepV2 *ws) {
+  if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
+    return std::get<AutomaticSowingData>(ws->data).absEarliestDate;
+  return absDate(ws);
+}
+
+Tools::Date workstep::latestDate(const WorkstepV2 *ws) {
+  switch (type(ws)) {
+  case WorkstepType::AUTOMATIC_SOWING:
+    return std::get<AutomaticSowingData>(ws->data).latestDate;
+  case WorkstepType::AUTOMATIC_HARVEST:
+    return std::get<AutomaticHarvestData>(ws->data).latestDate;
+  default:
+    return ws->date;
+  }
+}
+
+Tools::Date workstep::absLatestDate(const WorkstepV2 *ws) {
+  switch (type(ws)) {
+  case WorkstepType::AUTOMATIC_SOWING:
+    return std::get<AutomaticSowingData>(ws->data).absLatestDate;
+  case WorkstepType::AUTOMATIC_HARVEST:
+    return std::get<AutomaticHarvestData>(ws->data).absLatestDate;
+  default:
+    return absDate(ws);
+  }
+}
+
+Errors workstep::merge(WorkstepV2 *ws, json11::Json j) {
+  // mergeCommon already applies the DEFAULT/"=" unwrap (see its definition above) - not repeated here.
+  Errors res = mergeCommon(ws, j);
+
+  switch (type(ws)) {
+  case WorkstepType::SOWING:
+    res.append(merge(&std::get<SowingData>(ws->data), j));
+    break;
+  case WorkstepType::AUTOMATIC_SOWING:
+    res.append(merge(&std::get<AutomaticSowingData>(ws->data), j));
+    break;
+  case WorkstepType::TRANSPLANT:
+    res.append(merge(&std::get<TransplantData>(ws->data), j));
+    break;
+  case WorkstepType::HARVEST:
+    res.append(merge(&std::get<HarvestData>(ws->data), j));
+    break;
+  case WorkstepType::AUTOMATIC_HARVEST:
+    res.append(merge(&std::get<AutomaticHarvestData>(ws->data), j));
+    break;
+  case WorkstepType::CUTTING:
+    res.append(merge(&std::get<CuttingData>(ws->data), j));
+    break;
+  case WorkstepType::MINERAL_FERTILIZATION:
+    res.append(merge(&std::get<MineralFertilizationData>(ws->data), j));
+    break;
+  case WorkstepType::N_DEMAND_FERTILIZATION:
+    res.append(merge(&std::get<NDemandFertilizationData>(ws->data), ws, j));
+    break;
+  case WorkstepType::ORGANIC_FERTILIZATION:
+    res.append(merge(&std::get<OrganicFertilizationData>(ws->data), j));
+    break;
+  case WorkstepType::TILLAGE:
+    res.append(merge(&std::get<TillageData>(ws->data), j));
+    break;
+  case WorkstepType::SET_VALUE:
+    res.append(merge(&std::get<SetValueData>(ws->data), j));
+    break;
+  case WorkstepType::SAVE_MONICA_STATE:
+    res.append(merge(&std::get<SaveMonicaStateData>(ws->data), ws, j));
+    break;
+  case WorkstepType::IRRIGATION:
+    res.append(merge(&std::get<IrrigationData>(ws->data), j));
+    break;
+  case WorkstepType::AUTOMATIC_IRRIGATION:
+    res.append(merge(&std::get<AutomaticIrrigationData>(ws->data), j));
+    break;
+  }
+
+  return res;
+}
+
+json11::Json workstep::to_json(const WorkstepV2 *ws, bool includeFullCropParameters) {
+  switch (type(ws)) {
+  case WorkstepType::SOWING:
+    return to_json(&std::get<SowingData>(ws->data), ws, includeFullCropParameters);
+  case WorkstepType::AUTOMATIC_SOWING:
+    return to_json(&std::get<AutomaticSowingData>(ws->data), ws, includeFullCropParameters);
+  case WorkstepType::TRANSPLANT:
+    return to_json(&std::get<TransplantData>(ws->data), includeFullCropParameters);
+  case WorkstepType::HARVEST:
+    return to_json(&std::get<HarvestData>(ws->data), ws, includeFullCropParameters);
+  case WorkstepType::AUTOMATIC_HARVEST:
+    return to_json(&std::get<AutomaticHarvestData>(ws->data), ws, includeFullCropParameters);
+  case WorkstepType::CUTTING:
+    return to_json(&std::get<CuttingData>(ws->data), ws);
+  case WorkstepType::MINERAL_FERTILIZATION:
+    return to_json(&std::get<MineralFertilizationData>(ws->data), ws);
+  case WorkstepType::N_DEMAND_FERTILIZATION:
+    return to_json(&std::get<NDemandFertilizationData>(ws->data));
+  case WorkstepType::ORGANIC_FERTILIZATION:
+    return to_json(&std::get<OrganicFertilizationData>(ws->data), ws);
+  case WorkstepType::TILLAGE:
+    return to_json(&std::get<TillageData>(ws->data), ws);
+  case WorkstepType::SET_VALUE:
+    return to_json(&std::get<SetValueData>(ws->data), ws);
+  case WorkstepType::SAVE_MONICA_STATE:
+    return to_json(&std::get<SaveMonicaStateData>(ws->data), ws);
+  case WorkstepType::IRRIGATION:
+    return to_json(&std::get<IrrigationData>(ws->data), ws);
+  case WorkstepType::AUTOMATIC_IRRIGATION:
+    return to_json(&std::get<AutomaticIrrigationData>(ws->data));
+  }
+  return json11::Json(); // unreachable, all WorkstepType values handled above
+}
+
+bool workstep::isActive(const WorkstepV2 *ws) {
+  switch (type(ws)) {
+  case WorkstepType::AUTOMATIC_SOWING:
+    return !std::get<AutomaticSowingData>(ws->data).cropSeeded;
+  case WorkstepType::AUTOMATIC_HARVEST:
+    return !std::get<AutomaticHarvestData>(ws->data).cropHarvested;
+  case WorkstepType::N_DEMAND_FERTILIZATION:
+    return !std::get<NDemandFertilizationData>(ws->data).appliedFertilizer;
+  default:
+    return ws->isActive;
+  }
+}
+
+bool workstep::apply(WorkstepV2 *ws, MonicaModel *model) {
+  switch (type(ws)) {
+  case WorkstepType::SOWING:
+    return apply(&std::get<SowingData>(ws->data), ws, model);
+  case WorkstepType::AUTOMATIC_SOWING:
+    return apply(&std::get<AutomaticSowingData>(ws->data), ws, model);
+  case WorkstepType::TRANSPLANT:
+    return apply(&std::get<TransplantData>(ws->data), ws, model);
+  case WorkstepType::HARVEST:
+    return apply(&std::get<HarvestData>(ws->data), ws, model);
+  case WorkstepType::AUTOMATIC_HARVEST:
+    return apply(&std::get<AutomaticHarvestData>(ws->data), ws, model);
+  case WorkstepType::CUTTING:
+    return apply(&std::get<CuttingData>(ws->data), ws, model);
+  case WorkstepType::MINERAL_FERTILIZATION:
+    return apply(&std::get<MineralFertilizationData>(ws->data), ws, model);
+  case WorkstepType::N_DEMAND_FERTILIZATION:
+    return apply(&std::get<NDemandFertilizationData>(ws->data), ws, model);
+  case WorkstepType::ORGANIC_FERTILIZATION:
+    return apply(&std::get<OrganicFertilizationData>(ws->data), ws, model);
+  case WorkstepType::TILLAGE:
+    return apply(&std::get<TillageData>(ws->data), ws, model);
+  case WorkstepType::SET_VALUE:
+    return apply(&std::get<SetValueData>(ws->data), ws, model);
+  case WorkstepType::SAVE_MONICA_STATE:
+    return apply(&std::get<SaveMonicaStateData>(ws->data), ws, model);
+  case WorkstepType::IRRIGATION:
+    return apply(&std::get<IrrigationData>(ws->data), ws, model);
+  case WorkstepType::AUTOMATIC_IRRIGATION:
+    return apply(&std::get<AutomaticIrrigationData>(ws->data), model);
+  }
+  return false; // unreachable, all WorkstepType values handled above
+}
+
+bool workstep::applyWithPossibleCondition(WorkstepV2 *ws, MonicaModel *model) {
+  bool workstepFinished = false;
+  if (isActive(ws)) {
+    if (isDynamicWorkstep(ws))
+      workstepFinished = condition(ws, model) ? apply(ws, model) : false;
+    else
+      workstepFinished = apply(ws, model);
+    ws->isActive = !workstepFinished;
+  }
+  return workstepFinished;
+}
+
+bool workstep::condition(WorkstepV2 *ws, MonicaModel *model) {
+  switch (type(ws)) {
+  case WorkstepType::AUTOMATIC_SOWING:
+    return condition(&std::get<AutomaticSowingData>(ws->data), model);
+  case WorkstepType::AUTOMATIC_HARVEST:
+    return condition(&std::get<AutomaticHarvestData>(ws->data), model);
+  case WorkstepType::N_DEMAND_FERTILIZATION:
+    return condition(&std::get<NDemandFertilizationData>(ws->data), ws, model);
+  case WorkstepType::AUTOMATIC_IRRIGATION:
+    return condition(&std::get<AutomaticIrrigationData>(ws->data), model);
+  default:
+    return conditionCommon(ws, model);
+  }
+}
+
+bool workstep::reinit(WorkstepV2 *ws, Tools::Date date, bool addYear, bool forceInitYear) {
+  switch (type(ws)) {
+  case WorkstepType::AUTOMATIC_SOWING:
+    return reinit(&std::get<AutomaticSowingData>(ws->data), ws, date, addYear, forceInitYear);
+  case WorkstepType::AUTOMATIC_HARVEST:
+    return reinit(&std::get<AutomaticHarvestData>(ws->data), ws, date, addYear, forceInitYear);
+  case WorkstepType::N_DEMAND_FERTILIZATION:
+    return reinit(&std::get<NDemandFertilizationData>(ws->data), ws, date, addYear, forceInitYear);
+  case WorkstepType::AUTOMATIC_IRRIGATION:
+    return reinit(&std::get<AutomaticIrrigationData>(ws->data), ws, date, addYear, forceInitYear);
+  default:
+    return reinitCommon(ws, date, addYear, forceInitYear);
+  }
+}
+
+std::function<double(MonicaModel *)>
+workstep::registerDailyFunction(WorkstepV2 *ws, std::function<std::vector<double> &()> getDailyValues) {
+  if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
+    return registerDailyFunction(&std::get<AutomaticSowingData>(ws->data), getDailyValues);
+  return std::function<double(MonicaModel *)>();
+}
+
+WSPtrV2 monica::makeWorkstepV2(json11::Json j) {
+  string type = string_value(j["type"]);
+
+  if (type == "Sowing" || type == "Seed") {
+    return make_shared<WorkstepV2>(makeSowingWorkstep(j));
+  }
+  if (type == "Transplant") {
+    return make_shared<WorkstepV2>(makeTransplantWorkstep(j));
+  }
+  if (type == "AutomaticSowing") {
+    return make_shared<WorkstepV2>(makeAutomaticSowingWorkstep(j));
+  }
+  if (type == "Harvest") {
+    return make_shared<WorkstepV2>(makeHarvestWorkstep(j));
+  }
+  if (type == "AutomaticHarvest") {
+    return make_shared<WorkstepV2>(makeAutomaticHarvestWorkstep(j));
+  }
+  if (type == "Cutting") {
+    return make_shared<WorkstepV2>(makeCuttingWorkstep(j));
+  }
+  if (type == "MineralFertilization" ||
+      type == "MineralFertiliserApplication") { // deprecated name
+    return make_shared<WorkstepV2>(makeMineralFertilizationWorkstep(j));
+  }
+  if (type == "NDemandFertilization") {
+    return make_shared<WorkstepV2>(makeNDemandFertilizationWorkstep(j));
+  }
+  if (type == "OrganicFertilization" ||
+      type == "OrganicFertiliserApplication") { // deprecated name
+    return make_shared<WorkstepV2>(makeOrganicFertilizationWorkstep(j));
+  }
+  if (type == "Tillage" || type == "TillageApplication") { // deprecated name
+    return make_shared<WorkstepV2>(makeTillageWorkstep(j));
+  }
+  if (type == "Irrigation" ||
+      type == "IrrigationApplication") { // deprecated name
+    return make_shared<WorkstepV2>(makeIrrigationWorkstep(j));
+  }
+  if (type == "AutomaticIrrigation") {
+    return make_shared<WorkstepV2>(makeAutomaticIrrigationWorkstep(j));
+  }
+  if (type == "SetValue") {
+    return make_shared<WorkstepV2>(makeSetValueWorkstep(j));
+  }
+  if (type == "SaveMonicaState") {
+    return make_shared<WorkstepV2>(makeSaveMonicaStateWorkstep(j));
+  }
+
+  return {};
 }

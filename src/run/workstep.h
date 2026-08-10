@@ -357,7 +357,40 @@ DLL_API bool condition(AutomaticIrrigationData *ai, MonicaModel *model);
 DLL_API bool reinit(AutomaticIrrigationData *ai, WorkstepV2 *ws, Tools::Date date,
                     bool addYear = false, bool forceInitYear = false);
 
+// Central dispatch - switches on type(ws) to reach the right per-payload function above. Built once
+// all 14 payload types/functions above exist (phase 2 of plan-cultivation-method.md). Trivial,
+// never-overridden pieces of the original Workstep interface (date(), noOfDaysAfterEvent(),
+// afterEvent(), runAtStartOfDay(), errors()) are NOT ported as functions here at all - they're just
+// plain field reads now (ws->date, ws->applyNoOfDaysAfterEvent, ws->afterEvent, ws->runAtStartOfDay,
+// ws->errors), per the usual "trivial one-line accessors get inlined and removed" rule. `type()`'s
+// string form (originally `virtual std::string type() const`) is also not ported as a general-purpose
+// function - it had zero external callers (confirmed by the 2026-08-10 research pass), and its only
+// internal use sites (CultivationMethod::merge's wsType comparisons, allDynamicWorkstepsFinished) are
+// cleaner as direct WorkstepType enum comparisons (phase 3's job) than as string comparisons.
+
+inline Tools::Date absDate(const WorkstepV2 *ws) {
+  return ws->date.isAbsoluteDate() ? ws->date : ws->absDate;
+}
+
+DLL_API Tools::Date earliestDate(const WorkstepV2 *ws);
+DLL_API Tools::Date absEarliestDate(const WorkstepV2 *ws);
+DLL_API Tools::Date latestDate(const WorkstepV2 *ws);
+DLL_API Tools::Date absLatestDate(const WorkstepV2 *ws);
+
+DLL_API Tools::Errors merge(WorkstepV2 *ws, json11::Json j);
+DLL_API json11::Json to_json(const WorkstepV2 *ws, bool includeFullCropParameters = true);
+DLL_API bool isActive(const WorkstepV2 *ws);
+DLL_API bool apply(WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool applyWithPossibleCondition(WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool condition(WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool reinit(WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+                    bool forceInitYear = false);
+DLL_API std::function<double(MonicaModel *)>
+registerDailyFunction(WorkstepV2 *ws, std::function<std::vector<double> &()> getDailyValues);
+
 } // namespace workstep
+
+DLL_API WSPtrV2 makeWorkstepV2(json11::Json object);
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeAutomaticSowingWorkstep(json11::Json object);
