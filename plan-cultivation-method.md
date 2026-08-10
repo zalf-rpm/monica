@@ -458,7 +458,11 @@ validation per step is **build-only**, not a regression run.
     (item 4) and this subtype's own constructor-set field pattern — **never emits `"date"`**, another
     subtype confirmed to skip it. The field-based factory (`makeSaveMonicaStateWorkstep(const Date&,
     string, bool, int)`) sets `ws.runAtStartOfDay = false` directly, mirroring the constructor.
-14. [ ] `IrrigationData` — leaf.
+14. [x] `IrrigationData` — leaf. Simple, no quirks: `merge`/`to_json` follow the standard
+    ws-for-to_json-only shape (items 8/10/etc.), `IrrigationParameters` already a converted plain struct
+    (`monicamodel::applyIrrigation(MonicaModel*, double, double, ...)` takes plain values). Inlined the
+    trivial `nitrateConcentration()` accessor at its one call site (`i->params.nitrateConcentration`),
+    per the usual rule.
 15. [ ] `AutomaticIrrigationData` — leaf. Note `apply` always `return false` (never "finishes" on its
     own — relies on `condition`/`reinit`'s `done` flag) — preserve exactly.
 

@@ -344,6 +344,11 @@ DLL_API Tools::Errors merge(SaveMonicaStateData *sms, WorkstepV2 *ws, json11::Js
 DLL_API json11::Json to_json(const SaveMonicaStateData *sms, const WorkstepV2 *ws);
 DLL_API bool apply(SaveMonicaStateData *sms, WorkstepV2 *ws, MonicaModel *model);
 
+// IrrigationData
+DLL_API Tools::Errors merge(IrrigationData *i, json11::Json j);
+DLL_API json11::Json to_json(const IrrigationData *i, const WorkstepV2 *ws);
+DLL_API bool apply(IrrigationData *i, WorkstepV2 *ws, MonicaModel *model);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
@@ -376,5 +381,8 @@ DLL_API WorkstepV2 makeSaveMonicaStateWorkstep(const Tools::Date &at,
                                                std::string pathToSerializedStateFile,
                                                bool serializeAsJson = false,
                                                int noOfPreviousDaysSerializedClimateData = -1);
+DLL_API WorkstepV2 makeIrrigationWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeIrrigationWorkstep(const Tools::Date &at, double amount,
+                                          IrrigationParameters params = IrrigationParameters());
 
 } // namespace monica
