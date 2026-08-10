@@ -420,7 +420,9 @@ validation per step is **build-only**, not a regression run.
    `OrganicMatterParameters` — no cross-file bridging needed, same story as item 8. Same
    `toString()`-is-really-`to_json().dump()` leak-forward in `apply` as items 8/9. Ported both
    constructors (JSON and field-based).
-11. [ ] `TillageData` — leaf.
+11. [x] `TillageData` — leaf, the simplest one so far (single `depth` field, no cross-file bridging,
+   no quirks). `monicamodel::applyTillage(MonicaModel*, double)` takes a plain `double`, nothing to
+   convert. Ported both constructors.
 12. [ ] `SetValueData` — leaf. Uses `parseOutputIds`/`buildOutputTable`/`oid::` (already free-function
     style, from `build-output.h`/`output.h`) — no leak-forward concerns, just call them.
 13. [ ] `SaveMonicaStateData` — leaf. `apply` does real capnp serialization I/O (`kj::newDiskFilesystem`,

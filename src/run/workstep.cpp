@@ -1245,3 +1245,42 @@ bool workstep::apply(OrganicFertilizationData *of, WorkstepV2 *ws, MonicaModel *
 
   return true;
 }
+
+WorkstepV2 monica::makeTillageWorkstep(const Tools::Date &at, double depth) {
+  WorkstepV2 ws;
+  ws.date = at;
+  TillageData t;
+  t.depth = depth;
+  ws.data = t;
+  return ws;
+}
+
+WorkstepV2 monica::makeTillageWorkstep(json11::Json j) {
+  WorkstepV2 ws;
+  ws.data = TillageData{};
+  Errors res = workstep::mergeCommon(&ws, j);
+  res.append(workstep::merge(&std::get<TillageData>(ws.data), j));
+  ws.errors = res;
+  return ws;
+}
+
+Errors workstep::merge(TillageData *t, json11::Json j) {
+  Errors res;
+  set_double_value(t->depth, j, "depth");
+  return res;
+}
+
+json11::Json workstep::to_json(const TillageData *t, const WorkstepV2 *ws) {
+  return json11::Json::object{
+      {"type", "Tillage"}, {"date", ws->date.toIsoDateString()}, {"depth", t->depth}};
+}
+
+bool workstep::apply(TillageData *t, WorkstepV2 *ws, MonicaModel *model) {
+  workstep::applyCommon(ws, model);
+
+  debug() << workstep::to_json(t, ws).dump() << endl;
+  monicamodel::applyTillage(model, t->depth);
+  model->currentEvents.insert("Tillage");
+
+  return true;
+}
