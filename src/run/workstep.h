@@ -279,9 +279,17 @@ DLL_API bool reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date, b
 DLL_API std::function<double(MonicaModel *)>
 registerDailyFunction(AutomaticSowingData *as, std::function<std::vector<double> &()> getDailyValues);
 
+// TransplantData
+DLL_API Tools::Errors merge(TransplantData *t, json11::Json j);
+// note: unlike Sowing/AutomaticSowing, the original Transplant::to_json never embedded "date" - no
+// WorkstepV2* parameter needed here, preserved as-is (straight translation).
+DLL_API json11::Json to_json(const TransplantData *t, bool includeFullCropParameters = true);
+DLL_API bool apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeAutomaticSowingWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeTransplantWorkstep(json11::Json object);
 
 } // namespace monica

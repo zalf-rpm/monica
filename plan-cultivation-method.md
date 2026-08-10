@@ -266,7 +266,8 @@ validation per step is **build-only**, not a regression run.
   shared infrastructure. `setDate` in particular is now the *actual, permanent* central dispatcher (not
   a "Common" stand-in) — unlike merge/apply/condition/reinit, it has no single shared body since 3 of 14
   subtypes override it, so it was always going to be a switch; it's just populated incrementally
-  (currently: `SOWING`/`AUTOMATIC_SOWING` cases + `default:`) rather than written all at once in step 16.
+  (currently: `SOWING`/`AUTOMATIC_SOWING`/`TRANSPLANT` cases + `default:`, after step 4) rather than
+  written all at once in step 16.
   `workstep::mergeCommon`/`applyCommon`/`conditionCommon`/`reinitCommon` remain as planned: true "common
   body" helpers, reused by both phase-1 factories and step 16's dispatcher.
 
@@ -286,9 +287,22 @@ validation per step is **build-only**, not a regression run.
    only `(date, addYear)` — never forwarding `forceInitYear` to it even though `AutomaticSowing::reinit`
    itself receives one — and it computes `absLatestDate` *before* `absEarliestDate`, feeding
    `forceInitYear || !addedYear1` (not just `forceInitYear`) into the earliest-date computation.
-4. [ ] `TransplantData` — needs `SowingData` done (item 2). `apply` calls `Sowing::apply` first — becomes
-   `apply(static_cast<SowingData*>(&t), ws, model)` then Transplant-specific logic
-   (`cropmodule::forceTransplantState`).
+4. [x] `TransplantData` — needed `SowingData` done (item 2). `apply` calls
+   `workstep::apply(static_cast<SowingData*>(t), ws, model)` first, then Transplant-specific logic
+   (`cropmodule::forceTransplantState`, verified signature `(CropModule*, double temperatureSum, double
+   lai, size_t stage, double rootMass, double leafMass, double shootMass, int postTransplantDelay)`
+   against `crop-module.h:500` before writing the call). Added the `TRANSPLANT` case to the
+   `workstep::setDate` dispatcher (`cropToPlant->setSeedDate(date)`, guarded by `if (cropToPlant)` — see
+   below). Two things worth flagging for later steps: (1) `Transplant::to_json` never embeds `"date"`
+   (unlike `Sowing`/`AutomaticSowing`) — a genuine discrepancy in the original, preserved exactly, so
+   `workstep::to_json(const TransplantData*, bool)` takes **no** `WorkstepV2*` parameter, unlike every
+   other subtype's `to_json` so far. (2) `TransplantData::cropToPlant` (`kj::Own<Crop>`) is **never
+   actually assigned anywhere** in the live code — grepped `_cropToPlant` across the whole file and the
+   only non-comment hit is the `to_json` null-check itself; the `kj::heap<Crop>()`/`deserialize` init
+   that would populate it is inside the same dead, commented-out reader-based block already noted for
+   `Sowing` (item 2). So `cropToPlant` is always null today and both the `to_json` ternary and the new
+   `setDate` guard are currently dead branches — preserved as-is (not my job to fix or simplify a
+   pre-existing unused code path during a straight-translation pass).
 5. [ ] `HarvestData` — leaf. `sowing` field type is `SowingData*` (raw, non-owning — decision #4). Note
    `setSowing`/`sowing()` trivial accessors get inlined (decision #7) — just set/read the field directly
    from `CultivationMethod::merge`'s new version (phase 3).

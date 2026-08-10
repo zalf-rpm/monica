@@ -115,6 +115,12 @@ void workstep::setDate(WorkstepV2 *ws, Tools::Date date) {
   case WorkstepType::AUTOMATIC_SOWING:
     std::get<AutomaticSowingData>(ws->data).sowingDate = date;
     break;
+  case WorkstepType::TRANSPLANT: {
+    auto &t = std::get<TransplantData>(ws->data);
+    if (t.cropToPlant)
+      t.cropToPlant->setSeedDate(date);
+    break;
+  }
   default:
     break;
   }
@@ -522,4 +528,68 @@ bool workstep::reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date,
       makeInitAbsDate(as->earliestDate, date, addYear, forceInitYear || !addedYear1);
 
   return addedYear1; // || addedYear2;
+}
+
+WorkstepV2 monica::makeTransplantWorkstep(json11::Json j) {
+  WorkstepV2 ws;
+  ws.data = TransplantData{};
+  Errors res = workstep::mergeCommon(&ws, j);
+  res.append(workstep::merge(&std::get<TransplantData>(ws.data), j));
+  ws.errors = res;
+  return ws;
+}
+
+Errors workstep::merge(TransplantData *t, json11::Json j) {
+  // Mirrors Sowing's own merge (this is the only place that touches the common Workstep fields, via
+  // mergeCommon, done once by the make*Workstep factory - not repeated here).
+  Errors res = workstep::merge(static_cast<SowingData *>(t), j);
+
+  if (!j["initialStage"].is_null()) {
+    t->initialStage = static_cast<size_t>(j["initialStage"].int_value());
+  }
+  set_double_value(t->initialGDD, j, "initialTemperatureSum");
+  set_double_value(t->initRootMass, j, "initialRootBiomass");
+  set_double_value(t->initLeafMass, j, "initialLeafBiomass");
+  set_double_value(t->initShootMass, j, "initialShootBiomass");
+  set_double_value(t->initLAI, j, "initialLAI");
+  set_int_value(t->postTransplantDelay, j, "postTransplantDelay");
+  // FAO-56 Dual Kc: optional initial Kcb at transplanting (default 0.15 = bare soil)
+  set_double_value(t->initialKcb, j, "initialKcb");
+
+  return res; // propagates ALL sub-errors (crop parse errors included)
+}
+
+json11::Json workstep::to_json(const TransplantData *t, bool includeFullCropParameters) {
+  return json11::Json::object{
+      {"type", "Transplant"},
+      {"crop", t->cropToPlant ? t->cropToPlant->to_json(includeFullCropParameters)
+                              : json11::Json::object{}},
+      {"initialStage", static_cast<int>(t->initialStage)},
+      {"initialTemperatureSum", t->initialGDD},
+      {"initialRootBiomass", t->initRootMass},
+      {"initialLeafBiomass", t->initLeafMass},
+      {"initialShootBiomass", t->initShootMass},
+      {"initialLAI", t->initLAI},
+      {"postTransplantDelay", t->postTransplantDelay},
+      {"initialKcb", t->initialKcb},
+  };
+}
+
+bool workstep::apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model) {
+  workstep::apply(static_cast<SowingData *>(t), ws, model);
+
+  CropModule *cropModule = model->currentCropModule;
+  if (!cropModule)
+    return false;
+
+  cropmodule::forceTransplantState(cropModule, t->initialGDD, t->initLAI, t->initialStage,
+                                   t->initRootMass, t->initLeafMass, t->initShootMass,
+                                   t->postTransplantDelay);
+
+  if (model->simPs.dualKcMethod)
+    cropModule->vc_Kcb_ini = t->initialKcb;
+
+  model->currentEvents.insert("Transplant");
+
+  return true;
 }
