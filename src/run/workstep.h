@@ -336,6 +336,14 @@ DLL_API Tools::Errors merge(SetValueData *s, json11::Json j);
 DLL_API json11::Json to_json(const SetValueData *s, const WorkstepV2 *ws);
 DLL_API bool apply(SetValueData *s, WorkstepV2 *ws, MonicaModel *model);
 
+// SaveMonicaStateData
+// note: merge needs ws - the original re-parses "runAtStartOfDay" with an explicit false default,
+// overriding what mergeCommon already set on the common field (SaveMonicaState defaults to running
+// at the *end* of the day, unlike every other subtype).
+DLL_API Tools::Errors merge(SaveMonicaStateData *sms, WorkstepV2 *ws, json11::Json j);
+DLL_API json11::Json to_json(const SaveMonicaStateData *sms, const WorkstepV2 *ws);
+DLL_API bool apply(SaveMonicaStateData *sms, WorkstepV2 *ws, MonicaModel *model);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
@@ -363,5 +371,10 @@ DLL_API WorkstepV2 makeTillageWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeTillageWorkstep(const Tools::Date &at, double depth);
 DLL_API WorkstepV2 makeSetValueWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value);
+DLL_API WorkstepV2 makeSaveMonicaStateWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeSaveMonicaStateWorkstep(const Tools::Date &at,
+                                               std::string pathToSerializedStateFile,
+                                               bool serializeAsJson = false,
+                                               int noOfPreviousDaysSerializedClimateData = -1);
 
 } // namespace monica

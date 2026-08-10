@@ -442,9 +442,22 @@ validation per step is **build-only**, not a regression run.
     if the lambda is created *after* the `Workstep`/`WorkstepV2` has already reached its final stable
     address (e.g. `AutomaticSowingData::registerDailyFunction`, item 3, is fine — it's called externally,
     well after the object is already owned via `WSPtr`, not from inside `merge`/the factory).
-13. [ ] `SaveMonicaStateData` — leaf. `apply` does real capnp serialization I/O (`kj::newDiskFilesystem`,
-    `capnp::MallocMessageBuilder`, `monicamodel::serialize`) — port unchanged, no OOP concerns here, just
-    move the body into a free function taking `MonicaModel*`.
+13. [x] `SaveMonicaStateData` — leaf. `apply`'s real capnp serialization I/O (`kj::newDiskFilesystem`,
+    `capnp::MallocMessageBuilder`, `monicamodel::serialize`) ported unchanged; added the needed capnp/kj
+    includes (`<capnp/compat/json.h>`, `<capnp/message.h>`, `<capnp/serialize.h>`, `<kj/filesystem.h>`,
+    `<kj/string.h>`, `"model/monica/monica_state.capnp.h"`) to `workstep.cpp`, matching
+    `cultivation-method.cpp`'s own include list. `isAbsolutePath` confirmed already available
+    transitively (`tools/helper.h`, via `json11/json11-helper.h`, already in `workstep.h`).
+    **`merge` needed `WorkstepV2*` for an unusual reason** (different shape from items 9/12's): the
+    original constructor sets `_runAtStartOfDay = false` (this subtype defaults to running at the *end*
+    of the day, unlike every other subtype's `true` default), and `merge` **re-parses**
+    `"runAtStartOfDay"` with an explicit `false` default (`set_bool_valueD(...,false)`), overriding
+    whatever the generic `mergeCommon` already left on the common field. So
+    `workstep::merge(SaveMonicaStateData*, WorkstepV2*, json11::Json)` writes `ws->runAtStartOfDay`
+    directly. `to_json` also needs `ws` (emits the common `runAtStartOfDay`) but — like `Transplant`
+    (item 4) and this subtype's own constructor-set field pattern — **never emits `"date"`**, another
+    subtype confirmed to skip it. The field-based factory (`makeSaveMonicaStateWorkstep(const Date&,
+    string, bool, int)`) sets `ws.runAtStartOfDay = false` directly, mirroring the constructor.
 14. [ ] `IrrigationData` — leaf.
 15. [ ] `AutomaticIrrigationData` — leaf. Note `apply` always `return false` (never "finishes" on its
     own — relies on `condition`/`reinit`'s `done` flag) — preserve exactly.
