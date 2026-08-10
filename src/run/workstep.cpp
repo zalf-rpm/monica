@@ -23,6 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 
 #include "../core/monica-model.h"
+#include "../io/build-output.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
 
@@ -1281,6 +1282,93 @@ bool workstep::apply(TillageData *t, WorkstepV2 *ws, MonicaModel *model) {
   debug() << workstep::to_json(t, ws).dump() << endl;
   monicamodel::applyTillage(model, t->depth);
   model->currentEvents.insert("Tillage");
+
+  return true;
+}
+
+WorkstepV2 monica::makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value) {
+  WorkstepV2 ws;
+  ws.date = at;
+  SetValueData s;
+  s.oid = oid;
+  s.value = value;
+  ws.data = s;
+  return ws;
+}
+
+WorkstepV2 monica::makeSetValueWorkstep(json11::Json j) {
+  WorkstepV2 ws;
+  ws.data = SetValueData{};
+  Errors res = workstep::mergeCommon(&ws, j);
+  res.append(workstep::merge(&std::get<SetValueData>(ws.data), j));
+  ws.errors = res;
+  return ws;
+}
+
+Errors workstep::merge(SetValueData *s, json11::Json j) {
+  Errors res;
+
+  auto oids = parseOutputIds({j["var"]});
+  if (!oids.empty())
+    s->oid = oids[0];
+  else
+    return res;
+
+  s->value = j["value"];
+  if (s->value.is_array()) {
+    auto jva = s->value.array_items();
+    if (!jva.empty()) {
+      // is an expression
+      if (jva[0] == "=" && jva.size() == 4) {
+        auto f = buildPrimitiveCalcExpression(J11Array(jva.begin() + 1, jva.end()));
+        s->getValue = [f](const MonicaModel *mm) { return f(*mm); };
+      } else {
+        auto oids2 = parseOutputIds({s->value});
+        if (!oids2.empty()) {
+          auto oid = oids2[0];
+          const auto &ofs = buildOutputTable().ofs;
+          auto ofi = ofs.find(oid.id);
+          if (ofi != ofs.end()) {
+            auto f = ofi->second;
+            s->getValue = [f, oid](const MonicaModel *mm) { return f(*mm, oid); };
+          }
+        }
+      }
+    }
+  } else
+    // NOTE: captures a copy of the value, not `s` itself - unlike the original class-based code
+    // (where `this` was always a stable heap address via shared_ptr, so `[=]` capturing `this` and
+    // reading `this->_value` live was safe), `s` here points into a WorkstepV2 that is still a local/
+    // about-to-be-returned-by-value object at this point in makeSetValueWorkstep, not yet at its final
+    // stable (e.g. shared_ptr-owned) address - capturing the pointer would risk it dangling after a
+    // move. A value copy is behaviorally identical here since `value` is never reassigned again after
+    // this merge() call for the object's lifetime.
+    s->getValue = [value = s->value](const MonicaModel *) { return value; };
+
+  return res;
+}
+
+json11::Json workstep::to_json(const SetValueData *s, const WorkstepV2 *ws) {
+  return json11::Json::object{{"type", "SetValue"},
+                              {"date", ws->date.toIsoDateString()},
+                              {"var", s->oid.jsonInput},
+                              {"value", s->value}};
+}
+
+bool workstep::apply(SetValueData *s, WorkstepV2 *ws, MonicaModel *model) {
+  workstep::applyCommon(ws, model);
+
+  if (!s->getValue)
+    return true;
+
+  const auto &setfs = buildOutputTable().setfs;
+  auto ci = setfs.find(s->oid.id);
+  if (ci != setfs.end()) {
+    auto v = s->getValue(model);
+    ci->second(*model, s->oid, v);
+  }
+
+  model->currentEvents.insert("SetValue");
 
   return true;
 }

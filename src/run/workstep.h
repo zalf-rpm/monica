@@ -331,6 +331,11 @@ DLL_API Tools::Errors merge(TillageData *t, json11::Json j);
 DLL_API json11::Json to_json(const TillageData *t, const WorkstepV2 *ws);
 DLL_API bool apply(TillageData *t, WorkstepV2 *ws, MonicaModel *model);
 
+// SetValueData
+DLL_API Tools::Errors merge(SetValueData *s, json11::Json j);
+DLL_API json11::Json to_json(const SetValueData *s, const WorkstepV2 *ws);
+DLL_API bool apply(SetValueData *s, WorkstepV2 *ws, MonicaModel *model);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
@@ -356,5 +361,7 @@ DLL_API WorkstepV2 makeOrganicFertilizationWorkstep(const Tools::Date &at,
                                                     double amount, bool incorp = true);
 DLL_API WorkstepV2 makeTillageWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeTillageWorkstep(const Tools::Date &at, double depth);
+DLL_API WorkstepV2 makeSetValueWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value);
 
 } // namespace monica

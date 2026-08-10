@@ -423,8 +423,25 @@ validation per step is **build-only**, not a regression run.
 11. [x] `TillageData` — leaf, the simplest one so far (single `depth` field, no cross-file bridging,
    no quirks). `monicamodel::applyTillage(MonicaModel*, double)` takes a plain `double`, nothing to
    convert. Ported both constructors.
-12. [ ] `SetValueData` — leaf. Uses `parseOutputIds`/`buildOutputTable`/`oid::` (already free-function
-    style, from `build-output.h`/`output.h`) — no leak-forward concerns, just call them.
+12. [x] `SetValueData` — leaf. Uses `parseOutputIds`/`buildOutputTable`/`buildPrimitiveCalcExpression`
+    (already free-function style, from `build-output.h`) — added `#include "../io/build-output.h"` to
+    `workstep.cpp`. No leak-forward concerns, just called them directly with the same signatures.
+    **Real bug caught and fixed before it could bite**: the original `SetValue::merge`'s third branch
+    (`_getValue = [=](const MonicaModel *) { return _value; };`) captures `this` implicitly via `[=]` and
+    reads `this->_value` live at call time — safe in the original because `SetValue` objects are always
+    heap-allocated via `shared_ptr` (`this` never moves after construction). Transcribing this literally
+    as `s->getValue = [s](const MonicaModel *) { return s->value; };` would **not** be safe: `s` here is
+    `&std::get<SetValueData>(ws.data)` where `ws` is still a local `WorkstepV2` inside
+    `makeSetValueWorkstep`, about to be `return`ed by value — NRVO isn't guaranteed, so a move could
+    relocate the variant's storage to a new address between `merge()` returning and the caller receiving
+    the value, leaving `s` dangling. Fixed by capturing a **value copy** of `s->value` instead of the
+    pointer (`[value = s->value](const MonicaModel *) { return value; }`) — behaviorally identical since
+    `value` is never reassigned again after this `merge()` call for the object's lifetime, but with no
+    dangling-pointer risk. **Worth remembering for any future step (or the phase-2/3 central-dispatch and
+    `CultivationMethod` work) that stores a lambda capturing a pointer into a payload struct**: only safe
+    if the lambda is created *after* the `Workstep`/`WorkstepV2` has already reached its final stable
+    address (e.g. `AutomaticSowingData::registerDailyFunction`, item 3, is fine — it's called externally,
+    well after the object is already owned via `WSPtr`, not from inside `merge`/the factory).
 13. [ ] `SaveMonicaStateData` — leaf. `apply` does real capnp serialization I/O (`kj::newDiskFilesystem`,
     `capnp::MallocMessageBuilder`, `monicamodel::serialize`) — port unchanged, no OOP concerns here, just
     move the body into a free function taking `MonicaModel*`.
