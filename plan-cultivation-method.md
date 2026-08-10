@@ -394,7 +394,25 @@ validation per step is **build-only**, not a regression run.
    need for the not-yet-built top-level `workstep::to_json(const WorkstepV2*)` dispatcher). Added
    `<iostream>` to `workstep.cpp`'s includes (needed for `cerr`, used by the partition-merge error log;
    was previously arriving only transitively).
-9. [ ] `NDemandFertilizationData` — leaf.
+9. [x] `NDemandFertilizationData` — leaf. First subtype where `merge` genuinely needs `WorkstepV2*`
+   (breaking the "merge never needs ws" pattern established by items 2-8): `_initialDate = date();` in
+   the original copies the just-parsed common date into the subtype's own field, so
+   `workstep::merge(NDemandFertilizationData*, WorkstepV2*, json11::Json)` reads `ws->date` (set by
+   `mergeCommon`, called first in the factory, before this). `to_json`, conversely, needs **no** `ws` at
+   all — it only ever emits its own `initialDate`/`stage` fields (never the common date), so
+   `workstep::to_json(const NDemandFertilizationData*)` stayed ws-less like `Transplant`'s. Two more
+   preserved-not-fixed discrepancies:
+   - `reinit` computes `addedYear` from `workstep::reinitCommon(...)` but the function **unconditionally
+     `return`s `false`**, discarding it — confirmed by re-reading twice. Preserved with a comment, same
+     treatment as the recurring "computed but discarded" pattern from items 6/7.
+   - `reinit` also calls `setDate(_initialDate)` **before** `Workstep::reinit(...)`, and forwards
+     `forceInitYear` through to the common reinit — both opposite of `AutomaticSowing`/`AutomaticHarvest`'s
+     `reinit` (item 3/6), which called the common reinit *first* and never forwarded `forceInitYear`.
+     Confirms these per-subtype quirks really do vary and must be read individually each time, not
+     assumed from a sibling's pattern.
+   Ported all 3 original constructors (JSON, `(int stage, double depth, MineralFertilizerParameters,
+   double Ndemand)`, `(Tools::Date date, double depth, MineralFertilizerParameters, double Ndemand)`) as
+   overloaded `makeNDemandFertilizationWorkstep(...)` factories.
 10. [ ] `OrganicFertilizationData` — leaf.
 11. [ ] `TillageData` — leaf.
 12. [ ] `SetValueData` — leaf. Uses `parseOutputIds`/`buildOutputTable`/`oid::` (already free-function

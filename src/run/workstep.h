@@ -311,6 +311,16 @@ DLL_API Tools::Errors merge(MineralFertilizationData *mf, json11::Json j);
 DLL_API json11::Json to_json(const MineralFertilizationData *mf, const WorkstepV2 *ws);
 DLL_API bool apply(MineralFertilizationData *mf, WorkstepV2 *ws, MonicaModel *model);
 
+// NDemandFertilizationData
+// note: merge needs ws (it copies the just-parsed common date into initialDate); to_json doesn't
+// (it only ever emits its own initialDate/stage fields, never the common ws->date).
+DLL_API Tools::Errors merge(NDemandFertilizationData *nd, WorkstepV2 *ws, json11::Json j);
+DLL_API json11::Json to_json(const NDemandFertilizationData *nd);
+DLL_API bool apply(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool condition(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool reinit(NDemandFertilizationData *nd, WorkstepV2 *ws, Tools::Date date,
+                    bool addYear = false, bool forceInitYear = false);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
@@ -323,5 +333,12 @@ DLL_API WorkstepV2 makeMineralFertilizationWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeMineralFertilizationWorkstep(const Tools::Date &at,
                                                     MineralFertilizerParameters partition,
                                                     double amount);
+DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(int stage, double depth,
+                                                    MineralFertilizerParameters partition,
+                                                    double Ndemand);
+DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
+                                                    MineralFertilizerParameters partition,
+                                                    double Ndemand);
 
 } // namespace monica
