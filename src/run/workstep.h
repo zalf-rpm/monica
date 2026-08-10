@@ -132,7 +132,7 @@ struct DLL_API HarvestData {
 };
 
 struct DLL_API AutomaticHarvestData : HarvestData {
-  std::string harvestTime; //!< Harvest time parameter
+  std::string harvestTime{"maturity"}; //!< Harvest time parameter
   Tools::Date latestDate;
   Tools::Date absLatestDate;
   double minPercentASW{0};
@@ -292,11 +292,21 @@ DLL_API json11::Json to_json(const HarvestData *h, const WorkstepV2 *ws,
                              bool includeFullCropParameters = true);
 DLL_API bool apply(HarvestData *h, WorkstepV2 *ws, MonicaModel *model);
 
+// AutomaticHarvestData
+DLL_API Tools::Errors merge(AutomaticHarvestData *ah, json11::Json j);
+DLL_API json11::Json to_json(const AutomaticHarvestData *ah, const WorkstepV2 *ws,
+                             bool includeFullCropParameters = true);
+DLL_API bool apply(AutomaticHarvestData *ah, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool condition(AutomaticHarvestData *ah, MonicaModel *model);
+DLL_API bool reinit(AutomaticHarvestData *ah, WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+                    bool forceInitYear = false);
+
 } // namespace workstep
 
 DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeAutomaticSowingWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeTransplantWorkstep(json11::Json object);
 DLL_API WorkstepV2 makeHarvestWorkstep(json11::Json object);
+DLL_API WorkstepV2 makeAutomaticHarvestWorkstep(json11::Json object);
 
 } // namespace monica

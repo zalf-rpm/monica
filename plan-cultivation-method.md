@@ -331,11 +331,27 @@ validation per step is **build-only**, not a regression run.
    both files are compiled into `monica_lib`; the anonymous-namespace wrapping (already used for
    `makeInitAbsDate`/`isSoilMoistureOk`/etc. since step 2-3) sidesteps this via internal linkage.
    Build succeeded with no duplicate-symbol errors, confirming this.
-6. [ ] `AutomaticHarvestData` — needs `HarvestData` done (item 5). `apply`/`condition`/`reinit` call into
-   `cropmodule::maturityReached`, `isSoilMoistureOk`/`isPrecipitationOk` (the file-local helpers from
-   item 3 — check whether these are actually shared between `AutomaticSowing` and `AutomaticHarvest` in
-   the current code, i.e. not member functions, just free functions already — confirmed yes, both call
-   the same file-local `isSoilMoistureOk`/`isPrecipitationOk` free functions already).
+6. [x] `AutomaticHarvestData` — needed `HarvestData` done (item 5). `apply`/`condition`/`reinit` call
+   into `cropmodule::maturityReached`, `isSoilMoistureOk`/`isPrecipitationOk` (the file-local helpers
+   moved into `workstep.cpp`'s anonymous namespace back at item 3 — confirmed shared verbatim between
+   `AutomaticSowing` and `AutomaticHarvest` in the original, no changes needed to reuse them here).
+   Two things worth flagging:
+   - **Constructor-only default, not a header default member initializer**: unlike every other field
+     seen so far, `_harvestTime` had no inline default in the original header — both
+     `AutomaticHarvest()`/`AutomaticHarvest(json11::Json)` constructors set it to `"maturity"`
+     explicitly in their member-initializer-lists instead. Folded this into a default member
+     initializer on `AutomaticHarvestData::harvestTime` in `workstep.h` (`{"maturity"}`) rather than
+     setting it imperatively in `makeAutomaticHarvestWorkstep` — same simplification precedent as
+     `plan-monica-parameters.md` item 19 (`SoilMoistureModuleParameters`'s default-lambda constructor).
+   - **Preserved a real bug, not a typo of mine**: `AutomaticHarvest::to_json`'s `o["max-%-asw"]`/
+     `o["max-3d-precip-sum"]`/`o["max-curr-day-precip"]` lines use the **comma operator**, not `=`, in
+     the original (`o["max-%-asw"], J11Array{...};` rather than `o["max-%-asw"] = J11Array{...};`) —
+     each line computes and discards a `J11Array`, leaving that JSON key holding a default/null
+     `json11::Json` (inserted only as a side effect of `operator[]`) instead of the intended array.
+     Verified by re-reading the raw source a second time before transcribing. Preserved byte-for-byte
+     (literally kept the comma-operator syntax, with an explanatory comment) rather than "fixing" it to
+     `=` — straight translation, not a cleanup pass; flagging clearly in case a future simplification
+     pass wants to decide whether to fix this real bug or intentionally keep matching legacy output.
 7. [ ] `CuttingData` — leaf. Has its own nested `enum CL`/`enum Unit`/`struct Value` — keep nested inside
    `CuttingData` (or hoist to `workstep.h` top-level if that reads better once you're looking at it;
    don't over-think, either is fine, prefer keeping nested to match the original scoping/avoid
