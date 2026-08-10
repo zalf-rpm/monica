@@ -543,34 +543,50 @@ validation per step is **build-only**, not a regression run.
 
 ### Phase 3 — CultivationMethod (single step, after phase 2)
 
-17. [ ] Write `struct CultivationMethodV2` (temporary name) + `cultivationmethod::...` free functions in
-    `workstep.cpp`/`workstep.h` (or split into the new files at this point already if that reads
-    better — your call when you get here), porting `CultivationMethod::merge`/`to_json`/`apply`/
-    `absApply`/`apply(model, bool)`/`nextDate`/`nextAbsDate`/`workstepsAt`/`absWorkstepsAt`/
-    `areOnlyAbsoluteWorksteps`/`staticWorksteps`/`allDynamicWorksteps`/`allDynamicWorkstepsFinished`/
-    `startDate`/`absStartDate`/`absLatestSowingDate`/`endDate`/`absEndDate`/`toString`/`reinit` 1:1. Key
-    translation points already identified by reading the current `.cpp`:
-    - `CultivationMethod::merge`'s `dynamic_cast<Sowing*>`/`dynamic_cast<Harvest*>` become:
-      `if (type(ws) == WorkstepType::SOWING) sowingWS = &std::get<SowingData>(ws->data); else if
-      (type(ws) == WorkstepType::AUTOMATIC_SOWING) sowingWS = &std::get<AutomaticSowingData>(ws->data);`
-      (upcasts to `SowingData*` automatically via decision #5's inheritance) and similarly
-      `HARVEST`/`AUTOMATIC_HARVEST` setting `.sowing = sowingWS` on the `HarvestData`/
-      `AutomaticHarvestData` payload.
-    - `CultivationMethod::absLatestSowingDate`'s `dynamic_cast<Sowing*>` becomes the same
-      `type(ws) == SOWING || type(ws) == AUTOMATIC_SOWING` check.
-    - `addApplication<T>` template (only ever specialized, identically, for `Sowing`/`AutomaticSowing` —
-      confirmed both specializations do exactly `_allWorksteps.push_back(std::make_shared<T>(a));`, no
-      other behavior) collapses into **one** function, since `Workstep` is now uniformly one type:
-      `void addWorkstep(CultivationMethodV2* cm, Workstep ws)` (by value, moved in — see decision #8 on
-      why copy-ability likely isn't needed). Confirm at this step whether any external caller needs
-      `addApplication<T>`'s *generic* form for some other `T` too (unlikely — grep first).
-    - `p->toString()` inside `CultivationMethod::toString()` relied on the inherited
-      `Json11Serializable::toString()` default (`to_json().dump()`) since `Workstep` never overrode
-      `toString()` — becomes `workstep::to_json(ws.get()).dump()` (same leak-forward pattern as
-      `plan-monica-parameters.md` items 9/13).
-    - `ws->type() == "NDemandFertilization"` string comparison in `allDynamicWorkstepsFinished` becomes
-      `type(ws.get()) == WorkstepType::N_DEMAND_FERTILIZATION` (cleaner, enum comparison).
-    **Build-only validation** (still nothing external wired in).
+17. [x] Wrote `struct CultivationMethodV2` + `cultivationmethod::...` free functions in `workstep.cpp`/
+    `workstep.h` (kept in the same file pair rather than splitting — the split-at-cutover plan from
+    decision #3 still stands, just didn't bother doing it early here since nothing external references
+    either type yet). Ported `merge`/`to_json`/`apply`/`absApply`/`apply(model, bool)`/`nextDate`/
+    `nextAbsDate`/`workstepsAt`/`absWorkstepsAt`/`areOnlyAbsoluteWorksteps`/`staticWorksteps`/
+    `allDynamicWorksteps`/`allDynamicWorkstepsFinished`/`startDate`/`absStartDate`/
+    `absLatestSowingDate`/`endDate`/`absEndDate`/`toString`/`reinit`, all 1:1, confirmed against a fresh
+    full re-read of the original `.cpp` (not just recalled from the earlier planning pass). All the
+    predicted translation points panned out exactly as sketched:
+    - `CultivationMethod::merge`'s two `dynamic_cast`s became a `switch (workstep::type(ws.get()))` with
+      `SOWING`/`AUTOMATIC_SOWING` cases setting `sowingWS` and `HARVEST`/`AUTOMATIC_HARVEST` cases
+      setting `.sowing = sowingWS` on the (upcast-compatible, per decision #5) payload.
+    - `absLatestSowingDate`'s `dynamic_cast<Sowing*>` (which in the original succeeds for *both*
+      `Sowing` and `AutomaticSowing` objects, since the latter is-a the former, then calls the possibly-
+      virtual `absLatestDate()`) becomes `type(ws) == SOWING || type(ws) == AUTOMATIC_SOWING` guarding a
+      call to `workstep::absLatestDate(ws.get())` — which *already* does the right thing for both cases
+      via its own switch (returns the `AutomaticSowingData`-specific field for `AUTOMATIC_SOWING`, falls
+      through to `absDate(ws)` for plain `SOWING`), exactly replicating what virtual dispatch gave the
+      original for free.
+    - `p->toString()` inside `toString()` confirmed to be the `Json11Serializable` default
+      (`to_json().dump()`, `Workstep` never overrode it) → `workstep::to_json(p.get()).dump()`.
+    - `ws->type() == "NDemandFertilization"` in `allDynamicWorkstepsFinished` →
+      `workstep::type(wsp.get()) == WorkstepType::N_DEMAND_FERTILIZATION`.
+    **`addApplication<T>` was dropped entirely, not ported at all** — the 2026-08-10 research pass (and a
+    follow-up grep confirmed at step 12's writeup) found the generic template itself, and both of its
+    explicit specializations, have **zero callers anywhere in the whole repo**, not even inside
+    `cultivation-method.cpp`. Porting a provably-dead template would just be carrying forward unused
+    code; skipped, matching how other confirmed-dead constructs were handled earlier in this plan (e.g.
+    the commented-out reader-based constructors in items 2/4).
+    **Every trivial getter/setter became direct field access, no functions written**: `name()`,
+    `unfinishedDynamicWorksteps()`, `getWorksteps()`, `clearWorksteps()`, `setCustomId(int)`,
+    `customId()`, `canBeSkipped()`, `isCoverCrop()`, `repeat()` all just returned/set a single field with
+    no other logic — future call sites (step 18) use `cm->name`, `cm->unfinishedDynamicWorksteps`,
+    `cm->allWorksteps`, `cm->allWorksteps.clear()`, `cm->customId = ...`, `cm->customId`,
+    `cm->canBeSkipped`, `cm->isCoverCrop`, `cm->repeat` directly.
+    **`CultivationMethodV2` has no `errors` field** (unlike `WorkstepV2`) — confirmed the original
+    `CultivationMethod(json11::Json)` constructor calls `merge(j)` and discards the returned `Errors`
+    entirely (no `_errors.append(...)` the way every `Workstep` subtype's JSON constructor did) — so
+    `makeCultivationMethodV2` does the same, calling `cultivationmethod::merge(&cm, j)` and dropping the
+    result, matching the original exactly. Also confirmed (matching item 9's `MeasuredGroundwaterTableInformation`
+    precedent) that `CultivationMethod::merge` never called `Json11Serializable::merge(j)` in the
+    original either, so `cultivationmethod::merge` has no `defaultMerge` wrap.
+    Builds clean on the first attempt. **Build-only validation** (still nothing external wired in) — this
+    completes phase 3; only phase 4 (final cutover, step 18) remains.
 
 ### Phase 4 — final cutover (single, largest, highest-risk step — the only one with a real regression check)
 

@@ -427,4 +427,47 @@ DLL_API WorkstepV2 makeIrrigationWorkstep(const Tools::Date &at, double amount,
                                           IrrigationParameters params = IrrigationParameters());
 DLL_API WorkstepV2 makeAutomaticIrrigationWorkstep(json11::Json object);
 
+// NOTE: temporarily named CultivationMethodV2, same reason as WorkstepV2 (the old, still-live
+// `class CultivationMethod` in cultivation-method.h is transitively visible here via monica-model.h).
+// Renamed to `CultivationMethod` at final cutover.
+struct DLL_API CultivationMethodV2 {
+  std::vector<WSPtrV2> allWorksteps;
+  std::vector<WSPtrV2> allAbsWorksteps;
+  std::vector<WSPtrV2> unfinishedDynamicWorksteps;
+  int customId{0};
+  std::string name;
+  bool canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
+  bool isCoverCrop{false}; //! is like canBeSkipped (and implies it), but different rule for when
+                           //! cultivation methods will be skipped
+  bool repeat{true}; //! if false the cultivation method won't participate in wrapping at the end of
+                     //! the crop rotation
+};
+
+namespace cultivationmethod {
+
+DLL_API Tools::Errors merge(CultivationMethodV2 *cm, json11::Json j);
+DLL_API json11::Json to_json(const CultivationMethodV2 *cm);
+DLL_API void apply(const CultivationMethodV2 *cm, const Tools::Date &date, MonicaModel *model);
+DLL_API void absApply(const CultivationMethodV2 *cm, const Tools::Date &date, MonicaModel *model);
+DLL_API void apply(CultivationMethodV2 *cm, MonicaModel *model, bool runOnlyAtStartOfDayWorksteps);
+DLL_API Tools::Date nextDate(const CultivationMethodV2 *cm, const Tools::Date &date);
+DLL_API Tools::Date nextAbsDate(const CultivationMethodV2 *cm, const Tools::Date &date);
+DLL_API std::vector<WSPtrV2> workstepsAt(const CultivationMethodV2 *cm, const Tools::Date &date);
+DLL_API std::vector<WSPtrV2> absWorkstepsAt(const CultivationMethodV2 *cm, const Tools::Date &date);
+DLL_API bool areOnlyAbsoluteWorksteps(const CultivationMethodV2 *cm);
+DLL_API std::vector<WSPtrV2> staticWorksteps(const CultivationMethodV2 *cm);
+DLL_API std::vector<WSPtrV2> allDynamicWorksteps(const CultivationMethodV2 *cm);
+DLL_API bool allDynamicWorkstepsFinished(const CultivationMethodV2 *cm);
+DLL_API Tools::Date startDate(const CultivationMethodV2 *cm);
+DLL_API Tools::Date absStartDate(const CultivationMethodV2 *cm, bool includeDynamicWorksteps = true);
+DLL_API Tools::Date absLatestSowingDate(const CultivationMethodV2 *cm);
+DLL_API Tools::Date endDate(const CultivationMethodV2 *cm);
+DLL_API Tools::Date absEndDate(const CultivationMethodV2 *cm);
+DLL_API std::string toString(const CultivationMethodV2 *cm);
+DLL_API bool reinit(CultivationMethodV2 *cm, Tools::Date date, bool forceInitYear = false);
+
+} // namespace cultivationmethod
+
+DLL_API CultivationMethodV2 makeCultivationMethodV2(json11::Json object);
+
 } // namespace monica
