@@ -93,10 +93,12 @@ string organNameFromId(int organId) {
   return res;
 }
 
-// Harvest::Spec/OptCarbonManagementData are structurally identical to the new HarvestData::Spec/
-// OptCarbonManagementData, but monicamodel::harvestCurrentCrop's signature still takes the old types
-// (updating it to the new ones is a step-18/final-cutover change, since the old Harvest class it also
-// serves is still live until then) - convert on the way in rather than touching monica-model.h early.
+// Harvest::Spec/OptCarbonManagementData are structurally identical to the new
+// HarvestData::Spec/ OptCarbonManagementData, but
+// monicamodel::harvestCurrentCrop's signature still takes the old types
+// (updating it to the new ones is a step-18/final-cutover change, since the old
+// Harvest class it also serves is still live until then) - convert on the way
+// in rather than touching monica-model.h early.
 Harvest::Spec toOldHarvestSpec(const HarvestData::Spec &spec) {
   Harvest::Spec old;
   for (const auto &p : spec.organ2specVal) {
@@ -108,12 +110,15 @@ Harvest::Spec toOldHarvestSpec(const HarvestData::Spec &spec) {
   return old;
 }
 
-Harvest::OptCarbonManagementData toOldOptCarbMgmtData(const HarvestData::OptCarbonManagementData &d) {
+Harvest::OptCarbonManagementData
+toOldOptCarbMgmtData(const HarvestData::OptCarbonManagementData &d) {
   Harvest::OptCarbonManagementData old;
   old.optCarbonConservation = d.optCarbonConservation;
   old.cropImpactOnHumusBalance = d.cropImpactOnHumusBalance;
   old.maxResidueRecoverFraction = d.maxResidueRecoverFraction;
-  old.cropUsage = d.cropUsage == HarvestData::greenManure ? Harvest::greenManure : Harvest::biomassProduction;
+  old.cropUsage = d.cropUsage == HarvestData::greenManure
+                      ? Harvest::greenManure
+                      : Harvest::biomassProduction;
   old.residueHeq = d.residueHeq;
   old.organicFertilizerHeq = d.organicFertilizerHeq;
   return old;
@@ -161,11 +166,13 @@ bool workstep::conditionCommon(WorkstepV2 *ws, MonicaModel *model) {
   return ws->daysAfterEventCount == ws->applyNoOfDaysAfterEvent;
 }
 
-bool workstep::reinitCommon(WorkstepV2 *ws, Tools::Date date, bool addYear, bool forceInitYear) {
+bool workstep::reinitCommon(WorkstepV2 *ws, Tools::Date date, bool addYear,
+                            bool forceInitYear) {
   bool addedYear = false;
 
   if (ws->date.isValid()) {
-    tie(ws->absDate, addedYear) = makeInitAbsDate(ws->date, date, addYear, forceInitYear);
+    tie(ws->absDate, addedYear) =
+        makeInitAbsDate(ws->date, date, addYear, forceInitYear);
   } else {
     ws->absDate = Date();
   }
@@ -237,7 +244,8 @@ Errors workstep::merge(SowingData *s, json11::Json j) {
       s->isValid = true;
     } else {
       res.errors.push_back(
-          string("Couldn't find 'cropParams' key in JSON object:\n") + jc.dump());
+          string("Couldn't find 'cropParams' key in JSON object:\n") +
+          jc.dump());
       s->isValid = false;
     }
 
@@ -259,7 +267,8 @@ Errors workstep::merge(SowingData *s, json11::Json j) {
       cropresidueparameters::merge(&s->residueParams, jc["residueParams"]);
     } else {
       res.errors.push_back(
-          string("Couldn't find 'residueParams' key in JSON object:\n") + jc.dump());
+          string("Couldn't find 'residueParams' key in JSON object:\n") +
+          jc.dump());
       s->isValid = false;
     }
   }
@@ -273,12 +282,14 @@ Errors workstep::merge(SowingData *s, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const SowingData *s, const WorkstepV2 *ws, bool includeFullCropParameters) {
+json11::Json workstep::to_json(const SowingData *s, const WorkstepV2 *ws,
+                               bool includeFullCropParameters) {
   auto co = json11::Json::object{
       {"cropParams", cropparameters::to_json(&s->cropParams)},
       {"residueParams", cropresidueparameters::to_json(&s->residueParams)}};
   if (s->separatePerennialCropParams)
-    co["perennialCropParams"] = cropparameters::to_json(s->separatePerennialCropParams.get());
+    co["perennialCropParams"] =
+        cropparameters::to_json(s->separatePerennialCropParams.get());
 
   auto o = json11::Json::object{
       {"type", "Sowing"},
@@ -308,15 +319,16 @@ bool workstep::apply(SowingData *s, WorkstepV2 *ws, MonicaModel *model) {
   if (s->isValid) {
     model->cultivationMethodCount++;
 
-    auto addOMFunc = [model](const std::map<size_t, double> &layer2amount, double nconc) {
+    auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
+                             double nconc) {
       soilorganic::addOrganicMatter(model->soilOrganic.get(),
                                     model->currentCropModule->residuePs,
                                     layer2amount, nconc);
     };
     model->currentCropModule = nullptr;
     model->currentCropModule = makeCropModule(
-        model->soilColumn.get(), &s->cropParams, &s->residueParams, &model->sitePs,
-        &model->cropPs, &model->simPs,
+        model->soilColumn.get(), &s->cropParams, &s->residueParams,
+        &model->sitePs, &model->cropPs, &model->simPs,
         [model](string event) {
           model->currentEvents.insert(std::move(event));
         },
@@ -331,8 +343,10 @@ bool workstep::apply(SowingData *s, WorkstepV2 *ws, MonicaModel *model) {
       model->currentCropModule->perennialCropParams =
           kj::heap<CropParameters>(*s->separatePerennialCropParams.get());
 
-    soiltransport::putCrop(model->soilTransport.get(), model->currentCropModule.get());
-    soilcolumn::putCrop(model->soilColumn.get(), model->currentCropModule.get());
+    soiltransport::putCrop(model->soilTransport.get(),
+                           model->currentCropModule.get());
+    soilcolumn::putCrop(model->soilColumn.get(),
+                        model->currentCropModule.get());
     model->soilMoisture->cropModule = model->currentCropModule.get();
     model->soilOrganic->cropModule = model->currentCropModule.get();
 
@@ -395,19 +409,24 @@ Errors workstep::merge(AutomaticSowingData *as, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const AutomaticSowingData *as, const WorkstepV2 *ws,
+json11::Json workstep::to_json(const AutomaticSowingData *as,
+                               const WorkstepV2 *ws,
                                bool includeFullCropParameters) {
-  auto o = workstep::to_json(static_cast<const SowingData *>(as), ws).object_items();
+  auto o =
+      workstep::to_json(static_cast<const SowingData *>(as), ws).object_items();
   o["type"] = "AutomaticSowing";
   o["earliest-date"] =
       J11Array{as->earliestDate.toIsoDateString(), "", "earliest sowing date"};
   o["latest-date"] =
       J11Array{as->latestDate.toIsoDateString(), "", "latest sowing date"};
-  o["min-temp"] = J11Array{as->minTempThreshold, "\xEF\xBF\xBD" "C",
+  o["min-temp"] = J11Array{as->minTempThreshold,
+                           "\xEF\xBF\xBD"
+                           "C",
                            "minimal air temperature for sowing (T >= thresh && "
                            "avg T in Twindow >= thresh)"};
-  o["days-in-temp-window"] = J11Array{
-      as->daysInTempWindow, "d", "days to be used for sliding window of min-temp"};
+  o["days-in-temp-window"] =
+      J11Array{as->daysInTempWindow, "d",
+               "days to be used for sliding window of min-temp"};
   o["min-%-asw"] =
       J11Array{as->minPercentASW, "%",
                "minimal soil-moisture in percent of available soil-water"};
@@ -420,25 +439,33 @@ json11::Json workstep::to_json(const AutomaticSowingData *as, const WorkstepV2 *
   o["max-curr-day-precip"] =
       J11Array{as->maxCurrentDayPrecipSum, "mm",
                "max precipitation allowed at current day"};
-  o["temp-sum-above-base-temp"] = J11Array{
-      as->tempSumAboveBaseTemp, "\xEF\xBF\xBD" "C", "temperature sum above T-base needed"};
+  o["temp-sum-above-base-temp"] =
+      J11Array{as->tempSumAboveBaseTemp,
+               "\xEF\xBF\xBD"
+               "C",
+               "temperature sum above T-base needed"};
   o["base-temp"] = J11Array{
-      as->baseTemp, "\xEF\xBF\xBD" "C",
+      as->baseTemp,
+      "\xEF\xBF\xBD"
+      "C",
       "base temperature above which temp-sum-above-base-temp is counted"};
   o["avg-soil-temp"] = J11Object{
       {"depth", J11Array{as->soilDepthForAveraging, "m",
-                        "soil depth until averaging will be done"}},
+                         "soil depth until averaging will be done"}},
       {"days", J11Array{as->daysInSoilTempWindow, "d",
-                       "window/number of days for which the average "
-                       "temperature must be greater"}},
-      {"Tavg", J11Array{as->sowingIfAboveAvgSoilTemp, "\xEF\xBF\xBD" "C",
-                       "temperature which has to be reached on average"}}};
+                        "window/number of days for which the average "
+                        "temperature must be greater"}},
+      {"Tavg", J11Array{as->sowingIfAboveAvgSoilTemp,
+                        "\xEF\xBF\xBD"
+                        "C",
+                        "temperature which has to be reached on average"}}};
 
   return o;
 }
 
 namespace {
-bool isSoilMoistureOk(MonicaModel *model, double minPercentASW, double maxPercentASW) {
+bool isSoilMoistureOk(MonicaModel *model, double minPercentASW,
+                      double maxPercentASW) {
   bool soilMoistureOk = false;
   double pwp = model->soilColumn->at(0)._sps.vs_PermanentWiltingPoint;
   double sm = max(0.0, model->soilColumn->at(0).vs_SoilMoisture_m3 - pwp);
@@ -450,8 +477,9 @@ bool isSoilMoistureOk(MonicaModel *model, double minPercentASW, double maxPercen
   return soilMoistureOk;
 }
 
-bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>> &climateData,
-                       double max3dayPrecipSum, double maxCurrentDayPrecipSum) {
+bool isPrecipitationOk(
+    const std::vector<std::map<Climate::ACD, double>> &climateData,
+    double max3dayPrecipSum, double maxCurrentDayPrecipSum) {
   bool precipOk = false;
   double psum3d =
       std::accumulate(climateData.rbegin(), climateData.rbegin() + 3, 0.0,
@@ -479,7 +507,8 @@ bool isSoilTemperatureOk(const std::vector<double> &soilTemps, int windowDays,
 }
 } // namespace
 
-bool workstep::apply(AutomaticSowingData *as, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(AutomaticSowingData *as, WorkstepV2 *ws,
+                     MonicaModel *model) {
   auto currentDate = model->currentStepDate;
 
   as->sowingDate = currentDate;
@@ -492,9 +521,9 @@ bool workstep::apply(AutomaticSowingData *as, WorkstepV2 *ws, MonicaModel *model
   return true;
 }
 
-std::function<double(MonicaModel *)>
-workstep::registerDailyFunction(AutomaticSowingData *as,
-                                std::function<std::vector<double> &()> getDailyValues) {
+std::function<double(MonicaModel *)> workstep::registerDailyFunction(
+    AutomaticSowingData *as,
+    std::function<std::vector<double> &()> getDailyValues) {
   if (!as->checkForSoilTemperature)
     return std::function<double(MonicaModel *)>();
 
@@ -506,7 +535,8 @@ workstep::registerDailyFunction(AutomaticSowingData *as,
                          model->soilColumn.get(), as->soilDepthForAveraging) +
                      1;
          i < size; i++) {
-      avgSoilTemp += model->soilTemperature->soilColumn->at(int(i)).vs_SoilTemperature;
+      avgSoilTemp +=
+          model->soilTemperature->soilColumn->at(int(i)).vs_SoilTemperature;
     }
     return avgSoilTemp / double(i);
   };
@@ -538,7 +568,9 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
 
   auto avg = [&](Climate::ACD acd) {
     return accumulate(cd.rbegin(),
-                      cd.rbegin() + std::min(int(cd.size()), as->daysInTempWindow), 0.0,
+                      cd.rbegin() +
+                          std::min(int(cd.size()), as->daysInTempWindow),
+                      0.0,
                       [acd](double acc, const map<ACD, double> &d) {
                         auto it = d.find(acd);
                         return acc + (it == d.end() ? 0 : it->second);
@@ -583,20 +615,21 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
   return true;
 }
 
-bool workstep::reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date, bool addYear,
-                      bool forceInitYear) {
+bool workstep::reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date,
+                      bool addYear, bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
 
   as->cropSeeded = as->inSowingRange = false;
   workstep::setDate(ws, Tools::Date());
 
   bool addedYear1, addedYear2;
-  // init first the latest date, if the latest date stays in current year, so has to stay the earliest
-  // date (thus force current year) if there is a forced current (init) year, this will force both
-  // dates to this year
-  tie(as->absLatestDate, addedYear1) = makeInitAbsDate(as->latestDate, date, addYear, forceInitYear);
-  tie(as->absEarliestDate, addedYear2) =
-      makeInitAbsDate(as->earliestDate, date, addYear, forceInitYear || !addedYear1);
+  // init first the latest date, if the latest date stays in current year, so
+  // has to stay the earliest date (thus force current year) if there is a
+  // forced current (init) year, this will force both dates to this year
+  tie(as->absLatestDate, addedYear1) =
+      makeInitAbsDate(as->latestDate, date, addYear, forceInitYear);
+  tie(as->absEarliestDate, addedYear2) = makeInitAbsDate(
+      as->earliestDate, date, addYear, forceInitYear || !addedYear1);
 
   return addedYear1; // || addedYear2;
 }
@@ -611,8 +644,9 @@ WorkstepV2 monica::makeTransplantWorkstep(json11::Json j) {
 }
 
 Errors workstep::merge(TransplantData *t, json11::Json j) {
-  // Mirrors Sowing's own merge (this is the only place that touches the common Workstep fields, via
-  // mergeCommon, done once by the make*Workstep factory - not repeated here).
+  // Mirrors Sowing's own merge (this is the only place that touches the common
+  // Workstep fields, via mergeCommon, done once by the make*Workstep factory -
+  // not repeated here).
   Errors res = workstep::merge(static_cast<SowingData *>(t), j);
 
   if (!j["initialStage"].is_null()) {
@@ -624,17 +658,20 @@ Errors workstep::merge(TransplantData *t, json11::Json j) {
   set_double_value(t->initShootMass, j, "initialShootBiomass");
   set_double_value(t->initLAI, j, "initialLAI");
   set_int_value(t->postTransplantDelay, j, "postTransplantDelay");
-  // FAO-56 Dual Kc: optional initial Kcb at transplanting (default 0.15 = bare soil)
+  // FAO-56 Dual Kc: optional initial Kcb at transplanting (default 0.15 = bare
+  // soil)
   set_double_value(t->initialKcb, j, "initialKcb");
 
   return res; // propagates ALL sub-errors (crop parse errors included)
 }
 
-json11::Json workstep::to_json(const TransplantData *t, bool includeFullCropParameters) {
+json11::Json workstep::to_json(const TransplantData *t,
+                               bool includeFullCropParameters) {
   return json11::Json::object{
       {"type", "Transplant"},
-      {"crop", t->cropToPlant ? t->cropToPlant->to_json(includeFullCropParameters)
-                              : json11::Json::object{}},
+      {"crop", t->cropToPlant
+                   ? t->cropToPlant->to_json(includeFullCropParameters)
+                   : json11::Json::object{}},
       {"initialStage", static_cast<int>(t->initialStage)},
       {"initialTemperatureSum", t->initialGDD},
       {"initialRootBiomass", t->initRootMass},
@@ -653,9 +690,9 @@ bool workstep::apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model) {
   if (!cropModule)
     return false;
 
-  cropmodule::forceTransplantState(cropModule, t->initialGDD, t->initLAI, t->initialStage,
-                                   t->initRootMass, t->initLeafMass, t->initShootMass,
-                                   t->postTransplantDelay);
+  cropmodule::forceTransplantState(
+      cropModule, t->initialGDD, t->initLAI, t->initialStage, t->initRootMass,
+      t->initLeafMass, t->initShootMass, t->postTransplantDelay);
 
   if (model->simPs.dualKcMethod)
     cropModule->vc_Kcb_ini = t->initialKcb;
@@ -680,18 +717,23 @@ Errors workstep::merge(HarvestData *h, json11::Json j) {
   set_int_value(h->incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
   h->incorporateIntoLayerNo = max(1, h->incorporateIntoLayerNo);
   set_bool_value(h->exported, j, "exported");
-  set_bool_value(h->optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
-  set_double_value(h->optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
+  set_bool_value(h->optCarbMgmtData.optCarbonConservation, j,
+                 "opt-carbon-conservation");
+  set_double_value(h->optCarbMgmtData.cropImpactOnHumusBalance, j,
+                   "crop-impact-on-humus-balance");
   auto cu = j["crop-usage"].string_value();
   if (cu == "green-manure")
     h->optCarbMgmtData.cropUsage = HarvestData::greenManure;
   else
     h->optCarbMgmtData.cropUsage = HarvestData::biomassProduction;
   set_double_value(h->optCarbMgmtData.residueHeq, j, "residue-heq");
-  set_double_value(h->optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq");
-  set_double_value(h->optCarbMgmtData.maxResidueRecoverFraction, j, "max-residue-recover-fraction");
+  set_double_value(h->optCarbMgmtData.organicFertilizerHeq, j,
+                   "organic-fertilizer-heq");
+  set_double_value(h->optCarbMgmtData.maxResidueRecoverFraction, j,
+                   "max-residue-recover-fraction");
 
-  for (const string &organName : {"leaf", "shoot", "fruit", "struct", "sugar"}) {
+  for (const string &organName :
+       {"leaf", "shoot", "fruit", "struct", "sugar"}) {
     for (const auto &kv : j.object_items()) {
       if (toLower(kv.first) == organName && kv.second.is_object()) {
         HarvestData::Spec::Value sv;
@@ -712,13 +754,15 @@ json11::Json workstep::to_json(const HarvestData *h, const WorkstepV2 *ws,
       {"incorporateIntoLayerNo", h->incorporateIntoLayerNo},
       {"exported", h->exported},
       {"opt-carbon-conservation", h->optCarbMgmtData.optCarbonConservation},
-      {"crop-impact-on-humus-balance", h->optCarbMgmtData.cropImpactOnHumusBalance},
+      {"crop-impact-on-humus-balance",
+       h->optCarbMgmtData.cropImpactOnHumusBalance},
       {"crop-usage", h->optCarbMgmtData.cropUsage == HarvestData::greenManure
                          ? "green-manure"
                          : "biomass-production"},
       {"residue-heq", h->optCarbMgmtData.residueHeq},
       {"organic-fertilizer-heq", h->optCarbMgmtData.organicFertilizerHeq},
-      {"max-residue-recover-fraction", h->optCarbMgmtData.maxResidueRecoverFraction}};
+      {"max-residue-recover-fraction",
+       h->optCarbMgmtData.maxResidueRecoverFraction}};
 
   for (const auto &p : h->spec.organ2specVal) {
     jo[organNameFromId(p.first)] =
@@ -733,11 +777,13 @@ bool workstep::apply(HarvestData *h, WorkstepV2 *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   if (model->currentCropModule) {
-    monicamodel::harvestCurrentCrop(model, h->exported, toOldHarvestSpec(h->spec),
+    monicamodel::harvestCurrentCrop(model, h->exported,
+                                    toOldHarvestSpec(h->spec),
                                     toOldOptCarbMgmtData(h->optCarbMgmtData),
                                     h->incorporateIntoLayerNo - 1);
     if (h->sowing)
-      debug() << "harvesting crop: " << cropparameters::cropName(&h->sowing->cropParams)
+      debug() << "harvesting crop: "
+              << cropparameters::cropName(&h->sowing->cropParams)
               << " at: " << ws->date.toString() << endl;
     model->currentEvents.insert("Harvest");
   }
@@ -767,9 +813,11 @@ Errors workstep::merge(AutomaticHarvestData *ah, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const AutomaticHarvestData *ah, const WorkstepV2 *ws,
+json11::Json workstep::to_json(const AutomaticHarvestData *ah,
+                               const WorkstepV2 *ws,
                                bool includeFullCropParameters) {
-  auto o = workstep::to_json(static_cast<const HarvestData *>(ah), ws, includeFullCropParameters)
+  auto o = workstep::to_json(static_cast<const HarvestData *>(ah), ws,
+                             includeFullCropParameters)
                .object_items();
   o["type"] = "AutomaticHarvest";
   o["latest-date"] =
@@ -777,25 +825,21 @@ json11::Json workstep::to_json(const AutomaticHarvestData *ah, const WorkstepV2 
   o["min-%-asw"] =
       J11Array{ah->minPercentASW, "%",
                "minimal soil-moisture in percent of available soil-water"};
-  // NOTE: the following three lines use the comma operator, not assignment, in the original
-  // AutomaticHarvest::to_json - the J11Array{...} expressions are computed and discarded, and
-  // o["max-%-asw"]/o["max-3d-precip-sum"]/o["max-curr-day-precip"] end up holding a default/null
-  // json11::Json (inserted by operator[]'s side effect) instead of the intended array. Preserved
-  // exactly as a straight translation, not fixed - this is a pre-existing bug in the original code.
-  o["max-%-asw"],
+  o["max-%-asw"] =
       J11Array{ah->maxPercentASW, "%",
                "maximal soil-moisture in percent of available soil-water"};
-  o["max-3d-precip-sum"], J11Array{ah->max3dayPrecipSum, "mm",
-                                   "sum of precipitation in the last three "
-                                   "days (including current day)"};
-  o["max-curr-day-precip"],
+  o["max-3d-precip-sum"] = J11Array{ah->max3dayPrecipSum, "mm",
+                                    "sum of precipitation in the last three "
+                                    "days (including current day)"};
+  o["max-curr-day-precip"] =
       J11Array{ah->maxCurrentDayPrecipSum, "mm",
                "max precipitation allowed at current day"};
   o["harvest-time"] = ah->harvestTime;
   return o;
 }
 
-bool workstep::apply(AutomaticHarvestData *ah, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(AutomaticHarvestData *ah, WorkstepV2 *ws,
+                     MonicaModel *model) {
   workstep::apply(static_cast<HarvestData *>(ah), ws, model);
 
   model->currentEvents.insert("AutomaticHarvest");
@@ -811,25 +855,31 @@ bool workstep::condition(AutomaticHarvestData *ah, MonicaModel *model) {
   // got a crop and not yet harvested
   if (cg && !ah->cropHarvested)
     conditionMet =
-        model->currentStepDate >= ah->absLatestDate // harvest after or at latest date
-        || (ah->harvestTime == "maturity" &&
-            cropmodule::maturityReached(model->currentCropModule) // has maturity been reached
-            && isSoilMoistureOk(model, ah->minPercentASW, ah->maxPercentASW) // check soil moisture
-            && isPrecipitationOk(model->climateData, ah->max3dayPrecipSum,
-                                 ah->maxCurrentDayPrecipSum)); // check precipitation
+        model->currentStepDate >=
+            ah->absLatestDate // harvest after or at latest date
+        ||
+        (ah->harvestTime == "maturity" &&
+         cropmodule::maturityReached(
+             model->currentCropModule) // has maturity been reached
+         && isSoilMoistureOk(model, ah->minPercentASW,
+                             ah->maxPercentASW) // check soil moisture
+         &&
+         isPrecipitationOk(model->climateData, ah->max3dayPrecipSum,
+                           ah->maxCurrentDayPrecipSum)); // check precipitation
 
   return conditionMet;
 }
 
-bool workstep::reinit(AutomaticHarvestData *ah, WorkstepV2 *ws, Tools::Date date, bool addYear,
-                      bool forceInitYear) {
+bool workstep::reinit(AutomaticHarvestData *ah, WorkstepV2 *ws,
+                      Tools::Date date, bool addYear, bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
 
   ah->cropHarvested = false;
   workstep::setDate(ws, Tools::Date());
 
   bool addedYear;
-  tie(ah->absLatestDate, addedYear) = makeInitAbsDate(ah->latestDate, date, addYear, forceInitYear);
+  tie(ah->absLatestDate, addedYear) =
+      makeInitAbsDate(ah->latestDate, date, addYear, forceInitYear);
 
   return addedYear;
 }
