@@ -54,12 +54,10 @@ makeYieldComponent(mas::schema::model::monica::YieldComponent::Reader reader);
 
 namespace yieldcomponent {
 
-void
-deserialize(YieldComponent *yc,
-            mas::schema::model::monica::YieldComponent::Reader reader);
-void
-serialize(const YieldComponent *yc,
-          mas::schema::model::monica::YieldComponent::Builder builder);
+void deserialize(YieldComponent *yc,
+                 mas::schema::model::monica::YieldComponent::Reader reader);
+void serialize(const YieldComponent *yc,
+               mas::schema::model::monica::YieldComponent::Builder builder);
 Tools::Errors merge(YieldComponent *yc, json11::Json j);
 json11::Json to_json(const YieldComponent *yc);
 
@@ -153,12 +151,10 @@ SpeciesParameters makeSpeciesParameters(
 
 namespace speciesparameters {
 
-void
-deserialize(SpeciesParameters *sp,
-            mas::schema::model::monica::SpeciesParameters::Reader reader);
-void
-serialize(const SpeciesParameters *sp,
-          mas::schema::model::monica::SpeciesParameters::Builder builder);
+void deserialize(SpeciesParameters *sp,
+                 mas::schema::model::monica::SpeciesParameters::Reader reader);
+void serialize(const SpeciesParameters *sp,
+               mas::schema::model::monica::SpeciesParameters::Builder builder);
 Tools::Errors merge(SpeciesParameters *sp, json11::Json j);
 json11::Json to_json(const SpeciesParameters *sp);
 size_t numberOfDevelopmentalStages(const SpeciesParameters *sp);
@@ -231,12 +227,10 @@ CultivarParameters makeCultivarParameters(
 
 namespace cultivarparameters {
 
-void
-deserialize(CultivarParameters *cp,
-            mas::schema::model::monica::CultivarParameters::Reader reader);
-void
-serialize(const CultivarParameters *cp,
-          mas::schema::model::monica::CultivarParameters::Builder builder);
+void deserialize(CultivarParameters *cp,
+                 mas::schema::model::monica::CultivarParameters::Reader reader);
+void serialize(const CultivarParameters *cp,
+               mas::schema::model::monica::CultivarParameters::Builder builder);
 Tools::Errors merge(CultivarParameters *cp, json11::Json j);
 json11::Json to_json(const CultivarParameters *cp);
 inline size_t numberOfDevelopmentalStages(const CultivarParameters *cp) {
@@ -258,15 +252,12 @@ makeCropParameters(mas::schema::model::monica::CropParameters::Reader reader);
 
 namespace cropparameters {
 
-void
-deserialize(CropParameters *cp,
-            mas::schema::model::monica::CropParameters::Reader reader);
-void
-serialize(const CropParameters *cp,
-          mas::schema::model::monica::CropParameters::Builder builder);
+void deserialize(CropParameters *cp,
+                 mas::schema::model::monica::CropParameters::Reader reader);
+void serialize(const CropParameters *cp,
+               mas::schema::model::monica::CropParameters::Builder builder);
 Tools::Errors merge(CropParameters *cp, json11::Json j);
-Tools::Errors merge(CropParameters *cp, json11::Json sj,
-                            json11::Json cj);
+Tools::Errors merge(CropParameters *cp, json11::Json sj, json11::Json cj);
 json11::Json to_json(const CropParameters *cp);
 inline std::string cropName(const CropParameters *cp) {
   return cp->speciesParams.pc_SpeciesId + "/" +
@@ -306,8 +297,8 @@ void deserialize(
     mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader
         reader);
 void serialize(const MineralFertilizerParameters *fp,
-               mas::schema::model::monica::Params::
-                   MineralFertilization::Parameters::Builder builder);
+               mas::schema::model::monica::Params::MineralFertilization::
+                   Parameters::Builder builder);
 Tools::Errors merge(MineralFertilizerParameters *fp, json11::Json j);
 json11::Json to_json(const MineralFertilizerParameters *fp);
 
@@ -319,8 +310,8 @@ struct NMinApplicationParameters {
   int delayInDays{0};
 };
 
-NMinApplicationParameters
-makeNMinApplicationParameters(double min, double max, int delayInDays);
+NMinApplicationParameters makeNMinApplicationParameters(double min, double max,
+                                                        int delayInDays);
 NMinApplicationParameters makeNMinApplicationParameters(
     mas::schema::model::monica::NMinApplicationParameters::Reader reader);
 
@@ -347,8 +338,8 @@ struct IrrigationParameters {
   double fw{1.0}; //!< fraction of wetted soil surface [0-1]
 };
 
-IrrigationParameters makeIrrigationParameters(
-    double nitrateConcentration, double sulfateConcentration);
+IrrigationParameters makeIrrigationParameters(double nitrateConcentration,
+                                              double sulfateConcentration);
 IrrigationParameters makeIrrigationParameters(
     mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
 
@@ -357,10 +348,10 @@ namespace irrigationparameters {
 void deserialize(
     IrrigationParameters *ip,
     mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
-void
-serialize(const IrrigationParameters *ip,
-          mas::schema::model::monica::Params::Irrigation::Parameters::Builder
-              builder);
+void serialize(
+    const IrrigationParameters *ip,
+    mas::schema::model::monica::Params::Irrigation::Parameters::Builder
+        builder);
 Tools::Errors merge(IrrigationParameters *ip, json11::Json j);
 json11::Json to_json(const IrrigationParameters *ip);
 
@@ -399,8 +390,7 @@ struct MeasuredGroundwaterTableInformation {
   std::map<Tools::Date, double> groundwaterInfo;
 };
 
-MeasuredGroundwaterTableInformation
-makeMeasuredGroundwaterTableInformation(
+MeasuredGroundwaterTableInformation makeMeasuredGroundwaterTableInformation(
     mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader
         reader);
 
@@ -414,8 +404,7 @@ void serialize(
     const MeasuredGroundwaterTableInformation *gwi,
     mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder
         builder);
-Tools::Errors merge(MeasuredGroundwaterTableInformation *gwi,
-                    json11::Json j);
+Tools::Errors merge(MeasuredGroundwaterTableInformation *gwi, json11::Json j);
 json11::Json to_json(const MeasuredGroundwaterTableInformation *gwi);
 std::pair<bool, double>
 getGroundwaterInformation(const MeasuredGroundwaterTableInformation *gwi,
@@ -453,12 +442,10 @@ makeSiteParameters(mas::schema::model::monica::SiteParameters::Reader reader);
 
 namespace siteparameters {
 
-void
-deserialize(SiteParameters *sp,
-            mas::schema::model::monica::SiteParameters::Reader reader);
-void
-serialize(const SiteParameters *sp,
-          mas::schema::model::monica::SiteParameters::Builder builder);
+void deserialize(SiteParameters *sp,
+                 mas::schema::model::monica::SiteParameters::Reader reader);
+void serialize(const SiteParameters *sp,
+               mas::schema::model::monica::SiteParameters::Builder builder);
 Tools::Errors merge(SiteParameters *sp, json11::Json j);
 json11::Json to_json(const SiteParameters *sp);
 
@@ -506,20 +493,17 @@ struct NMinCropParameters {
   double nTarget30{0.0};
 };
 
-NMinCropParameters makeNMinCropParameters(double samplingDepth,
-                                          double nTarget,
+NMinCropParameters makeNMinCropParameters(double samplingDepth, double nTarget,
                                           double nTarget30);
 NMinCropParameters makeNMinCropParameters(
     mas::schema::model::monica::NMinCropParameters::Reader reader);
 
 namespace nmincropparameters {
 
-void
-deserialize(NMinCropParameters *ncp,
-            mas::schema::model::monica::NMinCropParameters::Reader reader);
-void
-serialize(const NMinCropParameters *ncp,
-          mas::schema::model::monica::NMinCropParameters::Builder builder);
+void deserialize(NMinCropParameters *ncp,
+                 mas::schema::model::monica::NMinCropParameters::Reader reader);
+void serialize(const NMinCropParameters *ncp,
+               mas::schema::model::monica::NMinCropParameters::Builder builder);
 Tools::Errors merge(NMinCropParameters *ncp, json11::Json j);
 json11::Json to_json(const NMinCropParameters *ncp);
 
@@ -570,14 +554,12 @@ OrganicMatterParameters makeOrganicMatterParameters(
 
 namespace organicmatterparameters {
 
-void
-deserialize(OrganicMatterParameters *omp,
-            mas::schema::model::monica::Params::OrganicFertilization::
-                OrganicMatterParameters::Reader reader);
-void
-serialize(const OrganicMatterParameters *omp,
-          mas::schema::model::monica::Params::OrganicFertilization::
-              OrganicMatterParameters::Builder builder);
+void deserialize(OrganicMatterParameters *omp,
+                 mas::schema::model::monica::Params::OrganicFertilization::
+                     OrganicMatterParameters::Reader reader);
+void serialize(const OrganicMatterParameters *omp,
+               mas::schema::model::monica::Params::OrganicFertilization::
+                   OrganicMatterParameters::Builder builder);
 Tools::Errors merge(OrganicMatterParameters *omp, json11::Json j);
 json11::Json to_json(const OrganicMatterParameters *omp);
 
@@ -601,8 +583,8 @@ void deserialize(
     mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader
         reader);
 void serialize(const OrganicFertilizerParameters *ofp,
-               mas::schema::model::monica::Params::
-                   OrganicFertilization::Parameters::Builder builder);
+               mas::schema::model::monica::Params::OrganicFertilization::
+                   Parameters::Builder builder);
 Tools::Errors merge(OrganicFertilizerParameters *ofp, json11::Json j);
 json11::Json to_json(const OrganicFertilizerParameters *ofp);
 
@@ -621,12 +603,12 @@ CropResidueParameters makeCropResidueParameters(
 
 namespace cropresidueparameters {
 
-void
-deserialize(CropResidueParameters *crp,
-            mas::schema::model::monica::CropResidueParameters::Reader reader);
-void
-serialize(const CropResidueParameters *crp,
-          mas::schema::model::monica::CropResidueParameters::Builder builder);
+void deserialize(
+    CropResidueParameters *crp,
+    mas::schema::model::monica::CropResidueParameters::Reader reader);
+void serialize(
+    const CropResidueParameters *crp,
+    mas::schema::model::monica::CropResidueParameters::Builder builder);
 Tools::Errors merge(CropResidueParameters *crp, json11::Json j);
 json11::Json to_json(const CropResidueParameters *crp);
 
@@ -679,12 +661,12 @@ SimulationParameters makeSimulationParameters(
 
 namespace simulationparameters {
 
-void
-deserialize(SimulationParameters *sp,
-            mas::schema::model::monica::SimulationParameters::Reader reader);
-void
-serialize(const SimulationParameters *sp,
-          mas::schema::model::monica::SimulationParameters::Builder builder);
+void deserialize(
+    SimulationParameters *sp,
+    mas::schema::model::monica::SimulationParameters::Reader reader);
+void serialize(
+    const SimulationParameters *sp,
+    mas::schema::model::monica::SimulationParameters::Builder builder);
 Tools::Errors merge(SimulationParameters *sp, json11::Json j);
 json11::Json to_json(const SimulationParameters *sp);
 
@@ -738,12 +720,12 @@ CropModuleParameters makeCropModuleParameters(
 
 namespace cropmoduleparameters {
 
-void
-deserialize(CropModuleParameters *cmp,
-            mas::schema::model::monica::CropModuleParameters::Reader reader);
-void
-serialize(const CropModuleParameters *cmp,
-          mas::schema::model::monica::CropModuleParameters::Builder builder);
+void deserialize(
+    CropModuleParameters *cmp,
+    mas::schema::model::monica::CropModuleParameters::Reader reader);
+void serialize(
+    const CropModuleParameters *cmp,
+    mas::schema::model::monica::CropModuleParameters::Builder builder);
 Tools::Errors merge(CropModuleParameters *cmp, json11::Json j);
 json11::Json to_json(const CropModuleParameters *cmp);
 
@@ -774,12 +756,12 @@ EnvironmentParameters makeEnvironmentParameters(
 
 namespace environmentparameters {
 
-void
-deserialize(EnvironmentParameters *ep,
-            mas::schema::model::monica::EnvironmentParameters::Reader reader);
-void
-serialize(const EnvironmentParameters *ep,
-          mas::schema::model::monica::EnvironmentParameters::Builder builder);
+void deserialize(
+    EnvironmentParameters *ep,
+    mas::schema::model::monica::EnvironmentParameters::Reader reader);
+void serialize(
+    const EnvironmentParameters *ep,
+    mas::schema::model::monica::EnvironmentParameters::Builder builder);
 Tools::Errors merge(EnvironmentParameters *ep, json11::Json j);
 json11::Json to_json(const EnvironmentParameters *ep);
 
@@ -863,12 +845,11 @@ namespace soiltemperaturemoduleparameters {
 void deserialize(
     SoilTemperatureModuleParameters *stp,
     mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader);
-void
-serialize(const SoilTemperatureModuleParameters *stp,
-          mas::schema::model::monica::SoilTemperatureModuleParameters::Builder
-              builder);
-Tools::Errors merge(SoilTemperatureModuleParameters *stp,
-                    json11::Json j);
+void serialize(
+    const SoilTemperatureModuleParameters *stp,
+    mas::schema::model::monica::SoilTemperatureModuleParameters::Builder
+        builder);
+Tools::Errors merge(SoilTemperatureModuleParameters *stp, json11::Json j);
 json11::Json to_json(const SoilTemperatureModuleParameters *stp);
 
 } // namespace soiltemperaturemoduleparameters
@@ -947,12 +928,10 @@ makeSticsParameters(mas::schema::model::monica::SticsParameters::Reader reader);
 
 namespace sticsparameters {
 
-void
-deserialize(SticsParameters *sp,
-            mas::schema::model::monica::SticsParameters::Reader reader);
-void
-serialize(const SticsParameters *sp,
-          mas::schema::model::monica::SticsParameters::Builder builder);
+void deserialize(SticsParameters *sp,
+                 mas::schema::model::monica::SticsParameters::Reader reader);
+void serialize(const SticsParameters *sp,
+               mas::schema::model::monica::SticsParameters::Builder builder);
 Tools::Errors merge(SticsParameters *sp, json11::Json j);
 json11::Json to_json(const SticsParameters *sp);
 
@@ -1074,8 +1053,7 @@ namespace centralparameterprovider {
 
 Tools::Errors merge(CentralParameterProvider *cpp, json11::Json j);
 json11::Json to_json(const CentralParameterProvider *cpp);
-double getPrecipCorrectionValue(const CentralParameterProvider *cpp,
-                                int month);
+double getPrecipCorrectionValue(const CentralParameterProvider *cpp, int month);
 void setPrecipCorrectionValue(CentralParameterProvider *cpp, int month,
                               double value);
 
