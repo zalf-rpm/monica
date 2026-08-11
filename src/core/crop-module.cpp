@@ -405,92 +405,94 @@ void monica::cropmodule::deserialize(
     CropModule *cm,
     mas::schema::model::monica::CropModuleState::Reader reader) {
   cm->frostKillOn = reader.getFrostKillOn();
-  // cm->speciesPs.deserialize(reader.getSpeciesParams());
-  // cm->cultivarPs.deserialize(reader.getCultivarParams());
+  cropparameters::deserialize(&cm->cropParams, reader.getCropParams());
+  cropparameters::deserialize(cm->perennialCropParams,
+                              reader.getPerennialCropParams());
   cropresidueparameters::deserialize(&cm->residuePs, reader.getResidueParams());
   cm->isWinterCrop = reader.getIsWinterCrop();
   cm->vs_Latitude = reader.getVsLatitude();
   cm->vc_AbovegroundBiomass = reader.getAbovegroundBiomass();
   cm->vc_AbovegroundBiomassOld = reader.getAbovegroundBiomassOld();
-  setFromCapnpList(cm->pc_AbovegroundOrgan, reader.getPcAbovegroundOrgan());
+  // setFromCapnpList(cm->pc_AbovegroundOrgan, reader.getPcAbovegroundOrgan());
   cm->vc_ActualTranspiration = reader.getActualTranspiration();
 
-  {
-    auto listReader = reader.getPcAssimilatePartitioningCoeff();
-    cm->pc_AssimilatePartitioningCoeff.resize(listReader.size());
-    capnp::uint i = 0;
-    for (auto &v : cm->pc_AssimilatePartitioningCoeff)
-      setFromCapnpList(v, listReader[i++]);
-  }
+  // {
+  // auto listReader = reader.getPcAssimilatePartitioningCoeff();
+  // cm->pc_AssimilatePartitioningCoeff.resize(listReader.size());
+  // capnp::uint i = 0;
+  // for (auto &v : cm->pc_AssimilatePartitioningCoeff)
+  // setFromCapnpList(v, listReader[i++]);
+  // }
 
-  cm->pc_AssimilateReallocation = reader.getPcAssimilateReallocation();
+  // cm->pc_AssimilateReallocation = reader.getPcAssimilateReallocation();
   cm->vc_Assimilates = reader.getAssimilates();
   cm->vc_AssimilationRate = reader.getAssimilationRate();
   cm->vc_AstronomicDayLenght = reader.getAstronomicDayLenght();
-  setFromCapnpList(cm->pc_BaseDaylength, reader.getPcBaseDaylength());
-  setFromCapnpList(cm->pc_BaseTemperature, reader.getPcBaseTemperature());
-  cm->pc_BeginSensitivePhaseHeatStress =
-      reader.getPcBeginSensitivePhaseHeatStress();
+  // setFromCapnpList(cm->pc_BaseDaylength, reader.getPcBaseDaylength());
+  // setFromCapnpList(cm->pc_BaseTemperature, reader.getPcBaseTemperature());
+  // cm->pc_BeginSensitivePhaseHeatStress =
+  // reader.getPcBeginSensitivePhaseHeatStress();
   cm->vc_BelowgroundBiomass = reader.getBelowgroundBiomass();
   cm->vc_BelowgroundBiomassOld = reader.getBelowgroundBiomassOld();
-  cm->pc_CarboxylationPathway = (int)reader.getPcCarboxylationPathway();
+  // cm->pc_CarboxylationPathway = (int)reader.getPcCarboxylationPathway();
   cm->vc_ClearDayRadiation = reader.getClearDayRadiation();
-  cm->pc_CO2Method = reader.getPcCo2Method();
+  // cm->pc_CO2Method = reader.getPcCo2Method();
   cm->vc_CriticalNConcentration = reader.getCriticalNConcentration();
-  setFromCapnpList(cm->pc_CriticalOxygenContent,
-                   reader.getPcCriticalOxygenContent());
-  cm->pc_CriticalTemperatureHeatStress =
-      reader.getPcCriticalTemperatureHeatStress();
+  // setFromCapnpList(cm->pc_CriticalOxygenContent,
+  // reader.getPcCriticalOxygenContent());
+  // cm->pc_CriticalTemperatureHeatStress =
+  // reader.getPcCriticalTemperatureHeatStress();
   cm->vc_CropDiameter = reader.getCropDiameter();
   cm->vc_CropFrostRedux = reader.getCropFrostRedux();
   cm->vc_CropHeatRedux = reader.getCropHeatRedux();
   cm->vc_CropHeight = reader.getCropHeight();
-  cm->pc_CropHeightP1 = reader.getPcCropHeightP1();
-  cm->pc_CropHeightP2 = reader.getPcCropHeightP2();
-  cm->pc_CropName = reader.getPcCropName();
+  // cm->pc_CropHeightP1 = reader.getPcCropHeightP1();
+  // cm->pc_CropHeightP2 = reader.getPcCropHeightP2();
+  // cm->pc_CropName = reader.getPcCropName();
   cm->vc_CropNDemand = reader.getCropNDemand();
   cm->vc_CropNRedux = reader.getCropNRedux();
-  cm->pc_CropSpecificMaxRootingDepth =
-      reader.getPcCropSpecificMaxRootingDepth();
+  // cm->pc_CropSpecificMaxRootingDepth =
+  reader.getPcCropSpecificMaxRootingDepth();
   setFromCapnpList(cm->vc_CropWaterUptake, reader.getCropWaterUptake());
   setFromCapnpList(cm->vc_CurrentTemperatureSum,
                    reader.getCurrentTemperatureSum());
   cm->vc_CurrentTotalTemperatureSum = reader.getCurrentTotalTemperatureSum();
   cm->vc_CurrentTotalTemperatureSumRoot =
       reader.getCurrentTotalTemperatureSumRoot();
-  cm->pc_CuttingDelayDays = reader.getPcCuttingDelayDays();
+  // cm->pc_CuttingDelayDays = reader.getPcCuttingDelayDays();
   cm->vc_DaylengthFactor = reader.getDaylengthFactor();
-  setFromCapnpList(cm->pc_DaylengthRequirement,
-                   reader.getPcDaylengthRequirement());
+  // setFromCapnpList(cm->pc_DaylengthRequirement,
+  // reader.getPcDaylengthRequirement());
   cm->vc_DaysAfterBeginFlowering = reader.getDaysAfterBeginFlowering();
   cm->vc_Declination = reader.getDeclination();
-  cm->pc_DefaultRadiationUseEfficiency =
-      reader.getPcDefaultRadiationUseEfficiency();
+  // cm->pc_DefaultRadiationUseEfficiency =
+  // reader.getPcDefaultRadiationUseEfficiency();
   cm->vm_DepthGroundwaterTable = reader.getVmDepthGroundwaterTable();
-  cm->pc_DevelopmentAccelerationByNitrogenStress =
-      (int)reader.getPcDevelopmentAccelerationByNitrogenStress();
+  // cm->pc_DevelopmentAccelerationByNitrogenStress =
+  // (int)reader.getPcDevelopmentAccelerationByNitrogenStress();
   cm->vc_DevelopmentalStage = reader.getDevelopmentalStage();
   cm->noOfCropSteps = reader.getNoOfCropSteps();
   cm->vc_DroughtImpactOnFertility = reader.getDroughtImpactOnFertility();
-  cm->pc_DroughtImpactOnFertilityFactor =
-      reader.getPcDroughtImpactOnFertilityFactor();
-  setFromCapnpList(cm->pc_DroughtStressThreshold,
-                   reader.getPcDroughtStressThreshold());
-  cm->pc_EmergenceFloodingControlOn = reader.getPcEmergenceFloodingControlOn();
-  cm->pc_EmergenceMoistureControlOn = reader.getPcEmergenceMoistureControlOn();
-  cm->pc_EndSensitivePhaseHeatStress =
-      reader.getPcEndSensitivePhaseHeatStress();
+  // cm->pc_DroughtImpactOnFertilityFactor =
+  // reader.getPcDroughtImpactOnFertilityFactor();
+  // setFromCapnpList(cm->pc_DroughtStressThreshold,
+  // reader.getPcDroughtStressThreshold());
+  // cm->pc_EmergenceFloodingControlOn =
+  // reader.getPcEmergenceFloodingControlOn(); cm->pc_EmergenceMoistureControlOn
+  // = reader.getPcEmergenceMoistureControlOn();
+  // cm->pc_EndSensitivePhaseHeatStress =
+  // reader.getPcEndSensitivePhaseHeatStress();
   cm->vc_EffectiveDayLength = reader.getEffectiveDayLength();
   cm->vc_ErrorStatus = reader.getErrorStatus();
   cm->vc_ErrorMessage = reader.getErrorMessage();
   cm->vc_EvaporatedFromIntercept = reader.getEvaporatedFromIntercept();
   cm->vc_ExtraterrestrialRadiation = reader.getExtraterrestrialRadiation();
-  cm->pc_FieldConditionModifier = reader.getPcFieldConditionModifier();
+  // cm->pc_FieldConditionModifier = reader.getPcFieldConditionModifier();
   cm->vc_FinalDevelopmentalStage = reader.getFinalDevelopmentalStage();
   cm->vc_FixedN = reader.getFixedN();
   // std::vector<double> vo_FreshSoilOrganicMatt
-  cm->pc_FrostDehardening = reader.getPcFrostDehardening();
-  cm->pc_FrostHardening = reader.getPcFrostHardening();
+  // cm->pc_FrostDehardening = reader.getPcFrostDehardening();
+  // cm->pc_FrostHardening = reader.getPcFrostHardening();
   cm->vc_GlobalRadiation = reader.getGlobalRadiation();
   cm->vc_GreenAreaIndex = reader.getGreenAreaIndex();
   cm->vc_GrossAssimilates = reader.getGrossAssimilates();
@@ -501,70 +503,71 @@ void monica::cropmodule::deserialize(
   cm->vc_GrossPrimaryProduction = reader.getGrossPrimaryProduction();
   cm->vc_GrowthCycleEnded = reader.getGrowthCycleEnded();
   cm->vc_GrowthRespirationAS = reader.getGrowthRespirationAS();
-  cm->pc_HeatSumIrrigationStart = reader.getPcHeatSumIrrigationStart();
-  cm->pc_HeatSumIrrigationEnd = reader.getPcHeatSumIrrigationEnd();
+  // cm->pc_HeatSumIrrigationStart = reader.getPcHeatSumIrrigationStart();
+  // cm->pc_HeatSumIrrigationEnd = reader.getPcHeatSumIrrigationEnd();
   cm->vs_HeightNN = reader.getVsHeightNN();
-  cm->pc_InitialKcFactor = reader.getPcInitialKcFactor();
-  setFromCapnpList(cm->pc_InitialOrganBiomass,
-                   reader.getPcInitialOrganBiomass());
-  cm->pc_InitialRootingDepth = reader.getPcInitialRootingDepth();
+  // cm->pc_InitialKcFactor = reader.getPcInitialKcFactor();
+  // setFromCapnpList(cm->pc_InitialOrganBiomass,
+  // reader.getPcInitialOrganBiomass());
+  // cm->pc_InitialRootingDepth = reader.getPcInitialRootingDepth();
   cm->vc_InterceptionStorage = reader.getInterceptionStorage();
   cm->vc_KcFactor = reader.getKcFactor();
   cm->vc_LeafAreaIndex = reader.getLeafAreaIndex();
   setFromCapnpList(cm->vc_sunlitLeafAreaIndex, reader.getSunlitLeafAreaIndex());
   setFromCapnpList(cm->vc_shadedLeafAreaIndex, reader.getShadedLeafAreaIndex());
-  cm->pc_LowTemperatureExposure = reader.getPcLowTemperatureExposure();
-  cm->pc_LimitingTemperatureHeatStress =
-      reader.getPcLimitingTemperatureHeatStress();
+  // cm->pc_LowTemperatureExposure = reader.getPcLowTemperatureExposure();
+  // cm->pc_LimitingTemperatureHeatStress =
+  // reader.getPcLimitingTemperatureHeatStress();
   cm->vc_LT50 = reader.getLt50();
   cm->vc_LT50M = reader.getLt50m();
-  cm->pc_LT50cultivar = reader.getPcLt50cultivar();
-  cm->pc_LuxuryNCoeff = reader.getPcLuxuryNCoeff();
+  // cm->pc_LT50cultivar = reader.getPcLt50cultivar();
+  // cm->pc_LuxuryNCoeff = reader.getPcLuxuryNCoeff();
   cm->vc_MaintenanceRespirationAS = reader.getMaintenanceRespirationAS();
-  cm->pc_MaxAssimilationRate = reader.getPcMaxAssimilationRate();
-  cm->pc_MaxCropDiameter = reader.getPcMaxCropDiameter();
-  cm->pc_MaxCropHeight = reader.getPcMaxCropHeight();
+  // cm->pc_MaxAssimilationRate = reader.getPcMaxAssimilationRate();
+  // cm->pc_MaxCropDiameter = reader.getPcMaxCropDiameter();
+  // cm->pc_MaxCropHeight = reader.getPcMaxCropHeight();
   cm->vc_MaxNUptake = reader.getMaxNUptake();
-  cm->pc_MaxNUptakeParam = reader.getPcMaxNUptakeParam();
+  // cm->pc_MaxNUptakeParam = reader.getPcMaxNUptakeParam();
   cm->vc_MaxRootingDepth = reader.getPcMaxRootingDepth();
-  cm->pc_MinimumNConcentration = reader.getPcMinimumNConcentration();
-  cm->pc_MinimumTemperatureForAssimilation =
-      reader.getPcMinimumTemperatureForAssimilation();
-  cm->pc_OptimumTemperatureForAssimilation =
-      reader.getPcOptimumTemperatureForAssimilation();
-  cm->pc_MaximumTemperatureForAssimilation =
-      reader.getPcMaximumTemperatureForAssimilation();
-  cm->pc_MinimumTemperatureRootGrowth =
-      reader.getPcMinimumTemperatureRootGrowth();
+  // cm->pc_MinimumNConcentration = reader.getPcMinimumNConcentration();
+  // cm->pc_MinimumTemperatureForAssimilation =
+  // reader.getPcMinimumTemperatureForAssimilation();
+  // cm->pc_OptimumTemperatureForAssimilation =
+  // reader.getPcOptimumTemperatureForAssimilation();
+  // cm->pc_MaximumTemperatureForAssimilation =
+  // reader.getPcMaximumTemperatureForAssimilation();
+  // cm->pc_MinimumTemperatureRootGrowth =
+  // reader.getPcMinimumTemperatureRootGrowth();
   cm->vc_NetMaintenanceRespiration = reader.getNetMaintenanceRespiration();
   cm->vc_NetPhotosynthesis = reader.getNetPhotosynthesis();
   cm->vc_NetPrecipitation = reader.getNetPrecipitation();
   cm->vc_NetPrimaryProduction = reader.getNetPrimaryProduction();
-  cm->pc_NConcentrationAbovegroundBiomass =
-      reader.getPcNConcentrationAbovegroundBiomass();
+  // cm->pc_NConcentrationAbovegroundBiomass =
+  // reader.getPcNConcentrationAbovegroundBiomass();
   cm->vc_NConcentrationAbovegroundBiomass =
       reader.getNConcentrationAbovegroundBiomass();
   cm->vc_NConcentrationAbovegroundBiomassOld =
       reader.getNConcentrationAbovegroundBiomassOld();
-  cm->pc_NConcentrationB0 = reader.getPcNConcentrationB0();
+  // cm->pc_NConcentrationB0 = reader.getPcNConcentrationB0();
   cm->vc_NContentDeficit = reader.getNContentDeficit();
-  cm->pc_NConcentrationPN = reader.getPcNConcentrationPN();
-  cm->pc_NConcentrationRoot = reader.getPcNConcentrationRoot();
+  // cm->pc_NConcentrationPN = reader.getPcNConcentrationPN();
+  // cm->pc_NConcentrationRoot = reader.getPcNConcentrationRoot();
   cm->vc_NConcentrationRoot = reader.getNConcentrationRoot();
   cm->vc_NConcentrationRootOld = reader.getNConcentrationRootOld();
-  cm->pc_NitrogenResponseOn = reader.getPcNitrogenResponseOn();
+  // cm->pc_NitrogenResponseOn = reader.getPcNitrogenResponseOn();
   cm->pc_NumberOfDevelopmentalStages =
       (int)reader.getPcNumberOfDevelopmentalStages();
   cm->pc_NumberOfOrgans = (int)reader.getPcNumberOfOrgans();
   setFromCapnpList(cm->vc_NUptakeFromLayer, reader.getNUptakeFromLayer());
-  setFromCapnpList(cm->pc_OptimumTemperature, reader.getPcOptimumTemperature());
+  // setFromCapnpList(cm->pc_OptimumTemperature,
+  // reader.getPcOptimumTemperature());
   setFromCapnpList(cm->vc_OrganBiomass, reader.getOrganBiomass());
   setFromCapnpList(cm->vc_OrganDeadBiomass, reader.getOrganDeadBiomass());
   setFromCapnpList(cm->vc_OrganGreenBiomass, reader.getOrganGreenBiomass());
   setFromCapnpList(cm->vc_OrganGrowthIncrement,
                    reader.getOrganGrowthIncrement());
-  setFromCapnpList(cm->pc_OrganGrowthRespiration,
-                   reader.getPcOrganGrowthRespiration());
+  // setFromCapnpList(cm->pc_OrganGrowthRespiration,
+  // reader.getPcOrganGrowthRespiration());
   auto deserializeYieldComponents = [](std::vector<YieldComponent> &ycs,
                                        auto listReader) {
     ycs.resize(listReader.size());
@@ -572,51 +575,51 @@ void monica::cropmodule::deserialize(
     for (auto &yc : ycs)
       yieldcomponent::deserialize(&yc, listReader[i++]);
   };
-  deserializeYieldComponents(cm->pc_OrganIdsForPrimaryYield,
-                             reader.getPcOrganIdsForPrimaryYield());
-  deserializeYieldComponents(cm->pc_OrganIdsForSecondaryYield,
-                             reader.getPcOrganIdsForSecondaryYield());
-  deserializeYieldComponents(cm->pc_OrganIdsForCutting,
-                             reader.getPcOrganIdsForCutting());
-  setFromCapnpList(cm->pc_OrganMaintenanceRespiration,
-                   reader.getPcOrganMaintenanceRespiration());
+  // deserializeYieldComponents(cm->pc_OrganIdsForPrimaryYield,
+  // reader.getPcOrganIdsForPrimaryYield());
+  // deserializeYieldComponents(cm->pc_OrganIdsForSecondaryYield,
+  // reader.getPcOrganIdsForSecondaryYield());
+  // deserializeYieldComponents(cm->pc_OrganIdsForCutting,
+  // reader.getPcOrganIdsForCutting());
+  // setFromCapnpList(cm->pc_OrganMaintenanceRespiration,
+  // reader.getPcOrganMaintenanceRespiration());
   setFromCapnpList(cm->vc_OrganSenescenceIncrement,
                    reader.getOrganSenescenceIncrement());
 
-  {
-    auto listReader = reader.getPcOrganSenescenceRate();
-    cm->pc_OrganSenescenceRate.resize(listReader.size());
-    capnp::uint i = 0;
-    for (auto &v : cm->pc_OrganSenescenceRate)
-      setFromCapnpList(v, listReader[i++]);
-  }
+  // {
+  // auto listReader = reader.getPcOrganSenescenceRate();
+  // cm->pc_OrganSenescenceRate.resize(listReader.size());
+  // capnp::uint i = 0;
+  // for (auto &v : cm->pc_OrganSenescenceRate)
+  // setFromCapnpList(v, listReader[i++]);
+  // }
 
   cm->vc_OvercastDayRadiation = reader.getOvercastDayRadiation();
   cm->vc_OxygenDeficit = reader.getOxygenDeficit();
-  cm->pc_PartBiologicalNFixation = reader.getPcPartBiologicalNFixation();
-  cm->pc_Perennial = reader.getPcPerennial();
+  // cm->pc_PartBiologicalNFixation = reader.getPcPartBiologicalNFixation();
+  // cm->pc_Perennial = reader.getPcPerennial();
   cm->vc_PhotoperiodicDaylength = reader.getPhotoperiodicDaylength();
   cm->vc_PhotActRadiationMean = reader.getPhotActRadiationMean();
-  cm->pc_PlantDensity = reader.getPcPlantDensity();
+  // cm->pc_PlantDensity = reader.getPcPlantDensity();
   cm->vc_PotentialTranspiration = reader.getPotentialTranspiration();
   cm->vc_ReferenceEvapotranspiration = reader.getReferenceEvapotranspiration();
   cm->vc_RelativeTotalDevelopment = reader.getRelativeTotalDevelopment();
   cm->vc_RemainingEvapotranspiration = reader.getRemainingEvapotranspiration();
   cm->vc_ReserveAssimilatePool = reader.getReserveAssimilatePool();
-  cm->pc_ResidueNRatio = reader.getPcResidueNRatio();
-  cm->pc_RespiratoryStress = reader.getPcRespiratoryStress();
+  // cm->pc_ResidueNRatio = reader.getPcResidueNRatio();
+  // cm->pc_RespiratoryStress = reader.getPcRespiratoryStress();
   cm->vc_RootBiomass = reader.getRootBiomass();
   cm->vc_RootBiomassOld = reader.getRootBiomassOld();
   setFromCapnpList(cm->vc_RootDensity, reader.getRootDensity());
   setFromCapnpList(cm->vc_RootDiameter, reader.getRootDiameter());
-  cm->pc_RootDistributionParam = reader.getPcRootDistributionParam();
+  // cm->pc_RootDistributionParam = reader.getPcRootDistributionParam();
   setFromCapnpList(cm->vc_RootEffectivity, reader.getRootEffectivity());
-  cm->pc_RootFormFactor = reader.getPcRootFormFactor();
-  cm->pc_RootGrowthLag = reader.getPcRootGrowthLag();
+  // cm->pc_RootFormFactor = reader.getPcRootFormFactor();
+  // cm->pc_RootGrowthLag = reader.getPcRootGrowthLag();
   cm->vc_RootingDepth = reader.getRootingDepth();
   cm->vc_RootingDepth_m = reader.getRootingDepthM();
   cm->vc_RootingZone = reader.getRootingZone();
-  cm->pc_RootPenetrationRate = reader.getPcRootPenetrationRate();
+  // cm->pc_RootPenetrationRate = reader.getPcRootPenetrationRate();
   cm->vm_SaturationDeficit = reader.getVmSaturationDeficit();
   cm->vc_SoilCoverage = reader.getSoilCoverage();
   setFromCapnpList(cm->vs_SoilMineralNContent,
@@ -624,18 +627,18 @@ void monica::cropmodule::deserialize(
   cm->vc_SoilSpecificMaxRootingDepth = reader.getSoilSpecificMaxRootingDepth();
   cm->vs_SoilSpecificMaxRootingDepth =
       reader.getVsSoilSpecificMaxRootingDepth();
-  setFromCapnpList(cm->pc_SpecificLeafArea, reader.getPcSpecificLeafArea());
-  cm->pc_SpecificRootLength = reader.getPcSpecificRootLength();
-  cm->pc_StageAfterCut = reader.getPcStageAfterCut();
-  cm->pc_StageAtMaxDiameter = reader.getPcStageAtMaxDiameter();
-  cm->pc_StageAtMaxHeight = reader.getPcStageAtMaxHeight();
-  setFromCapnpList(cm->pc_StageMaxRootNConcentration,
-                   reader.getPcStageMaxRootNConcentration());
-  setFromCapnpList(cm->pc_StageKcFactor, reader.getPcStageKcFactor());
-  setFromCapnpList(cm->pc_StageTemperatureSum,
-                   reader.getPcStageTemperatureSum());
+  // setFromCapnpList(cm->pc_SpecificLeafArea, reader.getPcSpecificLeafArea());
+  // cm->pc_SpecificRootLength = reader.getPcSpecificRootLength();
+  // cm->pc_StageAfterCut = reader.getPcStageAfterCut();
+  // cm->pc_StageAtMaxDiameter = reader.getPcStageAtMaxDiameter();
+  // cm->pc_StageAtMaxHeight = reader.getPcStageAtMaxHeight();
+  // setFromCapnpList(cm->pc_StageMaxRootNConcentration,
+  // reader.getPcStageMaxRootNConcentration());
+  // setFromCapnpList(cm->pc_StageKcFactor, reader.getPcStageKcFactor());
+  // setFromCapnpList(cm->pc_StageTemperatureSum,
+  // reader.getPcStageTemperatureSum());
   cm->vc_StomataResistance = reader.getStomataResistance();
-  setFromCapnpList(cm->pc_StorageOrgan, reader.getPcStorageOrgan());
+  // setFromCapnpList(cm->pc_StorageOrgan, reader.getPcStorageOrgan());
   cm->vc_StorageOrgan = reader.getStorageOrgan();
   cm->vc_TargetNConcentration = reader.getTargetNConcentration();
   cm->vc_TimeStep = reader.getTimeStep();
@@ -659,9 +662,9 @@ void monica::cropmodule::deserialize(
   cm->vc_TranspirationDeficit = reader.getTranspirationDeficit();
   cm->vc_VernalisationDays = reader.getVernalisationDays();
   cm->vc_VernalisationFactor = reader.getVernalisationFactor();
-  setFromCapnpList(cm->pc_VernalisationRequirement,
-                   reader.getPcVernalisationRequirement());
-  cm->pc_WaterDeficitResponseOn = reader.getPcWaterDeficitResponseOn();
+  // setFromCapnpList(cm->pc_VernalisationRequirement,
+  // reader.getPcVernalisationRequirement());
+  // cm->pc_WaterDeficitResponseOn = reader.getPcWaterDeficitResponseOn();
   cm->dyingOut = reader.getDyingOut();
   cm->vc_AccumulatedETa = reader.getAccumulatedETa();
   cm->vc_AccumulatedTranspiration = reader.getAccumulatedTranspiration();
@@ -706,8 +709,9 @@ void monica::cropmodule::serialize(
     const CropModule *cm,
     mas::schema::model::monica::CropModuleState::Builder builder) {
   builder.setFrostKillOn(cm->frostKillOn);
-  // cm->speciesPs.serialize(builder.initSpeciesParams());
-  // cm->cultivarPs.serialize(builder.initCultivarParams());
+  cropparameters::serialize(&cm->cropParams, builder.initCropParams());
+  cropparameters::serialize(cm->perennialCropParams,
+                            builder.initPerennialCropParams());
   cropresidueparameters::serialize(&cm->residuePs, builder.initResidueParams());
   builder.setIsWinterCrop(cm->isWinterCrop);
   builder.setVsLatitude(cm->vs_Latitude);
@@ -718,47 +722,47 @@ void monica::cropmodule::serialize(
                    (capnp::uint)cm->pc_AbovegroundOrgan.size()));
   builder.setActualTranspiration(cm->vc_ActualTranspiration);
 
-  {
-    auto coeffs = builder.initPcAssimilatePartitioningCoeff(
-        (capnp::uint)cm->pc_AssimilatePartitioningCoeff.size());
-    capnp::uint i = 0;
-    for (const auto &v : cm->pc_AssimilatePartitioningCoeff)
-      setCapnpList(v, coeffs.init(i++, (capnp::uint)v.size()));
-  }
+  // {
+  // auto coeffs = builder.initPcAssimilatePartitioningCoeff(
+  // (capnp::uint)cm->pc_AssimilatePartitioningCoeff.size());
+  // capnp::uint i = 0;
+  // for (const auto &v : cm->pc_AssimilatePartitioningCoeff)
+  // setCapnpList(v, coeffs.init(i++, (capnp::uint)v.size()));
+  // }
 
-  builder.setPcAssimilateReallocation(cm->pc_AssimilateReallocation);
+  // builder.setPcAssimilateReallocation(cm->pc_AssimilateReallocation);
   builder.setAssimilates(cm->vc_Assimilates);
   builder.setAssimilationRate(cm->vc_AssimilationRate);
   builder.setAstronomicDayLenght(cm->vc_AstronomicDayLenght);
-  setCapnpList(
-      cm->pc_BaseDaylength,
-      builder.initPcBaseDaylength((capnp::uint)cm->pc_BaseDaylength.size()));
-  setCapnpList(cm->pc_BaseTemperature,
-               builder.initPcBaseTemperature(
-                   (capnp::uint)cm->pc_BaseTemperature.size()));
-  builder.setPcBeginSensitivePhaseHeatStress(
-      cm->pc_BeginSensitivePhaseHeatStress);
+  // setCapnpList(
+  // cm->pc_BaseDaylength,
+  // builder.initPcBaseDaylength((capnp::uint)cm->pc_BaseDaylength.size()));
+  // setCapnpList(cm->pc_BaseTemperature,
+  // builder.initPcBaseTemperature(
+  // (capnp::uint)cm->pc_BaseTemperature.size()));
+  // builder.setPcBeginSensitivePhaseHeatStress(
+  // cm->pc_BeginSensitivePhaseHeatStress);
   builder.setBelowgroundBiomass(cm->vc_BelowgroundBiomass);
   builder.setBelowgroundBiomassOld(cm->vc_BelowgroundBiomassOld);
-  builder.setPcCarboxylationPathway(cm->pc_CarboxylationPathway);
+  // builder.setPcCarboxylationPathway(cm->pc_CarboxylationPathway);
   builder.setClearDayRadiation(cm->vc_ClearDayRadiation);
-  builder.setPcCo2Method(cm->pc_CO2Method);
+  // builder.setPcCo2Method(cm->pc_CO2Method);
   builder.setCriticalNConcentration(cm->vc_CriticalNConcentration);
-  setCapnpList(cm->pc_CriticalOxygenContent,
-               builder.initPcCriticalOxygenContent(
-                   (capnp::uint)cm->pc_CriticalOxygenContent.size()));
-  builder.setPcCriticalTemperatureHeatStress(
-      cm->pc_CriticalTemperatureHeatStress);
+  // setCapnpList(cm->pc_CriticalOxygenContent,
+  // builder.initPcCriticalOxygenContent(
+  // (capnp::uint)cm->pc_CriticalOxygenContent.size()));
+  // builder.setPcCriticalTemperatureHeatStress(
+  // cm->pc_CriticalTemperatureHeatStress);
   builder.setCropDiameter(cm->vc_CropDiameter);
   builder.setCropFrostRedux(cm->vc_CropFrostRedux);
   builder.setCropHeatRedux(cm->vc_CropHeatRedux);
   builder.setCropHeight(cm->vc_CropHeight);
-  builder.setPcCropHeightP1(cm->pc_CropHeightP1);
-  builder.setPcCropHeightP2(cm->pc_CropHeightP2);
-  builder.setPcCropName(cm->pc_CropName);
+  // builder.setPcCropHeightP1(cm->pc_CropHeightP1);
+  // builder.setPcCropHeightP2(cm->pc_CropHeightP2);
+  // builder.setPcCropName(cm->pc_CropName);
   builder.setCropNDemand(cm->vc_CropNDemand);
   builder.setCropNRedux(cm->vc_CropNRedux);
-  builder.setPcCropSpecificMaxRootingDepth(cm->pc_CropSpecificMaxRootingDepth);
+  // builder.setPcCropSpecificMaxRootingDepth(cm->pc_CropSpecificMaxRootingDepth);
   setCapnpList(
       cm->vc_CropWaterUptake,
       builder.initCropWaterUptake((capnp::uint)cm->vc_CropWaterUptake.size()));
@@ -768,40 +772,40 @@ void monica::cropmodule::serialize(
   builder.setCurrentTotalTemperatureSum(cm->vc_CurrentTotalTemperatureSum);
   builder.setCurrentTotalTemperatureSumRoot(
       cm->vc_CurrentTotalTemperatureSumRoot);
-  builder.setPcCuttingDelayDays(cm->pc_CuttingDelayDays);
+  // builder.setPcCuttingDelayDays(cm->pc_CuttingDelayDays);
   builder.setDaylengthFactor(cm->vc_DaylengthFactor);
-  setCapnpList(cm->pc_DaylengthRequirement,
-               builder.initPcDaylengthRequirement(
-                   (capnp::uint)cm->pc_DaylengthRequirement.size()));
+  // setCapnpList(cm->pc_DaylengthRequirement,
+  // builder.initPcDaylengthRequirement(
+  // (capnp::uint)cm->pc_DaylengthRequirement.size()));
   builder.setDaysAfterBeginFlowering(cm->vc_DaysAfterBeginFlowering);
   builder.setDeclination(cm->vc_Declination);
-  builder.setPcDefaultRadiationUseEfficiency(
-      cm->pc_DefaultRadiationUseEfficiency);
+  // builder.setPcDefaultRadiationUseEfficiency(
+  // cm->pc_DefaultRadiationUseEfficiency);
   builder.setVmDepthGroundwaterTable(cm->vm_DepthGroundwaterTable);
-  builder.setPcDevelopmentAccelerationByNitrogenStress(
-      cm->pc_DevelopmentAccelerationByNitrogenStress);
+  // builder.setPcDevelopmentAccelerationByNitrogenStress(
+  // cm->pc_DevelopmentAccelerationByNitrogenStress);
   builder.setDevelopmentalStage((uint16_t)cm->vc_DevelopmentalStage);
   builder.setNoOfCropSteps(cm->noOfCropSteps);
   builder.setDroughtImpactOnFertility(cm->vc_DroughtImpactOnFertility);
-  builder.setPcDroughtImpactOnFertilityFactor(
-      cm->pc_DroughtImpactOnFertilityFactor);
-  setCapnpList(cm->pc_DroughtStressThreshold,
-               builder.initPcDroughtStressThreshold(
-                   (capnp::uint)cm->pc_DroughtStressThreshold.size()));
-  builder.setPcEmergenceFloodingControlOn(cm->pc_EmergenceFloodingControlOn);
-  builder.setPcEmergenceMoistureControlOn(cm->pc_EmergenceMoistureControlOn);
-  builder.setPcEndSensitivePhaseHeatStress(cm->pc_EndSensitivePhaseHeatStress);
+  // builder.setPcDroughtImpactOnFertilityFactor(
+  // cm->pc_DroughtImpactOnFertilityFactor);
+  // setCapnpList(cm->pc_DroughtStressThreshold,
+  // builder.initPcDroughtStressThreshold(
+  // (capnp::uint)cm->pc_DroughtStressThreshold.size()));
+  // builder.setPcEmergenceFloodingControlOn(cm->pc_EmergenceFloodingControlOn);
+  // builder.setPcEmergenceMoistureControlOn(cm->pc_EmergenceMoistureControlOn);
+  // builder.setPcEndSensitivePhaseHeatStress(cm->pc_EndSensitivePhaseHeatStress);
   builder.setEffectiveDayLength(cm->vc_EffectiveDayLength);
   builder.setErrorStatus(cm->vc_ErrorStatus);
   builder.setErrorMessage(cm->vc_ErrorMessage);
   builder.setEvaporatedFromIntercept(cm->vc_EvaporatedFromIntercept);
   builder.setExtraterrestrialRadiation(cm->vc_ExtraterrestrialRadiation);
-  builder.setPcFieldConditionModifier(cm->pc_FieldConditionModifier);
+  // builder.setPcFieldConditionModifier(cm->pc_FieldConditionModifier);
   builder.setFinalDevelopmentalStage((uint16_t)cm->vc_FinalDevelopmentalStage);
   builder.setFixedN(cm->vc_FixedN);
   // std::vector<double> vo_FreshSoilOrganicMatt
-  builder.setPcFrostDehardening(cm->pc_FrostDehardening);
-  builder.setPcFrostHardening(cm->pc_FrostHardening);
+  // builder.setPcFrostDehardening(cm->pc_FrostDehardening);
+  // builder.setPcFrostHardening(cm->pc_FrostHardening);
   builder.setGlobalRadiation(cm->vc_GlobalRadiation);
   builder.setGreenAreaIndex(cm->vc_GreenAreaIndex);
   builder.setGrossAssimilates(cm->vc_GrossAssimilates);
@@ -812,14 +816,14 @@ void monica::cropmodule::serialize(
   builder.setGrossPrimaryProduction(cm->vc_GrossPrimaryProduction);
   builder.setGrowthCycleEnded(cm->vc_GrowthCycleEnded);
   builder.setGrowthRespirationAS(cm->vc_GrowthRespirationAS);
-  builder.setPcHeatSumIrrigationStart(cm->pc_HeatSumIrrigationStart);
-  builder.setPcHeatSumIrrigationEnd(cm->pc_HeatSumIrrigationEnd);
+  // builder.setPcHeatSumIrrigationStart(cm->pc_HeatSumIrrigationStart);
+  // builder.setPcHeatSumIrrigationEnd(cm->pc_HeatSumIrrigationEnd);
   builder.setVsHeightNN(cm->vs_HeightNN);
-  builder.setPcInitialKcFactor(cm->pc_InitialKcFactor);
-  setCapnpList(cm->pc_InitialOrganBiomass,
-               builder.initPcInitialOrganBiomass(
-                   (capnp::uint)cm->pc_InitialOrganBiomass.size()));
-  builder.setPcInitialRootingDepth(cm->pc_InitialRootingDepth);
+  // builder.setPcInitialKcFactor(cm->pc_InitialKcFactor);
+  // setCapnpList(cm->pc_InitialOrganBiomass,
+  // builder.initPcInitialOrganBiomass(
+  // (capnp::uint)cm->pc_InitialOrganBiomass.size()));
+  // builder.setPcInitialRootingDepth(cm->pc_InitialRootingDepth);
   builder.setInterceptionStorage(cm->vc_InterceptionStorage);
   builder.setKcFactor(cm->vc_KcFactor);
   builder.setLeafAreaIndex(cm->vc_LeafAreaIndex);
@@ -829,54 +833,54 @@ void monica::cropmodule::serialize(
   setCapnpList(cm->vc_shadedLeafAreaIndex,
                builder.initShadedLeafAreaIndex(
                    (capnp::uint)cm->vc_shadedLeafAreaIndex.size()));
-  builder.setPcLowTemperatureExposure(cm->pc_LowTemperatureExposure);
-  builder.setPcLimitingTemperatureHeatStress(
-      cm->pc_LimitingTemperatureHeatStress);
+  // builder.setPcLowTemperatureExposure(cm->pc_LowTemperatureExposure);
+  // builder.setPcLimitingTemperatureHeatStress(
+  // cm->pc_LimitingTemperatureHeatStress);
   builder.setLt50(cm->vc_LT50);
   builder.setLt50m(cm->vc_LT50M);
-  builder.setPcLt50cultivar(cm->pc_LT50cultivar);
-  builder.setPcLuxuryNCoeff(cm->pc_LuxuryNCoeff);
+  // builder.setPcLt50cultivar(cm->pc_LT50cultivar);
+  // builder.setPcLuxuryNCoeff(cm->pc_LuxuryNCoeff);
   builder.setMaintenanceRespirationAS(cm->vc_MaintenanceRespirationAS);
-  builder.setPcMaxAssimilationRate(cm->pc_MaxAssimilationRate);
-  builder.setPcMaxCropDiameter(cm->pc_MaxCropDiameter);
-  builder.setPcMaxCropHeight(cm->pc_MaxCropHeight);
+  // builder.setPcMaxAssimilationRate(cm->pc_MaxAssimilationRate);
+  // builder.setPcMaxCropDiameter(cm->pc_MaxCropDiameter);
+  // builder.setPcMaxCropHeight(cm->pc_MaxCropHeight);
   builder.setMaxNUptake(cm->vc_MaxNUptake);
-  builder.setPcMaxNUptakeParam(cm->pc_MaxNUptakeParam);
+  // builder.setPcMaxNUptakeParam(cm->pc_MaxNUptakeParam);
   builder.setPcMaxRootingDepth(cm->vc_MaxRootingDepth);
-  builder.setPcMinimumNConcentration(cm->pc_MinimumNConcentration);
-  builder.setPcMinimumTemperatureForAssimilation(
-      cm->pc_MinimumTemperatureForAssimilation);
-  builder.setPcOptimumTemperatureForAssimilation(
-      cm->pc_OptimumTemperatureForAssimilation);
-  builder.setPcMaximumTemperatureForAssimilation(
-      cm->pc_MaximumTemperatureForAssimilation);
-  builder.setPcMinimumTemperatureRootGrowth(
-      cm->pc_MinimumTemperatureRootGrowth);
+  // builder.setPcMinimumNConcentration(cm->pc_MinimumNConcentration);
+  // builder.setPcMinimumTemperatureForAssimilation(
+  // cm->pc_MinimumTemperatureForAssimilation);
+  // builder.setPcOptimumTemperatureForAssimilation(
+  // cm->pc_OptimumTemperatureForAssimilation);
+  // builder.setPcMaximumTemperatureForAssimilation(
+  // cm->pc_MaximumTemperatureForAssimilation);
+  // builder.setPcMinimumTemperatureRootGrowth(
+  // cm->pc_MinimumTemperatureRootGrowth);
   builder.setNetMaintenanceRespiration(cm->vc_NetMaintenanceRespiration);
   builder.setNetPhotosynthesis(cm->vc_NetPhotosynthesis);
   builder.setNetPrecipitation(cm->vc_NetPrecipitation);
   builder.setNetPrimaryProduction(cm->vc_NetPrimaryProduction);
-  builder.setPcNConcentrationAbovegroundBiomass(
-      cm->pc_NConcentrationAbovegroundBiomass);
+  // builder.setPcNConcentrationAbovegroundBiomass(
+  // cm->pc_NConcentrationAbovegroundBiomass);
   builder.setNConcentrationAbovegroundBiomass(
       cm->vc_NConcentrationAbovegroundBiomass);
   builder.setNConcentrationAbovegroundBiomassOld(
       cm->vc_NConcentrationAbovegroundBiomassOld);
-  builder.setPcNConcentrationB0(cm->pc_NConcentrationB0);
+  // builder.setPcNConcentrationB0(cm->pc_NConcentrationB0);
   builder.setNContentDeficit(cm->vc_NContentDeficit);
-  builder.setPcNConcentrationPN(cm->pc_NConcentrationPN);
-  builder.setPcNConcentrationRoot(cm->pc_NConcentrationRoot);
+  // builder.setPcNConcentrationPN(cm->pc_NConcentrationPN);
+  // builder.setPcNConcentrationRoot(cm->pc_NConcentrationRoot);
   builder.setNConcentrationRoot(cm->vc_NConcentrationRoot);
   builder.setNConcentrationRootOld(cm->vc_NConcentrationRootOld);
-  builder.setPcNitrogenResponseOn(cm->pc_NitrogenResponseOn);
-  builder.setPcNumberOfDevelopmentalStages(cm->pc_NumberOfDevelopmentalStages);
+  // builder.setPcNitrogenResponseOn(cm->pc_NitrogenResponseOn);
+  // builder.setPcNumberOfDevelopmentalStages(cm->pc_NumberOfDevelopmentalStages);
   builder.setPcNumberOfOrgans(cm->pc_NumberOfOrgans);
   setCapnpList(cm->vc_NUptakeFromLayer,
                builder.initNUptakeFromLayer(
                    (capnp::uint)cm->vc_NUptakeFromLayer.size()));
-  setCapnpList(cm->pc_OptimumTemperature,
-               builder.initPcOptimumTemperature(
-                   (capnp::uint)cm->pc_OptimumTemperature.size()));
+  // setCapnpList(cm->pc_OptimumTemperature,
+  // builder.initPcOptimumTemperature(
+  // (capnp::uint)cm->pc_OptimumTemperature.size()));
   setCapnpList(
       cm->vc_OrganBiomass,
       builder.initOrganBiomass((capnp::uint)cm->vc_OrganBiomass.size()));
@@ -889,55 +893,55 @@ void monica::cropmodule::serialize(
   setCapnpList(cm->vc_OrganGrowthIncrement,
                builder.initOrganGrowthIncrement(
                    (capnp::uint)cm->vc_OrganGrowthIncrement.size()));
-  setCapnpList(cm->pc_OrganGrowthRespiration,
-               builder.initPcOrganGrowthRespiration(
-                   (capnp::uint)cm->pc_OrganGrowthRespiration.size()));
-  auto serializeYieldComponents = [](const std::vector<YieldComponent> &ycs,
-                                     auto listBuilder) {
-    uint32_t i = 0;
-    for (const auto &yc : ycs)
-      yieldcomponent::serialize(&yc, listBuilder[i++]);
-  };
-  serializeYieldComponents(
-      cm->pc_OrganIdsForPrimaryYield,
-      builder.initPcOrganIdsForPrimaryYield(
-          (capnp::uint)cm->pc_OrganIdsForPrimaryYield.size()));
-  serializeYieldComponents(
-      cm->pc_OrganIdsForSecondaryYield,
-      builder.initPcOrganIdsForSecondaryYield(
-          (capnp::uint)cm->pc_OrganIdsForSecondaryYield.size()));
-  serializeYieldComponents(cm->pc_OrganIdsForCutting,
-                           builder.initPcOrganIdsForCutting(
-                               (capnp::uint)cm->pc_OrganIdsForCutting.size()));
-  setCapnpList(cm->pc_OrganMaintenanceRespiration,
-               builder.initPcOrganMaintenanceRespiration(
-                   (capnp::uint)cm->pc_OrganMaintenanceRespiration.size()));
-  setCapnpList(cm->vc_OrganSenescenceIncrement,
-               builder.initOrganSenescenceIncrement(
-                   (capnp::uint)cm->vc_OrganSenescenceIncrement.size()));
+  // setCapnpList(cm->pc_OrganGrowthRespiration,
+  // builder.initPcOrganGrowthRespiration(
+  // (capnp::uint)cm->pc_OrganGrowthRespiration.size()));
+  // auto serializeYieldComponents = [](const std::vector<YieldComponent> &ycs,
+  // auto listBuilder) {
+  // uint32_t i = 0;
+  // for (const auto &yc : ycs)
+  // yieldcomponent::serialize(&yc, listBuilder[i++]);
+  // };
+  // serializeYieldComponents(
+  cm->pc_OrganIdsForPrimaryYield,
+      // builder.initPcOrganIdsForPrimaryYield(
+      // (capnp::uint)cm->pc_OrganIdsForPrimaryYield.size()));
+      // serializeYieldComponents(
+      // cm->pc_OrganIdsForSecondaryYield,
+      // builder.initPcOrganIdsForSecondaryYield(
+      // (capnp::uint)cm->pc_OrganIdsForSecondaryYield.size()));
+      // serializeYieldComponents(cm->pc_OrganIdsForCutting,
+      // builder.initPcOrganIdsForCutting(
+      // (capnp::uint)cm->pc_OrganIdsForCutting.size()));
+      // setCapnpList(cm->pc_OrganMaintenanceRespiration,
+      // builder.initPcOrganMaintenanceRespiration(
+      // (capnp::uint)cm->pc_OrganMaintenanceRespiration.size()));
+      setCapnpList(cm->vc_OrganSenescenceIncrement,
+                   builder.initOrganSenescenceIncrement(
+                       (capnp::uint)cm->vc_OrganSenescenceIncrement.size()));
 
-  {
-    auto listBuilder = builder.initPcOrganSenescenceRate(
-        (capnp::uint)cm->pc_OrganSenescenceRate.size());
-    capnp::uint i = 0;
-    for (const auto &v : cm->pc_OrganSenescenceRate)
-      setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
-  }
+  // {
+  // auto listBuilder = builder.initPcOrganSenescenceRate(
+  // (capnp::uint)cm->pc_OrganSenescenceRate.size());
+  // capnp::uint i = 0;
+  // for (const auto &v : cm->pc_OrganSenescenceRate)
+  // setCapnpList(v, listBuilder.init(i++, (capnp::uint)v.size()));
+  // }
 
   builder.setOvercastDayRadiation(cm->vc_OvercastDayRadiation);
   builder.setOxygenDeficit(cm->vc_OxygenDeficit);
-  builder.setPcPartBiologicalNFixation(cm->pc_PartBiologicalNFixation);
-  builder.setPcPerennial(cm->pc_Perennial);
+  // builder.setPcPartBiologicalNFixation(cm->pc_PartBiologicalNFixation);
+  // builder.setPcPerennial(cm->pc_Perennial);
   builder.setPhotoperiodicDaylength(cm->vc_PhotoperiodicDaylength);
   builder.setPhotActRadiationMean(cm->vc_PhotActRadiationMean);
-  builder.setPcPlantDensity(cm->pc_PlantDensity);
+  // builder.setPcPlantDensity(cm->pc_PlantDensity);
   builder.setPotentialTranspiration(cm->vc_PotentialTranspiration);
   builder.setReferenceEvapotranspiration(cm->vc_ReferenceEvapotranspiration);
   builder.setRelativeTotalDevelopment(cm->vc_RelativeTotalDevelopment);
   builder.setRemainingEvapotranspiration(cm->vc_RemainingEvapotranspiration);
   builder.setReserveAssimilatePool(cm->vc_ReserveAssimilatePool);
-  builder.setPcResidueNRatio(cm->pc_ResidueNRatio);
-  builder.setPcRespiratoryStress(cm->pc_RespiratoryStress);
+  // builder.setPcResidueNRatio(cm->pc_ResidueNRatio);
+  // builder.setPcRespiratoryStress(cm->pc_RespiratoryStress);
   builder.setRootBiomass(cm->vc_RootBiomass);
   builder.setRootBiomassOld(cm->vc_RootBiomassOld);
   setCapnpList(cm->vc_RootDensity,
@@ -945,16 +949,16 @@ void monica::cropmodule::serialize(
   setCapnpList(
       cm->vc_RootDiameter,
       builder.initRootDiameter((capnp::uint)cm->vc_RootDiameter.size()));
-  builder.setPcRootDistributionParam(cm->pc_RootDistributionParam);
+  // builder.setPcRootDistributionParam(cm->pc_RootDistributionParam);
   setCapnpList(
       cm->vc_RootEffectivity,
       builder.initRootEffectivity((capnp::uint)cm->vc_RootEffectivity.size()));
-  builder.setPcRootFormFactor(cm->pc_RootFormFactor);
-  builder.setPcRootGrowthLag(cm->pc_RootGrowthLag);
+  // builder.setPcRootFormFactor(cm->pc_RootFormFactor);
+  // builder.setPcRootGrowthLag(cm->pc_RootGrowthLag);
   builder.setRootingDepth((uint16_t)cm->vc_RootingDepth);
   builder.setRootingDepthM(cm->vc_RootingDepth_m);
   builder.setRootingZone((uint16_t)cm->vc_RootingZone);
-  builder.setPcRootPenetrationRate(cm->pc_RootPenetrationRate);
+  // builder.setPcRootPenetrationRate(cm->pc_RootPenetrationRate);
   builder.setVmSaturationDeficit(cm->vm_SaturationDeficit);
   builder.setSoilCoverage(cm->vc_SoilCoverage);
   setCapnpList(cm->vs_SoilMineralNContent,
@@ -962,26 +966,26 @@ void monica::cropmodule::serialize(
                    (capnp::uint)cm->vs_SoilMineralNContent.size()));
   builder.setSoilSpecificMaxRootingDepth(cm->vc_SoilSpecificMaxRootingDepth);
   builder.setVsSoilSpecificMaxRootingDepth(cm->vs_SoilSpecificMaxRootingDepth);
-  setCapnpList(cm->pc_SpecificLeafArea,
-               builder.initPcSpecificLeafArea(
-                   (capnp::uint)cm->pc_SpecificLeafArea.size()));
-  builder.setPcSpecificRootLength(cm->pc_SpecificRootLength);
-  builder.setPcStageAfterCut(cm->pc_StageAfterCut);
-  builder.setPcStageAtMaxDiameter(cm->pc_StageAtMaxDiameter);
-  builder.setPcStageAtMaxHeight(cm->pc_StageAtMaxHeight);
-  setCapnpList(cm->pc_StageMaxRootNConcentration,
-               builder.initPcStageMaxRootNConcentration(
-                   (capnp::uint)cm->pc_StageMaxRootNConcentration.size()));
-  setCapnpList(
-      cm->pc_StageKcFactor,
-      builder.initPcStageKcFactor((capnp::uint)cm->pc_StageKcFactor.size()));
-  setCapnpList(cm->pc_StageTemperatureSum,
-               builder.initPcStageTemperatureSum(
-                   (capnp::uint)cm->pc_StageTemperatureSum.size()));
+  // setCapnpList(cm->pc_SpecificLeafArea,
+  // builder.initPcSpecificLeafArea(
+  // (capnp::uint)cm->pc_SpecificLeafArea.size()));
+  // builder.setPcSpecificRootLength(cm->pc_SpecificRootLength);
+  // builder.setPcStageAfterCut(cm->pc_StageAfterCut);
+  // builder.setPcStageAtMaxDiameter(cm->pc_StageAtMaxDiameter);
+  // builder.setPcStageAtMaxHeight(cm->pc_StageAtMaxHeight);
+  // setCapnpList(cm->pc_StageMaxRootNConcentration,
+  // builder.initPcStageMaxRootNConcentration(
+  // (capnp::uint)cm->pc_StageMaxRootNConcentration.size()));
+  // setCapnpList(
+  // cm->pc_StageKcFactor,
+  // builder.initPcStageKcFactor((capnp::uint)cm->pc_StageKcFactor.size()));
+  // setCapnpList(cm->pc_StageTemperatureSum,
+  // builder.initPcStageTemperatureSum(
+  // (capnp::uint)cm->pc_StageTemperatureSum.size()));
   builder.setStomataResistance(cm->vc_StomataResistance);
-  setCapnpList(
-      cm->pc_StorageOrgan,
-      builder.initPcStorageOrgan((capnp::uint)cm->pc_StorageOrgan.size()));
+  // setCapnpList(
+  // cm->pc_StorageOrgan,
+  // builder.initPcStorageOrgan((capnp::uint)cm->pc_StorageOrgan.size()));
   builder.setStorageOrgan(cm->vc_StorageOrgan);
   builder.setTargetNConcentration(cm->vc_TargetNConcentration);
   builder.setTimeStep(cm->vc_TimeStep);
@@ -1008,10 +1012,10 @@ void monica::cropmodule::serialize(
   builder.setTranspirationDeficit(cm->vc_TranspirationDeficit);
   builder.setVernalisationDays(cm->vc_VernalisationDays);
   builder.setVernalisationFactor(cm->vc_VernalisationFactor);
-  setCapnpList(cm->pc_VernalisationRequirement,
-               builder.initPcVernalisationRequirement(
-                   (capnp::uint)cm->pc_VernalisationRequirement.size()));
-  builder.setPcWaterDeficitResponseOn(cm->pc_WaterDeficitResponseOn);
+  // setCapnpList(cm->pc_VernalisationRequirement,
+  // builder.initPcVernalisationRequirement(
+  // (capnp::uint)cm->pc_VernalisationRequirement.size()));
+  // builder.setPcWaterDeficitResponseOn(cm->pc_WaterDeficitResponseOn);
   builder.setDyingOut(cm->dyingOut);
   builder.setAccumulatedETa(cm->vc_AccumulatedETa);
   builder.setAccumulatedTranspiration(cm->vc_AccumulatedTranspiration);
