@@ -17,18 +17,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "run-monica.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
-#include <limits>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <sstream>
-#include <thread>
 #include <tuple>
 
-#include "common/rpc-connection-manager.h"
 #include "model/monica/monica_state.capnp.h"
 #include <capnp/compat/json.h>
 #include <capnp/message.h>
@@ -776,7 +772,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   // after loading deserialized state, move the iterator to the previous
   // position if possible
   //!!! attention doesn't check currently if the env is the same as when the
-  //!state had been serialized !!!
+  //! state had been serialized !!!
   // while (critPos-- > 0 && crit + 1 != env.cropRotations.end())
   //   crit++;
 
@@ -824,7 +820,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   // after loading deserialized state, move the iterator to the previous
   // position if possible
   //!!! attention doesn't check currently if the env is the same as when the
-  //!state had been serialized !!!
+  //! state had been serialized !!!
   // while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
   //	cmit++;
 
@@ -842,7 +838,8 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         // delete fully cultivation methods with only absolute worksteps,
         // because they won't participate in a new run when wrapping the crop
         // rotation
-        if (cultivationmethod::areOnlyAbsoluteWorksteps(*cmit) || !(*cmit)->repeat)
+        if (cultivationmethod::areOnlyAbsoluteWorksteps(*cmit) ||
+            !(*cmit)->repeat)
           cmit = cropRotation.erase(cmit);
         else
           cmit++;
@@ -868,19 +865,22 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
             // if current CM's latest sowing date is actually after current
             // date, we have to reinit current CM again, but this time prevent
             // shifting it to the next year
-            if (!(notFoundNextCM = cultivationmethod::absLatestSowingDate(currentCM).withYear(
-                                       currentDate.year()) < currentDate)) {
+            if (!(notFoundNextCM =
+                      cultivationmethod::absLatestSowingDate(currentCM)
+                          .withYear(currentDate.year()) < currentDate)) {
               cultivationmethod::reinit(currentCM, currentDate, true);
             }
           } else
             notFoundNextCM =
                 currentCM->canBeSkipped; // if current CM was marked skipable,
-                                           // skip it
+                                         // skip it
         } else { // not added year or CM was had also absolute dates
           if (currentCM->isCoverCrop)
-            notFoundNextCM = cultivationmethod::absLatestSowingDate(currentCM) < currentDate;
+            notFoundNextCM =
+                cultivationmethod::absLatestSowingDate(currentCM) < currentDate;
           else if (currentCM->canBeSkipped)
-            notFoundNextCM = cultivationmethod::absStartDate(currentCM) < currentDate;
+            notFoundNextCM =
+                cultivationmethod::absStartDate(currentCM) < currentDate;
           else
             notFoundNextCM = false;
         }
@@ -888,9 +888,10 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         if (notFoundNextCM)
           nextAbsoluteCMApplicationDate = Date();
         else {
-          nextAbsoluteCMApplicationDate = cultivationmethod::staticWorksteps(currentCM).empty()
-                                              ? Date()
-                                              : cultivationmethod::absStartDate(currentCM, false);
+          nextAbsoluteCMApplicationDate =
+              cultivationmethod::staticWorksteps(currentCM).empty()
+                  ? Date()
+                  : cultivationmethod::absStartDate(currentCM, false);
           debug() << "new valid next abs app-date: "
                   << nextAbsoluteCMApplicationDate.toString() << endl;
         }
@@ -927,7 +928,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
   // while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
   //	tie(currentCM, nextAbsoluteCMApplicationDate) =
-  //findNextCultivationMethod(currentDate, true);;
+  // findNextCultivationMethod(currentDate, true);;
 
   vector<StoreData> store = setupStorage(
       env.events, env.climateData.startDate(), env.climateData.endDate());
@@ -1012,10 +1013,11 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     if (currentCM && nextAbsoluteCMApplicationDate == currentDate) {
       debug() << "MONICA 1: applying absolute-at: "
               << nextAbsoluteCMApplicationDate.toString() << endl;
-      cultivationmethod::absApply(currentCM, nextAbsoluteCMApplicationDate, monica.get());
+      cultivationmethod::absApply(currentCM, nextAbsoluteCMApplicationDate,
+                                  monica.get());
 
-      nextAbsoluteCMApplicationDate =
-          cultivationmethod::nextAbsDate(currentCM, nextAbsoluteCMApplicationDate);
+      nextAbsoluteCMApplicationDate = cultivationmethod::nextAbsDate(
+          currentCM, nextAbsoluteCMApplicationDate);
 
       debug() << "MONICA 1: next abs app-date: "
               << nextAbsoluteCMApplicationDate.toString() << endl;
@@ -1024,10 +1026,11 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         nextAbsoluteCMApplicationDate2 == currentDate) {
       debug() << "MONICA 2: applying absolute-at: "
               << nextAbsoluteCMApplicationDate2.toString() << endl;
-      cultivationmethod::absApply(currentCM2, nextAbsoluteCMApplicationDate2, monica2.get());
+      cultivationmethod::absApply(currentCM2, nextAbsoluteCMApplicationDate2,
+                                  monica2.get());
 
-      nextAbsoluteCMApplicationDate2 =
-          cultivationmethod::nextAbsDate(currentCM2, nextAbsoluteCMApplicationDate2);
+      nextAbsoluteCMApplicationDate2 = cultivationmethod::nextAbsDate(
+          currentCM2, nextAbsoluteCMApplicationDate2);
 
       debug() << "MONICA 2: next abs app-date: "
               << nextAbsoluteCMApplicationDate2.toString() << endl;
@@ -1126,14 +1129,16 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     // if the next application date is not valid, we're at the end
     // of the application list of this cultivation method
     // and go to the next one in the crop rotation
-    if (currentCM && cultivationmethod::allDynamicWorkstepsFinished(currentCM) &&
+    if (currentCM &&
+        cultivationmethod::allDynamicWorkstepsFinished(currentCM) &&
         !nextAbsoluteCMApplicationDate.isValid()) {
       // to count the applied fertiliser for the next production process
       monicamodel::resetFertiliserCounter(monica.get());
       tie(currentCM, nextAbsoluteCMApplicationDate) =
           findNextCultivationMethod(currentDate + 1);
     }
-    if (isSyncIC && currentCM2 && cultivationmethod::allDynamicWorkstepsFinished(currentCM2) &&
+    if (isSyncIC && currentCM2 &&
+        cultivationmethod::allDynamicWorkstepsFinished(currentCM2) &&
         !nextAbsoluteCMApplicationDate2.isValid()) {
       // to count the applied fertiliser for the next production process
       monicamodel::resetFertiliserCounter(monica2.get());
@@ -1152,7 +1157,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   }
   // if (isSyncIC && env2.params.simulationParameters.serializeMonicaStateAtEnd)
   // { 	SaveMonicaState sms(currentDate,
-  //env2.params.simulationParameters.pathToSerializationFile);
+  // env2.params.simulationParameters.pathToSerializationFile);
   //	sms.apply(monica2.get());
   // }
 

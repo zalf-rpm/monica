@@ -18,24 +18,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "monica-model.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
-#include <memory>
-#include <mutex>
-#include <numeric>
 #include <set>
-#include <sstream>
-#include <thread>
 
 #include "climate/climate-common.h"
 #include "core/monica-parameters.h"
 #include "tools/debug.h"
-// #include "db/abstract-db-connections.h"
-#include "crop.h"
-#include "tools/algorithms.h"
-#include "voc-common.h"
 
 using namespace monica;
 using namespace std;

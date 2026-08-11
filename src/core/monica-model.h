@@ -17,16 +17,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <fstream>
-#include <iostream>
-#include <list>
 #include <map>
-#include <memory>
-#include <queue>
 #include <set>
-#include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "climate.capnp.h"
@@ -38,16 +31,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "climate/climate-common.h"
 #include "crop-module.h"
 #include "monica-parameters.h"
-#include "soil/constants.h"
-#include "soil/soil.h"
 #include "soilcolumn.h"
 #include "soilmoisture.h"
 #include "soilorganic.h"
 #include "soiltemperature.h"
 #include "soiltransport.h"
-#include "tools/datastructures.h"
 #include "tools/date.h"
-#include "tools/helper.h"
 
 namespace monica {
 class Crop;
