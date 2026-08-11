@@ -19,7 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "../core/crop.h"
+// #include "../core/crop.h"
 #include "sowing.h"
 
 namespace monica {
@@ -27,8 +27,8 @@ class MonicaModel;
 struct Workstep;
 
 struct TransplantData : SowingData {
-  kj::Own<Crop>
-      cropToPlant; // Manages the genetic characteristics of the crop to plant
+  // kj::Own<Crop>
+  // cropToPlant; // Manages the genetic characteristics of the crop to plant
 
   // Seedling initial parameters forced at transplanting
   size_t initialStage{2};
@@ -48,7 +48,7 @@ Tools::Errors merge(TransplantData *t, json11::Json j);
 // note: unlike Sowing/AutomaticSowing, the original Transplant::to_json never
 // embedded "date" - no Workstep* parameter needed here, preserved as-is
 // (straight translation).
-json11::Json to_json(const TransplantData *t,
+json11::Json to_json(const TransplantData *t, const Workstep *ws,
                      bool includeFullCropParameters = true);
 bool apply(TransplantData *t, Workstep *ws, MonicaModel *model);
 

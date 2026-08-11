@@ -196,12 +196,9 @@ void workstep::setDate(Workstep *ws, Tools::Date date) {
   case WorkstepType::AUTOMATIC_SOWING:
     std::get<AutomaticSowingData>(ws->data).sowingDate = date;
     break;
-  case WorkstepType::TRANSPLANT: {
-    auto &t = std::get<TransplantData>(ws->data);
-    if (t.cropToPlant)
-      t.cropToPlant->setSeedDate(date);
+  case WorkstepType::TRANSPLANT:
+    std::get<TransplantData>(ws->data).sowingDate = date;
     break;
-  }
   default:
     break;
   }
@@ -309,7 +306,7 @@ json11::Json workstep::to_json(const Workstep *ws,
     return to_json(&std::get<AutomaticSowingData>(ws->data), ws,
                    includeFullCropParameters);
   case WorkstepType::TRANSPLANT:
-    return to_json(&std::get<TransplantData>(ws->data),
+    return to_json(&std::get<TransplantData>(ws->data), ws,
                    includeFullCropParameters);
   case WorkstepType::HARVEST:
     return to_json(&std::get<HarvestData>(ws->data), ws,

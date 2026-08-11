@@ -5,8 +5,6 @@
 /*
 Authors:
 Michael Berg <michael.berg@zalf.de>
-Claas Nendel <claas.nendel@zalf.de>
-Xenia Specka <xenia.specka@zalf.de>
 
 Maintainers:
 Currently maintained by the authors.
@@ -56,22 +54,21 @@ Errors workstep::merge(TransplantData *t, json11::Json j) {
   return res; // propagates ALL sub-errors (crop parse errors included)
 }
 
-json11::Json workstep::to_json(const TransplantData *t,
+json11::Json workstep::to_json(const TransplantData *t, const Workstep *ws,
                                bool includeFullCropParameters) {
-  return json11::Json::object{
-      {"type", "Transplant"},
-      {"crop", t->cropToPlant
-                   ? t->cropToPlant->to_json(includeFullCropParameters)
-                   : json11::Json::object{}},
-      {"initialStage", static_cast<int>(t->initialStage)},
-      {"initialTemperatureSum", t->initialGDD},
-      {"initialRootBiomass", t->initRootMass},
-      {"initialLeafBiomass", t->initLeafMass},
-      {"initialShootBiomass", t->initShootMass},
-      {"initialLAI", t->initLAI},
-      {"postTransplantDelay", t->postTransplantDelay},
-      {"initialKcb", t->initialKcb},
-  };
+  auto so =
+      to_json(static_cast<const SowingData *>(t), ws, includeFullCropParameters)
+          .object_items();
+  so["type"] = "Transplant";
+  so["initialStage"] = static_cast<int>(t->initialStage);
+  so["initialTemperatureSum"] = t->initialGDD;
+  so["initialRootBiomass"] = t->initRootMass;
+  so["initialLeafBiomass"] = t->initLeafMass;
+  so["initialShootBiomass"] = t->initShootMass;
+  so["initialLAI"] = t->initLAI;
+  so["postTransplantDelay"] = t->postTransplantDelay;
+  so["initialKcb"] = t->initialKcb;
+  return so;
 }
 
 bool workstep::apply(TransplantData *t, Workstep *ws, MonicaModel *model) {

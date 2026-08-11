@@ -150,8 +150,6 @@ GroupSources("util" ${PROJECT_SOURCE_DIR}/..)
 
 # create monica run static lib to compile code just once
 add_library(monica_lib
-        src/core/crop.h
-        src/core/crop.cpp
         src/core/crop-module.h
         src/core/crop-module.cpp
         src/core/monica-model.h
