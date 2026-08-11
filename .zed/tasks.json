@@ -16,7 +16,7 @@
   },
   {
     "label": "CMake Clean",
-    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake -S . -B  build --target clean",
+    "command": "$env:PATH='C:/Program Files (x86)/Microsoft Visual Studio/Installer;'+$env:PATH; & 'C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Launch-VsDevShell.ps1' -Arch amd64 -SkipAutomaticLocation; cmake --build build --target clean",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
