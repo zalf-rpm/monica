@@ -189,6 +189,34 @@ add_library(monica_lib
         src/io/build-output.h
         src/io/build-output.cpp
 
+        src/worksteps/sowing.h
+        src/worksteps/sowing.cpp
+        src/worksteps/automatic-sowing.h
+        src/worksteps/automatic-sowing.cpp
+        src/worksteps/transplant.h
+        src/worksteps/transplant.cpp
+        src/worksteps/harvest.h
+        src/worksteps/harvest.cpp
+        src/worksteps/automatic-harvest.h
+        src/worksteps/automatic-harvest.cpp
+        src/worksteps/cutting.h
+        src/worksteps/cutting.cpp
+        src/worksteps/mineral-fertilization.h
+        src/worksteps/mineral-fertilization.cpp
+        src/worksteps/n-demand-fertilization.h
+        src/worksteps/n-demand-fertilization.cpp
+        src/worksteps/organic-fertilization.h
+        src/worksteps/organic-fertilization.cpp
+        src/worksteps/tillage.h
+        src/worksteps/tillage.cpp
+        src/worksteps/set-value.h
+        src/worksteps/set-value.cpp
+        src/worksteps/save-monica-state.h
+        src/worksteps/save-monica-state.cpp
+        src/worksteps/irrigation.h
+        src/worksteps/irrigation.cpp
+        src/worksteps/automatic-irrigation.h
+        src/worksteps/automatic-irrigation.cpp
         src/run/workstep.h
         src/run/workstep.cpp
         src/run/cultivation-method.h
