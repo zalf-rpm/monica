@@ -20,18 +20,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <algorithm>
 #include <cmath>
 
-/**
- * @file soilcolumn.cpp
- *
- * @brief This file contains the definition of classes AOM_Properties,
- * SoilLayer, SoilColumn
- *
- * @see Monica::AOM_Properties
- * @see Monica::SoilLayer
- * @see Monica::SoilColumn
- * @see Monica::FertilizerTriggerThunk
- */
-
 #include "crop-module.h"
 #include "tools/debug.h"
 

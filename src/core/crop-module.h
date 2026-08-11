@@ -17,11 +17,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <iomanip>
-#include <iostream>
 #include <map>
 #include <math.h>
-#include <ostream>
 #include <set>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,9 +33,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model/monica/monica_state.capnp.h"
 
 #include "monica-parameters.h"
-#include "run/cultivation-method.h"
 #include "soilcolumn.h"
 #include "voc-common.h"
+#include "worksteps/cutting.h"
 
 namespace monica {
 /*
