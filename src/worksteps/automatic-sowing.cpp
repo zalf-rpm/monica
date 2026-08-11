@@ -18,7 +18,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "automatic-sowing.h"
 
 #include <numeric>
-#include <utility>
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"

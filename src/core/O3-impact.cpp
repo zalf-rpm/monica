@@ -17,8 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "O3-impact.h"
 
 #include <algorithm>
-#include <iostream>
-#include <math.h>
+#include <cmath>
 
 using namespace O3impact;
 using namespace std;

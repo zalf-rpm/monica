@@ -18,7 +18,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm>
 #include <climits>
-#include <fstream>
 #include <iterator>
 #include <mutex>
 #include <numeric>
@@ -298,7 +297,7 @@ void setComplexValues(OId oid, function<void(int, json11::Json)> setValue,
     values = J11Array(oid.toLayer - oid.fromLayer + 1, value);
   assert(values.size() <= INT_MAX);
   for (int i = oid.fromLayer, k = 0, vsize = (int)values.size();
-       i <= oid.toLayer, k < vsize; i++, k++) {
+       i <= oid.toLayer && k < vsize; i++, k++) {
     if (i < 0)
       debug() << "Error: " << monica::oid::toString(&oid, true)
               << " has no or negative layer defined! Can't set value." << endl;

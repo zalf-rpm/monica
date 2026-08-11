@@ -17,13 +17,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "frost-component.h"
 
-#include <algorithm> //for min, max
 #include <cmath>
-#include <iostream>
 
 #include "soilcolumn.h"
-#include "tools/algorithms.h"
-#include "tools/debug.h"
 #include "tools/helper.h"
 
 using namespace std;

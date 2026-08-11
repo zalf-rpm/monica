@@ -30,7 +30,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  */
 
 #include <assert.h>
-#include <iostream>
 #include <kj/memory.h>
 #include <list>
 #include <vector>

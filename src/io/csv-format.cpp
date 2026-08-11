@@ -19,8 +19,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <string>
 
-#include "tools/debug.h"
-
 using namespace monica;
 using namespace Tools;
 using namespace std;
@@ -28,8 +26,8 @@ using namespace json11;
 
 // copied from MSVC string.h, because gcc 4.7.2 seams not to know ""s
 inline string
-operator"" _s(const char *_Str,
-              size_t _Len) { // construct literal from [_Str, _Str + _Len)
+operator""_s(const char *_Str,
+             size_t _Len) { // construct literal from [_Str, _Str + _Len)
   return (string(_Str, _Len));
 }
 

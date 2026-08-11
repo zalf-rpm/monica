@@ -16,10 +16,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <cmath>
-#include <map>
-#include <vector>
-
 namespace O3impact {
 
 struct O3_impact_params {

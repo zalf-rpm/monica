@@ -17,8 +17,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "automatic-harvest.h"
 
-#include <utility>
-
 #include "../core/monica-model.h"
 #include "../run/workstep.h"
 #include "json11/json11-helper.h"

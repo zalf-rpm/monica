@@ -29,10 +29,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <cmath>
-#include <limits>
 #include <map>
-#include <vector>
 
 #include "model/monica/monica_params.capnp.h"
 

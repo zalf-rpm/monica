@@ -36,8 +36,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "voc-jjv.h"
 
-#include <iostream>
-
 #include <algorithm>
 #include <cassert>
 

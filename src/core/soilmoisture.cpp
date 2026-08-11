@@ -25,7 +25,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "frost-component.h"
 #include "monica-model.h"
 #include "snow-component.h"
-#include "soil/conversion.h"
 #include "soilcolumn.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"

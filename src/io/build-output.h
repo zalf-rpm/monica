@@ -22,11 +22,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "../core/monica-model.h"
-#include "climate/climate-common.h"
 #include "common/dll-exports.h"
 #include "json11/json11-helper.h"
 #include "output.h"
-#include "tools/date.h"
 
 namespace monica {
 struct OutputMetadata {

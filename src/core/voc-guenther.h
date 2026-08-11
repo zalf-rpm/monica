@@ -28,8 +28,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <cmath>
-#include <map>
 #include <vector>
 
 #include "voc-common.h"

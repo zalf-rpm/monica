@@ -23,10 +23,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <capnp/message.h>
 
-#include "tools/algorithms.h"
-
-#include "common.capnp.h"
-#include "model.capnp.h"
 #include "monica_management.capnp.h"
 
 using namespace monica;

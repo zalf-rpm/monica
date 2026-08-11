@@ -15,27 +15,19 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <fstream>
-#include <iostream>
-#include <list>
 #include <map>
-#include <memory>
-#include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "zmq.hpp"
-
-#include "json11/json11-helper.h"
-#include "json11/json11.hpp"
 
 namespace monica {
 
 // void startZeroMQMonica(zmq::context_t* zmqContext,
 //											 std::string
-//inputSocketAddress, 											 std::string outputSocketAddress, 											 bool isInProcess =
-//false);
+// inputSocketAddress,
+// std::string outputSocketAddress,
+// bool isInProcess = false);
 
 enum SocketType { Reply, ProxyReply, Pull, Push, Subscribe, Router, Dealer };
 enum SocketRole { ReceiveJob, SendResult, Control };

@@ -17,21 +17,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "monica-parameters.h"
 
-#include <cmath>
-#include <fstream>
-#include <iostream>
 #include <map>
-#include <mutex>
-#include <sstream>
 #include <string>
 #include <utility>
 
-// #include "db/abstract-db-connections.h"
-#include "climate/climate-common.h"
-#include "soil/conversion.h"
 #include "soil/soil.h"
-#include "tools/algorithms.h"
-#include "tools/debug.h"
 #include "tools/helper.h"
 
 #include "climate.capnp.h"
@@ -41,7 +31,6 @@ using namespace std;
 using namespace monica;
 using namespace Soil;
 using namespace Tools;
-using namespace Climate;
 using namespace json11;
 
 /**

@@ -13,143 +13,22 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include <cstdio>
-#include <fstream>
 #include <iostream>
 #include <string>
-#include <tuple>
 
-#include "../core/monica-model.h"
-#include "../io/csv-format.h"
-#include "climate/climate-file-io.h"
-#include "create-env-from-json-config.h"
-#include "json11/json11-helper.h"
-#include "json11/json11.hpp"
 #include "monica-zmq-defaults.h"
 #include "resource/version.h"
-#include "run-monica.h"
 #include "serve-monica-zmq.h"
-#include "soil/conversion.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
-#include "tools/helper.h"
-#include "zeromq/zmq-helper.h"
 
 using namespace std;
 using namespace monica;
 using namespace Tools;
-using namespace json11;
 
 string appName = "monica-zmq-server";
 string version = VER_FILE_VERSION_STR;
 ;
-
-/*
-int main_(int argc, char** argv)
-{
-  setlocale(LC_ALL, "");
-  setlocale(LC_NUMERIC, "C");
-
-  //use a possibly non-default db-connections.ini
-  //Db::dbConnectionParameters("db-connections.ini");
-
-  string address = defaultInputAddress;
-  int port = defaultInputPort;
-  string outputAddress = defaultOutputAddress;
-  int outputPort = defaultOutputPort;
-  string controlAddress = defaultControlAddress;
-  int controlPort = defaultControlPort;
-  bool usePipeline = false;
-  bool connectToZmqProxy = false;
-
-  auto printHelp = [=]()
-  {
-    cout
-      << appName << endl
-      << " [-d | --debug] ... show debug outputs" << endl
-      << " [[-c | --connect-to-proxy]] ... connect MONICA server process to a
-ZeroMQ proxy" << endl
-      << " [[-a | --address] (PROXY-)ADDRESS (default: " << address << ")] ...
-connect client to give IP address" << endl
-      << " [[-p | --port] (PROXY-)PORT (default: " << port << ")] ... run
-server/connect client on/to given port" << endl
-      << " [[-od | --output-defaults] ... use different result socket (parameter
-is optional, when non default result address/port are used)" << endl
-      << " [[-oa | --output-address] ADDRESS (default: " << outputAddress << ")]
-... bind socket to this IP address for results" << endl
-      << " [[-op | --output-port] PORT (default: " << outputPort << ")] ... bind
-socket to this port for results" << endl
-      << " [[-ca | --control-address] ADDRESS (default: " << controlAddress <<
-")] ... connect socket to this IP address for control messages" << endl
-      << " [[-cp | --control-port] PORT (default: " << controlPort << ")] ...
-bind socket to this port for control messages" << endl
-      << " [-h | --help] ... this help output" << endl
-      << " [-v | --version] ... outputs MONICA version" << endl;
-  };
-
-  zmq::context_t context(1);
-
-  if(argc >= 1)
-  {
-    for(auto i = 1; i < argc; i++)
-    {
-      string arg = argv[i];
-      if(arg == "-d" || arg == "--debug")
-        activateDebug = true;
-      else if((arg == "-c" || arg == "--connect-to-proxy"))
-        connectToZmqProxy = true;
-      else if((arg == "-a" || arg == "--address")
-              && i + 1 < argc)
-        address = argv[++i];
-      else if((arg == "-p" || arg == "--port")
-              && i + 1 < argc)
-        port = stoi(argv[++i]);
-      if(arg == "-od" || arg == "--output-defaults")
-        usePipeline = true;
-      else if((arg == "-oa" || arg == "--output-address")
-              && i + 1 < argc)
-        outputAddress = argv[++i], usePipeline = true;
-      else if((arg == "-op" || arg == "--output-port")
-              && i + 1 < argc)
-        outputPort = stoi(argv[++i]), usePipeline = true;
-      else if((arg == "-ca" || arg == "--control-address")
-              && i + 1 < argc)
-        controlAddress = argv[++i];
-      else if((arg == "-cp" || arg == "--control-port")
-              && i + 1 < argc)
-        controlPort = stoi(argv[++i]);
-      else if(arg == "-h" || arg == "--help")
-        printHelp(), exit(0);
-      else if(arg == "-v" || arg == "--version")
-        cout << appName << " version " << version << endl, exit(0);
-    }
-
-    debug() << "starting ZeroMQ MONICA server" << endl;
-
-    string recvAddress = string("tcp://") + address + ":" + to_string(port);
-    map<ZmqSocketRole, pair<ZmqSocketType, string>> addresses;
-    if(usePipeline)
-    {
-      addresses[ReceiveJob] = make_pair(Pull, recvAddress);
-      addresses[SendResult] = make_pair(Push, string("tcp://") + outputAddress +
-":" + to_string(outputPort));
-    }
-    else if(connectToZmqProxy)
-      addresses[ReceiveJob] = make_pair(ProxyReply, recvAddress);
-    else
-      addresses[ReceiveJob] = make_pair(Reply, recvAddress);
-
-    addresses[Control] = make_pair(Subscribe, string("tcp://") + controlAddress
-+ ":" + to_string(controlPort));
-
-    serveZmqMonicaFull(&context, addresses);
-
-    debug() << "stopped ZeroMQ MONICA server" << endl;
-  }
-
-  return 0;
-}
-*/
 
 int main(int argc, char **argv) {
   setlocale(LC_ALL, "");

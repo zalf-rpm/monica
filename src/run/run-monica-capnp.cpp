@@ -25,11 +25,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "capnp-helper.h"
 #include "climate/climate-file-io.h"
-#include "common/sole.hpp"
 #include "run-monica.h"
 #include "tools/helper.h"
 
 #include "common.capnp.h"
+#include "common/sole.hpp"
 
 #define KJ_MVCAP(var) var = kj::mv(var)
 

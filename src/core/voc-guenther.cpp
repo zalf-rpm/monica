@@ -30,8 +30,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "voc-guenther.h"
 
-#include <iostream>
-
 #include "tools/helper.h"
 
 using namespace Voc;

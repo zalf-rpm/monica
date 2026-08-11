@@ -33,7 +33,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  */
 
 #include "crop-module.h"
-#include "soil/constants.h"
 #include "tools/debug.h"
 
 using namespace monica;

@@ -33,7 +33,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model/monica/monica_params.capnp.h"
 #include "model/monica/monica_state.capnp.h"
 
-#include "climate/climate-common.h"
 #include "common/dll-exports.h"
 #include "json11/json11-helper.h"
 #include "soil/constants.h"

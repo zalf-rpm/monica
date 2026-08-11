@@ -15,11 +15,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <cstdlib>
 
+#include <zmq.hpp>
+
 #include "monica-zmq-defaults.h"
 #include "resource/version.h"
 #include "tools/debug.h"
 #include "tools/helper.h"
-#include "zeromq/zmq-helper.h"
 
 using namespace Tools;
 using namespace std;

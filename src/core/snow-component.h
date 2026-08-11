@@ -17,8 +17,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <vector>
-
 #include "model/monica/monica_state.capnp.h"
 
 namespace monica {

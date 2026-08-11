@@ -16,14 +16,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 #include "snow-component.h"
 
-#include <algorithm> //for min, max
 #include <cmath>
-#include <iostream>
 
 #include "monica-parameters.h"
 #include "soilcolumn.h"
-#include "tools/algorithms.h"
-#include "tools/debug.h"
 
 using namespace std;
 using namespace monica;

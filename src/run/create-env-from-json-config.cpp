@@ -13,15 +13,11 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include <fstream>
 #include <iostream>
 #include <set>
 #include <string>
 
-#include "../io/output.h"
-#include "capnp-helper.h"
 #include "climate/climate-file-io.h"
-#include "common/rpc-connection-manager.h"
 #include "create-env-from-json-config.h"
 #include "json11/json11-helper.h"
 #include "soil/conversion.h"
@@ -134,164 +130,6 @@ supportedPatterns() {
     }
     return {j, string("Couldn't resolve reference: ") + j.dump() + "!"};
   };
-
-  /*
-  auto fromDb = [](const Json&, const Json& j) -> EResult<Json>
-  {
-    if((j.array_items().size() >= 3 && j[1].is_string())
-       || (j.array_items().size() == 2 && j[1].is_object()))
-    {
-      bool isParamMap = j[1].is_object();
-
-      auto type = isParamMap ? j[1]["type"].string_value() :j[1].string_value();
-      string err;
-      string db = isParamMap && j[1].has_shape({{"db", Json::STRING}}, err)
-            ? j[1]["db"].string_value()
-            : "";
-      if(type == "mineral_fertiliser")
-      {
-        if(db.empty())
-          db = "monica";
-        auto name = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value(); return{getMineralFertiliserParametersFromMonicaDB(name,
-  db).to_json()};
-      }
-      else if(type == "organic_fertiliser")
-      {
-        if(db.empty())
-          db = "monica";
-        auto name = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value(); return{getOrganicFertiliserParametersFromMonicaDB(name,
-  db)->to_json()};
-      }
-      else if(type == "crop_residue"
-          && j.array_items().size() >= 3)
-      {
-        if(db.empty())
-          db = "monica";
-        auto species = isParamMap ? j[1]["species"].string_value() :
-  j[2].string_value(); auto residueType = isParamMap ?
-  j[1]["residue-type"].string_value() : j.array_items().size() == 4 ?
-  j[3].string_value() : ""; return{getResidueParametersFromMonicaDB(species,
-  residueType, db)->to_json()};
-      }
-      else if(type == "species")
-      {
-        if(db.empty())
-          db = "monica";
-        auto species = isParamMap ? j[1]["species"].string_value() :
-  j[2].string_value(); return{getSpeciesParametersFromMonicaDB(species,
-  db)->to_json()};
-      }
-      else if(type == "cultivar"
-          && j.array_items().size() >= 3)
-      {
-        if(db.empty())
-          db = "monica";
-        auto species = isParamMap ? j[1]["species"].string_value() :
-  j[2].string_value(); auto cultivar = isParamMap ?
-  j[1]["cultivar"].string_value() : j.array_items().size() == 4 ?
-  j[3].string_value() : ""; return{getCultivarParametersFromMonicaDB(species,
-  cultivar, db)->to_json()};
-      }
-      else if(type == "crop"
-          && j.array_items().size() >= 3)
-      {
-        if(db.empty())
-          db = "monica";
-        auto species = isParamMap ? j[1]["species"].string_value() :
-  j[2].string_value(); auto cultivar = isParamMap ?
-  j[1]["cultivar"].string_value() : j.array_items().size() == 4 ?
-  j[3].string_value() : ""; return{getCropParametersFromMonicaDB(species,
-  cultivar, db)->to_json()};
-      }
-      else if(type == "soil-temperature-params")
-      {
-        if(db.empty())
-          db = "monica";
-        auto module = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value();
-        return{readUserSoilTemperatureParametersFromDatabase(module,
-  db).to_json()};
-      }
-      else if(type == "environment-params")
-      {
-        if(db.empty())
-          db = "monica";
-        auto module = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value(); return{readUserEnvironmentParametersFromDatabase(module,
-  db).to_json()};
-      }
-      else if(type == "soil-organic-params")
-      {
-        if(db.empty())
-          db = "monica";
-        auto module = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value(); return{readUserSoilOrganicParametersFromDatabase(module,
-  db).to_json()};
-      }
-      else if(type == "soil-transport-params")
-      {
-        if(db.empty())
-          db = "monica";
-        auto module = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value();
-        return{readUserSoilTransportParametersFromDatabase(module,
-  db).to_json()};
-      }
-      else if(type == "soil-moisture-params")
-      {
-        if(db.empty())
-          db = "monica";
-        auto module = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value();
-        return{readUserSoilTemperatureParametersFromDatabase(module,
-  db).to_json()};
-      }
-      else if(type == "crop-params")
-      {
-        if(db.empty())
-          db = "monica";
-        auto module = isParamMap ? j[1]["name"].string_value() :
-  j[2].string_value(); return{readUserCropParametersFromDatabase(module,
-  db).to_json()};
-      }
-      else if(type == "soil-profile"
-          && (isParamMap
-            || (!isParamMap && j[2].is_number())))
-      {
-        if(db.empty())
-          db = "soil";
-        //vector<Json> spjs;
-        int profileId = isParamMap ? j[1]["id"].int_value() : j[2].int_value();
-        auto spjs = Soil::jsonSoilParameters(db, profileId);
-        //auto sps = Soil::soilParameters(db, profileId);
-        //for(auto sp : *sps)
-        //	spjs.push_back(sp.to_json());
-
-        return{spjs};
-      }
-      else if(type == "soil-layer"
-          && (isParamMap
-            || (j.array_items().size() == 4
-              && j[2].is_number()
-              && j[3].is_number())))
-      {
-        if(db.empty())
-          db = "soil";
-        int profileId = isParamMap ? j[1]["id"].int_value() : j[2].int_value();
-        size_t layerNo = size_t(isParamMap ? j[1]["no"].int_value() :
-  j[3].int_value()); auto sps = Soil::soilParameters(db, profileId); if(0 <
-  layerNo && layerNo <= sps->size()) return{sps->at(layerNo - 1).to_json()};
-
-        return{j, string("Couldn't load soil-layer from database: ") + j.dump()
-  + "!"};
-      }
-    }
-
-    return{j, string("Couldn't load data from DB: ") + j.dump() + "!"};
-  };
-  */
 
   auto fromFile = [](const Json &root, const Json &j) -> EResult<Json> {
     string error;

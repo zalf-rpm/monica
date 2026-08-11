@@ -13,7 +13,6 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -109,8 +108,7 @@ public:
     }
   }
 
-  kj::Promise<void> info(InfoContext context) // override
-  {
+  kj::Promise<void> info(InfoContext context) override {
     auto rs = context.getResults();
 
     rs.setId("monica-proxy_" + _uuid);
@@ -222,7 +220,7 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider,
 
 // kj::Promise<kj::Own<kj::AsyncIoStream>>
 // connectAttach(kj::Own<kj::NetworkAddress>&& addr) { 	return
-//addr->connect().attach(kj::mv(addr));
+// addr->connect().attach(kj::mv(addr));
 // }
 
 // struct ErrorHandler : public kj::TaskSet::ErrorHandler {
@@ -243,7 +241,7 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider,
 //		capnp::ReaderOptions readerOpts)
 //		: stream(kj::mv(stream))
 //		, network(*this->stream, capnp::rpc::twoparty::Side::SERVER,
-//readerOpts) 		, rpcSystem(makeRpcServer(network, mainInterface)) {}
+// readerOpts) 		, rpcSystem(makeRpcServer(network, mainInterface)) {}
 //};
 
 // void acceptLoop(kj::Own<kj::ConnectionReceiver>&& listener,
@@ -255,7 +253,7 @@ kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider,
 
 //				cout << "connection from client" << endl;
 //				auto server =
-//kj::heap<ServerContext>(kj::mv(connection), readerOpts);
+// kj::heap<ServerContext>(kj::mv(connection), readerOpts);
 
 // Arrange to destroy the server context when all references are gone, or when
 // the EzRpcServer is destroyed (which will destroy the TaskSet).

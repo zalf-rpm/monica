@@ -27,7 +27,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 
 #include "crop-module.h"
-#include "monica-model.h"
 #include "soil/constants.h"
 #include "soilcolumn.h"
 #include "stics-nit-denit-n2o.h"

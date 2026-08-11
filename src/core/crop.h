@@ -17,7 +17,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>

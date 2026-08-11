@@ -20,6 +20,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <map>
 
 #include "json11/json11.hpp"
+#include "tools/helper.h"
 
 #include "common/dll-exports.h"
 

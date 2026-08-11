@@ -15,13 +15,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "output.h"
 
-#include <algorithm>
-#include <fstream>
-#include <mutex>
-
 #include "json11/json11-helper.h"
-#include "tools/algorithms.h"
-#include "tools/debug.h"
 #include "tools/helper.h"
 
 using namespace monica;

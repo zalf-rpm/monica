@@ -21,7 +21,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <kj/thread.h>
 
 #include "climate/climate-common.h"
-#include "common/common.h"
 #include "common/restorer.h"
 #include "json11/json11-helper.h"
 

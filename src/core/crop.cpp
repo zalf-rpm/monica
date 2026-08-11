@@ -17,17 +17,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "crop.h"
 
-#include <cmath>
-#include <fstream>
 #include <iostream>
 #include <map>
-#include <mutex>
 #include <sstream>
-#include <utility>
 
 #include "json11/json11-helper.h"
-#include "tools/algorithms.h"
-#include "tools/debug.h"
 #include "tools/helper.h"
 
 using namespace std;

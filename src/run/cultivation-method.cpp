@@ -22,7 +22,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-model.h"
 #include "json11/json11-helper.h"
-#include "tools/debug.h"
 
 using namespace std;
 using namespace monica;

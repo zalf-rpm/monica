@@ -85,7 +85,7 @@ string workstep::organNameFromId(int organId) {
     res = "Sugar";
     break;
   default:
-    "unknown";
+    res = "unknown";
   }
   return res;
 }

@@ -18,7 +18,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "automatic-irrigation.h"
 
 #include <algorithm>
-#include <utility>
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"

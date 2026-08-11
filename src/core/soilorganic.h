@@ -17,10 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #pragma once
 
-#include <iomanip>
-#include <iostream>
 #include <kj/memory.h>
-#include <list>
 #include <map>
 #include <math.h>
 #include <stdio.h>

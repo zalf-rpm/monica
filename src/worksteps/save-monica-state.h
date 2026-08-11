@@ -23,6 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "common/dll-exports.h"
 #include "tools/date.h"
+#include "tools/helper.h"
 
 namespace monica {
 class MonicaModel;
