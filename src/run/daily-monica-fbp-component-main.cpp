@@ -200,13 +200,13 @@ public:
 
   void finalizeMonica(Date currentDate) {
     if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
-      SaveMonicaState sms(
+      Workstep sms = makeSaveMonicaStateWorkstep(
           currentDate,
           env.params.simulationParameters.pathToSerializationAtEndFile,
           env.params.simulationParameters.serializeMonicaStateAtEndToJson,
           env.params.simulationParameters
               .noOfPreviousDaysSerializedClimateData);
-      sms.apply(monica.get());
+      workstep::apply(&sms, monica.get());
     }
 
     for (auto &sd : store) {
@@ -464,7 +464,7 @@ public:
                 if (monica->currentCropModule) {
                   KJ_LOG(INFO, "received harvest event at",
                          eventDate.toIsoDateString());
-                  Harvest::Spec spec;
+                  HarvestData::Spec spec;
                   monicamodel::harvestCurrentCrop(monica.get(),
                                                   hp.getExported(), spec);
                   monica->currentEvents.insert("Harvest");
@@ -538,7 +538,7 @@ public:
                 if (c.hasCuttingSpec() && c.getCuttingSpec().size() > 0) {
                   KJ_LOG(INFO, "received cutting event at",
                          eventDate.toIsoDateString());
-                  std::map<int, Cutting::Value> organId2cuttingSpec;
+                  std::map<int, CuttingData::Value> organId2cuttingSpec;
                   std::map<int, double> organId2exportFraction;
                   for (auto cs : c.getCuttingSpec()) {
                     int organId = -1;
@@ -564,25 +564,25 @@ public:
                       break;
                     }
                     typedef mas::schema::model::monica::Params::Cutting C;
-                    Cutting::CL cl = Cutting::none;
+                    CuttingData::CL cl = CuttingData::none;
                     switch (cs.getCutOrLeft()) {
                     case C::CL::CUT:
-                      cl = Cutting::cut;
+                      cl = CuttingData::cut;
                       break;
                     case C::CL::LEFT:
-                      cl = Cutting::left;
+                      cl = CuttingData::left;
                       break;
                     }
-                    Cutting::Unit unit = Cutting::percentage;
+                    CuttingData::Unit unit = CuttingData::percentage;
                     switch (cs.getUnit()) {
                     case C::Unit::PERCENTAGE:
-                      unit = Cutting::percentage;
+                      unit = CuttingData::percentage;
                       break;
                     case C::Unit::BIOMASS:
-                      unit = Cutting::biomass;
+                      unit = CuttingData::biomass;
                       break;
                     case C::Unit::LAI:
-                      unit = Cutting::LAI;
+                      unit = CuttingData::LAI;
                       break;
                     }
                     if (organId >= 0) {

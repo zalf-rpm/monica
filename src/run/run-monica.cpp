@@ -52,12 +52,12 @@ using namespace json11;
 
 namespace { // private
 
-template <typename Vector> Errors extractAndStore(const Json &jv, Vector &vec) {
+Errors extractAndStore(const Json &jv, std::vector<CultivationMethod> &vec) {
   Errors es;
   vec.clear();
   for (const Json &cmj : jv.array_items()) {
-    typename Vector::value_type v;
-    es.append(v.merge(cmj));
+    CultivationMethod v;
+    es.append(cultivationmethod::merge(&v, cmj));
     vec.push_back(v);
   }
   return es;
@@ -100,7 +100,7 @@ Errors monica::crop_rotation_merge(CropRotation *cr, json11::Json j) {
 json11::Json monica::crop_rotation_to_json(const CropRotation *cr) {
   J11Array cra;
   for (const auto &c : cr->cropRotation)
-    cra.push_back(c.to_json());
+    cra.push_back(cultivationmethod::to_json(&c));
 
   return json11::Json::object{{"type", "CropRotation"},
                               {"start", cr->start.toIsoDateString()},
@@ -159,16 +159,16 @@ Errors monica::env_merge(Env *env, json11::Json j) {
 json11::Json monica::env_to_json(const Env *env) {
   J11Array cr;
   for (const auto &cm : env->cropRotation)
-    cr.push_back(cm.to_json());
+    cr.push_back(cultivationmethod::to_json(&cm));
   J11Array cr2;
   for (const auto &cm : env->cropRotation2)
-    cr2.push_back(cm.to_json());
+    cr2.push_back(cultivationmethod::to_json(&cm));
 
   J11Array crs;
   for (const auto &c : env->cropRotations) {
     J11Array cr;
     for (const auto &cm : c.cropRotation)
-      cr.push_back(cm.to_json());
+      cr.push_back(cultivationmethod::to_json(&cm));
 
     auto cro = J11Object{{"from", c.start.toIsoDateString()},
                          {"end", c.end.toIsoDateString()},
@@ -179,7 +179,7 @@ json11::Json monica::env_to_json(const Env *env) {
   for (const auto &c : env->cropRotations2) {
     J11Array cr;
     for (const auto &cm : c.cropRotation)
-      cr.push_back(cm.to_json());
+      cr.push_back(cultivationmethod::to_json(&cm));
 
     auto cro = J11Object{{"from", c.start.toIsoDateString()},
                          {"end", c.end.toIsoDateString()},
@@ -219,7 +219,7 @@ string monica::env_to_string(const Env *env) {
     << " to: " << env->climateData.endDate().toString() << endl;
   s << "Fruchtfolge: " << endl;
   for (const CultivationMethod &cm : env->cropRotation)
-    s << cm.toString() << endl;
+    s << cultivationmethod::toString(&cm) << endl;
   s << "customId: " << env->customId.dump();
   return s.str();
 }
@@ -737,9 +737,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   // functions which have to run daily
   for (auto &cr : env.cropRotations) {
     for (auto &cm : cr.cropRotation) {
-      for (auto wsptr : cm.getWorksteps()) {
-        auto df = wsptr->registerDailyFunction(
-            [&dailyValues, dailyFuncId]() -> vector<double> & {
+      for (auto wsptr : cm.allWorksteps) {
+        auto df = workstep::registerDailyFunction(
+            wsptr.get(), [&dailyValues, dailyFuncId]() -> vector<double> & {
               return dailyValues[dailyFuncId];
             });
         if (df) {
@@ -754,9 +754,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   if (isSyncIC) {
     for (auto &cr : env.cropRotations2) {
       for (auto &cm : cr.cropRotation) {
-        for (auto wsptr : cm.getWorksteps()) {
-          auto df = wsptr->registerDailyFunction(
-              [&dailyValues2, dailyFuncId2]() -> vector<double> & {
+        for (auto wsptr : cm.allWorksteps) {
+          auto df = workstep::registerDailyFunction(
+              wsptr.get(), [&dailyValues2, dailyFuncId2]() -> vector<double> & {
                 return dailyValues2[dailyFuncId2];
               });
           if (df) {
@@ -842,7 +842,7 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         // delete fully cultivation methods with only absolute worksteps,
         // because they won't participate in a new run when wrapping the crop
         // rotation
-        if ((*cmit)->areOnlyAbsoluteWorksteps() || !(*cmit)->repeat())
+        if (cultivationmethod::areOnlyAbsoluteWorksteps(*cmit) || !(*cmit)->repeat)
           cmit = cropRotation.erase(cmit);
         else
           cmit++;
@@ -860,27 +860,27 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         // addedYear tells that the start of the cultivation method was before
         // currentDate and thus the whole CM had to be moved into the next year
         // is possible for relative dates
-        bool addedYear = currentCM->reinit(currentDate);
+        bool addedYear = cultivationmethod::reinit(currentCM, currentDate);
         if (addedYear) {
           // current CM is a cover crop, check if the latest sowing date would
           // have been before current date, if so, skip current CM
-          if (currentCM->isCoverCrop()) {
+          if (currentCM->isCoverCrop) {
             // if current CM's latest sowing date is actually after current
             // date, we have to reinit current CM again, but this time prevent
             // shifting it to the next year
-            if (!(notFoundNextCM = currentCM->absLatestSowingDate().withYear(
+            if (!(notFoundNextCM = cultivationmethod::absLatestSowingDate(currentCM).withYear(
                                        currentDate.year()) < currentDate)) {
-              currentCM->reinit(currentDate, true);
+              cultivationmethod::reinit(currentCM, currentDate, true);
             }
           } else
             notFoundNextCM =
-                currentCM->canBeSkipped(); // if current CM was marked skipable,
+                currentCM->canBeSkipped; // if current CM was marked skipable,
                                            // skip it
         } else { // not added year or CM was had also absolute dates
-          if (currentCM->isCoverCrop())
-            notFoundNextCM = currentCM->absLatestSowingDate() < currentDate;
-          else if (currentCM->canBeSkipped())
-            notFoundNextCM = currentCM->absStartDate() < currentDate;
+          if (currentCM->isCoverCrop)
+            notFoundNextCM = cultivationmethod::absLatestSowingDate(currentCM) < currentDate;
+          else if (currentCM->canBeSkipped)
+            notFoundNextCM = cultivationmethod::absStartDate(currentCM) < currentDate;
           else
             notFoundNextCM = false;
         }
@@ -888,9 +888,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         if (notFoundNextCM)
           nextAbsoluteCMApplicationDate = Date();
         else {
-          nextAbsoluteCMApplicationDate = currentCM->staticWorksteps().empty()
+          nextAbsoluteCMApplicationDate = cultivationmethod::staticWorksteps(currentCM).empty()
                                               ? Date()
-                                              : currentCM->absStartDate(false);
+                                              : cultivationmethod::absStartDate(currentCM, false);
           debug() << "new valid next abs app-date: "
                   << nextAbsoluteCMApplicationDate.toString() << endl;
         }
@@ -1004,18 +1004,18 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     // try to apply dynamic worksteps marked to run before everything else that
     // day
     if (currentCM)
-      currentCM->apply(monica.get(), true);
+      cultivationmethod::apply(currentCM, monica.get(), true);
     if (isSyncIC && currentCM2)
-      currentCM2->apply(monica2.get(), true);
+      cultivationmethod::apply(currentCM2, monica2.get(), true);
 
     // apply worksteps and cycle through crop rotation
     if (currentCM && nextAbsoluteCMApplicationDate == currentDate) {
       debug() << "MONICA 1: applying absolute-at: "
               << nextAbsoluteCMApplicationDate.toString() << endl;
-      currentCM->absApply(nextAbsoluteCMApplicationDate, monica.get());
+      cultivationmethod::absApply(currentCM, nextAbsoluteCMApplicationDate, monica.get());
 
       nextAbsoluteCMApplicationDate =
-          currentCM->nextAbsDate(nextAbsoluteCMApplicationDate);
+          cultivationmethod::nextAbsDate(currentCM, nextAbsoluteCMApplicationDate);
 
       debug() << "MONICA 1: next abs app-date: "
               << nextAbsoluteCMApplicationDate.toString() << endl;
@@ -1024,10 +1024,10 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         nextAbsoluteCMApplicationDate2 == currentDate) {
       debug() << "MONICA 2: applying absolute-at: "
               << nextAbsoluteCMApplicationDate2.toString() << endl;
-      currentCM2->absApply(nextAbsoluteCMApplicationDate2, monica2.get());
+      cultivationmethod::absApply(currentCM2, nextAbsoluteCMApplicationDate2, monica2.get());
 
       nextAbsoluteCMApplicationDate2 =
-          currentCM2->nextAbsDate(nextAbsoluteCMApplicationDate2);
+          cultivationmethod::nextAbsDate(currentCM2, nextAbsoluteCMApplicationDate2);
 
       debug() << "MONICA 2: next abs app-date: "
               << nextAbsoluteCMApplicationDate2.toString() << endl;
@@ -1111,9 +1111,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     // try to apply dynamic worksteps marked to run AFTER everything else that
     // day
     if (currentCM)
-      currentCM->apply(monica.get(), false);
+      cultivationmethod::apply(currentCM, monica.get(), false);
     if (isSyncIC && currentCM2)
-      currentCM2->apply(monica2.get(), false);
+      cultivationmethod::apply(currentCM2, monica2.get(), false);
 
     // store results
     for (auto &s : store)
@@ -1126,14 +1126,14 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     // if the next application date is not valid, we're at the end
     // of the application list of this cultivation method
     // and go to the next one in the crop rotation
-    if (currentCM && currentCM->allDynamicWorkstepsFinished() &&
+    if (currentCM && cultivationmethod::allDynamicWorkstepsFinished(currentCM) &&
         !nextAbsoluteCMApplicationDate.isValid()) {
       // to count the applied fertiliser for the next production process
       monicamodel::resetFertiliserCounter(monica.get());
       tie(currentCM, nextAbsoluteCMApplicationDate) =
           findNextCultivationMethod(currentDate + 1);
     }
-    if (isSyncIC && currentCM2 && currentCM2->allDynamicWorkstepsFinished() &&
+    if (isSyncIC && currentCM2 && cultivationmethod::allDynamicWorkstepsFinished(currentCM2) &&
         !nextAbsoluteCMApplicationDate2.isValid()) {
       // to count the applied fertiliser for the next production process
       monicamodel::resetFertiliserCounter(monica2.get());
@@ -1143,12 +1143,12 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   }
 
   if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
-    SaveMonicaState sms(
+    Workstep sms = makeSaveMonicaStateWorkstep(
         currentDate,
         env.params.simulationParameters.pathToSerializationAtEndFile,
         env.params.simulationParameters.serializeMonicaStateAtEndToJson,
         env.params.simulationParameters.noOfPreviousDaysSerializedClimateData);
-    sms.apply(monica.get());
+    workstep::apply(&sms, monica.get());
   }
   // if (isSyncIC && env2.params.simulationParameters.serializeMonicaStateAtEnd)
   // { 	SaveMonicaState sms(currentDate,

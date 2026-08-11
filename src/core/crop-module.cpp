@@ -5508,7 +5508,7 @@ double monica::cropmodule::getOrganSpecificNPP(const CropModule *cm,
 }
 
 void monica::cropmodule::applyCutting(CropModule *cm,
-                                      std::map<int, Cutting::Value> &organs,
+                                      std::map<int, CuttingData::Value> &organs,
                                       std::map<int, double> &exports,
                                       double cutMaxAssimilationFraction) {
   auto &addOrganicMatter = cm->addOrganicMatter;
@@ -5538,7 +5538,7 @@ void monica::cropmodule::applyCutting(CropModule *cm,
 
   if (organs.empty()) {
     for (auto yc : pc_OrganIdsForCutting) {
-      Cutting::Value v;
+      CuttingData::Value v;
       v.value = yc.yieldPercentage;
       organs[yc.organId - 1] = v;
     }
@@ -5547,7 +5547,7 @@ void monica::cropmodule::applyCutting(CropModule *cm,
   double sumResidueBiomass = 0;
   for (auto p : organs) {
     int organId = p.first;
-    Cutting::Value organSpec = p.second;
+    CuttingData::Value organSpec = p.second;
 
     double oldOrganBiomass = vc_OrganBiomass.at(organId);
     double oldOrganDeadBiomass = vc_OrganDeadBiomass.at(organId);
@@ -5555,11 +5555,11 @@ void monica::cropmodule::applyCutting(CropModule *cm,
     double newOrganBiomass = 0.0;
     double cutOrganBiomass = 0.0;
 
-    if (organSpec.unit == Cutting::biomass) {
-      if (organSpec.cut_or_left == Cutting::cut) {
+    if (organSpec.unit == CuttingData::biomass) {
+      if (organSpec.cut_or_left == CuttingData::cut) {
         cutOrganBiomass = std::min(organSpec.value, oldOrganBiomass);
         newOrganBiomass = oldOrganBiomass - cutOrganBiomass;
-      } else if (organSpec.cut_or_left == Cutting::left) {
+      } else if (organSpec.cut_or_left == CuttingData::left) {
         newOrganBiomass = std::min(organSpec.value, oldOrganBiomass);
         cutOrganBiomass = oldOrganBiomass - newOrganBiomass;
       }
@@ -5572,11 +5572,11 @@ void monica::cropmodule::applyCutting(CropModule *cm,
             newOrganBiomass *
             std::min(oldOrganDeadBiomass / oldOrganBiomass, 1.0);
       }
-    } else if (organSpec.unit == Cutting::percentage) {
-      if (organSpec.cut_or_left == Cutting::cut) {
+    } else if (organSpec.unit == CuttingData::percentage) {
+      if (organSpec.cut_or_left == CuttingData::cut) {
         cutOrganBiomass = organSpec.value * oldOrganBiomass;
         newOrganBiomass = oldOrganBiomass - cutOrganBiomass;
-      } else if (organSpec.cut_or_left == Cutting::left) {
+      } else if (organSpec.cut_or_left == CuttingData::left) {
         newOrganBiomass = organSpec.value * oldOrganBiomass;
         cutOrganBiomass = oldOrganBiomass - newOrganBiomass;
       }
@@ -5589,7 +5589,7 @@ void monica::cropmodule::applyCutting(CropModule *cm,
             newOrganBiomass *
             std::min(oldOrganDeadBiomass / oldOrganBiomass, 1.0);
       }
-    } else if (organSpec.unit == Cutting::LAI) {
+    } else if (organSpec.unit == CuttingData::LAI) {
       // only "left" is supported for LAI
       double currentLAI = cm->vc_LeafAreaIndex;
       if (organSpec.value > currentLAI) {

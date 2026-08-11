@@ -500,7 +500,7 @@ void fcUpdateCropParametersForPerennial(CropModule *cm);
 void forceTransplantState(CropModule *cm, double temperatureSum, double lai,
                           size_t stage, double rootMass, double leafMass,
                           double shootMass, int postTransplantDelay);
-void applyCutting(CropModule *cm, std::map<int, Cutting::Value> &organs,
+void applyCutting(CropModule *cm, std::map<int, CuttingData::Value> &organs,
                   std::map<int, double> &exports,
                   double cutMaxAssimilationFraction);
 void step(CropModule *cm, double meanAirTemperature, double maxAirTemperature,

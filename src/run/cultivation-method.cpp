@@ -18,1733 +18,180 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "cultivation-method.h"
 
 #include <algorithm>
-#include <iostream>
-#include <map>
 #include <sstream>
-#include <utility>
-// #include <algorithm>
 
 #include "../core/monica-model.h"
-#include "../io/build-output.h"
-#include "model/monica/monica_state.capnp.h"
-#include "tools/algorithms.h"
+#include "json11/json11-helper.h"
 #include "tools/debug.h"
-#include <capnp/compat/json.h>
-#include <capnp/message.h>
-#include <capnp/serialize.h>
-#include <kj/filesystem.h>
-#include <kj/string.h>
-// #include "soil/conversion.h"
-#include "../io/build-output.h"
 
 using namespace std;
 using namespace monica;
-using namespace Soil;
 using namespace Tools;
-using namespace Climate;
 
-std::pair<Date, bool> makeInitAbsDate(Date date, Date initDate, bool addYear,
-                                      bool forceInitYear = false) {
-  bool addedYear = false;
-
-  if (date.isAbsoluteDate())
-    return make_pair(date, addedYear);
-
-  Date absDate = date.toAbsoluteDate(initDate.year());
-  if (!forceInitYear && (addYear || (absDate < initDate))) {
-    addedYear = true;
-    absDate.addYears(1);
-  }
-
-  return make_pair(absDate, addedYear);
-}
-
-int organIdFromName(const string &organName, Tools::Errors &err) {
-  string os = toLower(organName);
-  if (os == "root")
-    return 0;
-  else if (os == "leaf")
-    return 1;
-  else if (os == "shoot")
-    return 2;
-  else if (os == "fruit")
-    return 3;
-  else if (os == "struct")
-    return 4;
-  else if (os == "sugar")
-    return 5;
-  err.append(Errors(Errors::ERR, "organ id could not be resolved"));
-  return -1; // default error
-};
-
-string organNameFromId(int organId) {
-  string res = "unknown";
-  switch (organId) {
-  case 0:
-    res = "Root";
-    break;
-  case 1:
-    res = "Leaf";
-    break;
-  case 2:
-    res = "Shoot";
-    break;
-  case 3:
-    res = "Fruit";
-    break;
-  case 4:
-    res = "Struct";
-    break;
-  case 5:
-    res = "Sugar";
-    break;
-  default:
-    "unknown";
-  }
-  return res;
-};
-
-Workstep::Workstep(const Tools::Date &d) : _date(d) {}
-
-Workstep::Workstep(int noOfDaysAfterEvent, const std::string &afterEvent)
-    : _applyNoOfDaysAfterEvent(noOfDaysAfterEvent), _afterEvent(afterEvent) {}
-
-Workstep::Workstep(json11::Json j) {
-  _errors.append(Workstep::merge(kj::mv(j)));
-}
-
-Errors Workstep::merge(json11::Json j) {
-  Errors res = Json11Serializable::merge(j);
-
-  set_iso_date_value(_date, j, "date");
-  // at is a shortcut for after=event and days=1
-  auto at = string_value(j, "at");
-  if (!at.empty()) {
-    _afterEvent = at;
-    _applyNoOfDaysAfterEvent = 1;
-  }
-  set_int_value(_applyNoOfDaysAfterEvent, j, "days");
-  set_string_value(_afterEvent, j, "after");
-  set_bool_value(_runAtStartOfDay, j, "runAtStartOfDay");
-
-  return res;
-}
-
-json11::Json Workstep::to_json() const {
-  return json11::Json::object{{"type", type()},
-                              {"date", date().toIsoDateString()},
-                              {"days", _applyNoOfDaysAfterEvent},
-                              {"after", _afterEvent},
-                              {"runAtStartOfDay", _runAtStartOfDay}};
-}
-
-bool Workstep::apply(MonicaModel *model) {
-  model->currentEvents.insert("Workstep");
-  return true;
-}
-
-bool Workstep::applyWithPossibleCondition(MonicaModel *model) {
-  bool workstepFinished = false;
-  if (isActive()) {
-    if (isDynamicWorkstep())
-      workstepFinished = condition(model) ? apply(model) : false;
-    else
-      workstepFinished = apply(model);
-    _isActive = !workstepFinished;
-  }
-  return workstepFinished;
-}
-
-bool Workstep::condition(MonicaModel *model) {
-  if (_afterEvent.empty() || _applyNoOfDaysAfterEvent <= 0) {
-    return false;
-  }
-
-  const auto &currEvents = model->currentEvents;
-  const auto &prevEvents = model->previousDaysEvents;
-
-  auto ceit = currEvents.find(_afterEvent);
-  if (_daysAfterEventCountActivated) {
-    _daysAfterEventCount++;
-  } else if (ceit != currEvents.end() ||
-             prevEvents.find(_afterEvent) != prevEvents.end()) {
-    _daysAfterEventCountActivated = true;
-  }
-
-  return _daysAfterEventCount == _applyNoOfDaysAfterEvent;
-}
-
-bool Workstep::reinit(Tools::Date date, bool addYear, bool forceInitYear) {
-  bool addedYear = false;
-
-  if (_date.isValid()) {
-    tie(_absDate, addedYear) =
-        makeInitAbsDate(_date, date, addYear, forceInitYear);
-  } else {
-    _absDate = Date();
-  }
-
-  _isActive = true;
-  _daysAfterEventCount = 0;
-  _daysAfterEventCountActivated = false;
-
-  return addedYear;
-}
-
-// Sowing::Sowing(const Tools::Date& at, CropPtr crop)
-//	: Workstep(at)
-//	, _crop(crop)
-//{
-//	if (_crop)
-//		_crop->setSeedDate(at);
-// }
-
-Sowing::Sowing(json11::Json j) { _errors.append(Sowing::merge(kj::mv(j))); }
-
-// void Sowing::deserialize(mas::schema::model::monica::Params::Sowing::Reader
-// reader) {
-//   _cropToPlant = kj::heap<Crop>();
-//   _cropToPlant->deserialize(reader.getCrop());
-//   _plantDensity = reader.getPlantDensity();
-// }
-//
-// void Sowing::serialize(mas::schema::model::monica::Params::Sowing::Builder
-// builder) const {
-//
-// }
-
-Errors Sowing::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-
-  set_iso_date_value(_sowingDate, j, "seedDate");
-  set_iso_date_value(_harvestDate, j, "harvestDate");
-
-  if (j["crop"].is_object()) {
-    auto jc = j["crop"];
-    // if (jc["is-winter-crop"].is_bool())
-    //   _isWinterCrop.setValue(jc["is-winter-crop"].bool_value());
-
-    if (jc["is-perennial-crop"].is_bool())
-      _isPerennialCrop.setValue(jc["is-perennial-crop"].bool_value());
-
-    string err;
-    if (jc.has_shape({{"cropParams", json11::Json::OBJECT}}, err)) {
-      auto jcps = jc["cropParams"];
-      if (jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
-          jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err))
-        cropparameters::merge(&_cropParams, jcps);
-      else
-        res.errors.push_back(string("Couldn't find 'species' or 'cultivar' key "
-                                    "in JSON object 'cropParams':\n") +
-                             jc.dump());
-
-      if (_isPerennialCrop.isValue())
-        _cropParams.cultivarParams.pc_Perennial = _isPerennialCrop.value();
-      else
-        _isPerennialCrop.setValue(_cropParams.cultivarParams.pc_Perennial);
-
-      isValid = true;
-    } else {
-      res.errors.push_back(
-          string("Couldn't find 'cropParams' key in JSON object:\n") +
-          jc.dump());
-      isValid = false;
-    }
-
-    if (_isPerennialCrop.isValue() && _isPerennialCrop.value()) {
-      err = "";
-      if (jc.has_shape({{"perennialCropParams", json11::Json::OBJECT}}, err)) {
-        auto jcps = jc["perennialCropParams"];
-        if (jcps.has_shape({{"species", json11::Json::OBJECT}}, err) &&
-            jcps.has_shape({{"cultivar", json11::Json::OBJECT}}, err)) {
-          _separatePerennialCropParams = nullptr;
-          _separatePerennialCropParams = kj::heap<CropParameters>();
-          cropparameters::merge(_separatePerennialCropParams.get(), jcps);
-          // _perennialCropParams = _separatePerennialCropParams.get();
-        }
-      }
-    }
-
-    err = "";
-    if (jc.has_shape({{"residueParams", json11::Json::OBJECT}}, err)) {
-      cropresidueparameters::merge(&_residueParams, jc["residueParams"]);
-    } else {
-      res.errors.push_back(
-          string("Couldn't find 'residueParams' key in JSON object:\n") +
-          jc.dump());
-      isValid = false;
-    }
-  }
-
-  set_int_value(_plantDensity, j, "PlantDensity");
-  if (_plantDensity > 0) {
-    _cropParams.speciesParams.pc_PlantDensity = _plantDensity;
-  }
-  // FAO-56 Dual Kc: optional initial Kcb at sowing (default 0.15 = bare soil)
-  set_double_value(_initialKcb, j, "initialKcb");
-  return res;
-}
-
-json11::Json Sowing::to_json(bool includeFullCropParameters) const {
-  auto co = json11::Json::object{
-      {"cropParams", cropparameters::to_json(&_cropParams)},
-      {"residueParams", cropresidueparameters::to_json(&_residueParams)}};
-  if (_separatePerennialCropParams)
-    co["perennialCropParams"] =
-        cropparameters::to_json(_separatePerennialCropParams.get());
-
-  auto o = json11::Json::object{
-      {"type", type()},
-      {"date", date().toIsoDateString()},
-      {"crop", co},
-      {"initialKcb", _initialKcb},
-  };
-
-  if (_plantDensity > 0)
-    o["PlantDensity"] = J11Array{_plantDensity, "plants m-2"};
-
-  return o;
-}
-
-bool Sowing::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  debug() << "sowing crop: " << cropparameters::cropName(&_cropParams)
-          << " at: " << _sowingDate.toString() << endl;
-
-  model->p_daysWithCrop = 0;
-  model->p_accuNStress = 0.0;
-  model->p_accuWaterStress = 0.0;
-  model->p_accuHeatStress = 0.0;
-  model->p_accuOxygenStress = 0.0;
-
-  if (isValid) {
-    model->cultivationMethodCount++;
-
-    auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
-                             double nconc) {
-      soilorganic::addOrganicMatter(model->soilOrganic.get(),
-                                    model->currentCropModule->residuePs,
-                                    layer2amount, nconc);
-    };
-    model->currentCropModule = nullptr;
-    model->currentCropModule = makeCropModule(
-        model->soilColumn.get(), &_cropParams, &_residueParams, &model->sitePs,
-        &model->cropPs, &model->simPs,
-        [model](string event) {
-          model->currentEvents.insert(std::move(event));
-        },
-        addOMFunc,
-        [model](double avgAirTemp) {
-          return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-              model->soilMoisture.get(), avgAirTemp);
-        },
-        &model->intercropping);
-
-    if (_separatePerennialCropParams)
-      model->currentCropModule->perennialCropParams =
-          kj::heap<CropParameters>(*_separatePerennialCropParams.get());
-    // cropmodule::setPerennialCropParameters(model->currentCropModule.get(),
-    // crop->perennialCropParameters());
-
-    soiltransport::putCrop(model->soilTransport.get(),
-                           model->currentCropModule.get());
-    soilcolumn::putCrop(model->soilColumn.get(),
-                        model->currentCropModule.get());
-    model->soilMoisture->cropModule = model->currentCropModule.get();
-    model->soilOrganic->cropModule = model->currentCropModule.get();
-
-    //    debug() << "seedDate: "<< _currentCrop->seedDate().toString()
-    //            << " harvestDate: " << _currentCrop->harvestDate().toString()
-    //            << endl;
-
-    if (model->simPs.p_UseNMinMineralFertilisingMethod &&
-        !model->currentCropModule->isWinterCrop) {
-      soilcolumn::clearTopDressingParams(model->soilColumn.get());
-      debug() << "nMin fertilising summer crop" << endl;
-      double fert_amount = monicamodel::applyMineralFertiliserViaNMinMethod(
-          model, model->simPs.p_NMinFertiliserPartition,
-          makeNMinCropParameters(
-              _cropParams.speciesParams.pc_SamplingDepth,
-              _cropParams.speciesParams.pc_TargetNSamplingDepth,
-              _cropParams.speciesParams.pc_TargetN30));
-      monicamodel::addDailySumFertiliser(model, fert_amount);
-    }
-  }
-
-  // FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
-  if (model->simPs.dualKcMethod && model->currentCropModule) {
-    model->currentCropModule->vc_Kcb_ini = _initialKcb;
-  }
-  model->currentEvents.insert("Sowing");
-
-  return true;
-}
-
-AutomaticSowing::AutomaticSowing(json11::Json j) {
-  _errors.append(AutomaticSowing::merge(kj::mv(j)));
-}
-
-Errors AutomaticSowing::merge(json11::Json j) {
-  Errors res = Sowing::merge(j);
-
-  set_iso_date_value(_earliestDate, j, "earliest-date");
-  set_iso_date_value(_latestDate, j, "latest-date");
-  set_double_value(_minTempThreshold, j, "min-temp");
-  set_int_value(_daysInTempWindow, j, "days-in-temp-window");
-  set_double_value(_minPercentASW, j, "min-%-asw");
-  set_double_value(_maxPercentASW, j, "max-%-asw");
-  set_double_value(_max3dayPrecipSum, j, "max-3d-precip");
-  set_double_value(_maxCurrentDayPrecipSum, j, "max-curr-day-precip");
-  set_double_value(_tempSumAboveBaseTemp, j, "temp-sum-above-base-temp");
-  set_double_value(_baseTemp, j, "base-temp");
-
-  json11::Json avgSoilTemp = j["avg-soil-temp"];
-  if (avgSoilTemp.is_object()) {
-    set_double_value(_soilDepthForAveraging, avgSoilTemp, "depth");
-    set_int_value(_daysInSoilTempWindow, avgSoilTemp, "days");
-    set_double_value(_sowingIfAboveAvgSoilTemp, avgSoilTemp, "Tavg");
-    _checkForSoilTemperature = _soilDepthForAveraging > 0 &&
-                               _daysInSoilTempWindow > 0 &&
-                               _sowingIfAboveAvgSoilTemp > 0;
-  }
-
-  return res;
-}
-
-json11::Json AutomaticSowing::to_json(bool includeFullCropParameters) const {
-  auto o = Sowing::to_json().object_items();
-  o["type"] = type();
-  o["earliest-date"] =
-      J11Array{_earliestDate.toIsoDateString(), "", "earliest sowing date"};
-  o["latest-date"] =
-      J11Array{_latestDate.toIsoDateString(), "", "latest sowing date"};
-  o["min-temp"] = J11Array{_minTempThreshold, "�C",
-                           "minimal air temperature for sowing (T >= thresh && "
-                           "avg T in Twindow >= thresh)"};
-  o["days-in-temp-window"] = J11Array{
-      _daysInTempWindow, "d", "days to be used for sliding window of min-temp"};
-  o["min-%-asw"] =
-      J11Array{_minPercentASW, "%",
-               "minimal soil-moisture in percent of available soil-water"};
-  o["max-%-asw"] =
-      J11Array{_maxPercentASW, "%",
-               "maximal soil-moisture in percent of available soil-water"};
-  o["max-3d-precip-sum"] = J11Array{
-      _max3dayPrecipSum, "mm",
-      "sum of precipitation in the last three days (including current day)"};
-  o["max-curr-day-precip"] =
-      J11Array{_maxCurrentDayPrecipSum, "mm",
-               "max precipitation allowed at current day"};
-  o["temp-sum-above-base-temp"] = J11Array{
-      _tempSumAboveBaseTemp, "�C", "temperature sum above T-base needed"};
-  o["base-temp"] = J11Array{
-      _baseTemp, "�C",
-      "base temperature above which temp-sum-above-base-temp is counted"};
-  o["avg-soil-temp"] = J11Object{
-      {"depth", J11Array{_soilDepthForAveraging, "m",
-                         "soil depth until averaging will be done"}},
-      {"days", J11Array{_daysInSoilTempWindow, "d",
-                        "window/number of days for which the average "
-                        "temperature must be greater"}},
-      {"Tavg", J11Array{_sowingIfAboveAvgSoilTemp, "�C",
-                        "temperature which has to be reached on average"}}};
-
-  return o;
-}
-
-bool isSoilMoistureOk(MonicaModel *model, double minPercentASW,
-                      double maxPercentASW) {
-  bool soilMoistureOk = false;
-  double pwp = model->soilColumn->at(0)._sps.vs_PermanentWiltingPoint;
-  double sm = max(0.0, model->soilColumn->at(0).vs_SoilMoisture_m3 - pwp);
-  double asw = model->soilColumn->at(0)._sps.vs_FieldCapacity - pwp;
-  double currentPercentASW = sm / asw * 100.0;
-  soilMoistureOk =
-      minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW;
-
-  return soilMoistureOk;
-}
-
-bool isPrecipitationOk(
-    const std::vector<std::map<Climate::ACD, double>> &climateData,
-    double max3dayPrecipSum, double maxCurrentDayPrecipSum) {
-  bool precipOk = false;
-  double psum3d =
-      std::accumulate(climateData.rbegin(), climateData.rbegin() + 3, 0.0,
-                      [](double acc, const map<ACD, double> &d) {
-                        auto it = d.find(Climate::precip);
-                        return acc + (it == d.end() ? 0 : it->second);
-                      });
-  double currentp = climateData.back().at(Climate::precip);
-  precipOk = psum3d <= max3dayPrecipSum && currentp <= maxCurrentDayPrecipSum;
-
-  return precipOk;
-}
-
-bool isSoilTemperatureOk(const std::vector<double> &soilTemps, int windowDays,
-                         double targetAvgSoilTemp) {
-  if (soilTemps.empty())
-    return false;
-
-  double sum = 0;
-  auto size = soilTemps.size();
-  for (int i = int(size - 1); i >= 0 && i >= size - windowDays; i--)
-    sum += soilTemps[i];
-  double avg = sum / (size > windowDays ? windowDays : size);
-  // cout << "avg: " << avg << endl;
-  return avg >= targetAvgSoilTemp;
-}
-
-bool AutomaticSowing::apply(MonicaModel *model) {
-  auto currentDate = model->currentStepDate;
-
-  // setDate(currentDate); //-> commented out, causes the identification as
-  // dynamic workstep to fail
-  _sowingDate = currentDate;
-
-  Sowing::apply(model);
-  model->currentEvents.insert("AutomaticSowing");
-  _cropSeeded = true;
-  _inSowingRange = false;
-
-  return true;
-}
-
-std::function<double(MonicaModel *)> AutomaticSowing::registerDailyFunction(
-    std::function<std::vector<double> &()> getDailyValues) {
-  if (!_checkForSoilTemperature)
-    return std::function<double(MonicaModel *)>();
-
-  _getAvgSoilTemps = getDailyValues;
-  return [this](MonicaModel *model) -> double {
-    double avgSoilTemp = 0;
-    size_t i = 0;
-    for (auto size = soilcolumn::getLayerNumberForDepth(
-                         model->soilColumn.get(), _soilDepthForAveraging) +
-                     1;
-         i < size; i++) {
-      avgSoilTemp +=
-          model->soilTemperature->soilColumn->at(int(i)).vs_SoilTemperature;
-    }
-    return avgSoilTemp / double(i);
-  };
-}
-
-bool AutomaticSowing::condition(MonicaModel *model) {
-  if (_cropSeeded)
-    return false;
-
-  auto currentDate = model->currentStepDate;
-
-  if (!_inSowingRange && currentDate < _absEarliestDate)
-    return false;
-  else
-    _inSowingRange = true;
-
-  if (_inSowingRange && currentDate >= _absLatestDate)
-    return true;
-
-  // check soil temperature if requested
-  if (_checkForSoilTemperature) {
-    if (!isSoilTemperatureOk(_getAvgSoilTemps(), _daysInSoilTempWindow,
-                             _sowingIfAboveAvgSoilTemp))
-      return false;
-  }
-
-  const auto &cd = model->climateData;
-  auto currentCd = cd.back();
-
-  auto avg = [&](Climate::ACD acd) {
-    return accumulate(cd.rbegin(),
-                      cd.rbegin() + std::min(int(cd.size()), _daysInTempWindow),
-                      0.0,
-                      [acd](double acc, const map<ACD, double> &d) {
-                        auto it = d.find(acd);
-                        return acc + (it == d.end() ? 0 : it->second);
-                      }) /
-           min(int(cd.size()), _daysInTempWindow);
-  };
-
-  // check temperature
-  bool Tok = false;
-  if (_cropParams.cultivarParams.winterCrop) {
-    double avgTavg = avg(Climate::tavg);
-    Tok = avgTavg <= _minTempThreshold;
-  } else {
-    double avgTmin = avg(Climate::tmin);
-    bool avgTminOk = avgTmin >= _minTempThreshold;
-    bool TminOk = currentCd[Climate::tmin] >= _minTempThreshold;
-    Tok = avgTminOk && TminOk;
-  }
-
-  if (!Tok)
-    return false;
-
-  // check soil moisture
-  if (!isSoilMoistureOk(model, _minPercentASW, _maxPercentASW))
-    return false;
-
-  // check precipitation
-  if (!isPrecipitationOk(cd, _max3dayPrecipSum, _maxCurrentDayPrecipSum))
-    return false;
-
-  // check temperature sum
-  double baseTemp = _baseTemp;
-  double tempSum = accumulate(
-      cd.begin(), cd.end(), 0.0,
-      [baseTemp](double acc, const map<ACD, double> &d) {
-        auto it = d.find(Climate::tavg);
-        return acc + (it == d.end() ? 0 : max(0.0, it->second - baseTemp));
-      });
-  if (tempSum < _tempSumAboveBaseTemp)
-    return false;
-
-  return true;
-}
-
-bool AutomaticSowing::reinit(Tools::Date date, bool addYear,
-                             bool forceInitYear) {
-  Workstep::reinit(date, addYear);
-
-  _cropSeeded = _inSowingRange = false;
-  setDate(Tools::Date());
-
-  bool addedYear1, addedYear2;
-  // init first the latest date, if the latest date stays in current year, so
-  // has to stay the earliest date (thus force current year) if there is a
-  // forced current (init) year, this will force both dates to this year
-  tie(_absLatestDate, addedYear1) =
-      makeInitAbsDate(_latestDate, date, addYear, forceInitYear);
-  tie(_absEarliestDate, addedYear2) = makeInitAbsDate(
-      _earliestDate, date, addYear, forceInitYear || !addedYear1);
-
-  return addedYear1; // || addedYear2;
-}
-
-// --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION (PARSING) ---
-Transplant::Transplant(json11::Json object) {
-  // Mirror Sowing's constructor exactly: do NOT pass json to Workstep() base
-  // (that would call Workstep::merge once, then our merge() would call it
-  // again).
-  _errors.append(Transplant::merge(kj::mv(object)));
-}
-
-Transplant::Transplant(const Transplant &other) : Sowing(other) {}
-
-json11::Json Transplant::to_json(bool includeFullCropParameters) const {
-  return json11::Json::object{
-      {"type", "Transplant"},
-      {"crop", _cropToPlant ? _cropToPlant->to_json(includeFullCropParameters)
-                            : json11::Json::object{}},
-      {"initialStage", static_cast<int>(_initialStage)},
-      {"initialTemperatureSum", _initialGDD},
-      {"initialRootBiomass", _initRootMass},
-      {"initialLeafBiomass", _initLeafMass},
-      {"initialShootBiomass", _initShootMass},
-      {"initialLAI", _initLAI},
-      {"postTransplantDelay", _postTransplantDelay},
-      {"initialKcb", _initialKcb},
-  };
-}
-
-Tools::Errors Transplant::merge(json11::Json j) {
-  // --- Step 1: Parse date and base Workstep fields (mirrors Sowing::merge) ---
-  Errors res = Sowing::merge(j);
-
-  // --- Step 3: Parse transplant-specific numerical parameters ---
-  if (!j["initialStage"].is_null()) {
-    _initialStage = static_cast<size_t>(j["initialStage"].int_value());
-  }
-  set_double_value(_initialGDD, j, "initialTemperatureSum");
-  set_double_value(_initRootMass, j, "initialRootBiomass");
-  set_double_value(_initLeafMass, j, "initialLeafBiomass");
-  set_double_value(_initShootMass, j, "initialShootBiomass");
-  set_double_value(_initLAI, j, "initialLAI");
-  set_int_value(_postTransplantDelay, j, "postTransplantDelay");
-  // FAO-56 Dual Kc: optional initial Kcb at transplanting (default 0.15 = bare
-  // soil)
-  set_double_value(_initialKcb, j, "initialKcb");
-
-  return res; // propagates ALL sub-errors (crop parse errors included)
-}
-
-// --- END TRANSPLANT WORKSTEP IMPLEMENTATION (PARSING) ---
-
-// --- BEGIN TRANSPLANT WORKSTEP IMPLEMENTATION (EXECUTION) ---
-bool Transplant::apply(MonicaModel *model) {
-  // Step 1: Call base Sowing::apply
-  Sowing::apply(model);
-
-  // Step 3: Get the crop engine created by seedCrop
-  CropModule *cropModule = model->currentCropModule;
-  if (!cropModule)
-    return false;
-
-  // Step 4: Force the transplant initial state (overrides germination defaults)
-  cropmodule::forceTransplantState(cropModule, _initialGDD, _initLAI,
-                                   _initialStage, _initRootMass, _initLeafMass,
-                                   _initShootMass, _postTransplantDelay);
-
-  // Step 5: FAO-56 Dual Kc: push initial Kcb into the crop module
-  if (model->simPs.dualKcMethod)
-    cropModule->vc_Kcb_ini = _initialKcb;
-
-  // Step 6: Register the event
-  model->currentEvents.insert("Transplant");
-
-  return true;
-}
-
-// --- END TRANSPLANT WORKSTEP IMPLEMENTATION (EXECUTION) ---
-
-// Harvest::Harvest(const Tools::Date& at,
-//	Crop* crop,
-//	std::string method)
-//	: Workstep(at)
-//	, _crop(crop)
-//	, _method(method)
-//{
-//	if (_crop)
-//		_crop->setHarvestDate(at);
-// }
-
-Harvest::Harvest(json11::Json j) { _errors.append(Harvest::merge(kj::mv(j))); }
-
-Errors Harvest::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-
-  // set_string_value(_method, j, "method");
-  // set_double_value(_percentage, j, "percentage");
-  set_int_value(_incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
-  _incorporateIntoLayerNo = max(1, _incorporateIntoLayerNo);
-  set_bool_value(_exported, j, "exported");
-  set_bool_value(_optCarbMgmtData.optCarbonConservation, j,
-                 "opt-carbon-conservation");
-  set_double_value(_optCarbMgmtData.cropImpactOnHumusBalance, j,
-                   "crop-impact-on-humus-balance");
-  auto cu = j["crop-usage"].string_value();
-  if (cu == "green-manure")
-    _optCarbMgmtData.cropUsage = greenManure;
-  else
-    _optCarbMgmtData.cropUsage = biomassProduction;
-  set_double_value(_optCarbMgmtData.residueHeq, j, "residue-heq");
-  set_double_value(_optCarbMgmtData.organicFertilizerHeq, j,
-                   "organic-fertilizer-heq");
-  set_double_value(_optCarbMgmtData.maxResidueRecoverFraction, j,
-                   "max-residue-recover-fraction");
-
-  for (const string &organName :
-       {"leaf", "shoot", "fruit", "struct", "sugar"}) {
-    for (const auto &kv : j.object_items()) {
-      if (toLower(kv.first) == organName && kv.second.is_object()) {
-        Spec::Value sv;
-        set_double_value(sv.exportPercentage, kv.second, "export");
-        // set_bool_value(sv.incorporate, kv.second, "incorporate");
-        _spec.organ2specVal[organIdFromName(kv.first, res)] = sv;
-      }
-    }
-  }
-
-  return res;
-}
-
-json11::Json Harvest::to_json(bool includeFullCropParameters) const {
-  auto jo = json11::Json::object{
-      {"type", type()},
-      {"date", date().toIsoDateString()},
-      //{"percentage",                   _percentage},
-      {"incorporateIntoLayerNo", _incorporateIntoLayerNo},
-      {"exported", _exported},
-      {"opt-carbon-conservation", _optCarbMgmtData.optCarbonConservation},
-      {"crop-impact-on-humus-balance",
-       _optCarbMgmtData.cropImpactOnHumusBalance},
-      {"crop-usage", _optCarbMgmtData.cropUsage == greenManure
-                         ? "green-manure"
-                         : "biomass-production"},
-      {"residue-heq", _optCarbMgmtData.residueHeq},
-      {"organic-fertilizer-heq", _optCarbMgmtData.organicFertilizerHeq},
-      {"max-residue-recover-fraction",
-       _optCarbMgmtData.maxResidueRecoverFraction}};
-
-  for (const auto &p : _spec.organ2specVal) {
-    jo[organNameFromId(p.first)] =
-        J11Object{{"export", J11Array{p.second.exportPercentage, "%"}},
-                  {"incorporate", p.second.incorporate}};
-  }
-
-  return jo;
-}
-
-bool Harvest::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  if (model->currentCropModule) {
-    monicamodel::harvestCurrentCrop(model, _exported, _spec, _optCarbMgmtData,
-                                    _incorporateIntoLayerNo - 1);
-    if (_sowing)
-      debug() << "harvesting crop: "
-              << cropparameters::cropName(&_sowing->_cropParams)
-              << " at: " << date().toString() << endl;
-    model->currentEvents.insert("Harvest");
-  }
-
-  return true;
-}
-
-AutomaticHarvest::AutomaticHarvest() : Harvest(), _harvestTime("maturity") {}
-
-// AutomaticHarvest::AutomaticHarvest(Crop* crop,
-//	std::string harvestTime,
-//	Date latestHarvest,
-//	std::string method)
-//	: Harvest(Date(), crop, method)
-//	, _harvestTime(harvestTime)
-//	, _latestDate(latestHarvest)
-//{}
-
-AutomaticHarvest::AutomaticHarvest(json11::Json j) : _harvestTime("maturity") {
-  _errors.append(AutomaticHarvest::merge(kj::mv(j)));
-}
-
-Errors AutomaticHarvest::merge(json11::Json j) {
-  Errors res = Harvest::merge(j);
-
-  set_iso_date_value(_latestDate, j, "latest-date");
-  set_double_value(_minPercentASW, j, "min-%-asw");
-  set_double_value(_maxPercentASW, j, "max-%-asw");
-  set_double_value(_max3dayPrecipSum, j, "max-3d-precip-sum");
-  set_double_value(_maxCurrentDayPrecipSum, j, "max-curr-day-precip");
-  set_string_value(_harvestTime, j, "harvest-time");
-
-  return res;
-}
-
-json11::Json AutomaticHarvest::to_json(bool includeFullCropParameters) const {
-  auto o = Harvest::to_json(includeFullCropParameters).object_items();
-  o["type"] = type();
-  o["latest-date"] =
-      J11Array{_latestDate.toIsoDateString(), "", "latest harvesting date"};
-  o["min-%-asw"] =
-      J11Array{_minPercentASW, "%",
-               "minimal soil-moisture in percent of available soil-water"};
-  o["max-%-asw"],
-      J11Array{_maxPercentASW, "%",
-               "maximal soil-moisture in percent of available soil-water"};
-  o["max-3d-precip-sum"], J11Array{_max3dayPrecipSum, "mm",
-                                   "sum of precipitation in the last three "
-                                   "days (including current day)"};
-  o["max-curr-day-precip"],
-      J11Array{_maxCurrentDayPrecipSum, "mm",
-               "max precipitation allowed at current day"};
-  o["harvest-time"] = _harvestTime;
-  return o;
-}
-
-bool AutomaticHarvest::apply(MonicaModel *model) {
-  // setDate(model->currentStepDate()); //-> commented out, caused the detection
-  // as dynamic workstep to fail
-  // if (_sowing)
-  // _sowing->crop()->setHarvestDate(model->currentStepDate);
-
-  Harvest::apply(model);
-
-  model->currentEvents.insert("AutomaticHarvest");
-  _cropHarvested = true;
-
-  return true;
-}
-
-bool AutomaticHarvest::condition(MonicaModel *model) {
-  bool conditionMet = false;
-
-  auto *cg = model->currentCropModule.get();
-  // got a crop and not yet harvested
-  if (cg && !_cropHarvested)
-    conditionMet =
-        model->currentStepDate >=
-            _absLatestDate // harvest after or at latest date
-        ||
-        (_harvestTime == "maturity" &&
-         cropmodule::maturityReached(
-             model->currentCropModule) // has maturity been reached
-         && isSoilMoistureOk(model, _minPercentASW,
-                             _maxPercentASW) // check soil moisture
-         && isPrecipitationOk(model->climateData, _max3dayPrecipSum,
-                              _maxCurrentDayPrecipSum)); // check precipitation
-
-  return conditionMet;
-}
-
-bool AutomaticHarvest::reinit(Tools::Date date, bool addYear,
-                              bool forceInitYear) {
-  Workstep::reinit(date, addYear);
-
-  _cropHarvested = false;
-  setDate(Tools::Date());
-
-  bool addedYear;
-  tie(_absLatestDate, addedYear) =
-      makeInitAbsDate(_latestDate, date, addYear, forceInitYear);
-
-  return addedYear;
-}
-
-Cutting::Cutting(const Tools::Date &at) : Workstep(at) {}
-
-Cutting::Cutting(json11::Json j) { _errors.append(Cutting::merge(kj::mv(j))); }
-
-Errors Cutting::merge(json11::Json j) {
-  auto errors = Workstep::merge(j);
-
-  bool export_ = j["export"].is_bool() ? j["export"].bool_value() : true;
-
-  for (auto p : j["organs"].object_items()) {
-    int oid = organIdFromName(p.first, errors);
-    if (oid == -1)
-      continue;
-    Value v;
-    auto arr = p.second.array_items();
-    if (arr.size() > 0)
-      v.value = double_valueD(arr[0].number_value(), 0);
-    if (arr.size() > 1) {
-      v.unit = percentage;
-      auto p = arr[1].string_value();
-      if (p == "kg ha-1")
-        v.unit = biomass;
-      else if (p == "m2 m-2" && oid == 1)
-        v.unit = LAI;
-      else if (p == "%")
-        v.value = v.value / 100.0;
-      else {
-        // treat no unit as percentage
-        v.value = v.value / 100.0;
-        errors.append(string("Unknown unit: ") + p +
-                      " in Cutting workstep: " + j.dump());
-      }
-    }
-    if (arr.size() > 2) {
-      auto col = arr[2].string_value();
-      if (col == "cut")
-        v.cut_or_left = cut;
-      else if (col == "left")
-        v.cut_or_left = left;
-      else
-        v.cut_or_left = none;
-    }
-
-    _organId2cuttingSpec[oid] = v;
-    _organId2exportFraction[oid] = export_ ? 1 : 0;
-  }
-
-  for (auto p : j["export"].object_items()) {
-    int oid = organIdFromName(p.first, errors);
-    if (oid == -1)
-      continue;
-    _organId2exportFraction[oid] = int_valueD(p.second, 0) / 100.0;
-  }
-
-  set_double_value(_cutMaxAssimilationRateFraction, j,
-                   "cut-max-assimilation-rate",
-                   [](double v) { return v / 100.0; });
-
-  return errors;
-}
-
-json11::Json Cutting::to_json() const {
-  J11Object organs;
-  for (auto p : _organId2cuttingSpec)
-    organs[organNameFromId(p.first)] =
-        J11Array{p.second.value * (p.second.unit == percentage ? 100.0 : 1.0),
-                 p.second.unit == percentage
-                     ? "%"
-                     : (p.second.unit == biomass ? "kg ha-1" : "m2 m-2"),
-                 p.second.cut_or_left == cut ? "cut" : "left"};
-
-  J11Object organsBiomAfterCutting;
-  for (auto p : _organId2biomAfterCutting)
-    organsBiomAfterCutting[organNameFromId(p.first)] =
-        J11Array{int(p.second), "kg ha-1"};
-
-  J11Object exports;
-  for (auto p : _organId2exportFraction)
-    exports[organNameFromId(p.first)] = J11Array{int(p.second * 100.0), "%"};
-
-  return json11::Json::object{
-      {"type", type()},
-      {"date", date().toIsoDateString()},
-      {"organs", organs},
-      {"exports", exports},
-      {"cut-max-assimilation-rate",
-       J11Array{int(_cutMaxAssimilationRateFraction * 100.0), "%"}}};
-}
-
-bool Cutting::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  assert(model->currentCropModule);
-  debug() << "Cutting crop: "
-          << cropparameters::cropName(&model->currentCropModule->cropParams)
-          << " at: " << date().toString() << endl;
-
-  cropmodule::applyCutting(model->currentCropModule, _organId2cuttingSpec,
-                           _organId2exportFraction,
-                           _cutMaxAssimilationRateFraction);
-  model->currentEvents.insert("Cutting");
-
-  return true;
-}
-
-MineralFertilization::MineralFertilization(
-    const Tools::Date &at, MineralFertilizerParameters partition, double amount)
-    : Workstep(at), _partition(partition), _amount(amount) {}
-
-MineralFertilization::MineralFertilization(json11::Json j) {
-  _errors.append(MineralFertilization::merge(kj::mv(j)));
-}
-
-Errors MineralFertilization::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-  {
-    string err;
-    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err))
-      mineralfertilizerparameters::merge(&_partition, j["partition"]);
-    if (!err.empty())
-      cerr << "Error @ MineralFertilization::merge: " << err << endl;
-  }
-  set_double_value(_amount, j, "amount");
-  return res;
-}
-
-json11::Json MineralFertilization::to_json() const {
-  return json11::Json::object{
-      {"type", type()},
-      {"date", date().toIsoDateString()},
-      {"amount", _amount},
-      {"partition", mineralfertilizerparameters::to_json(&_partition)}};
-}
-
-bool MineralFertilization::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  debug() << toString() << endl;
-  monicamodel::applyMineralFertiliser(model, partition(), amount());
-  model->currentEvents.insert("MineralFertilization");
-
-  return true;
-}
-
-NDemandFertilization::NDemandFertilization(
-    int stage, double depth, MineralFertilizerParameters partition,
-    double Ndemand)
-    : Workstep(), _partition(partition), _Ndemand(Ndemand), _depth(depth),
-      _stage(stage) {}
-
-NDemandFertilization::NDemandFertilization(
-    Tools::Date date, double depth, MineralFertilizerParameters partition,
-    double Ndemand)
-    : Workstep(date), _initialDate(date), _partition(partition),
-      _Ndemand(Ndemand), _depth(depth) {}
-
-NDemandFertilization::NDemandFertilization(json11::Json j) {
-  _errors.append(NDemandFertilization::merge(kj::mv(j)));
-}
-
-Errors NDemandFertilization::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-  _initialDate = date();
-  set_double_value(_Ndemand, j, "N-demand");
-  {
-    string err;
-    if (j.has_shape({{"partition", json11::Json::OBJECT}}, err))
-      mineralfertilizerparameters::merge(&_partition, j["partition"]);
-    if (!err.empty())
-      cerr << "Error @ NDemandFertilization::merge: " << err << endl;
-  }
-  set_double_value(_depth, j, "depth");
-  set_int_value(_stage, j, "stage");
-
-  return res;
-}
-
-json11::Json NDemandFertilization::to_json() const {
-  auto o = J11Object{
-      {"type", type()},
-      {"N-demand", _Ndemand},
-      {"partition", mineralfertilizerparameters::to_json(&_partition)},
-      {"depth", J11Array{_depth, "m", "depth of Nmin measurement"}}};
-  if (_initialDate.isValid())
-    o["date"] = _initialDate.toIsoDateString();
-  else
-    o["stage"] = J11Array{
-        _stage, "",
-        "if this development stage is entered, the fertilizer will be applied"};
-
-  return o;
-}
-
-bool NDemandFertilization::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  double rd = model->currentCropModule->vc_RootingDepth_m;
-  debug() << toString() << endl;
-  double appliedAmount = soilcolumn::applyMineralFertiliserViaNDemand(
-      model->soilColumn.get(), partition(), rd < _depth ? rd : _depth,
-      _Ndemand);
-  model->dailySumFertiliser += appliedAmount;
-  _appliedFertilizer = true;
-  // record date of application until next reinit
-  setDate(model->currentStepDate);
-  model->currentEvents.insert("NDemandFertilization");
-
-  return true;
-}
-
-bool NDemandFertilization::condition(MonicaModel *model) {
-  bool conditionMet = false;
-
-  auto *cg = model->currentCropModule.get();
-  if (cg && !_appliedFertilizer) {
-    auto currStage = cg->vc_DevelopmentalStage + 1;
-    conditionMet = date().isValid()        // is timed application
-                   || currStage == _stage; // reached the requested stage
-  }
-
-  return conditionMet;
-}
-
-bool NDemandFertilization::reinit(Tools::Date date, bool addYear,
-                                  bool forceInitYear) {
-  setDate(_initialDate);
-
-  bool addedYear = Workstep::reinit(date, addYear, forceInitYear);
-
-  _appliedFertilizer = false;
-
-  return false;
-}
-
-OrganicFertilization::OrganicFertilization(
-    const Tools::Date &at, const OrganicMatterParameters &params, double amount,
-    bool incorp)
-    : Workstep(at), _params(params), _amount(amount), _incorporation(incorp) {}
-
-OrganicFertilization::OrganicFertilization(json11::Json j) {
-  _errors.append(OrganicFertilization::merge(kj::mv(j)));
-}
-
-Errors OrganicFertilization::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-  organicmatterparameters::merge(&_params, j["parameters"]);
-  set_double_value(_amount, j, "amount");
-  set_int_value(_incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
-  _incorporateIntoLayerNo = max(1, _incorporateIntoLayerNo);
-  set_bool_value(_incorporation, j, "incorporation");
-  return res;
-}
-
-json11::Json OrganicFertilization::to_json() const {
-  return json11::Json::object{
-      {"type", type()},
-      {"date", date().toIsoDateString()},
-      {"amount", _amount},
-      {"parameters", organicmatterparameters::to_json(&_params)},
-      {"incorporateIntoLayerNo", _incorporateIntoLayerNo},
-      {"incorporation", _incorporation}};
-}
-
-bool OrganicFertilization::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  debug() << toString() << endl;
-  monicamodel::applyOrganicFertiliser(model, _params, _amount, _incorporation,
-                                      _incorporateIntoLayerNo - 1);
-  model->currentEvents.insert("OrganicFertilization");
-
-  return true;
-}
-
-Tillage::Tillage(const Tools::Date &at, double depth)
-    : Workstep(at), _depth(depth) {}
-
-Tillage::Tillage(json11::Json j) { _errors.append(Tillage::merge(kj::mv(j))); }
-
-Errors Tillage::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-  set_double_value(_depth, j, "depth");
-  return res;
+CultivationMethod monica::makeCultivationMethod(json11::Json j) {
+  CultivationMethod cm;
+  // NOTE: like the original CultivationMethod(json11::Json) constructor, the merge() result (Errors)
+  // is not stored anywhere - discarded, not a mistake, matches the original exactly.
+  cultivationmethod::merge(&cm, j);
+  return cm;
 }
-
-json11::Json Tillage::to_json() const {
-  return json11::Json::object{
-      {"type", type()}, {"date", date().toIsoDateString()}, {"depth", _depth}};
-}
-
-bool Tillage::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  debug() << toString() << endl;
-  monicamodel::applyTillage(model, _depth);
-  model->currentEvents.insert("Tillage");
-
-  return true;
-}
-
-SetValue::SetValue(const Tools::Date &at, OId oid, json11::Json value)
-    : Workstep(at), _oid(oid), _value(value) {}
-
-SetValue::SetValue(json11::Json j) {
-  _errors.append(SetValue::merge(kj::mv(j)));
-}
-
-Errors SetValue::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-
-  auto oids = parseOutputIds({j["var"]});
-  if (!oids.empty())
-    _oid = oids[0];
-  else
-    return res;
-
-  _value = j["value"];
-  if (_value.is_array()) {
-    auto jva = _value.array_items();
-    if (!jva.empty()) {
-      // is an expression
-      if (jva[0] == "=" && jva.size() == 4) {
-        auto f =
-            buildPrimitiveCalcExpression(J11Array(jva.begin() + 1, jva.end()));
-        _getValue = [=](const MonicaModel *mm) { return f(*mm); };
-      } else {
-        auto oids = parseOutputIds({_value});
-        if (!oids.empty()) {
-          auto oid = oids[0];
-          const auto &ofs = buildOutputTable().ofs;
-          auto ofi = ofs.find(oid.id);
-          if (ofi != ofs.end()) {
-            auto f = ofi->second;
-            _getValue = [=](const MonicaModel *mm) { return f(*mm, oid); };
-          }
-        }
-      }
-    }
-  } else
-    _getValue = [=](const MonicaModel *) { return _value; };
-
-  return res;
-}
-
-json11::Json SetValue::to_json() const {
-  return json11::Json::object{{"type", type()},
-                              {"date", date().toIsoDateString()},
-                              {"var", _oid.jsonInput},
-                              {"value", _value}};
-}
-
-bool SetValue::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  if (!_getValue)
-    return true;
-
-  const auto &setfs = buildOutputTable().setfs;
-  auto ci = setfs.find(_oid.id);
-  if (ci != setfs.end()) {
-    auto v = _getValue(model);
-    ci->second(*model, _oid, v);
-  }
-
-  model->currentEvents.insert("SetValue");
-
-  return true;
-}
-
-SaveMonicaState::SaveMonicaState(const Tools::Date &at,
-                                 std::string pathToSerializedStateFile,
-                                 bool serializeAsJson,
-                                 int noOfPreviousDaysSerializedClimateData)
-    : Workstep(at), _pathToFile(std::move(pathToSerializedStateFile)),
-      _toJson(serializeAsJson), _noOfPreviousDaysSerializedClimateData(
-                                    noOfPreviousDaysSerializedClimateData) {
-  _runAtStartOfDay = false; // by default run at the end of the day
-}
-
-SaveMonicaState::SaveMonicaState(json11::Json j) {
-  _errors.append(SaveMonicaState::merge(kj::mv(j)));
-}
-
-Errors SaveMonicaState::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-  set_bool_valueD(_runAtStartOfDay, j, "runAtStartOfDay", false);
-  set_string_value(_pathToFile, j, "path");
-  set_bool_value(_toJson, j, "toJson");
-  set_int_valueD(_noOfPreviousDaysSerializedClimateData, j,
-                 "noOfPreviousDaysSerializedClimateData", -1);
-  return res;
-}
-
-json11::Json SaveMonicaState::to_json() const {
-  return json11::Json::object{{"type", type()},
-                              {"path", _pathToFile},
-                              {"toJson", _toJson},
-                              {"noOfPreviousDaysSerializedClimateData",
-                               _noOfPreviousDaysSerializedClimateData},
-                              {"runAtStartOfDay", _runAtStartOfDay}};
-}
-
-bool SaveMonicaState::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  int prevVal = -1;
-  if (_noOfPreviousDaysSerializedClimateData > -1) {
-    prevVal = model->simPs.noOfPreviousDaysSerializedClimateData;
-    model->simPs.noOfPreviousDaysSerializedClimateData =
-        _noOfPreviousDaysSerializedClimateData;
-  }
-
-  const auto pathToSerFile = kj::str(_pathToFile);
-  auto fs = kj::newDiskFilesystem();
-  auto file = isAbsolutePath(pathToSerFile.cStr())
-                  ? fs->getRoot().openFile(
-                        fs->getCurrentPath().eval(pathToSerFile),
-                        kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
-                  : fs->getRoot().openFile(kj::Path::parse(pathToSerFile),
-                                           kj::WriteMode::CREATE |
-                                               kj::WriteMode::MODIFY);
-
-  capnp::MallocMessageBuilder message;
-  auto runtimeState =
-      message.initRoot<mas::schema::model::monica::RuntimeState>();
-  const auto modelState = runtimeState.initModelState();
-  monicamodel::serialize(model, modelState);
-
-  if (_toJson) {
-    const capnp::JsonCodec json;
-    const auto jStr = json.encode(runtimeState);
-    file->writeAll(jStr);
-  } else {
-    auto flatArray = capnp::messageToFlatArray(message.getSegmentsForOutput());
-    file->writeAll(flatArray.asBytes());
-  }
-
-  if (prevVal > -1)
-    model->simPs.noOfPreviousDaysSerializedClimateData = prevVal;
-  model->currentEvents.insert("SaveMonicaState");
-  return true;
-}
-
-Irrigation::Irrigation(const Tools::Date &at, double amount,
-                       IrrigationParameters params)
-    : Workstep(at), _amount(amount), _params(params) {}
-
-Irrigation::Irrigation(json11::Json j) {
-  _errors.append(Irrigation::merge(kj::mv(j)));
-}
-
-Errors Irrigation::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-  set_double_value(_amount, j, "amount");
-  if (j["parameters"].is_object()) {
-    irrigationparameters::merge(&_params, j["parameters"]);
-  }
-  return res;
-}
-
-json11::Json Irrigation::to_json() const {
-  return json11::Json::object{
-      {"type", type()},
-      {"date", date().toIsoDateString()},
-      {"amount", _amount},
-      {"parameters", irrigationparameters::to_json(&_params)}};
-}
-
-bool Irrigation::apply(MonicaModel *model) {
-  Workstep::apply(model);
-
-  // cout << toString() << endl;
-  monicamodel::applyIrrigation(model, amount(), nitrateConcentration());
-  // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for
-  // today's ET calculation LIMITATION: Auto-irrigation uses sim.json params or
-  // defaults (fw=1.0, isDrip=false).
-  if (model->simPs.dualKcMethod) {
-    model->soilMoisture->vm_irrigFwEvent = _params.fw;
-    model->soilMoisture->vm_irrigIsDripEvent = _params.isDripIrrigation;
-  }
-  model->currentEvents.insert("Irrigation");
-
-  return true;
-}
-
-AutomaticIrrigation::AutomaticIrrigation() : Workstep() {}
-
-AutomaticIrrigation::AutomaticIrrigation(json11::Json j) : Workstep() {
-  _errors.append(AutomaticIrrigation::merge(kj::mv(j)));
-}
-
-Errors AutomaticIrrigation::merge(json11::Json j) {
-  Errors res = Workstep::merge(j);
-
-  set_int_value(startStage, j, "startStage");
-  // 1-based stages (user side) -> 0-based stages (model side)
-  if (startStage > -1)
-    startStage = std::max(0, startStage--);
-
-  set_int_value(endStage, j, "endStage");
-  // 1-based stages (user side) -> 0-based stages (model side)
-  if (endStage > -1)
-    endStage = std::min(7, endStage--);
-
-  set_bool_value(irrigateCrop, j, "irrigateCrop");
-  if (startStage > -1 || endStage > -1)
-    irrigateCrop = true;
-
-  if (j["parameters"].is_object()) {
-    automaticirrigationparameters::merge(&params, j["parameters"]);
-  }
-
-  return res;
-}
-
-json11::Json AutomaticIrrigation::to_json() const {
-  auto o = json11::Json::object{
-      {"type", type()},
-      {"irrigateCrop", irrigateCrop},
-      {"parameters", automaticirrigationparameters::to_json(&params)}};
-  if (startStage > -1)
-    o["startStage"] = startStage + 1;
-  if (endStage > -1)
-    o["endStage"] = endStage + 1;
-  return o;
-}
-
-bool AutomaticIrrigation::apply(MonicaModel *model) {
-  if (done) {
-    return true;
-  }
-
-  auto irrigationTriggered = false;
-  auto irrigationAmount = 0.0;
-  tie(irrigationTriggered, irrigationAmount) =
-      soilcolumn::applyIrrigationViaTrigger(model->soilColumn.get(), params);
-  if (irrigationTriggered) {
-    model->currentEvents.insert("AutomaticIrrigation");
-    model->soilOrganic->irrigationAmount += irrigationAmount;
-    monicamodel::addDailySumIrrigationWater(model, irrigationAmount);
-  }
-
-  return false;
-}
-
-bool AutomaticIrrigation::condition(MonicaModel *model) {
-  if (done)
-    return false;
-
-  // meet the correct date range
-  auto dateConditionMet = true;
-  const auto date = model->currentStepDate;
-  if (absStartDate.isValid() && absEndDate.isValid()) {
-    dateConditionMet = date >= absStartDate && date <= absEndDate;
-    if (date > absEndDate) {
-      done = true;
-    }
-  } else if (absStartDate.isValid()) {
-    dateConditionMet = date >= absStartDate;
-  } else if (absEndDate.isValid()) {
-    dateConditionMet = date <= absEndDate;
-    if (date > absEndDate)
-      done = true;
-  }
-  if (!dateConditionMet)
-    return done;
-
-  // meet the correct crop stage
-  auto cropConditionMet = dateConditionMet;
-  if (const auto *cg = model->currentCropModule.get(); cg && irrigateCrop) {
-    cropPlanted = true;
-    const auto stage = cg->vc_DevelopmentalStage;
-    if (startStage > -1 && endStage > -1) {
-      cropConditionMet = stage >= startStage && stage <= endStage;
-      if (stage > endStage)
-        done = true;
-    } else if (startStage > -1) {
-      cropConditionMet = stage >= startStage;
-    } else if (endStage > -1) {
-      cropConditionMet = stage <= endStage;
-      if (stage > endStage)
-        done = true;
-    }
-  } else if (cropPlanted) {
-    done = true;
-    cropPlanted = false;
-    cropConditionMet = false;
-  } else {
-    cropConditionMet = false;
-  }
-  return done || cropConditionMet;
-}
-
-bool AutomaticIrrigation::reinit(Tools::Date date, bool addYear,
-                                 bool forceInitYear) {
-  Workstep::reinit(date, addYear);
-  setDate(Tools::Date());
-
-  bool startAddedYear, stopAddedYear;
-  tie(absStartDate, startAddedYear) =
-      makeInitAbsDate(params.startDate, date, addYear, forceInitYear);
-  tie(absEndDate, stopAddedYear) =
-      makeInitAbsDate(params.endDate, date, addYear, forceInitYear);
-  done = false;
-
-  return startAddedYear;
-}
-
-WSPtr monica::makeWorkstep(json11::Json j) {
-  string type = string_value(j["type"]);
-
-  if (type == "Sowing" || type == "Seed") {
-    return make_shared<Sowing>(j);
-  }
-
-  if (type == "Transplant") {
-    return make_shared<Transplant>(j);
-  }
-  if (type == "AutomaticSowing") {
-    return make_shared<AutomaticSowing>(j);
-  }
-  if (type == "Harvest") {
-    return make_shared<Harvest>(j);
-  }
-  if (type == "AutomaticHarvest") {
-    return make_shared<AutomaticHarvest>(j);
-  }
-  if (type == "Cutting") {
-    return make_shared<Cutting>(j);
-  }
-  if (type == "MineralFertilization" ||
-      type == "MineralFertiliserApplication") { // deprecated name
-    return make_shared<MineralFertilization>(j);
-  }
-  if (type == "NDemandFertilization") {
-    return make_shared<NDemandFertilization>(j);
-  }
-  if (type == "OrganicFertilization" ||
-      type == "OrganicFertiliserApplication") { // deprecated name
-    return make_shared<OrganicFertilization>(j);
-  }
-  if (type == "Tillage" || type == "TillageApplication") { // deprecated name
-    return make_shared<Tillage>(j);
-  }
-  if (type == "Irrigation" ||
-      type == "IrrigationApplication") { // deprecated name
-    return make_shared<Irrigation>(j);
-  }
-  if (type == "AutomaticIrrigation") {
-    return make_shared<AutomaticIrrigation>(j);
-  }
-  if (type == "SetValue") {
-    return make_shared<SetValue>(j);
-  }
-  if (type == "SaveMonicaState") {
-    return make_shared<SaveMonicaState>(j);
-  }
-
-  return {};
-}
-
-CultivationMethod::CultivationMethod(json11::Json j) { merge(j); }
 
-Errors CultivationMethod::merge(json11::Json j) {
+Errors cultivationmethod::merge(CultivationMethod *cm, json11::Json j) {
   Errors res;
 
-  set_int_value(_customId, j, "customId");
-  set_string_value(_name, j, "name");
-  // set_bool_value(_irrigateCrop, j, "irrigateCrop");
-  set_bool_value(_canBeSkipped, j, "can-be-skipped");
-  set_bool_value(_isCoverCrop, j, "is-cover-crop");
-  set_bool_value(_repeat, j, "repeat");
+  set_int_value(cm->customId, j, "customId");
+  set_string_value(cm->name, j, "name");
+  set_bool_value(cm->canBeSkipped, j, "can-be-skipped");
+  set_bool_value(cm->isCoverCrop, j, "is-cover-crop");
+  set_bool_value(cm->repeat, j, "repeat");
 
   // keep reference to sowing workstep for use with harvest workstep
-  Sowing *sowingWS = nullptr;
+  SowingData *sowingWS = nullptr;
 
   for (auto wsj : j["worksteps"].array_items()) {
     auto ws = makeWorkstep(wsj);
     if (!ws)
       continue;
-    res.append(ws->errors());
-    _allWorksteps.push_back(ws);
-    //_allWorksteps.insert(make_pair(iso_date_value(wsj, "date"), ws));
-    string wsType = ws->type();
-    if (wsType == "Sowing" || wsType == "AutomaticSowing") {
-      if (Sowing *sowing = dynamic_cast<Sowing *>(ws.get())) {
-        sowingWS = sowing;
-        // _crop = sowing->crop();
-        // if ((_name.empty() || _name == "Fallow") && _crop)
-        // _name = _crop->id();
-      }
-    } else if (wsType == "Harvest" || wsType == "AutomaticHarvest") {
-      if (Harvest *harvest = dynamic_cast<Harvest *>(ws.get())) {
-        if (sowingWS) {
-          harvest->setSowing(sowingWS);
-          // sowingWS->crop()->setHarvestDate(harvest->date());
-        }
-      }
+    res.append(ws->errors);
+    cm->allWorksteps.push_back(ws);
+    switch (workstep::type(ws.get())) {
+    case WorkstepType::SOWING:
+      sowingWS = &std::get<SowingData>(ws->data);
+      break;
+    case WorkstepType::AUTOMATIC_SOWING:
+      sowingWS = &std::get<AutomaticSowingData>(ws->data);
+      break;
+    case WorkstepType::HARVEST:
+      if (sowingWS)
+        std::get<HarvestData>(ws->data).sowing = sowingWS;
+      break;
+    case WorkstepType::AUTOMATIC_HARVEST:
+      if (sowingWS)
+        std::get<AutomaticHarvestData>(ws->data).sowing = sowingWS;
+      break;
+    default:
+      break;
     }
   }
 
   return res;
 }
 
-json11::Json CultivationMethod::to_json() const {
+json11::Json cultivationmethod::to_json(const CultivationMethod *cm) {
   auto wss = J11Array();
-  // for(auto d2ws : _allWorksteps)
-  //	wss.push_back(d2ws.second->to_json());
-  for (auto ws : _allWorksteps)
-    wss.push_back(ws->to_json());
+  for (auto ws : cm->allWorksteps)
+    wss.push_back(workstep::to_json(ws.get()));
 
   return J11Object{{"type", "CultivationMethod"},
-                   {"customId", _customId},
-                   {"name", _name},
-                   // {"irrigateCrop", _irrigateCrop},
-                   {"can-be-skipped", _canBeSkipped},
-                   {"is-cover-crop", _isCoverCrop},
-                   {"repeat", _repeat},
+                   {"customId", cm->customId},
+                   {"name", cm->name},
+                   {"can-be-skipped", cm->canBeSkipped},
+                   {"is-cover-crop", cm->isCoverCrop},
+                   {"repeat", cm->repeat},
                    {"worksteps", wss}};
 }
 
-void CultivationMethod::apply(const Date &date, MonicaModel *model) const {
-  for (auto ws : workstepsAt(date))
-    ws->apply(model);
+void cultivationmethod::apply(const CultivationMethod *cm, const Date &date, MonicaModel *model) {
+  for (auto ws : workstepsAt(cm, date))
+    workstep::apply(ws.get(), model);
 }
 
-void CultivationMethod::absApply(const Date &date, MonicaModel *model) const {
-  for (auto ws : absWorkstepsAt(date))
-    ws->apply(model);
+void cultivationmethod::absApply(const CultivationMethod *cm, const Date &date, MonicaModel *model) {
+  for (auto ws : absWorkstepsAt(cm, date))
+    workstep::apply(ws.get(), model);
 }
 
-void CultivationMethod::apply(MonicaModel *model,
+void cultivationmethod::apply(CultivationMethod *cm, MonicaModel *model,
                               bool runOnlyAtStartOfDayWorksteps) {
-  auto &udws = _unfinishedDynamicWorksteps;
+  auto &udws = cm->unfinishedDynamicWorksteps;
   udws.erase(remove_if(udws.begin(), udws.end(),
                        [model, runOnlyAtStartOfDayWorksteps](WSPtr wsp) {
-                         return runOnlyAtStartOfDayWorksteps ==
-                                    wsp->runAtStartOfDay() &&
-                                wsp->applyWithPossibleCondition(model);
+                         return runOnlyAtStartOfDayWorksteps == wsp->runAtStartOfDay &&
+                                workstep::applyWithPossibleCondition(wsp.get(), model);
                        }),
              udws.end());
 }
 
-Date CultivationMethod::nextDate(const Date &date) const {
-  // auto ci = _allWorksteps.upper_bound(date);
-  // return ci != _allWorksteps.end() ? ci->first : Date();
-  for (auto ws : _allWorksteps) {
-    auto d = ws->date();
+Date cultivationmethod::nextDate(const CultivationMethod *cm, const Date &date) {
+  for (auto ws : cm->allWorksteps) {
+    auto d = ws->date;
     if (d.isValid() && d > date)
       return d;
   }
   return Date();
 }
 
-Date CultivationMethod::nextAbsDate(const Date &date) const {
-  // auto ci = _allAbsWorksteps.upper_bound(date);
-  // return ci != _allAbsWorksteps.end() ? ci->first : Date();
-  for (auto ws : _allAbsWorksteps) {
-    auto ad = ws->absDate();
+Date cultivationmethod::nextAbsDate(const CultivationMethod *cm, const Date &date) {
+  for (auto ws : cm->allAbsWorksteps) {
+    auto ad = workstep::absDate(ws.get());
     if (ad.isValid() && ad > date)
       return ad;
   }
   return Date();
 }
 
-vector<WSPtr> CultivationMethod::workstepsAt(const Date &date) const {
+vector<WSPtr> cultivationmethod::workstepsAt(const CultivationMethod *cm, const Date &date) {
   vector<WSPtr> apps;
-  // auto p = _allWorksteps.equal_range(date);
-  // while(p.first != p.second)
-  //{
-  //	apps.push_back(p.first->second);
-  //	p.first++;
-  // }
-  for (auto ws : _allWorksteps)
-    if (ws->date().isValid() && ws->date() == date)
+  for (auto ws : cm->allWorksteps)
+    if (ws->date.isValid() && ws->date == date)
       apps.push_back(ws);
 
   return apps;
 }
 
-vector<WSPtr> CultivationMethod::absWorkstepsAt(const Date &date) const {
+vector<WSPtr> cultivationmethod::absWorkstepsAt(const CultivationMethod *cm, const Date &date) {
   vector<WSPtr> apps;
-  // auto p = _allAbsWorksteps.equal_range(date);
-  // while(p.first != p.second)
-  //{
-  //	apps.push_back(p.first->second);
-  //	p.first++;
-  // }
-  for (auto ws : _allAbsWorksteps)
-    if (ws->absDate().isValid() && ws->absDate() == date)
+  for (auto ws : cm->allAbsWorksteps)
+    if (workstep::absDate(ws.get()).isValid() && workstep::absDate(ws.get()) == date)
       apps.push_back(ws);
 
   return apps;
 }
 
-bool CultivationMethod::areOnlyAbsoluteWorksteps() const {
-  return all_of(_allWorksteps.begin(), _allWorksteps.end(),
-                [](decltype(_allWorksteps)::value_type ws) {
-                  return ws->date().isValid() && ws->date().isAbsoluteDate();
-                });
+bool cultivationmethod::areOnlyAbsoluteWorksteps(const CultivationMethod *cm) {
+  return all_of(cm->allWorksteps.begin(), cm->allWorksteps.end(), [](const WSPtr &ws) {
+    return ws->date.isValid() && ws->date.isAbsoluteDate();
+  });
 }
 
-vector<WSPtr> CultivationMethod::staticWorksteps() const {
+vector<WSPtr> cultivationmethod::staticWorksteps(const CultivationMethod *cm) {
   vector<WSPtr> wss;
-  // for(auto p : _allWorksteps)
-  //	if(p.first.isValid())
-  //		wss.push_back(p.second);
-  for (auto ws : _allWorksteps)
-    if (ws->date().isValid())
+  for (auto ws : cm->allWorksteps)
+    if (ws->date.isValid())
       wss.push_back(ws);
   return wss;
 }
 
-vector<WSPtr> CultivationMethod::allDynamicWorksteps() const {
-  return workstepsAt(Date());
+vector<WSPtr> cultivationmethod::allDynamicWorksteps(const CultivationMethod *cm) {
+  return workstepsAt(cm, Date());
 }
 
-bool CultivationMethod::allDynamicWorkstepsFinished() const {
-  if (_unfinishedDynamicWorksteps.empty())
+bool cultivationmethod::allDynamicWorkstepsFinished(const CultivationMethod *cm) {
+  if (cm->unfinishedDynamicWorksteps.empty())
     return true;
   else {
-    return all_of(
-        _unfinishedDynamicWorksteps.begin(), _unfinishedDynamicWorksteps.end(),
-        [](const WSPtr &wsp) { return wsp->type() == "NDemandFertilization"; });
+    return all_of(cm->unfinishedDynamicWorksteps.begin(), cm->unfinishedDynamicWorksteps.end(),
+                 [](const WSPtr &wsp) {
+                   return workstep::type(wsp.get()) == WorkstepType::N_DEMAND_FERTILIZATION;
+                 });
   }
 }
 
-Date CultivationMethod::startDate() const {
-  if (_allWorksteps.empty())
+Date cultivationmethod::startDate(const CultivationMethod *cm) {
+  if (cm->allWorksteps.empty())
     return Date();
 
   auto dynEarliestStart = Date();
-  for (auto ws : workstepsAt(Date())) {
-    auto ed = ws->earliestDate();
+  for (auto ws : workstepsAt(cm, Date())) {
+    auto ed = workstep::earliestDate(ws.get());
     if ((ed.isValid() && dynEarliestStart.isValid() && ed < dynEarliestStart) ||
         (ed.isValid() && !dynEarliestStart.isValid()))
       dynEarliestStart = ed;
   }
 
-  // auto it = _allWorksteps.begin();
-  // while(it != _allWorksteps.end() && !it->first.isValid())
-  //	it++;
-
-  // if(dynEarliestStart.isValid() && it != _allWorksteps.end())
-  //	return dynEarliestStart < it->first ? dynEarliestStart : it->first;
-  // else if(dynEarliestStart.isValid())
-  //	return dynEarliestStart;
-  // else if(it != _allWorksteps.end())
-  //	return it->first;
-
-  // return Date();
-
   Date startDate = dynEarliestStart;
-  for (auto ws : _allWorksteps) {
-    auto d = ws->date();
+  for (auto ws : cm->allWorksteps) {
+    auto d = ws->date;
     if (d.isValid() && (d < startDate || !startDate.isValid()))
       startDate = d;
   }
@@ -1752,37 +199,23 @@ Date CultivationMethod::startDate() const {
   return startDate;
 }
 
-Date CultivationMethod::absStartDate(bool includeDynamicWorksteps) const {
-  if (_allAbsWorksteps.empty())
+Date cultivationmethod::absStartDate(const CultivationMethod *cm, bool includeDynamicWorksteps) {
+  if (cm->allAbsWorksteps.empty())
     return Date();
 
   auto dynEarliestStart = Date();
   if (includeDynamicWorksteps) {
-    for (auto ws : absWorkstepsAt(Date())) {
-      auto ed = ws->absEarliestDate();
-      if ((ed.isValid() && dynEarliestStart.isValid() &&
-           ed < dynEarliestStart) ||
+    for (auto ws : absWorkstepsAt(cm, Date())) {
+      auto ed = workstep::absEarliestDate(ws.get());
+      if ((ed.isValid() && dynEarliestStart.isValid() && ed < dynEarliestStart) ||
           (ed.isValid() && !dynEarliestStart.isValid()))
         dynEarliestStart = ed;
     }
   }
 
-  // auto it = _allAbsWorksteps.begin();
-  // while(it != _allAbsWorksteps.end() && !it->first.isValid())
-  //	it++;
-
-  // if(dynEarliestStart.isValid() && it != _allAbsWorksteps.end())
-  //	return dynEarliestStart < it->first ? dynEarliestStart : it->first;
-  // else if(dynEarliestStart.isValid())
-  //	return dynEarliestStart;
-  // else if(it != _allAbsWorksteps.end())
-  //	return it->first;
-
-  // return Date();
-
   Date startDate = dynEarliestStart;
-  for (auto ws : _allAbsWorksteps) {
-    auto ad = ws->absDate();
+  for (auto ws : cm->allAbsWorksteps) {
+    auto ad = workstep::absDate(ws.get());
     if (ad.isValid() && (ad < startDate || !startDate.isValid()))
       startDate = ad;
   }
@@ -1790,11 +223,12 @@ Date CultivationMethod::absStartDate(bool includeDynamicWorksteps) const {
   return startDate;
 }
 
-Date CultivationMethod::absLatestSowingDate() const {
+Date cultivationmethod::absLatestSowingDate(const CultivationMethod *cm) {
   auto dynLatestSowingDate = Date();
-  for (auto ws : _allAbsWorksteps) {
-    if (Sowing *sowing = dynamic_cast<Sowing *>(ws.get())) {
-      auto lsd = sowing->absLatestDate();
+  for (auto ws : cm->allAbsWorksteps) {
+    auto t = workstep::type(ws.get());
+    if (t == WorkstepType::SOWING || t == WorkstepType::AUTOMATIC_SOWING) {
+      auto lsd = workstep::absLatestDate(ws.get());
       if (lsd.isValid() && dynLatestSowingDate < lsd)
         dynLatestSowingDate = lsd;
     }
@@ -1803,34 +237,21 @@ Date CultivationMethod::absLatestSowingDate() const {
   return dynLatestSowingDate;
 }
 
-Date CultivationMethod::endDate() const {
-  if (_allWorksteps.empty())
+Date cultivationmethod::endDate(const CultivationMethod *cm) {
+  if (cm->allWorksteps.empty())
     return Date();
 
   auto dynLatestEnd = Date();
-  for (auto ws : workstepsAt(Date())) {
-    auto ed = ws->latestDate();
+  for (auto ws : workstepsAt(cm, Date())) {
+    auto ed = workstep::latestDate(ws.get());
     if ((ed.isValid() && dynLatestEnd.isValid() && ed > dynLatestEnd) ||
         (ed.isValid() && !dynLatestEnd.isValid()))
       dynLatestEnd = ed;
   }
 
-  // auto it = _allWorksteps.rbegin();
-  // while(it != _allWorksteps.rend() && !it->first.isValid())
-  //	it++;
-
-  // if(dynLatestEnd.isValid() && it != _allWorksteps.rend())
-  //	return dynLatestEnd > it->first ? dynLatestEnd : it->first;
-  // else if(dynLatestEnd.isValid())
-  //	return dynLatestEnd;
-  // else if(it != _allWorksteps.rend())
-  //	return it->first;
-
-  // return Date();
-
   Date endDate = dynLatestEnd;
-  for (auto ws : _allWorksteps) {
-    auto d = ws->date();
+  for (auto ws : cm->allWorksteps) {
+    auto d = ws->date;
     if (d.isValid() && (d > endDate || !endDate.isValid()))
       endDate = d;
   }
@@ -1838,34 +259,21 @@ Date CultivationMethod::endDate() const {
   return endDate;
 }
 
-Date CultivationMethod::absEndDate() const {
-  if (_allAbsWorksteps.empty())
+Date cultivationmethod::absEndDate(const CultivationMethod *cm) {
+  if (cm->allAbsWorksteps.empty())
     return Date();
 
   auto dynLatestEnd = Date();
-  for (auto ws : absWorkstepsAt(Date())) {
-    auto ed = ws->absLatestDate();
+  for (auto ws : absWorkstepsAt(cm, Date())) {
+    auto ed = workstep::absLatestDate(ws.get());
     if ((ed.isValid() && dynLatestEnd.isValid() && ed > dynLatestEnd) ||
         (ed.isValid() && !dynLatestEnd.isValid()))
       dynLatestEnd = ed;
   }
 
-  // auto it = _allAbsWorksteps.rbegin();
-  // while(it != _allAbsWorksteps.rend() && !it->first.isValid())
-  //	it++;
-
-  // if(dynLatestEnd.isValid() && it != _allAbsWorksteps.rend())
-  //	return dynLatestEnd > it->first ? dynLatestEnd : it->first;
-  // else if(dynLatestEnd.isValid())
-  //	return dynLatestEnd;
-  // else if(it != _allAbsWorksteps.rend())
-  //	return it->first;
-
-  // return Date();
-
   Date endDate = dynLatestEnd;
-  for (auto ws : _allAbsWorksteps) {
-    auto ad = ws->absDate();
+  for (auto ws : cm->allAbsWorksteps) {
+    auto ad = workstep::absDate(ws.get());
     if (ad.isValid() && (ad > endDate || !endDate.isValid()))
       endDate = ad;
   }
@@ -1873,31 +281,27 @@ Date CultivationMethod::absEndDate() const {
   return endDate;
 }
 
-std::string CultivationMethod::toString() const {
+std::string cultivationmethod::toString(const CultivationMethod *cm) {
   ostringstream s;
-  s << "name: " << name() << " start: " << startDate().toString()
-    << " end: " << endDate().toString() << endl;
+  s << "name: " << cm->name << " start: " << startDate(cm).toString()
+    << " end: " << endDate(cm).toString() << endl;
   s << "worksteps:" << endl;
-  for (auto p : _allWorksteps)
-    // s << "at: " << p.first.toString()
-    //<< " what: " << p.second->toString() << endl;
-    s << "at: " << p->date().toString() << " what: " << p->toString() << endl;
+  for (auto p : cm->allWorksteps)
+    // p->toString() in the original always fell back to the Json11Serializable default
+    // (to_json().dump()), since Workstep never overrode toString() itself - see workstep::to_json.
+    s << "at: " << p->date.toString() << " what: " << workstep::to_json(p.get()).dump() << endl;
   return s.str();
 }
 
-bool CultivationMethod::reinit(Tools::Date date, bool forceInitYear) {
-  _allAbsWorksteps.clear();
-  _unfinishedDynamicWorksteps.clear();
+bool cultivationmethod::reinit(CultivationMethod *cm, Tools::Date date, bool forceInitYear) {
+  cm->allAbsWorksteps.clear();
+  cm->unfinishedDynamicWorksteps.clear();
   bool addedYear = false;
-  // for(auto p : _allWorksteps)
-  for (auto ws : _allWorksteps) {
-    // auto ws = p.second;
-    addedYear = ws->reinit(date, addedYear, forceInitYear) || addedYear;
-    //_allAbsWorksteps.insert(make_pair(ws->absDate(), p.second));
-    _allAbsWorksteps.push_back(ws);
-    if (!ws->absDate().isValid())
-      //_unfinishedDynamicWorksteps.push_back(p.second);
-      _unfinishedDynamicWorksteps.push_back(ws);
+  for (auto ws : cm->allWorksteps) {
+    addedYear = workstep::reinit(ws.get(), date, addedYear, forceInitYear) || addedYear;
+    cm->allAbsWorksteps.push_back(ws);
+    if (!workstep::absDate(ws.get()).isValid())
+      cm->unfinishedDynamicWorksteps.push_back(ws);
   }
 
   return addedYear;

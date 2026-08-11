@@ -138,9 +138,9 @@ void seedCrop(MonicaModel *model,
 // void seedCrop(MonicaModel *model, CropParameters *cropParams,
 //               CropResidueParameters *residueParams, Crop *crop);
 void harvestCurrentCrop(MonicaModel *model, bool exported,
-                        const Harvest::Spec &spec,
-                        Harvest::OptCarbonManagementData optCarbMgmtData =
-                            Harvest::OptCarbonManagementData(),
+                        const HarvestData::Spec &spec,
+                        HarvestData::OptCarbonManagementData optCarbMgmtData =
+                            HarvestData::OptCarbonManagementData(),
                         int incorporateIntoLayerIndex = 0);
 void incorporateCurrentCrop(MonicaModel *model);
 void applyMineralFertiliser(MonicaModel *model,

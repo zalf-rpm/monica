@@ -546,8 +546,8 @@ void monica::monicamodel::seedCrop(
  * Deletes the current crop.
  */
 void monica::monicamodel::harvestCurrentCrop(
-    MonicaModel *model, bool exported, const Harvest::Spec &spec,
-    Harvest::OptCarbonManagementData optCarbMgmtData,
+    MonicaModel *model, bool exported, const HarvestData::Spec &spec,
+    HarvestData::OptCarbonManagementData optCarbMgmtData,
     int incorporateIntoLayerIndex) {
   auto &currentCropModule = model->currentCropModule;
   auto &soilOrganic = model->soilOrganic;
@@ -598,7 +598,7 @@ void monica::monicamodel::harvestCurrentCrop(
           }
         }
 
-        if (optCarbMgmtData.cropUsage == Harvest::greenManure)
+        if (optCarbMgmtData.cropUsage == HarvestData::greenManure)
           // if the crop is used as green manure, all the residues are
           // incorporated regardless the humus balance
           fractionToBeLeftOnField = 1.0;

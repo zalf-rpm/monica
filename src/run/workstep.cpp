@@ -102,77 +102,9 @@ string organNameFromId(int organId) {
   return res;
 }
 
-// Harvest::Spec/OptCarbonManagementData are structurally identical to the new
-// HarvestData::Spec/ OptCarbonManagementData, but
-// monicamodel::harvestCurrentCrop's signature still takes the old types
-// (updating it to the new ones is a step-18/final-cutover change, since the old
-// Harvest class it also serves is still live until then) - convert on the way
-// in rather than touching monica-model.h early.
-Harvest::Spec toOldHarvestSpec(const HarvestData::Spec &spec) {
-  Harvest::Spec old;
-  for (const auto &p : spec.organ2specVal) {
-    Harvest::Spec::Value v;
-    v.exportPercentage = p.second.exportPercentage;
-    v.incorporate = p.second.incorporate;
-    old.organ2specVal[p.first] = v;
-  }
-  return old;
-}
-
-Harvest::OptCarbonManagementData
-toOldOptCarbMgmtData(const HarvestData::OptCarbonManagementData &d) {
-  Harvest::OptCarbonManagementData old;
-  old.optCarbonConservation = d.optCarbonConservation;
-  old.cropImpactOnHumusBalance = d.cropImpactOnHumusBalance;
-  old.maxResidueRecoverFraction = d.maxResidueRecoverFraction;
-  old.cropUsage = d.cropUsage == HarvestData::greenManure
-                      ? Harvest::greenManure
-                      : Harvest::biomassProduction;
-  old.residueHeq = d.residueHeq;
-  old.organicFertilizerHeq = d.organicFertilizerHeq;
-  return old;
-}
-
-// Same bridging story as toOldHarvestSpec above, for cropmodule::applyCutting's still-old-typed
-// std::map<int, Cutting::Value>& parameter. Unlike Harvest::Spec, this parameter is a *mutable*
-// reference the function can fill in (e.g. when the caller passes an empty map, applyCutting
-// populates it from pc_OrganIdsForCutting) - the original CuttingData::organId2cuttingSpec member
-// would see that mutation directly (passed by reference), so the new code round-trips through
-// toOldCuttingSpec/fromOldCuttingSpec to preserve that, not just convert one-way and discard.
-std::map<int, Cutting::Value> toOldCuttingSpec(const std::map<int, CuttingData::Value> &spec) {
-  std::map<int, Cutting::Value> old;
-  for (const auto &p : spec) {
-    Cutting::Value v;
-    v.value = p.second.value;
-    v.unit = p.second.unit == CuttingData::percentage ? Cutting::percentage
-             : p.second.unit == CuttingData::biomass  ? Cutting::biomass
-                                                       : Cutting::LAI;
-    v.cut_or_left = p.second.cut_or_left == CuttingData::cut    ? Cutting::cut
-                    : p.second.cut_or_left == CuttingData::left ? Cutting::left
-                                                                 : Cutting::none;
-    old[p.first] = v;
-  }
-  return old;
-}
-
-std::map<int, CuttingData::Value> fromOldCuttingSpec(const std::map<int, Cutting::Value> &old) {
-  std::map<int, CuttingData::Value> spec;
-  for (const auto &p : old) {
-    CuttingData::Value v;
-    v.value = p.second.value;
-    v.unit = p.second.unit == Cutting::percentage ? CuttingData::percentage
-             : p.second.unit == Cutting::biomass  ? CuttingData::biomass
-                                                   : CuttingData::LAI;
-    v.cut_or_left = p.second.cut_or_left == Cutting::cut    ? CuttingData::cut
-                    : p.second.cut_or_left == Cutting::left ? CuttingData::left
-                                                             : CuttingData::none;
-    spec[p.first] = v;
-  }
-  return spec;
-}
 } // namespace
 
-Errors workstep::mergeCommon(WorkstepV2 *ws, json11::Json j) {
+Errors workstep::mergeCommon(Workstep *ws, json11::Json j) {
   // The DEFAULT/"=" JSON-unwrap wrap belongs here, not repeated in every per-payload merge(XxxData*,
   // ...): mergeCommon is the "called exactly once, first, for every subtype" entry point in this
   // design, exactly mirroring how the original Workstep::merge (which every subtype's merge() always
@@ -194,12 +126,12 @@ Errors workstep::mergeCommon(WorkstepV2 *ws, json11::Json j) {
   return res;
 }
 
-bool workstep::applyCommon(WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::applyCommon(Workstep *ws, MonicaModel *model) {
   model->currentEvents.insert("Workstep");
   return true;
 }
 
-bool workstep::conditionCommon(WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::conditionCommon(Workstep *ws, MonicaModel *model) {
   if (ws->afterEvent.empty() || ws->applyNoOfDaysAfterEvent <= 0) {
     return false;
   }
@@ -218,7 +150,7 @@ bool workstep::conditionCommon(WorkstepV2 *ws, MonicaModel *model) {
   return ws->daysAfterEventCount == ws->applyNoOfDaysAfterEvent;
 }
 
-bool workstep::reinitCommon(WorkstepV2 *ws, Tools::Date date, bool addYear,
+bool workstep::reinitCommon(Workstep *ws, Tools::Date date, bool addYear,
                             bool forceInitYear) {
   bool addedYear = false;
 
@@ -236,7 +168,7 @@ bool workstep::reinitCommon(WorkstepV2 *ws, Tools::Date date, bool addYear,
   return addedYear;
 }
 
-void workstep::setDate(WorkstepV2 *ws, Tools::Date date) {
+void workstep::setDate(Workstep *ws, Tools::Date date) {
   ws->date = date;
   switch (type(ws)) {
   case WorkstepType::SOWING:
@@ -256,8 +188,8 @@ void workstep::setDate(WorkstepV2 *ws, Tools::Date date) {
   }
 }
 
-WorkstepV2 monica::makeSowingWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeSowingWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = SowingData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<SowingData>(ws.data), j));
@@ -334,7 +266,7 @@ Errors workstep::merge(SowingData *s, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const SowingData *s, const WorkstepV2 *ws,
+json11::Json workstep::to_json(const SowingData *s, const Workstep *ws,
                                bool includeFullCropParameters) {
   auto co = json11::Json::object{
       {"cropParams", cropparameters::to_json(&s->cropParams)},
@@ -356,7 +288,7 @@ json11::Json workstep::to_json(const SowingData *s, const WorkstepV2 *ws,
   return o;
 }
 
-bool workstep::apply(SowingData *s, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(SowingData *s, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   debug() << "sowing crop: " << cropparameters::cropName(&s->cropParams)
@@ -425,8 +357,8 @@ bool workstep::apply(SowingData *s, WorkstepV2 *ws, MonicaModel *model) {
   return true;
 }
 
-WorkstepV2 monica::makeAutomaticSowingWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeAutomaticSowingWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = AutomaticSowingData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<AutomaticSowingData>(ws.data), j));
@@ -462,7 +394,7 @@ Errors workstep::merge(AutomaticSowingData *as, json11::Json j) {
 }
 
 json11::Json workstep::to_json(const AutomaticSowingData *as,
-                               const WorkstepV2 *ws,
+                               const Workstep *ws,
                                bool includeFullCropParameters) {
   auto o =
       workstep::to_json(static_cast<const SowingData *>(as), ws).object_items();
@@ -559,7 +491,7 @@ bool isSoilTemperatureOk(const std::vector<double> &soilTemps, int windowDays,
 }
 } // namespace
 
-bool workstep::apply(AutomaticSowingData *as, WorkstepV2 *ws,
+bool workstep::apply(AutomaticSowingData *as, Workstep *ws,
                      MonicaModel *model) {
   auto currentDate = model->currentStepDate;
 
@@ -667,7 +599,7 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
   return true;
 }
 
-bool workstep::reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date,
+bool workstep::reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date,
                       bool addYear, bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
 
@@ -686,8 +618,8 @@ bool workstep::reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date,
   return addedYear1; // || addedYear2;
 }
 
-WorkstepV2 monica::makeTransplantWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeTransplantWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = TransplantData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<TransplantData>(ws.data), j));
@@ -735,7 +667,7 @@ json11::Json workstep::to_json(const TransplantData *t,
   };
 }
 
-bool workstep::apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(TransplantData *t, Workstep *ws, MonicaModel *model) {
   workstep::apply(static_cast<SowingData *>(t), ws, model);
 
   CropModule *cropModule = model->currentCropModule;
@@ -754,8 +686,8 @@ bool workstep::apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model) {
   return true;
 }
 
-WorkstepV2 monica::makeHarvestWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeHarvestWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = HarvestData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<HarvestData>(ws.data), j));
@@ -798,7 +730,7 @@ Errors workstep::merge(HarvestData *h, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const HarvestData *h, const WorkstepV2 *ws,
+json11::Json workstep::to_json(const HarvestData *h, const Workstep *ws,
                                bool includeFullCropParameters) {
   auto jo = json11::Json::object{
       {"type", "Harvest"},
@@ -825,13 +757,11 @@ json11::Json workstep::to_json(const HarvestData *h, const WorkstepV2 *ws,
   return jo;
 }
 
-bool workstep::apply(HarvestData *h, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(HarvestData *h, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   if (model->currentCropModule) {
-    monicamodel::harvestCurrentCrop(model, h->exported,
-                                    toOldHarvestSpec(h->spec),
-                                    toOldOptCarbMgmtData(h->optCarbMgmtData),
+    monicamodel::harvestCurrentCrop(model, h->exported, h->spec, h->optCarbMgmtData,
                                     h->incorporateIntoLayerNo - 1);
     if (h->sowing)
       debug() << "harvesting crop: "
@@ -843,8 +773,8 @@ bool workstep::apply(HarvestData *h, WorkstepV2 *ws, MonicaModel *model) {
   return true;
 }
 
-WorkstepV2 monica::makeAutomaticHarvestWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeAutomaticHarvestWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = AutomaticHarvestData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<AutomaticHarvestData>(ws.data), j));
@@ -866,7 +796,7 @@ Errors workstep::merge(AutomaticHarvestData *ah, json11::Json j) {
 }
 
 json11::Json workstep::to_json(const AutomaticHarvestData *ah,
-                               const WorkstepV2 *ws,
+                               const Workstep *ws,
                                bool includeFullCropParameters) {
   auto o = workstep::to_json(static_cast<const HarvestData *>(ah), ws,
                              includeFullCropParameters)
@@ -890,7 +820,7 @@ json11::Json workstep::to_json(const AutomaticHarvestData *ah,
   return o;
 }
 
-bool workstep::apply(AutomaticHarvestData *ah, WorkstepV2 *ws,
+bool workstep::apply(AutomaticHarvestData *ah, Workstep *ws,
                      MonicaModel *model) {
   workstep::apply(static_cast<HarvestData *>(ah), ws, model);
 
@@ -922,7 +852,7 @@ bool workstep::condition(AutomaticHarvestData *ah, MonicaModel *model) {
   return conditionMet;
 }
 
-bool workstep::reinit(AutomaticHarvestData *ah, WorkstepV2 *ws,
+bool workstep::reinit(AutomaticHarvestData *ah, Workstep *ws,
                       Tools::Date date, bool addYear, bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
 
@@ -936,8 +866,8 @@ bool workstep::reinit(AutomaticHarvestData *ah, WorkstepV2 *ws,
   return addedYear;
 }
 
-WorkstepV2 monica::makeCuttingWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeCuttingWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = CuttingData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<CuttingData>(ws.data), j));
@@ -1000,7 +930,7 @@ Errors workstep::merge(CuttingData *c, json11::Json j) {
   return errors;
 }
 
-json11::Json workstep::to_json(const CuttingData *c, const WorkstepV2 *ws) {
+json11::Json workstep::to_json(const CuttingData *c, const Workstep *ws) {
   J11Object organs;
   for (auto p : c->organId2cuttingSpec)
     organs[organNameFromId(p.first)] =
@@ -1028,26 +958,24 @@ json11::Json workstep::to_json(const CuttingData *c, const WorkstepV2 *ws) {
       {"cut-max-assimilation-rate", J11Array{int(c->cutMaxAssimilationRateFraction * 100.0), "%"}}};
 }
 
-bool workstep::apply(CuttingData *c, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(CuttingData *c, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   assert(model->currentCropModule);
   debug() << "Cutting crop: " << cropparameters::cropName(&model->currentCropModule->cropParams)
           << " at: " << ws->date.toString() << endl;
 
-  auto oldSpec = toOldCuttingSpec(c->organId2cuttingSpec);
-  cropmodule::applyCutting(model->currentCropModule, oldSpec, c->organId2exportFraction,
-                           c->cutMaxAssimilationRateFraction);
-  c->organId2cuttingSpec = fromOldCuttingSpec(oldSpec);
+  cropmodule::applyCutting(model->currentCropModule, c->organId2cuttingSpec,
+                           c->organId2exportFraction, c->cutMaxAssimilationRateFraction);
   model->currentEvents.insert("Cutting");
 
   return true;
 }
 
-WorkstepV2 monica::makeMineralFertilizationWorkstep(const Tools::Date &at,
+Workstep monica::makeMineralFertilizationWorkstep(const Tools::Date &at,
                                                     MineralFertilizerParameters partition,
                                                     double amount) {
-  WorkstepV2 ws;
+  Workstep ws;
   ws.date = at;
   MineralFertilizationData mf;
   mf.partition = partition;
@@ -1056,8 +984,8 @@ WorkstepV2 monica::makeMineralFertilizationWorkstep(const Tools::Date &at,
   return ws;
 }
 
-WorkstepV2 monica::makeMineralFertilizationWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeMineralFertilizationWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = MineralFertilizationData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<MineralFertilizationData>(ws.data), j));
@@ -1078,7 +1006,7 @@ Errors workstep::merge(MineralFertilizationData *mf, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const MineralFertilizationData *mf, const WorkstepV2 *ws) {
+json11::Json workstep::to_json(const MineralFertilizationData *mf, const Workstep *ws) {
   return json11::Json::object{
       {"type", "MineralFertilization"},
       {"date", ws->date.toIsoDateString()},
@@ -1086,7 +1014,7 @@ json11::Json workstep::to_json(const MineralFertilizationData *mf, const Workste
       {"partition", mineralfertilizerparameters::to_json(&mf->partition)}};
 }
 
-bool workstep::apply(MineralFertilizationData *mf, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(MineralFertilizationData *mf, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   debug() << workstep::to_json(mf, ws).dump() << endl;
@@ -1096,10 +1024,10 @@ bool workstep::apply(MineralFertilizationData *mf, WorkstepV2 *ws, MonicaModel *
   return true;
 }
 
-WorkstepV2 monica::makeNDemandFertilizationWorkstep(int stage, double depth,
+Workstep monica::makeNDemandFertilizationWorkstep(int stage, double depth,
                                                     MineralFertilizerParameters partition,
                                                     double Ndemand) {
-  WorkstepV2 ws;
+  Workstep ws;
   NDemandFertilizationData nd;
   nd.partition = partition;
   nd.Ndemand = Ndemand;
@@ -1109,10 +1037,10 @@ WorkstepV2 monica::makeNDemandFertilizationWorkstep(int stage, double depth,
   return ws;
 }
 
-WorkstepV2 monica::makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
+Workstep monica::makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
                                                     MineralFertilizerParameters partition,
                                                     double Ndemand) {
-  WorkstepV2 ws;
+  Workstep ws;
   ws.date = date;
   NDemandFertilizationData nd;
   nd.initialDate = date;
@@ -1123,8 +1051,8 @@ WorkstepV2 monica::makeNDemandFertilizationWorkstep(Tools::Date date, double dep
   return ws;
 }
 
-WorkstepV2 monica::makeNDemandFertilizationWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeNDemandFertilizationWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = NDemandFertilizationData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<NDemandFertilizationData>(ws.data), &ws, j));
@@ -1132,7 +1060,7 @@ WorkstepV2 monica::makeNDemandFertilizationWorkstep(json11::Json j) {
   return ws;
 }
 
-Errors workstep::merge(NDemandFertilizationData *nd, WorkstepV2 *ws, json11::Json j) {
+Errors workstep::merge(NDemandFertilizationData *nd, Workstep *ws, json11::Json j) {
   Errors res;
   nd->initialDate = ws->date;
   set_double_value(nd->Ndemand, j, "N-demand");
@@ -1165,7 +1093,7 @@ json11::Json workstep::to_json(const NDemandFertilizationData *nd) {
   return o;
 }
 
-bool workstep::apply(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   double rd = model->currentCropModule->vc_RootingDepth_m;
@@ -1181,7 +1109,7 @@ bool workstep::apply(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel *
   return true;
 }
 
-bool workstep::condition(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::condition(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model) {
   bool conditionMet = false;
 
   auto *cg = model->currentCropModule.get();
@@ -1194,7 +1122,7 @@ bool workstep::condition(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaMod
   return conditionMet;
 }
 
-bool workstep::reinit(NDemandFertilizationData *nd, WorkstepV2 *ws, Tools::Date date, bool addYear,
+bool workstep::reinit(NDemandFertilizationData *nd, Workstep *ws, Tools::Date date, bool addYear,
                       bool forceInitYear) {
   workstep::setDate(ws, nd->initialDate);
 
@@ -1206,10 +1134,10 @@ bool workstep::reinit(NDemandFertilizationData *nd, WorkstepV2 *ws, Tools::Date 
                 // false unconditionally - preserved exactly, not a mistake on my part.
 }
 
-WorkstepV2 monica::makeOrganicFertilizationWorkstep(const Tools::Date &at,
+Workstep monica::makeOrganicFertilizationWorkstep(const Tools::Date &at,
                                                     const OrganicMatterParameters &params,
                                                     double amount, bool incorp) {
-  WorkstepV2 ws;
+  Workstep ws;
   ws.date = at;
   OrganicFertilizationData of;
   of.params = params;
@@ -1219,8 +1147,8 @@ WorkstepV2 monica::makeOrganicFertilizationWorkstep(const Tools::Date &at,
   return ws;
 }
 
-WorkstepV2 monica::makeOrganicFertilizationWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeOrganicFertilizationWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = OrganicFertilizationData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<OrganicFertilizationData>(ws.data), j));
@@ -1238,7 +1166,7 @@ Errors workstep::merge(OrganicFertilizationData *of, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const OrganicFertilizationData *of, const WorkstepV2 *ws) {
+json11::Json workstep::to_json(const OrganicFertilizationData *of, const Workstep *ws) {
   return json11::Json::object{
       {"type", "OrganicFertilization"},
       {"date", ws->date.toIsoDateString()},
@@ -1248,7 +1176,7 @@ json11::Json workstep::to_json(const OrganicFertilizationData *of, const Workste
       {"incorporation", of->incorporation}};
 }
 
-bool workstep::apply(OrganicFertilizationData *of, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(OrganicFertilizationData *of, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   debug() << workstep::to_json(of, ws).dump() << endl;
@@ -1259,8 +1187,8 @@ bool workstep::apply(OrganicFertilizationData *of, WorkstepV2 *ws, MonicaModel *
   return true;
 }
 
-WorkstepV2 monica::makeTillageWorkstep(const Tools::Date &at, double depth) {
-  WorkstepV2 ws;
+Workstep monica::makeTillageWorkstep(const Tools::Date &at, double depth) {
+  Workstep ws;
   ws.date = at;
   TillageData t;
   t.depth = depth;
@@ -1268,8 +1196,8 @@ WorkstepV2 monica::makeTillageWorkstep(const Tools::Date &at, double depth) {
   return ws;
 }
 
-WorkstepV2 monica::makeTillageWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeTillageWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = TillageData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<TillageData>(ws.data), j));
@@ -1283,12 +1211,12 @@ Errors workstep::merge(TillageData *t, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const TillageData *t, const WorkstepV2 *ws) {
+json11::Json workstep::to_json(const TillageData *t, const Workstep *ws) {
   return json11::Json::object{
       {"type", "Tillage"}, {"date", ws->date.toIsoDateString()}, {"depth", t->depth}};
 }
 
-bool workstep::apply(TillageData *t, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(TillageData *t, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   debug() << workstep::to_json(t, ws).dump() << endl;
@@ -1298,8 +1226,8 @@ bool workstep::apply(TillageData *t, WorkstepV2 *ws, MonicaModel *model) {
   return true;
 }
 
-WorkstepV2 monica::makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value) {
-  WorkstepV2 ws;
+Workstep monica::makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value) {
+  Workstep ws;
   ws.date = at;
   SetValueData s;
   s.oid = oid;
@@ -1308,8 +1236,8 @@ WorkstepV2 monica::makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::
   return ws;
 }
 
-WorkstepV2 monica::makeSetValueWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeSetValueWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = SetValueData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<SetValueData>(ws.data), j));
@@ -1350,7 +1278,7 @@ Errors workstep::merge(SetValueData *s, json11::Json j) {
   } else
     // NOTE: captures a copy of the value, not `s` itself - unlike the original class-based code
     // (where `this` was always a stable heap address via shared_ptr, so `[=]` capturing `this` and
-    // reading `this->_value` live was safe), `s` here points into a WorkstepV2 that is still a local/
+    // reading `this->_value` live was safe), `s` here points into a Workstep that is still a local/
     // about-to-be-returned-by-value object at this point in makeSetValueWorkstep, not yet at its final
     // stable (e.g. shared_ptr-owned) address - capturing the pointer would risk it dangling after a
     // move. A value copy is behaviorally identical here since `value` is never reassigned again after
@@ -1360,14 +1288,14 @@ Errors workstep::merge(SetValueData *s, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const SetValueData *s, const WorkstepV2 *ws) {
+json11::Json workstep::to_json(const SetValueData *s, const Workstep *ws) {
   return json11::Json::object{{"type", "SetValue"},
                               {"date", ws->date.toIsoDateString()},
                               {"var", s->oid.jsonInput},
                               {"value", s->value}};
 }
 
-bool workstep::apply(SetValueData *s, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(SetValueData *s, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   if (!s->getValue)
@@ -1385,11 +1313,11 @@ bool workstep::apply(SetValueData *s, WorkstepV2 *ws, MonicaModel *model) {
   return true;
 }
 
-WorkstepV2 monica::makeSaveMonicaStateWorkstep(const Tools::Date &at,
+Workstep monica::makeSaveMonicaStateWorkstep(const Tools::Date &at,
                                                std::string pathToSerializedStateFile,
                                                bool serializeAsJson,
                                                int noOfPreviousDaysSerializedClimateData) {
-  WorkstepV2 ws;
+  Workstep ws;
   ws.date = at;
   ws.runAtStartOfDay = false; // by default run at the end of the day
   SaveMonicaStateData sms;
@@ -1400,8 +1328,8 @@ WorkstepV2 monica::makeSaveMonicaStateWorkstep(const Tools::Date &at,
   return ws;
 }
 
-WorkstepV2 monica::makeSaveMonicaStateWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeSaveMonicaStateWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = SaveMonicaStateData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<SaveMonicaStateData>(ws.data), &ws, j));
@@ -1409,7 +1337,7 @@ WorkstepV2 monica::makeSaveMonicaStateWorkstep(json11::Json j) {
   return ws;
 }
 
-Errors workstep::merge(SaveMonicaStateData *sms, WorkstepV2 *ws, json11::Json j) {
+Errors workstep::merge(SaveMonicaStateData *sms, Workstep *ws, json11::Json j) {
   Errors res;
   set_bool_valueD(ws->runAtStartOfDay, j, "runAtStartOfDay", false);
   set_string_value(sms->pathToFile, j, "path");
@@ -1419,7 +1347,7 @@ Errors workstep::merge(SaveMonicaStateData *sms, WorkstepV2 *ws, json11::Json j)
   return res;
 }
 
-json11::Json workstep::to_json(const SaveMonicaStateData *sms, const WorkstepV2 *ws) {
+json11::Json workstep::to_json(const SaveMonicaStateData *sms, const Workstep *ws) {
   return json11::Json::object{{"type", "SaveMonicaState"},
                               {"path", sms->pathToFile},
                               {"toJson", sms->toJson},
@@ -1428,7 +1356,7 @@ json11::Json workstep::to_json(const SaveMonicaStateData *sms, const WorkstepV2 
                               {"runAtStartOfDay", ws->runAtStartOfDay}};
 }
 
-bool workstep::apply(SaveMonicaStateData *sms, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(SaveMonicaStateData *sms, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   int prevVal = -1;
@@ -1466,9 +1394,9 @@ bool workstep::apply(SaveMonicaStateData *sms, WorkstepV2 *ws, MonicaModel *mode
   return true;
 }
 
-WorkstepV2 monica::makeIrrigationWorkstep(const Tools::Date &at, double amount,
+Workstep monica::makeIrrigationWorkstep(const Tools::Date &at, double amount,
                                           IrrigationParameters params) {
-  WorkstepV2 ws;
+  Workstep ws;
   ws.date = at;
   IrrigationData i;
   i.amount = amount;
@@ -1477,8 +1405,8 @@ WorkstepV2 monica::makeIrrigationWorkstep(const Tools::Date &at, double amount,
   return ws;
 }
 
-WorkstepV2 monica::makeIrrigationWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeIrrigationWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = IrrigationData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<IrrigationData>(ws.data), j));
@@ -1495,14 +1423,14 @@ Errors workstep::merge(IrrigationData *i, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const IrrigationData *i, const WorkstepV2 *ws) {
+json11::Json workstep::to_json(const IrrigationData *i, const Workstep *ws) {
   return json11::Json::object{{"type", "Irrigation"},
                               {"date", ws->date.toIsoDateString()},
                               {"amount", i->amount},
                               {"parameters", irrigationparameters::to_json(&i->params)}};
 }
 
-bool workstep::apply(IrrigationData *i, WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(IrrigationData *i, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   // cout << toString() << endl;
@@ -1518,8 +1446,8 @@ bool workstep::apply(IrrigationData *i, WorkstepV2 *ws, MonicaModel *model) {
   return true;
 }
 
-WorkstepV2 monica::makeAutomaticIrrigationWorkstep(json11::Json j) {
-  WorkstepV2 ws;
+Workstep monica::makeAutomaticIrrigationWorkstep(json11::Json j) {
+  Workstep ws;
   ws.data = AutomaticIrrigationData{};
   Errors res = workstep::mergeCommon(&ws, j);
   res.append(workstep::merge(&std::get<AutomaticIrrigationData>(ws.data), j));
@@ -1633,7 +1561,7 @@ bool workstep::condition(AutomaticIrrigationData *ai, MonicaModel *model) {
   return ai->done || cropConditionMet;
 }
 
-bool workstep::reinit(AutomaticIrrigationData *ai, WorkstepV2 *ws, Tools::Date date, bool addYear,
+bool workstep::reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date, bool addYear,
                       bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
   workstep::setDate(ws, Tools::Date());
@@ -1653,19 +1581,19 @@ bool workstep::reinit(AutomaticIrrigationData *ai, WorkstepV2 *ws, Tools::Date d
 // above. See workstep.h for what's deliberately NOT ported here (trivial never-overridden accessors,
 // the string-returning type()).
 
-Tools::Date workstep::earliestDate(const WorkstepV2 *ws) {
+Tools::Date workstep::earliestDate(const Workstep *ws) {
   if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
     return std::get<AutomaticSowingData>(ws->data).earliestDate;
   return ws->date;
 }
 
-Tools::Date workstep::absEarliestDate(const WorkstepV2 *ws) {
+Tools::Date workstep::absEarliestDate(const Workstep *ws) {
   if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
     return std::get<AutomaticSowingData>(ws->data).absEarliestDate;
   return absDate(ws);
 }
 
-Tools::Date workstep::latestDate(const WorkstepV2 *ws) {
+Tools::Date workstep::latestDate(const Workstep *ws) {
   switch (type(ws)) {
   case WorkstepType::AUTOMATIC_SOWING:
     return std::get<AutomaticSowingData>(ws->data).latestDate;
@@ -1676,7 +1604,7 @@ Tools::Date workstep::latestDate(const WorkstepV2 *ws) {
   }
 }
 
-Tools::Date workstep::absLatestDate(const WorkstepV2 *ws) {
+Tools::Date workstep::absLatestDate(const Workstep *ws) {
   switch (type(ws)) {
   case WorkstepType::AUTOMATIC_SOWING:
     return std::get<AutomaticSowingData>(ws->data).absLatestDate;
@@ -1687,7 +1615,7 @@ Tools::Date workstep::absLatestDate(const WorkstepV2 *ws) {
   }
 }
 
-Errors workstep::merge(WorkstepV2 *ws, json11::Json j) {
+Errors workstep::merge(Workstep *ws, json11::Json j) {
   // mergeCommon already applies the DEFAULT/"=" unwrap (see its definition above) - not repeated here.
   Errors res = mergeCommon(ws, j);
 
@@ -1739,7 +1667,7 @@ Errors workstep::merge(WorkstepV2 *ws, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const WorkstepV2 *ws, bool includeFullCropParameters) {
+json11::Json workstep::to_json(const Workstep *ws, bool includeFullCropParameters) {
   switch (type(ws)) {
   case WorkstepType::SOWING:
     return to_json(&std::get<SowingData>(ws->data), ws, includeFullCropParameters);
@@ -1773,7 +1701,7 @@ json11::Json workstep::to_json(const WorkstepV2 *ws, bool includeFullCropParamet
   return json11::Json(); // unreachable, all WorkstepType values handled above
 }
 
-bool workstep::isActive(const WorkstepV2 *ws) {
+bool workstep::isActive(const Workstep *ws) {
   switch (type(ws)) {
   case WorkstepType::AUTOMATIC_SOWING:
     return !std::get<AutomaticSowingData>(ws->data).cropSeeded;
@@ -1786,7 +1714,7 @@ bool workstep::isActive(const WorkstepV2 *ws) {
   }
 }
 
-bool workstep::apply(WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::apply(Workstep *ws, MonicaModel *model) {
   switch (type(ws)) {
   case WorkstepType::SOWING:
     return apply(&std::get<SowingData>(ws->data), ws, model);
@@ -1820,7 +1748,7 @@ bool workstep::apply(WorkstepV2 *ws, MonicaModel *model) {
   return false; // unreachable, all WorkstepType values handled above
 }
 
-bool workstep::applyWithPossibleCondition(WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::applyWithPossibleCondition(Workstep *ws, MonicaModel *model) {
   bool workstepFinished = false;
   if (isActive(ws)) {
     if (isDynamicWorkstep(ws))
@@ -1832,7 +1760,7 @@ bool workstep::applyWithPossibleCondition(WorkstepV2 *ws, MonicaModel *model) {
   return workstepFinished;
 }
 
-bool workstep::condition(WorkstepV2 *ws, MonicaModel *model) {
+bool workstep::condition(Workstep *ws, MonicaModel *model) {
   switch (type(ws)) {
   case WorkstepType::AUTOMATIC_SOWING:
     return condition(&std::get<AutomaticSowingData>(ws->data), model);
@@ -1847,7 +1775,7 @@ bool workstep::condition(WorkstepV2 *ws, MonicaModel *model) {
   }
 }
 
-bool workstep::reinit(WorkstepV2 *ws, Tools::Date date, bool addYear, bool forceInitYear) {
+bool workstep::reinit(Workstep *ws, Tools::Date date, bool addYear, bool forceInitYear) {
   switch (type(ws)) {
   case WorkstepType::AUTOMATIC_SOWING:
     return reinit(&std::get<AutomaticSowingData>(ws->data), ws, date, addYear, forceInitYear);
@@ -1863,342 +1791,60 @@ bool workstep::reinit(WorkstepV2 *ws, Tools::Date date, bool addYear, bool force
 }
 
 std::function<double(MonicaModel *)>
-workstep::registerDailyFunction(WorkstepV2 *ws, std::function<std::vector<double> &()> getDailyValues) {
+workstep::registerDailyFunction(Workstep *ws, std::function<std::vector<double> &()> getDailyValues) {
   if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
     return registerDailyFunction(&std::get<AutomaticSowingData>(ws->data), getDailyValues);
   return std::function<double(MonicaModel *)>();
 }
 
-WSPtrV2 monica::makeWorkstepV2(json11::Json j) {
+WSPtr monica::makeWorkstep(json11::Json j) {
   string type = string_value(j["type"]);
 
   if (type == "Sowing" || type == "Seed") {
-    return make_shared<WorkstepV2>(makeSowingWorkstep(j));
+    return make_shared<Workstep>(makeSowingWorkstep(j));
   }
   if (type == "Transplant") {
-    return make_shared<WorkstepV2>(makeTransplantWorkstep(j));
+    return make_shared<Workstep>(makeTransplantWorkstep(j));
   }
   if (type == "AutomaticSowing") {
-    return make_shared<WorkstepV2>(makeAutomaticSowingWorkstep(j));
+    return make_shared<Workstep>(makeAutomaticSowingWorkstep(j));
   }
   if (type == "Harvest") {
-    return make_shared<WorkstepV2>(makeHarvestWorkstep(j));
+    return make_shared<Workstep>(makeHarvestWorkstep(j));
   }
   if (type == "AutomaticHarvest") {
-    return make_shared<WorkstepV2>(makeAutomaticHarvestWorkstep(j));
+    return make_shared<Workstep>(makeAutomaticHarvestWorkstep(j));
   }
   if (type == "Cutting") {
-    return make_shared<WorkstepV2>(makeCuttingWorkstep(j));
+    return make_shared<Workstep>(makeCuttingWorkstep(j));
   }
   if (type == "MineralFertilization" ||
       type == "MineralFertiliserApplication") { // deprecated name
-    return make_shared<WorkstepV2>(makeMineralFertilizationWorkstep(j));
+    return make_shared<Workstep>(makeMineralFertilizationWorkstep(j));
   }
   if (type == "NDemandFertilization") {
-    return make_shared<WorkstepV2>(makeNDemandFertilizationWorkstep(j));
+    return make_shared<Workstep>(makeNDemandFertilizationWorkstep(j));
   }
   if (type == "OrganicFertilization" ||
       type == "OrganicFertiliserApplication") { // deprecated name
-    return make_shared<WorkstepV2>(makeOrganicFertilizationWorkstep(j));
+    return make_shared<Workstep>(makeOrganicFertilizationWorkstep(j));
   }
   if (type == "Tillage" || type == "TillageApplication") { // deprecated name
-    return make_shared<WorkstepV2>(makeTillageWorkstep(j));
+    return make_shared<Workstep>(makeTillageWorkstep(j));
   }
   if (type == "Irrigation" ||
       type == "IrrigationApplication") { // deprecated name
-    return make_shared<WorkstepV2>(makeIrrigationWorkstep(j));
+    return make_shared<Workstep>(makeIrrigationWorkstep(j));
   }
   if (type == "AutomaticIrrigation") {
-    return make_shared<WorkstepV2>(makeAutomaticIrrigationWorkstep(j));
+    return make_shared<Workstep>(makeAutomaticIrrigationWorkstep(j));
   }
   if (type == "SetValue") {
-    return make_shared<WorkstepV2>(makeSetValueWorkstep(j));
+    return make_shared<Workstep>(makeSetValueWorkstep(j));
   }
   if (type == "SaveMonicaState") {
-    return make_shared<WorkstepV2>(makeSaveMonicaStateWorkstep(j));
+    return make_shared<Workstep>(makeSaveMonicaStateWorkstep(j));
   }
 
   return {};
-}
-
-// --------------------------------------------------------------------
-// CultivationMethodV2 (phase 3, step 17)
-
-CultivationMethodV2 monica::makeCultivationMethodV2(json11::Json j) {
-  CultivationMethodV2 cm;
-  // NOTE: like the original CultivationMethod(json11::Json) constructor, the merge() result (Errors)
-  // is not stored anywhere - discarded, not a mistake, matches the original exactly.
-  cultivationmethod::merge(&cm, j);
-  return cm;
-}
-
-Errors cultivationmethod::merge(CultivationMethodV2 *cm, json11::Json j) {
-  Errors res;
-
-  set_int_value(cm->customId, j, "customId");
-  set_string_value(cm->name, j, "name");
-  set_bool_value(cm->canBeSkipped, j, "can-be-skipped");
-  set_bool_value(cm->isCoverCrop, j, "is-cover-crop");
-  set_bool_value(cm->repeat, j, "repeat");
-
-  // keep reference to sowing workstep for use with harvest workstep
-  SowingData *sowingWS = nullptr;
-
-  for (auto wsj : j["worksteps"].array_items()) {
-    auto ws = makeWorkstepV2(wsj);
-    if (!ws)
-      continue;
-    res.append(ws->errors);
-    cm->allWorksteps.push_back(ws);
-    switch (workstep::type(ws.get())) {
-    case WorkstepType::SOWING:
-      sowingWS = &std::get<SowingData>(ws->data);
-      break;
-    case WorkstepType::AUTOMATIC_SOWING:
-      sowingWS = &std::get<AutomaticSowingData>(ws->data);
-      break;
-    case WorkstepType::HARVEST:
-      if (sowingWS)
-        std::get<HarvestData>(ws->data).sowing = sowingWS;
-      break;
-    case WorkstepType::AUTOMATIC_HARVEST:
-      if (sowingWS)
-        std::get<AutomaticHarvestData>(ws->data).sowing = sowingWS;
-      break;
-    default:
-      break;
-    }
-  }
-
-  return res;
-}
-
-json11::Json cultivationmethod::to_json(const CultivationMethodV2 *cm) {
-  auto wss = J11Array();
-  for (auto ws : cm->allWorksteps)
-    wss.push_back(workstep::to_json(ws.get()));
-
-  return J11Object{{"type", "CultivationMethod"},
-                   {"customId", cm->customId},
-                   {"name", cm->name},
-                   {"can-be-skipped", cm->canBeSkipped},
-                   {"is-cover-crop", cm->isCoverCrop},
-                   {"repeat", cm->repeat},
-                   {"worksteps", wss}};
-}
-
-void cultivationmethod::apply(const CultivationMethodV2 *cm, const Date &date, MonicaModel *model) {
-  for (auto ws : workstepsAt(cm, date))
-    workstep::apply(ws.get(), model);
-}
-
-void cultivationmethod::absApply(const CultivationMethodV2 *cm, const Date &date, MonicaModel *model) {
-  for (auto ws : absWorkstepsAt(cm, date))
-    workstep::apply(ws.get(), model);
-}
-
-void cultivationmethod::apply(CultivationMethodV2 *cm, MonicaModel *model,
-                              bool runOnlyAtStartOfDayWorksteps) {
-  auto &udws = cm->unfinishedDynamicWorksteps;
-  udws.erase(remove_if(udws.begin(), udws.end(),
-                       [model, runOnlyAtStartOfDayWorksteps](WSPtrV2 wsp) {
-                         return runOnlyAtStartOfDayWorksteps == wsp->runAtStartOfDay &&
-                                workstep::applyWithPossibleCondition(wsp.get(), model);
-                       }),
-             udws.end());
-}
-
-Date cultivationmethod::nextDate(const CultivationMethodV2 *cm, const Date &date) {
-  for (auto ws : cm->allWorksteps) {
-    auto d = ws->date;
-    if (d.isValid() && d > date)
-      return d;
-  }
-  return Date();
-}
-
-Date cultivationmethod::nextAbsDate(const CultivationMethodV2 *cm, const Date &date) {
-  for (auto ws : cm->allAbsWorksteps) {
-    auto ad = workstep::absDate(ws.get());
-    if (ad.isValid() && ad > date)
-      return ad;
-  }
-  return Date();
-}
-
-vector<WSPtrV2> cultivationmethod::workstepsAt(const CultivationMethodV2 *cm, const Date &date) {
-  vector<WSPtrV2> apps;
-  for (auto ws : cm->allWorksteps)
-    if (ws->date.isValid() && ws->date == date)
-      apps.push_back(ws);
-
-  return apps;
-}
-
-vector<WSPtrV2> cultivationmethod::absWorkstepsAt(const CultivationMethodV2 *cm, const Date &date) {
-  vector<WSPtrV2> apps;
-  for (auto ws : cm->allAbsWorksteps)
-    if (workstep::absDate(ws.get()).isValid() && workstep::absDate(ws.get()) == date)
-      apps.push_back(ws);
-
-  return apps;
-}
-
-bool cultivationmethod::areOnlyAbsoluteWorksteps(const CultivationMethodV2 *cm) {
-  return all_of(cm->allWorksteps.begin(), cm->allWorksteps.end(), [](const WSPtrV2 &ws) {
-    return ws->date.isValid() && ws->date.isAbsoluteDate();
-  });
-}
-
-vector<WSPtrV2> cultivationmethod::staticWorksteps(const CultivationMethodV2 *cm) {
-  vector<WSPtrV2> wss;
-  for (auto ws : cm->allWorksteps)
-    if (ws->date.isValid())
-      wss.push_back(ws);
-  return wss;
-}
-
-vector<WSPtrV2> cultivationmethod::allDynamicWorksteps(const CultivationMethodV2 *cm) {
-  return workstepsAt(cm, Date());
-}
-
-bool cultivationmethod::allDynamicWorkstepsFinished(const CultivationMethodV2 *cm) {
-  if (cm->unfinishedDynamicWorksteps.empty())
-    return true;
-  else {
-    return all_of(cm->unfinishedDynamicWorksteps.begin(), cm->unfinishedDynamicWorksteps.end(),
-                 [](const WSPtrV2 &wsp) {
-                   return workstep::type(wsp.get()) == WorkstepType::N_DEMAND_FERTILIZATION;
-                 });
-  }
-}
-
-Date cultivationmethod::startDate(const CultivationMethodV2 *cm) {
-  if (cm->allWorksteps.empty())
-    return Date();
-
-  auto dynEarliestStart = Date();
-  for (auto ws : workstepsAt(cm, Date())) {
-    auto ed = workstep::earliestDate(ws.get());
-    if ((ed.isValid() && dynEarliestStart.isValid() && ed < dynEarliestStart) ||
-        (ed.isValid() && !dynEarliestStart.isValid()))
-      dynEarliestStart = ed;
-  }
-
-  Date startDate = dynEarliestStart;
-  for (auto ws : cm->allWorksteps) {
-    auto d = ws->date;
-    if (d.isValid() && (d < startDate || !startDate.isValid()))
-      startDate = d;
-  }
-
-  return startDate;
-}
-
-Date cultivationmethod::absStartDate(const CultivationMethodV2 *cm, bool includeDynamicWorksteps) {
-  if (cm->allAbsWorksteps.empty())
-    return Date();
-
-  auto dynEarliestStart = Date();
-  if (includeDynamicWorksteps) {
-    for (auto ws : absWorkstepsAt(cm, Date())) {
-      auto ed = workstep::absEarliestDate(ws.get());
-      if ((ed.isValid() && dynEarliestStart.isValid() && ed < dynEarliestStart) ||
-          (ed.isValid() && !dynEarliestStart.isValid()))
-        dynEarliestStart = ed;
-    }
-  }
-
-  Date startDate = dynEarliestStart;
-  for (auto ws : cm->allAbsWorksteps) {
-    auto ad = workstep::absDate(ws.get());
-    if (ad.isValid() && (ad < startDate || !startDate.isValid()))
-      startDate = ad;
-  }
-
-  return startDate;
-}
-
-Date cultivationmethod::absLatestSowingDate(const CultivationMethodV2 *cm) {
-  auto dynLatestSowingDate = Date();
-  for (auto ws : cm->allAbsWorksteps) {
-    auto t = workstep::type(ws.get());
-    if (t == WorkstepType::SOWING || t == WorkstepType::AUTOMATIC_SOWING) {
-      auto lsd = workstep::absLatestDate(ws.get());
-      if (lsd.isValid() && dynLatestSowingDate < lsd)
-        dynLatestSowingDate = lsd;
-    }
-  }
-
-  return dynLatestSowingDate;
-}
-
-Date cultivationmethod::endDate(const CultivationMethodV2 *cm) {
-  if (cm->allWorksteps.empty())
-    return Date();
-
-  auto dynLatestEnd = Date();
-  for (auto ws : workstepsAt(cm, Date())) {
-    auto ed = workstep::latestDate(ws.get());
-    if ((ed.isValid() && dynLatestEnd.isValid() && ed > dynLatestEnd) ||
-        (ed.isValid() && !dynLatestEnd.isValid()))
-      dynLatestEnd = ed;
-  }
-
-  Date endDate = dynLatestEnd;
-  for (auto ws : cm->allWorksteps) {
-    auto d = ws->date;
-    if (d.isValid() && (d > endDate || !endDate.isValid()))
-      endDate = d;
-  }
-
-  return endDate;
-}
-
-Date cultivationmethod::absEndDate(const CultivationMethodV2 *cm) {
-  if (cm->allAbsWorksteps.empty())
-    return Date();
-
-  auto dynLatestEnd = Date();
-  for (auto ws : absWorkstepsAt(cm, Date())) {
-    auto ed = workstep::absLatestDate(ws.get());
-    if ((ed.isValid() && dynLatestEnd.isValid() && ed > dynLatestEnd) ||
-        (ed.isValid() && !dynLatestEnd.isValid()))
-      dynLatestEnd = ed;
-  }
-
-  Date endDate = dynLatestEnd;
-  for (auto ws : cm->allAbsWorksteps) {
-    auto ad = workstep::absDate(ws.get());
-    if (ad.isValid() && (ad > endDate || !endDate.isValid()))
-      endDate = ad;
-  }
-
-  return endDate;
-}
-
-std::string cultivationmethod::toString(const CultivationMethodV2 *cm) {
-  ostringstream s;
-  s << "name: " << cm->name << " start: " << startDate(cm).toString()
-    << " end: " << endDate(cm).toString() << endl;
-  s << "worksteps:" << endl;
-  for (auto p : cm->allWorksteps)
-    // p->toString() in the original always fell back to the Json11Serializable default
-    // (to_json().dump()), since Workstep never overrode toString() itself - see workstep::to_json.
-    s << "at: " << p->date.toString() << " what: " << workstep::to_json(p.get()).dump() << endl;
-  return s.str();
-}
-
-bool cultivationmethod::reinit(CultivationMethodV2 *cm, Tools::Date date, bool forceInitYear) {
-  cm->allAbsWorksteps.clear();
-  cm->unfinishedDynamicWorksteps.clear();
-  bool addedYear = false;
-  for (auto ws : cm->allWorksteps) {
-    addedYear = workstep::reinit(ws.get(), date, addedYear, forceInitYear) || addedYear;
-    cm->allAbsWorksteps.push_back(ws);
-    if (!workstep::absDate(ws.get()).isValid())
-      cm->unfinishedDynamicWorksteps.push_back(ws);
-  }
-
-  return addedYear;
 }

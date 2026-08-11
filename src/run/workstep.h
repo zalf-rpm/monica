@@ -219,12 +219,7 @@ using WorkstepData = std::variant<
     MineralFertilizationData, NDemandFertilizationData, OrganicFertilizationData, TillageData,
     SetValueData, SaveMonicaStateData, IrrigationData, AutomaticIrrigationData>;
 
-// NOTE: temporarily named WorkstepV2 (not Workstep) because the old, still-live OOP `class Workstep`
-// in cultivation-method.h is transitively pulled in by monica-model.h (needed here for MonicaModel's
-// full definition) - both can't be named `monica::Workstep` in the same translation unit. Renamed to
-// `Workstep` (and WSPtrV2 -> WSPtr) at final cutover once the old class is deleted, per
-// plan-cultivation-method.md.
-struct DLL_API WorkstepV2 {
+struct DLL_API Workstep {
   Tools::Date date;
   Tools::Date absDate;
   int applyNoOfDaysAfterEvent{0};
@@ -238,43 +233,43 @@ struct DLL_API WorkstepV2 {
   WorkstepData data;
 };
 
-typedef std::shared_ptr<WorkstepV2> WSPtrV2;
+typedef std::shared_ptr<Workstep> WSPtr;
 
 namespace workstep {
 
-inline WorkstepType type(const WorkstepV2 *ws) {
+inline WorkstepType type(const Workstep *ws) {
   return static_cast<WorkstepType>(ws->data.index());
 }
 
-inline bool isDynamicWorkstep(const WorkstepV2 *ws) { return !ws->date.isValid(); }
+inline bool isDynamicWorkstep(const Workstep *ws) { return !ws->date.isValid(); }
 
 // Common (former base-class, non-overridden-by-default) Workstep behavior. Used both by the phase-1
 // per-subtype make*Workstep(...) factories below and (later, once built) by the central dispatchers'
 // default/fallback cases for the many subtypes that don't override a given piece of behavior.
-DLL_API Tools::Errors mergeCommon(WorkstepV2 *ws, json11::Json j);
-DLL_API bool applyCommon(WorkstepV2 *ws, MonicaModel *model);
-DLL_API bool conditionCommon(WorkstepV2 *ws, MonicaModel *model);
-DLL_API bool reinitCommon(WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+DLL_API Tools::Errors mergeCommon(Workstep *ws, json11::Json j);
+DLL_API bool applyCommon(Workstep *ws, MonicaModel *model);
+DLL_API bool conditionCommon(Workstep *ws, MonicaModel *model);
+DLL_API bool reinitCommon(Workstep *ws, Tools::Date date, bool addYear = false,
                           bool forceInitYear = false);
 // setDate is inherently per-subtype dispatching (3 of the 14 subtypes override it), so unlike
 // merge/apply/condition/reinit there's no single "common" body to factor out - this is already the
 // full (if still incrementally-populated - see the per-step notes in plan-cultivation-method.md)
 // dispatcher, not a "Common" helper.
-DLL_API void setDate(WorkstepV2 *ws, Tools::Date date);
+DLL_API void setDate(Workstep *ws, Tools::Date date);
 
 // SowingData
 DLL_API Tools::Errors merge(SowingData *s, json11::Json j);
-DLL_API json11::Json to_json(const SowingData *s, const WorkstepV2 *ws,
+DLL_API json11::Json to_json(const SowingData *s, const Workstep *ws,
                              bool includeFullCropParameters = true);
-DLL_API bool apply(SowingData *s, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool apply(SowingData *s, Workstep *ws, MonicaModel *model);
 
 // AutomaticSowingData
 DLL_API Tools::Errors merge(AutomaticSowingData *as, json11::Json j);
-DLL_API json11::Json to_json(const AutomaticSowingData *as, const WorkstepV2 *ws,
+DLL_API json11::Json to_json(const AutomaticSowingData *as, const Workstep *ws,
                              bool includeFullCropParameters = true);
-DLL_API bool apply(AutomaticSowingData *as, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool apply(AutomaticSowingData *as, Workstep *ws, MonicaModel *model);
 DLL_API bool condition(AutomaticSowingData *as, MonicaModel *model);
-DLL_API bool reinit(AutomaticSowingData *as, WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+DLL_API bool reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date, bool addYear = false,
                     bool forceInitYear = false);
 DLL_API std::function<double(MonicaModel *)>
 registerDailyFunction(AutomaticSowingData *as, std::function<std::vector<double> &()> getDailyValues);
@@ -282,79 +277,79 @@ registerDailyFunction(AutomaticSowingData *as, std::function<std::vector<double>
 // TransplantData
 DLL_API Tools::Errors merge(TransplantData *t, json11::Json j);
 // note: unlike Sowing/AutomaticSowing, the original Transplant::to_json never embedded "date" - no
-// WorkstepV2* parameter needed here, preserved as-is (straight translation).
+// Workstep* parameter needed here, preserved as-is (straight translation).
 DLL_API json11::Json to_json(const TransplantData *t, bool includeFullCropParameters = true);
-DLL_API bool apply(TransplantData *t, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool apply(TransplantData *t, Workstep *ws, MonicaModel *model);
 
 // HarvestData
 DLL_API Tools::Errors merge(HarvestData *h, json11::Json j);
-DLL_API json11::Json to_json(const HarvestData *h, const WorkstepV2 *ws,
+DLL_API json11::Json to_json(const HarvestData *h, const Workstep *ws,
                              bool includeFullCropParameters = true);
-DLL_API bool apply(HarvestData *h, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool apply(HarvestData *h, Workstep *ws, MonicaModel *model);
 
 // AutomaticHarvestData
 DLL_API Tools::Errors merge(AutomaticHarvestData *ah, json11::Json j);
-DLL_API json11::Json to_json(const AutomaticHarvestData *ah, const WorkstepV2 *ws,
+DLL_API json11::Json to_json(const AutomaticHarvestData *ah, const Workstep *ws,
                              bool includeFullCropParameters = true);
-DLL_API bool apply(AutomaticHarvestData *ah, WorkstepV2 *ws, MonicaModel *model);
+DLL_API bool apply(AutomaticHarvestData *ah, Workstep *ws, MonicaModel *model);
 DLL_API bool condition(AutomaticHarvestData *ah, MonicaModel *model);
-DLL_API bool reinit(AutomaticHarvestData *ah, WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+DLL_API bool reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date, bool addYear = false,
                     bool forceInitYear = false);
 
 // CuttingData
 DLL_API Tools::Errors merge(CuttingData *c, json11::Json j);
-DLL_API json11::Json to_json(const CuttingData *c, const WorkstepV2 *ws);
-DLL_API bool apply(CuttingData *c, WorkstepV2 *ws, MonicaModel *model);
+DLL_API json11::Json to_json(const CuttingData *c, const Workstep *ws);
+DLL_API bool apply(CuttingData *c, Workstep *ws, MonicaModel *model);
 
 // MineralFertilizationData
 DLL_API Tools::Errors merge(MineralFertilizationData *mf, json11::Json j);
-DLL_API json11::Json to_json(const MineralFertilizationData *mf, const WorkstepV2 *ws);
-DLL_API bool apply(MineralFertilizationData *mf, WorkstepV2 *ws, MonicaModel *model);
+DLL_API json11::Json to_json(const MineralFertilizationData *mf, const Workstep *ws);
+DLL_API bool apply(MineralFertilizationData *mf, Workstep *ws, MonicaModel *model);
 
 // NDemandFertilizationData
 // note: merge needs ws (it copies the just-parsed common date into initialDate); to_json doesn't
 // (it only ever emits its own initialDate/stage fields, never the common ws->date).
-DLL_API Tools::Errors merge(NDemandFertilizationData *nd, WorkstepV2 *ws, json11::Json j);
+DLL_API Tools::Errors merge(NDemandFertilizationData *nd, Workstep *ws, json11::Json j);
 DLL_API json11::Json to_json(const NDemandFertilizationData *nd);
-DLL_API bool apply(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel *model);
-DLL_API bool condition(NDemandFertilizationData *nd, WorkstepV2 *ws, MonicaModel *model);
-DLL_API bool reinit(NDemandFertilizationData *nd, WorkstepV2 *ws, Tools::Date date,
+DLL_API bool apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model);
+DLL_API bool condition(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model);
+DLL_API bool reinit(NDemandFertilizationData *nd, Workstep *ws, Tools::Date date,
                     bool addYear = false, bool forceInitYear = false);
 
 // OrganicFertilizationData
 DLL_API Tools::Errors merge(OrganicFertilizationData *of, json11::Json j);
-DLL_API json11::Json to_json(const OrganicFertilizationData *of, const WorkstepV2 *ws);
-DLL_API bool apply(OrganicFertilizationData *of, WorkstepV2 *ws, MonicaModel *model);
+DLL_API json11::Json to_json(const OrganicFertilizationData *of, const Workstep *ws);
+DLL_API bool apply(OrganicFertilizationData *of, Workstep *ws, MonicaModel *model);
 
 // TillageData
 DLL_API Tools::Errors merge(TillageData *t, json11::Json j);
-DLL_API json11::Json to_json(const TillageData *t, const WorkstepV2 *ws);
-DLL_API bool apply(TillageData *t, WorkstepV2 *ws, MonicaModel *model);
+DLL_API json11::Json to_json(const TillageData *t, const Workstep *ws);
+DLL_API bool apply(TillageData *t, Workstep *ws, MonicaModel *model);
 
 // SetValueData
 DLL_API Tools::Errors merge(SetValueData *s, json11::Json j);
-DLL_API json11::Json to_json(const SetValueData *s, const WorkstepV2 *ws);
-DLL_API bool apply(SetValueData *s, WorkstepV2 *ws, MonicaModel *model);
+DLL_API json11::Json to_json(const SetValueData *s, const Workstep *ws);
+DLL_API bool apply(SetValueData *s, Workstep *ws, MonicaModel *model);
 
 // SaveMonicaStateData
 // note: merge needs ws - the original re-parses "runAtStartOfDay" with an explicit false default,
 // overriding what mergeCommon already set on the common field (SaveMonicaState defaults to running
 // at the *end* of the day, unlike every other subtype).
-DLL_API Tools::Errors merge(SaveMonicaStateData *sms, WorkstepV2 *ws, json11::Json j);
-DLL_API json11::Json to_json(const SaveMonicaStateData *sms, const WorkstepV2 *ws);
-DLL_API bool apply(SaveMonicaStateData *sms, WorkstepV2 *ws, MonicaModel *model);
+DLL_API Tools::Errors merge(SaveMonicaStateData *sms, Workstep *ws, json11::Json j);
+DLL_API json11::Json to_json(const SaveMonicaStateData *sms, const Workstep *ws);
+DLL_API bool apply(SaveMonicaStateData *sms, Workstep *ws, MonicaModel *model);
 
 // IrrigationData
 DLL_API Tools::Errors merge(IrrigationData *i, json11::Json j);
-DLL_API json11::Json to_json(const IrrigationData *i, const WorkstepV2 *ws);
-DLL_API bool apply(IrrigationData *i, WorkstepV2 *ws, MonicaModel *model);
+DLL_API json11::Json to_json(const IrrigationData *i, const Workstep *ws);
+DLL_API bool apply(IrrigationData *i, Workstep *ws, MonicaModel *model);
 
 // AutomaticIrrigationData
 DLL_API Tools::Errors merge(AutomaticIrrigationData *ai, json11::Json j);
 DLL_API json11::Json to_json(const AutomaticIrrigationData *ai);
 DLL_API bool apply(AutomaticIrrigationData *ai, MonicaModel *model);
 DLL_API bool condition(AutomaticIrrigationData *ai, MonicaModel *model);
-DLL_API bool reinit(AutomaticIrrigationData *ai, WorkstepV2 *ws, Tools::Date date,
+DLL_API bool reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date,
                     bool addYear = false, bool forceInitYear = false);
 
 // Central dispatch - switches on type(ws) to reach the right per-payload function above. Built once
@@ -368,106 +363,63 @@ DLL_API bool reinit(AutomaticIrrigationData *ai, WorkstepV2 *ws, Tools::Date dat
 // internal use sites (CultivationMethod::merge's wsType comparisons, allDynamicWorkstepsFinished) are
 // cleaner as direct WorkstepType enum comparisons (phase 3's job) than as string comparisons.
 
-inline Tools::Date absDate(const WorkstepV2 *ws) {
+inline Tools::Date absDate(const Workstep *ws) {
   return ws->date.isAbsoluteDate() ? ws->date : ws->absDate;
 }
 
-DLL_API Tools::Date earliestDate(const WorkstepV2 *ws);
-DLL_API Tools::Date absEarliestDate(const WorkstepV2 *ws);
-DLL_API Tools::Date latestDate(const WorkstepV2 *ws);
-DLL_API Tools::Date absLatestDate(const WorkstepV2 *ws);
+DLL_API Tools::Date earliestDate(const Workstep *ws);
+DLL_API Tools::Date absEarliestDate(const Workstep *ws);
+DLL_API Tools::Date latestDate(const Workstep *ws);
+DLL_API Tools::Date absLatestDate(const Workstep *ws);
 
-DLL_API Tools::Errors merge(WorkstepV2 *ws, json11::Json j);
-DLL_API json11::Json to_json(const WorkstepV2 *ws, bool includeFullCropParameters = true);
-DLL_API bool isActive(const WorkstepV2 *ws);
-DLL_API bool apply(WorkstepV2 *ws, MonicaModel *model);
-DLL_API bool applyWithPossibleCondition(WorkstepV2 *ws, MonicaModel *model);
-DLL_API bool condition(WorkstepV2 *ws, MonicaModel *model);
-DLL_API bool reinit(WorkstepV2 *ws, Tools::Date date, bool addYear = false,
+DLL_API Tools::Errors merge(Workstep *ws, json11::Json j);
+DLL_API json11::Json to_json(const Workstep *ws, bool includeFullCropParameters = true);
+DLL_API bool isActive(const Workstep *ws);
+DLL_API bool apply(Workstep *ws, MonicaModel *model);
+DLL_API bool applyWithPossibleCondition(Workstep *ws, MonicaModel *model);
+DLL_API bool condition(Workstep *ws, MonicaModel *model);
+DLL_API bool reinit(Workstep *ws, Tools::Date date, bool addYear = false,
                     bool forceInitYear = false);
 DLL_API std::function<double(MonicaModel *)>
-registerDailyFunction(WorkstepV2 *ws, std::function<std::vector<double> &()> getDailyValues);
+registerDailyFunction(Workstep *ws, std::function<std::vector<double> &()> getDailyValues);
 
 } // namespace workstep
 
-DLL_API WSPtrV2 makeWorkstepV2(json11::Json object);
+DLL_API WSPtr makeWorkstep(json11::Json object);
 
-DLL_API WorkstepV2 makeSowingWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeAutomaticSowingWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeTransplantWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeHarvestWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeAutomaticHarvestWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeCuttingWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeMineralFertilizationWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeMineralFertilizationWorkstep(const Tools::Date &at,
-                                                    MineralFertilizerParameters partition,
-                                                    double amount);
-DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(int stage, double depth,
-                                                    MineralFertilizerParameters partition,
-                                                    double Ndemand);
-DLL_API WorkstepV2 makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
-                                                    MineralFertilizerParameters partition,
-                                                    double Ndemand);
-DLL_API WorkstepV2 makeOrganicFertilizationWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeOrganicFertilizationWorkstep(const Tools::Date &at,
-                                                    const OrganicMatterParameters &params,
-                                                    double amount, bool incorp = true);
-DLL_API WorkstepV2 makeTillageWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeTillageWorkstep(const Tools::Date &at, double depth);
-DLL_API WorkstepV2 makeSetValueWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value);
-DLL_API WorkstepV2 makeSaveMonicaStateWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeSaveMonicaStateWorkstep(const Tools::Date &at,
-                                               std::string pathToSerializedStateFile,
-                                               bool serializeAsJson = false,
-                                               int noOfPreviousDaysSerializedClimateData = -1);
-DLL_API WorkstepV2 makeIrrigationWorkstep(json11::Json object);
-DLL_API WorkstepV2 makeIrrigationWorkstep(const Tools::Date &at, double amount,
-                                          IrrigationParameters params = IrrigationParameters());
-DLL_API WorkstepV2 makeAutomaticIrrigationWorkstep(json11::Json object);
-
-// NOTE: temporarily named CultivationMethodV2, same reason as WorkstepV2 (the old, still-live
-// `class CultivationMethod` in cultivation-method.h is transitively visible here via monica-model.h).
-// Renamed to `CultivationMethod` at final cutover.
-struct DLL_API CultivationMethodV2 {
-  std::vector<WSPtrV2> allWorksteps;
-  std::vector<WSPtrV2> allAbsWorksteps;
-  std::vector<WSPtrV2> unfinishedDynamicWorksteps;
-  int customId{0};
-  std::string name;
-  bool canBeSkipped{false}; //! can this crop be skipped, eg. is a catch or cover crop
-  bool isCoverCrop{false}; //! is like canBeSkipped (and implies it), but different rule for when
-                           //! cultivation methods will be skipped
-  bool repeat{true}; //! if false the cultivation method won't participate in wrapping at the end of
-                     //! the crop rotation
-};
-
-namespace cultivationmethod {
-
-DLL_API Tools::Errors merge(CultivationMethodV2 *cm, json11::Json j);
-DLL_API json11::Json to_json(const CultivationMethodV2 *cm);
-DLL_API void apply(const CultivationMethodV2 *cm, const Tools::Date &date, MonicaModel *model);
-DLL_API void absApply(const CultivationMethodV2 *cm, const Tools::Date &date, MonicaModel *model);
-DLL_API void apply(CultivationMethodV2 *cm, MonicaModel *model, bool runOnlyAtStartOfDayWorksteps);
-DLL_API Tools::Date nextDate(const CultivationMethodV2 *cm, const Tools::Date &date);
-DLL_API Tools::Date nextAbsDate(const CultivationMethodV2 *cm, const Tools::Date &date);
-DLL_API std::vector<WSPtrV2> workstepsAt(const CultivationMethodV2 *cm, const Tools::Date &date);
-DLL_API std::vector<WSPtrV2> absWorkstepsAt(const CultivationMethodV2 *cm, const Tools::Date &date);
-DLL_API bool areOnlyAbsoluteWorksteps(const CultivationMethodV2 *cm);
-DLL_API std::vector<WSPtrV2> staticWorksteps(const CultivationMethodV2 *cm);
-DLL_API std::vector<WSPtrV2> allDynamicWorksteps(const CultivationMethodV2 *cm);
-DLL_API bool allDynamicWorkstepsFinished(const CultivationMethodV2 *cm);
-DLL_API Tools::Date startDate(const CultivationMethodV2 *cm);
-DLL_API Tools::Date absStartDate(const CultivationMethodV2 *cm, bool includeDynamicWorksteps = true);
-DLL_API Tools::Date absLatestSowingDate(const CultivationMethodV2 *cm);
-DLL_API Tools::Date endDate(const CultivationMethodV2 *cm);
-DLL_API Tools::Date absEndDate(const CultivationMethodV2 *cm);
-DLL_API std::string toString(const CultivationMethodV2 *cm);
-DLL_API bool reinit(CultivationMethodV2 *cm, Tools::Date date, bool forceInitYear = false);
-
-} // namespace cultivationmethod
-
-DLL_API CultivationMethodV2 makeCultivationMethodV2(json11::Json object);
+DLL_API Workstep makeSowingWorkstep(json11::Json object);
+DLL_API Workstep makeAutomaticSowingWorkstep(json11::Json object);
+DLL_API Workstep makeTransplantWorkstep(json11::Json object);
+DLL_API Workstep makeHarvestWorkstep(json11::Json object);
+DLL_API Workstep makeAutomaticHarvestWorkstep(json11::Json object);
+DLL_API Workstep makeCuttingWorkstep(json11::Json object);
+DLL_API Workstep makeMineralFertilizationWorkstep(json11::Json object);
+DLL_API Workstep makeMineralFertilizationWorkstep(const Tools::Date &at,
+                                                  MineralFertilizerParameters partition,
+                                                  double amount);
+DLL_API Workstep makeNDemandFertilizationWorkstep(json11::Json object);
+DLL_API Workstep makeNDemandFertilizationWorkstep(int stage, double depth,
+                                                  MineralFertilizerParameters partition,
+                                                  double Ndemand);
+DLL_API Workstep makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
+                                                  MineralFertilizerParameters partition,
+                                                  double Ndemand);
+DLL_API Workstep makeOrganicFertilizationWorkstep(json11::Json object);
+DLL_API Workstep makeOrganicFertilizationWorkstep(const Tools::Date &at,
+                                                  const OrganicMatterParameters &params,
+                                                  double amount, bool incorp = true);
+DLL_API Workstep makeTillageWorkstep(json11::Json object);
+DLL_API Workstep makeTillageWorkstep(const Tools::Date &at, double depth);
+DLL_API Workstep makeSetValueWorkstep(json11::Json object);
+DLL_API Workstep makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value);
+DLL_API Workstep makeSaveMonicaStateWorkstep(json11::Json object);
+DLL_API Workstep makeSaveMonicaStateWorkstep(const Tools::Date &at,
+                                             std::string pathToSerializedStateFile,
+                                             bool serializeAsJson = false,
+                                             int noOfPreviousDaysSerializedClimateData = -1);
+DLL_API Workstep makeIrrigationWorkstep(json11::Json object);
+DLL_API Workstep makeIrrigationWorkstep(const Tools::Date &at, double amount,
+                                        IrrigationParameters params = IrrigationParameters());
+DLL_API Workstep makeAutomaticIrrigationWorkstep(json11::Json object);
 
 } // namespace monica

@@ -590,32 +590,86 @@ validation per step is **build-only**, not a regression run.
 
 ### Phase 4 — final cutover (single, largest, highest-risk step — the only one with a real regression check)
 
-18. [ ] **Before touching anything**, re-run a fresh repo-wide grep for every external touch point (the
-    2026-08-10 research pass results are recorded below as a starting point, but re-verify — the
-    codebase may have moved on by the time you get here). Then, in one coherent pass:
-    - Fix every external call site (see "External usage notes" below for the as-of-2026-08-10 inventory)
-      to use the new `Workstep`/`WorkstepType`/`workstep::...`/`CultivationMethodV2`/
-      `cultivationmethod::...` API instead of the old classes/virtual calls/`dynamic_cast`.
-    - Delete the old `class Workstep` + all 14 old subclasses + old `monica::makeWorkstep` + old
-      `class CultivationMethod` + the two old `addApplication<>` explicit specializations from
-      `cultivation-method.h`/`.cpp`.
-    - Rename `CultivationMethodV2` -> `CultivationMethod`, `makeWorkstepV2` -> `makeWorkstep`,
-      `addWorkstep`/whatever `addApplication` became -> finalize naming.
-    - Move the `CultivationMethod` struct + `cultivationmethod::...` free functions out of
-      `workstep.cpp`/`.h` into `cultivation-method.cpp`/`.h` (which `#include "workstep.h"`), so the file
-      split matches the two concerns cleanly (Workstep union in `workstep.h`, CultivationMethod in
-      `cultivation-method.h`) — this is the point where `cultivation-method.h`/`.cpp` stop containing any
-      `Workstep`-related code at all.
-    - Double-check the fresh grep still shows no `.clone()`/`addApplication<T>` callers before relying on
-      `Workstep` being move-only (decision #8) — if something new has started calling either since
-      2026-08-10, resolve then; unlikely but cheap to re-check.
-    - Build (`cmake --build build --parallel`), then run the **"Run monica-run"** task and diff
-      `sim-min-out_section_crop.csv` / `sim-min-out_section_daily.csv` against
-      `sim-min-out_section_crop_3.6.60.csv` / `sim-min-out_section_daily_3.6.60.csv` — must be
-      byte-identical (same validation baseline as `plan-monica-parameters.md`). This is the **first**
-      point in this whole effort where a regression run is meaningful, since phases 0-3 are all inert/
-      unreachable new code sitting next to the still-fully-live old implementation.
-    - Commit + push.
+18. [x] Re-ran a fresh repo-wide grep for every external touch point before changing anything — the
+    2026-08-10 inventory below held up exactly: `monica-model.h/.cpp`, `crop-module.h/.cpp`,
+    `daily-monica-fbp-component-main.cpp`, `run-monica.h/.cpp` were the only files (besides
+    `workstep.*`/`cultivation-method.*` themselves) referencing `Workstep`/`CultivationMethod`/
+    `Harvest::`/`Cutting::`. Did the whole cutover in one coherent pass:
+    - **`monica-model.h`/`.cpp`**: `harvestCurrentCrop`'s signature and body changed `Harvest::Spec`/
+      `Harvest::OptCarbonManagementData`/`Harvest::greenManure` -> `HarvestData::Spec`/
+      `HarvestData::OptCarbonManagementData`/`HarvestData::greenManure` (mechanical rename, `HarvestData`
+      already nested those types identically per decision #12).
+    - **`crop-module.h`/`.cpp`**: `applyCutting`'s signature and all 9 body use sites changed
+      `Cutting::Value`/`Cutting::CL`/`Cutting::Unit`/enumerators -> `CuttingData::` equivalents (same
+      mechanical rename).
+    - **`daily-monica-fbp-component-main.cpp`**: `finalizeMonica`'s direct `SaveMonicaState sms(...);
+      sms.apply(...)` construction became `Workstep sms = makeSaveMonicaStateWorkstep(...);
+      workstep::apply(&sms, ...)`. The live (non-commented) event-handling code's `Harvest::Spec spec;`
+      and the `Cutting::Value`/`Cutting::CL`/`Cutting::Unit` local variables/enumerators were renamed to
+      `HarvestData::`/`CuttingData::` (careful to leave the *capnp* `mas::schema::model::monica::Params::
+      Cutting`-derived `C::CL`/`C::Unit` switch labels alone — those are a different, unrelated type that
+      happens to share short names with the old `Cutting` class).
+    - **`run-monica.cpp`**: the private `extractAndStore<Vector>` template (which did `v.merge(cmj)` as a
+      member call, instantiated only for `vector<CultivationMethod>`) was simplified to a non-template
+      function calling `cultivationmethod::merge(&v, cmj)` directly — it was never instantiated with any
+      other `Vector`, so genericity would have been unused abstraction. All `.to_json(`/`.toString(`
+      call sites on `CultivationMethod` values became `cultivationmethod::to_json(&c)`/
+      `cultivationmethod::toString(&cm)` — confirmed (per the note left in the external-usage inventory)
+      that the `s << cm.toString() << endl;` call site genuinely wants the human-readable
+      `cultivationmethod::toString` (ported in phase 3), not a JSON dump; the two are different
+      functions and this call site was the one place that mattered. `wsptr->registerDailyFunction(...)`
+      became `workstep::registerDailyFunction(wsptr.get(), ...)`, `cm.getWorksteps()` became
+      `cm.allWorksteps` (trivial accessor -> direct field, per decision #7), and every remaining
+      `currentCM->xyz(...)`-shaped call (`reinit`, `isCoverCrop`, `absLatestSowingDate`, `canBeSkipped`,
+      `absStartDate`, `staticWorksteps`, `areOnlyAbsoluteWorksteps`, `repeat`, `apply`, `absApply`,
+      `nextAbsDate`, `allDynamicWorkstepsFinished`) became `cultivationmethod::xyz(currentCM, ...)` or a
+      direct field read for the ones that were trivial accessors (`isCoverCrop`, `canBeSkipped`,
+      `repeat`). The `SaveMonicaState` direct-construction site at the end of `runMonica()` got the same
+      fix as `daily-monica-fbp-component-main.cpp`'s.
+    - **Deleted** the old `class Workstep` + all 14 old subclasses + old `monica::makeWorkstep` + old
+      `class CultivationMethod` + both old `addApplication<>` explicit specializations, by rewriting
+      `cultivation-method.h`/`.cpp` from scratch (verified byte-for-byte against a full read of the old
+      1905-line `.cpp` first, to be sure nothing besides what phase 1-3 already ported was being
+      dropped — it wasn't; the full old file matched the already-ported free-function code exactly).
+    - **Renamed** `WorkstepV2` -> `Workstep`, `WSPtrV2` -> `WSPtr`, `makeWorkstepV2` -> `makeWorkstep`
+      throughout `workstep.h`/`.cpp` (the old, colliding OOP class was gone, so the rename was safe) via
+      global find/replace, then removed the two now-stale "temporarily named ... because of collision"
+      explanatory comments.
+    - **Moved** the `CultivationMethod` struct + `cultivationmethod::...` declarations from `workstep.h`
+      into `cultivation-method.h` (renaming `CultivationMethodV2` -> `CultivationMethod` and `WSPtrV2` ->
+      `WSPtr` on the way), and the corresponding implementations from `workstep.cpp` into
+      `cultivation-method.cpp` (which now `#include`s `cultivation-method.h` -> `workstep.h`, plus
+      `../core/monica-model.h`, `json11/json11-helper.h`, `tools/debug.h`, `<algorithm>`, `<sstream>` —
+      the actual minimal set this file's implementations need, not copied wholesale from the old file's
+      much longer capnp/kj-heavy include list, since none of that machinery lives here anymore — it's all
+      in `workstep.cpp` now for the `SaveMonicaState` payload). `workstep.h`/`.cpp` no longer mention
+      `CultivationMethod` at all — the file split now matches the two concerns cleanly, as planned.
+    - **Deleted the two temporary cross-file bridging helpers** from `workstep.cpp`'s anonymous namespace
+      (`toOldHarvestSpec`/`toOldOptCarbMgmtData` from item 5, `toOldCuttingSpec`/`fromOldCuttingSpec` from
+      item 7) now that `harvestCurrentCrop`/`applyCutting` take the new types directly — their two call
+      sites in `workstep::apply(HarvestData*, ...)`/`workstep::apply(CuttingData*, ...)` simplified back
+      down to passing `h->spec`/`h->optCarbMgmtData`/`c->organId2cuttingSpec` straight through, with the
+      round-trip-through-a-local-copy dance from item 7 no longer needed either (the mutable-reference
+      parameter now mutates `c->organId2cuttingSpec` directly again, exactly like the original
+      `Cutting::apply` did with `_organId2cuttingSpec`).
+    - Re-checked: no remaining `.clone()`/`addApplication<T>` callers anywhere (confirmed by grep before
+      relying on `Workstep` being move-only, decision #8) — nothing new had started calling either since
+      2026-08-10.
+    - **Build**: `cmake --build build --parallel` succeeded on the **first attempt**, no errors — all 27
+      build steps (6 executables + 2 static libs) compiled and linked clean on the very first try despite
+      this being the single largest, most cross-cutting step in the whole plan.
+    - **Regression check** (the first meaningful one in this whole effort — phases 0-3 were all inert):
+      ran `monica-run.exe -m installer/Hohenfinow2/sim-min.json` (with `MONICA_PARAMETERS` pointed at the
+      sibling `monica-parameters` checkout) and diffed the freshly generated
+      `sim-min-out_section_crop.csv`/`sim-min-out_section_daily.csv` against the pre-existing
+      `..._3.6.60.csv` baselines (left over from the `plan-monica-parameters.md` conversion's own
+      regression check) — **both byte-identical**, confirmed via `diff -q`. No output regression from the
+      entire `Workstep`/`CultivationMethod` proceduralization.
+    - Committed + pushed (this commit).
+
+    This completes `plan-cultivation-method.md` in full: `Workstep` is now a plain struct + `std::variant`
+    tagged union with free-function dispatch, `CultivationMethod` is a plain struct + free functions, and
+    the old OOP hierarchy is gone.
 
 ## External usage notes (research pass 2026-08-10, spot-checked by hand — re-verify at step 18, the
 codebase may have moved on by then, but this is a solid, checked starting map)
