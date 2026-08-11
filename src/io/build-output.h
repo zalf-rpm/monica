@@ -22,7 +22,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "../core/monica-model.h"
-#include "common/dll-exports.h"
 #include "json11/json11-helper.h"
 #include "output.h"
 
@@ -38,14 +37,14 @@ double applyOIdOP(OId::OP op, const std::vector<double> &vs);
 
 json11::Json applyOIdOP(OId::OP op, const std::vector<json11::Json> &js);
 
-DLL_API std::vector<OId> parseOutputIds(const Tools::J11Array &oidArray);
+std::vector<OId> parseOutputIds(const Tools::J11Array &oidArray);
 
-struct DLL_API BOTRes {
+struct BOTRes {
   std::map<int, std::function<json11::Json(const MonicaModel &, OId)>> ofs;
   std::map<int, std::function<void(MonicaModel &, OId, json11::Json)>> setfs;
   std::map<std::string, OutputMetadata> name2metadata;
 };
-DLL_API BOTRes &buildOutputTable();
+BOTRes &buildOutputTable();
 
 std::function<bool(double, double)> getCompareOp(std::string opStr);
 bool applyCompareOp(std::function<bool(double, double)> op, json11::Json lj,

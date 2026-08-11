@@ -19,7 +19,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "common/dll-exports.h"
 #include "json11/json11-helper.h"
 #include "tools/date.h"
 
@@ -27,19 +26,19 @@ namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API TillageData {
+struct TillageData {
   double depth{0.3};
 };
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(TillageData *t, json11::Json j);
-DLL_API json11::Json to_json(const TillageData *t, const Workstep *ws);
-DLL_API bool apply(TillageData *t, Workstep *ws, MonicaModel *model);
+Tools::Errors merge(TillageData *t, json11::Json j);
+json11::Json to_json(const TillageData *t, const Workstep *ws);
+bool apply(TillageData *t, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
-DLL_API Workstep makeTillageWorkstep(json11::Json object);
-DLL_API Workstep makeTillageWorkstep(const Tools::Date &at, double depth);
+Workstep makeTillageWorkstep(json11::Json object);
+Workstep makeTillageWorkstep(const Tools::Date &at, double depth);
 
 } // namespace monica

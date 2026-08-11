@@ -24,7 +24,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica-model.h"
 #include "../io/output.h"
 #include "climate/climate-common.h"
-#include "common/dll-exports.h"
 #include "cultivation-method.h"
 
 namespace monica {
@@ -40,7 +39,7 @@ Tools::Errors crop_rotation_merge(CropRotation *cr, json11::Json j);
 
 json11::Json crop_rotation_to_json(const CropRotation *cr);
 
-struct DLL_API Env {
+struct Env {
   //! object holding the climate data
   Climate::DataAccessor climateData;
   // 1. priority, object holding the climate data
@@ -83,19 +82,19 @@ struct DLL_API Env {
   Intercropping ic;
 };
 
-DLL_API Env makeEnv(CentralParameterProvider &&cpp);
+Env makeEnv(CentralParameterProvider &&cpp);
 
-DLL_API Tools::Errors env_merge(Env *env, json11::Json j);
+Tools::Errors env_merge(Env *env, json11::Json j);
 // merge a json file into Env
 
-DLL_API json11::Json env_to_json(const Env *env);
+json11::Json env_to_json(const Env *env);
 // serialize to json
 
-DLL_API std::string env_to_string(const Env *env);
+std::string env_to_string(const Env *env);
 
 //! is the output as a list (e.g. days) of an object (holding all the requested
 //! data)
-DLL_API bool env_return_obj_outputs(const Env *env);
+bool env_return_obj_outputs(const Env *env);
 
 struct Spec {
   json11::Json origSpec;
@@ -142,8 +141,8 @@ std::vector<StoreData> setupStorage(const json11::Json &event2oids,
 //! main function for running monica under a given Env(ironment)
 //! @param env the environment completely defining what the model needs and gets
 //! @return a structure with all the Monica results
-DLL_API std::pair<Output, Output> runMonicaIC(Env env,
-                                              bool isIntercropping = true);
-DLL_API Output runMonica(Env env);
+std::pair<Output, Output> runMonicaIC(Env env,
+                                      bool isIntercropping = true);
+Output runMonica(Env env);
 
 } // namespace monica

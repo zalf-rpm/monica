@@ -20,7 +20,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "../core/monica-parameters.h"
-#include "common/dll-exports.h"
 #include "tools/date.h"
 #include "tools/helper.h"
 
@@ -28,21 +27,21 @@ namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API IrrigationData {
+struct IrrigationData {
   double amount{0};
   IrrigationParameters params;
 };
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(IrrigationData *i, json11::Json j);
-DLL_API json11::Json to_json(const IrrigationData *i, const Workstep *ws);
-DLL_API bool apply(IrrigationData *i, Workstep *ws, MonicaModel *model);
+Tools::Errors merge(IrrigationData *i, json11::Json j);
+json11::Json to_json(const IrrigationData *i, const Workstep *ws);
+bool apply(IrrigationData *i, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
-DLL_API Workstep makeIrrigationWorkstep(json11::Json object);
-DLL_API Workstep
+Workstep makeIrrigationWorkstep(json11::Json object);
+Workstep
 makeIrrigationWorkstep(const Tools::Date &at, double amount,
                        IrrigationParameters params = IrrigationParameters());
 

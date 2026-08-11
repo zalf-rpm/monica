@@ -20,14 +20,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "../core/crop.h"
-#include "common/dll-exports.h"
 #include "sowing.h"
 
 namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API TransplantData : SowingData {
+struct TransplantData : SowingData {
   kj::Own<Crop>
       cropToPlant; // Manages the genetic characteristics of the crop to plant
 
@@ -45,16 +44,16 @@ struct DLL_API TransplantData : SowingData {
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(TransplantData *t, json11::Json j);
+Tools::Errors merge(TransplantData *t, json11::Json j);
 // note: unlike Sowing/AutomaticSowing, the original Transplant::to_json never
 // embedded "date" - no Workstep* parameter needed here, preserved as-is
 // (straight translation).
-DLL_API json11::Json to_json(const TransplantData *t,
-                             bool includeFullCropParameters = true);
-DLL_API bool apply(TransplantData *t, Workstep *ws, MonicaModel *model);
+json11::Json to_json(const TransplantData *t,
+                     bool includeFullCropParameters = true);
+bool apply(TransplantData *t, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
-DLL_API Workstep makeTransplantWorkstep(json11::Json object);
+Workstep makeTransplantWorkstep(json11::Json object);
 
 } // namespace monica

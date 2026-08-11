@@ -22,14 +22,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "common/dll-exports.h"
 #include "tools/date.h"
 #include "workstep.h"
 
 namespace monica {
 class MonicaModel;
 
-struct DLL_API CultivationMethod {
+struct CultivationMethod {
   std::vector<WSPtr> allWorksteps;
   std::vector<WSPtr> allAbsWorksteps;
   std::vector<WSPtr> unfinishedDynamicWorksteps;
@@ -46,38 +45,38 @@ struct DLL_API CultivationMethod {
 
 namespace cultivationmethod {
 
-DLL_API Tools::Errors merge(CultivationMethod *cm, json11::Json j);
-DLL_API json11::Json to_json(const CultivationMethod *cm);
-DLL_API void apply(const CultivationMethod *cm, const Tools::Date &date,
-                   MonicaModel *model);
-DLL_API void absApply(const CultivationMethod *cm, const Tools::Date &date,
-                      MonicaModel *model);
-DLL_API void apply(CultivationMethod *cm, MonicaModel *model,
-                   bool runOnlyAtStartOfDayWorksteps);
-DLL_API Tools::Date nextDate(const CultivationMethod *cm,
-                             const Tools::Date &date);
-DLL_API Tools::Date nextAbsDate(const CultivationMethod *cm,
-                                const Tools::Date &date);
-DLL_API std::vector<WSPtr> workstepsAt(const CultivationMethod *cm,
-                                       const Tools::Date &date);
-DLL_API std::vector<WSPtr> absWorkstepsAt(const CultivationMethod *cm,
-                                          const Tools::Date &date);
-DLL_API bool areOnlyAbsoluteWorksteps(const CultivationMethod *cm);
-DLL_API std::vector<WSPtr> staticWorksteps(const CultivationMethod *cm);
-DLL_API std::vector<WSPtr> allDynamicWorksteps(const CultivationMethod *cm);
-DLL_API bool allDynamicWorkstepsFinished(const CultivationMethod *cm);
-DLL_API Tools::Date startDate(const CultivationMethod *cm);
-DLL_API Tools::Date absStartDate(const CultivationMethod *cm,
-                                 bool includeDynamicWorksteps = true);
-DLL_API Tools::Date absLatestSowingDate(const CultivationMethod *cm);
-DLL_API Tools::Date endDate(const CultivationMethod *cm);
-DLL_API Tools::Date absEndDate(const CultivationMethod *cm);
-DLL_API std::string toString(const CultivationMethod *cm);
-DLL_API bool reinit(CultivationMethod *cm, Tools::Date date,
-                    bool forceInitYear = false);
+Tools::Errors merge(CultivationMethod *cm, json11::Json j);
+json11::Json to_json(const CultivationMethod *cm);
+void apply(const CultivationMethod *cm, const Tools::Date &date,
+          MonicaModel *model);
+void absApply(const CultivationMethod *cm, const Tools::Date &date,
+             MonicaModel *model);
+void apply(CultivationMethod *cm, MonicaModel *model,
+          bool runOnlyAtStartOfDayWorksteps);
+Tools::Date nextDate(const CultivationMethod *cm,
+                     const Tools::Date &date);
+Tools::Date nextAbsDate(const CultivationMethod *cm,
+                        const Tools::Date &date);
+std::vector<WSPtr> workstepsAt(const CultivationMethod *cm,
+                               const Tools::Date &date);
+std::vector<WSPtr> absWorkstepsAt(const CultivationMethod *cm,
+                                  const Tools::Date &date);
+bool areOnlyAbsoluteWorksteps(const CultivationMethod *cm);
+std::vector<WSPtr> staticWorksteps(const CultivationMethod *cm);
+std::vector<WSPtr> allDynamicWorksteps(const CultivationMethod *cm);
+bool allDynamicWorkstepsFinished(const CultivationMethod *cm);
+Tools::Date startDate(const CultivationMethod *cm);
+Tools::Date absStartDate(const CultivationMethod *cm,
+                         bool includeDynamicWorksteps = true);
+Tools::Date absLatestSowingDate(const CultivationMethod *cm);
+Tools::Date endDate(const CultivationMethod *cm);
+Tools::Date absEndDate(const CultivationMethod *cm);
+std::string toString(const CultivationMethod *cm);
+bool reinit(CultivationMethod *cm, Tools::Date date,
+           bool forceInitYear = false);
 
 } // namespace cultivationmethod
 
-DLL_API CultivationMethod makeCultivationMethod(json11::Json object);
+CultivationMethod makeCultivationMethod(json11::Json object);
 
 } // namespace monica

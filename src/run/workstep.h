@@ -35,7 +35,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "climate/climate-common.h"
-#include "common/dll-exports.h"
 #include "tools/date.h"
 
 #include "../worksteps/automatic-harvest.h"
@@ -83,7 +82,7 @@ using WorkstepData =
                  TillageData, SetValueData, SaveMonicaStateData, IrrigationData,
                  AutomaticIrrigationData>;
 
-struct DLL_API Workstep {
+struct Workstep {
   Tools::Date date;
   Tools::Date absDate;
   int applyNoOfDaysAfterEvent{0};
@@ -113,14 +112,14 @@ inline bool isDynamicWorkstep(const Workstep *ws) {
 // originally a private, anonymous-namespace-scoped helper local to
 // workstep.cpp; promoted to declared functions here once splitting into
 // src/worksteps/*.cpp meant more than one translation unit needed them).
-DLL_API std::pair<Tools::Date, bool>
+std::pair<Tools::Date, bool>
 makeInitAbsDate(Tools::Date date, Tools::Date initDate, bool addYear,
                 bool forceInitYear = false);
-DLL_API int organIdFromName(const std::string &organName, Tools::Errors &err);
-DLL_API std::string organNameFromId(int organId);
-DLL_API bool isSoilMoistureOk(MonicaModel *model, double minPercentASW,
-                              double maxPercentASW);
-DLL_API bool isPrecipitationOk(
+int organIdFromName(const std::string &organName, Tools::Errors &err);
+std::string organNameFromId(int organId);
+bool isSoilMoistureOk(MonicaModel *model, double minPercentASW,
+                      double maxPercentASW);
+bool isPrecipitationOk(
     const std::vector<std::map<Climate::ACD, double>> &climateData,
     double max3dayPrecipSum, double maxCurrentDayPrecipSum);
 
@@ -128,16 +127,16 @@ DLL_API bool isPrecipitationOk(
 // both by the per-type make*Workstep(...) factories (in src/worksteps/*.cpp)
 // and by the central dispatchers' default/ fallback cases below for the many
 // subtypes that don't override a given piece of behavior.
-DLL_API Tools::Errors mergeCommon(Workstep *ws, json11::Json j);
-DLL_API bool applyCommon(Workstep *ws, MonicaModel *model);
-DLL_API bool conditionCommon(Workstep *ws, MonicaModel *model);
-DLL_API bool reinitCommon(Workstep *ws, Tools::Date date, bool addYear = false,
-                          bool forceInitYear = false);
+Tools::Errors mergeCommon(Workstep *ws, json11::Json j);
+bool applyCommon(Workstep *ws, MonicaModel *model);
+bool conditionCommon(Workstep *ws, MonicaModel *model);
+bool reinitCommon(Workstep *ws, Tools::Date date, bool addYear = false,
+                  bool forceInitYear = false);
 // setDate is inherently per-subtype dispatching (3 of the 14 subtypes override
 // it), so unlike merge/apply/condition/reinit there's no single "common" body
 // to factor out - this is already the full central dispatcher, not a "Common"
 // helper.
-DLL_API void setDate(Workstep *ws, Tools::Date date);
+void setDate(Workstep *ws, Tools::Date date);
 
 // Central dispatch - switches on type(ws) to reach the right per-payload
 // function (declared in each concrete workstep's own header under
@@ -155,26 +154,26 @@ inline Tools::Date absDate(const Workstep *ws) {
   return ws->date.isAbsoluteDate() ? ws->date : ws->absDate;
 }
 
-DLL_API Tools::Date earliestDate(const Workstep *ws);
-DLL_API Tools::Date absEarliestDate(const Workstep *ws);
-DLL_API Tools::Date latestDate(const Workstep *ws);
-DLL_API Tools::Date absLatestDate(const Workstep *ws);
+Tools::Date earliestDate(const Workstep *ws);
+Tools::Date absEarliestDate(const Workstep *ws);
+Tools::Date latestDate(const Workstep *ws);
+Tools::Date absLatestDate(const Workstep *ws);
 
-DLL_API Tools::Errors merge(Workstep *ws, json11::Json j);
-DLL_API json11::Json to_json(const Workstep *ws,
-                             bool includeFullCropParameters = true);
-DLL_API bool isActive(const Workstep *ws);
-DLL_API bool apply(Workstep *ws, MonicaModel *model);
-DLL_API bool applyWithPossibleCondition(Workstep *ws, MonicaModel *model);
-DLL_API bool condition(Workstep *ws, MonicaModel *model);
-DLL_API bool reinit(Workstep *ws, Tools::Date date, bool addYear = false,
-                    bool forceInitYear = false);
-DLL_API std::function<double(MonicaModel *)>
+Tools::Errors merge(Workstep *ws, json11::Json j);
+json11::Json to_json(const Workstep *ws,
+                     bool includeFullCropParameters = true);
+bool isActive(const Workstep *ws);
+bool apply(Workstep *ws, MonicaModel *model);
+bool applyWithPossibleCondition(Workstep *ws, MonicaModel *model);
+bool condition(Workstep *ws, MonicaModel *model);
+bool reinit(Workstep *ws, Tools::Date date, bool addYear = false,
+            bool forceInitYear = false);
+std::function<double(MonicaModel *)>
 registerDailyFunction(Workstep *ws,
                       std::function<std::vector<double> &()> getDailyValues);
 
 } // namespace workstep
 
-DLL_API WSPtr makeWorkstep(json11::Json object);
+WSPtr makeWorkstep(json11::Json object);
 
 } // namespace monica

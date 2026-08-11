@@ -21,11 +21,10 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "common/dll-exports.h"
 #include "json11/json11-helper.h"
 
 namespace monica {
-struct DLL_API OId {
+struct OId {
   enum OP { AVG, MEDIAN, SUM, MIN, MAX, FIRST, LAST, NONE, _UNDEFINED_OP_ };
 
   enum ORGAN { ROOT = 0, LEAF, SHOOT, FRUIT, STRUCT, SUGAR, _UNDEFINED_ORGAN_ };
@@ -43,25 +42,25 @@ struct DLL_API OId {
 };
 
 //! just name
-DLL_API OId makeOId(int id);
+OId makeOId(int id);
 //! id and organ
-DLL_API OId makeOId(int id, OId::ORGAN organ);
+OId makeOId(int id, OId::ORGAN organ);
 //! id and layer aggregation
-DLL_API OId makeOId(int id, OId::OP layerAgg);
+OId makeOId(int id, OId::OP layerAgg);
 //! id, layer aggregation and time aggregation, shortcut for aggregating all
 //! layers in non daily setting
-DLL_API OId makeOId(int id, OId::OP layerAgg, OId::OP timeAgg);
+OId makeOId(int id, OId::OP layerAgg, OId::OP timeAgg);
 //! id, layer aggregation of from to (incl) to layers
-DLL_API OId makeOId(int id, int from, int to, OId::OP layerAgg);
+OId makeOId(int id, int from, int to, OId::OP layerAgg);
 //! aggregate layers from to (incl) to in a non daily setting
-DLL_API OId makeOId(int id, int from, int to, OId::OP layerAgg,
-                    OId::OP timeAgg);
-DLL_API OId makeOId(json11::Json object);
+OId makeOId(int id, int from, int to, OId::OP layerAgg,
+            OId::OP timeAgg);
+OId makeOId(json11::Json object);
 
 namespace oid {
 
-DLL_API Tools::Errors merge(OId *oid, json11::Json j);
-DLL_API json11::Json to_json(const OId *oid);
+Tools::Errors merge(OId *oid, json11::Json j);
+json11::Json to_json(const OId *oid);
 
 inline bool isRange(const OId *oid) {
   return oid->fromLayer >= 0 && oid->toLayer >= 0;
@@ -71,16 +70,16 @@ inline bool isOrgan(const OId *oid) {
   return oid->organ != OId::_UNDEFINED_ORGAN_;
 }
 
-DLL_API std::string toString(const OId *oid, bool includeTimeAgg = false);
+std::string toString(const OId *oid, bool includeTimeAgg = false);
 
-DLL_API std::string toString(const OId *oid, OId::OP op);
-DLL_API std::string toString(const OId *oid, OId::ORGAN organ);
+std::string toString(const OId *oid, OId::OP op);
+std::string toString(const OId *oid, OId::ORGAN organ);
 
-DLL_API std::string outputName(const OId *oid);
+std::string outputName(const OId *oid);
 
 } // namespace oid
 
-struct DLL_API Output {
+struct Output {
   // std::string customId;
   json11::Json customId;
 
@@ -96,13 +95,13 @@ struct DLL_API Output {
   std::vector<std::string> warnings;
 };
 
-DLL_API Output makeOutput(std::string error);
-DLL_API Output makeOutput(json11::Json object);
+Output makeOutput(std::string error);
+Output makeOutput(json11::Json object);
 
 namespace output {
 
-DLL_API Tools::Errors merge(Output *output, json11::Json j);
-DLL_API json11::Json to_json(const Output *output);
+Tools::Errors merge(Output *output, json11::Json j);
+json11::Json to_json(const Output *output);
 
 } // namespace output
 

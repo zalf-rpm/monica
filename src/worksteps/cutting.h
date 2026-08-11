@@ -22,13 +22,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 #include "tools/helper.h"
 
-#include "common/dll-exports.h"
-
 namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API CuttingData {
+struct CuttingData {
   enum CL { cut, left, none };
 
   enum Unit { percentage, biomass, LAI };
@@ -47,12 +45,12 @@ struct DLL_API CuttingData {
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(CuttingData *c, json11::Json j);
-DLL_API json11::Json to_json(const CuttingData *c, const Workstep *ws);
-DLL_API bool apply(CuttingData *c, Workstep *ws, MonicaModel *model);
+Tools::Errors merge(CuttingData *c, json11::Json j);
+json11::Json to_json(const CuttingData *c, const Workstep *ws);
+bool apply(CuttingData *c, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
-DLL_API Workstep makeCuttingWorkstep(json11::Json object);
+Workstep makeCuttingWorkstep(json11::Json object);
 
 } // namespace monica

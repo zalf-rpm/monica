@@ -20,7 +20,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "../core/monica-parameters.h"
-#include "common/dll-exports.h"
 #include "tools/date.h"
 #include "tools/helper.h"
 
@@ -28,7 +27,7 @@ namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API AutomaticIrrigationData {
+struct AutomaticIrrigationData {
   Tools::Date absStartDate;
   Tools::Date absEndDate;
   bool irrigateCrop{false};
@@ -41,15 +40,15 @@ struct DLL_API AutomaticIrrigationData {
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(AutomaticIrrigationData *ai, json11::Json j);
-DLL_API json11::Json to_json(const AutomaticIrrigationData *ai);
-DLL_API bool apply(AutomaticIrrigationData *ai, MonicaModel *model);
-DLL_API bool condition(AutomaticIrrigationData *ai, MonicaModel *model);
-DLL_API bool reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date,
-                    bool addYear = false, bool forceInitYear = false);
+Tools::Errors merge(AutomaticIrrigationData *ai, json11::Json j);
+json11::Json to_json(const AutomaticIrrigationData *ai);
+bool apply(AutomaticIrrigationData *ai, MonicaModel *model);
+bool condition(AutomaticIrrigationData *ai, MonicaModel *model);
+bool reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date,
+            bool addYear = false, bool forceInitYear = false);
 
 } // namespace workstep
 
-DLL_API Workstep makeAutomaticIrrigationWorkstep(json11::Json object);
+Workstep makeAutomaticIrrigationWorkstep(json11::Json object);
 
 } // namespace monica

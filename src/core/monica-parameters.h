@@ -33,7 +33,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model/monica/monica_params.capnp.h"
 #include "model/monica/monica_state.capnp.h"
 
-#include "common/dll-exports.h"
 #include "json11/json11-helper.h"
 #include "soil/constants.h"
 #include "soil/soil.h"
@@ -42,31 +41,31 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 namespace monica {
 class CentralParameterProvider;
 
-struct DLL_API YieldComponent {
+struct YieldComponent {
   int organId{-1};
   double yieldPercentage{0.0};
   double yieldDryMatter{0.0};
 };
 
-DLL_API YieldComponent makeYieldComponent(int organId, double yieldPercentage,
-                                          double yieldDryMatter);
-DLL_API YieldComponent
+YieldComponent makeYieldComponent(int organId, double yieldPercentage,
+                                  double yieldDryMatter);
+YieldComponent
 makeYieldComponent(mas::schema::model::monica::YieldComponent::Reader reader);
 
 namespace yieldcomponent {
 
-DLL_API void
+void
 deserialize(YieldComponent *yc,
             mas::schema::model::monica::YieldComponent::Reader reader);
-DLL_API void
+void
 serialize(const YieldComponent *yc,
           mas::schema::model::monica::YieldComponent::Builder builder);
-DLL_API Tools::Errors merge(YieldComponent *yc, json11::Json j);
-DLL_API json11::Json to_json(const YieldComponent *yc);
+Tools::Errors merge(YieldComponent *yc, json11::Json j);
+json11::Json to_json(const YieldComponent *yc);
 
 } // namespace yieldcomponent
 
-struct DLL_API SpeciesParameters {
+struct SpeciesParameters {
   std::string pc_SpeciesId;
   int pc_CarboxylationPathway{0};
   double pc_DefaultRadiationUseEfficiency{0.0};
@@ -149,27 +148,27 @@ struct DLL_API SpeciesParameters {
   //!< temperature sums (0 = unset)
 };
 
-DLL_API SpeciesParameters makeSpeciesParameters(
+SpeciesParameters makeSpeciesParameters(
     mas::schema::model::monica::SpeciesParameters::Reader reader);
 
 namespace speciesparameters {
 
-DLL_API void
+void
 deserialize(SpeciesParameters *sp,
             mas::schema::model::monica::SpeciesParameters::Reader reader);
-DLL_API void
+void
 serialize(const SpeciesParameters *sp,
           mas::schema::model::monica::SpeciesParameters::Builder builder);
-DLL_API Tools::Errors merge(SpeciesParameters *sp, json11::Json j);
-DLL_API json11::Json to_json(const SpeciesParameters *sp);
-DLL_API size_t numberOfDevelopmentalStages(const SpeciesParameters *sp);
-DLL_API size_t numberOfOrgans(const SpeciesParameters *sp);
+Tools::Errors merge(SpeciesParameters *sp, json11::Json j);
+json11::Json to_json(const SpeciesParameters *sp);
+size_t numberOfDevelopmentalStages(const SpeciesParameters *sp);
+size_t numberOfOrgans(const SpeciesParameters *sp);
 
 } // namespace speciesparameters
 
 typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
 
-struct DLL_API CultivarParameters {
+struct CultivarParameters {
   std::string pc_CultivarId;
   std::string pc_Description;
   bool pc_Perennial{false};
@@ -227,19 +226,19 @@ struct DLL_API CultivarParameters {
   bool winterCrop{false};
 };
 
-DLL_API CultivarParameters makeCultivarParameters(
+CultivarParameters makeCultivarParameters(
     mas::schema::model::monica::CultivarParameters::Reader reader);
 
 namespace cultivarparameters {
 
-DLL_API void
+void
 deserialize(CultivarParameters *cp,
             mas::schema::model::monica::CultivarParameters::Reader reader);
-DLL_API void
+void
 serialize(const CultivarParameters *cp,
           mas::schema::model::monica::CultivarParameters::Builder builder);
-DLL_API Tools::Errors merge(CultivarParameters *cp, json11::Json j);
-DLL_API json11::Json to_json(const CultivarParameters *cp);
+Tools::Errors merge(CultivarParameters *cp, json11::Json j);
+json11::Json to_json(const CultivarParameters *cp);
 inline size_t numberOfDevelopmentalStages(const CultivarParameters *cp) {
   return cp->pc_BaseDaylength.size();
 }
@@ -248,27 +247,27 @@ inline size_t numberOfDevelopmentalStages(const CultivarParameters *cp) {
 
 typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 
-struct DLL_API CropParameters {
+struct CropParameters {
   SpeciesParameters speciesParams;
   CultivarParameters cultivarParams;
   kj::Maybe<bool> __enable_vernalisation_factor_fix__;
 };
 
-DLL_API CropParameters
+CropParameters
 makeCropParameters(mas::schema::model::monica::CropParameters::Reader reader);
 
 namespace cropparameters {
 
-DLL_API void
+void
 deserialize(CropParameters *cp,
             mas::schema::model::monica::CropParameters::Reader reader);
-DLL_API void
+void
 serialize(const CropParameters *cp,
           mas::schema::model::monica::CropParameters::Builder builder);
-DLL_API Tools::Errors merge(CropParameters *cp, json11::Json j);
-DLL_API Tools::Errors merge(CropParameters *cp, json11::Json sj,
+Tools::Errors merge(CropParameters *cp, json11::Json j);
+Tools::Errors merge(CropParameters *cp, json11::Json sj,
                             json11::Json cj);
-DLL_API json11::Json to_json(const CropParameters *cp);
+json11::Json to_json(const CropParameters *cp);
 inline std::string cropName(const CropParameters *cp) {
   return cp->speciesParams.pc_SpeciesId + "/" +
          cp->cultivarParams.pc_CultivarId;
@@ -285,7 +284,7 @@ enum FertiliserType { mineral, organic, undefined };
  * Simple data structure that holds information about mineral fertiliser.
  * @author Xenia Holtmann, Claas Nendel
  */
-struct DLL_API MineralFertilizerParameters {
+struct MineralFertilizerParameters {
   std::string id;
   std::string name;
   double vo_Carbamid{0.0}; //!< [%]
@@ -293,52 +292,52 @@ struct DLL_API MineralFertilizerParameters {
   double vo_NO3{0.0};      //!< [%]
 };
 
-DLL_API MineralFertilizerParameters makeMineralFertilizerParameters(
+MineralFertilizerParameters makeMineralFertilizerParameters(
     mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader
         reader);
-DLL_API MineralFertilizerParameters
+MineralFertilizerParameters
 makeMineralFertilizerParameters(const std::string &id, const std::string &name,
                                 double carbamid, double no3, double nh4);
 
 namespace mineralfertilizerparameters {
 
-DLL_API void deserialize(
+void deserialize(
     MineralFertilizerParameters *fp,
     mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader
         reader);
-DLL_API void serialize(const MineralFertilizerParameters *fp,
-                       mas::schema::model::monica::Params::
-                           MineralFertilization::Parameters::Builder builder);
-DLL_API Tools::Errors merge(MineralFertilizerParameters *fp, json11::Json j);
-DLL_API json11::Json to_json(const MineralFertilizerParameters *fp);
+void serialize(const MineralFertilizerParameters *fp,
+               mas::schema::model::monica::Params::
+                   MineralFertilization::Parameters::Builder builder);
+Tools::Errors merge(MineralFertilizerParameters *fp, json11::Json j);
+json11::Json to_json(const MineralFertilizerParameters *fp);
 
 } // namespace mineralfertilizerparameters
 
-struct DLL_API NMinApplicationParameters {
+struct NMinApplicationParameters {
   double min{0.0};
   double max{0.0};
   int delayInDays{0};
 };
 
-DLL_API NMinApplicationParameters
+NMinApplicationParameters
 makeNMinApplicationParameters(double min, double max, int delayInDays);
-DLL_API NMinApplicationParameters makeNMinApplicationParameters(
+NMinApplicationParameters makeNMinApplicationParameters(
     mas::schema::model::monica::NMinApplicationParameters::Reader reader);
 
 namespace nminapplicationparameters {
 
-DLL_API void deserialize(
+void deserialize(
     NMinApplicationParameters *nap,
     mas::schema::model::monica::NMinApplicationParameters::Reader reader);
-DLL_API void serialize(
+void serialize(
     const NMinApplicationParameters *nap,
     mas::schema::model::monica::NMinApplicationParameters::Builder builder);
-DLL_API Tools::Errors merge(NMinApplicationParameters *nap, json11::Json j);
-DLL_API json11::Json to_json(const NMinApplicationParameters *nap);
+Tools::Errors merge(NMinApplicationParameters *nap, json11::Json j);
+json11::Json to_json(const NMinApplicationParameters *nap);
 
 } // namespace nminapplicationparameters
 
-struct DLL_API IrrigationParameters {
+struct IrrigationParameters {
   double nitrateConcentration{0.0}; //!< nitrate concentration [mg dm-3]
   double sulfateConcentration{0.0}; //!< sulfate concentration [mg dm-3]
 
@@ -348,26 +347,26 @@ struct DLL_API IrrigationParameters {
   double fw{1.0}; //!< fraction of wetted soil surface [0-1]
 };
 
-DLL_API IrrigationParameters makeIrrigationParameters(
+IrrigationParameters makeIrrigationParameters(
     double nitrateConcentration, double sulfateConcentration);
-DLL_API IrrigationParameters makeIrrigationParameters(
+IrrigationParameters makeIrrigationParameters(
     mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
 
 namespace irrigationparameters {
 
-DLL_API void deserialize(
+void deserialize(
     IrrigationParameters *ip,
     mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
-DLL_API void
+void
 serialize(const IrrigationParameters *ip,
           mas::schema::model::monica::Params::Irrigation::Parameters::Builder
               builder);
-DLL_API Tools::Errors merge(IrrigationParameters *ip, json11::Json j);
-DLL_API json11::Json to_json(const IrrigationParameters *ip);
+Tools::Errors merge(IrrigationParameters *ip, json11::Json j);
+json11::Json to_json(const IrrigationParameters *ip);
 
 } // namespace irrigationparameters
 
-struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
+struct AutomaticIrrigationParameters : public IrrigationParameters {
   Tools::Date startDate;
   Tools::Date endDate;
   double amount{-1.0};
@@ -377,54 +376,54 @@ struct DLL_API AutomaticIrrigationParameters : public IrrigationParameters {
   int minDaysBetweenIrrigationEvents{0};
 };
 
-DLL_API AutomaticIrrigationParameters
+AutomaticIrrigationParameters
 makeAutomaticIrrigationParameters(double a, double t, double nc, double sc);
-DLL_API AutomaticIrrigationParameters makeAutomaticIrrigationParameters(
+AutomaticIrrigationParameters makeAutomaticIrrigationParameters(
     mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
 
 namespace automaticirrigationparameters {
 
-DLL_API void deserialize(
+void deserialize(
     AutomaticIrrigationParameters *aip,
     mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
-DLL_API void serialize(
+void serialize(
     const AutomaticIrrigationParameters *aip,
     mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder);
-DLL_API Tools::Errors merge(AutomaticIrrigationParameters *aip, json11::Json j);
-DLL_API json11::Json to_json(const AutomaticIrrigationParameters *aip);
+Tools::Errors merge(AutomaticIrrigationParameters *aip, json11::Json j);
+json11::Json to_json(const AutomaticIrrigationParameters *aip);
 
 } // namespace automaticirrigationparameters
 
-struct DLL_API MeasuredGroundwaterTableInformation {
+struct MeasuredGroundwaterTableInformation {
   bool groundwaterInformationAvailable{false};
   std::map<Tools::Date, double> groundwaterInfo;
 };
 
-DLL_API MeasuredGroundwaterTableInformation
+MeasuredGroundwaterTableInformation
 makeMeasuredGroundwaterTableInformation(
     mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader
         reader);
 
 namespace measuredgroundwatertableinformation {
 
-DLL_API void deserialize(
+void deserialize(
     MeasuredGroundwaterTableInformation *gwi,
     mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader
         reader);
-DLL_API void serialize(
+void serialize(
     const MeasuredGroundwaterTableInformation *gwi,
     mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder
         builder);
-DLL_API Tools::Errors merge(MeasuredGroundwaterTableInformation *gwi,
-                            json11::Json j);
-DLL_API json11::Json to_json(const MeasuredGroundwaterTableInformation *gwi);
-DLL_API std::pair<bool, double>
+Tools::Errors merge(MeasuredGroundwaterTableInformation *gwi,
+                    json11::Json j);
+json11::Json to_json(const MeasuredGroundwaterTableInformation *gwi);
+std::pair<bool, double>
 getGroundwaterInformation(const MeasuredGroundwaterTableInformation *gwi,
                           Tools::Date gwDate);
 
 } // namespace measuredgroundwatertableinformation
 
-struct DLL_API SiteParameters {
+struct SiteParameters {
   double vs_Latitude{52.5};         // ZALF latitude
   double vs_Slope{0.01};            //!< [m m-1]
   double vs_HeightNN{50.0};         //!< [m]
@@ -449,19 +448,19 @@ struct DLL_API SiteParameters {
   // MeasuredGroundwaterTableInformation groundwaterInformation;
 };
 
-DLL_API SiteParameters
+SiteParameters
 makeSiteParameters(mas::schema::model::monica::SiteParameters::Reader reader);
 
 namespace siteparameters {
 
-DLL_API void
+void
 deserialize(SiteParameters *sp,
             mas::schema::model::monica::SiteParameters::Reader reader);
-DLL_API void
+void
 serialize(const SiteParameters *sp,
           mas::schema::model::monica::SiteParameters::Builder builder);
-DLL_API Tools::Errors merge(SiteParameters *sp, json11::Json j);
-DLL_API json11::Json to_json(const SiteParameters *sp);
+Tools::Errors merge(SiteParameters *sp, json11::Json j);
+json11::Json to_json(const SiteParameters *sp);
 
 } // namespace siteparameters
 
@@ -469,7 +468,7 @@ DLL_API json11::Json to_json(const SiteParameters *sp);
  * @brief Data structure that containts all relevant parameters for the
  * automatic yield trigger.
  */
-struct DLL_API AutomaticHarvestParameters {
+struct AutomaticHarvestParameters {
   //! Enumeration for defining automatic harvesting times
 
   //! Definition of different harvest time definition for the automatic
@@ -483,50 +482,50 @@ struct DLL_API AutomaticHarvestParameters {
   int _latestHarvestDOY{-1}; //!< Fallback day for latest harvest of the crop
 };
 
-DLL_API AutomaticHarvestParameters
+AutomaticHarvestParameters
 makeAutomaticHarvestParameters(AutomaticHarvestParameters::HarvestTime yt);
-DLL_API AutomaticHarvestParameters makeAutomaticHarvestParameters(
+AutomaticHarvestParameters makeAutomaticHarvestParameters(
     mas::schema::model::monica::AutomaticHarvestParameters::Reader reader);
 
 namespace automaticharvestparameters {
 
-DLL_API void deserialize(
+void deserialize(
     AutomaticHarvestParameters *ahp,
     mas::schema::model::monica::AutomaticHarvestParameters::Reader reader);
-DLL_API void serialize(
+void serialize(
     const AutomaticHarvestParameters *ahp,
     mas::schema::model::monica::AutomaticHarvestParameters::Builder builder);
-DLL_API Tools::Errors merge(AutomaticHarvestParameters *ahp, json11::Json j);
-DLL_API json11::Json to_json(const AutomaticHarvestParameters *ahp);
+Tools::Errors merge(AutomaticHarvestParameters *ahp, json11::Json j);
+json11::Json to_json(const AutomaticHarvestParameters *ahp);
 
 } // namespace automaticharvestparameters
 
-struct DLL_API NMinCropParameters {
+struct NMinCropParameters {
   double samplingDepth{0.0};
   double nTarget{0.0};
   double nTarget30{0.0};
 };
 
-DLL_API NMinCropParameters makeNMinCropParameters(double samplingDepth,
-                                                  double nTarget,
-                                                  double nTarget30);
-DLL_API NMinCropParameters makeNMinCropParameters(
+NMinCropParameters makeNMinCropParameters(double samplingDepth,
+                                          double nTarget,
+                                          double nTarget30);
+NMinCropParameters makeNMinCropParameters(
     mas::schema::model::monica::NMinCropParameters::Reader reader);
 
 namespace nmincropparameters {
 
-DLL_API void
+void
 deserialize(NMinCropParameters *ncp,
             mas::schema::model::monica::NMinCropParameters::Reader reader);
-DLL_API void
+void
 serialize(const NMinCropParameters *ncp,
           mas::schema::model::monica::NMinCropParameters::Builder builder);
-DLL_API Tools::Errors merge(NMinCropParameters *ncp, json11::Json j);
-DLL_API json11::Json to_json(const NMinCropParameters *ncp);
+Tools::Errors merge(NMinCropParameters *ncp, json11::Json j);
+json11::Json to_json(const NMinCropParameters *ncp);
 
 } // namespace nmincropparameters
 
-struct DLL_API OrganicMatterParameters {
+struct OrganicMatterParameters {
   double vo_AOM_DryMatterContent{
       0.0}; //!< Dry matter content of added organic matter [kg DM kg FM-1]
   double vo_AOM_NH4Content{
@@ -565,77 +564,77 @@ struct DLL_API OrganicMatterParameters {
   double vo_NConcentration{0.0};
 };
 
-DLL_API OrganicMatterParameters makeOrganicMatterParameters(
+OrganicMatterParameters makeOrganicMatterParameters(
     mas::schema::model::monica::Params::OrganicFertilization::
         OrganicMatterParameters::Reader reader);
 
 namespace organicmatterparameters {
 
-DLL_API void
+void
 deserialize(OrganicMatterParameters *omp,
             mas::schema::model::monica::Params::OrganicFertilization::
                 OrganicMatterParameters::Reader reader);
-DLL_API void
+void
 serialize(const OrganicMatterParameters *omp,
           mas::schema::model::monica::Params::OrganicFertilization::
               OrganicMatterParameters::Builder builder);
-DLL_API Tools::Errors merge(OrganicMatterParameters *omp, json11::Json j);
-DLL_API json11::Json to_json(const OrganicMatterParameters *omp);
+Tools::Errors merge(OrganicMatterParameters *omp, json11::Json j);
+json11::Json to_json(const OrganicMatterParameters *omp);
 
 } // namespace organicmatterparameters
 
 typedef std::shared_ptr<OrganicMatterParameters> OrganicMatterParametersPtr;
 
-struct DLL_API OrganicFertilizerParameters : public OrganicMatterParameters {
+struct OrganicFertilizerParameters : public OrganicMatterParameters {
   std::string id;
   std::string name;
 };
 
-DLL_API OrganicFertilizerParameters makeOrganicFertilizerParameters(
+OrganicFertilizerParameters makeOrganicFertilizerParameters(
     mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader
         reader);
 
 namespace organicfertilizerparameters {
 
-DLL_API void deserialize(
+void deserialize(
     OrganicFertilizerParameters *ofp,
     mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader
         reader);
-DLL_API void serialize(const OrganicFertilizerParameters *ofp,
-                       mas::schema::model::monica::Params::
-                           OrganicFertilization::Parameters::Builder builder);
-DLL_API Tools::Errors merge(OrganicFertilizerParameters *ofp, json11::Json j);
-DLL_API json11::Json to_json(const OrganicFertilizerParameters *ofp);
+void serialize(const OrganicFertilizerParameters *ofp,
+               mas::schema::model::monica::Params::
+                   OrganicFertilization::Parameters::Builder builder);
+Tools::Errors merge(OrganicFertilizerParameters *ofp, json11::Json j);
+json11::Json to_json(const OrganicFertilizerParameters *ofp);
 
 } // namespace organicfertilizerparameters
 
 typedef std::shared_ptr<OrganicFertilizerParameters>
     OrganicFertiliserParametersPtr;
 
-struct DLL_API CropResidueParameters : public OrganicMatterParameters {
+struct CropResidueParameters : public OrganicMatterParameters {
   std::string species;
   std::string residueType;
 };
 
-DLL_API CropResidueParameters makeCropResidueParameters(
+CropResidueParameters makeCropResidueParameters(
     mas::schema::model::monica::CropResidueParameters::Reader reader);
 
 namespace cropresidueparameters {
 
-DLL_API void
+void
 deserialize(CropResidueParameters *crp,
             mas::schema::model::monica::CropResidueParameters::Reader reader);
-DLL_API void
+void
 serialize(const CropResidueParameters *crp,
           mas::schema::model::monica::CropResidueParameters::Builder builder);
-DLL_API Tools::Errors merge(CropResidueParameters *crp, json11::Json j);
-DLL_API json11::Json to_json(const CropResidueParameters *crp);
+Tools::Errors merge(CropResidueParameters *crp, json11::Json j);
+json11::Json to_json(const CropResidueParameters *crp);
 
 } // namespace cropresidueparameters
 
 typedef std::shared_ptr<CropResidueParameters> CropResidueParametersPtr;
 
-struct DLL_API SimulationParameters {
+struct SimulationParameters {
   Tools::Date startDate;
   Tools::Date endDate;
 
@@ -675,19 +674,19 @@ struct DLL_API SimulationParameters {
   bool dualKcMethod{false}; //!< Use FAO-56 Dual Kc evaporation partitioning
 };
 
-DLL_API SimulationParameters makeSimulationParameters(
+SimulationParameters makeSimulationParameters(
     mas::schema::model::monica::SimulationParameters::Reader reader);
 
 namespace simulationparameters {
 
-DLL_API void
+void
 deserialize(SimulationParameters *sp,
             mas::schema::model::monica::SimulationParameters::Reader reader);
-DLL_API void
+void
 serialize(const SimulationParameters *sp,
           mas::schema::model::monica::SimulationParameters::Builder builder);
-DLL_API Tools::Errors merge(SimulationParameters *sp, json11::Json j);
-DLL_API json11::Json to_json(const SimulationParameters *sp);
+Tools::Errors merge(SimulationParameters *sp, json11::Json j);
+json11::Json to_json(const SimulationParameters *sp);
 
 } // namespace simulationparameters
 
@@ -695,7 +694,7 @@ DLL_API json11::Json to_json(const SimulationParameters *sp);
  * Class that holds information of crop defined by user.
  * @author Xenia Specka
  */
-struct DLL_API CropModuleParameters {
+struct CropModuleParameters {
   double pc_CanopyReflectionCoefficient{0.0};
   double pc_ReferenceMaxAssimilationRate{0.0};
   double pc_ReferenceLeafAreaIndex{0.0};
@@ -734,19 +733,19 @@ struct DLL_API CropModuleParameters {
   std::string pc_intercropping_writer_sr;
 };
 
-DLL_API CropModuleParameters makeCropModuleParameters(
+CropModuleParameters makeCropModuleParameters(
     mas::schema::model::monica::CropModuleParameters::Reader reader);
 
 namespace cropmoduleparameters {
 
-DLL_API void
+void
 deserialize(CropModuleParameters *cmp,
             mas::schema::model::monica::CropModuleParameters::Reader reader);
-DLL_API void
+void
 serialize(const CropModuleParameters *cmp,
           mas::schema::model::monica::CropModuleParameters::Builder builder);
-DLL_API Tools::Errors merge(CropModuleParameters *cmp, json11::Json j);
-DLL_API json11::Json to_json(const CropModuleParameters *cmp);
+Tools::Errors merge(CropModuleParameters *cmp, json11::Json j);
+json11::Json to_json(const CropModuleParameters *cmp);
 
 } // namespace cropmoduleparameters
 
@@ -754,7 +753,7 @@ DLL_API json11::Json to_json(const CropModuleParameters *cmp);
  * Class that holds information about user defined environment parameters.
  * @author Xenia Specka
  */
-struct DLL_API EnvironmentParameters {
+struct EnvironmentParameters {
   double p_Albedo{0.23};
   mas::schema::climate::RCP rcp{mas::schema::climate::RCP::RCP85};
   double p_AtmosphericCO2{0.0};
@@ -770,19 +769,19 @@ struct DLL_API EnvironmentParameters {
   int p_MinGroundwaterDepthMonth{3};
 };
 
-DLL_API EnvironmentParameters makeEnvironmentParameters(
+EnvironmentParameters makeEnvironmentParameters(
     mas::schema::model::monica::EnvironmentParameters::Reader reader);
 
 namespace environmentparameters {
 
-DLL_API void
+void
 deserialize(EnvironmentParameters *ep,
             mas::schema::model::monica::EnvironmentParameters::Reader reader);
-DLL_API void
+void
 serialize(const EnvironmentParameters *ep,
           mas::schema::model::monica::EnvironmentParameters::Builder builder);
-DLL_API Tools::Errors merge(EnvironmentParameters *ep, json11::Json j);
-DLL_API json11::Json to_json(const EnvironmentParameters *ep);
+Tools::Errors merge(EnvironmentParameters *ep, json11::Json j);
+json11::Json to_json(const EnvironmentParameters *ep);
 
 } // namespace environmentparameters
 
@@ -790,7 +789,7 @@ DLL_API json11::Json to_json(const EnvironmentParameters *ep);
  * Class that holds information about user defined soil moisture parameters.
  * @author Xenia Specka
  */
-struct DLL_API SoilMoistureModuleParameters {
+struct SoilMoistureModuleParameters {
   std::function<double(std::string, size_t)> getCapillaryRiseRate{
       [](std::string soilTexture, size_t distance) { return 0.0; }};
 
@@ -820,19 +819,19 @@ struct DLL_API SoilMoistureModuleParameters {
   double pm_MoistureInitValue{0.0};
 };
 
-DLL_API SoilMoistureModuleParameters makeSoilMoistureModuleParameters(
+SoilMoistureModuleParameters makeSoilMoistureModuleParameters(
     mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader);
 
 namespace soilmoisturemoduleparameters {
 
-DLL_API void deserialize(
+void deserialize(
     SoilMoistureModuleParameters *smp,
     mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader);
-DLL_API void serialize(
+void serialize(
     const SoilMoistureModuleParameters *smp,
     mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder);
-DLL_API Tools::Errors merge(SoilMoistureModuleParameters *smp, json11::Json j);
-DLL_API json11::Json to_json(const SoilMoistureModuleParameters *smp);
+Tools::Errors merge(SoilMoistureModuleParameters *smp, json11::Json j);
+json11::Json to_json(const SoilMoistureModuleParameters *smp);
 
 } // namespace soilmoisturemoduleparameters
 
@@ -840,7 +839,7 @@ DLL_API json11::Json to_json(const SoilMoistureModuleParameters *smp);
  * Class that holds information about user defined soil temperature parameters.
  * @author Xenia Specka
  */
-struct DLL_API SoilTemperatureModuleParameters {
+struct SoilTemperatureModuleParameters {
   double pt_NTau{0.0};
   double pt_InitialSurfaceTemperature{0.0};
   double pt_BaseTemperature{0.0};
@@ -856,21 +855,21 @@ struct DLL_API SoilTemperatureModuleParameters {
   double pt_SoilMoisture{0.25};
 };
 
-DLL_API SoilTemperatureModuleParameters makeSoilTemperatureModuleParameters(
+SoilTemperatureModuleParameters makeSoilTemperatureModuleParameters(
     mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader);
 
 namespace soiltemperaturemoduleparameters {
 
-DLL_API void deserialize(
+void deserialize(
     SoilTemperatureModuleParameters *stp,
     mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader);
-DLL_API void
+void
 serialize(const SoilTemperatureModuleParameters *stp,
           mas::schema::model::monica::SoilTemperatureModuleParameters::Builder
               builder);
-DLL_API Tools::Errors merge(SoilTemperatureModuleParameters *stp,
-                            json11::Json j);
-DLL_API json11::Json to_json(const SoilTemperatureModuleParameters *stp);
+Tools::Errors merge(SoilTemperatureModuleParameters *stp,
+                    json11::Json j);
+json11::Json to_json(const SoilTemperatureModuleParameters *stp);
 
 } // namespace soiltemperaturemoduleparameters
 
@@ -878,30 +877,30 @@ DLL_API json11::Json to_json(const SoilTemperatureModuleParameters *stp);
  * Class that holds information about user defined soil transport parameters.
  * @author Xenia Specka
  */
-struct DLL_API SoilTransportModuleParameters {
+struct SoilTransportModuleParameters {
   double pq_DispersionLength{0.0};
   double pq_AD{0.0};
   double pq_DiffusionCoefficientStandard{0.0};
   double pq_NDeposition{0.0};
 };
 
-DLL_API SoilTransportModuleParameters makeSoilTransportModuleParameters(
+SoilTransportModuleParameters makeSoilTransportModuleParameters(
     mas::schema::model::monica::SoilTransportModuleParameters::Reader reader);
 
 namespace soiltransportmoduleparameters {
 
-DLL_API void deserialize(
+void deserialize(
     SoilTransportModuleParameters *stp,
     mas::schema::model::monica::SoilTransportModuleParameters::Reader reader);
-DLL_API void serialize(
+void serialize(
     const SoilTransportModuleParameters *stp,
     mas::schema::model::monica::SoilTransportModuleParameters::Builder builder);
-DLL_API Tools::Errors merge(SoilTransportModuleParameters *stp, json11::Json j);
-DLL_API json11::Json to_json(const SoilTransportModuleParameters *stp);
+Tools::Errors merge(SoilTransportModuleParameters *stp, json11::Json j);
+json11::Json to_json(const SoilTransportModuleParameters *stp);
 
 } // namespace soiltransportmoduleparameters
 
-struct DLL_API SticsParameters {
+struct SticsParameters {
   bool use_n2o{false};
   bool use_nit{false};
   bool use_denit{false};
@@ -943,19 +942,19 @@ struct DLL_API SticsParameters {
   double vpotdenit{2.0}; // [kg N/ha/day]
 };
 
-DLL_API SticsParameters
+SticsParameters
 makeSticsParameters(mas::schema::model::monica::SticsParameters::Reader reader);
 
 namespace sticsparameters {
 
-DLL_API void
+void
 deserialize(SticsParameters *sp,
             mas::schema::model::monica::SticsParameters::Reader reader);
-DLL_API void
+void
 serialize(const SticsParameters *sp,
           mas::schema::model::monica::SticsParameters::Builder builder);
-DLL_API Tools::Errors merge(SticsParameters *sp, json11::Json j);
-DLL_API json11::Json to_json(const SticsParameters *sp);
+Tools::Errors merge(SticsParameters *sp, json11::Json j);
+json11::Json to_json(const SticsParameters *sp);
 
 } // namespace sticsparameters
 
@@ -963,7 +962,7 @@ DLL_API json11::Json to_json(const SticsParameters *sp);
  * Class that holds information about user-defined soil organic parameters.
  * @author Claas Nendel
  */
-struct DLL_API SoilOrganicModuleParameters {
+struct SoilOrganicModuleParameters {
   double po_SOM_SlowDecCoeffStandard{
       4.30e-5}; // 4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
   double po_SOM_FastDecCoeffStandard{
@@ -1025,19 +1024,19 @@ struct DLL_API SoilOrganicModuleParameters {
   SticsParameters sticsParams;
 };
 
-DLL_API SoilOrganicModuleParameters makeSoilOrganicModuleParameters(
+SoilOrganicModuleParameters makeSoilOrganicModuleParameters(
     mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader);
 
 namespace soilorganicmoduleparameters {
 
-DLL_API void deserialize(
+void deserialize(
     SoilOrganicModuleParameters *sop,
     mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader);
-DLL_API void serialize(
+void serialize(
     const SoilOrganicModuleParameters *sop,
     mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder);
-DLL_API Tools::Errors merge(SoilOrganicModuleParameters *sop, json11::Json j);
-DLL_API json11::Json to_json(const SoilOrganicModuleParameters *sop);
+Tools::Errors merge(SoilOrganicModuleParameters *sop, json11::Json j);
+json11::Json to_json(const SoilOrganicModuleParameters *sop);
 
 } // namespace soilorganicmoduleparameters
 
@@ -1048,7 +1047,7 @@ DLL_API json11::Json to_json(const SoilOrganicModuleParameters *sop);
  *
  * @author Xenia Specka
  */
-struct DLL_API CentralParameterProvider {
+struct CentralParameterProvider {
   CropModuleParameters userCropParameters;
   EnvironmentParameters userEnvironmentParameters;
   SoilMoistureModuleParameters userSoilMoistureParameters;
@@ -1073,12 +1072,12 @@ struct DLL_API CentralParameterProvider {
 
 namespace centralparameterprovider {
 
-DLL_API Tools::Errors merge(CentralParameterProvider *cpp, json11::Json j);
-DLL_API json11::Json to_json(const CentralParameterProvider *cpp);
-DLL_API double getPrecipCorrectionValue(const CentralParameterProvider *cpp,
-                                        int month);
-DLL_API void setPrecipCorrectionValue(CentralParameterProvider *cpp, int month,
-                                      double value);
+Tools::Errors merge(CentralParameterProvider *cpp, json11::Json j);
+json11::Json to_json(const CentralParameterProvider *cpp);
+double getPrecipCorrectionValue(const CentralParameterProvider *cpp,
+                                int month);
+void setPrecipCorrectionValue(CentralParameterProvider *cpp, int month,
+                              double value);
 
 inline std::string pathToOutputDir(const CentralParameterProvider *cpp) {
   return cpp->_pathToOutputDir.empty() ? "./" : cpp->_pathToOutputDir;

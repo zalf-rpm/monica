@@ -21,7 +21,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "common/dll-exports.h"
 #include "harvest.h"
 #include "tools/date.h"
 
@@ -29,7 +28,7 @@ namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API AutomaticHarvestData : HarvestData {
+struct AutomaticHarvestData : HarvestData {
   std::string harvestTime{"maturity"}; //!< Harvest time parameter
   Tools::Date latestDate;
   Tools::Date absLatestDate;
@@ -42,16 +41,16 @@ struct DLL_API AutomaticHarvestData : HarvestData {
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(AutomaticHarvestData *ah, json11::Json j);
-DLL_API json11::Json to_json(const AutomaticHarvestData *ah, const Workstep *ws,
-                             bool includeFullCropParameters = true);
-DLL_API bool apply(AutomaticHarvestData *ah, Workstep *ws, MonicaModel *model);
-DLL_API bool condition(AutomaticHarvestData *ah, MonicaModel *model);
-DLL_API bool reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date,
-                    bool addYear = false, bool forceInitYear = false);
+Tools::Errors merge(AutomaticHarvestData *ah, json11::Json j);
+json11::Json to_json(const AutomaticHarvestData *ah, const Workstep *ws,
+                     bool includeFullCropParameters = true);
+bool apply(AutomaticHarvestData *ah, Workstep *ws, MonicaModel *model);
+bool condition(AutomaticHarvestData *ah, MonicaModel *model);
+bool reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date,
+            bool addYear = false, bool forceInitYear = false);
 
 } // namespace workstep
 
-DLL_API Workstep makeAutomaticHarvestWorkstep(json11::Json object);
+Workstep makeAutomaticHarvestWorkstep(json11::Json object);
 
 } // namespace monica

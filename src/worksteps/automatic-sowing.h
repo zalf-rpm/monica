@@ -22,7 +22,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "json11/json11.hpp"
 
-#include "common/dll-exports.h"
 #include "sowing.h"
 #include "tools/date.h"
 
@@ -30,7 +29,7 @@ namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API AutomaticSowingData : SowingData {
+struct AutomaticSowingData : SowingData {
   Tools::Date absEarliestDate;
   Tools::Date earliestDate;
   Tools::Date latestDate;
@@ -56,19 +55,19 @@ struct DLL_API AutomaticSowingData : SowingData {
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(AutomaticSowingData *as, json11::Json j);
-DLL_API json11::Json to_json(const AutomaticSowingData *as, const Workstep *ws,
-                             bool includeFullCropParameters = true);
-DLL_API bool apply(AutomaticSowingData *as, Workstep *ws, MonicaModel *model);
-DLL_API bool condition(AutomaticSowingData *as, MonicaModel *model);
-DLL_API bool reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date,
-                    bool addYear = false, bool forceInitYear = false);
-DLL_API std::function<double(MonicaModel *)>
+Tools::Errors merge(AutomaticSowingData *as, json11::Json j);
+json11::Json to_json(const AutomaticSowingData *as, const Workstep *ws,
+                     bool includeFullCropParameters = true);
+bool apply(AutomaticSowingData *as, Workstep *ws, MonicaModel *model);
+bool condition(AutomaticSowingData *as, MonicaModel *model);
+bool reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date,
+            bool addYear = false, bool forceInitYear = false);
+std::function<double(MonicaModel *)>
 registerDailyFunction(AutomaticSowingData *as,
                       std::function<std::vector<double> &()> getDailyValues);
 
 } // namespace workstep
 
-DLL_API Workstep makeAutomaticSowingWorkstep(json11::Json object);
+Workstep makeAutomaticSowingWorkstep(json11::Json object);
 
 } // namespace monica

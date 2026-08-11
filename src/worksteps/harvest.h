@@ -22,14 +22,12 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 #include "tools/helper.h"
 
-#include "common/dll-exports.h"
-
 namespace monica {
 class MonicaModel;
 struct Workstep;
 struct SowingData;
 
-struct DLL_API HarvestData {
+struct HarvestData {
   enum CropUsage { greenManure = 0, biomassProduction };
 
   struct OptCarbonManagementData {
@@ -60,13 +58,13 @@ struct DLL_API HarvestData {
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(HarvestData *h, json11::Json j);
-DLL_API json11::Json to_json(const HarvestData *h, const Workstep *ws,
-                             bool includeFullCropParameters = true);
-DLL_API bool apply(HarvestData *h, Workstep *ws, MonicaModel *model);
+Tools::Errors merge(HarvestData *h, json11::Json j);
+json11::Json to_json(const HarvestData *h, const Workstep *ws,
+                     bool includeFullCropParameters = true);
+bool apply(HarvestData *h, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
-DLL_API Workstep makeHarvestWorkstep(json11::Json object);
+Workstep makeHarvestWorkstep(json11::Json object);
 
 } // namespace monica

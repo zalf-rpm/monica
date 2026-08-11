@@ -20,14 +20,13 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "../core/monica-parameters.h"
-#include "common/dll-exports.h"
 #include "tools/date.h"
 
 namespace monica {
 class MonicaModel;
 struct Workstep;
 
-struct DLL_API SowingData {
+struct SowingData {
   bool isValid{false};
   Tools::Date sowingDate;
   Tools::Date harvestDate;
@@ -42,13 +41,13 @@ struct DLL_API SowingData {
 
 namespace workstep {
 
-DLL_API Tools::Errors merge(SowingData *s, json11::Json j);
-DLL_API json11::Json to_json(const SowingData *s, const Workstep *ws,
-                             bool includeFullCropParameters = true);
-DLL_API bool apply(SowingData *s, Workstep *ws, MonicaModel *model);
+Tools::Errors merge(SowingData *s, json11::Json j);
+json11::Json to_json(const SowingData *s, const Workstep *ws,
+                     bool includeFullCropParameters = true);
+bool apply(SowingData *s, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
-DLL_API Workstep makeSowingWorkstep(json11::Json object);
+Workstep makeSowingWorkstep(json11::Json object);
 
 } // namespace monica
