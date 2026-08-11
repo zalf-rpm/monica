@@ -21,7 +21,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-parameters.h"
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 namespace monica {
@@ -37,7 +36,8 @@ struct DLL_API SowingData {
   kj::Own<CropParameters> separatePerennialCropParams;
   CropResidueParameters residueParams;
   int plantDensity{-1}; //[plants m-2]
-  double initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at planting (default = 0.15)
+  double initialKcb{
+      0.15}; //!< FAO-56 Dual Kc: initial Kcb at planting (default = 0.15)
 };
 
 namespace workstep {

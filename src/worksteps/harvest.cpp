@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"
+#include "json11/json11-helper.h"
 #include "sowing.h"
 #include "tools/debug.h"
 
@@ -101,7 +102,8 @@ bool workstep::apply(HarvestData *h, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   if (model->currentCropModule) {
-    monicamodel::harvestCurrentCrop(model, h->exported, h->spec, h->optCarbMgmtData,
+    monicamodel::harvestCurrentCrop(model, h->exported, h->spec,
+                                    h->optCarbMgmtData,
                                     h->incorporateIntoLayerNo - 1);
     if (h->sowing)
       debug() << "harvesting crop: "

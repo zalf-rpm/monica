@@ -21,15 +21,17 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"
+#include "json11/json11-helper.h"
 #include "tools/debug.h"
 
 using namespace std;
 using namespace monica;
 using namespace Tools;
 
-Workstep monica::makeNDemandFertilizationWorkstep(int stage, double depth,
-                                                    MineralFertilizerParameters partition,
-                                                    double Ndemand) {
+Workstep
+monica::makeNDemandFertilizationWorkstep(int stage, double depth,
+                                         MineralFertilizerParameters partition,
+                                         double Ndemand) {
   Workstep ws;
   NDemandFertilizationData nd;
   nd.partition = partition;
@@ -40,9 +42,10 @@ Workstep monica::makeNDemandFertilizationWorkstep(int stage, double depth,
   return ws;
 }
 
-Workstep monica::makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
-                                                    MineralFertilizerParameters partition,
-                                                    double Ndemand) {
+Workstep
+monica::makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
+                                         MineralFertilizerParameters partition,
+                                         double Ndemand) {
   Workstep ws;
   ws.date = date;
   NDemandFertilizationData nd;
@@ -58,12 +61,14 @@ Workstep monica::makeNDemandFertilizationWorkstep(json11::Json j) {
   Workstep ws;
   ws.data = NDemandFertilizationData{};
   Errors res = workstep::mergeCommon(&ws, j);
-  res.append(workstep::merge(&std::get<NDemandFertilizationData>(ws.data), &ws, j));
+  res.append(
+      workstep::merge(&std::get<NDemandFertilizationData>(ws.data), &ws, j));
   ws.errors = res;
   return ws;
 }
 
-Errors workstep::merge(NDemandFertilizationData *nd, Workstep *ws, json11::Json j) {
+Errors workstep::merge(NDemandFertilizationData *nd, Workstep *ws,
+                       json11::Json j) {
   Errors res;
   nd->initialDate = ws->date;
   set_double_value(nd->Ndemand, j, "N-demand");
@@ -96,13 +101,15 @@ json11::Json workstep::to_json(const NDemandFertilizationData *nd) {
   return o;
 }
 
-bool workstep::apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model) {
+bool workstep::apply(NDemandFertilizationData *nd, Workstep *ws,
+                     MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   double rd = model->currentCropModule->vc_RootingDepth_m;
   debug() << workstep::to_json(nd).dump() << endl;
   double appliedAmount = soilcolumn::applyMineralFertiliserViaNDemand(
-      model->soilColumn.get(), nd->partition, rd < nd->depth ? rd : nd->depth, nd->Ndemand);
+      model->soilColumn.get(), nd->partition, rd < nd->depth ? rd : nd->depth,
+      nd->Ndemand);
   model->dailySumFertiliser += appliedAmount;
   nd->appliedFertilizer = true;
   // record date of application until next reinit
@@ -112,27 +119,29 @@ bool workstep::apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *mo
   return true;
 }
 
-bool workstep::condition(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model) {
+bool workstep::condition(NDemandFertilizationData *nd, Workstep *ws,
+                         MonicaModel *model) {
   bool conditionMet = false;
 
   auto *cg = model->currentCropModule.get();
   if (cg && !nd->appliedFertilizer) {
     auto currStage = cg->vc_DevelopmentalStage + 1;
-    conditionMet = ws->date.isValid()      // is timed application
+    conditionMet = ws->date.isValid()         // is timed application
                    || currStage == nd->stage; // reached the requested stage
   }
 
   return conditionMet;
 }
 
-bool workstep::reinit(NDemandFertilizationData *nd, Workstep *ws, Tools::Date date, bool addYear,
-                      bool forceInitYear) {
+bool workstep::reinit(NDemandFertilizationData *nd, Workstep *ws,
+                      Tools::Date date, bool addYear, bool forceInitYear) {
   workstep::setDate(ws, nd->initialDate);
 
   bool addedYear = workstep::reinitCommon(ws, date, addYear, forceInitYear);
 
   nd->appliedFertilizer = false;
 
-  return false; // NOTE: original NDemandFertilization::reinit computes addedYear but always returns
-                // false unconditionally - preserved exactly, not a mistake on my part.
+  return false; // NOTE: original NDemandFertilization::reinit computes
+                // addedYear but always returns false unconditionally -
+                // preserved exactly, not a mistake on my part.
 }

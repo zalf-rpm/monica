@@ -19,15 +19,17 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"
+#include "json11/json11-helper.h"
 #include "tools/debug.h"
 
 using namespace std;
 using namespace monica;
 using namespace Tools;
 
-Workstep monica::makeOrganicFertilizationWorkstep(const Tools::Date &at,
-                                                    const OrganicMatterParameters &params,
-                                                    double amount, bool incorp) {
+Workstep
+monica::makeOrganicFertilizationWorkstep(const Tools::Date &at,
+                                         const OrganicMatterParameters &params,
+                                         double amount, bool incorp) {
   Workstep ws;
   ws.date = at;
   OrganicFertilizationData of;
@@ -57,7 +59,8 @@ Errors workstep::merge(OrganicFertilizationData *of, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const OrganicFertilizationData *of, const Workstep *ws) {
+json11::Json workstep::to_json(const OrganicFertilizationData *of,
+                               const Workstep *ws) {
   return json11::Json::object{
       {"type", "OrganicFertilization"},
       {"date", ws->date.toIsoDateString()},
@@ -67,11 +70,13 @@ json11::Json workstep::to_json(const OrganicFertilizationData *of, const Workste
       {"incorporation", of->incorporation}};
 }
 
-bool workstep::apply(OrganicFertilizationData *of, Workstep *ws, MonicaModel *model) {
+bool workstep::apply(OrganicFertilizationData *of, Workstep *ws,
+                     MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   debug() << workstep::to_json(of, ws).dump() << endl;
-  monicamodel::applyOrganicFertiliser(model, of->params, of->amount, of->incorporation,
+  monicamodel::applyOrganicFertiliser(model, of->params, of->amount,
+                                      of->incorporation,
                                       of->incorporateIntoLayerNo - 1);
   model->currentEvents.insert("OrganicFertilization");
 

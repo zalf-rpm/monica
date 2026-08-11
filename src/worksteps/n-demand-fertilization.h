@@ -21,7 +21,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-parameters.h"
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 namespace monica {
@@ -39,23 +38,28 @@ struct DLL_API NDemandFertilizationData {
 
 namespace workstep {
 
-// note: merge needs ws (it copies the just-parsed common date into initialDate); to_json doesn't
-// (it only ever emits its own initialDate/stage fields, never the common ws->date).
-DLL_API Tools::Errors merge(NDemandFertilizationData *nd, Workstep *ws, json11::Json j);
+// note: merge needs ws (it copies the just-parsed common date into
+// initialDate); to_json doesn't (it only ever emits its own initialDate/stage
+// fields, never the common ws->date).
+DLL_API Tools::Errors merge(NDemandFertilizationData *nd, Workstep *ws,
+                            json11::Json j);
 DLL_API json11::Json to_json(const NDemandFertilizationData *nd);
-DLL_API bool apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model);
-DLL_API bool condition(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model);
-DLL_API bool reinit(NDemandFertilizationData *nd, Workstep *ws, Tools::Date date,
-                    bool addYear = false, bool forceInitYear = false);
+DLL_API bool apply(NDemandFertilizationData *nd, Workstep *ws,
+                   MonicaModel *model);
+DLL_API bool condition(NDemandFertilizationData *nd, Workstep *ws,
+                       MonicaModel *model);
+DLL_API bool reinit(NDemandFertilizationData *nd, Workstep *ws,
+                    Tools::Date date, bool addYear = false,
+                    bool forceInitYear = false);
 
 } // namespace workstep
 
 DLL_API Workstep makeNDemandFertilizationWorkstep(json11::Json object);
-DLL_API Workstep makeNDemandFertilizationWorkstep(int stage, double depth,
-                                                  MineralFertilizerParameters partition,
-                                                  double Ndemand);
-DLL_API Workstep makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
-                                                  MineralFertilizerParameters partition,
-                                                  double Ndemand);
+DLL_API Workstep makeNDemandFertilizationWorkstep(
+    int stage, double depth, MineralFertilizerParameters partition,
+    double Ndemand);
+DLL_API Workstep makeNDemandFertilizationWorkstep(
+    Tools::Date date, double depth, MineralFertilizerParameters partition,
+    double Ndemand);
 
 } // namespace monica

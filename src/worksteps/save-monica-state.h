@@ -22,7 +22,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 namespace monica {
@@ -37,19 +36,22 @@ struct DLL_API SaveMonicaStateData {
 
 namespace workstep {
 
-// note: merge needs ws - the original re-parses "runAtStartOfDay" with an explicit false default,
-// overriding what mergeCommon already set on the common field (SaveMonicaState defaults to running
-// at the *end* of the day, unlike every other subtype).
-DLL_API Tools::Errors merge(SaveMonicaStateData *sms, Workstep *ws, json11::Json j);
-DLL_API json11::Json to_json(const SaveMonicaStateData *sms, const Workstep *ws);
+// note: merge needs ws - the original re-parses "runAtStartOfDay" with an
+// explicit false default, overriding what mergeCommon already set on the common
+// field (SaveMonicaState defaults to running at the *end* of the day, unlike
+// every other subtype).
+DLL_API Tools::Errors merge(SaveMonicaStateData *sms, Workstep *ws,
+                            json11::Json j);
+DLL_API json11::Json to_json(const SaveMonicaStateData *sms,
+                             const Workstep *ws);
 DLL_API bool apply(SaveMonicaStateData *sms, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
 DLL_API Workstep makeSaveMonicaStateWorkstep(json11::Json object);
-DLL_API Workstep makeSaveMonicaStateWorkstep(const Tools::Date &at,
-                                             std::string pathToSerializedStateFile,
-                                             bool serializeAsJson = false,
-                                             int noOfPreviousDaysSerializedClimateData = -1);
+DLL_API Workstep makeSaveMonicaStateWorkstep(
+    const Tools::Date &at, std::string pathToSerializedStateFile,
+    bool serializeAsJson = false,
+    int noOfPreviousDaysSerializedClimateData = -1);
 
 } // namespace monica

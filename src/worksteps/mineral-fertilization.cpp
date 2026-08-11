@@ -21,15 +21,17 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"
+#include "json11/json11-helper.h"
 #include "tools/debug.h"
 
 using namespace std;
 using namespace monica;
 using namespace Tools;
 
-Workstep monica::makeMineralFertilizationWorkstep(const Tools::Date &at,
-                                                    MineralFertilizerParameters partition,
-                                                    double amount) {
+Workstep
+monica::makeMineralFertilizationWorkstep(const Tools::Date &at,
+                                         MineralFertilizerParameters partition,
+                                         double amount) {
   Workstep ws;
   ws.date = at;
   MineralFertilizationData mf;
@@ -61,7 +63,8 @@ Errors workstep::merge(MineralFertilizationData *mf, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const MineralFertilizationData *mf, const Workstep *ws) {
+json11::Json workstep::to_json(const MineralFertilizationData *mf,
+                               const Workstep *ws) {
   return json11::Json::object{
       {"type", "MineralFertilization"},
       {"date", ws->date.toIsoDateString()},
@@ -69,7 +72,8 @@ json11::Json workstep::to_json(const MineralFertilizationData *mf, const Workste
       {"partition", mineralfertilizerparameters::to_json(&mf->partition)}};
 }
 
-bool workstep::apply(MineralFertilizationData *mf, Workstep *ws, MonicaModel *model) {
+bool workstep::apply(MineralFertilizationData *mf, Workstep *ws,
+                     MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   debug() << workstep::to_json(mf, ws).dump() << endl;

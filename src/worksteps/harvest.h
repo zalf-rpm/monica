@@ -22,7 +22,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 
 namespace monica {
 class MonicaModel;
@@ -50,7 +49,8 @@ struct DLL_API HarvestData {
     std::map<int, Value> organ2specVal;
   };
 
-  SowingData *sowing{nullptr}; // non-owning, points into another workstep's variant payload
+  SowingData *sowing{
+      nullptr}; // non-owning, points into another workstep's variant payload
   bool exported{true};
   Spec spec;
   OptCarbonManagementData optCarbMgmtData;

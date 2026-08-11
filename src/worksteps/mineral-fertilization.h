@@ -21,7 +21,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-parameters.h"
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 namespace monica {
@@ -36,14 +35,16 @@ struct DLL_API MineralFertilizationData {
 namespace workstep {
 
 DLL_API Tools::Errors merge(MineralFertilizationData *mf, json11::Json j);
-DLL_API json11::Json to_json(const MineralFertilizationData *mf, const Workstep *ws);
-DLL_API bool apply(MineralFertilizationData *mf, Workstep *ws, MonicaModel *model);
+DLL_API json11::Json to_json(const MineralFertilizationData *mf,
+                             const Workstep *ws);
+DLL_API bool apply(MineralFertilizationData *mf, Workstep *ws,
+                   MonicaModel *model);
 
 } // namespace workstep
 
 DLL_API Workstep makeMineralFertilizationWorkstep(json11::Json object);
-DLL_API Workstep makeMineralFertilizationWorkstep(const Tools::Date &at,
-                                                  MineralFertilizerParameters partition,
-                                                  double amount);
+DLL_API Workstep makeMineralFertilizationWorkstep(
+    const Tools::Date &at, MineralFertilizerParameters partition,
+    double amount);
 
 } // namespace monica

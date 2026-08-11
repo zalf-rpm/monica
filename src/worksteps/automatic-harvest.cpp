@@ -21,6 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"
+#include "json11/json11-helper.h"
 
 using namespace std;
 using namespace monica;
@@ -98,16 +99,15 @@ bool workstep::condition(AutomaticHarvestData *ah, MonicaModel *model) {
              model->currentCropModule) // has maturity been reached
          && workstep::isSoilMoistureOk(model, ah->minPercentASW,
                                        ah->maxPercentASW) // check soil moisture
-         &&
-         workstep::isPrecipitationOk(
-             model->climateData, ah->max3dayPrecipSum,
-             ah->maxCurrentDayPrecipSum)); // check precipitation
+         && workstep::isPrecipitationOk(
+                model->climateData, ah->max3dayPrecipSum,
+                ah->maxCurrentDayPrecipSum)); // check precipitation
 
   return conditionMet;
 }
 
-bool workstep::reinit(AutomaticHarvestData *ah, Workstep *ws,
-                      Tools::Date date, bool addYear, bool forceInitYear) {
+bool workstep::reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date,
+                      bool addYear, bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
 
   ah->cropHarvested = false;

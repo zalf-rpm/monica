@@ -20,12 +20,14 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/monica-model.h"
 #include "../io/build-output.h"
 #include "../run/workstep.h"
+#include "json11/json11-helper.h"
 
 using namespace std;
 using namespace monica;
 using namespace Tools;
 
-Workstep monica::makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value) {
+Workstep monica::makeSetValueWorkstep(const Tools::Date &at, OId oid,
+                                      json11::Json value) {
   Workstep ws;
   ws.date = at;
   SetValueData s;
@@ -59,7 +61,8 @@ Errors workstep::merge(SetValueData *s, json11::Json j) {
     if (!jva.empty()) {
       // is an expression
       if (jva[0] == "=" && jva.size() == 4) {
-        auto f = buildPrimitiveCalcExpression(J11Array(jva.begin() + 1, jva.end()));
+        auto f =
+            buildPrimitiveCalcExpression(J11Array(jva.begin() + 1, jva.end()));
         s->getValue = [f](const MonicaModel *mm) { return f(*mm); };
       } else {
         auto oids2 = parseOutputIds({s->value});
@@ -69,19 +72,23 @@ Errors workstep::merge(SetValueData *s, json11::Json j) {
           auto ofi = ofs.find(oid.id);
           if (ofi != ofs.end()) {
             auto f = ofi->second;
-            s->getValue = [f, oid](const MonicaModel *mm) { return f(*mm, oid); };
+            s->getValue = [f, oid](const MonicaModel *mm) {
+              return f(*mm, oid);
+            };
           }
         }
       }
     }
   } else
-    // NOTE: captures a copy of the value, not `s` itself - unlike the original class-based code
-    // (where `this` was always a stable heap address via shared_ptr, so `[=]` capturing `this` and
-    // reading `this->_value` live was safe), `s` here points into a Workstep that is still a local/
-    // about-to-be-returned-by-value object at this point in makeSetValueWorkstep, not yet at its final
-    // stable (e.g. shared_ptr-owned) address - capturing the pointer would risk it dangling after a
-    // move. A value copy is behaviorally identical here since `value` is never reassigned again after
-    // this merge() call for the object's lifetime.
+    // NOTE: captures a copy of the value, not `s` itself - unlike the original
+    // class-based code (where `this` was always a stable heap address via
+    // shared_ptr, so `[=]` capturing `this` and reading `this->_value` live was
+    // safe), `s` here points into a Workstep that is still a local/
+    // about-to-be-returned-by-value object at this point in
+    // makeSetValueWorkstep, not yet at its final stable (e.g. shared_ptr-owned)
+    // address - capturing the pointer would risk it dangling after a move. A
+    // value copy is behaviorally identical here since `value` is never
+    // reassigned again after this merge() call for the object's lifetime.
     s->getValue = [value = s->value](const MonicaModel *) { return value; };
 
   return res;

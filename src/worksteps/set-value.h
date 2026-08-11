@@ -23,7 +23,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../io/output.h"
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 namespace monica {
@@ -45,6 +44,7 @@ DLL_API bool apply(SetValueData *s, Workstep *ws, MonicaModel *model);
 } // namespace workstep
 
 DLL_API Workstep makeSetValueWorkstep(json11::Json object);
-DLL_API Workstep makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value);
+DLL_API Workstep makeSetValueWorkstep(const Tools::Date &at, OId oid,
+                                      json11::Json value);
 
 } // namespace monica

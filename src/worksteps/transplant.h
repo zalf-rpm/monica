@@ -21,7 +21,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/crop.h"
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "sowing.h"
 
 namespace monica {
@@ -29,7 +28,8 @@ class MonicaModel;
 struct Workstep;
 
 struct DLL_API TransplantData : SowingData {
-  kj::Own<Crop> cropToPlant; // Manages the genetic characteristics of the crop to plant
+  kj::Own<Crop>
+      cropToPlant; // Manages the genetic characteristics of the crop to plant
 
   // Seedling initial parameters forced at transplanting
   size_t initialStage{2};
@@ -39,15 +39,18 @@ struct DLL_API TransplantData : SowingData {
   double initShootMass{0.0};
   double initLAI{0.0};
   int postTransplantDelay{0};
-  double initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
+  double initialKcb{
+      0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
 };
 
 namespace workstep {
 
 DLL_API Tools::Errors merge(TransplantData *t, json11::Json j);
-// note: unlike Sowing/AutomaticSowing, the original Transplant::to_json never embedded "date" - no
-// Workstep* parameter needed here, preserved as-is (straight translation).
-DLL_API json11::Json to_json(const TransplantData *t, bool includeFullCropParameters = true);
+// note: unlike Sowing/AutomaticSowing, the original Transplant::to_json never
+// embedded "date" - no Workstep* parameter needed here, preserved as-is
+// (straight translation).
+DLL_API json11::Json to_json(const TransplantData *t,
+                             bool includeFullCropParameters = true);
 DLL_API bool apply(TransplantData *t, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep

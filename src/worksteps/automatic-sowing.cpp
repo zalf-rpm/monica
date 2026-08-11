@@ -22,7 +22,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-model.h"
 #include "../run/workstep.h"
-#include "tools/debug.h"
 
 using namespace std;
 using namespace monica;
@@ -225,7 +224,8 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
     return false;
 
   // check precipitation
-  if (!workstep::isPrecipitationOk(cd, as->max3dayPrecipSum, as->maxCurrentDayPrecipSum))
+  if (!workstep::isPrecipitationOk(cd, as->max3dayPrecipSum,
+                                   as->maxCurrentDayPrecipSum))
     return false;
 
   // check temperature sum

@@ -23,7 +23,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "common/dll-exports.h"
 #include "harvest.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 namespace monica {
@@ -48,8 +47,8 @@ DLL_API json11::Json to_json(const AutomaticHarvestData *ah, const Workstep *ws,
                              bool includeFullCropParameters = true);
 DLL_API bool apply(AutomaticHarvestData *ah, Workstep *ws, MonicaModel *model);
 DLL_API bool condition(AutomaticHarvestData *ah, MonicaModel *model);
-DLL_API bool reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date, bool addYear = false,
-                    bool forceInitYear = false);
+DLL_API bool reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date,
+                    bool addYear = false, bool forceInitYear = false);
 
 } // namespace workstep
 

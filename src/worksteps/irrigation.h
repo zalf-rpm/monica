@@ -21,7 +21,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "../core/monica-parameters.h"
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 namespace monica {
@@ -42,7 +41,8 @@ DLL_API bool apply(IrrigationData *i, Workstep *ws, MonicaModel *model);
 } // namespace workstep
 
 DLL_API Workstep makeIrrigationWorkstep(json11::Json object);
-DLL_API Workstep makeIrrigationWorkstep(const Tools::Date &at, double amount,
-                                        IrrigationParameters params = IrrigationParameters());
+DLL_API Workstep
+makeIrrigationWorkstep(const Tools::Date &at, double amount,
+                       IrrigationParameters params = IrrigationParameters());
 
 } // namespace monica

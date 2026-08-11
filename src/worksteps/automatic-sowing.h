@@ -23,7 +23,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "sowing.h"
 #include "tools/date.h"
 
@@ -62,10 +61,11 @@ DLL_API json11::Json to_json(const AutomaticSowingData *as, const Workstep *ws,
                              bool includeFullCropParameters = true);
 DLL_API bool apply(AutomaticSowingData *as, Workstep *ws, MonicaModel *model);
 DLL_API bool condition(AutomaticSowingData *as, MonicaModel *model);
-DLL_API bool reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date, bool addYear = false,
-                    bool forceInitYear = false);
+DLL_API bool reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date,
+                    bool addYear = false, bool forceInitYear = false);
 DLL_API std::function<double(MonicaModel *)>
-registerDailyFunction(AutomaticSowingData *as, std::function<std::vector<double> &()> getDailyValues);
+registerDailyFunction(AutomaticSowingData *as,
+                      std::function<std::vector<double> &()> getDailyValues);
 
 } // namespace workstep
 

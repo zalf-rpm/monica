@@ -21,13 +21,15 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <utility>
 
 #include "../core/monica-model.h"
+#include "json11/json11-helper.h"
 
 using namespace std;
 using namespace monica;
 using namespace Tools;
 using namespace Climate;
 
-std::pair<Date, bool> workstep::makeInitAbsDate(Date date, Date initDate, bool addYear,
+std::pair<Date, bool> workstep::makeInitAbsDate(Date date, Date initDate,
+                                                bool addYear,
                                                 bool forceInitYear) {
   bool addedYear = false;
 
@@ -118,12 +120,16 @@ bool workstep::isPrecipitationOk(
 }
 
 Errors workstep::mergeCommon(Workstep *ws, json11::Json j) {
-  // The DEFAULT/"=" JSON-unwrap wrap belongs here, not repeated in every per-payload merge(XxxData*,
-  // ...): mergeCommon is the "called exactly once, first, for every subtype" entry point in this
-  // design, exactly mirroring how the original Workstep::merge (which every subtype's merge() always
-  // chained to, directly or transitively) was the sole place Json11Serializable::merge(j) got called
-  // per external invocation, however many levels of subtype-chaining happened above it.
-  Errors res = defaultMerge(j, [ws](json11::Json j2) { return mergeCommon(ws, j2); });
+  // The DEFAULT/"=" JSON-unwrap wrap belongs here, not repeated in every
+  // per-payload merge(XxxData*,
+  // ...): mergeCommon is the "called exactly once, first, for every subtype"
+  // entry point in this design, exactly mirroring how the original
+  // Workstep::merge (which every subtype's merge() always chained to, directly
+  // or transitively) was the sole place Json11Serializable::merge(j) got called
+  // per external invocation, however many levels of subtype-chaining happened
+  // above it.
+  Errors res =
+      defaultMerge(j, [ws](json11::Json j2) { return mergeCommon(ws, j2); });
 
   set_iso_date_value(ws->date, j, "date");
   // at is a shortcut for after=event and days=1
@@ -202,8 +208,9 @@ void workstep::setDate(Workstep *ws, Tools::Date date) {
 }
 
 // --------------------------------------------------------------------
-// Central dispatch - switches on type(ws) to reach the right per-payload function, declared in each
-// concrete workstep's own header under src/worksteps/.
+// Central dispatch - switches on type(ws) to reach the right per-payload
+// function, declared in each concrete workstep's own header under
+// src/worksteps/.
 
 Tools::Date workstep::earliestDate(const Workstep *ws) {
   if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
@@ -240,7 +247,8 @@ Tools::Date workstep::absLatestDate(const Workstep *ws) {
 }
 
 Errors workstep::merge(Workstep *ws, json11::Json j) {
-  // mergeCommon already applies the DEFAULT/"=" unwrap (see its definition above) - not repeated here.
+  // mergeCommon already applies the DEFAULT/"=" unwrap (see its definition
+  // above) - not repeated here.
   Errors res = mergeCommon(ws, j);
 
   switch (type(ws)) {
@@ -291,18 +299,24 @@ Errors workstep::merge(Workstep *ws, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const Workstep *ws, bool includeFullCropParameters) {
+json11::Json workstep::to_json(const Workstep *ws,
+                               bool includeFullCropParameters) {
   switch (type(ws)) {
   case WorkstepType::SOWING:
-    return to_json(&std::get<SowingData>(ws->data), ws, includeFullCropParameters);
+    return to_json(&std::get<SowingData>(ws->data), ws,
+                   includeFullCropParameters);
   case WorkstepType::AUTOMATIC_SOWING:
-    return to_json(&std::get<AutomaticSowingData>(ws->data), ws, includeFullCropParameters);
+    return to_json(&std::get<AutomaticSowingData>(ws->data), ws,
+                   includeFullCropParameters);
   case WorkstepType::TRANSPLANT:
-    return to_json(&std::get<TransplantData>(ws->data), includeFullCropParameters);
+    return to_json(&std::get<TransplantData>(ws->data),
+                   includeFullCropParameters);
   case WorkstepType::HARVEST:
-    return to_json(&std::get<HarvestData>(ws->data), ws, includeFullCropParameters);
+    return to_json(&std::get<HarvestData>(ws->data), ws,
+                   includeFullCropParameters);
   case WorkstepType::AUTOMATIC_HARVEST:
-    return to_json(&std::get<AutomaticHarvestData>(ws->data), ws, includeFullCropParameters);
+    return to_json(&std::get<AutomaticHarvestData>(ws->data), ws,
+                   includeFullCropParameters);
   case WorkstepType::CUTTING:
     return to_json(&std::get<CuttingData>(ws->data), ws);
   case WorkstepType::MINERAL_FERTILIZATION:
@@ -399,25 +413,31 @@ bool workstep::condition(Workstep *ws, MonicaModel *model) {
   }
 }
 
-bool workstep::reinit(Workstep *ws, Tools::Date date, bool addYear, bool forceInitYear) {
+bool workstep::reinit(Workstep *ws, Tools::Date date, bool addYear,
+                      bool forceInitYear) {
   switch (type(ws)) {
   case WorkstepType::AUTOMATIC_SOWING:
-    return reinit(&std::get<AutomaticSowingData>(ws->data), ws, date, addYear, forceInitYear);
+    return reinit(&std::get<AutomaticSowingData>(ws->data), ws, date, addYear,
+                  forceInitYear);
   case WorkstepType::AUTOMATIC_HARVEST:
-    return reinit(&std::get<AutomaticHarvestData>(ws->data), ws, date, addYear, forceInitYear);
+    return reinit(&std::get<AutomaticHarvestData>(ws->data), ws, date, addYear,
+                  forceInitYear);
   case WorkstepType::N_DEMAND_FERTILIZATION:
-    return reinit(&std::get<NDemandFertilizationData>(ws->data), ws, date, addYear, forceInitYear);
+    return reinit(&std::get<NDemandFertilizationData>(ws->data), ws, date,
+                  addYear, forceInitYear);
   case WorkstepType::AUTOMATIC_IRRIGATION:
-    return reinit(&std::get<AutomaticIrrigationData>(ws->data), ws, date, addYear, forceInitYear);
+    return reinit(&std::get<AutomaticIrrigationData>(ws->data), ws, date,
+                  addYear, forceInitYear);
   default:
     return reinitCommon(ws, date, addYear, forceInitYear);
   }
 }
 
-std::function<double(MonicaModel *)>
-workstep::registerDailyFunction(Workstep *ws, std::function<std::vector<double> &()> getDailyValues) {
+std::function<double(MonicaModel *)> workstep::registerDailyFunction(
+    Workstep *ws, std::function<std::vector<double> &()> getDailyValues) {
   if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
-    return registerDailyFunction(&std::get<AutomaticSowingData>(ws->data), getDailyValues);
+    return registerDailyFunction(&std::get<AutomaticSowingData>(ws->data),
+                                 getDailyValues);
   return std::function<double(MonicaModel *)>();
 }
 

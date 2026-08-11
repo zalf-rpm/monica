@@ -15,12 +15,13 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
-// General Workstep infrastructure: the WorkstepType tag, the WorkstepData tagged union, the Workstep
-// struct itself, and the common (former base-class)/central-dispatch free functions that switch on the
-// tag. Each concrete workstep's payload struct + its own free functions live in their own file pair
-// under src/worksteps/ (e.g. src/worksteps/sowing.h/.cpp) - this file just #includes all of them to
-// assemble the WorkstepData variant, and holds the code that's genuinely shared/dispatching across all
-// of them.
+// General Workstep infrastructure: the WorkstepType tag, the WorkstepData
+// tagged union, the Workstep struct itself, and the common (former
+// base-class)/central-dispatch free functions that switch on the tag. Each
+// concrete workstep's payload struct + its own free functions live in their own
+// file pair under src/worksteps/ (e.g. src/worksteps/sowing.h/.cpp) - this file
+// just #includes all of them to assemble the WorkstepData variant, and holds
+// the code that's genuinely shared/dispatching across all of them.
 
 #pragma once
 
@@ -35,7 +36,6 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "climate/climate-common.h"
 #include "common/dll-exports.h"
-#include "json11/json11-helper.h"
 #include "tools/date.h"
 
 #include "../worksteps/automatic-harvest.h"
@@ -56,8 +56,9 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 namespace monica {
 class MonicaModel;
 
-// Declaration order must exactly match WorkstepData's alternative order (workstep::type(...) below
-// derives the tag via static_cast<WorkstepType>(data.index()), no separately stored tag field).
+// Declaration order must exactly match WorkstepData's alternative order
+// (workstep::type(...) below derives the tag via
+// static_cast<WorkstepType>(data.index()), no separately stored tag field).
 enum class WorkstepType {
   SOWING,
   AUTOMATIC_SOWING,
@@ -75,10 +76,12 @@ enum class WorkstepType {
   AUTOMATIC_IRRIGATION
 };
 
-using WorkstepData = std::variant<
-    SowingData, AutomaticSowingData, TransplantData, HarvestData, AutomaticHarvestData, CuttingData,
-    MineralFertilizationData, NDemandFertilizationData, OrganicFertilizationData, TillageData,
-    SetValueData, SaveMonicaStateData, IrrigationData, AutomaticIrrigationData>;
+using WorkstepData =
+    std::variant<SowingData, AutomaticSowingData, TransplantData, HarvestData,
+                 AutomaticHarvestData, CuttingData, MineralFertilizationData,
+                 NDemandFertilizationData, OrganicFertilizationData,
+                 TillageData, SetValueData, SaveMonicaStateData, IrrigationData,
+                 AutomaticIrrigationData>;
 
 struct DLL_API Workstep {
   Tools::Date date;
@@ -102,41 +105,51 @@ inline WorkstepType type(const Workstep *ws) {
   return static_cast<WorkstepType>(ws->data.index());
 }
 
-inline bool isDynamicWorkstep(const Workstep *ws) { return !ws->date.isValid(); }
+inline bool isDynamicWorkstep(const Workstep *ws) {
+  return !ws->date.isValid();
+}
 
-// Shared helpers used by more than one concrete workstep's .cpp file (each was originally a private,
-// anonymous-namespace-scoped helper local to workstep.cpp; promoted to declared functions here once
-// splitting into src/worksteps/*.cpp meant more than one translation unit needed them).
-DLL_API std::pair<Tools::Date, bool> makeInitAbsDate(Tools::Date date, Tools::Date initDate,
-                                                     bool addYear, bool forceInitYear = false);
+// Shared helpers used by more than one concrete workstep's .cpp file (each was
+// originally a private, anonymous-namespace-scoped helper local to
+// workstep.cpp; promoted to declared functions here once splitting into
+// src/worksteps/*.cpp meant more than one translation unit needed them).
+DLL_API std::pair<Tools::Date, bool>
+makeInitAbsDate(Tools::Date date, Tools::Date initDate, bool addYear,
+                bool forceInitYear = false);
 DLL_API int organIdFromName(const std::string &organName, Tools::Errors &err);
 DLL_API std::string organNameFromId(int organId);
-DLL_API bool isSoilMoistureOk(MonicaModel *model, double minPercentASW, double maxPercentASW);
-DLL_API bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>> &climateData,
-                               double max3dayPrecipSum, double maxCurrentDayPrecipSum);
+DLL_API bool isSoilMoistureOk(MonicaModel *model, double minPercentASW,
+                              double maxPercentASW);
+DLL_API bool isPrecipitationOk(
+    const std::vector<std::map<Climate::ACD, double>> &climateData,
+    double max3dayPrecipSum, double maxCurrentDayPrecipSum);
 
-// Common (former base-class, non-overridden-by-default) Workstep behavior. Used both by the per-type
-// make*Workstep(...) factories (in src/worksteps/*.cpp) and by the central dispatchers' default/
-// fallback cases below for the many subtypes that don't override a given piece of behavior.
+// Common (former base-class, non-overridden-by-default) Workstep behavior. Used
+// both by the per-type make*Workstep(...) factories (in src/worksteps/*.cpp)
+// and by the central dispatchers' default/ fallback cases below for the many
+// subtypes that don't override a given piece of behavior.
 DLL_API Tools::Errors mergeCommon(Workstep *ws, json11::Json j);
 DLL_API bool applyCommon(Workstep *ws, MonicaModel *model);
 DLL_API bool conditionCommon(Workstep *ws, MonicaModel *model);
 DLL_API bool reinitCommon(Workstep *ws, Tools::Date date, bool addYear = false,
                           bool forceInitYear = false);
-// setDate is inherently per-subtype dispatching (3 of the 14 subtypes override it), so unlike
-// merge/apply/condition/reinit there's no single "common" body to factor out - this is already the
-// full central dispatcher, not a "Common" helper.
+// setDate is inherently per-subtype dispatching (3 of the 14 subtypes override
+// it), so unlike merge/apply/condition/reinit there's no single "common" body
+// to factor out - this is already the full central dispatcher, not a "Common"
+// helper.
 DLL_API void setDate(Workstep *ws, Tools::Date date);
 
-// Central dispatch - switches on type(ws) to reach the right per-payload function (declared in each
-// concrete workstep's own header under src/worksteps/). Trivial, never-overridden pieces of the
-// original Workstep interface (date(), noOfDaysAfterEvent(), afterEvent(), runAtStartOfDay(),
-// errors()) are NOT ported as functions here at all - they're just plain field reads now (ws->date,
-// ws->applyNoOfDaysAfterEvent, ws->afterEvent, ws->runAtStartOfDay, ws->errors), per the usual
-// "trivial one-line accessors get inlined and removed" rule. `type()`'s string form (originally
-// `virtual std::string type() const`) is also not ported as a general-purpose function - it had zero
-// external callers, and its only internal use sites are cleaner as direct WorkstepType enum
-// comparisons than as string comparisons.
+// Central dispatch - switches on type(ws) to reach the right per-payload
+// function (declared in each concrete workstep's own header under
+// src/worksteps/). Trivial, never-overridden pieces of the original Workstep
+// interface (date(), noOfDaysAfterEvent(), afterEvent(), runAtStartOfDay(),
+// errors()) are NOT ported as functions here at all - they're just plain field
+// reads now (ws->date, ws->applyNoOfDaysAfterEvent, ws->afterEvent,
+// ws->runAtStartOfDay, ws->errors), per the usual "trivial one-line accessors
+// get inlined and removed" rule. `type()`'s string form (originally `virtual
+// std::string type() const`) is also not ported as a general-purpose function -
+// it had zero external callers, and its only internal use sites are cleaner as
+// direct WorkstepType enum comparisons than as string comparisons.
 
 inline Tools::Date absDate(const Workstep *ws) {
   return ws->date.isAbsoluteDate() ? ws->date : ws->absDate;
@@ -148,7 +161,8 @@ DLL_API Tools::Date latestDate(const Workstep *ws);
 DLL_API Tools::Date absLatestDate(const Workstep *ws);
 
 DLL_API Tools::Errors merge(Workstep *ws, json11::Json j);
-DLL_API json11::Json to_json(const Workstep *ws, bool includeFullCropParameters = true);
+DLL_API json11::Json to_json(const Workstep *ws,
+                             bool includeFullCropParameters = true);
 DLL_API bool isActive(const Workstep *ws);
 DLL_API bool apply(Workstep *ws, MonicaModel *model);
 DLL_API bool applyWithPossibleCondition(Workstep *ws, MonicaModel *model);
@@ -156,7 +170,8 @@ DLL_API bool condition(Workstep *ws, MonicaModel *model);
 DLL_API bool reinit(Workstep *ws, Tools::Date date, bool addYear = false,
                     bool forceInitYear = false);
 DLL_API std::function<double(MonicaModel *)>
-registerDailyFunction(Workstep *ws, std::function<std::vector<double> &()> getDailyValues);
+registerDailyFunction(Workstep *ws,
+                      std::function<std::vector<double> &()> getDailyValues);
 
 } // namespace workstep
 
