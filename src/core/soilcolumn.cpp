@@ -254,7 +254,7 @@ kj::Own<SoilColumn> monica::makeSoilColumn(double layerThickness,
   debug() << "makeSoilColumn: " << soilParams.size() << endl;
   for (const auto &sp : soilParams)
     sc->push_back(makeSoilLayer(layerThickness, sp));
-  sc->_vs_NumberOfOrganicLayers =
+  sc->vs_NumberOfOrganicLayers =
       soilcolumn::calculateNumberOfOrganicLayers(sc.get());
   return sc;
 }
@@ -361,11 +361,11 @@ void monica::soilcolumn::deserialize(
   sc->vt_SoilSurfaceTemperature = reader.getVtSoilSurfaceTemperature();
   sc->vm_SnowDepth = reader.getVmSnowDepth();
   sc->ps_MaxMineralisationDepth = reader.getPsMaxMineralisationDepth();
-  sc->_vs_NumberOfOrganicLayers = (int)reader.getVsNumberOfOrganicLayers();
-  sc->_vf_TopDressing = reader.getVfTopDressing();
-  mineralfertilizerparameters::deserialize(&sc->_vf_TopDressingPartition,
+  sc->vs_NumberOfOrganicLayers = (int)reader.getVsNumberOfOrganicLayers();
+  sc->vf_TopDressing = reader.getVfTopDressing();
+  mineralfertilizerparameters::deserialize(&sc->vf_TopDressingPartition,
                                            reader.getVfTopDressingPartition());
-  sc->_vf_TopDressingDelay = reader.getVfTopDressingDelay();
+  sc->vf_TopDressingDelay = reader.getVfTopDressingDelay();
   setFromComplexCapnpList(sc->_delayedNMinApplications,
                           reader.getDelayedNMinApplications());
   // pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
@@ -387,11 +387,11 @@ void monica::soilcolumn::serialize(
   builder.setVtSoilSurfaceTemperature(sc->vt_SoilSurfaceTemperature);
   builder.setVmSnowDepth(sc->vm_SnowDepth);
   builder.setPsMaxMineralisationDepth(sc->ps_MaxMineralisationDepth);
-  builder.setVsNumberOfOrganicLayers(sc->_vs_NumberOfOrganicLayers);
-  builder.setVfTopDressing(sc->_vf_TopDressing);
-  mineralfertilizerparameters::serialize(&sc->_vf_TopDressingPartition,
+  builder.setVsNumberOfOrganicLayers(sc->vs_NumberOfOrganicLayers);
+  builder.setVfTopDressing(sc->vf_TopDressing);
+  mineralfertilizerparameters::serialize(&sc->vf_TopDressingPartition,
                                          builder.initVfTopDressingPartition());
-  builder.setVfTopDressingDelay(sc->_vf_TopDressingDelay);
+  builder.setVfTopDressingDelay(sc->vf_TopDressingDelay);
   setComplexCapnpList(sc->_delayedNMinApplications,
                       builder.initDelayedNMinApplications(
                           (capnp::uint)sc->_delayedNMinApplications.size()));
@@ -409,7 +409,7 @@ void monica::soilcolumn::removeCrop(SoilColumn *sc) {
   sc->cropModule = nullptr;
 }
 void monica::soilcolumn::clearTopDressingParams(SoilColumn *sc) {
-  sc->_vf_TopDressing = 0.0, sc->_vf_TopDressingDelay = 0;
+  sc->vf_TopDressing = 0.0, sc->vf_TopDressingDelay = 0;
 }
 /**
  * @brief Checks and deletes AOM pool
@@ -425,7 +425,7 @@ void monica::soilcolumn::deleteAOMPool(SoilColumn *sc) {
     double vo_SumAOM_Slow = 0.0;
     double vo_SumAOM_Fast = 0.0;
 
-    for (int i_Layer = 0; i_Layer < sc->_vs_NumberOfOrganicLayers; i_Layer++) {
+    for (int i_Layer = 0; i_Layer < sc->vs_NumberOfOrganicLayers; i_Layer++) {
       vo_SumAOM_Slow += sc->at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Slow;
       vo_SumAOM_Fast += sc->at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Fast;
     }
@@ -434,8 +434,7 @@ void monica::soilcolumn::deleteAOMPool(SoilColumn *sc) {
     // Fast: " << vo_SumAOM_Fast << endl;
 
     if ((vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001) {
-      for (int i_Layer = 0; i_Layer < sc->_vs_NumberOfOrganicLayers;
-           i_Layer++) {
+      for (int i_Layer = 0; i_Layer < sc->vs_NumberOfOrganicLayers; i_Layer++) {
         auto it_AOMPool = sc->at(i_Layer).vo_AOM_Pool.begin();
         it_AOMPool += i_AOMPool;
         sc->at(i_Layer).vo_AOM_Pool.erase(it_AOMPool);
@@ -474,12 +473,12 @@ double monica::soilcolumn::applyPossibleDelayedFerilizer(SoilColumn *sc) {
 double monica::soilcolumn::applyPossibleTopDressing(SoilColumn *sc) {
   double amount = 0;
 
-  if (sc->_vf_TopDressingDelay > 0) {
-    sc->_vf_TopDressingDelay--;
-  } else if (sc->_vf_TopDressingDelay == 0 && sc->_vf_TopDressing > 0.0) {
-    amount = sc->_vf_TopDressing;
-    applyMineralFertiliser(sc, sc->_vf_TopDressingPartition, amount);
-    sc->_vf_TopDressing = 0;
+  if (sc->vf_TopDressingDelay > 0) {
+    sc->vf_TopDressingDelay--;
+  } else if (sc->vf_TopDressingDelay == 0 && sc->vf_TopDressing > 0.0) {
+    amount = sc->vf_TopDressing;
+    applyMineralFertiliser(sc, sc->vf_TopDressingPartition, amount);
+    sc->vf_TopDressing = 0;
   }
   return amount;
 }
@@ -587,10 +586,9 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
     // If the N demand of the crop is greater than the user defined
     // maximum fertilisation then need to split so surplus fertilizer can
     // be applied after a delay time
-    sc->_vf_TopDressing =
-        vf_FertiliserRecommendation - fertiliserMinApplication;
-    sc->_vf_TopDressingPartition = fertiliserPartition;
-    sc->_vf_TopDressingDelay = topDressingDelay;
+    sc->vf_TopDressing = vf_FertiliserRecommendation - fertiliserMinApplication;
+    sc->vf_TopDressingPartition = fertiliserPartition;
+    sc->vf_TopDressingDelay = topDressingDelay;
     vf_FertiliserRecommendation = fertiliserMinApplication;
   }
 
@@ -620,7 +618,8 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
   if (!sc->cropModule)
     return std::make_pair(false, 0);
 
-  double s = sc->cropModule->cropParams.cultivarParams.pc_HeatSumIrrigationStart;
+  double s =
+      sc->cropModule->cropParams.cultivarParams.pc_HeatSumIrrigationStart;
   double e = sc->cropModule->cropParams.cultivarParams.pc_HeatSumIrrigationEnd;
   double cts = sc->cropModule->vc_CurrentTotalTemperatureSum;
   if (cts < s || cts > e || aips.threshold < 0.0)
@@ -792,7 +791,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
       aom_fast[pool_index] = 0.0;
     }
 
-    layer_index = min(layer_index, size_t(sc->_vs_NumberOfOrganicLayers));
+    layer_index = min(layer_index, size_t(sc->vs_NumberOfOrganicLayers));
 
     // cout << "Soil parameters before applying tillage for the first "<<
     // layer_index+1 << " layers: " << endl;

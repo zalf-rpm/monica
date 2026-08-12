@@ -197,10 +197,10 @@ struct SoilColumn : public std::vector<SoilLayer> {
 
   double ps_MaxMineralisationDepth{0.4};
 
-  int _vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
-  double _vf_TopDressing{0.0};
-  MineralFertilizerParameters _vf_TopDressingPartition;
-  int _vf_TopDressingDelay{0};
+  int vs_NumberOfOrganicLayers{0}; //!< Number of organic layers.
+  double vf_TopDressing{0.0};
+  MineralFertilizerParameters vf_TopDressingPartition;
+  int vf_TopDressingDelay{0};
 
   CropModule *cropModule{nullptr};
 
@@ -254,7 +254,7 @@ double applyMineralFertiliserViaNDemand(SoilColumn *sc,
 int calculateNumberOfOrganicLayers(const SoilColumn *sc);
 inline size_t numberOfLayers(const SoilColumn *sc) { return sc->size(); }
 inline size_t numberOfOrganicLayers(const SoilColumn *sc) {
-  return sc->_vs_NumberOfOrganicLayers;
+  return sc->vs_NumberOfOrganicLayers;
 }
 //! Returns the thickness of a layer.
 //! Right now by definition all layers have the same size,

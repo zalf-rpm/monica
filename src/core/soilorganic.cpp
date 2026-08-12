@@ -43,7 +43,7 @@ namespace monica {
 namespace soilorganic {
 
 void foUrea(SoilOrganic *so) {
-  auto nools = so->soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = so->soilColumn.vs_NumberOfOrganicLayers;
   std::vector<double> vo_SoilCarbamid_solid(
       nools,
       0.0); // Solid carbamide concentration in soil solution [kmol urea m-3]
@@ -73,7 +73,7 @@ void foUrea(SoilOrganic *so) {
 
   so->vo_NH3_Volatilised = 0.0;
 
-  for (int i = 0; i < so->soilColumn._vs_NumberOfOrganicLayers; i++) {
+  for (int i = 0; i < so->soilColumn.vs_NumberOfOrganicLayers; i++) {
     auto &layer = so->soilColumn.at(i);
 
     // kmol urea m-3 soil
@@ -237,7 +237,7 @@ void step(SoilOrganic *so, double meanAirTemperature, double precipitation,
 
   so->irrigationAmount = 0.0;
 
-  auto nools = so->soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = so->soilColumn.vs_NumberOfOrganicLayers;
   for (size_t i = 0; i < nools; i++) {
     so->vo_AOM_SlowInput[i] = 0.0;
     so->vo_AOM_FastInput[i] = 0.0;
@@ -252,7 +252,7 @@ void addOrganicMatter(SoilOrganic *so, const OrganicMatterParameters &params,
   debug() << "SoilOrganic: addOrganicMatter: "
           << organicmatterparameters::to_json(&params).dump() << endl;
 
-  auto nools = so->soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = so->soilColumn.vs_NumberOfOrganicLayers;
   double layerThickness = so->soilColumn.at(0).vs_LayerThickness;
 
   bool areCropResidueParams = int(params.vo_CN_Ratio_AOM_Fast * 10000.0) == 0;
@@ -445,7 +445,7 @@ double getOrganicN(const SoilOrganic *so, int i) {
 
 void initializeFromParams(SoilOrganic *so) {
   auto &sc = so->soilColumn;
-  auto nools = sc._vs_NumberOfOrganicLayers;
+  auto nools = sc.vs_NumberOfOrganicLayers;
 
   so->vs_NumberOfLayers = sc.size();
   so->vs_NumberOfOrganicLayers = nools;
@@ -610,7 +610,7 @@ void foMIT(SoilOrganic *so) {
   auto &vo_SMB_CO2EvolutionRate = so->vo_SMB_CO2EvolutionRate;
   auto &vo_DecomposerRespiration = so->vo_DecomposerRespiration;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   double po_SOM_SlowDecCoeffStandard = params.po_SOM_SlowDecCoeffStandard;
   double po_SOM_FastDecCoeffStandard = params.po_SOM_FastDecCoeffStandard;
   double po_SMB_SlowDeathRateStandard = params.po_SMB_SlowDeathRateStandard;
@@ -1195,7 +1195,7 @@ void foNitrification(SoilOrganic *so) {
   auto &vo_ActAmmoniaOxidationRate = so->vo_ActAmmoniaOxidationRate;
   auto &vo_ActNitrificationRate = so->vo_ActNitrificationRate;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   double po_AmmoniaOxidationRateCoeffStandard =
       params.po_AmmoniaOxidationRateCoeffStandard;
   double po_NitriteOxidationRateCoeffStandard =
@@ -1256,7 +1256,7 @@ void foSticsNitrification(SoilOrganic *so) {
   auto &params = so->params;
   auto &vo_ActNitrificationRate = so->vo_ActNitrificationRate;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   auto sticsParams = params.sticsParams;
 
   for (int i = 0; i < nools; i++) {
@@ -1303,7 +1303,7 @@ void foDenitrification(SoilOrganic *so) {
   auto &vo_TotalDenitrification = so->vo_TotalDenitrification;
   auto &vo_SumDenitrification = so->vo_SumDenitrification;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   std::vector<double> vo_PotDenitrificationRate(nools, 0.0);
   double po_SpecAnaerobDenitrification = params.po_SpecAnaerobDenitrification;
   double po_TransportRateCoeff = params.po_TransportRateCoeff;
@@ -1347,7 +1347,7 @@ void foSticsDenitrification(SoilOrganic *so) {
   auto &vo_TotalDenitrification = so->vo_TotalDenitrification;
   auto &vo_SumDenitrification = so->vo_SumDenitrification;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   auto sticsParams = params.sticsParams;
   vo_TotalDenitrification = 0.0;
 
@@ -1395,7 +1395,7 @@ double foN2OProduction(SoilOrganic *so) {
   auto &soilColumn = so->soilColumn;
   auto &params = so->params;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   double N2OProductionRate = params.po_N2OProductionRate;
   double pKaHNO2 = OrganicConstants::po_pKaHNO2;
   double sumN2OProduced = 0.0;
@@ -1428,7 +1428,7 @@ SoilOrganic::NitDenitN2O foSticsN2OProduction(SoilOrganic *so) {
   auto &vo_ActNitrificationRate = so->vo_ActNitrificationRate;
   auto &vo_ActDenitrificationRate = so->vo_ActDenitrificationRate;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   double sumN2OProducedNit = 0.0, sumN2OProducedDenit = 0.0;
   auto sticsParams = params.sticsParams;
 
@@ -1487,7 +1487,7 @@ void foPoolUpdate(SoilOrganic *so) {
   auto &vo_SoilOrganicC = so->vo_SoilOrganicC;
   auto &vo_InertSoilOrganicC = so->vo_InertSoilOrganicC;
 
-  auto nools = soilColumn._vs_NumberOfOrganicLayers;
+  auto nools = soilColumn.vs_NumberOfOrganicLayers;
   for (int i = 0; i < nools; i++) {
     auto &layi = soilColumn.at(i);
 

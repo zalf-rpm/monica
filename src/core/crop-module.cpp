@@ -1643,7 +1643,7 @@ void monica::cropmodule::fcMoveDeadRootBiomassToSoil(
   auto &vc_NConcentrationRoot = cm->vc_NConcentrationRoot;
   auto &vc_RootingZone = cm->vc_RootingZone;
   auto &addOrganicMatter = cm->addOrganicMatter;
-  auto nools = soilColumn->_vs_NumberOfOrganicLayers;
+  auto nools = soilColumn->vs_NumberOfOrganicLayers;
 
   map<size_t, double> layer2deadRootBiomassAtLayer;
   for (size_t i = 0; i < vc_RootingZone; i++) {
