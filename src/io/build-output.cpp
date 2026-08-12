@@ -28,6 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "../core/soilorganic.h"
 #include "../core/soiltemperature.h"
 #include "../core/soiltransport.h"
+#include "core/monica-parameters.h"
 #include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
@@ -370,7 +371,8 @@ BOTRes &monica::buildOutputTable() {
       build({id++, "Crop", "", "crop name"},
             [](const MonicaModel &monica, OId oid) {
               return monica.currentCropModule.get()
-                         ? monica.currentCropModule.get()->pc_CropName
+                         ? cropparameters::cropName(
+                               &monica.currentCropModule->cropParams)
                          : "";
             });
 
@@ -587,7 +589,9 @@ BOTRes &monica::buildOutputTable() {
             [](const MonicaModel &monica, OId oid) {
               if (monica::oid::isOrgan(&oid) &&
                   monica.currentCropModule.get() &&
-                  monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
+                  speciesparameters::numberOfOrgans(
+                      &monica.currentCropModule->cropParams.speciesParams) >
+                      oid.organ)
                 return round(
                     monica.currentCropModule.get()->vc_OrganBiomass[oid.organ],
                     1);
@@ -599,7 +603,9 @@ BOTRes &monica::buildOutputTable() {
             [](const MonicaModel &monica, OId oid) {
               if (monica::oid::isOrgan(&oid) &&
                   monica.currentCropModule.get() &&
-                  monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
+                  speciesparameters::numberOfOrgans(
+                      &monica.currentCropModule->cropParams.speciesParams) >
+                      oid.organ)
                 return round(monica.currentCropModule.get()
                                  ->vc_OrganGreenBiomass[oid.organ],
                              1);
@@ -922,7 +928,9 @@ BOTRes &monica::buildOutputTable() {
             [](const MonicaModel &monica, OId oid) {
               if (monica::oid::isOrgan(&oid) &&
                   monica.currentCropModule.get() &&
-                  monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
+                  speciesparameters::numberOfOrgans(
+                      &monica.currentCropModule->cropParams.speciesParams) >
+                      oid.organ)
                 return round(cropmodule::getOrganSpecificNPP(
                                  monica.currentCropModule.get(), oid.organ),
                              4);
@@ -973,7 +981,9 @@ BOTRes &monica::buildOutputTable() {
             [](const MonicaModel &monica, OId oid) {
               if (monica::oid::isOrgan(&oid) &&
                   monica.currentCropModule.get() &&
-                  monica.currentCropModule.get()->pc_NumberOfOrgans > oid.organ)
+                  speciesparameters::numberOfOrgans(
+                      &monica.currentCropModule->cropParams.speciesParams) >
+                      oid.organ)
                 return round(cropmodule::getOrganSpecificTotalRespired(
                                  monica.currentCropModule.get(), oid.organ),
                              4);

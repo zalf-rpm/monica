@@ -318,6 +318,9 @@ Errors speciesparameters::merge(SpeciesParameters *sp, json11::Json j) {
   set_double_value(sp->pc_RootFormFactor, j, "RootFormFactor");
   set_double_value(sp->pc_SpecificRootLength, j, "SpecificRootLength");
   set_int_value(sp->pc_StageAfterCut, j, "StageAfterCut");
+  if (sp->pc_StageAfterCut > 0) {
+    sp->pc_StageAfterCut--;
+  }
   set_double_value(sp->pc_LimitingTemperatureHeatStress, j,
                    "LimitingTemperatureHeatStress");
   set_int_value(sp->pc_CuttingDelayDays, j, "CuttingDelayDays");
@@ -800,8 +803,9 @@ void cropparameters::serialize(
 
 Errors cropparameters::merge(CropParameters *cp, json11::Json j) {
   auto evff = j["__enable_vernalisation_factor_fix__"];
-  if (!evff.is_null() && evff.is_bool())
+  if (!evff.is_null() && evff.is_bool()) {
     cp->__enable_vernalisation_factor_fix__ = evff.bool_value();
+  }
   return merge(cp, j["species"], j["cultivar"]);
 }
 

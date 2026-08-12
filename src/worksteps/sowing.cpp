@@ -173,7 +173,7 @@ bool workstep::apply(SowingData *s, Workstep *ws, MonicaModel *model) {
     model->soilOrganic->cropModule = model->currentCropModule.get();
 
     if (model->simPs.p_UseNMinMineralFertilisingMethod &&
-        !model->currentCropModule->isWinterCrop) {
+        !model->currentCropModule->cropParams.cultivarParams.winterCrop) {
       soilcolumn::clearTopDressingParams(model->soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = monicamodel::applyMineralFertiliserViaNMinMethod(

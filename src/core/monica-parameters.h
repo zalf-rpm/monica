@@ -65,35 +65,35 @@ json11::Json to_json(const YieldComponent *yc);
 
 struct SpeciesParameters {
   std::string pc_SpeciesId;
-  int pc_CarboxylationPathway{0};
+  int pc_CarboxylationPathway{0}; // old TEMPTYP
   double pc_DefaultRadiationUseEfficiency{0.0};
   double pc_PartBiologicalNFixation{0.0};
-  double pc_InitialKcFactor{0.0};
+  double pc_InitialKcFactor{0.0}; // old Kcini
   double pc_LuxuryNCoeff{0.0};
   double pc_MaxCropDiameter{0.0};
   double pc_StageAtMaxHeight{0.0};
   double pc_StageAtMaxDiameter{0.0};
   double pc_MinimumNConcentration{0.0};
-  double pc_MinimumTemperatureForAssimilation{0.0};
+  double pc_MinimumTemperatureForAssimilation{0.0}; // old MINTMP
   double pc_OptimumTemperatureForAssimilation{0.0};
   double pc_MaximumTemperatureForAssimilation{0.0};
-  double pc_NConcentrationAbovegroundBiomass{0.0};
+  double pc_NConcentrationAbovegroundBiomass{0.0}; // initial value of old GEHOB
   double pc_NConcentrationB0{0.0};
   double pc_NConcentrationPN{0.0};
-  double pc_NConcentrationRoot{0.0};
+  double pc_NConcentrationRoot{0.0}; // initial value to WUGEH
   int pc_DevelopmentAccelerationByNitrogenStress{0};
   double pc_FieldConditionModifier{1.0};
   double pc_AssimilateReallocation{0.0};
 
   std::vector<double> pc_BaseTemperature;
-  std::vector<double> pc_OrganMaintenanceRespiration;
-  std::vector<double> pc_OrganGrowthRespiration;
-  std::vector<double> pc_StageMaxRootNConcentration;
+  std::vector<double> pc_OrganMaintenanceRespiration; // old MAIRT
+  std::vector<double> pc_OrganGrowthRespiration;      // old MAIRT
+  std::vector<double> pc_StageMaxRootNConcentration;  // old WGMAX
   std::vector<double> pc_InitialOrganBiomass;
-  std::vector<double> pc_CriticalOxygenContent;
+  std::vector<double> pc_CriticalOxygenContent; // old LUKRIT
   std::vector<double> pc_StageMobilFromStorageCoeff;
 
-  std::vector<bool> pc_AbovegroundOrgan;
+  std::vector<bool> pc_AbovegroundOrgan; // old KOMP
   std::vector<bool> pc_StorageOrgan;
 
   double pc_SamplingDepth{0.0};
@@ -108,7 +108,7 @@ struct SpeciesParameters {
   double pc_RootPenetrationRate{0.0};
   double pc_RootFormFactor{0.0};
   double pc_SpecificRootLength{0.0};
-  int pc_StageAfterCut{0}; //!< stage number is zero-based
+  int pc_StageAfterCut{0}; // stage number is zero-based
   double pc_LimitingTemperatureHeatStress{0.0};
   int pc_CuttingDelayDays{0};
   double pc_DroughtImpactOnFertilityFactor{0.0};
@@ -158,6 +158,8 @@ void serialize(const SpeciesParameters *sp,
 Tools::Errors merge(SpeciesParameters *sp, json11::Json j);
 json11::Json to_json(const SpeciesParameters *sp);
 size_t numberOfDevelopmentalStages(const SpeciesParameters *sp);
+
+// old NRKOM
 size_t numberOfOrgans(const SpeciesParameters *sp);
 
 } // namespace speciesparameters
@@ -169,7 +171,7 @@ struct CultivarParameters {
   std::string pc_Description;
   bool pc_Perennial{false};
   // std::string pc_PermanentCultivarId;
-  double pc_MaxAssimilationRate{0.0};
+  double pc_MaxAssimilationRate{0.0}; // old MAXAMAX
   double pc_LightExtinctionCoefficient{0.8};
   double pc_MaxCropHeight{0.0};
   double pc_ResidueNRatio{0.0};
@@ -177,19 +179,19 @@ struct CultivarParameters {
 
   double pc_CropHeightP1{0.0};
   double pc_CropHeightP2{0.0};
-  double pc_CropSpecificMaxRootingDepth{0.0};
+  double pc_CropSpecificMaxRootingDepth{0.0}; // old WUMAXPF [m]
 
-  std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff;
-  std::vector<std::vector<double>> pc_OrganSenescenceRate;
+  std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff; // old PRO
+  std::vector<std::vector<double>> pc_OrganSenescenceRate;         // old DEAD
 
   std::vector<double> pc_BaseDaylength;
   std::vector<double> pc_OptimumTemperature;
-  std::vector<double> pc_DaylengthRequirement;
-  std::vector<double> pc_DroughtStressThreshold;
-  std::vector<double> pc_SpecificLeafArea;
-  std::vector<double> pc_StageKcFactor;
-  std::vector<double> pc_StageTemperatureSum;
-  std::vector<double> pc_VernalisationRequirement;
+  std::vector<double> pc_DaylengthRequirement;     // old DEC
+  std::vector<double> pc_DroughtStressThreshold;   // old DRYswell
+  std::vector<double> pc_SpecificLeafArea;         // old LAIFKT [ha kg-1]
+  std::vector<double> pc_StageKcFactor;            // old Kc
+  std::vector<double> pc_StageTemperatureSum;      // old TSUM
+  std::vector<double> pc_VernalisationRequirement; // old VSCHWELL
 
   // FAO-56 Dual Kc: GDD-based trapezoidal curve is initialised in CropModule
   // constructor. Per-stage arrays removed; use vc_Kcb_ini/vc_Kcb_mid/vc_Kcb_end
@@ -244,7 +246,7 @@ typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 struct CropParameters {
   SpeciesParameters speciesParams;
   CultivarParameters cultivarParams;
-  kj::Maybe<bool> __enable_vernalisation_factor_fix__;
+  bool __enable_vernalisation_factor_fix__{false};
 };
 
 CropParameters
@@ -259,6 +261,8 @@ void serialize(const CropParameters *cp,
 Tools::Errors merge(CropParameters *cp, json11::Json j);
 Tools::Errors merge(CropParameters *cp, json11::Json sj, json11::Json cj);
 json11::Json to_json(const CropParameters *cp);
+
+// old FRUCHT$(AKF)
 inline std::string cropName(const CropParameters *cp) {
   return cp->speciesParams.pc_SpeciesId + "/" +
          cp->cultivarParams.pc_CultivarId;
@@ -691,7 +695,7 @@ struct CropModuleParameters {
   double pc_MaxCropNDemand{0.0};
   double pc_GrowthRespirationParameter1{0.0};
   double pc_GrowthRespirationParameter2{0.0};
-  double pc_Tortuosity{0.0};
+  double pc_Tortuosity{0.0}; // old AD
   bool pc_AdjustRootDepthForSoilProps{true};
   std::vector<int> pc_TimeUnderAnoxiaThreshold{4, 4, 4, 4, 4, 4, 4};
 

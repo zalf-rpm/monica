@@ -446,7 +446,7 @@ void monica::monicamodel::seedCrop(
     model->soilOrganic->cropModule = model->currentCropModule.get();
 
     if (model->simPs.p_UseNMinMineralFertilisingMethod &&
-        !model->currentCropModule->isWinterCrop) {
+        !model->currentCropModule->cropParams.cultivarParams.winterCrop) {
       soilcolumn::clearTopDressingParams(model->soilColumn.get());
       debug() << "nMin fertilising summer crop" << endl;
       double fertAmount = monicamodel::applyMineralFertiliserViaNMinMethod(
@@ -1000,7 +1000,7 @@ void monica::monicamodel::generalStep(MonicaModel *model) {
   monicamodel::addDailySumFertiliser(model, possibleTopDressingAmount);
 
   if (currentCropModule && simPs.p_UseNMinMineralFertilisingMethod &&
-      currentCropModule->isWinterCrop &&
+      currentCropModule->cropParams.cultivarParams.winterCrop &&
       julday == simPs.p_JulianDayAutomaticFertilising) {
     soilcolumn::clearTopDressingParams(soilColumn.get());
     debug() << "nMin fertilising winter crop" << endl;
