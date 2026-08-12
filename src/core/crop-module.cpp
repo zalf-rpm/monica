@@ -210,14 +210,14 @@ void monica::cropmodule::initializeFromCropParameters(CropModule *cm) {
       cps->__enable_vernalisation_factor_fix__.orDefault(
           cm->cropPs->__enable_vernalisation_factor_fix__);
 
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
   auto &pc_NumberOfOrgans = cm->pc_NumberOfOrgans;
   auto &vc_OrganBiomass = cm->vc_OrganBiomass;
-  auto &pc_AbovegroundOrgan = cm->pc_AbovegroundOrgan;
+  auto &pc_AbovegroundOrgan = cm->cropParams.speciesParams.pc_AbovegroundOrgan;
   auto &vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
   auto &vc_RootBiomass = cm->vc_RootBiomass;
   auto &vc_LeafAreaIndex = cm->vc_LeafAreaIndex;
-  auto &pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
+  auto &pc_SpecificLeafArea = cm->cropParams.cultivarParams.pc_SpecificLeafArea;
   auto &vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
   auto &vc_TotalRootLength = cm->vc_TotalRootLength;
   auto &vc_TotalBiomassNContent = cm->vc_TotalBiomassNContent;
@@ -225,11 +225,11 @@ void monica::cropmodule::initializeFromCropParameters(CropModule *cm) {
       cm->vc_NConcentrationAbovegroundBiomass;
   auto &vc_NConcentrationRoot = cm->vc_NConcentrationRoot;
   auto &pc_NConcentrationAbovegroundBiomass =
-      cm->pc_NConcentrationAbovegroundBiomass;
-  auto &pc_NConcentrationRoot = cm->pc_NConcentrationRoot;
-  auto &pc_CropSpecificMaxRootingDepth = cm->pc_CropSpecificMaxRootingDepth;
+      cm->cropParams.speciesParams.pc_NConcentrationAbovegroundBiomass;
+  auto &pc_NConcentrationRoot = cm->cropParams.speciesParams.pc_NConcentrationRoot;
+  auto &pc_CropSpecificMaxRootingDepth = cm->cropParams.cultivarParams.pc_CropSpecificMaxRootingDepth;
   auto &vc_MaxRootingDepth = cm->vc_MaxRootingDepth;
-  auto &pc_StageKcFactor = cm->pc_StageKcFactor;
+  auto &pc_StageKcFactor = cm->cropParams.cultivarParams.pc_StageKcFactor;
   auto &vc_Kcb_mid = cm->vc_Kcb_mid;
   auto &vc_Kcb_end = cm->vc_Kcb_end;
   auto &vc_KcbFactor = cm->vc_KcbFactor;
@@ -248,21 +248,21 @@ void monica::cropmodule::initializeFromCropParameters(CropModule *cm) {
 
   // Determining the initial crop organ's biomass
   for (size_t i_Organ = 0; i_Organ < pc_NumberOfOrgans; i_Organ++) {
-    vc_OrganBiomass[i_Organ] = cm->pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
+    vc_OrganBiomass[i_Organ] = cm->cropParams.speciesParams.pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
 
     if (pc_AbovegroundOrgan[i_Organ])
-      vc_AbovegroundBiomass += cm->pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
+      vc_AbovegroundBiomass += cm->cropParams.speciesParams.pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
 
-    cm->vc_TotalBiomass += cm->pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
+    cm->vc_TotalBiomass += cm->cropParams.speciesParams.pc_InitialOrganBiomass[i_Organ]; // [kg ha-1]
 
     // Define storage organ
-    if (cm->pc_StorageOrgan[i_Organ])
+    if (cm->cropParams.speciesParams.pc_StorageOrgan[i_Organ])
       cm->vc_StorageOrgan = i_Organ;
   }
 
   cm->vc_OrganGreenBiomass = vc_OrganBiomass;
 
-  vc_RootBiomass = cm->pc_InitialOrganBiomass[0]; // [kg ha-1]
+  vc_RootBiomass = cm->cropParams.speciesParams.pc_InitialOrganBiomass[0]; // [kg ha-1]
 
   // Initialisisng the leaf area index
   vc_LeafAreaIndex = vc_OrganBiomass[OId::LEAF] *
@@ -351,7 +351,7 @@ monica::cropmodule::sunlitAndShadedLAI(const CropModule *cm) {
 std::set<int>
 monica::cropmodule::organIdsForPrimaryYield(const CropModule *cm) {
   std::set<int> ids;
-  for (const auto &yc : cm->pc_OrganIdsForPrimaryYield)
+  for (const auto &yc : cm->cropParams.cultivarParams.pc_OrganIdsForPrimaryYield)
     ids.insert(yc.organId);
   return ids;
 }
@@ -397,7 +397,7 @@ double monica::cropmodule::sumStageTemperatureSums(const CropModule *cm,
           ? cm->pc_NumberOfDevelopmentalStages + endAtInclStage + 1
           : endAtInclStage;
   for (int s = startAtStage; s < endAtInclStage2; s++)
-    ts += cm->pc_StageTemperatureSum[s];
+    ts += cm->cropParams.cultivarParams.pc_StageTemperatureSum[s];
   return ts;
 }
 
@@ -717,9 +717,9 @@ void monica::cropmodule::serialize(
   builder.setVsLatitude(cm->vs_Latitude);
   builder.setAbovegroundBiomass(cm->vc_AbovegroundBiomass);
   builder.setAbovegroundBiomassOld(cm->vc_AbovegroundBiomassOld);
-  setCapnpList(cm->pc_AbovegroundOrgan,
+  setCapnpList(cm->cropParams.speciesParams.pc_AbovegroundOrgan,
                builder.initPcAbovegroundOrgan(
-                   (capnp::uint)cm->pc_AbovegroundOrgan.size()));
+                   (capnp::uint)cm->cropParams.speciesParams.pc_AbovegroundOrgan.size()));
   builder.setActualTranspiration(cm->vc_ActualTranspiration);
 
   // {
@@ -903,7 +903,7 @@ void monica::cropmodule::serialize(
   // yieldcomponent::serialize(&yc, listBuilder[i++]);
   // };
   // serializeYieldComponents(
-  cm->pc_OrganIdsForPrimaryYield,
+  cm->cropParams.cultivarParams.pc_OrganIdsForPrimaryYield,
       // builder.initPcOrganIdsForPrimaryYield(
       // (capnp::uint)cm->pc_OrganIdsForPrimaryYield.size()));
       // serializeYieldComponents(
@@ -1092,15 +1092,15 @@ void monica::cropmodule::step(
       cm->perennialCropDormancyPeriodEndDate;
   auto &stemElongationEventFired = cm->stemElongationEventFired;
   const auto *cropPs = cm->cropPs;
-  auto &pc_BaseDaylength = cm->pc_BaseDaylength;
-  auto &pc_CriticalOxygenContent = cm->pc_CriticalOxygenContent;
-  auto &pc_DaylengthRequirement = cm->pc_DaylengthRequirement;
-  auto &pc_MaxCropHeight = cm->pc_MaxCropHeight;
-  auto &pc_Perennial = cm->pc_Perennial;
-  auto &pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
-  auto &pc_StageKcFactor = cm->pc_StageKcFactor;
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
-  auto &pc_VernalisationRequirement = cm->pc_VernalisationRequirement;
+  auto &pc_BaseDaylength = cm->cropParams.cultivarParams.pc_BaseDaylength;
+  auto &pc_CriticalOxygenContent = cm->cropParams.speciesParams.pc_CriticalOxygenContent;
+  auto &pc_DaylengthRequirement = cm->cropParams.cultivarParams.pc_DaylengthRequirement;
+  auto &pc_MaxCropHeight = cm->cropParams.cultivarParams.pc_MaxCropHeight;
+  auto &pc_Perennial = cm->cropParams.cultivarParams.pc_Perennial;
+  auto &pc_SpecificLeafArea = cm->cropParams.cultivarParams.pc_SpecificLeafArea;
+  auto &pc_StageKcFactor = cm->cropParams.cultivarParams.pc_StageKcFactor;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
+  auto &pc_VernalisationRequirement = cm->cropParams.cultivarParams.pc_VernalisationRequirement;
   auto *soilColumn = cm->soilColumn;
   auto &speciesPs = cm->cropParams.speciesParams;
   auto &vc_AnthesisDay = cm->vc_AnthesisDay;
@@ -1732,17 +1732,17 @@ void monica::cropmodule::fcCropDevelopmentalStage(CropModule *cm,
   auto &cultivarPs = cm->cropParams.cultivarParams;
   auto &speciesPs = cm->cropParams.speciesParams;
   auto *soilColumn = cm->soilColumn;
-  auto &pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
-  auto &pc_BaseTemperature = cm->pc_BaseTemperature;
+  auto &pc_AssimilatePartitioningCoeff = cm->cropParams.cultivarParams.pc_AssimilatePartitioningCoeff;
+  auto &pc_BaseTemperature = cm->cropParams.speciesParams.pc_BaseTemperature;
   auto &pc_DevelopmentAccelerationByNitrogenStress =
-      cm->pc_DevelopmentAccelerationByNitrogenStress;
-  auto &pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+      cm->cropParams.speciesParams.pc_DevelopmentAccelerationByNitrogenStress;
+  auto &pc_DroughtStressThreshold = cm->cropParams.cultivarParams.pc_DroughtStressThreshold;
   auto &pc_EmergenceFloodingControlOn = cm->pc_EmergenceFloodingControlOn;
   auto &pc_EmergenceMoistureControlOn = cm->pc_EmergenceMoistureControlOn;
   auto &pc_NumberOfDevelopmentalStages = cm->pc_NumberOfDevelopmentalStages;
-  auto &pc_OptimumTemperature = cm->pc_OptimumTemperature;
-  auto &pc_Perennial = cm->pc_Perennial;
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto &pc_OptimumTemperature = cm->cropParams.cultivarParams.pc_OptimumTemperature;
+  auto &pc_Perennial = cm->cropParams.cultivarParams.pc_Perennial;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
   auto &vc_CropNRedux = cm->vc_CropNRedux;
   auto &vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
   auto &vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
@@ -1959,7 +1959,7 @@ double monica::cropmodule::fcKcFactor(const CropModule *cm,
                                       double d_EarlierStageKcFactor) // DB
 {
   auto &vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
-  auto &pc_InitialKcFactor = cm->pc_InitialKcFactor;
+  auto &pc_InitialKcFactor = cm->cropParams.speciesParams.pc_InitialKcFactor;
   double vc_RelativeDevelopment = 0.0;
   if (d_StageTemperatureSum > 0.0) {
     vc_RelativeDevelopment =
@@ -2001,15 +2001,15 @@ double monica::cropmodule::fcKcFactor(const CropModule *cm,
  * @author Claas Nendel
  */
 void monica::cropmodule::fcCropSize(CropModule *cm, double maxCropHeight) {
-  auto &pc_StageAtMaxHeight = cm->pc_StageAtMaxHeight;
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto &pc_StageAtMaxHeight = cm->cropParams.speciesParams.pc_StageAtMaxHeight;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
   auto &vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
-  auto &pc_CropHeightP1 = cm->pc_CropHeightP1;
-  auto &pc_CropHeightP2 = cm->pc_CropHeightP2;
+  auto &pc_CropHeightP1 = cm->cropParams.cultivarParams.pc_CropHeightP1;
+  auto &pc_CropHeightP2 = cm->cropParams.cultivarParams.pc_CropHeightP2;
   auto &vc_CropHeight = cm->vc_CropHeight;
-  auto &pc_StageAtMaxDiameter = cm->pc_StageAtMaxDiameter;
+  auto &pc_StageAtMaxDiameter = cm->cropParams.speciesParams.pc_StageAtMaxDiameter;
   auto &vc_CropDiameter = cm->vc_CropDiameter;
-  auto &pc_MaxCropDiameter = cm->pc_MaxCropDiameter;
+  auto &pc_MaxCropDiameter = cm->cropParams.speciesParams.pc_MaxCropDiameter;
   double vc_TotalTemperatureSumForHeight = 0.0;
   for (int stage = 1; stage < pc_StageAtMaxHeight + 1; stage++) {
     vc_TotalTemperatureSumForHeight += pc_StageTemperatureSum[stage];
@@ -2068,7 +2068,7 @@ void monica::cropmodule::fcCropGreenArea(
   auto &vc_GreenAreaIndex = cm->vc_GreenAreaIndex;
   auto &vc_CropHeight = cm->vc_CropHeight;
   auto &vc_CropDiameter = cm->vc_CropDiameter;
-  auto &pc_PlantDensity = cm->pc_PlantDensity;
+  auto &pc_PlantDensity = cm->cropParams.speciesParams.pc_PlantDensity;
   double TempResponseExpansion = 1.0;
   if (cropPs->__enable_T_response_leaf_expansion__) {
     // Stage switch T response leaf exp (wheat = 2, maize = -1 (deactivated))
@@ -2278,25 +2278,25 @@ void monica::cropmodule::fcCropPhotosynthesis(
   auto *intercropping = cm->intercropping;
   auto &speciesPs = cm->cropParams.speciesParams;
   auto &cultivarPs = cm->cropParams.cultivarParams;
-  auto &pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
-  auto &pc_CarboxylationPathway = cm->pc_CarboxylationPathway;
+  auto &pc_AssimilatePartitioningCoeff = cm->cropParams.cultivarParams.pc_AssimilatePartitioningCoeff;
+  auto &pc_CarboxylationPathway = cm->cropParams.speciesParams.pc_CarboxylationPathway;
   auto &pc_CO2Method = cm->pc_CO2Method;
-  auto &pc_DefaultRadiationUseEfficiency = cm->pc_DefaultRadiationUseEfficiency;
-  auto &pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
-  auto &pc_FieldConditionModifier = cm->pc_FieldConditionModifier;
+  auto &pc_DefaultRadiationUseEfficiency = cm->cropParams.speciesParams.pc_DefaultRadiationUseEfficiency;
+  auto &pc_DroughtStressThreshold = cm->cropParams.cultivarParams.pc_DroughtStressThreshold;
+  auto &pc_FieldConditionModifier = cm->cropParams.speciesParams.pc_FieldConditionModifier;
   auto &pc_GrowthRespirationParameter_2 =
       cm->cropPs->pc_GrowthRespirationParameter2;
-  auto &pc_MaxAssimilationRate = cm->pc_MaxAssimilationRate;
+  auto &pc_MaxAssimilationRate = cm->cropParams.cultivarParams.pc_MaxAssimilationRate;
   auto &pc_MinimumTemperatureForAssimilation =
-      cm->pc_MinimumTemperatureForAssimilation;
+      cm->cropParams.speciesParams.pc_MinimumTemperatureForAssimilation;
   auto &pc_MaximumTemperatureForAssimilation =
-      cm->pc_MaximumTemperatureForAssimilation;
+      cm->cropParams.speciesParams.pc_MaximumTemperatureForAssimilation;
   auto &pc_NumberOfOrgans = cm->pc_NumberOfOrgans;
-  auto &pc_OrganGrowthRespiration = cm->pc_OrganGrowthRespiration;
-  auto &pc_OrganMaintenanceRespiration = cm->pc_OrganMaintenanceRespiration;
+  auto &pc_OrganGrowthRespiration = cm->cropParams.speciesParams.pc_OrganGrowthRespiration;
+  auto &pc_OrganMaintenanceRespiration = cm->cropParams.speciesParams.pc_OrganMaintenanceRespiration;
   auto &pc_OptimumTemperatureForAssimilation =
-      cm->pc_OptimumTemperatureForAssimilation;
-  auto &pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
+      cm->cropParams.speciesParams.pc_OptimumTemperatureForAssimilation;
+  auto &pc_SpecificLeafArea = cm->cropParams.cultivarParams.pc_SpecificLeafArea;
   auto &pc_WaterDeficitResponseOn = cm->pc_WaterDeficitResponseOn;
   auto &vc_Assimilates = cm->vc_Assimilates;
   auto &vc_AssimilationRate = cm->vc_AssimilationRate;
@@ -3458,10 +3458,10 @@ void monica::cropmodule::fcCropPhotosynthesis(
 void monica::cropmodule::fcHeatStressImpact(CropModule *cm,
                                             double vw_MaxAirTemperature,
                                             double vw_MinAirTemperature) {
-  auto &pc_BeginSensitivePhaseHeatStress = cm->pc_BeginSensitivePhaseHeatStress;
-  auto &pc_CriticalTemperatureHeatStress = cm->pc_CriticalTemperatureHeatStress;
-  auto &pc_EndSensitivePhaseHeatStress = cm->pc_EndSensitivePhaseHeatStress;
-  auto &pc_LimitingTemperatureHeatStress = cm->pc_LimitingTemperatureHeatStress;
+  auto &pc_BeginSensitivePhaseHeatStress = cm->cropParams.cultivarParams.pc_BeginSensitivePhaseHeatStress;
+  auto &pc_CriticalTemperatureHeatStress = cm->cropParams.cultivarParams.pc_CriticalTemperatureHeatStress;
+  auto &pc_EndSensitivePhaseHeatStress = cm->cropParams.cultivarParams.pc_EndSensitivePhaseHeatStress;
+  auto &pc_LimitingTemperatureHeatStress = cm->cropParams.speciesParams.pc_LimitingTemperatureHeatStress;
   auto &vc_CropHeatRedux = cm->vc_CropHeatRedux;
   auto &vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
   auto &vc_DaysAfterBeginFlowering = cm->vc_DaysAfterBeginFlowering;
@@ -3542,11 +3542,11 @@ void monica::cropmodule::fcFrostKill(CropModule *cm,
                                      double vw_MaxAirTemperature,
                                      double vw_MinAirTemperature) {
   auto *soilColumn = cm->soilColumn;
-  auto &pc_FrostDehardening = cm->pc_FrostDehardening;
-  auto &pc_FrostHardening = cm->pc_FrostHardening;
-  auto &pc_LT50cultivar = cm->pc_LT50cultivar;
-  auto &pc_RespiratoryStress = cm->pc_RespiratoryStress;
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+  auto &pc_FrostDehardening = cm->cropParams.cultivarParams.pc_FrostDehardening;
+  auto &pc_FrostHardening = cm->cropParams.cultivarParams.pc_FrostHardening;
+  auto &pc_LT50cultivar = cm->cropParams.cultivarParams.pc_LT50cultivar;
+  auto &pc_RespiratoryStress = cm->cropParams.cultivarParams.pc_RespiratoryStress;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
   auto &vc_CropFrostRedux = cm->vc_CropFrostRedux;
   auto &vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
   auto &vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
@@ -3642,10 +3642,10 @@ void monica::cropmodule::fcFrostKill(CropModule *cm,
  * @brief Drought impact on crop fertility
  */
 void monica::cropmodule::fcDroughtImpactOnFertility(CropModule *cm) {
-  auto &pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
+  auto &pc_AssimilatePartitioningCoeff = cm->cropParams.cultivarParams.pc_AssimilatePartitioningCoeff;
   auto &pc_DroughtImpactOnFertilityFactor =
-      cm->pc_DroughtImpactOnFertilityFactor;
-  auto &pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+      cm->cropParams.speciesParams.pc_DroughtImpactOnFertilityFactor;
+  auto &pc_DroughtStressThreshold = cm->cropParams.cultivarParams.pc_DroughtStressThreshold;
   auto &vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
   auto &vc_DroughtImpactOnFertility = cm->vc_DroughtImpactOnFertility;
   auto &vc_OxygenDeficit = cm->vc_OxygenDeficit;
@@ -3684,29 +3684,29 @@ void monica::cropmodule::fcDroughtImpactOnFertility(CropModule *cm) {
 void monica::cropmodule::fcCropNitrogen(CropModule *cm) {
   const auto *cropPs = cm->cropPs;
   auto *soilColumn = cm->soilColumn;
-  auto &pc_AbovegroundOrgan = cm->pc_AbovegroundOrgan;
-  auto &pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
-  auto &pc_CropSpecificMaxRootingDepth = cm->pc_CropSpecificMaxRootingDepth;
-  auto &pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
+  auto &pc_AbovegroundOrgan = cm->cropParams.speciesParams.pc_AbovegroundOrgan;
+  auto &pc_AssimilatePartitioningCoeff = cm->cropParams.cultivarParams.pc_AssimilatePartitioningCoeff;
+  auto &pc_CropSpecificMaxRootingDepth = cm->cropParams.cultivarParams.pc_CropSpecificMaxRootingDepth;
+  auto &pc_DroughtStressThreshold = cm->cropParams.cultivarParams.pc_DroughtStressThreshold;
   auto &pc_DevelopmentAccelerationByNitrogenStress =
-      cm->pc_DevelopmentAccelerationByNitrogenStress;
-  auto &pc_InitialRootingDepth = cm->pc_InitialRootingDepth;
-  auto &pc_LuxuryNCoeff = cm->pc_LuxuryNCoeff;
-  auto &pc_MaxNUptakeParam = cm->pc_MaxNUptakeParam;
-  auto &pc_MinimumNConcentration = cm->pc_MinimumNConcentration;
-  auto &pc_MinimumTemperatureRootGrowth = cm->pc_MinimumTemperatureRootGrowth;
-  auto &pc_NConcentrationB0 = cm->pc_NConcentrationB0;
-  auto &pc_NConcentrationPN = cm->pc_NConcentrationPN;
+      cm->cropParams.speciesParams.pc_DevelopmentAccelerationByNitrogenStress;
+  auto &pc_InitialRootingDepth = cm->cropParams.speciesParams.pc_InitialRootingDepth;
+  auto &pc_LuxuryNCoeff = cm->cropParams.speciesParams.pc_LuxuryNCoeff;
+  auto &pc_MaxNUptakeParam = cm->cropParams.speciesParams.pc_MaxNUptakeParam;
+  auto &pc_MinimumNConcentration = cm->cropParams.speciesParams.pc_MinimumNConcentration;
+  auto &pc_MinimumTemperatureRootGrowth = cm->cropParams.speciesParams.pc_MinimumTemperatureRootGrowth;
+  auto &pc_NConcentrationB0 = cm->cropParams.speciesParams.pc_NConcentrationB0;
+  auto &pc_NConcentrationPN = cm->cropParams.speciesParams.pc_NConcentrationPN;
   auto &pc_NitrogenResponseOn = cm->pc_NitrogenResponseOn;
   auto &pc_NumberOfDevelopmentalStages = cm->pc_NumberOfDevelopmentalStages;
   auto &pc_NumberOfOrgans = cm->pc_NumberOfOrgans;
-  auto &pc_RootGrowthLag = cm->pc_RootGrowthLag;
-  auto &pc_RootPenetrationRate = cm->pc_RootPenetrationRate;
-  auto &pc_StageMaxRootNConcentration = cm->pc_StageMaxRootNConcentration;
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
-  auto &pc_StorageOrgan = cm->pc_StorageOrgan;
-  auto &pc_SpecificRootLength = cm->pc_SpecificRootLength;
-  auto &pc_ResidueNRatio = cm->pc_ResidueNRatio;
+  auto &pc_RootGrowthLag = cm->cropParams.speciesParams.pc_RootGrowthLag;
+  auto &pc_RootPenetrationRate = cm->cropParams.speciesParams.pc_RootPenetrationRate;
+  auto &pc_StageMaxRootNConcentration = cm->cropParams.speciesParams.pc_StageMaxRootNConcentration;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
+  auto &pc_StorageOrgan = cm->cropParams.speciesParams.pc_StorageOrgan;
+  auto &pc_SpecificRootLength = cm->cropParams.speciesParams.pc_SpecificRootLength;
+  auto &pc_ResidueNRatio = cm->cropParams.cultivarParams.pc_ResidueNRatio;
   auto &rootNRedux = cm->rootNRedux;
   auto &vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
   auto &vc_BelowgroundBiomass = cm->vc_BelowgroundBiomass;
@@ -3820,25 +3820,25 @@ void monica::cropmodule::fcCropDryMatter(CropModule *cm,
   const auto *cropPs = cm->cropPs;
   auto *soilColumn = cm->soilColumn;
   auto &speciesPs = cm->cropParams.speciesParams;
-  auto &pc_AbovegroundOrgan = cm->pc_AbovegroundOrgan;
-  auto &pc_AssimilatePartitioningCoeff = cm->pc_AssimilatePartitioningCoeff;
-  auto &pc_AssimilateReallocation = cm->pc_AssimilateReallocation;
-  auto &pc_CropSpecificMaxRootingDepth = cm->pc_CropSpecificMaxRootingDepth;
-  auto &pc_DroughtStressThreshold = cm->pc_DroughtStressThreshold;
-  auto &pc_InitialRootingDepth = cm->pc_InitialRootingDepth;
-  auto &pc_MaxNUptakeParam = cm->pc_MaxNUptakeParam;
-  auto &pc_MinimumTemperatureRootGrowth = cm->pc_MinimumTemperatureRootGrowth;
+  auto &pc_AbovegroundOrgan = cm->cropParams.speciesParams.pc_AbovegroundOrgan;
+  auto &pc_AssimilatePartitioningCoeff = cm->cropParams.cultivarParams.pc_AssimilatePartitioningCoeff;
+  auto &pc_AssimilateReallocation = cm->cropParams.speciesParams.pc_AssimilateReallocation;
+  auto &pc_CropSpecificMaxRootingDepth = cm->cropParams.cultivarParams.pc_CropSpecificMaxRootingDepth;
+  auto &pc_DroughtStressThreshold = cm->cropParams.cultivarParams.pc_DroughtStressThreshold;
+  auto &pc_InitialRootingDepth = cm->cropParams.speciesParams.pc_InitialRootingDepth;
+  auto &pc_MaxNUptakeParam = cm->cropParams.speciesParams.pc_MaxNUptakeParam;
+  auto &pc_MinimumTemperatureRootGrowth = cm->cropParams.speciesParams.pc_MinimumTemperatureRootGrowth;
   auto &pc_NumberOfDevelopmentalStages = cm->pc_NumberOfDevelopmentalStages;
   auto &pc_NumberOfOrgans = cm->pc_NumberOfOrgans;
-  auto &pc_OrganSenescenceRate = cm->pc_OrganSenescenceRate;
-  auto &pc_Perennial = cm->pc_Perennial;
-  auto &pc_ResidueNRatio = cm->pc_ResidueNRatio;
-  auto &pc_RootGrowthLag = cm->pc_RootGrowthLag;
-  auto &pc_RootPenetrationRate = cm->pc_RootPenetrationRate;
-  auto &pc_SpecificRootLength = cm->pc_SpecificRootLength;
-  auto &pc_StageMaxRootNConcentration = cm->pc_StageMaxRootNConcentration;
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
-  auto &pc_StorageOrgan = cm->pc_StorageOrgan;
+  auto &pc_OrganSenescenceRate = cm->cropParams.cultivarParams.pc_OrganSenescenceRate;
+  auto &pc_Perennial = cm->cropParams.cultivarParams.pc_Perennial;
+  auto &pc_ResidueNRatio = cm->cropParams.cultivarParams.pc_ResidueNRatio;
+  auto &pc_RootGrowthLag = cm->cropParams.speciesParams.pc_RootGrowthLag;
+  auto &pc_RootPenetrationRate = cm->cropParams.speciesParams.pc_RootPenetrationRate;
+  auto &pc_SpecificRootLength = cm->cropParams.speciesParams.pc_SpecificRootLength;
+  auto &pc_StageMaxRootNConcentration = cm->cropParams.speciesParams.pc_StageMaxRootNConcentration;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
+  auto &pc_StorageOrgan = cm->cropParams.speciesParams.pc_StorageOrgan;
   auto &vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
   auto &vc_AbovegroundBiomassOld = cm->vc_AbovegroundBiomassOld;
   auto &vc_Assimilates = cm->vc_Assimilates;
@@ -4509,12 +4509,12 @@ monica::cropmodule::calcRootDensityFactorAndSum(const CropModule *cm) {
   for (size_t i_Layer = 0; i_Layer < nols; i_Layer++) {
     if (i_Layer < cm->vc_RootingDepth) {
       vc_RootDensityFactor[i_Layer] =
-          exp(-cm->pc_RootFormFactor * (i_Layer * layerThickness));
+          exp(-cm->cropParams.speciesParams.pc_RootFormFactor * (i_Layer * layerThickness));
       // [] //MP: hier könnte man was ändern, wenn man layer-spezifische
       // densities haben will.
     } else if (i_Layer < cm->vc_RootingZone) {
       vc_RootDensityFactor[i_Layer] =
-          exp(-cm->pc_RootFormFactor * (i_Layer * layerThickness)) *
+          exp(-cm->cropParams.speciesParams.pc_RootFormFactor * (i_Layer * layerThickness)) *
           (1.0 - (double(i_Layer - cm->vc_RootingDepth) /
                   double(cm->vc_RootingZone - cm->vc_RootingDepth))); // []
     } else {
@@ -4557,7 +4557,7 @@ double monica::cropmodule::fcReferenceEvapotranspiration(
     double vw_WindSpeed, double vw_WindSpeedHeight,
     double vw_AtmosphericCO2Concentration) {
   const auto *cropPs = cm->cropPs;
-  auto &pc_CarboxylationPathway = cm->pc_CarboxylationPathway;
+  auto &pc_CarboxylationPathway = cm->cropParams.speciesParams.pc_CarboxylationPathway;
   auto &vc_ExtraterrestrialRadiation = cm->vc_ExtraterrestrialRadiation;
   auto &vc_GlobalRadiation = cm->vc_GlobalRadiation;
   auto &vc_GrossPhotosynthesisReference_mol =
@@ -5019,9 +5019,9 @@ void monica::cropmodule::fcCropNUptake(CropModule *cm,
                                        double /*vc_TotalTemperatureSum*/) {
   const auto *cropPs = cm->cropPs;
   auto *soilColumn = cm->soilColumn;
-  auto &pc_PartBiologicalNFixation = cm->pc_PartBiologicalNFixation;
-  auto &pc_ResidueNRatio = cm->pc_ResidueNRatio;
-  auto &pc_StageMaxRootNConcentration = cm->pc_StageMaxRootNConcentration;
+  auto &pc_PartBiologicalNFixation = cm->cropParams.speciesParams.pc_PartBiologicalNFixation;
+  auto &pc_ResidueNRatio = cm->cropParams.cultivarParams.pc_ResidueNRatio;
+  auto &pc_StageMaxRootNConcentration = cm->cropParams.speciesParams.pc_StageMaxRootNConcentration;
   auto &vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
   auto &vc_AbovegroundBiomassOld = cm->vc_AbovegroundBiomassOld;
   auto &vc_BelowgroundBiomass = cm->vc_BelowgroundBiomass;
@@ -5266,7 +5266,7 @@ double monica::cropmodule::fcNetPrimaryProduction(CropModule *cm,
 
 void monica::cropmodule::calculateVOCEmissions(
     CropModule *cm, const Voc::MicroClimateData &mcd) {
-  auto &pc_SpecificLeafArea = cm->pc_SpecificLeafArea;
+  auto &pc_SpecificLeafArea = cm->cropParams.cultivarParams.pc_SpecificLeafArea;
   auto &vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
   auto &speciesPs = cm->cropParams.speciesParams;
   auto &cropPhotosynthesisResults = cm->cropPhotosynthesisResults;
@@ -5311,7 +5311,7 @@ double monica::cropmodule::getFruitBiomassNContent(const CropModule *cm) {
   auto fruitNConcentration =
       (cm->vc_TotalBiomassNContent -
        (rootBiomass * cm->vc_NConcentrationRoot)) /
-      (fruitBiomass + (cm->pc_ResidueNRatio *
+      (fruitBiomass + (cm->cropParams.cultivarParams.pc_ResidueNRatio *
                        (cm->vc_TotalBiomass - rootBiomass - fruitBiomass)));
   return fruitBiomass * fruitNConcentration;
 }
@@ -5322,8 +5322,8 @@ double monica::cropmodule::getFruitBiomassNContent(const CropModule *cm) {
  */
 int monica::cropmodule::numberOfAbovegroundOrgans(const CropModule *cm) {
   int count = 0;
-  for (size_t i = 0, size = cm->pc_AbovegroundOrgan.size(); i < size; i++) {
-    if (cm->pc_AbovegroundOrgan[i]) {
+  for (size_t i = 0, size = cm->cropParams.speciesParams.pc_AbovegroundOrgan.size(); i < size; i++) {
+    if (cm->cropParams.speciesParams.pc_AbovegroundOrgan[i]) {
       count++;
     }
   }
@@ -5367,7 +5367,7 @@ double calculateCropFreshMatterYield(const VYC &ycs,
  * @return primary yield
  */
 double monica::cropmodule::getPrimaryCropYield(const CropModule *cm) {
-  return calculateCropYield(cm->pc_OrganIdsForPrimaryYield,
+  return calculateCropYield(cm->cropParams.cultivarParams.pc_OrganIdsForPrimaryYield,
                             cm->vc_OrganBiomass);
 }
 
@@ -5376,7 +5376,7 @@ double monica::cropmodule::getPrimaryCropYield(const CropModule *cm) {
  * @return crop yield
  */
 double monica::cropmodule::getSecondaryCropYield(const CropModule *cm) {
-  return calculateCropYield(cm->pc_OrganIdsForSecondaryYield,
+  return calculateCropYield(cm->cropParams.cultivarParams.pc_OrganIdsForSecondaryYield,
                             cm->vc_OrganBiomass);
 }
 
@@ -5409,7 +5409,7 @@ double monica::cropmodule::getResiduesNConcentration(
 
   return (cm->vc_TotalBiomassNContent -
           (rootBiomass * cm->vc_NConcentrationRoot)) /
-         ((primaryCropYield / cm->pc_ResidueNRatio) +
+         ((primaryCropYield / cm->cropParams.cultivarParams.pc_ResidueNRatio) +
           (cm->vc_TotalBiomass - rootBiomass - primaryCropYield));
 }
 
@@ -5427,7 +5427,7 @@ double monica::cropmodule::getPrimaryYieldNConcentration(
   return (cm->vc_TotalBiomassNContent -
           (rootBiomass * cm->vc_NConcentrationRoot)) /
          (primaryCropYield +
-          (cm->pc_ResidueNRatio *
+          (cm->cropParams.cultivarParams.pc_ResidueNRatio *
            (cm->vc_TotalBiomass - rootBiomass - primaryCropYield)));
 }
 
@@ -5516,9 +5516,9 @@ void monica::cropmodule::applyCutting(CropModule *cm,
                                       std::map<int, double> &exports,
                                       double cutMaxAssimilationFraction) {
   auto &addOrganicMatter = cm->addOrganicMatter;
-  auto &pc_CuttingDelayDays = cm->pc_CuttingDelayDays;
-  auto &pc_MaxAssimilationRate = cm->pc_MaxAssimilationRate;
-  auto &pc_OrganIdsForCutting = cm->pc_OrganIdsForCutting;
+  auto &pc_CuttingDelayDays = cm->cropParams.speciesParams.pc_CuttingDelayDays;
+  auto &pc_MaxAssimilationRate = cm->cropParams.cultivarParams.pc_MaxAssimilationRate;
+  auto &pc_OrganIdsForCutting = cm->cropParams.cultivarParams.pc_OrganIdsForCutting;
   auto &pc_StageAfterCut = cm->pc_StageAfterCut;
   auto &vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
   auto &vc_CuttingDelayDays = cm->vc_CuttingDelayDays;
@@ -5945,11 +5945,11 @@ void monica::cropmodule::forceTransplantState(CropModule *cm,
                                               double leafMass, double shootMass,
                                               int postTransplantDelay) {
   auto *soilColumn = cm->soilColumn;
-  auto &pc_InitialRootingDepth = cm->pc_InitialRootingDepth;
+  auto &pc_InitialRootingDepth = cm->cropParams.speciesParams.pc_InitialRootingDepth;
   auto &pc_NConcentrationAbovegroundBiomass =
-      cm->pc_NConcentrationAbovegroundBiomass;
-  auto &pc_NConcentrationRoot = cm->pc_NConcentrationRoot;
-  auto &pc_StageTemperatureSum = cm->pc_StageTemperatureSum;
+      cm->cropParams.speciesParams.pc_NConcentrationAbovegroundBiomass;
+  auto &pc_NConcentrationRoot = cm->cropParams.speciesParams.pc_NConcentrationRoot;
+  auto &pc_StageTemperatureSum = cm->cropParams.cultivarParams.pc_StageTemperatureSum;
   auto &vc_AbovegroundBiomass = cm->vc_AbovegroundBiomass;
   auto &vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
   auto &vc_CurrentTotalTemperatureSum = cm->vc_CurrentTotalTemperatureSum;
