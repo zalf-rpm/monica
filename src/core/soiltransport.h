@@ -35,16 +35,20 @@ struct CropModule;
  */
 struct SoilTransport {
   SoilColumn *soilColumn{nullptr};
-  SoilTransportModuleParameters params;
+  SoilTransportModuleParameters modParams;
+  const SiteParameters *siteParams{nullptr};
+  const EnvironmentParameters *envParams{nullptr};
+  const CropModuleParameters *cropModParams{nullptr};
+
   // const size_t vs_NumberOfLayers;
   std::vector<double> vq_Convection;
   std::vector<double> vq_DiffusionCoeff;
   std::vector<double> vq_Dispersion;
   std::vector<double> vq_DispersionCoeff;
   // std::vector<double> vq_FieldCapacity;
-  double vs_LeachingDepth{0.0}; //!< [m]
+  // double vs_LeachingDepth{0.0}; //!< [m]
   double vq_LeachingAtBoundary{0.0};
-  double vs_NDeposition{0.0};              //!< [kg N ha-1 y-1]
+  // double vs_NDeposition{0.0};              // [kg N ha-1 y-1]
   std::vector<double> vc_NUptakeFromLayer; //! Pflanzenaufnahme aus der Tiefe Z;
                                            //! C1 N-Konzentration [kg N ha-1]
   std::vector<double> vq_PoreWaterVelocity;
@@ -54,22 +58,24 @@ struct SoilTransport {
   std::vector<double> vq_SoilNO3_aq;
   double vq_TimeStep{1.0};
   std::vector<double> vq_TotalDispersion;
-  std::vector<double>
-      vq_PercolationRate; //!< Soil water flux from above [mm d-1]
+  std::vector<double> vq_PercolationRate; // Soil water flux from above [mm d-1]
 
-  double pc_MinimumAvailableN{0.0}; //! kg m-2
+  // double pc_MinimumAvailableN{0.0}; //! kg m-2
 
   CropModule *cropModule{nullptr};
 };
 
 kj::Own<SoilTransport>
-makeSoilTransport(SoilColumn &soilColumn, const SiteParameters &sps,
-                  const SoilTransportModuleParameters &params,
-                  double leachingDepth, double timeStep,
-                  double minimumAvailableN);
+makeSoilTransport(SoilTransportModuleParameters modParams,
+                  SoilColumn *soilColumn, const SiteParameters *siteParams,
+                  const EnvironmentParameters *envParams,
+                  const CropModuleParameters *cropModParams);
+
 kj::Own<SoilTransport> makeSoilTransport(
-    SoilColumn &soilColumn,
+    SoilColumn *soilColumn,
     mas::schema::model::monica::SoilTransportModuleState::Reader reader,
+    const SiteParameters *siteParams, const EnvironmentParameters *envParams,
+    const CropModuleParameters *cropModParams,
     CropModule *cropModule = nullptr);
 
 namespace soiltransport {

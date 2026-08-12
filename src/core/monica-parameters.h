@@ -425,9 +425,9 @@ struct SiteParameters {
   double vs_GroundwaterDepth{70.0}; //!< [m]
   double vs_Soil_CN_Ratio{10.0};
   double vs_DrainageCoeff{1.0};
-  double vq_NDeposition{30.0};                       //!< [kg N ha-1 y-1]
-  double vs_MaxEffectiveRootingDepth{2.0};           //!< [m]
-  double vs_ImpenetrableLayerDepth{-1};              //!< [m]
+  double vq_NDeposition{30.0};                       // [kg N ha-1 y-1]
+  double vs_MaxEffectiveRootingDepth{2.0};           // [m]
+  double vs_ImpenetrableLayerDepth{-1};              // [m]
   double vs_SoilSpecificHumusBalanceCorrection{0.0}; // humus equivalents
   double bareSoilKcFactor{0.4};
 
@@ -689,7 +689,7 @@ struct CropModuleParameters {
   double pc_MaintenanceRespirationParameter1{0.0};
   double pc_MaintenanceRespirationParameter2{0.0};
   double pc_MinimumNConcentrationRoot{0.0};
-  double pc_MinimumAvailableN{0.0};
+  double pc_MinimumAvailableN{0.0}; // [kg m-2]
   double pc_ReferenceAlbedo{0.0};
   double pc_StomataConductanceAlpha{0.0};
   double pc_SaturationBeta{0.0};

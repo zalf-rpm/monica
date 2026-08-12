@@ -70,9 +70,8 @@ void initializeMonicaModelFromParams(MonicaModel *model,
   model->soilOrganic =
       makeSoilOrganic(*model->soilColumn, cpp.userSoilOrganicParameters);
   model->soilTransport = makeSoilTransport(
-      *model->soilColumn, model->sitePs, cpp.userSoilTransportParameters,
-      model->envPs.p_LeachingDepth, model->envPs.p_timeStep,
-      model->cropPs.pc_MinimumAvailableN);
+      kj::mv(cpp.userSoilTransportParameters), model->soilColumn,
+      &model->sitePs, &model->envPs, &model->cropPs);
 }
 
 } // namespace
@@ -166,11 +165,12 @@ void monica::monicamodel::deserialize(
 
   soilcolumn::putCrop(soilColumn.get(), currentCropModule.get());
 
-  if (soilTemperature)
+  if (soilTemperature) {
     soiltemperature::deserialize(soilTemperature.get(),
                                  reader.getSoilTemperature());
-  else
+  } else {
     soilTemperature = makeSoilTemperature(*model, reader.getSoilTemperature());
+  }
 
   if (soilMoisture) {
     soilmoisture::deserialize(soilMoisture.get(), reader.getSoilMoisture());
@@ -189,11 +189,12 @@ void monica::monicamodel::deserialize(
   }
 
   if (soilTransport) {
-    soiltransport::deserialize(soilTransport.get(), reader.getSoilTransport());
-    soiltransport::putCrop(soilTransport.get(), currentCropModule.get());
+    soiltransport::deserialize(soilTransport, reader.getSoilTransport());
+    soilTransport->cropModule = currentCropModule;
   } else {
-    soilTransport = makeSoilTransport(*soilColumn, reader.getSoilTransport(),
-                                      currentCropModule.get());
+    soilTransport =
+        makeSoilTransport(soilColumn, reader.getSoilTransport(), &model->sitePs,
+                          &model->envPs, &model->cropPs, currentCropModule);
   }
 
   sumFertiliser = reader.getSumFertiliser();
