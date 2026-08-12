@@ -53,6 +53,9 @@ namespace monica {
  */
 struct CropModule {
 
+  size_t noOfOrgans{0};
+  size_t noOfDevStages{0};
+
   // --- BEGIN TRANSPLANT MODIFICATION ---
   // Forces the initial crop state by bypassing normal germination and
   // synchronizing biomass pools.
@@ -72,11 +75,11 @@ struct CropModule {
   Intercropping *intercropping{nullptr};
 
   SoilColumn *soilColumn{nullptr};
-  const SiteParameters *sitePs{nullptr};
-  const SimulationParameters *simPs{nullptr};
-  const CropModuleParameters *cropPs{nullptr};
+  const SiteParameters *siteParams{nullptr};
+  const SimulationParameters *simParams{nullptr};
+  const CropModuleParameters *cropModParams{nullptr};
   CropParameters cropParams;
-  CropResidueParameters residuePs;
+  CropResidueParameters residueParams;
   kj::Own<CropParameters> perennialCropParams;
 
   //! old N
@@ -84,10 +87,10 @@ struct CropModule {
   double vc_AbovegroundBiomassOld{0.0}; //! old OBALT
   double vc_ActualTranspiration{0.0};
   double vc_Assimilates{0.0};
-  double vc_AssimilationRate{0.0};        //! old AMAX
-  double vc_AstronomicDayLenght{0.0};     //! old DL
-  std::vector<double> pc_BaseDaylength;   //! old DLBAS
-  std::vector<double> pc_BaseTemperature; //! old BAS
+  double vc_AssimilationRate{0.0};    //! old AMAX
+  double vc_AstronomicDayLenght{0.0}; //! old DL
+  // std::vector<double> pc_BaseDaylength;   //! old DLBAS
+  // std::vector<double> pc_BaseTemperature; //! old BAS
   double vc_BelowgroundBiomass{0.0};
   double vc_BelowgroundBiomassOld{0.0};
   double vc_ClearDayRadiation{0.0}; //! old DRC
@@ -126,8 +129,6 @@ struct CropModule {
   double vc_GrossPrimaryProduction{0.0};
   bool vc_GrowthCycleEnded{false};
   double vc_GrowthRespirationAS{0.0};
-  double pc_HeatSumIrrigationStart{};
-  double pc_HeatSumIrrigationEnd{};
   double vc_InterceptionStorage{0.0};
   double vc_KcFactor{0.6};      //! old FKc
   double vc_LeafAreaIndex{0.0}; //! old LAI
@@ -190,7 +191,6 @@ struct CropModule {
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0};             //! old dt
   int TimeUnderAnoxiaThresholdDefault = 4;
-  std::vector<int> vc_TimeUnderAnoxiaThreshold;
   double vc_TotalBiomass{0.0};
   double vc_TotalBiomassNContent{0.0}; //! old PESUM
   double vc_TotalCropHeatImpact{0.0};
@@ -207,7 +207,6 @@ struct CropModule {
   std::vector<double> vc_TranspirationRedux; //! old TRRED
   double vc_VernalisationDays{0.0};          //
   double vc_VernalisationFactor{0.0};        //! old FV
-
   bool dyingOut{false};
   double vc_AccumulatedETa{0.0};
   double vc_AccumulatedTranspiration{0.0};
@@ -215,14 +214,9 @@ struct CropModule {
   double vc_exportedCutBiomass{0.0};
   double vc_sumResidueCutBiomass{0.0};
   double vc_residueCutBiomass{0.0};
-
   int vc_CuttingDelayDays{0};
-  double vs_MaxEffectiveRootingDepth{};
-  double vs_ImpenetrableLayerDepth{};
-
   int vc_AnthesisDay{-1};
   int vc_MaturityDay{-1};
-
   bool vc_MaturityReached{false};
 
   // VOC members
@@ -260,8 +254,6 @@ struct CropModule {
   double fractionOfInterceptedRadiation1{0.0};
   double fractionOfInterceptedRadiation2{0.0};
 
-  bool __enable_vernalisation_factor_fix__{false};
-
   Tools::Date perennialCropDormancyPeriodEndDate;
 };
 
@@ -277,6 +269,7 @@ kj::Own<CropModule> makeCropModule(
         getSnowDepthAndCalcTempUnderSnow,
     Intercropping *intercropping);
 
+// make crop module from serialized state
 kj::Own<CropModule> makeCropModule(
     SoilColumn *soilColumn, const CropModuleParameters *cropModuleParams,
     std::function<void(std::string)> fireEvent,
@@ -291,15 +284,6 @@ void serialize(const CropModule *cm,
                mas::schema::model::monica::CropModuleState::Builder builder);
 void deserialize(CropModule *cm,
                  mas::schema::model::monica::CropModuleState::Reader reader);
-void initialize(
-    CropModule *cm, SoilColumn *soilColumn,
-    const CropModuleParameters *cropModuleParams,
-    std::function<void(std::string)> fireEvent,
-    std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-    std::function<std::pair<double, double>(double)>
-        getSnowDepthAndCalcTempUnderSnow,
-    Intercropping *intercropping);
-void initializeFromCropParameters(CropModule *cm);
 void fcRadiation(CropModule *cm, double julianDay, double globalRadiation,
                  double sunshineHours);
 double fcDaylengthFactor(CropModule *cm, double daylengthRequirement,

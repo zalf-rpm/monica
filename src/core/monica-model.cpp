@@ -147,7 +147,7 @@ void monica::monicamodel::deserialize(
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
                              double nconc) {
       soilorganic::addOrganicMatter(model->soilOrganic.get(),
-                                    model->currentCropModule->residuePs,
+                                    model->currentCropModule->residueParams,
                                     layer2amount, nconc);
     };
     currentCropModule = nullptr;
@@ -417,7 +417,7 @@ void monica::monicamodel::seedCrop(
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
                              double nConcentration) {
       soilorganic::addOrganicMatter(model->soilOrganic.get(),
-                                    model->currentCropModule->residuePs,
+                                    model->currentCropModule->residueParams,
                                     layer2amount, nConcentration);
     };
     CropParameters cps = makeCropParameters(reader.getCropParams());
@@ -607,7 +607,7 @@ void monica::monicamodel::harvestCurrentCrop(
         }
 
         soilorganic::addOrganicMatter(
-            soilOrganic.get(), currentCropModule->residuePs,
+            soilOrganic.get(), currentCropModule->residueParams,
             optCarbonReturnedResidues,
             cropmodule::getResiduesNConcentration(currentCropModule.get()),
             incorporateIntoLayerIndex);
@@ -647,7 +647,7 @@ void monica::monicamodel::harvestCurrentCrop(
                        currentCropModule.get())
                 << endl;
         soilorganic::addOrganicMatter(
-            soilOrganic.get(), currentCropModule->residuePs, residueBiomass,
+            soilOrganic.get(), currentCropModule->residueParams, residueBiomass,
             residueNConcentration, incorporateIntoLayerIndex);
       }
     } else if (!spec.organ2specVal
@@ -682,7 +682,7 @@ void monica::monicamodel::harvestCurrentCrop(
       auto residuesNConcentration = cropmodule::getResiduesNConcentration(
           currentCropModule.get(), primaryCropYield);
       soilorganic::addOrganicMatter(
-          soilOrganic.get(), currentCropModule->residuePs,
+          soilOrganic.get(), currentCropModule->residueParams,
           totalResidueBiomassToIncorporate, residuesNConcentration,
           incorporateIntoLayerIndex);
 
@@ -723,8 +723,9 @@ void monica::monicamodel::harvestCurrentCrop(
               << " Aboveground biomass N concentration: "
               << abovegroundBiomassNConcentration << endl;
       soilorganic::addOrganicMatter(
-          soilOrganic.get(), currentCropModule->residuePs, abovegroundBiomass,
-          abovegroundBiomassNConcentration, incorporateIntoLayerIndex);
+          soilOrganic.get(), currentCropModule->residueParams,
+          abovegroundBiomass, abovegroundBiomassNConcentration,
+          incorporateIntoLayerIndex);
     }
   }
 
@@ -756,8 +757,8 @@ void monica::monicamodel::incorporateCurrentCrop(MonicaModel *model) {
             << " Total N concentration: " << totalNConcentration << endl;
 
     soilorganic::addOrganicMatter(soilOrganic.get(),
-                                  currentCropModule->residuePs, total_biomass,
-                                  totalNConcentration);
+                                  currentCropModule->residueParams,
+                                  total_biomass, totalNConcentration);
   }
 
   clearCropUponNextDay = true;

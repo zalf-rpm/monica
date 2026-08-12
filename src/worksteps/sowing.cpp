@@ -144,7 +144,7 @@ bool workstep::apply(SowingData *s, Workstep *ws, MonicaModel *model) {
     auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
                              double nconc) {
       soilorganic::addOrganicMatter(model->soilOrganic.get(),
-                                    model->currentCropModule->residuePs,
+                                    model->currentCropModule->residueParams,
                                     layer2amount, nconc);
     };
     model->currentCropModule = nullptr;

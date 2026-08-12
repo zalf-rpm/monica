@@ -620,8 +620,8 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
   if (!sc->cropModule)
     return std::make_pair(false, 0);
 
-  double s = sc->cropModule->pc_HeatSumIrrigationStart;
-  double e = sc->cropModule->pc_HeatSumIrrigationEnd;
+  double s = sc->cropModule->cropParams.cultivarParams.pc_HeatSumIrrigationStart;
+  double e = sc->cropModule->cropParams.cultivarParams.pc_HeatSumIrrigationEnd;
   double cts = sc->cropModule->vc_CurrentTotalTemperatureSum;
   if (cts < s || cts > e || aips.threshold < 0.0)
     return std::make_pair(false, 0);

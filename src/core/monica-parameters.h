@@ -85,7 +85,7 @@ struct SpeciesParameters {
   double pc_FieldConditionModifier{1.0};
   double pc_AssimilateReallocation{0.0};
 
-  std::vector<double> pc_BaseTemperature;
+  std::vector<double> pc_BaseTemperature;             // old BAS
   std::vector<double> pc_OrganMaintenanceRespiration; // old MAIRT
   std::vector<double> pc_OrganGrowthRespiration;      // old MAIRT
   std::vector<double> pc_StageMaxRootNConcentration;  // old WGMAX
@@ -184,7 +184,7 @@ struct CultivarParameters {
   std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff; // old PRO
   std::vector<std::vector<double>> pc_OrganSenescenceRate;         // old DEAD
 
-  std::vector<double> pc_BaseDaylength;
+  std::vector<double> pc_BaseDaylength; // old DLBAS
   std::vector<double> pc_OptimumTemperature;
   std::vector<double> pc_DaylengthRequirement;     // old DEC
   std::vector<double> pc_DroughtStressThreshold;   // old DRYswell
@@ -246,7 +246,9 @@ typedef std::shared_ptr<CultivarParameters> CultivarParametersPtr;
 struct CropParameters {
   SpeciesParameters speciesParams;
   CultivarParameters cultivarParams;
-  bool __enable_vernalisation_factor_fix__{false};
+  // Maybe, because unset should fall back to CropModuleParameters'
+  // __enable_vernalisation_factor_fix__ default, not to false.
+  kj::Maybe<bool> __enable_vernalisation_factor_fix__;
 };
 
 CropParameters
