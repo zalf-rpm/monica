@@ -30,8 +30,7 @@
     "label": "Debug: monica-run (attach)",
     "adapter": "CodeLLDB",
     "request": "attach",
-    "program": "$ZED_WORKTREE_ROOT/build/monica-run.exe",
-    "pid": 20316,
+    "pid": 25788,
     "stopOnEntry": false,
   },
 ]
