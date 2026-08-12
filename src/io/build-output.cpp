@@ -1070,7 +1070,7 @@ BOTRes &monica::buildOutputTable() {
             oid,
             [&](int i) {
               return monica.soilMoisture->soilColumn.at(i).vs_SoilMoisture_m3 -
-                     monica.soilColumn->at(i)._sps.vs_PermanentWiltingPoint;
+                     monica.soilColumn->at(i).sps.vs_PermanentWiltingPoint;
             },
             3);
       });
@@ -1248,7 +1248,7 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->at(i)._sps.vs_SoilOrganicCarbon();
+                    return monica.soilColumn->at(i).sps.vs_SoilOrganicCarbon();
                   },
                   6);
             });
@@ -1259,8 +1259,8 @@ BOTRes &monica::buildOutputTable() {
             return getComplexValues<double>(
                 oid,
                 [&](int i) {
-                  return monica.soilColumn->at(i)._sps.vs_SoilOrganicCarbon() *
-                         monica.soilColumn->at(i)._sps.vs_SoilBulkDensity() *
+                  return monica.soilColumn->at(i).sps.vs_SoilOrganicCarbon() *
+                         monica.soilColumn->at(i).sps.vs_SoilBulkDensity() *
                          monica.soilColumn->at(i).vs_LayerThickness * 1000;
                 },
                 4);
@@ -1415,7 +1415,7 @@ BOTRes &monica::buildOutputTable() {
 
       build({id++, "SoilpH", "", "SoilpH"},
             [](const MonicaModel &monica, OId oid) {
-              return round(monica.soilColumn->at(0)._sps.vs_SoilpH, 1);
+              return round(monica.soilColumn->at(0).sps.vs_SoilpH, 1);
             });
 
       build({id++, "NEP", "kgC ha-1", "NEP"},
@@ -1555,9 +1555,9 @@ BOTRes &monica::buildOutputTable() {
                 [&](int i) {
                   double smm3 =
                       monica.soilMoisture->soilColumn.at(i).vs_SoilMoisture_m3;
-                  double fc = monica.soilColumn->at(i)._sps.vs_FieldCapacity;
+                  double fc = monica.soilColumn->at(i).sps.vs_FieldCapacity;
                   double pwp =
-                      monica.soilColumn->at(i)._sps.vs_PermanentWiltingPoint;
+                      monica.soilColumn->at(i).sps.vs_PermanentWiltingPoint;
                   return (smm3 - pwp) / (fc - pwp); //[%nFK]
                 },
                 4);
@@ -1568,9 +1568,9 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    double fc = monica.soilColumn->at(i)._sps.vs_FieldCapacity;
+                    double fc = monica.soilColumn->at(i).sps.vs_FieldCapacity;
                     double pwp =
-                        monica.soilColumn->at(i)._sps.vs_PermanentWiltingPoint;
+                        monica.soilColumn->at(i).sps.vs_PermanentWiltingPoint;
                     return fc - pwp;
                   },
                   4);
@@ -1687,7 +1687,7 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->at(i)._sps.vs_FieldCapacity;
+                    return monica.soilColumn->at(i).sps.vs_FieldCapacity;
                   },
                   4);
             });
@@ -1698,7 +1698,7 @@ BOTRes &monica::buildOutputTable() {
             return getComplexValues<double>(
                 oid,
                 [&](int i) {
-                  return monica.soilColumn->at(i)._sps.vs_PermanentWiltingPoint;
+                  return monica.soilColumn->at(i).sps.vs_PermanentWiltingPoint;
                 },
                 4);
           });
@@ -1707,7 +1707,7 @@ BOTRes &monica::buildOutputTable() {
                                                       OId oid) {
         return getComplexValues<double>(
             oid,
-            [&](int i) { return monica.soilColumn->at(i)._sps.vs_Saturation; },
+            [&](int i) { return monica.soilColumn->at(i).sps.vs_Saturation; },
             4);
       });
 
@@ -1765,7 +1765,7 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->at(i)._sps.vs_SoilSandContent;
+                    return monica.soilColumn->at(i).sps.vs_SoilSandContent;
                   },
                   2);
             });
@@ -1775,7 +1775,7 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->at(i)._sps.vs_SoilClayContent;
+                    return monica.soilColumn->at(i).sps.vs_SoilClayContent;
                   },
                   2);
             });
@@ -1785,7 +1785,7 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->at(i)._sps.vs_SoilSiltContent();
+                    return monica.soilColumn->at(i).sps.vs_SoilSiltContent();
                   },
                   2);
             });
@@ -1795,7 +1795,7 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->at(i)._sps.vs_SoilStoneContent;
+                    return monica.soilColumn->at(i).sps.vs_SoilStoneContent;
                   },
                   2);
             });
@@ -1805,7 +1805,7 @@ BOTRes &monica::buildOutputTable() {
           [](const MonicaModel &monica, OId oid) {
             return getComplexValues<double>(
                 oid,
-                [&](int i) { return monica.soilColumn->at(i)._sps.vs_SoilpH; },
+                [&](int i) { return monica.soilColumn->at(i).sps.vs_SoilpH; },
                 2);
           });
 

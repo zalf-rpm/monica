@@ -88,7 +88,7 @@ SoilLayer monica::makeSoilLayer(double vs_LayerThickness,
   sl.vs_LayerThickness = vs_LayerThickness;
   sl.vs_SoilNH4 = sps.vs_SoilAmmonium;
   sl.vs_SoilNO3 = sps.vs_SoilNitrate;
-  sl._sps = sps;
+  sl.sps = sps;
   sl.vs_SoilMoisture_m3 =
       sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0;
   return sl;
@@ -108,7 +108,7 @@ void soillayer::deserialize(
   sl->vs_SoilNO2 = reader.getSoilNO2();
   sl->vs_SoilNO3 = reader.getSoilNO3();
   sl->vs_SoilFrozen = reader.getSoilFrozen();
-  sl->_sps.deserialize(reader.getSps());
+  sl->sps.deserialize(reader.getSps());
   sl->vs_SoilMoisture_m3 = reader.getSoilMoistureM3();
   sl->vs_SoilTemperature = reader.getSoilTemperature();
 }
@@ -130,7 +130,7 @@ void soillayer::serialize(
   builder.setSoilNO2(sl->vs_SoilNO2);
   builder.setSoilNO3(sl->vs_SoilNO3);
   builder.setSoilFrozen(sl->vs_SoilFrozen);
-  sl->_sps.serialize(builder.initSps());
+  sl->sps.serialize(builder.initSps());
   builder.setSoilMoistureM3(sl->vs_SoilMoisture_m3);
   builder.setSoilTemperature(sl->vs_SoilTemperature);
 }
@@ -146,9 +146,9 @@ double soillayer::soilMoisturePF(const SoilLayer *sl) {
   // Derivation of Van Genuchten parameters (Vereecken at al. 1989)
 
   auto ps = calcVanGenuchtenVereeckenParams(
-      sl->_sps.vs_PermanentWiltingPoint, sl->_sps.vs_Saturation,
-      sl->_sps.vs_SoilSandContent, sl->_sps.vs_SoilClayContent,
-      sl->_sps.vs_SoilBulkDensity(), sl->_sps.vs_SoilOrganicCarbon());
+      sl->sps.vs_PermanentWiltingPoint, sl->sps.vs_Saturation,
+      sl->sps.vs_SoilSandContent, sl->sps.vs_SoilClayContent,
+      sl->sps.vs_SoilBulkDensity(), sl->sps.vs_SoilOrganicCarbon());
 
   // Van Genuchten retention curve
   auto sm = sl->vs_SoilMoisture_m3;
@@ -198,47 +198,6 @@ void SoilColumn::DelayedNMinApplicationParams::serialize(
 }
 
 /**
- * @brief Constructor
- *
- * Parameter initialization.
- */
-/*
-FertilizerTriggerThunk::FertilizerTriggerThunk(
-MineralFertiliserPartition fp,
-SoilColumn* sc,
-double vf_SamplingDepth,
-double vf_CropNTargetValue,
-double vf_CropNTargetValue30,
-double vf_FertiliserMaxApplication,
-double vf_FertiliserMinApplication,
-int vf_TopDressingDelay)
-: _fp(fp), _sc(sc),
-_sd(vf_SamplingDepth),
-_cntv(vf_CropNTargetValue),
-_cntv30(vf_CropNTargetValue30),
-_fmaxa(vf_FertiliserMaxApplication),
-_fmina(vf_FertiliserMinApplication),
-_tdd(vf_TopDressingDelay)
-{
-
-}
- */
-
-/**
- * Starts applying of fertilizer in the soil column according
- * to specified type (nmin or manual).
- * @todo Frage an Micha: Warum wurd operator überladen anstatt eine methode zu
- * implementieren?
- * @todo Micha: Das haut so nicht hin. Beide Fertiliser events haben
- * unterschiedliche Parameter-Anforderungen!
- */
-/*
-void FertilizerTriggerThunk::operator()() const {
-_sc->nMinFertiliserTrigger(_fp, _sd, _cntv, _cntv30, _fmaxa, _fmina, _tdd);
-}
-*/
-
-/**
  * Constructs every layer in the vector with the layer-thickness and the
  * matching soil parameters for that layer.
  *
@@ -252,8 +211,9 @@ kj::Own<SoilColumn> monica::makeSoilColumn(double layerThickness,
   auto sc = kj::heap<SoilColumn>();
   sc->ps_MaxMineralisationDepth = maxMineralisationDepth;
   debug() << "makeSoilColumn: " << soilParams.size() << endl;
-  for (const auto &sp : soilParams)
+  for (const auto &sp : soilParams) {
     sc->push_back(makeSoilLayer(layerThickness, sp));
+  }
   sc->vs_NumberOfOrganicLayers =
       soilcolumn::calculateNumberOfOrganicLayers(sc.get());
   return sc;
@@ -520,7 +480,7 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
     double samplingDepth, double cropNTargetValue, double cropNTargetValue30,
     double fertiliserMaxApplication, double fertiliserMinApplication,
     int topDressingDelay) {
-  if (sc->at(0).vs_SoilMoisture_m3 > sc->at(0)._sps.vs_FieldCapacity) {
+  if (sc->at(0).vs_SoilMoisture_m3 > sc->at(0).sps.vs_FieldCapacity) {
     sc->_delayedNMinApplications.push_back(
         {fertiliserPartition, samplingDepth, cropNTargetValue,
          cropNTargetValue30, fertiliserMaxApplication, fertiliserMinApplication,
@@ -632,8 +592,8 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
        i++) {
     const auto &li = sc->at(i);
     auto smi = li.vs_SoilMoisture_m3;
-    auto fci = li._sps.vs_FieldCapacity;
-    auto pwpi = li._sps.vs_PermanentWiltingPoint;
+    auto fci = li.sps.vs_FieldCapacity;
+    auto pwpi = li.sps.vs_PermanentWiltingPoint;
     auto lti = li.vs_LayerThickness;
 
     actPAW += (smi - pwpi) * lti * 1000.0; // [mm]
@@ -655,8 +615,8 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
            i < sc->size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
         auto &li = sc->at(i);
         auto smi = li.vs_SoilMoisture_m3;
-        auto fci = li._sps.vs_FieldCapacity;
-        auto pwpi = li._sps.vs_PermanentWiltingPoint;
+        auto fci = li.sps.vs_FieldCapacity;
+        auto pwpi = li.sps.vs_PermanentWiltingPoint;
         auto lti = li.vs_LayerThickness;
 
         double percentNFCi = (fci - pwpi) * aips.percentNFC / 100.0;
@@ -726,7 +686,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
 
   // add up all parameters that are affected by tillage
   for (size_t i = 0; i < layer_index; i++) {
-    soil_organic_carbon += sc->at(i)._sps.vs_SoilOrganicCarbon();
+    soil_organic_carbon += sc->at(i).sps.vs_SoilOrganicCarbon();
     // soil_organic_matter += at(i).vs_SoilOrganicMatter();
     soil_temperature += sc->at(i).vs_SoilTemperature;
     soil_moisture += sc->at(i).vs_SoilMoisture_m3;
@@ -762,7 +722,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
   for (size_t i = 0; i < layer_index; i++) {
     // assert((soil_organic_carbon - (soil_organic_matter *
     // OrganicConstants::po_SOM_to_C)) < 0.00001);
-    sc->at(i)._sps.set_vs_SoilOrganicCarbon(soil_organic_carbon);
+    sc->at(i).sps.set_vs_SoilOrganicCarbon(soil_organic_carbon);
     // at(i).set_SoilOrganicMatter(soil_organic_matter);
     sc->at(i).vs_SoilTemperature = soil_temperature;
     sc->at(i).vs_SoilMoisture_m3 = soil_moisture;
