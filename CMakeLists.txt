@@ -65,10 +65,10 @@ if (NOT TARGET climate_file_io_lib)
   add_subdirectory(mas_cpp_misc/climate/climate-file-io climate/climate-file-io)
 endif ()
 
-if (NOT TARGET soil_lib)
-  message(STATUS "target: soil_lib")
-  add_subdirectory(mas_cpp_misc/soil soil)
-endif ()
+#if (NOT TARGET soil_lib)
+#  message(STATUS "target: soil_lib")
+#  add_subdirectory(mas_cpp_misc/soil soil)
+#endif ()
 
 if (NOT TARGET zeromq_lib)
   message(STATUS "target: zeromq_lib")
@@ -224,7 +224,15 @@ add_library(monica_lib
 
         src/resource/version.h
         src/resource/version_resource.rc
-        src/run/capnp-helper.h src/run/capnp-helper.cpp)
+        src/run/capnp-helper.h src/run/capnp-helper.cpp
+
+        src/soil/soil.h
+        src/soil/soil.cpp
+        src/soil/conversion.h
+        src/soil/conversion.cpp
+        src/soil/constants.h
+        src/soil/constants.cpp
+        )
 target_link_libraries(monica_lib
         PUBLIC
         ${CMAKE_THREAD_LIBS_INIT}
@@ -233,7 +241,7 @@ target_link_libraries(monica_lib
         debug_lib
         helpers_lib
         date_lib
-        soil_lib
+        #soil_lib
         json11_lib
         common_lib
         climate_file_io_lib
