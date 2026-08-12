@@ -42,26 +42,24 @@ namespace monica {
 class Crop;
 
 struct MonicaModel {
-public:
   SiteParameters sitePs;
   EnvironmentParameters envPs;
   CropModuleParameters cropPs;
   SimulationParameters simPs;
   MeasuredGroundwaterTableInformation groundwaterInformation;
 
-  kj::Own<SoilColumn> soilColumn;           //!< main soil data structure
-  kj::Own<SoilTemperature> soilTemperature; //!< temperature code
-  kj::Own<SoilMoisture> soilMoisture;       //!< moisture code
-  kj::Own<SoilOrganic> soilOrganic;         //!< organic code
-  kj::Own<SoilTransport> soilTransport;     //!< transport code
-  kj::Own<CropModule>
-      currentCropModule; //!< crop code for possibly planted crop
+  kj::Own<SoilColumn> soilColumn;           // main soil data structure
+  kj::Own<SoilTemperature> soilTemperature; // temperature code
+  kj::Own<SoilMoisture> soilMoisture;       // moisture code
+  kj::Own<SoilOrganic> soilOrganic;         // organic code
+  kj::Own<SoilTransport> soilTransport;     // transport code
+  kj::Own<CropModule> currentCropModule; // crop code for possibly planted crop
 
-  //! store applied fertiliser during one production process
+  // store applied fertiliser during one production process
   double sumFertiliser{0.0};    // mineral N
   double sumOrgFertiliser{0.0}; // organic N
 
-  //! stores the daily sum of applied fertiliser
+  // stores the daily sum of applied fertiliser
   double dailySumFertiliser{0.0};    // mineral N
   double dailySumOrgFertiliser{0.0}; // organic N
 
@@ -95,10 +93,6 @@ public:
   int cultivationMethodCount{0};
 
   Intercropping intercropping;
-
-  // public:
-  //   uint critPos{ 0 };
-  //   uint cmitPos{ 0 };
 };
 
 kj::Own<MonicaModel> makeMonicaModel(const CentralParameterProvider &cpp);
