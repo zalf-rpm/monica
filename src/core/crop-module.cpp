@@ -500,19 +500,13 @@ void monica::cropmodule::step(
     double windSpeedHeight, double atmosphericCO2Concentration,
     double atmosphericO3Concentration, double grossPrecipitation,
     double referenceEvapotranspiration) {
-  auto &bareSoilKcFactor = cm->siteParams->bareSoilKcFactor;
-  auto &fireEvent = cm->fireEvent;
-  auto &frostKillOn = cm->simParams->pc_FrostKillOn;
-  auto &intercropping = cm->intercropping;
-  auto &intercroppingOtherCropHeight = cm->intercroppingOtherCropHeight;
-  auto stemElongationEventFired = cm->stemElongationEventFired;
   const auto &pc_BaseDaylength = cm->cropParams.cultivarParams.pc_BaseDaylength;
   const auto &pc_CriticalOxygenContent =
       cm->cropParams.speciesParams.pc_CriticalOxygenContent;
   const auto &pc_DaylengthRequirement =
       cm->cropParams.cultivarParams.pc_DaylengthRequirement;
-  auto pc_MaxCropHeight = cm->cropParams.cultivarParams.pc_MaxCropHeight;
-  auto pc_Perennial = cm->cropParams.cultivarParams.pc_Perennial;
+  const auto pc_MaxCropHeight = cm->cropParams.cultivarParams.pc_MaxCropHeight;
+  const auto pc_Perennial = cm->cropParams.cultivarParams.pc_Perennial;
   const auto &pc_SpecificLeafArea =
       cm->cropParams.cultivarParams.pc_SpecificLeafArea;
   const auto &pc_StageKcFactor = cm->cropParams.cultivarParams.pc_StageKcFactor;
@@ -521,7 +515,7 @@ void monica::cropmodule::step(
   const auto &pc_VernalisationRequirement =
       cm->cropParams.cultivarParams.pc_VernalisationRequirement;
   auto *soilColumn = cm->soilColumn;
-  auto &speciesPs = cm->cropParams.speciesParams;
+  const auto &speciesPs = cm->cropParams.speciesParams;
   auto &vc_AnthesisDay = cm->vc_AnthesisDay;
   auto &vc_CropHeight = cm->vc_CropHeight;
   auto &vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
@@ -533,10 +527,6 @@ void monica::cropmodule::step(
   auto &vc_EffectiveDayLength = cm->vc_EffectiveDayLength;
   auto &vc_GrossPrimaryProduction = cm->vc_GrossPrimaryProduction;
   auto &vc_KcFactor = cm->vc_KcFactor;
-  auto &vc_KcbFactor = cm->vc_KcbFactor;
-  auto &vc_Kcb_end = cm->vc_Kcb_end;
-  auto &vc_Kcb_ini = cm->vc_Kcb_ini;
-  auto &vc_Kcb_mid = cm->vc_Kcb_mid;
   auto &vc_MaturityDay = cm->vc_MaturityDay;
   auto &vc_MaturityReached = cm->vc_MaturityReached;
   auto &vc_NetPrimaryProduction = cm->vc_NetPrimaryProduction;
@@ -556,8 +546,9 @@ void monica::cropmodule::step(
 
   int vs_JulianDay = int(currentDate.julianDay());
 
-  if (vc_CuttingDelayDays > 0)
+  if (vc_CuttingDelayDays > 0) {
     vc_CuttingDelayDays--;
+  }
 
   // [TRANSPLANT SHOCK] Daily stress recovery calculation.
   // The daily transplant efficiency factors in transplant shock, increasing
@@ -597,31 +588,31 @@ void monica::cropmodule::step(
   }
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
-    if (fireEvent)
-      fireEvent("emergence");
+    if (cm->fireEvent)
+      cm->fireEvent("emergence");
   } else if (isAnthesisDay(cm, old_DevelopmentalStage, vc_DevelopmentalStage)) {
     vc_AnthesisDay = vs_JulianDay;
-    if (fireEvent)
-      fireEvent("anthesis");
+    if (cm->fireEvent)
+      cm->fireEvent("anthesis");
   } else if (isMaturityDay(cm, old_DevelopmentalStage, vc_DevelopmentalStage)) {
     vc_MaturityDay = vs_JulianDay;
     vc_MaturityReached = true;
-    if (fireEvent)
-      fireEvent("maturity");
+    if (cm->fireEvent)
+      cm->fireEvent("maturity");
   }
 
-  if (!stemElongationEventFired &&
+  if (!cm->stemElongationEventFired &&
       vc_CurrentTotalTemperatureSum >=
           pc_StageTemperatureSum[2] * 0.25 + pc_StageTemperatureSum[1]) {
-    fireEvent("cereal-stem-elongation");
-    stemElongationEventFired = true;
+    cm->fireEvent("cereal-stem-elongation");
+    cm->stemElongationEventFired = true;
   }
 
   // fire stage event on stage change or right after sowing
   if (old_DevelopmentalStage != cm->vc_DevelopmentalStage ||
       cm->noOfCropSteps == 0) {
-    if (fireEvent)
-      fireEvent(string("Stage-") + to_string(vc_DevelopmentalStage + 1));
+    if (cm->fireEvent)
+      cm->fireEvent(string("Stage-") + to_string(vc_DevelopmentalStage + 1));
   }
 
   vc_DaylengthFactor = fcDaylengthFactor(
@@ -641,8 +632,8 @@ void monica::cropmodule::step(
   }
 
   if (cm->vc_DevelopmentalStage == 0) {
-    vc_KcFactor = bareSoilKcFactor; /** @todo Claas: muss hier etwas Genaueres
-                                       hin, siehe FAO? */
+    vc_KcFactor = cm->siteParams->bareSoilKcFactor; /** @todo Claas: muss hier
+                                       etwas Genaueres hin, siehe FAO? */
   } else {
     vc_KcFactor =
         fcKcFactor(cm, pc_StageTemperatureSum[cm->vc_DevelopmentalStage],
@@ -702,7 +693,7 @@ void monica::cropmodule::step(
 
       // Phase 1: flat initial
       if (elapsed_GDD <= gdd_phase1_end) {
-        vc_KcbFactor = vc_Kcb_ini;
+        cm->vc_KcbFactor = cm->vc_Kcb_ini;
       }
       // Phase 2: linear development ascent
       else if (vc_DevelopmentalStage < mid_stage_start) {
@@ -711,11 +702,12 @@ void monica::cropmodule::step(
             (denom > 0.0)
                 ? std::min(1.0, (elapsed_GDD - gdd_phase1_end) / denom)
                 : 1.0;
-        vc_KcbFactor = vc_Kcb_ini + frac * (vc_Kcb_mid - vc_Kcb_ini);
+        cm->vc_KcbFactor =
+            cm->vc_Kcb_ini + frac * (cm->vc_Kcb_mid - cm->vc_Kcb_ini);
       }
       // Phase 3: mid-season plateau
       else if (vc_DevelopmentalStage < late_stage_start) {
-        vc_KcbFactor = vc_Kcb_mid;
+        cm->vc_KcbFactor = cm->vc_Kcb_mid;
       }
       // Phase 4: late-season linear descent
       else {
@@ -723,34 +715,36 @@ void monica::cropmodule::step(
         const double frac = (gdd_late_total > 0.0)
                                 ? std::min(1.0, gdd_since_late / gdd_late_total)
                                 : 1.0;
-        vc_KcbFactor = vc_Kcb_mid + frac * (vc_Kcb_end - vc_Kcb_mid);
+        cm->vc_KcbFactor =
+            cm->vc_Kcb_mid + frac * (cm->vc_Kcb_end - cm->vc_Kcb_mid);
       }
-      vc_KcbFactor = std::max(0.0, vc_KcbFactor);
+      cm->vc_KcbFactor = std::max(0.0, cm->vc_KcbFactor);
     }
   }
 
   auto icSendRcv = [&](const string &outmsg) {
-    if (cm->cropModParams->isIntercropping && intercropping->isAsync()) {
+    if (cm->cropModParams->isIntercropping && cm->intercropping->isAsync()) {
       debug() << outmsg;
       // tell the other side our current crop height
-      auto wreq = intercropping->writer.writeRequest();
+      auto wreq = cm->intercropping->writer.writeRequest();
       auto wval = wreq.initValue();
       wval.setHeight(vc_CropHeight);
       auto prom = wreq.send();
-      //.wait(intercropping->ioContext->waitScope); //.eagerlyEvaluate(nullptr);
+      //.wait(cm->intercropping->ioContext->waitScope);
+      ////.eagerlyEvaluate(nullptr);
       ////[](kj::Exception&& ex){ cout << "crop-module:
       // CropModule::fc_CropPhotosynthesis: write height failed: " <<
       // ex.getDescription().cStr() << endl;});
-      auto val = intercropping->reader.readRequest()
+      auto val = cm->intercropping->reader.readRequest()
                      .send()
-                     .wait(intercropping->ioContext->waitScope)
+                     .wait(cm->intercropping->ioContext->waitScope)
                      .getValue();
       debug() << "sent height: " << vc_CropHeight << " and received ";
       if (val.isHeight()) {
-        intercroppingOtherCropHeight = val.getHeight();
-        debug() << "height: " << intercroppingOtherCropHeight << endl;
+        cm->intercroppingOtherCropHeight = val.getHeight();
+        debug() << "height: " << cm->intercroppingOtherCropHeight << endl;
       } else if (val.isNoCrop()) {
-        intercroppingOtherCropHeight = -1;
+        cm->intercroppingOtherCropHeight = -1;
         debug() << " no-crop" << endl;
       } else if (val.isLait()) {
         debug() << " LAI_t -> Error shouldn't happen here." << endl;
@@ -762,7 +756,7 @@ void monica::cropmodule::step(
   if (vc_DevelopmentalStage > 0) {
     auto maxCropHeight =
         cm->cropModParams->isIntercropping &&
-                intercroppingOtherCropHeight > vc_CropHeight
+                cm->intercroppingOtherCropHeight > vc_CropHeight
             ? pc_MaxCropHeight * cm->cropModParams->pc_intercropping_phRedux
             : pc_MaxCropHeight;
     debug() << "original maxCropHeight: " << pc_MaxCropHeight
@@ -788,7 +782,7 @@ void monica::cropmodule::step(
 
     fcHeatStressImpact(cm, maxAirTemperature, minAirTemperature);
 
-    if (frostKillOn) {
+    if (cm->simParams->pc_FrostKillOn) {
       fcFrostKill(cm, maxAirTemperature, minAirTemperature);
     }
 
@@ -1707,8 +1701,8 @@ void monica::cropmodule::fcCropPhotosynthesis(
   const auto *cropPs = cm->cropModParams;
   auto *soilColumn = cm->soilColumn;
   auto *intercropping = cm->intercropping;
-  auto &speciesPs = cm->cropParams.speciesParams;
-  auto &cultivarPs = cm->cropParams.cultivarParams;
+  const auto &speciesPs = cm->cropParams.speciesParams;
+  const auto &cultivarPs = cm->cropParams.cultivarParams;
   auto &pc_AssimilatePartitioningCoeff =
       cm->cropParams.cultivarParams.pc_AssimilatePartitioningCoeff;
   auto &pc_CarboxylationPathway =
@@ -1783,7 +1777,7 @@ void monica::cropmodule::fcCropPhotosynthesis(
   auto &guentherEmissions = cm->guentherEmissions;
   auto &index24 = cm->index24;
   auto &index240 = cm->index240;
-  auto &intercroppingOtherCropHeight = cm->intercroppingOtherCropHeight;
+  const auto intercroppingOtherCropHeight = cm->intercroppingOtherCropHeight;
   auto &intercroppingOtherLAIt = cm->intercroppingOtherLAIt;
   auto &jjvEmissions = cm->jjvEmissions;
   auto &rad24 = cm->rad24;
@@ -2980,24 +2974,13 @@ void monica::cropmodule::fcHeatStressImpact(CropModule *cm,
  * @param vw_MinAirTemperature
  */
 
-void monica::cropmodule::fcFrostKill(CropModule *cm,
-                                     double vw_MaxAirTemperature,
-                                     double vw_MinAirTemperature) {
+void monica::cropmodule::fcFrostKill(CropModule *cm, double maxAirTemp,
+                                     double minAirTemp) {
   auto *soilColumn = cm->soilColumn;
-  auto &pc_FrostDehardening = cm->cropParams.cultivarParams.pc_FrostDehardening;
-  auto &pc_FrostHardening = cm->cropParams.cultivarParams.pc_FrostHardening;
-  auto &pc_LT50cultivar = cm->cropParams.cultivarParams.pc_LT50cultivar;
-  auto &pc_RespiratoryStress =
-      cm->cropParams.cultivarParams.pc_RespiratoryStress;
-  auto &pc_StageTemperatureSum =
-      cm->cropParams.cultivarParams.pc_StageTemperatureSum;
-  auto &vc_CropFrostRedux = cm->vc_CropFrostRedux;
-  auto &vc_CurrentTemperatureSum = cm->vc_CurrentTemperatureSum;
+
+  const auto &LT50cultivar = cm->cropParams.cultivarParams.pc_LT50cultivar;
+
   auto &vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
-  auto &vc_LT50 = cm->vc_LT50;
-  auto &vc_LT50M = cm->vc_LT50M;
-  auto &vc_VernalisationFactor = cm->vc_VernalisationFactor;
-  auto &getSnowDepthAndCalcTempUnderSnow = cm->getSnowDepthAndCalcTempUnderSnow;
 
   // ************************************************************
   // ** Fowler, D.B., B.M. Byrns, K.J. Greer. 2014. Overwinter **
@@ -3005,122 +2988,122 @@ void monica::cropmodule::fcFrostKill(CropModule *cm,
   // **	Simulation. Crop Sci. 54:2395–2405.          **
   // ************************************************************
 
-  double vc_LT50old = vc_LT50;
-  vc_LT50M = min(vc_LT50, vc_LT50M);
+  double LT50old = cm->vc_LT50;
+  cm->vc_LT50M = min(cm->vc_LT50, cm->vc_LT50M);
 
-  double vc_NightTemperature =
-      vw_MinAirTemperature +
-      ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0);
-  double vc_CrownTemperature = vc_NightTemperature * 0.8;
+  double nightTemperature = minAirTemp + ((maxAirTemp - minAirTemp) / 4.0);
+  double crownTemperature = nightTemperature * 0.8;
   auto snowDepthAndTempUnderSnow =
-      getSnowDepthAndCalcTempUnderSnow(vc_CrownTemperature);
+      cm->getSnowDepthAndCalcTempUnderSnow(crownTemperature);
   if (vc_DevelopmentalStage <= 1) {
-    vc_CrownTemperature = (3.0 * soilColumn->vt_SoilSurfaceTemperature +
-                           2.0 * (*soilColumn)[0].vs_SoilTemperature) /
-                          5.0;
+    crownTemperature = (3.0 * soilColumn->vt_SoilSurfaceTemperature +
+                        2.0 * (*soilColumn)[0].vs_SoilTemperature) /
+                       5.0;
   } else if (snowDepthAndTempUnderSnow.first > 0.0) {
-    vc_CrownTemperature = snowDepthAndTempUnderSnow.second;
+    crownTemperature = snowDepthAndTempUnderSnow.second;
   }
 
-  double vc_FrostHardening = 0.0;
-  double vc_ThresholdInductionTemperature =
-      3.72135 - 0.401124 * pc_LT50cultivar;
-  if ((vc_VernalisationFactor < 1.0) &&
-      (vc_CrownTemperature < vc_ThresholdInductionTemperature)) {
-    vc_FrostHardening =
-        pc_FrostHardening *
-        (vc_ThresholdInductionTemperature - vc_CrownTemperature) *
-        (vc_LT50old - pc_LT50cultivar);
+  double frostHardening = 0.0;
+  double thresholdInductionTemperature = 3.72135 - 0.401124 * LT50cultivar;
+  const auto &frostHardeningParam =
+      cm->cropParams.cultivarParams.pc_FrostHardening;
+  if ((cm->vc_VernalisationFactor < 1.0) &&
+      (crownTemperature < thresholdInductionTemperature)) {
+    frostHardening = frostHardeningParam *
+                     (thresholdInductionTemperature - crownTemperature) *
+                     (LT50old - LT50cultivar);
   }
 
-  double vc_FrostDehardening = 0.0;
+  double frostDehardening = 0.0;
+  const auto &frostDehardeningParam =
+      cm->cropParams.cultivarParams.pc_FrostDehardening;
+  const auto &stageTempSum =
+      cm->cropParams.cultivarParams.pc_StageTemperatureSum;
   double vc_DoubleRidgeCounter =
-      vc_CurrentTemperatureSum[1] / pc_StageTemperatureSum[1];
+      cm->vc_CurrentTemperatureSum[1] / stageTempSum[1];
   double vc_VRTFactor = 1 / (1 + (exp(80.0 * (vc_DoubleRidgeCounter - 0.9))));
   if ((vc_DoubleRidgeCounter < 1.0 &&
-       vc_CrownTemperature >= vc_ThresholdInductionTemperature) ||
+       crownTemperature >= thresholdInductionTemperature) ||
       vc_DoubleRidgeCounter >= 1.0) {
-    vc_FrostDehardening =
-        pc_FrostDehardening / (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
-  } else if (vc_DoubleRidgeCounter < 1.0 && -4.0 <= vc_CrownTemperature &&
-             vc_CrownTemperature < vc_ThresholdInductionTemperature) {
-    vc_FrostDehardening = (1 - vc_VRTFactor) * pc_FrostDehardening /
-                          (1.0 + exp(4.35 - 0.28 * vc_CrownTemperature));
+    frostDehardening =
+        frostDehardeningParam / (1.0 + exp(4.35 - 0.28 * crownTemperature));
+  } else if (vc_DoubleRidgeCounter < 1.0 && -4.0 <= crownTemperature &&
+             crownTemperature < thresholdInductionTemperature) {
+    frostDehardening = (1 - vc_VRTFactor) * frostDehardeningParam /
+                       (1.0 + exp(4.35 - 0.28 * crownTemperature));
   }
 
   // double vc_LowTemperatureExposure = 0.0;
-  // if (vc_CrownTemperature < -3.0 && (vc_LT50M - vc_CrownTemperature) > -12.0)
+  // if (vc_CrownTemperature < -3.0 && (cm->vc_LT50M - vc_CrownTemperature) >
+  // -12.0)
   //{
-  //	vc_LowTemperatureExposure = -(vc_LT50M - vc_CrownTemperature) /
-  //		exp(-pc_LowTemperatureExposure * (vc_LT50M -
+  //	vc_LowTemperatureExposure = -(cm->vc_LT50M - vc_CrownTemperature) /
+  //		exp(-pc_LowTemperatureExposure * (cm->vc_LT50M -
   // vc_CrownTemperature) - 3.74);
   // }
 
-  double vc_SnowDepthFactor = 1.0;
-  if (soilColumn->vm_SnowDepth <= 125.0)
-    vc_SnowDepthFactor = soilColumn->vm_SnowDepth / 125.0;
+  double snowDepthFactor = 1.0;
+  if (soilColumn->vm_SnowDepth <= 125.0) {
+    snowDepthFactor = soilColumn->vm_SnowDepth / 125.0;
+  }
+  double respirationFactor =
+      (exp(0.84 + 0.051 * crownTemperature) - 2.0) / 1.85;
+  const auto respiratoryStressParam =
+      cm->cropParams.cultivarParams.pc_RespiratoryStress;
+  double respiratoryStress =
+      respiratoryStressParam * respirationFactor * snowDepthFactor;
 
-  double vc_RespirationFactor =
-      (exp(0.84 + 0.051 * vc_CrownTemperature) - 2.0) / 1.85;
-  double vc_RespiratoryStress =
-      pc_RespiratoryStress * vc_RespirationFactor * vc_SnowDepthFactor;
-
-  // vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening +
+  // cm->vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening +
   // vc_LowTemperatureExposure + vc_RespiratoryStress;
-  vc_LT50 = vc_LT50old - vc_FrostHardening + vc_FrostDehardening +
-            vc_RespiratoryStress;
+  cm->vc_LT50 = LT50old - frostHardening + frostDehardening + respiratoryStress;
   // cout << "CrownT: " << vc_CrownTemperature
-  //	<< " LT50: " << vc_LT50 << " LT50old: " << vc_LT50old << " LT50M: " <<
-  // vc_LT50M << " LT50c: " << pc_LT50cultivar
+  //	<< " LT50: " << cm->vc_LT50 << " LT50old: " << vc_LT50old << " LT50M: "
+  //<<
+  // cm->vc_LT50M << " LT50c: " << pc_LT50cultivar
   //	<< " FH: " << vc_FrostHardening << " FDH: " << vc_FrostDehardening
   //	/*<< " LTE: " << vc_LowTemperatureExposure*/ << " RS: " <<
   // vc_RespiratoryStress << endl;
 
-  if (vc_LT50 > -3.0)
-    vc_LT50 = -3.0;
-  if (vc_CrownTemperature < vc_LT50)
-    vc_CropFrostRedux *= 0.5;
+  if (cm->vc_LT50 > -3.0) {
+    cm->vc_LT50 = -3.0;
+  }
+  if (crownTemperature < cm->vc_LT50M) {
+    cm->vc_CropFrostRedux *= 0.5;
+  }
 }
 
 /**
  * @brief Drought impact on crop fertility
  */
 void monica::cropmodule::fcDroughtImpactOnFertility(CropModule *cm) {
-  auto &pc_AssimilatePartitioningCoeff =
+  const auto &assimPartCoeff =
       cm->cropParams.cultivarParams.pc_AssimilatePartitioningCoeff;
-  auto &pc_DroughtImpactOnFertilityFactor =
+  const auto droughtImpactOnFertilityFactor =
       cm->cropParams.speciesParams.pc_DroughtImpactOnFertilityFactor;
-  auto &pc_DroughtStressThreshold =
+  const auto &droughtStressThreshold =
       cm->cropParams.cultivarParams.pc_DroughtStressThreshold;
-  auto &vc_DevelopmentalStage = cm->vc_DevelopmentalStage;
-  auto &vc_DroughtImpactOnFertility = cm->vc_DroughtImpactOnFertility;
-  auto &vc_OxygenDeficit = cm->vc_OxygenDeficit;
-  auto &vc_StorageOrgan = cm->vc_StorageOrgan;
-  auto &vc_TranspirationDeficit = cm->vc_TranspirationDeficit;
+  const auto devStage = cm->vc_DevelopmentalStage;
 
-  if (vc_TranspirationDeficit < 0.0)
-    vc_TranspirationDeficit = 0.0;
+  if (cm->vc_TranspirationDeficit < 0.0)
+    cm->vc_TranspirationDeficit = 0.0;
 
   // Fertility of the crop is reduced in cases of severe drought during bloom
-  if ((vc_TranspirationDeficit <
-       (pc_DroughtImpactOnFertilityFactor *
-        pc_DroughtStressThreshold[vc_DevelopmentalStage])) &&
-      (pc_AssimilatePartitioningCoeff[vc_DevelopmentalStage][vc_StorageOrgan] >
-       0.0)) {
+  if ((cm->vc_TranspirationDeficit <
+       (droughtImpactOnFertilityFactor * droughtStressThreshold[devStage])) &&
+      (assimPartCoeff[devStage][cm->vc_StorageOrgan] > 0.0)) {
     double vc_TranspirationDeficitHelper =
-        vc_TranspirationDeficit /
-        (pc_DroughtImpactOnFertilityFactor *
-         pc_DroughtStressThreshold[vc_DevelopmentalStage]);
+        cm->vc_TranspirationDeficit /
+        (droughtImpactOnFertilityFactor * droughtStressThreshold[devStage]);
 
-    if (vc_OxygenDeficit < 1.0) {
-      vc_DroughtImpactOnFertility = 1.0;
+    if (cm->vc_OxygenDeficit < 1.0) {
+      cm->vc_DroughtImpactOnFertility = 1.0;
     } else {
-      vc_DroughtImpactOnFertility =
+      cm->vc_DroughtImpactOnFertility =
           1.0 - ((1.0 - vc_TranspirationDeficitHelper) *
                  (1.0 - vc_TranspirationDeficitHelper));
     }
   } else {
-    vc_DroughtImpactOnFertility = 1.0;
+    cm->vc_DroughtImpactOnFertility = 1.0;
   }
 }
 
@@ -5182,6 +5165,10 @@ void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule *cm) {
     return;
   }
   cm->cropParams = *cm->perennialCropParams;
+  cm->noOfOrgans =
+      speciesparameters::numberOfOrgans(&cm->cropParams.speciesParams);
+  cm->noOfDevStages = speciesparameters::numberOfDevelopmentalStages(
+      &cm->cropParams.speciesParams);
 }
 
 /**
