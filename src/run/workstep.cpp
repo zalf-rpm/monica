@@ -178,24 +178,6 @@ bool workstep::reinitCommon(Workstep *ws, Tools::Date date, bool addYear, bool f
   return addedYear;
 }
 
-void workstep::setDate(Workstep *ws, Tools::Date date) {
-  ws->date = date;
-  switch (type(ws)) {
-  case WorkstepType::SOWING:
-    std::get<SowingData>(ws->data).sowingDate = date;
-    break;
-  case WorkstepType::AUTOMATIC_SOWING:
-    std::get<AutomaticSowingData>(ws->data).sowingDate = date;
-    break;
-  case WorkstepType::TRANSPLANT:
-    std::get<TransplantData>(ws->data).sowingDate = date;
-    break;
-  default:
-    break;
-  }
-}
-
-// --------------------------------------------------------------------
 // Central dispatch - switches on type(ws) to reach the right per-payload
 // function, declared in each concrete workstep's own header under
 // src/worksteps/.

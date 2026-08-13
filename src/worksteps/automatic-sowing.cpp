@@ -229,7 +229,8 @@ bool workstep::reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date, b
   workstep::reinitCommon(ws, date, addYear);
 
   as->cropSeeded = as->inSowingRange = false;
-  workstep::setDate(ws, Tools::Date());
+  ws->date = Tools::Date();
+  as->sowingDate = Tools::Date();
 
   bool addedYear1, addedYear2;
   // init first the latest date, if the latest date stays in current year, so

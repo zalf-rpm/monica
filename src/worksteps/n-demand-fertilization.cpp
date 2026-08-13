@@ -105,7 +105,7 @@ bool workstep::apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *mo
   model->dailySumFertiliser += appliedAmount;
   nd->appliedFertilizer = true;
   // record date of application until next reinit
-  workstep::setDate(ws, model->currentStepDate);
+  ws->date = model->currentStepDate;
   model->currentEvents.insert("NDemandFertilization");
 
   return true;
@@ -126,10 +126,8 @@ bool workstep::condition(NDemandFertilizationData *nd, Workstep *ws, MonicaModel
 
 bool workstep::reinit(NDemandFertilizationData *nd, Workstep *ws, Tools::Date date, bool addYear,
                       bool forceInitYear) {
-  workstep::setDate(ws, nd->initialDate);
-
+  ws->date = nd->initialDate;
   bool addedYear = workstep::reinitCommon(ws, date, addYear, forceInitYear);
-
   nd->appliedFertilizer = false;
 
   return false; // NOTE: original NDemandFertilization::reinit computes

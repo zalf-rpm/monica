@@ -123,11 +123,6 @@ Tools::Errors mergeCommon(Workstep *ws, json11::Json j);
 bool applyCommon(Workstep *ws, MonicaModel *model);
 bool conditionCommon(Workstep *ws, MonicaModel *model);
 bool reinitCommon(Workstep *ws, Tools::Date date, bool addYear = false, bool forceInitYear = false);
-// setDate is inherently per-subtype dispatching (3 of the 14 subtypes override
-// it), so unlike merge/apply/condition/reinit there's no single "common" body
-// to factor out - this is already the full central dispatcher, not a "Common"
-// helper.
-void setDate(Workstep *ws, Tools::Date date);
 
 // Central dispatch - switches on type(ws) to reach the right per-payload
 // function (declared in each concrete workstep's own header under

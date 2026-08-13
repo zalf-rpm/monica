@@ -98,7 +98,7 @@ bool workstep::reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date, 
   workstep::reinitCommon(ws, date, addYear);
 
   ah->cropHarvested = false;
-  workstep::setDate(ws, Tools::Date());
+  ws->date = Tools::Date();
 
   bool addedYear;
   tie(ah->absLatestDate, addedYear) =

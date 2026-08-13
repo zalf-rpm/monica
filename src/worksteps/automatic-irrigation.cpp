@@ -148,7 +148,7 @@ bool workstep::condition(AutomaticIrrigationData *ai, MonicaModel *model) {
 bool workstep::reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date, bool addYear,
                       bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
-  workstep::setDate(ws, Tools::Date());
+  ws->date = Tools::Date();
 
   bool startAddedYear, stopAddedYear;
   tie(ai->absStartDate, startAddedYear) =
