@@ -50,8 +50,9 @@ Errors cultivationmethod::merge(CultivationMethod *cm, json11::Json j) {
 
   for (auto wsj : j["worksteps"].array_items()) {
     auto ws = makeWorkstep(wsj);
-    if (!ws)
+    if (!ws) {
       continue;
+    }
     res.append(ws->errors);
     cm->allWorksteps.push_back(ws);
     switch (workstep::type(ws.get())) {
@@ -62,12 +63,14 @@ Errors cultivationmethod::merge(CultivationMethod *cm, json11::Json j) {
       sowingWS = &std::get<AutomaticSowingData>(ws->data);
       break;
     case WorkstepType::HARVEST:
-      if (sowingWS)
+      if (sowingWS) {
         std::get<HarvestData>(ws->data).sowing = sowingWS;
+      }
       break;
     case WorkstepType::AUTOMATIC_HARVEST:
-      if (sowingWS)
+      if (sowingWS) {
         std::get<AutomaticHarvestData>(ws->data).sowing = sowingWS;
+      }
       break;
     default:
       break;
@@ -79,8 +82,9 @@ Errors cultivationmethod::merge(CultivationMethod *cm, json11::Json j) {
 
 json11::Json cultivationmethod::to_json(const CultivationMethod *cm) {
   auto wss = J11Array();
-  for (auto ws : cm->allWorksteps)
+  for (auto ws : cm->allWorksteps) {
     wss.push_back(workstep::to_json(ws.get()));
+  }
 
   return J11Object{{"type", "CultivationMethod"},
                    {"customId", cm->customId},
@@ -92,14 +96,16 @@ json11::Json cultivationmethod::to_json(const CultivationMethod *cm) {
 }
 
 void cultivationmethod::apply(const CultivationMethod *cm, const Date &date, MonicaModel *model) {
-  for (auto ws : workstepsAt(cm, date))
+  for (auto ws : workstepsAt(cm, date)) {
     workstep::apply(ws.get(), model);
+  }
 }
 
 void cultivationmethod::absApply(const CultivationMethod *cm, const Date &date,
                                  MonicaModel *model) {
-  for (auto ws : absWorkstepsAt(cm, date))
+  for (auto ws : absWorkstepsAt(cm, date)) {
     workstep::apply(ws.get(), model);
+  }
 }
 
 void cultivationmethod::apply(CultivationMethod *cm, MonicaModel *model,
@@ -116,8 +122,9 @@ void cultivationmethod::apply(CultivationMethod *cm, MonicaModel *model,
 Date cultivationmethod::nextDate(const CultivationMethod *cm, const Date &date) {
   for (auto ws : cm->allWorksteps) {
     auto d = ws->date;
-    if (d.isValid() && d > date)
+    if (d.isValid() && d > date) {
       return d;
+    }
   }
   return Date();
 }
@@ -125,26 +132,31 @@ Date cultivationmethod::nextDate(const CultivationMethod *cm, const Date &date) 
 Date cultivationmethod::nextAbsDate(const CultivationMethod *cm, const Date &date) {
   for (auto ws : cm->allAbsWorksteps) {
     auto ad = workstep::absDate(ws.get());
-    if (ad.isValid() && ad > date)
+    if (ad.isValid() && ad > date) {
       return ad;
+    }
   }
   return Date();
 }
 
 vector<WSPtr> cultivationmethod::workstepsAt(const CultivationMethod *cm, const Date &date) {
   vector<WSPtr> apps;
-  for (auto ws : cm->allWorksteps)
-    if (ws->date.isValid() && ws->date == date)
+  for (auto ws : cm->allWorksteps) {
+    if (ws->date.isValid() && ws->date == date) {
       apps.push_back(ws);
+    }
+  }
 
   return apps;
 }
 
 vector<WSPtr> cultivationmethod::absWorkstepsAt(const CultivationMethod *cm, const Date &date) {
   vector<WSPtr> apps;
-  for (auto ws : cm->allAbsWorksteps)
-    if (workstep::absDate(ws.get()).isValid() && workstep::absDate(ws.get()) == date)
+  for (auto ws : cm->allAbsWorksteps) {
+    if (workstep::absDate(ws.get()).isValid() && workstep::absDate(ws.get()) == date) {
       apps.push_back(ws);
+    }
+  }
 
   return apps;
 }
@@ -156,9 +168,11 @@ bool cultivationmethod::areOnlyAbsoluteWorksteps(const CultivationMethod *cm) {
 
 vector<WSPtr> cultivationmethod::staticWorksteps(const CultivationMethod *cm) {
   vector<WSPtr> wss;
-  for (auto ws : cm->allWorksteps)
-    if (ws->date.isValid())
+  for (auto ws : cm->allWorksteps) {
+    if (ws->date.isValid()) {
       wss.push_back(ws);
+    }
+  }
   return wss;
 }
 
@@ -167,9 +181,9 @@ vector<WSPtr> cultivationmethod::allDynamicWorksteps(const CultivationMethod *cm
 }
 
 bool cultivationmethod::allDynamicWorkstepsFinished(const CultivationMethod *cm) {
-  if (cm->unfinishedDynamicWorksteps.empty())
+  if (cm->unfinishedDynamicWorksteps.empty()) {
     return true;
-  else {
+  } else {
     return all_of(cm->unfinishedDynamicWorksteps.begin(), cm->unfinishedDynamicWorksteps.end(),
                   [](const WSPtr &wsp) {
                     return workstep::type(wsp.get()) == WorkstepType::N_DEMAND_FERTILIZATION;
@@ -185,39 +199,44 @@ Date cultivationmethod::startDate(const CultivationMethod *cm) {
   for (auto ws : workstepsAt(cm, Date())) {
     auto ed = workstep::earliestDate(ws.get());
     if ((ed.isValid() && dynEarliestStart.isValid() && ed < dynEarliestStart) ||
-        (ed.isValid() && !dynEarliestStart.isValid()))
+        (ed.isValid() && !dynEarliestStart.isValid())) {
       dynEarliestStart = ed;
+    }
   }
 
   Date startDate = dynEarliestStart;
   for (auto ws : cm->allWorksteps) {
     auto d = ws->date;
-    if (d.isValid() && (d < startDate || !startDate.isValid()))
+    if (d.isValid() && (d < startDate || !startDate.isValid())) {
       startDate = d;
+    }
   }
 
   return startDate;
 }
 
 Date cultivationmethod::absStartDate(const CultivationMethod *cm, bool includeDynamicWorksteps) {
-  if (cm->allAbsWorksteps.empty())
+  if (cm->allAbsWorksteps.empty()) {
     return Date();
+  }
 
   auto dynEarliestStart = Date();
   if (includeDynamicWorksteps) {
     for (auto ws : absWorkstepsAt(cm, Date())) {
       auto ed = workstep::absEarliestDate(ws.get());
       if ((ed.isValid() && dynEarliestStart.isValid() && ed < dynEarliestStart) ||
-          (ed.isValid() && !dynEarliestStart.isValid()))
+          (ed.isValid() && !dynEarliestStart.isValid())) {
         dynEarliestStart = ed;
+      }
     }
   }
 
   Date startDate = dynEarliestStart;
   for (auto ws : cm->allAbsWorksteps) {
     auto ad = workstep::absDate(ws.get());
-    if (ad.isValid() && (ad < startDate || !startDate.isValid()))
+    if (ad.isValid() && (ad < startDate || !startDate.isValid())) {
       startDate = ad;
+    }
   }
 
   return startDate;
@@ -229,8 +248,9 @@ Date cultivationmethod::absLatestSowingDate(const CultivationMethod *cm) {
     auto t = workstep::type(ws.get());
     if (t == WorkstepType::SOWING || t == WorkstepType::AUTOMATIC_SOWING) {
       auto lsd = workstep::absLatestDate(ws.get());
-      if (lsd.isValid() && dynLatestSowingDate < lsd)
+      if (lsd.isValid() && dynLatestSowingDate < lsd) {
         dynLatestSowingDate = lsd;
+      }
     }
   }
 
@@ -238,44 +258,50 @@ Date cultivationmethod::absLatestSowingDate(const CultivationMethod *cm) {
 }
 
 Date cultivationmethod::endDate(const CultivationMethod *cm) {
-  if (cm->allWorksteps.empty())
+  if (cm->allWorksteps.empty()) {
     return Date();
+  }
 
   auto dynLatestEnd = Date();
   for (auto ws : workstepsAt(cm, Date())) {
     auto ed = workstep::latestDate(ws.get());
     if ((ed.isValid() && dynLatestEnd.isValid() && ed > dynLatestEnd) ||
-        (ed.isValid() && !dynLatestEnd.isValid()))
+        (ed.isValid() && !dynLatestEnd.isValid())) {
       dynLatestEnd = ed;
+    }
   }
 
   Date endDate = dynLatestEnd;
   for (auto ws : cm->allWorksteps) {
     auto d = ws->date;
-    if (d.isValid() && (d > endDate || !endDate.isValid()))
+    if (d.isValid() && (d > endDate || !endDate.isValid())) {
       endDate = d;
+    }
   }
 
   return endDate;
 }
 
 Date cultivationmethod::absEndDate(const CultivationMethod *cm) {
-  if (cm->allAbsWorksteps.empty())
+  if (cm->allAbsWorksteps.empty()) {
     return Date();
+  }
 
   auto dynLatestEnd = Date();
   for (auto ws : absWorkstepsAt(cm, Date())) {
     auto ed = workstep::absLatestDate(ws.get());
     if ((ed.isValid() && dynLatestEnd.isValid() && ed > dynLatestEnd) ||
-        (ed.isValid() && !dynLatestEnd.isValid()))
+        (ed.isValid() && !dynLatestEnd.isValid())) {
       dynLatestEnd = ed;
+    }
   }
 
   Date endDate = dynLatestEnd;
   for (auto ws : cm->allAbsWorksteps) {
     auto ad = workstep::absDate(ws.get());
-    if (ad.isValid() && (ad > endDate || !endDate.isValid()))
+    if (ad.isValid() && (ad > endDate || !endDate.isValid())) {
       endDate = ad;
+    }
   }
 
   return endDate;
@@ -286,11 +312,12 @@ std::string cultivationmethod::toString(const CultivationMethod *cm) {
   s << "name: " << cm->name << " start: " << startDate(cm).toString()
     << " end: " << endDate(cm).toString() << endl;
   s << "worksteps:" << endl;
-  for (auto p : cm->allWorksteps)
+  for (auto p : cm->allWorksteps) {
     // p->toString() in the original always fell back to the Json11Serializable
     // default (to_json().dump()), since Workstep never overrode toString()
     // itself - see workstep::to_json.
     s << "at: " << p->date.toString() << " what: " << workstep::to_json(p.get()).dump() << endl;
+  }
   return s.str();
 }
 
@@ -301,8 +328,9 @@ bool cultivationmethod::reinit(CultivationMethod *cm, Tools::Date date, bool for
   for (auto ws : cm->allWorksteps) {
     addedYear = workstep::reinit(ws.get(), date, addedYear, forceInitYear) || addedYear;
     cm->allAbsWorksteps.push_back(ws);
-    if (!workstep::absDate(ws.get()).isValid())
+    if (!workstep::absDate(ws.get()).isValid()) {
       cm->unfinishedDynamicWorksteps.push_back(ws);
+    }
   }
 
   return addedYear;
