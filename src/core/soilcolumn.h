@@ -52,11 +52,6 @@ struct CropModule;
  * <img src="../images/aom-diagramm.png" width="600" height="420">
  */
 struct AOM_Properties {
-  void deserialize(mas::schema::model::monica::AOMProperties::Reader reader);
-
-  void
-  serialize(mas::schema::model::monica::AOMProperties::Builder builder) const;
-
   double vo_AOM_Slow{0.0}; // C content in slowly decomposing added organic
                            // matter pool [kgC m-3]
   double vo_AOM_Fast{0.0}; // C content in rapidly decomposing added organic
@@ -106,6 +101,15 @@ struct AOM_Properties {
   bool noVolatilization{true}; // true means it's a crop residue and won't
                                // participate in vo_volatilisation()
 };
+
+namespace aomproperties {
+
+void deserialize(AOM_Properties *aomp,
+                 mas::schema::model::monica::AOMProperties::Reader reader);
+void serialize(const AOM_Properties *aomp,
+               mas::schema::model::monica::AOMProperties::Builder builder);
+
+} // namespace aomproperties
 
 /**
  * @author Claas Nendel, Michael Berg
@@ -204,12 +208,6 @@ struct SoilColumn {
   CropModule *cropModule{nullptr};
 
   struct DelayedNMinApplicationParams {
-    void deserialize(mas::schema::model::monica::SoilColumnState::
-                         DelayedNMinApplicationParams::Reader reader);
-
-    void serialize(mas::schema::model::monica::SoilColumnState::
-                       DelayedNMinApplicationParams::Builder builder) const;
-
     MineralFertilizerParameters fp;
     double vf_SamplingDepth;
     double vf_CropNTarget;
@@ -237,6 +235,14 @@ void deserialize(SoilColumn *sc,
                  mas::schema::model::monica::SoilColumnState::Reader reader);
 void serialize(const SoilColumn *sc,
                mas::schema::model::monica::SoilColumnState::Builder builder);
+void deserializeDelayedNMinApplicationParams(
+    SoilColumn::DelayedNMinApplicationParams *dnmap,
+    mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::
+        Reader reader);
+void serializeDelayedNMinApplicationParams(
+    const SoilColumn::DelayedNMinApplicationParams *dnmap,
+    mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::
+        Builder builder);
 void putCrop(SoilColumn *sc, CropModule *cm);
 void removeCrop(SoilColumn *sc);
 void clearTopDressingParams(SoilColumn *sc);

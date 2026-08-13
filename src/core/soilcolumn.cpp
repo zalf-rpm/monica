@@ -28,54 +28,56 @@ using namespace std;
 using namespace Soil;
 using namespace Tools;
 
-void AOM_Properties::deserialize(
+void aomproperties::deserialize(
+    AOM_Properties *aomp,
     mas::schema::model::monica::AOMProperties::Reader reader) {
-  vo_AOM_Slow = reader.getAomSlow();
-  vo_AOM_Fast = reader.getAomFast();
-  vo_AOM_SlowDecRate_to_SMB_Slow = reader.getAomSlowDecRatetoSMBSlow();
-  vo_AOM_SlowDecRate_to_SMB_Fast = reader.getAomSlowDecRatetoSMBFast();
-  vo_AOM_FastDecRate_to_SMB_Slow = reader.getAomFastDecRatetoSMBSlow();
-  vo_AOM_FastDecRate_to_SMB_Fast = reader.getAomFastDecRatetoSMBFast();
-  vo_AOM_SlowDecCoeff = reader.getAomSlowDecCoeff();
-  vo_AOM_FastDecCoeff = reader.getAomFastDecCoeff();
-  vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
-  vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
-  vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowtoSMBSlow();
-  vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowtoSMBFast();
-  vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
-  vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
-  vo_DaysAfterApplication = reader.getDaysAfterApplication();
-  vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
-  vo_AOM_NH4Content = reader.getAomNH4Content();
-  vo_AOM_SlowDelta = reader.getAomSlowDelta();
-  vo_AOM_FastDelta = reader.getAomFastDelta();
-  incorporation = reader.getIncorporation();
-  noVolatilization = reader.getNoVolatilization();
+  aomp->vo_AOM_Slow = reader.getAomSlow();
+  aomp->vo_AOM_Fast = reader.getAomFast();
+  aomp->vo_AOM_SlowDecRate_to_SMB_Slow = reader.getAomSlowDecRatetoSMBSlow();
+  aomp->vo_AOM_SlowDecRate_to_SMB_Fast = reader.getAomSlowDecRatetoSMBFast();
+  aomp->vo_AOM_FastDecRate_to_SMB_Slow = reader.getAomFastDecRatetoSMBSlow();
+  aomp->vo_AOM_FastDecRate_to_SMB_Fast = reader.getAomFastDecRatetoSMBFast();
+  aomp->vo_AOM_SlowDecCoeff = reader.getAomSlowDecCoeff();
+  aomp->vo_AOM_FastDecCoeff = reader.getAomFastDecCoeff();
+  aomp->vo_AOM_SlowDecCoeffStandard = reader.getAomSlowDecCoeffStandard();
+  aomp->vo_AOM_FastDecCoeffStandard = reader.getAomFastDecCoeffStandard();
+  aomp->vo_PartAOM_Slow_to_SMB_Slow = reader.getPartAOMSlowtoSMBSlow();
+  aomp->vo_PartAOM_Slow_to_SMB_Fast = reader.getPartAOMSlowtoSMBFast();
+  aomp->vo_CN_Ratio_AOM_Slow = reader.getCnRatioAOMSlow();
+  aomp->vo_CN_Ratio_AOM_Fast = reader.getCnRatioAOMFast();
+  aomp->vo_DaysAfterApplication = reader.getDaysAfterApplication();
+  aomp->vo_AOM_DryMatterContent = reader.getAomDryMatterContent();
+  aomp->vo_AOM_NH4Content = reader.getAomNH4Content();
+  aomp->vo_AOM_SlowDelta = reader.getAomSlowDelta();
+  aomp->vo_AOM_FastDelta = reader.getAomFastDelta();
+  aomp->incorporation = reader.getIncorporation();
+  aomp->noVolatilization = reader.getNoVolatilization();
 }
 
-void AOM_Properties::serialize(
-    mas::schema::model::monica::AOMProperties::Builder builder) const {
-  builder.setAomSlow(vo_AOM_Slow);
-  builder.setAomFast(vo_AOM_Fast);
-  builder.setAomSlowDecRatetoSMBSlow(vo_AOM_SlowDecRate_to_SMB_Slow);
-  builder.setAomSlowDecRatetoSMBFast(vo_AOM_SlowDecRate_to_SMB_Fast);
-  builder.setAomFastDecRatetoSMBSlow(vo_AOM_FastDecRate_to_SMB_Slow);
-  builder.setAomFastDecRatetoSMBFast(vo_AOM_FastDecRate_to_SMB_Fast);
-  builder.setAomSlowDecCoeff(vo_AOM_SlowDecCoeff);
-  builder.setAomFastDecCoeff(vo_AOM_FastDecCoeff);
-  builder.setAomSlowDecCoeffStandard(vo_AOM_SlowDecCoeffStandard);
-  builder.setAomFastDecCoeffStandard(vo_AOM_FastDecCoeffStandard);
-  builder.setPartAOMSlowtoSMBSlow(vo_PartAOM_Slow_to_SMB_Slow);
-  builder.setPartAOMSlowtoSMBFast(vo_PartAOM_Slow_to_SMB_Fast);
-  builder.setCnRatioAOMSlow(vo_CN_Ratio_AOM_Slow);
-  builder.setCnRatioAOMFast(vo_CN_Ratio_AOM_Fast);
-  builder.setDaysAfterApplication(vo_DaysAfterApplication);
-  builder.setAomDryMatterContent(vo_AOM_DryMatterContent);
-  builder.setAomNH4Content(vo_AOM_NH4Content);
-  builder.setAomSlowDelta(vo_AOM_SlowDelta);
-  builder.setAomFastDelta(vo_AOM_FastDelta);
-  builder.setIncorporation(incorporation);
-  builder.setNoVolatilization(noVolatilization);
+void aomproperties::serialize(
+    const AOM_Properties *aomp,
+    mas::schema::model::monica::AOMProperties::Builder builder) {
+  builder.setAomSlow(aomp->vo_AOM_Slow);
+  builder.setAomFast(aomp->vo_AOM_Fast);
+  builder.setAomSlowDecRatetoSMBSlow(aomp->vo_AOM_SlowDecRate_to_SMB_Slow);
+  builder.setAomSlowDecRatetoSMBFast(aomp->vo_AOM_SlowDecRate_to_SMB_Fast);
+  builder.setAomFastDecRatetoSMBSlow(aomp->vo_AOM_FastDecRate_to_SMB_Slow);
+  builder.setAomFastDecRatetoSMBFast(aomp->vo_AOM_FastDecRate_to_SMB_Fast);
+  builder.setAomSlowDecCoeff(aomp->vo_AOM_SlowDecCoeff);
+  builder.setAomFastDecCoeff(aomp->vo_AOM_FastDecCoeff);
+  builder.setAomSlowDecCoeffStandard(aomp->vo_AOM_SlowDecCoeffStandard);
+  builder.setAomFastDecCoeffStandard(aomp->vo_AOM_FastDecCoeffStandard);
+  builder.setPartAOMSlowtoSMBSlow(aomp->vo_PartAOM_Slow_to_SMB_Slow);
+  builder.setPartAOMSlowtoSMBFast(aomp->vo_PartAOM_Slow_to_SMB_Fast);
+  builder.setCnRatioAOMSlow(aomp->vo_CN_Ratio_AOM_Slow);
+  builder.setCnRatioAOMFast(aomp->vo_CN_Ratio_AOM_Fast);
+  builder.setDaysAfterApplication(aomp->vo_DaysAfterApplication);
+  builder.setAomDryMatterContent(aomp->vo_AOM_DryMatterContent);
+  builder.setAomNH4Content(aomp->vo_AOM_NH4Content);
+  builder.setAomSlowDelta(aomp->vo_AOM_SlowDelta);
+  builder.setAomFastDelta(aomp->vo_AOM_FastDelta);
+  builder.setIncorporation(aomp->incorporation);
+  builder.setNoVolatilization(aomp->noVolatilization);
 }
 
 /**
@@ -98,7 +100,10 @@ void soillayer::deserialize(
     SoilLayer *sl, mas::schema::model::monica::SoilLayerState::Reader reader) {
   sl->vs_LayerThickness = reader.getLayerThickness();
   sl->vs_SoilWaterFlux = reader.getSoilWaterFlux();
-  setFromComplexCapnpList(sl->vo_AOM_Pool, reader.getVoAOMPool());
+  auto aomPool = reader.getVoAOMPool();
+  sl->vo_AOM_Pool.resize(aomPool.size());
+  for (uint32_t i = 0; i < aomPool.size(); i++)
+    aomproperties::deserialize(&sl->vo_AOM_Pool[i], aomPool[i]);
   sl->vs_SOM_Slow = reader.getSomSlow();
   sl->vs_SOM_Fast = reader.getSomFast();
   sl->vs_SMB_Slow = reader.getSmbSlow();
@@ -118,9 +123,10 @@ void soillayer::serialize(
     mas::schema::model::monica::SoilLayerState::Builder builder) {
   builder.setLayerThickness(sl->vs_LayerThickness);
   builder.setSoilWaterFlux(sl->vs_SoilWaterFlux);
-  setComplexCapnpList(
-      sl->vo_AOM_Pool,
-      builder.initVoAOMPool((capnp::uint)sl->vo_AOM_Pool.size()));
+  auto aomPoolBuilder =
+      builder.initVoAOMPool((capnp::uint)sl->vo_AOM_Pool.size());
+  for (capnp::uint i = 0; i < sl->vo_AOM_Pool.size(); i++)
+    aomproperties::serialize(&sl->vo_AOM_Pool[i], aomPoolBuilder[i]);
   builder.setSomSlow(sl->vs_SOM_Slow);
   builder.setSomFast(sl->vs_SOM_Fast);
   builder.setSmbSlow(sl->vs_SMB_Slow);
@@ -173,28 +179,30 @@ double soillayer::soilNmin(const SoilLayer *sl) {
 
 //------------------------------------------------------------------------------
 
-void SoilColumn::DelayedNMinApplicationParams::deserialize(
+void soilcolumn::deserializeDelayedNMinApplicationParams(
+    SoilColumn::DelayedNMinApplicationParams *dnmap,
     mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::
         Reader reader) {
-  mineralfertilizerparameters::deserialize(&fp, reader.getFp());
-  vf_SamplingDepth = reader.getSamplingDepth();
-  vf_CropNTarget = reader.getCropNTarget();
-  vf_CropNTarget30 = reader.getCropNTarget30();
-  vf_FertiliserMinApplication = reader.getFertiliserMinApplication();
-  vf_FertiliserMaxApplication = reader.getFertiliserMaxApplication();
-  vf_TopDressingDelay = (int)reader.getTopDressingDelay();
+  mineralfertilizerparameters::deserialize(&dnmap->fp, reader.getFp());
+  dnmap->vf_SamplingDepth = reader.getSamplingDepth();
+  dnmap->vf_CropNTarget = reader.getCropNTarget();
+  dnmap->vf_CropNTarget30 = reader.getCropNTarget30();
+  dnmap->vf_FertiliserMinApplication = reader.getFertiliserMinApplication();
+  dnmap->vf_FertiliserMaxApplication = reader.getFertiliserMaxApplication();
+  dnmap->vf_TopDressingDelay = (int)reader.getTopDressingDelay();
 }
 
-void SoilColumn::DelayedNMinApplicationParams::serialize(
+void soilcolumn::serializeDelayedNMinApplicationParams(
+    const SoilColumn::DelayedNMinApplicationParams *dnmap,
     mas::schema::model::monica::SoilColumnState::DelayedNMinApplicationParams::
-        Builder builder) const {
-  mineralfertilizerparameters::serialize(&fp, builder.initFp());
-  builder.setSamplingDepth(vf_SamplingDepth);
-  builder.setCropNTarget(vf_CropNTarget);
-  builder.setCropNTarget30(vf_CropNTarget30);
-  builder.setFertiliserMinApplication(vf_FertiliserMinApplication);
-  builder.setFertiliserMaxApplication(vf_FertiliserMaxApplication);
-  builder.setTopDressingDelay(vf_TopDressingDelay);
+        Builder builder) {
+  mineralfertilizerparameters::serialize(&dnmap->fp, builder.initFp());
+  builder.setSamplingDepth(dnmap->vf_SamplingDepth);
+  builder.setCropNTarget(dnmap->vf_CropNTarget);
+  builder.setCropNTarget30(dnmap->vf_CropNTarget30);
+  builder.setFertiliserMinApplication(dnmap->vf_FertiliserMinApplication);
+  builder.setFertiliserMaxApplication(dnmap->vf_FertiliserMaxApplication);
+  builder.setTopDressingDelay(dnmap->vf_TopDressingDelay);
 }
 
 /**
@@ -326,8 +334,14 @@ void monica::soilcolumn::deserialize(
   mineralfertilizerparameters::deserialize(&sc->vf_TopDressingPartition,
                                            reader.getVfTopDressingPartition());
   sc->vf_TopDressingDelay = reader.getVfTopDressingDelay();
-  setFromComplexCapnpList(sc->_delayedNMinApplications,
-                          reader.getDelayedNMinApplications());
+  auto delayedNMinApplications = reader.getDelayedNMinApplications();
+  sc->_delayedNMinApplications.resize(delayedNMinApplications.size());
+  {
+    uint32_t j = 0;
+    for (auto &dnmap : sc->_delayedNMinApplications)
+      soilcolumn::deserializeDelayedNMinApplicationParams(
+          &dnmap, delayedNMinApplications[j++]);
+  }
   // pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
   auto layers = reader.getLayers();
   sc->layers.resize(layers.size());
@@ -352,9 +366,14 @@ void monica::soilcolumn::serialize(
   mineralfertilizerparameters::serialize(&sc->vf_TopDressingPartition,
                                          builder.initVfTopDressingPartition());
   builder.setVfTopDressingDelay(sc->vf_TopDressingDelay);
-  setComplexCapnpList(sc->_delayedNMinApplications,
-                      builder.initDelayedNMinApplications(
-                          (capnp::uint)sc->_delayedNMinApplications.size()));
+  {
+    auto delayedNMinApplicationsBuilder = builder.initDelayedNMinApplications(
+        (capnp::uint)sc->_delayedNMinApplications.size());
+    uint32_t j = 0;
+    for (const auto &dnmap : sc->_delayedNMinApplications)
+      soilcolumn::serializeDelayedNMinApplicationParams(
+          &dnmap, delayedNMinApplicationsBuilder[j++]);
+  }
   // builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
   auto layersBuilder = builder.initLayers((capnp::uint)sc->layers.size());
   uint32_t i = 0;
