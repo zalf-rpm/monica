@@ -968,11 +968,11 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     if (isSyncIC) {
       const auto &cps = monica->cropPs;
       if (cps.twoWaySync && cps.sequentialWaterUse) {
-        auto nols = monica->soilColumn->size();
-        KJ_ASSERT((nols == monica2->soilColumn->size()));
+        auto nols = monica->soilColumn->layers.size();
+        KJ_ASSERT((nols == monica2->soilColumn->layers.size()));
         for (size_t i = 0; i < nols; i++) {
-          (*(monica->soilColumn))[i].vs_SoilMoisture_m3 =
-              (*(monica2->soilColumn))[i].vs_SoilMoisture_m3;
+          monica->soilColumn->layers[i].vs_SoilMoisture_m3 =
+              monica2->soilColumn->layers[i].vs_SoilMoisture_m3;
         }
       }
     }
@@ -1090,11 +1090,11 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
       // set the soil moisture of monica2's soil column to monica1's soil column
       // (after running for current day)
       if (monica->cropPs.sequentialWaterUse) {
-        auto nols = monica->soilColumn->size();
-        KJ_ASSERT((nols == monica2->soilColumn->size()));
+        auto nols = monica->soilColumn->layers.size();
+        KJ_ASSERT((nols == monica2->soilColumn->layers.size()));
         for (size_t i = 0; i < nols; i++) {
-          (*(monica2->soilColumn))[i].vs_SoilMoisture_m3 =
-              (*(monica->soilColumn))[i].vs_SoilMoisture_m3;
+          monica2->soilColumn->layers[i].vs_SoilMoisture_m3 =
+              monica->soilColumn->layers[i].vs_SoilMoisture_m3;
         }
       }
       monicamodel::step(monica2.get());

@@ -16,7 +16,7 @@ namespace {
 
 SoilLayer &soilTemperatureLayerAt(SoilTemperature *st, size_t i) {
   if (i < st->noOfSoilLayers)
-    return st->soilColumn->at(i);
+    return st->soilColumn->layers.at(i);
   if (i < st->noOfSoilLayers + 1)
     return st->soilColumnGroundLayer;
   return st->soilColumnBottomLayer;
@@ -24,7 +24,7 @@ SoilLayer &soilTemperatureLayerAt(SoilTemperature *st, size_t i) {
 
 const SoilLayer &soilTemperatureLayerAt(const SoilTemperature *st, size_t i) {
   if (i < st->noOfSoilLayers)
-    return st->soilColumn->at(i);
+    return st->soilColumn->layers.at(i);
   if (i < st->noOfSoilLayers + 1)
     return st->soilColumnGroundLayer;
   return st->soilColumnBottomLayer;
@@ -197,8 +197,8 @@ makeSoilTemperature(MonicaModel &mm,
   st->soilColumn = mm.soilColumn.get();
   st->monica = &mm;
   st->params = params;
-  st->noOfTempLayers = st->soilColumn->size() + 2;
-  st->noOfSoilLayers = st->soilColumn->size();
+  st->noOfTempLayers = st->soilColumn->layers.size() + 2;
+  st->noOfSoilLayers = st->soilColumn->layers.size();
   st->soilTemperature.resize(st->noOfTempLayers);
   st->V.resize(st->noOfTempLayers);
   st->volumeMatrix.resize(st->noOfTempLayers);
@@ -216,9 +216,9 @@ makeSoilTemperature(MonicaModel &mm,
 
   debug() << "Constructor: SoilColumn" << endl;
 
-  if (!st->soilColumn->empty())
+  if (!st->soilColumn->layers.empty())
     st->soilColumnGroundLayer = st->soilColumnBottomLayer =
-        st->soilColumn->back();
+        st->soilColumn->layers.back();
 
   const double soilMoistureConst = st->params.pt_SoilMoisture;
 
@@ -320,8 +320,8 @@ kj::Own<SoilTemperature> makeSoilTemperature(
   auto st = kj::heap<SoilTemperature>();
   st->soilColumn = mm.soilColumn.get();
   st->monica = &mm;
-  st->noOfTempLayers = st->soilColumn->size() + 2;
-  st->noOfSoilLayers = st->soilColumn->size();
+  st->noOfTempLayers = st->soilColumn->layers.size() + 2;
+  st->noOfSoilLayers = st->soilColumn->layers.size();
   st->solution.resize(st->noOfTempLayers);
   st->matrixDiagonal.resize(st->noOfTempLayers);
   st->matrixLowerTriangle.resize(st->noOfTempLayers);

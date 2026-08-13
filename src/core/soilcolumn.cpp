@@ -212,7 +212,7 @@ kj::Own<SoilColumn> monica::makeSoilColumn(double layerThickness,
   sc->ps_MaxMineralisationDepth = maxMineralisationDepth;
   debug() << "makeSoilColumn: " << soilParams.size() << endl;
   for (const auto &sp : soilParams) {
-    sc->push_back(makeSoilLayer(layerThickness, sp));
+    sc->layers.push_back(makeSoilLayer(layerThickness, sp));
   }
   sc->vs_NumberOfOrganicLayers =
       soilcolumn::calculateNumberOfOrganicLayers(sc.get());
@@ -237,9 +237,9 @@ kj::Own<SoilColumn> monica::makeSoilColumn(
 int monica::soilcolumn::calculateNumberOfOrganicLayers(const SoilColumn *sc) {
   double lsum = 0;
   int count = 0;
-  for (int i = 0; i < sc->size(); i++) {
+  for (int i = 0; i < sc->layers.size(); i++) {
     count++;
-    lsum += sc->at(i).vs_LayerThickness;
+    lsum += sc->layers.at(i).vs_LayerThickness;
 
     if (lsum >= sc->ps_MaxMineralisationDepth)
       break;
@@ -257,10 +257,10 @@ size_t monica::soilcolumn::getLayerNumberForDepth(const SoilColumn *sc,
                                                   double depth) {
   size_t layer = 0;
   double accu_depth = 0;
-  double layer_thickness = sc->at(0).vs_LayerThickness;
+  double layer_thickness = sc->layers.at(0).vs_LayerThickness;
 
   // find number of layer that lay between the given depth
-  for (size_t i = 0, _size = sc->size(); i < _size; i++) {
+  for (size_t i = 0, _size = sc->layers.size(); i < _size; i++) {
     accu_depth += layer_thickness;
     if (depth <= accu_depth)
       break;
@@ -279,7 +279,7 @@ double monica::soilcolumn::sumSoilTemperature(const SoilColumn *sc,
                                               int layers) {
   double accu = 0.0;
   for (int i = 0; i < layers; i++)
-    accu += sc->at(i).vs_SoilTemperature;
+    accu += sc->layers.at(i).vs_SoilTemperature;
   return accu;
 }
 
@@ -289,13 +289,13 @@ double monica::soilcolumn::applyMineralFertiliserViaNDemand(
   double sumSoilNkgHa = 0.0;
   int depthCm = 0;
   int i = 0;
-  for (const auto &layer : *sc) {
+  for (const auto &layer : sc->layers) {
     double layerSize = layer.vs_LayerThickness;
     depthCm += int(layerSize * 100.0);
 
     // convert [kg N m-3] to [kg N ha-1]
     sumSoilNkgHa +=
-        (sc->at(i).vs_SoilNO3 + sc->at(i).vs_SoilNH4) * 10000.0 * layerSize;
+        (sc->layers.at(i).vs_SoilNO3 + sc->layers.at(i).vs_SoilNH4) * 10000.0 * layerSize;
 
     if (depthCm >= int(demandDepth * 100))
       break;
@@ -330,9 +330,9 @@ void monica::soilcolumn::deserialize(
                           reader.getDelayedNMinApplications());
   // pm_CriticalMoistureDepth = reader.getPmCriticalMoistureDepth();
   auto layers = reader.getLayers();
-  sc->resize(layers.size());
+  sc->layers.resize(layers.size());
   uint32_t i = 0;
-  for (auto &layer : *sc)
+  for (auto &layer : sc->layers)
     soillayer::deserialize(&layer, layers[i++]);
 }
 
@@ -356,9 +356,9 @@ void monica::soilcolumn::serialize(
                       builder.initDelayedNMinApplications(
                           (capnp::uint)sc->_delayedNMinApplications.size()));
   // builder.setPmCriticalMoistureDepth(pm_CriticalMoistureDepth);
-  auto layersBuilder = builder.initLayers((capnp::uint)sc->size());
+  auto layersBuilder = builder.initLayers((capnp::uint)sc->layers.size());
   uint32_t i = 0;
-  for (const auto &layer : *sc)
+  for (const auto &layer : sc->layers)
     soillayer::serialize(&layer, layersBuilder[i++]);
 }
 
@@ -381,13 +381,13 @@ void monica::soilcolumn::clearTopDressingParams(SoilColumn *sc) {
  * @author: Claas Nendel
  */
 void monica::soilcolumn::deleteAOMPool(SoilColumn *sc) {
-  for (unsigned int i_AOMPool = 0; i_AOMPool < sc->at(0).vo_AOM_Pool.size();) {
+  for (unsigned int i_AOMPool = 0; i_AOMPool < sc->layers.at(0).vo_AOM_Pool.size();) {
     double vo_SumAOM_Slow = 0.0;
     double vo_SumAOM_Fast = 0.0;
 
     for (int i_Layer = 0; i_Layer < sc->vs_NumberOfOrganicLayers; i_Layer++) {
-      vo_SumAOM_Slow += sc->at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Slow;
-      vo_SumAOM_Fast += sc->at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Fast;
+      vo_SumAOM_Slow += sc->layers.at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Slow;
+      vo_SumAOM_Fast += sc->layers.at(i_Layer).vo_AOM_Pool.at(i_AOMPool).vo_AOM_Fast;
     }
 
     // cout << "Pool " << i_AOMPool << " -> Slow: " << vo_SumAOM_Slow << ";
@@ -395,9 +395,9 @@ void monica::soilcolumn::deleteAOMPool(SoilColumn *sc) {
 
     if ((vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001) {
       for (int i_Layer = 0; i_Layer < sc->vs_NumberOfOrganicLayers; i_Layer++) {
-        auto it_AOMPool = sc->at(i_Layer).vo_AOM_Pool.begin();
+        auto it_AOMPool = sc->layers.at(i_Layer).vo_AOM_Pool.begin();
         it_AOMPool += i_AOMPool;
-        sc->at(i_Layer).vo_AOM_Pool.erase(it_AOMPool);
+        sc->layers.at(i_Layer).vo_AOM_Pool.erase(it_AOMPool);
       }
       // cout << "Pool " << i_AOMPool << " deleted" << endl;
     } else {
@@ -454,10 +454,10 @@ void monica::soilcolumn::applyMineralFertiliser(SoilColumn *sc,
           << mineralfertilizerparameters::to_json(&fp).dump()
           << " amount: " << amount << endl;
   // [kg N ha-1 -> kg m-3]
-  double kgHaTokgm3 = 10000.0 * sc->at(0).vs_LayerThickness;
-  sc->at(0).vs_SoilNO3 += amount * fp.vo_NO3 / kgHaTokgm3;
-  sc->at(0).vs_SoilNH4 += amount * fp.vo_NH4 / kgHaTokgm3;
-  sc->at(0).vs_SoilCarbamid += amount * fp.vo_Carbamid / kgHaTokgm3;
+  double kgHaTokgm3 = 10000.0 * sc->layers.at(0).vs_LayerThickness;
+  sc->layers.at(0).vs_SoilNO3 += amount * fp.vo_NO3 / kgHaTokgm3;
+  sc->layers.at(0).vs_SoilNH4 += amount * fp.vo_NH4 / kgHaTokgm3;
+  sc->layers.at(0).vs_SoilCarbamid += amount * fp.vo_Carbamid / kgHaTokgm3;
 }
 /**
  * Method for calculating fertilizer demand from crop demand and soil mineral
@@ -480,7 +480,7 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
     double samplingDepth, double cropNTargetValue, double cropNTargetValue30,
     double fertiliserMaxApplication, double fertiliserMinApplication,
     int topDressingDelay) {
-  if (sc->at(0).vs_SoilMoisture_m3 > sc->at(0).sps.vs_FieldCapacity) {
+  if (sc->layers.at(0).vs_SoilMoisture_m3 > sc->layers.at(0).sps.vs_FieldCapacity) {
     sc->_delayedNMinApplications.push_back(
         {fertiliserPartition, samplingDepth, cropNTargetValue,
          cropNTargetValue30, fertiliserMaxApplication, fertiliserMinApplication,
@@ -503,8 +503,8 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
        ;
        i_Layer++) {
     // vf_TargetLayer is in cm. We want number of layers
-    vf_SoilNO3Sum += sc->at(i_Layer).vs_SoilNO3; //! [kg N m-3]
-    vf_SoilNH4Sum += sc->at(i_Layer).vs_SoilNH4; //! [kg N m-3]
+    vf_SoilNO3Sum += sc->layers.at(i_Layer).vs_SoilNO3; //! [kg N m-3]
+    vf_SoilNH4Sum += sc->layers.at(i_Layer).vs_SoilNH4; //! [kg N m-3]
   }
 
   double vf_SoilNO3Sum30 = 0.0;
@@ -512,15 +512,15 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
   // Same calculation for a depth of 30 cm
   /** @todo Must be adapted when using variable layer depth. */
   for (int i_Layer = 0; i_Layer < vf_Layer30cm; i_Layer++) {
-    vf_SoilNO3Sum30 += sc->at(i_Layer).vs_SoilNO3; //! [kg N m-3]
-    vf_SoilNH4Sum30 += sc->at(i_Layer).vs_SoilNH4; //! [kg N m-3]
+    vf_SoilNO3Sum30 += sc->layers.at(i_Layer).vs_SoilNO3; //! [kg N m-3]
+    vf_SoilNH4Sum30 += sc->layers.at(i_Layer).vs_SoilNH4; //! [kg N m-3]
   }
 
   // Converts [kg N ha-1] to [kg N m-3]
   double vf_CropNTargetValue =
-      cropNTargetValue / 10000.0 / sc->at(0).vs_LayerThickness;
+      cropNTargetValue / 10000.0 / sc->layers.at(0).vs_LayerThickness;
   double vf_CropNTargetValue30 =
-      cropNTargetValue30 / 10000.0 / sc->at(0).vs_LayerThickness;
+      cropNTargetValue30 / 10000.0 / sc->layers.at(0).vs_LayerThickness;
 
   double vf_FertiliserDemandVol =
       vf_CropNTargetValue - (vf_SoilNO3Sum + vf_SoilNH4Sum);
@@ -529,9 +529,9 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
 
   // Converts fertiliser demand back from [kg N m-3] to [kg N ha-1]
   double vf_FertiliserDemand =
-      vf_FertiliserDemandVol * 10000.0 * sc->at(0).vs_LayerThickness;
+      vf_FertiliserDemandVol * 10000.0 * sc->layers.at(0).vs_LayerThickness;
   double vf_FertiliserDemand30 =
-      vf_FertiliserDemandVol30 * 10000.0 * sc->at(0).vs_LayerThickness;
+      vf_FertiliserDemandVol30 * 10000.0 * sc->layers.at(0).vs_LayerThickness;
 
   double vf_FertiliserRecommendation =
       max(vf_FertiliserDemand, vf_FertiliserDemand30);
@@ -588,9 +588,9 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
   double actPAW = 0.0; // actualPlantAvailableWater
   double maxPAW = 0.0; // maxPlantAvailableWater
   double layerDepthM = 0;
-  for (int i = 0; i < sc->size() && layerDepthM < aips.criticalMoistureDepthM;
+  for (int i = 0; i < sc->layers.size() && layerDepthM < aips.criticalMoistureDepthM;
        i++) {
-    const auto &li = sc->at(i);
+    const auto &li = sc->layers.at(i);
     auto smi = li.vs_SoilMoisture_m3;
     auto fci = li.sps.vs_FieldCapacity;
     auto pwpi = li.sps.vs_PermanentWiltingPoint;
@@ -612,8 +612,8 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
     } else if (aips.percentNFC > 0.0) {
       layerDepthM = 0;
       for (int i = 0;
-           i < sc->size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
-        auto &li = sc->at(i);
+           i < sc->layers.size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
+        auto &li = sc->layers.at(i);
         auto smi = li.vs_SoilMoisture_m3;
         auto fci = li.sps.vs_FieldCapacity;
         auto pwpi = li.sps.vs_PermanentWiltingPoint;
@@ -657,10 +657,10 @@ void monica::soilcolumn::applyIrrigation(SoilColumn *sc, double amount,
   double nitrateAddedViaIrrigation =           // -> //[kg m-3]
       nitrateConcentration *                   // [mg dm-3]
       amount /                                 //[dm3 m-2]
-      sc->at(0).vs_LayerThickness / 1000000.0; // [m]
+      sc->layers.at(0).vs_LayerThickness / 1000000.0; // [m]
 
   // adding N from irrigation water to top soil nitrate pool
-  sc->at(0).vs_SoilNO3 += nitrateAddedViaIrrigation;
+  sc->layers.at(0).vs_SoilNO3 += nitrateAddedViaIrrigation;
 }
 /**
  * Applies tillage to effected layers. Parameters for effected soil layers
@@ -686,19 +686,19 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
 
   // add up all parameters that are affected by tillage
   for (size_t i = 0; i < layer_index; i++) {
-    soil_organic_carbon += sc->at(i).sps.vs_SoilOrganicCarbon();
+    soil_organic_carbon += sc->layers.at(i).sps.vs_SoilOrganicCarbon();
     // soil_organic_matter += at(i).vs_SoilOrganicMatter();
-    soil_temperature += sc->at(i).vs_SoilTemperature;
-    soil_moisture += sc->at(i).vs_SoilMoisture_m3;
+    soil_temperature += sc->layers.at(i).vs_SoilTemperature;
+    soil_moisture += sc->layers.at(i).vs_SoilMoisture_m3;
     // soil_moistureOld += at(i).vs_SoilMoistureOld_m3;
-    som_slow += sc->at(i).vs_SOM_Slow;
-    som_fast += sc->at(i).vs_SOM_Fast;
-    smb_slow += sc->at(i).vs_SMB_Slow;
-    smb_fast += sc->at(i).vs_SMB_Fast;
-    carbamid += sc->at(i).vs_SoilCarbamid;
-    nh4 += sc->at(i).vs_SoilNH4;
-    no2 += sc->at(i).vs_SoilNO2;
-    no3 += sc->at(i).vs_SoilNO3;
+    som_slow += sc->layers.at(i).vs_SOM_Slow;
+    som_fast += sc->layers.at(i).vs_SOM_Fast;
+    smb_slow += sc->layers.at(i).vs_SMB_Slow;
+    smb_fast += sc->layers.at(i).vs_SMB_Fast;
+    carbamid += sc->layers.at(i).vs_SoilCarbamid;
+    nh4 += sc->layers.at(i).vs_SoilNH4;
+    no2 += sc->layers.at(i).vs_SoilNO2;
+    no3 += sc->layers.at(i).vs_SoilNO3;
   }
 
   auto li = double(layer_index);
@@ -722,23 +722,23 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
   for (size_t i = 0; i < layer_index; i++) {
     // assert((soil_organic_carbon - (soil_organic_matter *
     // OrganicConstants::po_SOM_to_C)) < 0.00001);
-    sc->at(i).sps.set_vs_SoilOrganicCarbon(soil_organic_carbon);
+    sc->layers.at(i).sps.set_vs_SoilOrganicCarbon(soil_organic_carbon);
     // at(i).set_SoilOrganicMatter(soil_organic_matter);
-    sc->at(i).vs_SoilTemperature = soil_temperature;
-    sc->at(i).vs_SoilMoisture_m3 = soil_moisture;
+    sc->layers.at(i).vs_SoilTemperature = soil_temperature;
+    sc->layers.at(i).vs_SoilMoisture_m3 = soil_moisture;
     // at(i).vs_SoilMoistureOld_m3 = soil_moistureOld;
-    sc->at(i).vs_SOM_Slow = som_slow;
-    sc->at(i).vs_SOM_Fast = som_fast;
-    sc->at(i).vs_SMB_Slow = smb_slow;
-    sc->at(i).vs_SMB_Fast = smb_fast;
-    sc->at(i).vs_SoilCarbamid = carbamid;
-    sc->at(i).vs_SoilNH4 = nh4;
-    sc->at(i).vs_SoilNO2 = no2;
-    sc->at(i).vs_SoilNO3 = no3;
+    sc->layers.at(i).vs_SOM_Slow = som_slow;
+    sc->layers.at(i).vs_SOM_Fast = som_fast;
+    sc->layers.at(i).vs_SMB_Slow = smb_slow;
+    sc->layers.at(i).vs_SMB_Fast = smb_fast;
+    sc->layers.at(i).vs_SoilCarbamid = carbamid;
+    sc->layers.at(i).vs_SoilNH4 = nh4;
+    sc->layers.at(i).vs_SoilNO2 = no2;
+    sc->layers.at(i).vs_SoilNO3 = no3;
   }
 
   // merge aom pool
-  auto aom_pool_count = sc->at(0).vo_AOM_Pool.size();
+  auto aom_pool_count = sc->layers.at(0).vo_AOM_Pool.size();
 
   if (aom_pool_count > 0) {
     vector<double> aom_slow(aom_pool_count);
@@ -760,7 +760,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
     for (size_t j = 0; j < layer_index; j++) {
       // cout << "Layer " << j << endl << endl;
 
-      SoilLayer &layer = sc->at(j);
+      SoilLayer &layer = sc->layers.at(j);
       size_t pool_index = 0;
       for (auto aomp : layer.vo_AOM_Pool) {
         aom_slow[pool_index] += aomp.vo_AOM_Slow;
@@ -785,7 +785,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
 
     // rewrite parameters of aom pool with mean values
     for (size_t j = 0; j < layer_index; j++) {
-      SoilLayer &layer = sc->at(j);
+      SoilLayer &layer = sc->layers.at(j);
       // cout << "Layer " << j << endl << endl;
       size_t pool_index = 0;
       for (auto aomp : layer.vo_AOM_Pool) {

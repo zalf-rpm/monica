@@ -181,7 +181,9 @@ double soilNmin(const SoilLayer *sl);
   * @see Monica::SoilLayer
   *
   */
-struct SoilColumn : public std::vector<SoilLayer> {
+struct SoilColumn {
+  std::vector<SoilLayer> layers;
+
   double vs_SurfaceWaterStorage{
       0.0}; // Content of above-ground water storage [mm]
   double vs_InterceptionStorage{
@@ -249,7 +251,7 @@ double applyMineralFertiliserViaNDemand(SoilColumn *sc,
 //! Calculates number of organic layers, usually the number of layers in the
 //! first 30 cm depth of soil.
 int calculateNumberOfOrganicLayers(const SoilColumn *sc);
-inline size_t numberOfLayers(const SoilColumn *sc) { return sc->size(); }
+inline size_t numberOfLayers(const SoilColumn *sc) { return sc->layers.size(); }
 inline size_t numberOfOrganicLayers(const SoilColumn *sc) {
   return sc->vs_NumberOfOrganicLayers;
 }
@@ -257,7 +259,7 @@ inline size_t numberOfOrganicLayers(const SoilColumn *sc) {
 //! Right now by definition all layers have the same size,
 //! therefor only the thickness of first layer is returned.
 inline double layerThickness(const SoilColumn *sc) {
-  return sc->at(0).vs_LayerThickness;
+  return sc->layers.at(0).vs_LayerThickness;
 }
 //! Returns daily crop N uptake [kg N ha-1 d-1]
 inline double dailyCropNUptake(const SoilColumn *sc) {

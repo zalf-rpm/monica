@@ -43,8 +43,8 @@ void initializeFromParams(SoilMoisture *sm) {
   auto &mm = sm->monica;
   debug() << "Constructor: SoilMoisture" << endl;
 
-  sm->numberOfMoistureLayers = soilColumn.size() + 1;
-  sm->numberOfSoilLayers = soilColumn.size();
+  sm->numberOfMoistureLayers = soilColumn.layers.size() + 1;
+  sm->numberOfSoilLayers = soilColumn.layers.size();
 
   sm->vm_AvailableWater.assign(sm->numberOfMoistureLayers, 0.0);
   sm->pm_CapillaryRiseRate.assign(sm->numberOfMoistureLayers, 0.0);
@@ -94,7 +94,7 @@ void initializeFromParams(SoilMoisture *sm) {
 
   //  double vm_GroundwaterDepth = 0.0;
   //  for (int i_Layer = 0; i_Layer < vs_NumberOfLayers; i_Layer++) {
-  //    vm_GroundwaterDepth += soilColumn[i_Layer].vs_LayerThickness;
+  //    vm_GroundwaterDepth += soilColumn.layers[i_Layer].vs_LayerThickness;
   //    if (vm_GroundwaterDepth <= siteParameters.vs_GroundwaterDepth) {
   //      vm_GroundwaterTable = i_Layer;
   //    }
@@ -106,7 +106,7 @@ void initializeFromParams(SoilMoisture *sm) {
   //
   //  for (int i_Layer = vm_NumberOfLayers - 1; i_Layer >= vm_GroundwaterTable;
   //  i_Layer--) {
-  //    soilColumn[i_Layer].set_Vs_SoilMoisture_m3(soilColumn[i_Layer].get_Saturation());
+  //    soilColumn.layers[i_Layer].set_Vs_SoilMoisture_m3(soilColumn.layers[i_Layer].get_Saturation());
   //  }
 }
 
@@ -129,27 +129,27 @@ void step(SoilMoisture *sm, double vs_GroundwaterDepth, double vw_Precipitation,
           double vw_ReferenceEvapotranspiration) {
   for (int i = 0; i < sm->numberOfSoilLayers; i++) {
     // initialization with moisture values stored in the layer
-    sm->vm_SoilMoisture[i] = sm->soilColumn[i].vs_SoilMoisture_m3;
+    sm->vm_SoilMoisture[i] = sm->soilColumn.layers[i].vs_SoilMoisture_m3;
     sm->vm_WaterFlux[i] = 0.0;
-    sm->vm_FieldCapacity[i] = sm->soilColumn[i].sps.vs_FieldCapacity;
-    sm->vm_SoilPoreVolume[i] = sm->soilColumn[i].sps.vs_Saturation;
+    sm->vm_FieldCapacity[i] = sm->soilColumn.layers[i].sps.vs_FieldCapacity;
+    sm->vm_SoilPoreVolume[i] = sm->soilColumn.layers[i].sps.vs_Saturation;
     sm->vm_PermanentWiltingPoint[i] =
-        sm->soilColumn[i].sps.vs_PermanentWiltingPoint;
-    sm->vm_LayerThickness[i] = sm->soilColumn[i].vs_LayerThickness;
-    sm->vm_Lambda[i] = sm->soilColumn[i].sps.vs_Lambda;
+        sm->soilColumn.layers[i].sps.vs_PermanentWiltingPoint;
+    sm->vm_LayerThickness[i] = sm->soilColumn.layers[i].vs_LayerThickness;
+    sm->vm_Lambda[i] = sm->soilColumn.layers[i].sps.vs_Lambda;
   }
 
   sm->vm_SoilMoisture[sm->numberOfMoistureLayers - 1] =
-      sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_SoilMoisture_m3;
+      sm->soilColumn.layers[sm->numberOfMoistureLayers - 2].vs_SoilMoisture_m3;
   sm->vm_WaterFlux[sm->numberOfMoistureLayers - 1] = 0.0;
   sm->vm_FieldCapacity[sm->numberOfMoistureLayers - 1] =
-      sm->soilColumn[sm->numberOfMoistureLayers - 2].sps.vs_FieldCapacity;
+      sm->soilColumn.layers[sm->numberOfMoistureLayers - 2].sps.vs_FieldCapacity;
   sm->vm_SoilPoreVolume[sm->numberOfMoistureLayers - 1] =
-      sm->soilColumn[sm->numberOfMoistureLayers - 2].sps.vs_Saturation;
+      sm->soilColumn.layers[sm->numberOfMoistureLayers - 2].sps.vs_Saturation;
   sm->vm_LayerThickness[sm->numberOfMoistureLayers - 1] =
-      sm->soilColumn[sm->numberOfMoistureLayers - 2].vs_LayerThickness;
+      sm->soilColumn.layers[sm->numberOfMoistureLayers - 2].vs_LayerThickness;
   sm->vm_Lambda[sm->numberOfMoistureLayers - 1] =
-      sm->soilColumn[sm->numberOfMoistureLayers - 2].sps.vs_Lambda;
+      sm->soilColumn.layers[sm->numberOfMoistureLayers - 2].sps.vs_Lambda;
 
   sm->vm_SurfaceWaterStorage = sm->soilColumn.vs_SurfaceWaterStorage;
 
@@ -186,7 +186,7 @@ void step(SoilMoisture *sm, double vs_GroundwaterDepth, double vw_Precipitation,
     sm->vm_GroundwaterTableLayer = i--;
 
   auto oscillGroundWaterLayer =
-      size_t(vs_GroundwaterDepth / sm->soilColumn[0].vs_LayerThickness);
+      size_t(vs_GroundwaterDepth / sm->soilColumn.layers[0].vs_LayerThickness);
   if ((sm->vm_GroundwaterTableLayer > oscillGroundWaterLayer &&
        sm->vm_GroundwaterTableLayer < sm->numberOfSoilLayers + 2) ||
       sm->vm_GroundwaterTableLayer >= sm->numberOfSoilLayers + 2) {
@@ -229,11 +229,11 @@ void step(SoilMoisture *sm, double vs_GroundwaterDepth, double vw_Precipitation,
   capillaryRise(sm);
 
   for (int i_Layer = 0; i_Layer < sm->numberOfSoilLayers; i_Layer++) {
-    sm->soilColumn[i_Layer].vs_SoilMoisture_m3 = sm->vm_SoilMoisture[i_Layer];
-    sm->soilColumn[i_Layer].vs_SoilWaterFlux = sm->vm_WaterFlux[i_Layer];
+    sm->soilColumn.layers[i_Layer].vs_SoilMoisture_m3 = sm->vm_SoilMoisture[i_Layer];
+    sm->soilColumn.layers[i_Layer].vs_SoilWaterFlux = sm->vm_WaterFlux[i_Layer];
     // commented out because old calc_vs_SoilMoisture_pF algorithm is calcualted
     // every time vs_SoilMoisture_pF is accessed
-    //     soilColumn[i_Layer].calc_vs_SoilMoisture_pF();
+    //     soilColumn.layers[i_Layer].calc_vs_SoilMoisture_pF();
   }
   sm->soilColumn.vs_SurfaceWaterStorage = sm->vm_SurfaceWaterStorage;
   sm->soilColumn.vs_FluxAtLowerBoundary = sm->vm_FluxAtLowerBoundary;
@@ -310,7 +310,7 @@ void infiltration(SoilMoisture *sm, double vm_WaterToInfiltrate) {
     /** @todo <b>Claas:</b> Mathematischer Sinn ist zu überprüfen */
     vm_Infiltration =
         min(vm_Infiltration, ((vm_SoilPoreVolume[0] - vm_SoilMoisture[0]) *
-                              1000.0 * soilColumn[0].vs_LayerThickness));
+                              1000.0 * soilColumn.layers[0].vs_LayerThickness));
 
     // Limitation of airfilled pore space added to prevent water contents
     // above pore space in layers below (Claas Nendel)
@@ -475,7 +475,7 @@ void capillaryRise(SoilMoisture *sm) {
     auto vm_StartLayer =
         min(vm_GroundwaterTableLayer, (numberOfSoilLayers - 1));
     for (int i = int(vm_StartLayer); i >= 0; i--) {
-      std::string vs_SoilTexture = soilColumn[i].sps.vs_SoilTexture;
+      std::string vs_SoilTexture = soilColumn.layers[i].sps.vs_SoilTexture;
       assert(!vs_SoilTexture.empty());
       double vm_CapillaryRiseRate =
           min(0.01, params.getCapillaryRiseRate(vs_SoilTexture,
@@ -865,7 +865,7 @@ double dualKcPrecomputation(SoilMoisture *sm, double windSpeed, double tmin,
 
   // A. Dynamic REW (FAO-56 Table 19 Mapping via Pedology)
   double REW = 0.0;
-  std::string ka5Texture = soilColumn[0].sps.vs_SoilTexture;
+  std::string ka5Texture = soilColumn.layers[0].sps.vs_SoilTexture;
 
   if (ka5Texture == "Ss")
     REW = 2.5;
@@ -1461,9 +1461,9 @@ double getEReducer1(const SoilMoisture *sm, int i_Layer,
                     double vm_ReferenceEvapotranspiration) {
   double vm_EReductionFactor;
   int vm_EvaporationReductionMethod = 1;
-  double vm_SoilMoisture_m3 = sm->soilColumn[i_Layer].vs_SoilMoisture_m3;
-  double vm_PWP = sm->soilColumn[i_Layer].sps.vs_PermanentWiltingPoint;
-  double vm_FK = sm->soilColumn[i_Layer].sps.vs_FieldCapacity;
+  double vm_SoilMoisture_m3 = sm->soilColumn.layers[i_Layer].vs_SoilMoisture_m3;
+  double vm_PWP = sm->soilColumn.layers[i_Layer].sps.vs_PermanentWiltingPoint;
+  double vm_FK = sm->soilColumn.layers[i_Layer].sps.vs_FieldCapacity;
   double vm_RelativeEvaporableWater;
   double vm_CriticalSoilMoisture;
   double vm_XSA;
@@ -1491,7 +1491,7 @@ double getEReducer1(const SoilMoisture *sm, int i_Layer,
                      vm_ReferenceEvapotranspiration;
       }
       vm_CriticalSoilMoisture =
-          sm->soilColumn[i_Layer].sps.vs_FieldCapacity * vm_Reducer;
+          sm->soilColumn.layers[i_Layer].sps.vs_FieldCapacity * vm_Reducer;
     }
 
     // Calculation of an evaporation-reducing factor in relation to soil water
@@ -1583,11 +1583,11 @@ double meanWaterContent(const SoilMoisture *sm, double depth_m) {
 
   for (int i = 0; i < sm->numberOfSoilLayers; i++) {
     count++;
-    double smm3 = sm->soilColumn[i].vs_SoilMoisture_m3;
-    double fc = sm->soilColumn[i].sps.vs_FieldCapacity;
-    double pwp = sm->soilColumn[i].sps.vs_PermanentWiltingPoint;
+    double smm3 = sm->soilColumn.layers[i].vs_SoilMoisture_m3;
+    double fc = sm->soilColumn.layers[i].sps.vs_FieldCapacity;
+    double pwp = sm->soilColumn.layers[i].sps.vs_PermanentWiltingPoint;
     sum += smm3 / (fc - pwp); //[%nFK]
-    lsum += sm->soilColumn[i].vs_LayerThickness;
+    lsum += sm->soilColumn.layers[i].vs_LayerThickness;
     if (lsum >= depth_m)
       break;
   }
@@ -1606,9 +1606,9 @@ double meanWaterContent(const SoilMoisture *sm, int layer,
 
   for (int i = layer; i < layer + number_of_layers; i++) {
     count++;
-    double smm3 = sm->soilColumn[i].vs_SoilMoisture_m3;
-    double fc = sm->soilColumn[i].sps.vs_FieldCapacity;
-    double pwp = sm->soilColumn[i].sps.vs_PermanentWiltingPoint;
+    double smm3 = sm->soilColumn.layers[i].vs_SoilMoisture_m3;
+    double fc = sm->soilColumn.layers[i].sps.vs_FieldCapacity;
+    double pwp = sm->soilColumn.layers[i].sps.vs_PermanentWiltingPoint;
     sum += smm3 / (fc - pwp); //[%nFK]
   }
 

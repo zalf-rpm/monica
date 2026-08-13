@@ -124,7 +124,7 @@ double monica::frostcomponent::getMeanBulkDensity(const FrostComponent *fc) {
   auto vs_number_of_layers = soilcolumn::numberOfLayers(&soilColumn);
   double bulk_density_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    bulk_density_accu += soilColumn[i_Layer].sps.vs_SoilBulkDensity();
+    bulk_density_accu += soilColumn.layers[i_Layer].sps.vs_SoilBulkDensity();
   }
   return (bulk_density_accu / double(vs_number_of_layers) / 1000.0); // [Mg m-3]
 }
@@ -138,7 +138,7 @@ double monica::frostcomponent::getMeanFieldCapacity(const FrostComponent *fc) {
   auto vs_number_of_layers = soilcolumn::numberOfLayers(&soilColumn);
   double mean_field_capacity_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    mean_field_capacity_accu += soilColumn[i_Layer].sps.vs_FieldCapacity;
+    mean_field_capacity_accu += soilColumn.layers[i_Layer].sps.vs_FieldCapacity;
   }
   return (mean_field_capacity_accu / double(vs_number_of_layers));
 }
@@ -332,11 +332,11 @@ void monica::frostcomponent::updateLambdaRedux(FrostComponent *fc) {
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
 
     if (i_Layer < (std::floor((fc->vm_FrostDepth /
-                               soilColumn[i_Layer].vs_LayerThickness) +
+                               soilColumn.layers[i_Layer].vs_LayerThickness) +
                               0.5))) {
 
       // soil layer is frozen
-      soilColumn[i_Layer].vs_SoilFrozen = true;
+      soilColumn.layers[i_Layer].vs_SoilFrozen = true;
       fc->vm_LambdaRedux[i_Layer] = 0.0;
 
       if (i_Layer == 0) {
@@ -345,15 +345,15 @@ void monica::frostcomponent::updateLambdaRedux(FrostComponent *fc) {
     }
 
     if (i_Layer <
-        (std::floor((fc->vm_ThawDepth / soilColumn[i_Layer].vs_LayerThickness) +
+        (std::floor((fc->vm_ThawDepth / soilColumn.layers[i_Layer].vs_LayerThickness) +
                     0.5))) {
       // soil layer is thawing
 
       if (fc->vm_ThawDepth <
-              (double(i_Layer + 1) * soilColumn[i_Layer].vs_LayerThickness) &&
+              (double(i_Layer + 1) * soilColumn.layers[i_Layer].vs_LayerThickness) &&
           (fc->vm_ThawDepth < fc->vm_FrostDepth)) {
         // soil layer is thawing but there is more frost than thaw
-        soilColumn[i_Layer].vs_SoilFrozen = true;
+        soilColumn.layers[i_Layer].vs_SoilFrozen = true;
         fc->vm_LambdaRedux[i_Layer] = 0.0;
         if (i_Layer == 0) {
           fc->vm_HydraulicConductivityRedux = 0.0;
@@ -361,7 +361,7 @@ void monica::frostcomponent::updateLambdaRedux(FrostComponent *fc) {
 
       } else {
         // soil is thawing
-        soilColumn[i_Layer].vs_SoilFrozen = false;
+        soilColumn.layers[i_Layer].vs_SoilFrozen = false;
         fc->vm_LambdaRedux[i_Layer] = 1.0;
         if (i_Layer == 0) {
           fc->vm_HydraulicConductivityRedux = 0.1;
@@ -378,7 +378,7 @@ void monica::frostcomponent::updateLambdaRedux(FrostComponent *fc) {
 
       fc->vm_HydraulicConductivityRedux = fc->pm_HydraulicConductivityRedux;
       for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-        soilColumn[i_Layer].vs_SoilFrozen = false;
+        soilColumn.layers[i_Layer].vs_SoilFrozen = false;
         fc->vm_LambdaRedux[i_Layer] = 1.0;
       }
     }

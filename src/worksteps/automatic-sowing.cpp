@@ -161,7 +161,7 @@ std::function<double(MonicaModel *)> workstep::registerDailyFunction(
                      1;
          i < size; i++) {
       avgSoilTemp +=
-          model->soilTemperature->soilColumn->at(int(i)).vs_SoilTemperature;
+          model->soilTemperature->soilColumn->layers.at(int(i)).vs_SoilTemperature;
     }
     return avgSoilTemp / double(i);
   };
