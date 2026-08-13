@@ -1,0 +1,131 @@
+# Odin port conventions
+
+Read this before writing any Odin in this tree. Every later file copies these decisions; changing
+one of them later means touching thousands of lines.
+
+See `../plan-odin.md` for the phase plan and `../plan.md` for the C++ refactoring history.
+
+## 1. The prime directive: translate literally
+
+**Do not improve anything.** The acceptance test is byte-identical CSV output against the C++
+build, so any "cleanup" is a potential regression with no upside.
+
+- Keep C++ procedure names, argument order and **variable names**, including the `vc_` / `vs_` /
+  `vw_` / `pc_` / `vm_` / `vo_` prefixes. A trace diff is only useful if both sides name the same
+  thing.
+- Keep statement order in numeric routines. Reassociating float arithmetic (`a*b + a*c` ->
+  `a*(b+c)`) changes the last bits.
+- Port one C++ procedure at a time. Do not merge, split or inline.
+- When the C++ has a quirk or an outright bug, **reproduce it and comment it** with
+  `// NOTE(c++-quirk): ...`. Several already exist in `support/date` — see `date_to_absolute_date`.
+
+### Mixed int/float arithmetic
+
+C++ promotes `int` to `double` implicitly in mixed expressions; Odin requires explicit conversion.
+Casting the wrong operand silently turns float division into truncating integer division. **For
+every arithmetic line containing an integer variable or literal, check the C++ promotion rules
+before writing the Odin.** This class of bug already bit the C++ branch once.
+
+```odin
+// C++: double x = a / b;   with int a, b   -> integer division, THEN widened
+x := f64(a / b)     // correct
+// C++: double x = a / double(b);
+x := f64(a) / f64(b)  // correct
+```
+
+Odin's `/` and `%` on signed integers truncate toward zero, matching C/C++. `f64 -> int`
+conversion truncates toward zero, matching C++. `math.round` rounds half away from zero, matching
+`std::round`.
+
+### `long double`
+
+`mas_cpp_misc/tools/algorithms.h` uses `long double` in `round_to_digits`. On MSVC (the reference
+build) `long double == double`, so `f64` is exact. On a GCC/Linux reference build it would be 80-bit
+and results could differ in the last bit — if the baseline is ever regenerated on Linux, revisit
+`tools.round`.
+
+## 2. Naming
+
+C++ is `namespace::camelCase`; Odin is `package` + `snake_case`. Map mechanically:
+
+| C++ | Odin |
+| --- | --- |
+| `Tools::Errors` | `tools.Errors` |
+| `Tools::readFile` | `tools.read_file` |
+| `Tools::Date` | `date.Date` |
+| `monica::soilmoisture::step` | `soilmoisture.step` |
+| `monica::makeSoilColumn` | `soilcolumn.make_soil_column` |
+| struct field `vs_SoilMoisture_m3` | field `vs_SoilMoisture_m3` (**unchanged**) |
+
+Struct **field** names keep their exact C++ spelling — they are what the trace diff matches on.
+Only procedure and package names get snake_cased.
+
+C++ free procedures that live in a lowercase namespace (`monica::soilmoisture::...`) become a
+package of the same name, so the call site reads almost identically.
+
+## 3. Memory
+
+- **Config JSON (Phase 1) lives in an arena and is never individually freed.** `json.Value` owns
+  its `Array`/`Object`; shallow-copying it — which the C++ does freely, e.g.
+  `findAndReplaceReferences` — would double-free under a tracking allocator. One
+  `virtual.Arena` for the whole config, destroyed at exit.
+- Procedures that allocate take `allocator := context.allocator` as the last parameter.
+- `Errors` owns its strings (they are cloned on append). Call `errors_destroy` if you are not
+  running under an arena.
+- The model state (`MonicaModel` and its submodules) is heap-allocated **once** and never moved:
+  submodules hold back-pointers to `SoilColumn`. Take pointers only after allocation.
+
+## 4. Error handling
+
+Port `Tools::Errors` / `Tools::EResult<T>` rather than switching to Odin's `->  (T, Error)`
+idiom. MONICA accumulates *multiple* errors and warnings across a merge and inspects them later;
+that is not what a single return-value error models.
+
+```odin
+errs: tools.Errors
+tools.append_error(&errs, "something went wrong")
+if tools.failure(errs) { ... }
+
+res := tools.EResult(f64){ result = 1.5 }
+```
+
+## 5. `Maybe`
+
+C++ `Tools::Maybe<T>` and `kj::Maybe<T>` both map to Odin's builtin `Maybe(T)` (a `union{T}`).
+
+**The three-state semantics are load-bearing.** `unset` must never collapse to the zero value —
+that is exactly the `__enable_vernalisation_factor_fix__` bug documented in `../plan.md`. When the
+C++ reads `x.orDefault(fallback)`, the Odin must read
+`v, ok := x.?; value := ok ? v : fallback` — never `x.? or_else T{}`.
+
+## 6. Layout
+
+```
+odin/
+  CONVENTIONS.md      <- this file
+  support/            <- port of the needed mas_cpp_misc subset
+    tools/            <- Errors/EResult, string, file and algorithm helpers
+    date/             <- Tools::Date
+    jsonx/            <- (Phase 1) forgiving json11-style accessors
+    climate/          <- (Phase 2) DataAccessor + CSV reader
+  monica/             <- (Phase 3+) port of src/
+  tests/
+```
+
+`support/tools` deliberately does **not** import `support/date` (and vice versa) except where the
+C++ does, to keep the dependency graph acyclic.
+
+## 7. Testing
+
+`odin test odin/tests`.
+
+Two kinds of test, both required for anything numeric:
+
+1. **Ported C++ assertions.** `Tools::testDate()` and `Tools::testRoundFloorCeil()` are ground
+   truth copied verbatim from the C++ source — every assertion there must pass unchanged.
+2. **Differential sweeps.** For `Date`, walk a multi-year range day by day and check that
+   round-tripping, `julianDay`, `numberOfDaysTo` and `+`/`-` stay self-consistent and agree with
+   the C++ where a reference dump exists.
+
+From Phase 4 the primary oracle becomes the daily trace diff (see `../plan-odin.md` §1), not unit
+tests.

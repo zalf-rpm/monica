@@ -211,9 +211,29 @@ it is already counted in the `src` budget above and is ported in Phase 3.
 Each phase ends with a diff against a C++-produced artefact. **Do not advance with a known
 divergence.**
 
-### Phase 0 — scaffolding + support layer
+### Phase 0 — scaffolding + support layer — **DONE**
 Arena strategy, `Errors`/`EResult`, file/string helpers, `Date`, `algorithms` subset.
-**Oracle:** unit tests; a day-by-day `Date` sweep vs. a small C++ driver.
+
+Delivered: `odin/CONVENTIONS.md` (read this first), `odin/support/tools/{errors,strings,files,algorithms}.odin`,
+`odin/support/date/date.odin`, `odin/tests/`.
+
+**Oracle — both green:**
+- `odin test odin/tests` — 27 tests, including 1:1 ports of the C++ `Tools::testDate()` and
+  `Tools::testRoundFloorCeil()` assertions.
+- `bash odin/tests/cpp_ref/run.sh` — builds a C++ driver against the real
+  `mas_cpp_misc/tools/date.cpp`, runs both implementations over 8,283 cases (a 2,192-day sweep,
+  arithmetic at 11 offsets × 6 bases both directions, 546 construction edge cases × 3 variants,
+  relative dates + `toAbsoluteDate`, ISO parsing, 1,830 `julianDate` round-trips, the setter
+  quirks, 64 comparison pairs) and diffs. **Currently identical.**
+
+C++ quirks found and deliberately reproduced (all marked `NOTE(c++-quirk)` in the source):
+`toAbsoluteDate` passes only 5 of 6 constructor arguments so `useLeapYears` lands on
+`createValidDate`; `setYear` does not reselect the days-in-month table; `setUseLeapYears` ignores
+`isLeapYear()`; the `Date(string)` constructor drops the parsed relative flag; `readFile`
+concatenates lines without newlines. Also: `daysInMonth(month > 12)` *aborts* the C++ process
+(confirmed empirically while building the driver), so the Odin guard returning 0 is unobservable.
+`Tools::testDate()`'s relative-date assertions are dead code that would fail if enabled — see
+`odin/tests/date_test.odin` for the worked-through explanation.
 
 ### Phase 1 — JSON config pipeline + all 26 parameter structs
 `jsonx`, `create-env-from-json-config` (incl. `findAndReplaceReferences` and the
