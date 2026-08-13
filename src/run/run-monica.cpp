@@ -212,78 +212,6 @@ string monica::env_to_string(const Env *env) {
   return s.str();
 }
 
-/**
- * Interface method for python wrapping, so climate module
- * does not need to be wrapped by python.
- *
- * @param acd
- * @param data
- */
-/*
-void
-Env::addOrReplaceClimateData(std::string name, const std::vector<double>& data)
-{
-  cout << "addOrReplaceClimsteData " << name.c_str() << endl;
-  int acd = 0;
-  if (name == "tmin")
-    acd = tmin;
-  else if (name == "tmax")
-    acd = tmax;
-  else if (name == "tavg")
-    acd = tavg;
-  else if (name == "precip")
-    acd = precip;
-  else if (name == "globrad")
-    acd = globrad;
-  else if (name == "wind")
-    acd = wind;
-  else if (name == "sunhours")
-    acd = sunhours;
-  else if (name == "relhumid")
-    acd = relhumid;
-  else if (name == "co2")
-    acd = co2;
-  else if (name == "et0")
-    acd = et0;
-
-  climateData.addOrReplaceClimateData(AvailableClimateData(acd), data);
-}
-*/
-
-/*
-pair<Date, map<Climate::ACD, double>>
-climateDataForStep(const Climate::DataAccessor& da,
-                   size_t stepNo,
-                   double latitude)
-{
-  Date startDate = da.startDate();
-  Date currentDate = startDate + stepNo;
-
-  // test if data for relhumid are available; if not, value is set to -1.0
-  double relhumid = da.hasAvailableClimateData(Climate::relhumid)
-    ? da.dataForTimestep(Climate::relhumid, stepNo)
-    : -1.0;
-
-  double globrad = da.hasAvailableClimateData(Climate::globrad)
-    ? da.dataForTimestep(Climate::globrad, stepNo)
-    : (da.hasAvailableClimateData(Climate::sunhours)
-       ? Tools::sunshine2globalRadiation(currentDate.julianDay(),
-                                         da.dataForTimestep(Climate::sunhours,
-stepNo), latitude, true) : -1.0);
-
-  map<Climate::ACD, double> m
-  {{ Climate::tmin, da.dataForTimestep(Climate::tmin, stepNo)}
-  ,{ Climate::tavg, da.dataForTimestep(Climate::tavg, stepNo)}
-  ,{ Climate::tmax, da.dataForTimestep(Climate::tmax, stepNo)}
-  ,{ Climate::precip, da.dataForTimestep(Climate::precip, stepNo)}
-  ,{ Climate::wind, da.dataForTimestep(Climate::wind, stepNo)}
-  ,{ Climate::globrad, globrad}
-  ,{ Climate::relhumid, relhumid }
-  };
-  return make_pair(currentDate, m);
-}
-*/
-
 void writeDebugInputs(const Env &env, string fileName = "inputs.json") {
   ofstream pout;
   string path = Tools::fixSystemSeparator(centralparameterprovider::pathToOutputDir(&env.params));
@@ -389,8 +317,9 @@ void storeResults(const vector<OId> &outputIds, vector<J11Array> &results,
   results.resize(outputIds.size());
   for (auto oid : outputIds) {
     auto ofi = ofs.find(oid.id);
-    if (ofi != ofs.end())
+    if (ofi != ofs.end()) {
       results[i].push_back(ofi->second(monica, oid));
+    }
     ++i;
   }
 };
@@ -402,8 +331,9 @@ void storeResultsObj(const vector<OId> &outputIds, vector<J11Object> &results,
   J11Object result;
   for (auto oid : outputIds) {
     auto ofi = ofs.find(oid.id);
-    if (ofi != ofs.end())
+    if (ofi != ofs.end()) {
       result[::monica::oid::outputName(&oid)] = ofi->second(monica, oid);
+    }
   }
   results.push_back(result);
 };
@@ -431,9 +361,9 @@ void monica::store_data_aggregate_results(StoreData *sd) {
           default:
             sd->results[i].push_back(ivs.front());
           }
-        } else
+        } else {
           sd->results[i].push_back(applyOIdOP(oid.timeAggOp, ivs));
-
+        }
         sd->intermediateResults[i].clear();
       }
       ++i;
@@ -461,9 +391,9 @@ void monica::store_data_aggregate_results_obj(StoreData *sd) {
           default:
             result[monica::oid::outputName(&oid)] = ivs.front();
           }
-        } else
+        } else {
           result[monica::oid::outputName(&oid)] = applyOIdOP(oid.timeAggOp, ivs);
-
+        }
         sd->intermediateResults[i].clear();
       }
       ++i;
@@ -483,15 +413,17 @@ void monica::store_data_store_results_if_spec_applies(StoreData *sd, const Monic
   // check for possible start event (if one exists at all and just enter in that
   // case if it is false)
   if (withinEventStartEndRange.isNothing() || !withinEventStartEndRange.value()) {
-    if (spec.startf)
+    if (spec.startf) {
       withinEventStartEndRange = spec.startf(monica);
+    }
   }
 
   // check for end event (doesn't need a start event, but if there was one at
   // all, it has to be true)
   if (withinEventStartEndRange.isNothing() || withinEventStartEndRange.isValue()) {
-    if (spec.endf)
+    if (spec.endf) {
       isCurrentlyEndEvent = spec.endf(monica);
+    }
   }
 
   // do something if we are in start/end range or nothing is set at all (means
@@ -499,10 +431,11 @@ void monica::store_data_store_results_if_spec_applies(StoreData *sd, const Monic
   if (withinEventStartEndRange.isNothing() || withinEventStartEndRange.value()) {
     // check for at event
     if (spec.atf && spec.atf(monica)) {
-      if (storeObjOutputs)
+      if (storeObjOutputs) {
         storeResultsObj(sd->outputIds, sd->resultsObj, monica);
-      else
+      } else {
         storeResults(sd->outputIds, sd->results, monica);
+      }
     } else if (spec.fromf && spec.tof) { // or from/to range event
       bool isCurrentlyToEvent = false;
       if (withinEventFromToRange.isNothing() || !withinEventFromToRange.value()) {
@@ -516,37 +449,41 @@ void monica::store_data_store_results_if_spec_applies(StoreData *sd, const Monic
         // the while is true but aggregate only if the range is left this means
         // the range specifies the extend of recording
         if (spec.whilef) {
-          if (spec.whilef(monica))
+          if (spec.whilef(monica)) {
             storeResults(sd->outputIds, sd->intermediateResults, monica);
-        } else
+          }
+        } else {
           storeResults(sd->outputIds, sd->intermediateResults, monica);
-
+        }
         if (isCurrentlyToEvent) {
-          if (storeObjOutputs)
+          if (storeObjOutputs) {
             store_data_aggregate_results_obj(sd);
-          else
+          } else {
             store_data_aggregate_results(sd);
+          }
           withinEventFromToRange = false;
         }
       }
     }
     // or a single while aggregating expression
     else if (spec.whilef) {
-      if (spec.whilef(monica))
+      if (spec.whilef(monica)) {
         storeResults(sd->outputIds, sd->intermediateResults, monica);
-      else if (!sd->intermediateResults.empty() && !sd->intermediateResults.front().empty()) {
+      } else if (!sd->intermediateResults.empty() && !sd->intermediateResults.front().empty()) {
         // if while event was not successful but we got intermediate results,
         // they should be aggregated
-        if (storeObjOutputs)
+        if (storeObjOutputs) {
           store_data_aggregate_results_obj(sd);
-        else
+        } else {
           store_data_aggregate_results(sd);
+        }
       }
     }
   }
 
-  if (isCurrentlyEndEvent)
+  if (isCurrentlyEndEvent) {
     withinEventStartEndRange = false;
+  }
 }
 
 vector<StoreData> monica::setupStorage(const json11::Json &event2oids, const Date &startDate,
@@ -569,22 +506,25 @@ vector<StoreData> monica::setupStorage(const json11::Json &event2oids, const Dat
     if (spec.is_string()) {
       auto ss = spec.string_value();
       auto ci = shortcuts.find(ss);
-      if (ci != shortcuts.end())
+      if (ci != shortcuts.end()) {
         spec = ci->second;
-      else
+      } else {
         spec = J11Object{{"at", ss}};
+      }
     } else if (spec.is_array() && spec.array_items().size() == 4 && spec[0].is_string() &&
                (spec[0].string_value() == "while" ||
                 spec[0].string_value() == "at")) { // an array means it's an expression pattern to
                                                    // be stored at 'at'
       auto sa = spec.array_items();
       spec = J11Object{{spec[0].string_value(), J11Array(sa.begin() + 1, sa.end())}};
-    } else if (spec.is_array())
+    } else if (spec.is_array()) {
       spec = J11Object{{"at", spec}};
+    }
     // everything else (number, bool, null) we ignore
     // object is the default we assume
-    else if (!spec.is_object())
+    else if (!spec.is_object()) {
       continue;
+    }
 
     // if "at" and "while" are missing, add by default an "every day" "at"
     if (spec["at"].is_null() && spec["while"].is_null() && spec["from"].is_null() &&
@@ -638,9 +578,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   out2.customId = env.customId;
 
   activateDebug = env.debugMode;
-  if (activateDebug)
+  if (activateDebug) {
     writeDebugInputs(env, "inputs.json");
-
+  }
   // prefer multiple crop rotations, but use a single rotation if there
   if (env.cropRotations.empty() && !env.cropRotation.empty()) {
     env.cropRotations.push_back(
@@ -763,8 +703,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         // if a new cropRotation starts, copy the pointers to the CMs to the
         // shadow CR
         if (crit->start.isValid() && currentDate == crit->start) {
-          for (auto &cm : crit->cropRotation)
+          for (auto &cm : crit->cropRotation) {
             cropRotation.push_back(&cm);
+          }
           return true;
         }
       }
@@ -804,14 +745,16 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         // delete fully cultivation methods with only absolute worksteps,
         // because they won't participate in a new run when wrapping the crop
         // rotation
-        if (cultivationmethod::areOnlyAbsoluteWorksteps(*cmit) || !(*cmit)->repeat)
+        if (cultivationmethod::areOnlyAbsoluteWorksteps(*cmit) || !(*cmit)->repeat) {
           cmit = cropRotation.erase(cmit);
-        else
+        } else {
           cmit++;
+        }
 
         // start anew if we reached the end of the crop rotation
-        if (cmit == cropRotation.end())
+        if (cmit == cropRotation.end()) {
           cmit = cropRotation.begin();
+        }
       }
 
       // check if there's at least a cultivation method left in cropRotation
@@ -834,21 +777,23 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
                                        currentDate.year()) < currentDate)) {
               cultivationmethod::reinit(currentCM, currentDate, true);
             }
-          } else
+          } else {
             notFoundNextCM = currentCM->canBeSkipped; // if current CM was marked skipable,
                                                       // skip it
+          }
         } else { // not added year or CM was had also absolute dates
-          if (currentCM->isCoverCrop)
+          if (currentCM->isCoverCrop) {
             notFoundNextCM = cultivationmethod::absLatestSowingDate(currentCM) < currentDate;
-          else if (currentCM->canBeSkipped)
+          } else if (currentCM->canBeSkipped) {
             notFoundNextCM = cultivationmethod::absStartDate(currentCM) < currentDate;
-          else
+          } else {
             notFoundNextCM = false;
+          }
         }
 
-        if (notFoundNextCM)
+        if (notFoundNextCM) {
           nextAbsoluteCMApplicationDate = Date();
-        else {
+        } else {
           nextAbsoluteCMApplicationDate = cultivationmethod::staticWorksteps(currentCM).empty()
                                               ? Date()
                                               : cultivationmethod::absStartDate(currentCM, false);
@@ -877,10 +822,10 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   CultivationMethod *currentCM2{nullptr};
   Date nextAbsoluteCMApplicationDate, nextAbsoluteCMApplicationDate2;
   tie(currentCM, nextAbsoluteCMApplicationDate) = findNextCultivationMethod(currentDate, false);
-  if (isSyncIC)
+  if (isSyncIC) {
     tie(currentCM2, nextAbsoluteCMApplicationDate2) =
         findNextCultivationMethod2(currentDate, false);
-
+  }
   // while (cmitPos-- > 0 && cmit + 1 != cropRotation.end())
   //	tie(currentCM, nextAbsoluteCMApplicationDate) =
   // findNextCultivationMethod(currentDate, true);;
@@ -888,12 +833,13 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   vector<StoreData> store =
       setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
   vector<StoreData> store2;
-  if (isSyncIC)
+  if (isSyncIC) {
     store2 = setupStorage(env.events2, env.climateData.startDate(), env.climateData.endDate());
-
+  }
   monica->currentEvents.insert("run-started");
-  if (isSyncIC)
+  if (isSyncIC) {
     monica2->currentEvents.insert("run-started");
+  }
   for (size_t d = 0, nods = env.climateData.noOfStepsPossible(); d < nods; ++d, ++currentDate) {
     debug() << "currentDate: " << currentDate.toString() << endl;
 
@@ -912,9 +858,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     }
 
     monicamodel::dailyReset(monica.get());
-    if (isSyncIC)
+    if (isSyncIC) {
       monicamodel::dailyReset(monica2.get());
-
+    }
     // set the soil moisture of the monica1's soil column to monica2's soil
     // column (from previous day)
     if (isSyncIC) {
@@ -930,16 +876,18 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     }
 
     monica->currentStepDate = currentDate;
-    if (isSyncIC)
+    if (isSyncIC) {
       monica2->currentStepDate = currentDate;
+    }
     monica->climateData.push_back(
         env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude));
     if (isSyncIC) {
       auto cd = env.climateData.allDataForStep(d, env.params.siteParameters.vs_Latitude);
       // in case of sequential water use activated, set the precipitation for
       // the second monica to 0
-      if (monica->cropPs.sequentialWaterUse)
+      if (monica->cropPs.sequentialWaterUse) {
         cd[Climate::precip] = 0;
+      }
       monica2->climateData.push_back(cd);
     }
 
@@ -954,10 +902,12 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
 
     // try to apply dynamic worksteps marked to run before everything else that
     // day
-    if (currentCM)
+    if (currentCM) {
       cultivationmethod::apply(currentCM, monica.get(), true);
-    if (isSyncIC && currentCM2)
+    }
+    if (isSyncIC && currentCM2) {
       cultivationmethod::apply(currentCM2, monica2.get(), true);
+    }
 
     // apply worksteps and cycle through crop rotation
     if (currentCM && nextAbsoluteCMApplicationDate == currentDate) {
@@ -1015,8 +965,9 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
       }
     }
 
-    if (isSyncIC)
+    if (isSyncIC) {
       debug() << "MONICA 1: ";
+    }
     monicamodel::step(monica.get());
     if (isSyncIC) {
       if (monica->currentCropModule) {
@@ -1045,25 +996,32 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
     // steps, than before so the daily monica calculations will be taken into
     // account but means also that a workstep which gets executed before the
     // steps, can't take the values into account by applying a daily function
-    for (auto &f : applyDailyFuncs)
+    for (auto &f : applyDailyFuncs) {
       f();
-    if (isSyncIC)
-      for (auto &f : applyDailyFuncs2)
+    }
+    if (isSyncIC) {
+      for (auto &f : applyDailyFuncs2) {
         f();
-
+      }
+    }
     // try to apply dynamic worksteps marked to run AFTER everything else that
     // day
-    if (currentCM)
+    if (currentCM) {
       cultivationmethod::apply(currentCM, monica.get(), false);
-    if (isSyncIC && currentCM2)
+    }
+    if (isSyncIC && currentCM2) {
       cultivationmethod::apply(currentCM2, monica2.get(), false);
+    }
 
     // store results
-    for (auto &s : store)
+    for (auto &s : store) {
       store_data_store_results_if_spec_applies(&s, *monica, returnObjOutputs);
-    if (isSyncIC)
-      for (auto &s : store2)
+    }
+    if (isSyncIC) {
+      for (auto &s : store2) {
         store_data_store_results_if_spec_applies(&s, *monica2, returnObjOutputs);
+      }
+    }
 
     // if the next application date is not valid, we're at the end
     // of the application list of this cultivation method
@@ -1098,20 +1056,22 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
   for (auto &sd : store) {
     // aggregate results of while events or unfinished other from/to ranges
     // (where to event didn't happen yet)
-    if (returnObjOutputs)
+    if (returnObjOutputs) {
       store_data_aggregate_results_obj(&sd);
-    else
+    } else {
       store_data_aggregate_results(&sd);
+    }
     out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
   }
   if (isSyncIC) {
     for (auto &sd : store2) {
       // aggregate results of while events or unfinished other from/to ranges
       // (where to event didn't happen yet)
-      if (returnObjOutputs)
+      if (returnObjOutputs) {
         store_data_aggregate_results_obj(&sd);
-      else
+      } else {
         store_data_aggregate_results(&sd);
+      }
       out2.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
     }
   }
