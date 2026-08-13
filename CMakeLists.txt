@@ -27,7 +27,8 @@ endmacro(set_absolute_path)
 
 if (NOT TARGET capnp_schemas_lib)
   message(STATUS "target: capnp_schemas_lib")
-  add_subdirectory(mas_cpp_misc/mas_capnproto_schemas/gen/c++ mas-infrastructure/capnproto_schemas)
+  add_subdirectory(mas_cpp_misc/mas_capnproto_schemas/gen/c++
+  mas-infrastructure/capnproto_schemas)
 endif ()
 
 if (NOT TARGET common_lib)
@@ -257,7 +258,8 @@ target_include_directories(monica_lib
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
 #message(STATUS "monica_lib_interface_includes:")
-#get_target_property(monica_lib_interface_includes monica_lib INTERFACE_INCLUDE_DIRECTORIES)
+#get_target_property(monica_lib_interface_includes monica_lib
+# INTERFACE_INCLUDE_DIRECTORIES)
 #foreach(X ${monica_lib_interface_includes})
 #    message(STATUS ${X})
 #endforeach()
@@ -286,7 +288,8 @@ add_library(monica_run_lib
 
 target_link_libraries(monica_run_lib monica_lib)
 
-#target_include_directories(monica_run_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+#target_include_directories(monica_run_lib PUBLIC
+# ${CMAKE_CURRENT_SOURCE_DIR}/src)
 if (MSVC)
   target_compile_options(monica_run_lib PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
@@ -318,7 +321,8 @@ endif ()
 
 #------------------------------------------------------------------------------
 
-# create monica-zmq-server executable, the server running monica via zeromq requests
+# create monica-zmq-server executable, the server running monica
+# via zeromq requests
 add_executable(monica-zmq-server
         src/run/serve-monica-zmq.h
         src/run/serve-monica-zmq.cpp
@@ -336,7 +340,8 @@ endif ()
 
 #------------------------------------------------------------------------------
 
-# create monica-capnp-server executable, the server running monica via CapNProto RPC
+# create monica-capnp-server executable, the server running monica
+# via CapNProto RPC
 add_executable(monica-capnp-server
         src/run/monica-capnp-server-main.cpp
         src/run/run-monica-capnp.h
@@ -351,7 +356,8 @@ endif ()
 
 #------------------------------------------------------------------------------
 
-# create monica-capnp-proxy executable, a server forwarding monica CapNProto RPC requests to registered monica instances
+# create monica-capnp-proxy executable, a server forwarding monica
+# CapNProto RPC requests to registered monica instances
 add_executable(monica-capnp-proxy
         src/run/monica-capnp-proxy-main.cpp
         src/run/run-monica-capnp.h
@@ -366,7 +372,8 @@ endif ()
 
 #------------------------------------------------------------------------------
 
-# create monica-capnp-server executable, the server running monica via CapNProto RPC
+# create monica-capnp-server executable, the server running monica
+# via CapNProto RPC
 add_executable(monica-capnp-fbp-component
         src/run/monica-capnp-fbp-component-main.cpp
         src/run/run-monica-capnp.h
@@ -376,7 +383,8 @@ add_executable(monica-capnp-fbp-component
 target_link_libraries(monica-capnp-fbp-component monica_lib)
 
 if (MSVC)
-  target_compile_options(monica-capnp-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(monica-capnp-fbp-component
+  PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
@@ -390,7 +398,8 @@ target_link_libraries(daily-monica-fbp-component
 )
 
 if (MSVC)
-  target_compile_options(daily-monica-fbp-component PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+  target_compile_options(daily-monica-fbp-component
+  PRIVATE "/MT$<$<CONFIG:Debug>:d>")
 endif ()
 
 #------------------------------------------------------------------------------
