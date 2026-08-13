@@ -60,8 +60,8 @@ json11::Json to_json(const AutomaticSowingData *as, const Workstep *ws,
                      bool includeFullCropParameters = true);
 bool apply(AutomaticSowingData *as, Workstep *ws, MonicaModel *model);
 bool condition(AutomaticSowingData *as, MonicaModel *model);
-bool reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date,
-            bool addYear = false, bool forceInitYear = false);
+bool reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date, bool addYear = false,
+            bool forceInitYear = false);
 std::function<double(MonicaModel *)>
 registerDailyFunction(AutomaticSowingData *as,
                       std::function<std::vector<double> &()> getDailyValues);

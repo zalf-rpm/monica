@@ -64,8 +64,7 @@ OId monica::makeOId(int id, int from, int to, OId::OP layerAgg) {
   return oid;
 }
 
-OId monica::makeOId(int id, int from, int to, OId::OP layerAgg,
-                    OId::OP timeAgg) {
+OId monica::makeOId(int id, int from, int to, OId::OP layerAgg, OId::OP timeAgg) {
   OId oid;
   oid.id = id;
   oid.layerAggOp = layerAgg;
@@ -121,9 +120,7 @@ std::string oid::toString(const OId *oid, bool includeTimeAgg) {
     oss << ", " << toString(oid, oid->organ);
   else if (isRange(oid))
     oss << ", [" << (oid->fromLayer + 1) << ", " << (oid->toLayer + 1)
-        << (oid->layerAggOp != OId::NONE
-                ? string(", ") + toString(oid, oid->layerAggOp)
-                : "")
+        << (oid->layerAggOp != OId::NONE ? string(", ") + toString(oid, oid->layerAggOp) : "")
         << "]";
   else if (oid->fromLayer >= 0)
     oss << ", " << (oid->fromLayer + 1);
@@ -257,8 +254,7 @@ json11::Json output::to_json(const Output *output) {
     J11Array outputIds;
     for (const auto &o : d.outputIds)
       outputIds.push_back(oid::to_json(&o));
-    ds.push_back(J11Object{
-        {"origSpec", d.origSpec}, {"outputIds", outputIds}, {"results", rs}});
+    ds.push_back(J11Object{{"origSpec", d.origSpec}, {"outputIds", outputIds}, {"results", rs}});
   }
 
   return json11::Json::object{{"type", "Output"},

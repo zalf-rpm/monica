@@ -47,13 +47,13 @@ string version = "1.0.0-beta";
 typedef mas::schema::model::EnvInstance<mas::schema::common::StructuredText,
                                         mas::schema::common::StructuredText>
     MonicaEnvInstance;
-typedef mas::schema::model::EnvInstanceProxy<
-    mas::schema::common::StructuredText, mas::schema::common::StructuredText>
+typedef mas::schema::model::EnvInstanceProxy<mas::schema::common::StructuredText,
+                                             mas::schema::common::StructuredText>
     MonicaEnvInstanceProxy;
 
-class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy<
-                                 mas::schema::common::StructuredText,
-                                 mas::schema::common::StructuredText>::Server {
+class RunMonicaProxy final
+    : public mas::schema::model::EnvInstanceProxy<mas::schema::common::StructuredText,
+                                                  mas::schema::common::StructuredText>::Server {
   struct Unregister final : public MonicaEnvInstanceProxy::Unregister::Server {
     RunMonicaProxy &_proxy;
     size_t _monicaServerId;
@@ -100,8 +100,7 @@ class RunMonicaProxy final : public mas::schema::model::EnvInstanceProxy<
 public:
   RunMonicaProxy() : _uuid(sole::uuid4().str()) {}
 
-  RunMonicaProxy(vector<MonicaEnvInstance::Client> &monicas)
-      : _uuid(sole::uuid4().str()) {
+  RunMonicaProxy(vector<MonicaEnvInstance::Client> &monicas) : _uuid(sole::uuid4().str()) {
     size_t id = 0;
     for (auto &&client : monicas) {
       _xs.push_back({kj::mv(client), id++, 0});
@@ -117,8 +116,8 @@ public:
     return kj::READY_NOW;
   }
 
-  kj::Promise<void> run(RunContext context)
-      override // run @0 (env :Env) -> (result :Common.StructuredText);
+  kj::Promise<void>
+  run(RunContext context) override // run @0 (env :Env) -> (result :Common.StructuredText);
   {
     if (_xs.empty())
       return kj::READY_NOW;
@@ -143,15 +142,14 @@ public:
     req.setEnv(context.getParams().getEnv());
     min->jobs++;
     auto id = min->id;
-    cout << "added job to worker: " << id << " now " << min->jobs
-         << " in worker queue" << endl;
+    cout << "added job to worker: " << id << " now " << min->jobs << " in worker queue" << endl;
     return req.send().then(
         [context, id, this](auto &&res) mutable {
           if (id < this->_xs.size()) {
             X &x = _xs[id];
             x.jobs--;
-            cout << "finished job of worker: " << id << " now " << x.jobs
-                 << " in worker queue" << endl;
+            cout << "finished job of worker: " << id << " now " << x.jobs << " in worker queue"
+                 << endl;
             context.setResults(res);
           }
         },
@@ -165,9 +163,9 @@ public:
         });
   }
 
-  kj::Promise<void> registerEnvInstance(RegisterEnvInstanceContext context)
-      override // registerEnvInstance @0 (instance :EnvInstance) -> (unregister
-               // :Common.Callback);
+  kj::Promise<void> registerEnvInstance(
+      RegisterEnvInstanceContext context) override // registerEnvInstance @0 (instance :EnvInstance)
+                                                   // -> (unregister :Common.Callback);
   {
     auto instance = context.getParams().getInstance();
     bool filledEmptySlot = false;
@@ -192,11 +190,10 @@ public:
         count++;
     }
 
-    cout << "added service to proxy: service-id: " << registeredAsId << " -> "
-         << count << " services registered now" << endl;
+    cout << "added service to proxy: service-id: " << registeredAsId << " -> " << count
+         << " services registered now" << endl;
 
-    context.getResults().setUnregister(
-        kj::heap<Unregister>(*this, registeredAsId));
+    context.getResults().setUnregister(kj::heap<Unregister>(*this, registeredAsId));
 
     return kj::READY_NOW;
   }
@@ -204,18 +201,15 @@ public:
 
 kj::AsyncIoProvider::PipeThread runServer(kj::AsyncIoProvider &ioProvider,
                                           bool startMonicaThreadsInDebugMode) {
-  return ioProvider.newPipeThread(
-      [startMonicaThreadsInDebugMode](kj::AsyncIoProvider &ioProvider,
-                                      kj::AsyncIoStream &stream,
-                                      kj::WaitScope &waitScope) {
-        capnp::TwoPartyVatNetwork network(stream,
-                                          capnp::rpc::twoparty::Side::SERVER);
-        auto server = makeRpcServer(
-            network,
-            kj::heap<RunMonica>(startMonicaThreadsInDebugMode,
-                                new mas::infrastructure::common::Restorer()));
-        network.onDisconnect().wait(waitScope);
-      });
+  return ioProvider.newPipeThread([startMonicaThreadsInDebugMode](kj::AsyncIoProvider &ioProvider,
+                                                                  kj::AsyncIoStream &stream,
+                                                                  kj::WaitScope &waitScope) {
+    capnp::TwoPartyVatNetwork network(stream, capnp::rpc::twoparty::Side::SERVER);
+    auto server =
+        makeRpcServer(network, kj::heap<RunMonica>(startMonicaThreadsInDebugMode,
+                                                   new mas::infrastructure::common::Restorer()));
+    network.onDisconnect().wait(waitScope);
+  });
 }
 
 // kj::Promise<kj::Own<kj::AsyncIoStream>>
@@ -277,8 +271,7 @@ struct CMETRes {
   MonicaEnvInstance::Client client;
 };
 
-CMETRes createMonicaEnvThread(kj::AsyncIoProvider &ioProvider,
-                              bool startMonicaThreadsInDebugMode) {
+CMETRes createMonicaEnvThread(kj::AsyncIoProvider &ioProvider, bool startMonicaThreadsInDebugMode) {
   auto serverThread = runServer(ioProvider, startMonicaThreadsInDebugMode);
   auto tc = kj::heap<ThreadContext>(kj::mv(serverThread));
 
@@ -319,8 +312,8 @@ int main(int argc, const char *argv[]) {
          << "options:" << endl
          << endl
          << " -h | --help ... this help output" << endl
-         << " -v | --version ... outputs " << appName
-         << " version and ZeroMQ version being used" << endl
+         << " -v | --version ... outputs " << appName << " version and ZeroMQ version being used"
+         << endl
          << endl
          << " -d | --debug "
             "... show debug outputs"
@@ -375,8 +368,8 @@ int main(int argc, const char *argv[]) {
     vector<MonicaEnvInstance::Client> clients;
     vector<kj::Promise<void>> proms;
     for (unsigned int i = 0; i < no_of_threads; i++) {
-      auto promAndClient = createMonicaEnvThread(*ioContext.provider,
-                                                 startMonicaThreadsInDebugMode);
+      auto promAndClient =
+          createMonicaEnvThread(*ioContext.provider, startMonicaThreadsInDebugMode);
       proms.push_back(promAndClient.fp.addBranch());
       clients.push_back(kj::mv(promAndClient.client));
     }
@@ -384,8 +377,7 @@ int main(int argc, const char *argv[]) {
     capnp::Capability::Client mainInterface = kj::heap<RunMonicaProxy>(clients);
 
     ConnectionManager conMan(ioContext);
-    auto portPromise =
-        conMan.bind(mainInterface, address, port < 0 ? 0U : kj::uint(port));
+    auto portPromise = conMan.bind(mainInterface, address, port < 0 ? 0U : kj::uint(port));
     auto port = portPromise.wait(ioContext.waitScope);
 
     // port = portPromise.addBranch().wait(ioContext.waitScope);

@@ -34,16 +34,13 @@ struct MineralFertilizationData {
 namespace workstep {
 
 Tools::Errors merge(MineralFertilizationData *mf, json11::Json j);
-json11::Json to_json(const MineralFertilizationData *mf,
-                     const Workstep *ws);
-bool apply(MineralFertilizationData *mf, Workstep *ws,
-          MonicaModel *model);
+json11::Json to_json(const MineralFertilizationData *mf, const Workstep *ws);
+bool apply(MineralFertilizationData *mf, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
 Workstep makeMineralFertilizationWorkstep(json11::Json object);
-Workstep makeMineralFertilizationWorkstep(
-    const Tools::Date &at, MineralFertilizerParameters partition,
-    double amount);
+Workstep makeMineralFertilizationWorkstep(const Tools::Date &at,
+                                          MineralFertilizerParameters partition, double amount);
 
 } // namespace monica

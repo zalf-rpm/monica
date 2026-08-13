@@ -63,8 +63,7 @@ std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(
 }
 
 std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(
-    const capnp::List<mas::schema::model::monica::Params::DailyWeather::KV>::
-        Reader &dailyData) {
+    const capnp::List<mas::schema::model::monica::Params::DailyWeather::KV>::Reader &dailyData) {
   std::map<ACD, double> res;
   for (const auto &kv : dailyData) {
     res[climateElementToACD(kv.getKey())] = kv.getValue();
@@ -72,10 +71,9 @@ std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(
   return res;
 }
 
-DataAccessor
-monica::fromCapnpData(const Tools::Date &startDate, const Tools::Date &endDate,
-                      capnp::List<mas::schema::climate::Element>::Reader header,
-                      capnp::List<capnp::List<float>>::Reader data) {
+DataAccessor monica::fromCapnpData(const Tools::Date &startDate, const Tools::Date &endDate,
+                                   capnp::List<mas::schema::climate::Element>::Reader header,
+                                   capnp::List<capnp::List<float>>::Reader data) {
   typedef mas::schema::climate::Element E;
 
   if (data.size() == 0)
@@ -115,27 +113,24 @@ monica::fromCapnpData(const Tools::Date &startDate, const Tools::Date &endDate,
   return da;
 }
 
-kj::Promise<DataAccessor> monica::dataAccessorFromTimeSeries(
-    mas::schema::climate::TimeSeries::Client ts) {
+kj::Promise<DataAccessor>
+monica::dataAccessorFromTimeSeries(mas::schema::climate::TimeSeries::Client ts) {
   auto rangeProm = ts.rangeRequest().send();
   auto headerProm = ts.headerRequest().send();
   auto dataTProm = ts.dataTRequest().send();
 
   return rangeProm.then(
-      [KJ_MVCAP(headerProm),
-       KJ_MVCAP(dataTProm)](auto &&rangeResponse) mutable {
+      [KJ_MVCAP(headerProm), KJ_MVCAP(dataTProm)](auto &&rangeResponse) mutable {
         return headerProm.then(
-            [KJ_MVCAP(rangeResponse),
-             KJ_MVCAP(dataTProm)](auto &&headerResponse) mutable {
+            [KJ_MVCAP(rangeResponse), KJ_MVCAP(dataTProm)](auto &&headerResponse) mutable {
               return dataTProm.then(
                   [KJ_MVCAP(rangeResponse),
                    KJ_MVCAP(headerResponse)](auto &&dataTResponse) mutable {
                     auto sd = rangeResponse.getStartDate();
                     auto ed = rangeResponse.getEndDate();
-                    return ::fromCapnpData(
-                        Tools::Date(sd.getDay(), sd.getMonth(), sd.getYear()),
-                        Tools::Date(ed.getDay(), ed.getMonth(), ed.getYear()),
-                        headerResponse.getHeader(), dataTResponse.getData());
+                    return ::fromCapnpData(Tools::Date(sd.getDay(), sd.getMonth(), sd.getYear()),
+                                           Tools::Date(ed.getDay(), ed.getMonth(), ed.getYear()),
+                                           headerResponse.getHeader(), dataTResponse.getData());
                   },
                   [](auto &&e) {
                     KJ_LOG(ERROR,
@@ -156,8 +151,7 @@ kj::Promise<DataAccessor> monica::dataAccessorFromTimeSeries(
       });
 }
 
-kj::Promise<J11Array>
-monica::fromCapnpSoilProfile(mas::schema::soil::Profile::Client profile) {
+kj::Promise<J11Array> monica::fromCapnpSoilProfile(mas::schema::soil::Profile::Client profile) {
   return profile.dataRequest().send().then(
       [](auto &&data) {
         J11Array ls;
@@ -214,8 +208,7 @@ monica::fromCapnpSoilProfile(mas::schema::soil::Profile::Client profile) {
               if (prop.isF32Value())
                 l["PoreVolume"] = prop.getF32Value() / 100.0;
               break;
-            case mas::schema::soil::PropertyName::
-                SOIL_WATER_CONDUCTIVITY_COEFFICIENT:
+            case mas::schema::soil::PropertyName::SOIL_WATER_CONDUCTIVITY_COEFFICIENT:
               if (prop.isF32Value())
                 l["Lambda"] = prop.getF32Value();
               break;

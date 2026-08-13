@@ -55,19 +55,17 @@ Errors workstep::merge(IrrigationData *i, json11::Json j) {
 }
 
 json11::Json workstep::to_json(const IrrigationData *i, const Workstep *ws) {
-  return json11::Json::object{
-      {"type", "Irrigation"},
-      {"date", ws->date.toIsoDateString()},
-      {"amount", i->amount},
-      {"parameters", irrigationparameters::to_json(&i->params)}};
+  return json11::Json::object{{"type", "Irrigation"},
+                              {"date", ws->date.toIsoDateString()},
+                              {"amount", i->amount},
+                              {"parameters", irrigationparameters::to_json(&i->params)}};
 }
 
 bool workstep::apply(IrrigationData *i, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   // cout << toString() << endl;
-  monicamodel::applyIrrigation(model, i->amount,
-                               i->params.nitrateConcentration);
+  monicamodel::applyIrrigation(model, i->amount, i->params.nitrateConcentration);
   // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for
   // today's ET calculation LIMITATION: Auto-irrigation uses sim.json params or
   // defaults (fw=1.0, isDrip=false).

@@ -98,8 +98,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
     try {
       if (distinctSendSocket) {
         for (const auto &address : sAddresses)
-          sconfig.op == bind ? sendSocket.bind(address)
-                             : sendSocket.connect(address);
+          sconfig.op == bind ? sendSocket.bind(address) : sendSocket.connect(address);
       }
 
       try {
@@ -108,8 +107,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
           auto topic = "finish";
           topicCharCount = strlen(topic);
           for (const auto &address : cAddresses)
-            cconfig.op == bind ? controlSocket.bind(address)
-                               : controlSocket.connect(address);
+            cconfig.op == bind ? controlSocket.bind(address) : controlSocket.connect(address);
           controlSocket.setsockopt(ZMQ_SUBSCRIBE, topic, topicCharCount);
         }
 
@@ -133,16 +131,14 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                 J11Object resultMsg;
                 resultMsg["type"] = "ack";
                 try {
-                  s_send(distinctSendSocket ? sendSocket : socket,
-                         Json(resultMsg).dump());
+                  s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
                 } catch (const zmq::error_t &e) {
                   cerr << "Exception on trying to reply to 'finish' request "
                           "with 'ack' message on zmq socket with address(es): ";
                   int i = 0;
                   for (const auto &address : sAddresses)
                     cerr << (i > 0 ? "," : "") << address, ++i;
-                  cerr << "! Still will finish MONICA process! Error: ["
-                       << e.what() << "]" << endl;
+                  cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
                 }
               }
               sendSocket.setsockopt(ZMQ_LINGER, 0);
@@ -156,40 +152,33 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
 
               break;
             } else if (msgType == "Env") {
-              auto sharedId = msg.json["sharedId"].is_null()
-                                  ? ""
-                                  : msg.json["sharedId"].string_value();
+              auto sharedId =
+                  msg.json["sharedId"].is_null() ? "" : msg.json["sharedId"].string_value();
               monica::Output out, out2;
               auto customId = msg.json["customId"];
               out.customId = customId;
               out2.customId = customId;
-              bool isNoDataPassThrough =
-                  customId.is_object() && customId["nodata"].bool_value();
-              bool isIC = msg.json["params"]["userCropParameters"]
-                                  ["intercropping"]["is_intercropping"]
-                                      .bool_value();
+              bool isNoDataPassThrough = customId.is_object() && customId["nodata"].bool_value();
+              bool isIC =
+                  msg.json["params"]["userCropParameters"]["intercropping"]["is_intercropping"]
+                      .bool_value();
               if (isNoDataPassThrough) {
-                debug() << "nodata pass through -> customId: "
-                        << customId.dump() << endl;
+                debug() << "nodata pass through -> customId: " << customId.dump() << endl;
               } else {
                 Env env;
-                auto pathToSoilDir = fixSystemSeparator(
-                    replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
-                env.params.siteParameters
-                    .calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::
-                    getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
+                auto pathToSoilDir =
+                    fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
+                    Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
                         pathToSoilDir);
-                env.params.siteParameters
-                    .calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
                     Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
                 env.params.siteParameters
                     .calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
                     Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-                env.params.siteParameters
-                    .calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
                     Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
-                env.params.siteParameters
-                    .calculateAndSetPwpFcSatFunctions["Toth"] =
+                env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
                     Soil::updateUnsetPwpFcSatFromToth;
 
                 auto errors = env_merge(&env, msg.json);
@@ -198,21 +187,19 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                   try {
                     if (!env.climateData.isValid()) {
                       if (!env.climateCSV.empty()) {
-                        eda = readClimateDataFromCSVStringViaHeaders(
-                            env.climateCSV, env.csvViaHeaderOptions);
+                        eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV,
+                                                                     env.csvViaHeaderOptions);
                       } else if (!env.pathsToClimateCSV.empty()) {
-                        eda = readClimateDataFromCSVFilesViaHeaders(
-                            env.pathsToClimateCSV, env.csvViaHeaderOptions);
+                        eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV,
+                                                                    env.csvViaHeaderOptions);
 
 #ifdef INCLUDE_SR_SUPPORT
                         Climate::DataAccessor finalDA = kj::mv(eda.result);
                         for (const auto &sr : env.pathsToClimateCSV) {
                           if (sr.find("capnp://") == 0) {
                             auto ts =
-                                conMan.tryConnectB(sr)
-                                    .castAs<mas::schema::climate::TimeSeries>();
-                            auto da = dataAccessorFromTimeSeries(ts).wait(
-                                ioContext.waitScope);
+                                conMan.tryConnectB(sr).castAs<mas::schema::climate::TimeSeries>();
+                            auto da = dataAccessorFromTimeSeries(ts).wait(ioContext.waitScope);
                             if (!finalDA.isValid()) {
                               finalDA = kj::mv(da);
                             } else {
@@ -229,24 +216,18 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                     // no soil data have been loaded, but there might be a capnp
                     // sturdy ref
                     string soilSR;
-                    if (msg.json["params"]["siteParameters"]
-                                ["SoilProfileParameters"]
-                                    .is_string()) {
-                      soilSR = msg.json["params"]["siteParameters"]
-                                       ["SoilProfileParameters"]
-                                           .string_value();
+                    if (msg.json["params"]["siteParameters"]["SoilProfileParameters"].is_string()) {
+                      soilSR = msg.json["params"]["siteParameters"]["SoilProfileParameters"]
+                                   .string_value();
                     }
                     if (!soilSR.empty()) {
-                      auto sp = conMan.tryConnectB(soilSR)
-                                    .castAs<mas::schema::soil::Profile>();
-                      auto soilpsj =
-                          fromCapnpSoilProfile(sp).wait(ioContext.waitScope);
+                      auto sp = conMan.tryConnectB(soilSR).castAs<mas::schema::soil::Profile>();
+                      auto soilpsj = fromCapnpSoilProfile(sp).wait(ioContext.waitScope);
                       auto soilps = Soil::createSoilPMs(soilpsj);
                       if (soilps.second.failure())
                         printPossibleErrors(soilps.second, activateDebug);
                       else
-                        env.params.siteParameters.vs_SoilParameters =
-                            soilps.first;
+                        env.params.siteParameters.vs_SoilParameters = soilps.first;
                     }
 #endif
 
@@ -256,24 +237,19 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
 
                       env.debugMode = startedServerInDebugMode && env.debugMode;
 
-                      env.params.userSoilMoistureParameters
-                          .getCapillaryRiseRate = [](const string &soilTexture,
-                                                     size_t distance) {
-                        return Soil::readCapillaryRiseRates().getRate(
-                            soilTexture, distance);
-                      };
+                      env.params.userSoilMoistureParameters.getCapillaryRiseRate =
+                          [](const string &soilTexture, size_t distance) {
+                            return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+                          };
 
                       // isIC = env.params.userCropParameters.isIntercropping;
-                      debug() << "running             -> customId: "
-                              << env.customId.dump() << endl;
+                      debug() << "running             -> customId: " << env.customId.dump() << endl;
                       auto str = msg.json.dump();
                       std::tie(out, out2) = runMonicaIC(kj::mv(env), isIC);
                       // cout << "out: " << out.to_json().dump() << endl;
                     }
                   } catch (std::exception &e) {
-                    eda.appendError(
-                        kj::str("Error while running MONICA: ", e.what())
-                            .cStr());
+                    eda.appendError(kj::str("Error while running MONICA: ", e.what()).cStr());
                   }
                   out.errors = eda.errors;
                   out.warnings = eda.warnings;
@@ -285,25 +261,21 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
 
               try {
                 if (!sharedId.empty())
-                  s_sendmore(distinctSendSocket ? sendSocket : socket,
-                             sharedId);
+                  s_sendmore(distinctSendSocket ? sendSocket : socket, sharedId);
 
                 if (isIC) {
-                  auto outs =
-                      json11::Json(J11Object({{"1", output::to_json(&out)},
-                                              {"2", output::to_json(&out2)}}));
+                  auto outs = json11::Json(
+                      J11Object({{"1", output::to_json(&out)}, {"2", output::to_json(&out2)}}));
                   s_send(distinctSendSocket ? sendSocket : socket, outs.dump());
                 } else {
-                  s_send(distinctSendSocket ? sendSocket : socket,
-                         output::to_json(&out).dump());
+                  s_send(distinctSendSocket ? sendSocket : socket, output::to_json(&out).dump());
                 }
               } catch (const zmq::error_t &e) {
                 cerr << "Exception on trying to reply with result message on "
                         "zmq socket with address: ";
                 for (auto i : kj::indices(sAddresses))
                   cerr << (i > 0 ? "," : "") << sAddresses[i];
-                cerr << "! Will continue to receive requests! Error: ["
-                     << e.what() << "]" << endl;
+                cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
               }
             } else {
               J11Object resultMsg;
@@ -311,16 +283,14 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
               debug() << "Error, original message was: " << msg.msg << endl;
 
               try {
-                s_send(distinctSendSocket ? sendSocket : socket,
-                       Json(resultMsg).dump());
+                s_send(distinctSendSocket ? sendSocket : socket, Json(resultMsg).dump());
               } catch (const zmq::error_t &e) {
                 cerr << "Exception on trying to reply to '" << msgType
                      << "' request with 'error' message on zmq socket with "
                         "address: ";
                 for (auto i : kj::indices(sAddresses))
                   cerr << (i > 0 ? "," : "") << sAddresses[i];
-                cerr << "! Still will finish MONICA process! Error: ["
-                     << e.what() << "]" << endl;
+                cerr << "! Still will finish MONICA process! Error: [" << e.what() << "]" << endl;
               }
             }
           } catch (const zmq::error_t &e) {
@@ -328,8 +298,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
                     "socket with address: ";
             for (auto i : kj::indices(rAddresses))
               cerr << (i > 0 ? "," : "") << rAddresses[i];
-            cerr << "! Will continue to receive requests! Error: [" << e.what()
-                 << "]" << endl;
+            cerr << "! Will continue to receive requests! Error: [" << e.what() << "]" << endl;
           }
         }
       } catch (const zmq::error_t &e) {
@@ -347,8 +316,7 @@ void monica::serveZmqMonicaFull(zmq::context_t *zmqContext,
       cerr << "! Error: " << e.what() << endl;
     }
   } catch (const zmq::error_t &e) {
-    cerr << "Couldn't " << (rconfig.op == bind ? "bind" : "connect")
-         << " zmq socket to address: ";
+    cerr << "Couldn't " << (rconfig.op == bind ? "bind" : "connect") << " zmq socket to address: ";
     for (auto i : kj::indices(rAddresses))
       cerr << (i > 0 ? "," : "") << rAddresses[i];
     cerr << "! Error: " << e.what() << endl;

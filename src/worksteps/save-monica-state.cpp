@@ -31,17 +31,17 @@ using namespace std;
 using namespace monica;
 using namespace Tools;
 
-Workstep monica::makeSaveMonicaStateWorkstep(
-    const Tools::Date &at, std::string pathToSerializedStateFile,
-    bool serializeAsJson, int noOfPreviousDaysSerializedClimateData) {
+Workstep monica::makeSaveMonicaStateWorkstep(const Tools::Date &at,
+                                             std::string pathToSerializedStateFile,
+                                             bool serializeAsJson,
+                                             int noOfPreviousDaysSerializedClimateData) {
   Workstep ws;
   ws.date = at;
   ws.runAtStartOfDay = false; // by default run at the end of the day
   SaveMonicaStateData sms;
   sms.pathToFile = std::move(pathToSerializedStateFile);
   sms.toJson = serializeAsJson;
-  sms.noOfPreviousDaysSerializedClimateData =
-      noOfPreviousDaysSerializedClimateData;
+  sms.noOfPreviousDaysSerializedClimateData = noOfPreviousDaysSerializedClimateData;
   ws.data = sms;
   return ws;
 }
@@ -65,40 +65,34 @@ Errors workstep::merge(SaveMonicaStateData *sms, Workstep *ws, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const SaveMonicaStateData *sms,
-                               const Workstep *ws) {
-  return json11::Json::object{{"type", "SaveMonicaState"},
-                              {"path", sms->pathToFile},
-                              {"toJson", sms->toJson},
-                              {"noOfPreviousDaysSerializedClimateData",
-                               sms->noOfPreviousDaysSerializedClimateData},
-                              {"runAtStartOfDay", ws->runAtStartOfDay}};
+json11::Json workstep::to_json(const SaveMonicaStateData *sms, const Workstep *ws) {
+  return json11::Json::object{
+      {"type", "SaveMonicaState"},
+      {"path", sms->pathToFile},
+      {"toJson", sms->toJson},
+      {"noOfPreviousDaysSerializedClimateData", sms->noOfPreviousDaysSerializedClimateData},
+      {"runAtStartOfDay", ws->runAtStartOfDay}};
 }
 
-bool workstep::apply(SaveMonicaStateData *sms, Workstep *ws,
-                     MonicaModel *model) {
+bool workstep::apply(SaveMonicaStateData *sms, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   int prevVal = -1;
   if (sms->noOfPreviousDaysSerializedClimateData > -1) {
     prevVal = model->simPs.noOfPreviousDaysSerializedClimateData;
-    model->simPs.noOfPreviousDaysSerializedClimateData =
-        sms->noOfPreviousDaysSerializedClimateData;
+    model->simPs.noOfPreviousDaysSerializedClimateData = sms->noOfPreviousDaysSerializedClimateData;
   }
 
   const auto pathToSerFile = kj::str(sms->pathToFile);
   auto fs = kj::newDiskFilesystem();
   auto file = isAbsolutePath(pathToSerFile.cStr())
-                  ? fs->getRoot().openFile(
-                        fs->getCurrentPath().eval(pathToSerFile),
-                        kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
+                  ? fs->getRoot().openFile(fs->getCurrentPath().eval(pathToSerFile),
+                                           kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
                   : fs->getRoot().openFile(kj::Path::parse(pathToSerFile),
-                                           kj::WriteMode::CREATE |
-                                               kj::WriteMode::MODIFY);
+                                           kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
 
   capnp::MallocMessageBuilder message;
-  auto runtimeState =
-      message.initRoot<mas::schema::model::monica::RuntimeState>();
+  auto runtimeState = message.initRoot<mas::schema::model::monica::RuntimeState>();
   const auto modelState = runtimeState.initModelState();
   monicamodel::serialize(model, modelState);
 

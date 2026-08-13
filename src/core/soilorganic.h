@@ -54,12 +54,10 @@ public:
   std::vector<double> vo_ActNitrificationRate;    //!< [kg N m-3 d-1]
   std::vector<double> vo_ActDenitrificationRate;  //!< [kg N m-3 d-1]
   std::vector<double> vo_AOM_FastDeltaSum;
-  std::vector<double>
-      vo_AOM_FastInput; //!< AOMfast pool change by direct input [kg C m-3]
+  std::vector<double> vo_AOM_FastInput; //!< AOMfast pool change by direct input [kg C m-3]
   std::vector<double> vo_AOM_FastSum;
   std::vector<double> vo_AOM_SlowDeltaSum;
-  std::vector<double>
-      vo_AOM_SlowInput; //!< AOMslow pool change by direct input [kg C m-3]
+  std::vector<double> vo_AOM_SlowInput; //!< AOMslow pool change by direct input [kg C m-3]
   std::vector<double> vo_AOM_SlowSum;
   std::vector<double> vo_CBalance;
   double vo_DecomposerRespiration{0.0};
@@ -82,8 +80,7 @@ public:
   std::vector<double> vo_SoilOrganicC;
   std::vector<double> vo_SoilOrganicC_highCN;
   std::vector<double> vo_SOM_FastDelta;
-  std::vector<double>
-      vo_SOM_FastInput; //!< SOMfast pool change by direct input [kg C m-3]
+  std::vector<double> vo_SOM_FastInput; //!< SOMfast pool change by direct input [kg C m-3]
   std::vector<double> vo_SOM_SlowDelta;
   double vo_SumDenitrification{0.0}; // kg-N/m2
   double vo_SumNetNMineralisation{0.0};
@@ -98,26 +95,23 @@ public:
   CropModule *cropModule{nullptr};
 };
 
-kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn &soilColumn,
-                                     SoilOrganicModuleParameters params);
-kj::Own<SoilOrganic> makeSoilOrganic(
-    SoilColumn &soilColumn,
-    mas::schema::model::monica::SoilOrganicModuleState::Reader reader,
-    CropModule *cropModule = nullptr);
+kj::Own<SoilOrganic> makeSoilOrganic(SoilColumn &soilColumn, SoilOrganicModuleParameters params);
+kj::Own<SoilOrganic>
+makeSoilOrganic(SoilColumn &soilColumn,
+                mas::schema::model::monica::SoilOrganicModuleState::Reader reader,
+                CropModule *cropModule = nullptr);
 
 namespace soilorganic {
 
-void deserialize(
-    SoilOrganic *so,
-    mas::schema::model::monica::SoilOrganicModuleState::Reader reader);
-void serialize(
-    const SoilOrganic *so,
-    mas::schema::model::monica::SoilOrganicModuleState::Builder builder);
+void deserialize(SoilOrganic *so,
+                 mas::schema::model::monica::SoilOrganicModuleState::Reader reader);
+void serialize(const SoilOrganic *so,
+               mas::schema::model::monica::SoilOrganicModuleState::Builder builder);
 void initializeFromParams(SoilOrganic *so);
 void foUrea(SoilOrganic *so);
 void foMIT(SoilOrganic *so);
-void foVolatilisation(SoilOrganic *so, bool aomAddition,
-                      double meanAirTemperature, double windSpeed);
+void foVolatilisation(SoilOrganic *so, bool aomAddition, double meanAirTemperature,
+                      double windSpeed);
 void foNitrification(SoilOrganic *so);
 void foSticsNitrification(SoilOrganic *so);
 void foDenitrification(SoilOrganic *so);
@@ -129,31 +123,24 @@ double foNetEcosystemProduction(SoilOrganic *so, double netPrimaryProduction,
                                 double decomposerRespiration);
 double foNetEcosystemExchange(SoilOrganic *so, double netPrimaryProduction,
                               double decomposerRespiration);
-double foClayOnDecompostionKaiteew(SoilOrganic *so, double soilClayContent,
-                                   double limitClayEffect);
-double foTempOnDecompostionKaiteew(SoilOrganic *so, double soilTemperature,
-                                   double qTenFactor, double tempDecOptimal);
-double foMoistOnDecompostionKaiteew(SoilOrganic *so, double soilMoisture_m3,
-                                    double saturation,
+double foClayOnDecompostionKaiteew(SoilOrganic *so, double soilClayContent, double limitClayEffect);
+double foTempOnDecompostionKaiteew(SoilOrganic *so, double soilTemperature, double qTenFactor,
+                                   double tempDecOptimal);
+double foMoistOnDecompostionKaiteew(SoilOrganic *so, double soilMoisture_m3, double saturation,
                                     double moistureDecOptimal);
-double foClayOnDecompostion(SoilOrganic *so, double soilClayContent,
-                            double limitClayEffect);
+double foClayOnDecompostion(SoilOrganic *so, double soilClayContent, double limitClayEffect);
 double foTempOnDecompostion(SoilOrganic *so, double soilTemperature);
 double foMoistOnDecompostion(SoilOrganic *so, double soilMoisture_pF);
 double foMoistOnHydrolysis(SoilOrganic *so, double soilMoisture_pF);
 double foTempOnNitrification(SoilOrganic *so, double soilTemperature);
 double foMoistOnNitrification(SoilOrganic *so, double soilMoisture_pF);
-double foMoistOnDenitrification(SoilOrganic *so, double soilMoisture_m3,
-                                double saturation);
+double foMoistOnDenitrification(SoilOrganic *so, double soilMoisture_m3, double saturation);
 double foNH3onNitriteOxidation(SoilOrganic *so, double soilNH4, double soilpH);
-void step(SoilOrganic *so, double meanAirTemperature, double precipitation,
-          double windSpeed);
+void step(SoilOrganic *so, double meanAirTemperature, double precipitation, double windSpeed);
 void addOrganicMatter(SoilOrganic *so, const OrganicMatterParameters &params,
-                      const std::map<size_t, double> &layer2amount,
-                      double nConcentration = 0);
-void addOrganicMatter(SoilOrganic *so, const OrganicMatterParameters &params,
-                      double amount, double nConcentration = 0,
-                      size_t intoLayerIndex = 0);
+                      const std::map<size_t, double> &layer2amount, double nConcentration = 0);
+void addOrganicMatter(SoilOrganic *so, const OrganicMatterParameters &params, double amount,
+                      double nConcentration = 0, size_t intoLayerIndex = 0);
 double getSoilOrganicC(const SoilOrganic *so, int iLayer);
 double getNetNMineralisationRate(const SoilOrganic *so, int iLayer);
 double getNH3_Volatilised(const SoilOrganic *so);

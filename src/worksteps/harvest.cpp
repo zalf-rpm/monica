@@ -42,23 +42,18 @@ Errors workstep::merge(HarvestData *h, json11::Json j) {
   set_int_value(h->incorporateIntoLayerNo, j, "incorporateIntoLayerNo");
   h->incorporateIntoLayerNo = max(1, h->incorporateIntoLayerNo);
   set_bool_value(h->exported, j, "exported");
-  set_bool_value(h->optCarbMgmtData.optCarbonConservation, j,
-                 "opt-carbon-conservation");
-  set_double_value(h->optCarbMgmtData.cropImpactOnHumusBalance, j,
-                   "crop-impact-on-humus-balance");
+  set_bool_value(h->optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation");
+  set_double_value(h->optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance");
   auto cu = j["crop-usage"].string_value();
   if (cu == "green-manure")
     h->optCarbMgmtData.cropUsage = HarvestData::greenManure;
   else
     h->optCarbMgmtData.cropUsage = HarvestData::biomassProduction;
   set_double_value(h->optCarbMgmtData.residueHeq, j, "residue-heq");
-  set_double_value(h->optCarbMgmtData.organicFertilizerHeq, j,
-                   "organic-fertilizer-heq");
-  set_double_value(h->optCarbMgmtData.maxResidueRecoverFraction, j,
-                   "max-residue-recover-fraction");
+  set_double_value(h->optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq");
+  set_double_value(h->optCarbMgmtData.maxResidueRecoverFraction, j, "max-residue-recover-fraction");
 
-  for (const string &organName :
-       {"leaf", "shoot", "fruit", "struct", "sugar"}) {
+  for (const string &organName : {"leaf", "shoot", "fruit", "struct", "sugar"}) {
     for (const auto &kv : j.object_items()) {
       if (toLower(kv.first) == organName && kv.second.is_object()) {
         HarvestData::Spec::Value sv;
@@ -79,15 +74,13 @@ json11::Json workstep::to_json(const HarvestData *h, const Workstep *ws,
       {"incorporateIntoLayerNo", h->incorporateIntoLayerNo},
       {"exported", h->exported},
       {"opt-carbon-conservation", h->optCarbMgmtData.optCarbonConservation},
-      {"crop-impact-on-humus-balance",
-       h->optCarbMgmtData.cropImpactOnHumusBalance},
+      {"crop-impact-on-humus-balance", h->optCarbMgmtData.cropImpactOnHumusBalance},
       {"crop-usage", h->optCarbMgmtData.cropUsage == HarvestData::greenManure
                          ? "green-manure"
                          : "biomass-production"},
       {"residue-heq", h->optCarbMgmtData.residueHeq},
       {"organic-fertilizer-heq", h->optCarbMgmtData.organicFertilizerHeq},
-      {"max-residue-recover-fraction",
-       h->optCarbMgmtData.maxResidueRecoverFraction}};
+      {"max-residue-recover-fraction", h->optCarbMgmtData.maxResidueRecoverFraction}};
 
   for (const auto &p : h->spec.organ2specVal) {
     jo[workstep::organNameFromId(p.first)] =
@@ -102,12 +95,10 @@ bool workstep::apply(HarvestData *h, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   if (model->currentCropModule) {
-    monicamodel::harvestCurrentCrop(model, h->exported, h->spec,
-                                    h->optCarbMgmtData,
+    monicamodel::harvestCurrentCrop(model, h->exported, h->spec, h->optCarbMgmtData,
                                     h->incorporateIntoLayerNo - 1);
     if (h->sowing)
-      debug() << "harvesting crop: "
-              << cropparameters::cropName(&h->sowing->cropParams)
+      debug() << "harvesting crop: " << cropparameters::cropName(&h->sowing->cropParams)
               << " at: " << ws->date.toString() << endl;
     model->currentEvents.insert("Harvest");
   }

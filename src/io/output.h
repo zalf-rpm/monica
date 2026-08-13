@@ -34,9 +34,8 @@ struct OId {
   std::string displayName;
   std::string unit;
   std::string jsonInput;
-  OP layerAggOp{
-      NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
-  OP timeAggOp{AVG}; //! aggregate values in a second time range (e.g. monthly)
+  OP layerAggOp{NONE}; //! aggregate values on potentially daily basis (e.g. soil layers)
+  OP timeAggOp{AVG};   //! aggregate values in a second time range (e.g. monthly)
   ORGAN organ{_UNDEFINED_ORGAN_};
   int fromLayer{-1}, toLayer{-1};
 };
@@ -53,8 +52,7 @@ OId makeOId(int id, OId::OP layerAgg, OId::OP timeAgg);
 //! id, layer aggregation of from to (incl) to layers
 OId makeOId(int id, int from, int to, OId::OP layerAgg);
 //! aggregate layers from to (incl) to in a non daily setting
-OId makeOId(int id, int from, int to, OId::OP layerAgg,
-            OId::OP timeAgg);
+OId makeOId(int id, int from, int to, OId::OP layerAgg, OId::OP timeAgg);
 OId makeOId(json11::Json object);
 
 namespace oid {
@@ -66,9 +64,7 @@ inline bool isRange(const OId *oid) {
   return oid->fromLayer >= 0 && oid->toLayer >= 0;
 } // && fromLayer < toLayer; }
 
-inline bool isOrgan(const OId *oid) {
-  return oid->organ != OId::_UNDEFINED_ORGAN_;
-}
+inline bool isOrgan(const OId *oid) { return oid->organ != OId::_UNDEFINED_ORGAN_; }
 
 std::string toString(const OId *oid, bool includeTimeAgg = false);
 

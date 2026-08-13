@@ -44,8 +44,8 @@ Tools::Errors merge(AutomaticIrrigationData *ai, json11::Json j);
 json11::Json to_json(const AutomaticIrrigationData *ai);
 bool apply(AutomaticIrrigationData *ai, MonicaModel *model);
 bool condition(AutomaticIrrigationData *ai, MonicaModel *model);
-bool reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date,
-            bool addYear = false, bool forceInitYear = false);
+bool reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date, bool addYear = false,
+            bool forceInitYear = false);
 
 } // namespace workstep
 

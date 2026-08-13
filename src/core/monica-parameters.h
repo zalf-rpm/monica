@@ -47,15 +47,12 @@ struct YieldComponent {
   double yieldDryMatter{0.0};
 };
 
-YieldComponent makeYieldComponent(int organId, double yieldPercentage,
-                                  double yieldDryMatter);
-YieldComponent
-makeYieldComponent(mas::schema::model::monica::YieldComponent::Reader reader);
+YieldComponent makeYieldComponent(int organId, double yieldPercentage, double yieldDryMatter);
+YieldComponent makeYieldComponent(mas::schema::model::monica::YieldComponent::Reader reader);
 
 namespace yieldcomponent {
 
-void deserialize(YieldComponent *yc,
-                 mas::schema::model::monica::YieldComponent::Reader reader);
+void deserialize(YieldComponent *yc, mas::schema::model::monica::YieldComponent::Reader reader);
 void serialize(const YieldComponent *yc,
                mas::schema::model::monica::YieldComponent::Builder builder);
 Tools::Errors merge(YieldComponent *yc, json11::Json j);
@@ -139,15 +136,14 @@ struct SpeciesParameters {
   //!< default=330.0 | LDNDC default=179.0
 
   int pc_TransitionStageLeafExp{-1}; //!< [1-7]
-  int dormancyStartDoy{
-      0}; //!< start dormancy of perennial crops at that DOY (0 = unset)
+  int dormancyStartDoy{0};           //!< start dormancy of perennial crops at that DOY (0 = unset)
   int dormancyEndDoy{0};
   //!< end dormancy of perennial crops at that DOY, start accumulating
   //!< temperature sums (0 = unset)
 };
 
-SpeciesParameters makeSpeciesParameters(
-    mas::schema::model::monica::SpeciesParameters::Reader reader);
+SpeciesParameters
+makeSpeciesParameters(mas::schema::model::monica::SpeciesParameters::Reader reader);
 
 namespace speciesparameters {
 
@@ -224,8 +220,8 @@ struct CultivarParameters {
   bool winterCrop{false};
 };
 
-CultivarParameters makeCultivarParameters(
-    mas::schema::model::monica::CultivarParameters::Reader reader);
+CultivarParameters
+makeCultivarParameters(mas::schema::model::monica::CultivarParameters::Reader reader);
 
 namespace cultivarparameters {
 
@@ -251,13 +247,11 @@ struct CropParameters {
   kj::Maybe<bool> __enable_vernalisation_factor_fix__;
 };
 
-CropParameters
-makeCropParameters(mas::schema::model::monica::CropParameters::Reader reader);
+CropParameters makeCropParameters(mas::schema::model::monica::CropParameters::Reader reader);
 
 namespace cropparameters {
 
-void deserialize(CropParameters *cp,
-                 mas::schema::model::monica::CropParameters::Reader reader);
+void deserialize(CropParameters *cp, mas::schema::model::monica::CropParameters::Reader reader);
 void serialize(const CropParameters *cp,
                mas::schema::model::monica::CropParameters::Builder builder);
 Tools::Errors merge(CropParameters *cp, json11::Json j);
@@ -266,8 +260,7 @@ json11::Json to_json(const CropParameters *cp);
 
 // old FRUCHT$(AKF)
 inline std::string cropName(const CropParameters *cp) {
-  return cp->speciesParams.pc_SpeciesId + "/" +
-         cp->cultivarParams.pc_CultivarId;
+  return cp->speciesParams.pc_SpeciesId + "/" + cp->cultivarParams.pc_CultivarId;
 }
 
 } // namespace cropparameters
@@ -290,21 +283,20 @@ struct MineralFertilizerParameters {
 };
 
 MineralFertilizerParameters makeMineralFertilizerParameters(
-    mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader
-        reader);
-MineralFertilizerParameters
-makeMineralFertilizerParameters(const std::string &id, const std::string &name,
-                                double carbamid, double no3, double nh4);
+    mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader);
+MineralFertilizerParameters makeMineralFertilizerParameters(const std::string &id,
+                                                            const std::string &name,
+                                                            double carbamid, double no3,
+                                                            double nh4);
 
 namespace mineralfertilizerparameters {
 
 void deserialize(
     MineralFertilizerParameters *fp,
-    mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader
-        reader);
-void serialize(const MineralFertilizerParameters *fp,
-               mas::schema::model::monica::Params::MineralFertilization::
-                   Parameters::Builder builder);
+    mas::schema::model::monica::Params::MineralFertilization::Parameters::Reader reader);
+void serialize(
+    const MineralFertilizerParameters *fp,
+    mas::schema::model::monica::Params::MineralFertilization::Parameters::Builder builder);
 Tools::Errors merge(MineralFertilizerParameters *fp, json11::Json j);
 json11::Json to_json(const MineralFertilizerParameters *fp);
 
@@ -316,19 +308,16 @@ struct NMinApplicationParameters {
   int delayInDays{0};
 };
 
-NMinApplicationParameters makeNMinApplicationParameters(double min, double max,
-                                                        int delayInDays);
-NMinApplicationParameters makeNMinApplicationParameters(
-    mas::schema::model::monica::NMinApplicationParameters::Reader reader);
+NMinApplicationParameters makeNMinApplicationParameters(double min, double max, int delayInDays);
+NMinApplicationParameters
+makeNMinApplicationParameters(mas::schema::model::monica::NMinApplicationParameters::Reader reader);
 
 namespace nminapplicationparameters {
 
-void deserialize(
-    NMinApplicationParameters *nap,
-    mas::schema::model::monica::NMinApplicationParameters::Reader reader);
-void serialize(
-    const NMinApplicationParameters *nap,
-    mas::schema::model::monica::NMinApplicationParameters::Builder builder);
+void deserialize(NMinApplicationParameters *nap,
+                 mas::schema::model::monica::NMinApplicationParameters::Reader reader);
+void serialize(const NMinApplicationParameters *nap,
+               mas::schema::model::monica::NMinApplicationParameters::Builder builder);
 Tools::Errors merge(NMinApplicationParameters *nap, json11::Json j);
 json11::Json to_json(const NMinApplicationParameters *nap);
 
@@ -339,25 +328,21 @@ struct IrrigationParameters {
   double sulfateConcentration{0.0}; //!< sulfate concentration [mg dm-3]
 
   // FAO-56 Dual Kc: event-level irrigation physical parameters
-  bool isDripIrrigation{
-      false};     //!< true = drip irrigation (shading adjustment applied)
-  double fw{1.0}; //!< fraction of wetted soil surface [0-1]
+  bool isDripIrrigation{false}; //!< true = drip irrigation (shading adjustment applied)
+  double fw{1.0};               //!< fraction of wetted soil surface [0-1]
 };
 
 IrrigationParameters makeIrrigationParameters(double nitrateConcentration,
                                               double sulfateConcentration);
-IrrigationParameters makeIrrigationParameters(
-    mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
+IrrigationParameters
+makeIrrigationParameters(mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
 
 namespace irrigationparameters {
 
-void deserialize(
-    IrrigationParameters *ip,
-    mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
-void serialize(
-    const IrrigationParameters *ip,
-    mas::schema::model::monica::Params::Irrigation::Parameters::Builder
-        builder);
+void deserialize(IrrigationParameters *ip,
+                 mas::schema::model::monica::Params::Irrigation::Parameters::Reader reader);
+void serialize(const IrrigationParameters *ip,
+               mas::schema::model::monica::Params::Irrigation::Parameters::Builder builder);
 Tools::Errors merge(IrrigationParameters *ip, json11::Json j);
 json11::Json to_json(const IrrigationParameters *ip);
 
@@ -373,19 +358,17 @@ struct AutomaticIrrigationParameters : public IrrigationParameters {
   int minDaysBetweenIrrigationEvents{0};
 };
 
-AutomaticIrrigationParameters
-makeAutomaticIrrigationParameters(double a, double t, double nc, double sc);
+AutomaticIrrigationParameters makeAutomaticIrrigationParameters(double a, double t, double nc,
+                                                                double sc);
 AutomaticIrrigationParameters makeAutomaticIrrigationParameters(
     mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
 
 namespace automaticirrigationparameters {
 
-void deserialize(
-    AutomaticIrrigationParameters *aip,
-    mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
-void serialize(
-    const AutomaticIrrigationParameters *aip,
-    mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder);
+void deserialize(AutomaticIrrigationParameters *aip,
+                 mas::schema::model::monica::AutomaticIrrigationParameters::Reader reader);
+void serialize(const AutomaticIrrigationParameters *aip,
+               mas::schema::model::monica::AutomaticIrrigationParameters::Builder builder);
 Tools::Errors merge(AutomaticIrrigationParameters *aip, json11::Json j);
 json11::Json to_json(const AutomaticIrrigationParameters *aip);
 
@@ -397,32 +380,26 @@ struct MeasuredGroundwaterTableInformation {
 };
 
 MeasuredGroundwaterTableInformation makeMeasuredGroundwaterTableInformation(
-    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader
-        reader);
+    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader);
 
 namespace measuredgroundwatertableinformation {
 
-void deserialize(
-    MeasuredGroundwaterTableInformation *gwi,
-    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader
-        reader);
-void serialize(
-    const MeasuredGroundwaterTableInformation *gwi,
-    mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder
-        builder);
+void deserialize(MeasuredGroundwaterTableInformation *gwi,
+                 mas::schema::model::monica::MeasuredGroundwaterTableInformation::Reader reader);
+void serialize(const MeasuredGroundwaterTableInformation *gwi,
+               mas::schema::model::monica::MeasuredGroundwaterTableInformation::Builder builder);
 Tools::Errors merge(MeasuredGroundwaterTableInformation *gwi, json11::Json j);
 json11::Json to_json(const MeasuredGroundwaterTableInformation *gwi);
-std::pair<bool, double>
-getGroundwaterInformation(const MeasuredGroundwaterTableInformation *gwi,
-                          Tools::Date gwDate);
+std::pair<bool, double> getGroundwaterInformation(const MeasuredGroundwaterTableInformation *gwi,
+                                                  Tools::Date gwDate);
 
 } // namespace measuredgroundwatertableinformation
 
 struct SiteParameters {
   double vs_Latitude{52.5};         // ZALF latitude
-  double vs_Slope{0.01};            //!< [m m-1]
-  double vs_HeightNN{50.0};         //!< [m]
-  double vs_GroundwaterDepth{70.0}; //!< [m]
+  double vs_Slope{0.01};            // [m m-1]
+  double vs_HeightNN{50.0};         // [m]
+  double vs_GroundwaterDepth{70.0}; // [m]
   double vs_Soil_CN_Ratio{10.0};
   double vs_DrainageCoeff{1.0};
   double vq_NDeposition{30.0};                       // [kg N ha-1 y-1]
@@ -437,19 +414,16 @@ struct SiteParameters {
   Soil::SoilPMs vs_SoilParameters;
   Tools::J11Array initSoilProfileSpec;
   std::string pwpFcSatFunction{"Wessolek2009"};
-  std::map<std::string,
-           std::function<Tools::Errors(Soil::SoilParameters *, int)>>
+  std::map<std::string, std::function<Tools::Errors(Soil::SoilParameters *, int)>>
       calculateAndSetPwpFcSatFunctions;
   // MeasuredGroundwaterTableInformation groundwaterInformation;
 };
 
-SiteParameters
-makeSiteParameters(mas::schema::model::monica::SiteParameters::Reader reader);
+SiteParameters makeSiteParameters(mas::schema::model::monica::SiteParameters::Reader reader);
 
 namespace siteparameters {
 
-void deserialize(SiteParameters *sp,
-                 mas::schema::model::monica::SiteParameters::Reader reader);
+void deserialize(SiteParameters *sp, mas::schema::model::monica::SiteParameters::Reader reader);
 void serialize(const SiteParameters *sp,
                mas::schema::model::monica::SiteParameters::Builder builder);
 Tools::Errors merge(SiteParameters *sp, json11::Json j);
@@ -472,7 +446,7 @@ struct AutomaticHarvestParameters {
   };
 
   HarvestTime _harvestTime{unknown}; //!< Harvest time parameter
-  int _latestHarvestDOY{-1}; //!< Fallback day for latest harvest of the crop
+  int _latestHarvestDOY{-1};         //!< Fallback day for latest harvest of the crop
 };
 
 AutomaticHarvestParameters
@@ -482,12 +456,10 @@ AutomaticHarvestParameters makeAutomaticHarvestParameters(
 
 namespace automaticharvestparameters {
 
-void deserialize(
-    AutomaticHarvestParameters *ahp,
-    mas::schema::model::monica::AutomaticHarvestParameters::Reader reader);
-void serialize(
-    const AutomaticHarvestParameters *ahp,
-    mas::schema::model::monica::AutomaticHarvestParameters::Builder builder);
+void deserialize(AutomaticHarvestParameters *ahp,
+                 mas::schema::model::monica::AutomaticHarvestParameters::Reader reader);
+void serialize(const AutomaticHarvestParameters *ahp,
+               mas::schema::model::monica::AutomaticHarvestParameters::Builder builder);
 Tools::Errors merge(AutomaticHarvestParameters *ahp, json11::Json j);
 json11::Json to_json(const AutomaticHarvestParameters *ahp);
 
@@ -499,10 +471,9 @@ struct NMinCropParameters {
   double nTarget30{0.0};
 };
 
-NMinCropParameters makeNMinCropParameters(double samplingDepth, double nTarget,
-                                          double nTarget30);
-NMinCropParameters makeNMinCropParameters(
-    mas::schema::model::monica::NMinCropParameters::Reader reader);
+NMinCropParameters makeNMinCropParameters(double samplingDepth, double nTarget, double nTarget30);
+NMinCropParameters
+makeNMinCropParameters(mas::schema::model::monica::NMinCropParameters::Reader reader);
 
 namespace nmincropparameters {
 
@@ -517,55 +488,47 @@ json11::Json to_json(const NMinCropParameters *ncp);
 
 struct OrganicMatterParameters {
   double vo_AOM_DryMatterContent{
-      0.0}; //!< Dry matter content of added organic matter [kg DM kg FM-1]
-  double vo_AOM_NH4Content{
-      0.0}; //!< Ammonium content in added organic matter [kg N kg DM-1]
-  double vo_AOM_NO3Content{
-      0.0}; //!< Nitrate content in added organic matter [kg N kg DM-1]
-  double vo_AOM_CarbamidContent{
-      0.0}; //!< Carbamide content in added organic matter [kg N kg DM-1]
-  double vo_CorgContent{
-      0.0}; //!< Carbon content in added organic matter [kg C kg DM-1]
+      0.0};                      //!< Dry matter content of added organic matter [kg DM kg FM-1]
+  double vo_AOM_NH4Content{0.0}; //!< Ammonium content in added organic matter [kg N kg DM-1]
+  double vo_AOM_NO3Content{0.0}; //!< Nitrate content in added organic matter [kg N kg DM-1]
+  double vo_AOM_CarbamidContent{0.0}; //!< Carbamide content in added organic matter [kg N kg DM-1]
+  double vo_CorgContent{0.0};         //!< Carbon content in added organic matter [kg C kg DM-1]
 
-  double vo_AOM_SlowDecCoeffStandard{
-      0.0}; //!< Decomposition rate coefficient of slow AOM at standard
-            //!< conditions [d-1]
-  double vo_AOM_FastDecCoeffStandard{
-      0.0}; //!< Decomposition rate coefficient of fast AOM at standard
-            //!< conditions [d-1]
+  double vo_AOM_SlowDecCoeffStandard{0.0}; //!< Decomposition rate coefficient of slow AOM at
+                                           //!< standard conditions [d-1]
+  double vo_AOM_FastDecCoeffStandard{0.0}; //!< Decomposition rate coefficient of fast AOM at
+                                           //!< standard conditions [d-1]
 
   double vo_PartAOM_to_AOM_Slow{0.0}; //!< Part of AOM that is assigned to the
                                       //!< slowly decomposing pool [kg kg-1
   double vo_PartAOM_to_AOM_Fast{0.0}; //!< Part of AOM that is assigned to the
                                       //!< rapidly decomposing pool [kg kg-1]
 
-  double vo_CN_Ratio_AOM_Slow{
-      0.0}; //!< C to N ratio of the slowly decomposing AOM pool []
-  double vo_CN_Ratio_AOM_Fast{
-      0.0}; //!< C to N ratio of the rapidly decomposing AOM pool []
+  double vo_CN_Ratio_AOM_Slow{0.0}; //!< C to N ratio of the slowly decomposing AOM pool []
+  double vo_CN_Ratio_AOM_Fast{0.0}; //!< C to N ratio of the rapidly decomposing AOM pool []
 
-  double vo_PartAOM_Slow_to_SMB_Slow{
-      0.0}; //!< Part of AOM slow consumed by slow soil microbial biomass [kg
-            //!< kg-1]
-  double vo_PartAOM_Slow_to_SMB_Fast{
-      0.0}; //!< Part of AOM slow consumed by fast soil microbial biomass [kg
-            //!< kg-1]
+  double vo_PartAOM_Slow_to_SMB_Slow{0.0}; //!< Part of AOM slow consumed by slow soil microbial
+                                           //!< biomass [kg kg-1]
+  double vo_PartAOM_Slow_to_SMB_Fast{0.0}; //!< Part of AOM slow consumed by fast soil microbial
+                                           //!< biomass [kg kg-1]
 
   double vo_NConcentration{0.0};
 };
 
 OrganicMatterParameters makeOrganicMatterParameters(
-    mas::schema::model::monica::Params::OrganicFertilization::
-        OrganicMatterParameters::Reader reader);
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader
+        reader);
 
 namespace organicmatterparameters {
 
-void deserialize(OrganicMatterParameters *omp,
-                 mas::schema::model::monica::Params::OrganicFertilization::
-                     OrganicMatterParameters::Reader reader);
-void serialize(const OrganicMatterParameters *omp,
-               mas::schema::model::monica::Params::OrganicFertilization::
-                   OrganicMatterParameters::Builder builder);
+void deserialize(
+    OrganicMatterParameters *omp,
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Reader
+        reader);
+void serialize(
+    const OrganicMatterParameters *omp,
+    mas::schema::model::monica::Params::OrganicFertilization::OrganicMatterParameters::Builder
+        builder);
 Tools::Errors merge(OrganicMatterParameters *omp, json11::Json j);
 json11::Json to_json(const OrganicMatterParameters *omp);
 
@@ -579,42 +542,37 @@ struct OrganicFertilizerParameters : public OrganicMatterParameters {
 };
 
 OrganicFertilizerParameters makeOrganicFertilizerParameters(
-    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader
-        reader);
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader);
 
 namespace organicfertilizerparameters {
 
 void deserialize(
     OrganicFertilizerParameters *ofp,
-    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader
-        reader);
-void serialize(const OrganicFertilizerParameters *ofp,
-               mas::schema::model::monica::Params::OrganicFertilization::
-                   Parameters::Builder builder);
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Reader reader);
+void serialize(
+    const OrganicFertilizerParameters *ofp,
+    mas::schema::model::monica::Params::OrganicFertilization::Parameters::Builder builder);
 Tools::Errors merge(OrganicFertilizerParameters *ofp, json11::Json j);
 json11::Json to_json(const OrganicFertilizerParameters *ofp);
 
 } // namespace organicfertilizerparameters
 
-typedef std::shared_ptr<OrganicFertilizerParameters>
-    OrganicFertiliserParametersPtr;
+typedef std::shared_ptr<OrganicFertilizerParameters> OrganicFertiliserParametersPtr;
 
 struct CropResidueParameters : public OrganicMatterParameters {
   std::string species;
   std::string residueType;
 };
 
-CropResidueParameters makeCropResidueParameters(
-    mas::schema::model::monica::CropResidueParameters::Reader reader);
+CropResidueParameters
+makeCropResidueParameters(mas::schema::model::monica::CropResidueParameters::Reader reader);
 
 namespace cropresidueparameters {
 
-void deserialize(
-    CropResidueParameters *crp,
-    mas::schema::model::monica::CropResidueParameters::Reader reader);
-void serialize(
-    const CropResidueParameters *crp,
-    mas::schema::model::monica::CropResidueParameters::Builder builder);
+void deserialize(CropResidueParameters *crp,
+                 mas::schema::model::monica::CropResidueParameters::Reader reader);
+void serialize(const CropResidueParameters *crp,
+               mas::schema::model::monica::CropResidueParameters::Builder builder);
 Tools::Errors merge(CropResidueParameters *crp, json11::Json j);
 json11::Json to_json(const CropResidueParameters *crp);
 
@@ -662,17 +620,15 @@ struct SimulationParameters {
   bool dualKcMethod{false}; //!< Use FAO-56 Dual Kc evaporation partitioning
 };
 
-SimulationParameters makeSimulationParameters(
-    mas::schema::model::monica::SimulationParameters::Reader reader);
+SimulationParameters
+makeSimulationParameters(mas::schema::model::monica::SimulationParameters::Reader reader);
 
 namespace simulationparameters {
 
-void deserialize(
-    SimulationParameters *sp,
-    mas::schema::model::monica::SimulationParameters::Reader reader);
-void serialize(
-    const SimulationParameters *sp,
-    mas::schema::model::monica::SimulationParameters::Builder builder);
+void deserialize(SimulationParameters *sp,
+                 mas::schema::model::monica::SimulationParameters::Reader reader);
+void serialize(const SimulationParameters *sp,
+               mas::schema::model::monica::SimulationParameters::Builder builder);
 Tools::Errors merge(SimulationParameters *sp, json11::Json j);
 json11::Json to_json(const SimulationParameters *sp);
 
@@ -721,17 +677,15 @@ struct CropModuleParameters {
   std::string pc_intercropping_writer_sr;
 };
 
-CropModuleParameters makeCropModuleParameters(
-    mas::schema::model::monica::CropModuleParameters::Reader reader);
+CropModuleParameters
+makeCropModuleParameters(mas::schema::model::monica::CropModuleParameters::Reader reader);
 
 namespace cropmoduleparameters {
 
-void deserialize(
-    CropModuleParameters *cmp,
-    mas::schema::model::monica::CropModuleParameters::Reader reader);
-void serialize(
-    const CropModuleParameters *cmp,
-    mas::schema::model::monica::CropModuleParameters::Builder builder);
+void deserialize(CropModuleParameters *cmp,
+                 mas::schema::model::monica::CropModuleParameters::Reader reader);
+void serialize(const CropModuleParameters *cmp,
+               mas::schema::model::monica::CropModuleParameters::Builder builder);
 Tools::Errors merge(CropModuleParameters *cmp, json11::Json j);
 json11::Json to_json(const CropModuleParameters *cmp);
 
@@ -757,17 +711,15 @@ struct EnvironmentParameters {
   int p_MinGroundwaterDepthMonth{3};
 };
 
-EnvironmentParameters makeEnvironmentParameters(
-    mas::schema::model::monica::EnvironmentParameters::Reader reader);
+EnvironmentParameters
+makeEnvironmentParameters(mas::schema::model::monica::EnvironmentParameters::Reader reader);
 
 namespace environmentparameters {
 
-void deserialize(
-    EnvironmentParameters *ep,
-    mas::schema::model::monica::EnvironmentParameters::Reader reader);
-void serialize(
-    const EnvironmentParameters *ep,
-    mas::schema::model::monica::EnvironmentParameters::Builder builder);
+void deserialize(EnvironmentParameters *ep,
+                 mas::schema::model::monica::EnvironmentParameters::Reader reader);
+void serialize(const EnvironmentParameters *ep,
+               mas::schema::model::monica::EnvironmentParameters::Builder builder);
 Tools::Errors merge(EnvironmentParameters *ep, json11::Json j);
 json11::Json to_json(const EnvironmentParameters *ep);
 
@@ -812,12 +764,10 @@ SoilMoistureModuleParameters makeSoilMoistureModuleParameters(
 
 namespace soilmoisturemoduleparameters {
 
-void deserialize(
-    SoilMoistureModuleParameters *smp,
-    mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader);
-void serialize(
-    const SoilMoistureModuleParameters *smp,
-    mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder);
+void deserialize(SoilMoistureModuleParameters *smp,
+                 mas::schema::model::monica::SoilMoistureModuleParameters::Reader reader);
+void serialize(const SoilMoistureModuleParameters *smp,
+               mas::schema::model::monica::SoilMoistureModuleParameters::Builder builder);
 Tools::Errors merge(SoilMoistureModuleParameters *smp, json11::Json j);
 json11::Json to_json(const SoilMoistureModuleParameters *smp);
 
@@ -848,13 +798,10 @@ SoilTemperatureModuleParameters makeSoilTemperatureModuleParameters(
 
 namespace soiltemperaturemoduleparameters {
 
-void deserialize(
-    SoilTemperatureModuleParameters *stp,
-    mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader);
-void serialize(
-    const SoilTemperatureModuleParameters *stp,
-    mas::schema::model::monica::SoilTemperatureModuleParameters::Builder
-        builder);
+void deserialize(SoilTemperatureModuleParameters *stp,
+                 mas::schema::model::monica::SoilTemperatureModuleParameters::Reader reader);
+void serialize(const SoilTemperatureModuleParameters *stp,
+               mas::schema::model::monica::SoilTemperatureModuleParameters::Builder builder);
 Tools::Errors merge(SoilTemperatureModuleParameters *stp, json11::Json j);
 json11::Json to_json(const SoilTemperatureModuleParameters *stp);
 
@@ -876,12 +823,10 @@ SoilTransportModuleParameters makeSoilTransportModuleParameters(
 
 namespace soiltransportmoduleparameters {
 
-void deserialize(
-    SoilTransportModuleParameters *stp,
-    mas::schema::model::monica::SoilTransportModuleParameters::Reader reader);
-void serialize(
-    const SoilTransportModuleParameters *stp,
-    mas::schema::model::monica::SoilTransportModuleParameters::Builder builder);
+void deserialize(SoilTransportModuleParameters *stp,
+                 mas::schema::model::monica::SoilTransportModuleParameters::Reader reader);
+void serialize(const SoilTransportModuleParameters *stp,
+               mas::schema::model::monica::SoilTransportModuleParameters::Builder builder);
 Tools::Errors merge(SoilTransportModuleParameters *stp, json11::Json j);
 json11::Json to_json(const SoilTransportModuleParameters *stp);
 
@@ -929,13 +874,11 @@ struct SticsParameters {
   double vpotdenit{2.0}; // [kg N/ha/day]
 };
 
-SticsParameters
-makeSticsParameters(mas::schema::model::monica::SticsParameters::Reader reader);
+SticsParameters makeSticsParameters(mas::schema::model::monica::SticsParameters::Reader reader);
 
 namespace sticsparameters {
 
-void deserialize(SticsParameters *sp,
-                 mas::schema::model::monica::SticsParameters::Reader reader);
+void deserialize(SticsParameters *sp, mas::schema::model::monica::SticsParameters::Reader reader);
 void serialize(const SticsParameters *sp,
                mas::schema::model::monica::SticsParameters::Builder builder);
 Tools::Errors merge(SticsParameters *sp, json11::Json j);
@@ -948,59 +891,44 @@ json11::Json to_json(const SticsParameters *sp);
  * @author Claas Nendel
  */
 struct SoilOrganicModuleParameters {
-  double po_SOM_SlowDecCoeffStandard{
-      4.30e-5}; // 4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
-  double po_SOM_FastDecCoeffStandard{
-      1.40e-4}; // 1.40e-4 [d-1], from DAISY manual 1.4e-4
-  double po_SMB_SlowMaintRateStandard{
-      1.00e-3}; // 1.00e-3 [d-1], from DAISY manual original 1.8e-3
-  double po_SMB_FastMaintRateStandard{
-      1.00e-2}; // 1.00e-2 [d-1], from DAISY manual
-  double po_SMB_SlowDeathRateStandard{
-      1.00e-3}; // 1.00e-3 [d-1], from DAISY manual
-  double po_SMB_FastDeathRateStandard{
-      1.00e-2};                              // 1.00e-2 [d-1], from DAISY manual
-  double po_SMB_UtilizationEfficiency{0.60}; // 0.60 [], from DAISY manual 0.6
-  double po_SOM_SlowUtilizationEfficiency{
-      0.40}; // 0.40 [], from DAISY manual 0.4
-  double po_SOM_FastUtilizationEfficiency{
-      0.50}; // 0.50 [], from DAISY manual 0.5
-  double po_AOM_SlowUtilizationEfficiency{
-      0.40}; // 0.40 [], from DAISY manual original 0.13
-  double po_AOM_FastUtilizationEfficiency{
-      0.10}; // 0.10 [], from DAISY manual original 0.69
-  double po_AOM_FastMaxC_to_N{1000.0};      // 1000.0
-  double po_PartSOM_Fast_to_SOM_Slow{0.30}; // 0.30 [], Bruun et al. 2003
-  double po_PartSMB_Slow_to_SOM_Fast{0.60}; // 0.60 [], from DAISY manual
-  double po_PartSMB_Fast_to_SOM_Fast{0.60}; // 0.60 [], from DAISY manual
-  double po_PartSOM_to_SMB_Slow{0.0150};    // 0.0150 [], optimised
-  double po_PartSOM_to_SMB_Fast{0.0002};    // 0.0002 [], optimised
-  double po_CN_Ratio_SMB{6.70};             // 6.70 [], from DAISY manual
-  double po_LimitClayEffect{0.25};          // 0.25 [kg kg-1], from DAISY manual
-  double po_QTenFactor{2.9};    // 2.4 [] default value, analysis literature
-  double po_TempDecOptimal{38}; // 38 [°C] default value, analysis literature
-  double po_MoistureDecOptimal{
-      0.45}; // 0.45 [fraction] default value, analysis literature
-  double po_AmmoniaOxidationRateCoeffStandard{
-      1.0e-1}; // 1.0e-1 [d-1], from DAISY manual
-  double po_NitriteOxidationRateCoeffStandard{
-      9.0e-1};                       // 9.0e-1 [d-1], fudged by Florian Stange
-  double po_TransportRateCoeff{0.1}; // 0.1 [d-1], from DAISY manual
-  double po_SpecAnaerobDenitrification{0.1}; // 0.1 [g gas-N g CO2-C-1]
-  double po_ImmobilisationRateCoeffNO3{0.5}; // 0.5 [d-1]
-  double po_ImmobilisationRateCoeffNH4{0.5}; // 0.5 [d-1]
-  double po_Denit1{0.2};                     // 0.2 Denitrification parameter
-  double po_Denit2{0.8};                     // 0.8 Denitrification parameter
-  double po_Denit3{0.9};                     // 0.9 Denitrification parameter
-  double po_HydrolysisKM{0.00334};           // 0.00334 from Tabatabai 1973
-  double po_ActivationEnergy{41000.0};       // 41000.0 from Gould et al. 1973
-  double po_HydrolysisP1{4.259e-12}; // 4.259e-12 from Sadeghi et al. 1988
-  double po_HydrolysisP2{1.408e-12}; // 1.408e-12 from Sadeghi et al. 1988
-  double po_AtmosphericResistance{
-      0.0025};                      // 0.0025 [s m-1], from Sadeghi et al. 1988
-  double po_N2OProductionRate{0.5}; // 0.5 [d-1]
-  double po_Inhibitor_NH3{
-      1.0}; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
+  double po_SOM_SlowDecCoeffStandard{4.30e-5};   // 4.30e-5 [d-1], Bruun et al. 2003 4.3e-5
+  double po_SOM_FastDecCoeffStandard{1.40e-4};   // 1.40e-4 [d-1], from DAISY manual 1.4e-4
+  double po_SMB_SlowMaintRateStandard{1.00e-3};  // 1.00e-3 [d-1], from DAISY manual original 1.8e-3
+  double po_SMB_FastMaintRateStandard{1.00e-2};  // 1.00e-2 [d-1], from DAISY manual
+  double po_SMB_SlowDeathRateStandard{1.00e-3};  // 1.00e-3 [d-1], from DAISY manual
+  double po_SMB_FastDeathRateStandard{1.00e-2};  // 1.00e-2 [d-1], from DAISY manual
+  double po_SMB_UtilizationEfficiency{0.60};     // 0.60 [], from DAISY manual 0.6
+  double po_SOM_SlowUtilizationEfficiency{0.40}; // 0.40 [], from DAISY manual 0.4
+  double po_SOM_FastUtilizationEfficiency{0.50}; // 0.50 [], from DAISY manual 0.5
+  double po_AOM_SlowUtilizationEfficiency{0.40}; // 0.40 [], from DAISY manual original 0.13
+  double po_AOM_FastUtilizationEfficiency{0.10}; // 0.10 [], from DAISY manual original 0.69
+  double po_AOM_FastMaxC_to_N{1000.0};           // 1000.0
+  double po_PartSOM_Fast_to_SOM_Slow{0.30};      // 0.30 [], Bruun et al. 2003
+  double po_PartSMB_Slow_to_SOM_Fast{0.60};      // 0.60 [], from DAISY manual
+  double po_PartSMB_Fast_to_SOM_Fast{0.60};      // 0.60 [], from DAISY manual
+  double po_PartSOM_to_SMB_Slow{0.0150};         // 0.0150 [], optimised
+  double po_PartSOM_to_SMB_Fast{0.0002};         // 0.0002 [], optimised
+  double po_CN_Ratio_SMB{6.70};                  // 6.70 [], from DAISY manual
+  double po_LimitClayEffect{0.25};               // 0.25 [kg kg-1], from DAISY manual
+  double po_QTenFactor{2.9};                     // 2.4 [] default value, analysis literature
+  double po_TempDecOptimal{38};                  // 38 [°C] default value, analysis literature
+  double po_MoistureDecOptimal{0.45}; // 0.45 [fraction] default value, analysis literature
+  double po_AmmoniaOxidationRateCoeffStandard{1.0e-1}; // 1.0e-1 [d-1], from DAISY manual
+  double po_NitriteOxidationRateCoeffStandard{9.0e-1}; // 9.0e-1 [d-1], fudged by Florian Stange
+  double po_TransportRateCoeff{0.1};                   // 0.1 [d-1], from DAISY manual
+  double po_SpecAnaerobDenitrification{0.1};           // 0.1 [g gas-N g CO2-C-1]
+  double po_ImmobilisationRateCoeffNO3{0.5};           // 0.5 [d-1]
+  double po_ImmobilisationRateCoeffNH4{0.5};           // 0.5 [d-1]
+  double po_Denit1{0.2};                               // 0.2 Denitrification parameter
+  double po_Denit2{0.8};                               // 0.8 Denitrification parameter
+  double po_Denit3{0.9};                               // 0.9 Denitrification parameter
+  double po_HydrolysisKM{0.00334};                     // 0.00334 from Tabatabai 1973
+  double po_ActivationEnergy{41000.0};                 // 41000.0 from Gould et al. 1973
+  double po_HydrolysisP1{4.259e-12};                   // 4.259e-12 from Sadeghi et al. 1988
+  double po_HydrolysisP2{1.408e-12};                   // 1.408e-12 from Sadeghi et al. 1988
+  double po_AtmosphericResistance{0.0025};             // 0.0025 [s m-1], from Sadeghi et al. 1988
+  double po_N2OProductionRate{0.5};                    // 0.5 [d-1]
+  double po_Inhibitor_NH3{1.0}; // 1.0 [kg N m-3] NH3-induced inhibitor for nitrite oxidation
   double ps_MaxMineralisationDepth{0.4};
 
   bool __enable_kaiteew_TempOnDecompostion__{true};
@@ -1014,12 +942,10 @@ SoilOrganicModuleParameters makeSoilOrganicModuleParameters(
 
 namespace soilorganicmoduleparameters {
 
-void deserialize(
-    SoilOrganicModuleParameters *sop,
-    mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader);
-void serialize(
-    const SoilOrganicModuleParameters *sop,
-    mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder);
+void deserialize(SoilOrganicModuleParameters *sop,
+                 mas::schema::model::monica::SoilOrganicModuleParameters::Reader reader);
+void serialize(const SoilOrganicModuleParameters *sop,
+               mas::schema::model::monica::SoilOrganicModuleParameters::Builder builder);
 Tools::Errors merge(SoilOrganicModuleParameters *sop, json11::Json j);
 json11::Json to_json(const SoilOrganicModuleParameters *sop);
 
@@ -1060,8 +986,7 @@ namespace centralparameterprovider {
 Tools::Errors merge(CentralParameterProvider *cpp, json11::Json j);
 json11::Json to_json(const CentralParameterProvider *cpp);
 double getPrecipCorrectionValue(const CentralParameterProvider *cpp, int month);
-void setPrecipCorrectionValue(CentralParameterProvider *cpp, int month,
-                              double value);
+void setPrecipCorrectionValue(CentralParameterProvider *cpp, int month, double value);
 
 inline std::string pathToOutputDir(const CentralParameterProvider *cpp) {
   return cpp->_pathToOutputDir.empty() ? "./" : cpp->_pathToOutputDir;

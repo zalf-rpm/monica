@@ -179,11 +179,10 @@ struct CropModule {
   // vc_KcbFactor is the current daily interpolated Kcb.
   // vc_Kcb_ini/mid/end define the trapezoidal shape initialized in the
   // constructor.
-  double vc_KcbFactor{
-      0.15}; // Current daily Kcb (output of GDD-based 4-phase interpolation)
-  double vc_Kcb_ini{0.15}; //!< Initial/germination phase Kcb (flat, Phase 1)
-  double vc_Kcb_mid{0.0};  //!< Mid-season plateau Kcb (Phase 3)
-  double vc_Kcb_end{0.0};  //!< End of late-season Kcb target (Phase 4)
+  double vc_KcbFactor{0.15}; // Current daily Kcb (output of GDD-based 4-phase interpolation)
+  double vc_Kcb_ini{0.15};   //!< Initial/germination phase Kcb (flat, Phase 1)
+  double vc_Kcb_mid{0.0};    //!< Mid-season plateau Kcb (Phase 3)
+  double vc_Kcb_end{0.0};    //!< End of late-season Kcb target (Phase 4)
   // double vc_TheoreticalGDDAccumulated{0.0}; //!< Total GDD accumulated since
   // crop start (for phase tracking)
   double vc_StomataResistance{0.0}; //! old RSTOM
@@ -232,8 +231,7 @@ struct CropModule {
 
   std::function<void(std::string)> fireEvent;
   std::function<void(std::map<size_t, double>, double)> addOrganicMatter;
-  std::function<std::pair<double, double>(double)>
-      getSnowDepthAndCalcTempUnderSnow;
+  std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow;
 
   double vc_O3_shortTermDamage{1.0};
   double vc_O3_longTermDamage{1.0};
@@ -257,85 +255,64 @@ struct CropModule {
   Tools::Date perennialCropDormancyPeriodEndDate;
 };
 
-kj::Own<CropModule> makeCropModule(
-    SoilColumn *soilColumn, const CropParameters *cropParams,
-    const CropResidueParameters *residueParams,
-    const SiteParameters *siteParams,
-    const CropModuleParameters *cropModuleParams,
-    const SimulationParameters *simParams,
-    std::function<void(std::string)> fireEvent,
-    std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-    std::function<std::pair<double, double>(double)>
-        getSnowDepthAndCalcTempUnderSnow,
-    Intercropping *intercropping);
+kj::Own<CropModule>
+makeCropModule(SoilColumn *soilColumn, const CropParameters *cropParams,
+               const CropResidueParameters *residueParams, const SiteParameters *siteParams,
+               const CropModuleParameters *cropModuleParams, const SimulationParameters *simParams,
+               std::function<void(std::string)> fireEvent,
+               std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
+               std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
+               Intercropping *intercropping);
 
 // make crop module from serialized state
-kj::Own<CropModule> makeCropModule(
-    SoilColumn *soilColumn, const CropModuleParameters *cropModuleParams,
-    std::function<void(std::string)> fireEvent,
-    std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
-    std::function<std::pair<double, double>(double)>
-        getSnowDepthAndCalcTempUnderSnow,
-    mas::schema::model::monica::CropModuleState::Reader reader,
-    Intercropping *intercropping);
+kj::Own<CropModule>
+makeCropModule(SoilColumn *soilColumn, const CropModuleParameters *cropModuleParams,
+               std::function<void(std::string)> fireEvent,
+               std::function<void(std::map<size_t, double>, double)> addOrganicMatter,
+               std::function<std::pair<double, double>(double)> getSnowDepthAndCalcTempUnderSnow,
+               mas::schema::model::monica::CropModuleState::Reader reader,
+               Intercropping *intercropping);
 
 namespace cropmodule {
-void serialize(const CropModule *cm,
-               mas::schema::model::monica::CropModuleState::Builder builder);
-void deserialize(CropModule *cm,
-                 mas::schema::model::monica::CropModuleState::Reader reader);
-void fcRadiation(CropModule *cm, double julianDay, double globalRadiation,
-                 double sunshineHours);
-double fcDaylengthFactor(CropModule *cm, double daylengthRequirement,
-                         double effectiveDayLength,
+void serialize(const CropModule *cm, mas::schema::model::monica::CropModuleState::Builder builder);
+void deserialize(CropModule *cm, mas::schema::model::monica::CropModuleState::Reader reader);
+void fcRadiation(CropModule *cm, double julianDay, double globalRadiation, double sunshineHours);
+double fcDaylengthFactor(CropModule *cm, double daylengthRequirement, double effectiveDayLength,
                          double photoperiodicDayLength, double baseDaylength);
-std::pair<double, double> fcVernalisationFactor(CropModule *cm,
-                                                double meanAirTemperature,
+std::pair<double, double> fcVernalisationFactor(CropModule *cm, double meanAirTemperature,
                                                 double vernalisationRequirement,
                                                 double vernalisationDays);
 double fcOxygenDeficiency(CropModule *cm, double criticalOxygenContent);
-void fcCropDevelopmentalStage(CropModule *cm, double meanAirTemperature,
-                              double soilMoisture_m3, double fieldCapacity,
-                              double permanentWiltingPoint,
+void fcCropDevelopmentalStage(CropModule *cm, double meanAirTemperature, double soilMoisture_m3,
+                              double fieldCapacity, double permanentWiltingPoint,
                               Tools::Date currentDate);
-double fcKcFactor(const CropModule *cm, double stageTemperatureSum,
-                  double currentTemperatureSum, double stageKcFactor,
-                  double earlierStageKcFactor);
+double fcKcFactor(const CropModule *cm, double stageTemperatureSum, double currentTemperatureSum,
+                  double stageKcFactor, double earlierStageKcFactor);
 void fcCropSize(CropModule *cm, double maxCropHeight);
-void fcCropGreenArea(CropModule *cm, double meanAirTemperature,
-                     double leafBiomassIncrement, double leafBiomassDecrement,
-                     double specificLeafAreaStart, double specificLeafAreaEnd,
-                     double specificLeafAreaEarly, double stageTemperatureSum,
-                     double currentTemperatureSum);
+void fcCropGreenArea(CropModule *cm, double meanAirTemperature, double leafBiomassIncrement,
+                     double leafBiomassDecrement, double specificLeafAreaStart,
+                     double specificLeafAreaEnd, double specificLeafAreaEarly,
+                     double stageTemperatureSum, double currentTemperatureSum);
 double fcSoilCoverage(const CropModule *cm);
 void fcMoveDeadRootBiomassToSoil(CropModule *cm, double deadRootBiomass,
                                  double rootDensityFactorSum,
                                  const std::vector<double> &rootDensityFactor);
 void addAndDistributeRootBiomassInSoil(CropModule *cm, double rootBiomass);
-void fcCropPhotosynthesis(CropModule *cm, double meanAirTemperature,
-                          double maxAirTemperature, double minAirTemperature,
-                          double atmosphericCO2Concentration,
-                          double atmosphericO3Concentration,
-                          Tools::Date currentDate);
-void fcHeatStressImpact(CropModule *cm, double maxAirTemperature,
-                        double minAirTemperature);
-void fcFrostKill(CropModule *cm, double maxAirTemperature,
-                 double minAirTemperature);
+void fcCropPhotosynthesis(CropModule *cm, double meanAirTemperature, double maxAirTemperature,
+                          double minAirTemperature, double atmosphericCO2Concentration,
+                          double atmosphericO3Concentration, Tools::Date currentDate);
+void fcHeatStressImpact(CropModule *cm, double maxAirTemperature, double minAirTemperature);
+void fcFrostKill(CropModule *cm, double maxAirTemperature, double minAirTemperature);
 void fcDroughtImpactOnFertility(CropModule *cm);
 void fcCropNitrogen(CropModule *cm);
 void fcCropDryMatter(CropModule *cm, double meanAirTemperature);
 double fcReferenceEvapotranspiration(CropModule *cm, double maxAirTemperature,
-                                     double minAirTemperature,
-                                     double relativeHumidity,
-                                     double meanAirTemperature,
-                                     double windSpeed, double windSpeedHeight,
-                                     double atmosphericCO2Concentration);
-void fcCropWaterUptake(CropModule *cm, size_t groundwaterTable,
-                       double grossPrecipitation,
-                       double currentTotalTemperatureSum,
-                       double totalTemperatureSum);
-void fcCropNUptake(CropModule *cm, size_t groundwaterTable,
-                   double currentTotalTemperatureSum,
+                                     double minAirTemperature, double relativeHumidity,
+                                     double meanAirTemperature, double windSpeed,
+                                     double windSpeedHeight, double atmosphericCO2Concentration);
+void fcCropWaterUptake(CropModule *cm, size_t groundwaterTable, double grossPrecipitation,
+                       double currentTotalTemperatureSum, double totalTemperatureSum);
+void fcCropNUptake(CropModule *cm, size_t groundwaterTable, double currentTotalTemperatureSum,
                    double totalTemperatureSum);
 double fcGrossPrimaryProduction(const CropModule *cm);
 double fcNetPrimaryProduction(CropModule *cm, double totalRespired);
@@ -350,35 +327,25 @@ double getCurrentTotalTemperatureSum(const CropModule *cm);
 double getCurrentStageTemperatureSum(const CropModule *cm);
 double getTotalTemperatureSum(const CropModule *cm);
 kj::Tuple<int, int> anthesisBetweenStages(const CropModule *cm);
-double sumStageTemperatureSums(const CropModule *cm, int startAtStage,
-                               int endAtInclStage);
-std::pair<std::vector<double>, double>
-calcRootDensityFactorAndSum(const CropModule *cm);
+double sumStageTemperatureSums(const CropModule *cm, int startAtStage, int endAtInclStage);
+std::pair<std::vector<double>, double> calcRootDensityFactorAndSum(const CropModule *cm);
 int numberOfAbovegroundOrgans(const CropModule *cm);
-bool isAnthesisDay(const CropModule *cm, size_t old_dev_stage,
-                   size_t new_dev_stage);
-bool isMaturityDay(const CropModule *cm, size_t old_dev_stage,
-                   size_t new_dev_stage);
+bool isAnthesisDay(const CropModule *cm, size_t old_dev_stage, size_t new_dev_stage);
+bool isMaturityDay(const CropModule *cm, size_t old_dev_stage, size_t new_dev_stage);
 void setStage(CropModule *cm, size_t newStage);
 double getFruitBiomassNContent(const CropModule *cm);
 double getPrimaryCropYield(const CropModule *cm);
 double getSecondaryCropYield(const CropModule *cm);
-double getResidueBiomass(const CropModule *cm,
-                         bool useSecondaryCropYields = true,
+double getResidueBiomass(const CropModule *cm, bool useSecondaryCropYields = true,
                          double alternativeCropYield = -1);
-double getResiduesNConcentration(const CropModule *cm,
-                                 double alternativePrimaryCropYield = -1);
-double getPrimaryYieldNConcentration(const CropModule *cm,
-                                     double alternativePrimaryCropYield = -1);
-double getResiduesNContent(const CropModule *cm,
-                           bool useSecondaryCropYields = true,
+double getResiduesNConcentration(const CropModule *cm, double alternativePrimaryCropYield = -1);
+double getPrimaryYieldNConcentration(const CropModule *cm, double alternativePrimaryCropYield = -1);
+double getResiduesNContent(const CropModule *cm, bool useSecondaryCropYields = true,
                            double alternativePrimaryCropYield = -1,
                            double alternativeCropYield = -1);
-double getPrimaryYieldNContent(const CropModule *cm,
-                               double alternativePrimaryCropYield = -1);
+double getPrimaryYieldNContent(const CropModule *cm, double alternativePrimaryCropYield = -1);
 double getRawProteinConcentration(const CropModule *cm);
-double getSecondaryYieldNContent(const CropModule *cm,
-                                 double alternativePrimaryCropYield = -1,
+double getSecondaryYieldNContent(const CropModule *cm, double alternativePrimaryCropYield = -1,
                                  double alternativeSecondaryCropYield = -1);
 double getAbovegroundBiomassNContent(const CropModule *cm);
 double getAutotrophicRespiration(const CropModule *cm);
@@ -392,18 +359,17 @@ double getAccumulatedETa(const CropModule *cm);
 double getAccumulatedTranspiration(const CropModule *cm);
 void calculateVOCEmissions(CropModule *cm, const Voc::MicroClimateData &mcd);
 void fcUpdateCropParametersForPerennial(CropModule *cm);
-void forceTransplantState(CropModule *cm, double temperatureSum, double lai,
-                          size_t stage, double rootMass, double leafMass,
-                          double shootMass, int postTransplantDelay);
+void forceTransplantState(CropModule *cm, double temperatureSum, double lai, size_t stage,
+                          double rootMass, double leafMass, double shootMass,
+                          int postTransplantDelay);
 void applyCutting(CropModule *cm, std::map<int, CuttingData::Value> &organs,
-                  std::map<int, double> &exports,
-                  double cutMaxAssimilationFraction);
+                  std::map<int, double> &exports, double cutMaxAssimilationFraction);
 void step(CropModule *cm, double meanAirTemperature, double maxAirTemperature,
-          double minAirTemperature, double globalRadiation,
-          double sunshineHours, Tools::Date currentDate,
-          double relativeHumidity, double windSpeed, double windSpeedHeight,
-          double atmosphericCO2Concentration, double atmosphericO3Concentration,
-          double grossPrecipitation, double referenceEvapotranspiration);
+          double minAirTemperature, double globalRadiation, double sunshineHours,
+          Tools::Date currentDate, double relativeHumidity, double windSpeed,
+          double windSpeedHeight, double atmosphericCO2Concentration,
+          double atmosphericO3Concentration, double grossPrecipitation,
+          double referenceEvapotranspiration);
 } // namespace cropmodule
 
 // #define TEST_HOURLY_OUTPUT

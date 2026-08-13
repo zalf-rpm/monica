@@ -40,18 +40,15 @@ namespace workstep {
 // explicit false default, overriding what mergeCommon already set on the common
 // field (SaveMonicaState defaults to running at the *end* of the day, unlike
 // every other subtype).
-Tools::Errors merge(SaveMonicaStateData *sms, Workstep *ws,
-                    json11::Json j);
-json11::Json to_json(const SaveMonicaStateData *sms,
-                     const Workstep *ws);
+Tools::Errors merge(SaveMonicaStateData *sms, Workstep *ws, json11::Json j);
+json11::Json to_json(const SaveMonicaStateData *sms, const Workstep *ws);
 bool apply(SaveMonicaStateData *sms, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
 Workstep makeSaveMonicaStateWorkstep(json11::Json object);
-Workstep makeSaveMonicaStateWorkstep(
-    const Tools::Date &at, std::string pathToSerializedStateFile,
-    bool serializeAsJson = false,
-    int noOfPreviousDaysSerializedClimateData = -1);
+Workstep makeSaveMonicaStateWorkstep(const Tools::Date &at, std::string pathToSerializedStateFile,
+                                     bool serializeAsJson = false,
+                                     int noOfPreviousDaysSerializedClimateData = -1);
 
 } // namespace monica

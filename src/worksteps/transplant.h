@@ -38,8 +38,7 @@ struct TransplantData : SowingData {
   double initShootMass{0.0};
   double initLAI{0.0};
   int postTransplantDelay{0};
-  double initialKcb{
-      0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
+  double initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at transplanting (default = 0.15)
 };
 
 namespace workstep {

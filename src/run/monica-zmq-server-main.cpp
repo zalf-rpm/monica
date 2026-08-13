@@ -50,38 +50,32 @@ int main(int argc, char **argv) {
   zmq::version(&major, &minor, &patch);
 
   auto printHelp = [=]() {
-    cout
-        << appName << "[options]" << endl
-        << endl
-        << "options:" << endl
-        << endl
-        << " -h | --help ... this help output" << endl
-        << " -v | --version ... outputs " << appName
-        << " version and ZeroMQ version being used" << endl
-        << endl
-        << " -d | --debug ... show debug outputs" << endl
-        << " -s | --serve-address [ADDRESS] (default: " << serveAddress
-        << ")] ... serve MONICA on given address" << endl
-        << " -p | --proxy-address [(PROXY-)ADDRESS1[,ADDRESS2,...]] (default: "
-        << inputAddress
-        << ")] ... receive work via proxy from given address(es)" << endl
-        << " -bi | --bind-input ... bind the input port" << endl
-        << " -ci | --connect-input (default) ... connect the input port" << endl
-        << " -i | --input-address [bind|connect]|[ADDRESS1[,ADDRESS2,...]] "
-           "(default: "
-        << inputAddress << ")] ... receive work from given address(es)" << endl
-        << " -bo | --bind-output ... bind the output port" << endl
-        << " -co | --connect-output (default) ... connect the output port"
-        << endl
-        << " -o | --output-address [ADDRESS1[,ADDRESS2,...]] (default: "
-        << outputAddress << ")] ... send results to this address(es)" << endl
-        << " -or | --router-output-address [ADDRESS1[,ADDRESS2,...]] (default: "
-        << outputAddress
-        << ")] ... send results to this address(es) but use a router socket"
-        << endl
-        << " -c | --control-address [ADDRESS] (default: " << controlAddress
-        << ")] ... connect MONICA server to this address for control messages"
-        << endl;
+    cout << appName << "[options]" << endl
+         << endl
+         << "options:" << endl
+         << endl
+         << " -h | --help ... this help output" << endl
+         << " -v | --version ... outputs " << appName << " version and ZeroMQ version being used"
+         << endl
+         << endl
+         << " -d | --debug ... show debug outputs" << endl
+         << " -s | --serve-address [ADDRESS] (default: " << serveAddress
+         << ")] ... serve MONICA on given address" << endl
+         << " -p | --proxy-address [(PROXY-)ADDRESS1[,ADDRESS2,...]] (default: " << inputAddress
+         << ")] ... receive work via proxy from given address(es)" << endl
+         << " -bi | --bind-input ... bind the input port" << endl
+         << " -ci | --connect-input (default) ... connect the input port" << endl
+         << " -i | --input-address [bind|connect]|[ADDRESS1[,ADDRESS2,...]] "
+            "(default: "
+         << inputAddress << ")] ... receive work from given address(es)" << endl
+         << " -bo | --bind-output ... bind the output port" << endl
+         << " -co | --connect-output (default) ... connect the output port" << endl
+         << " -o | --output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress
+         << ")] ... send results to this address(es)" << endl
+         << " -or | --router-output-address [ADDRESS1[,ADDRESS2,...]] (default: " << outputAddress
+         << ")] ... send results to this address(es) but use a router socket" << endl
+         << " -c | --control-address [ADDRESS] (default: " << controlAddress
+         << ")] ... connect MONICA server to this address for control messages" << endl;
   };
 
   zmq::context_t context(1);
@@ -126,9 +120,8 @@ int main(int argc, char **argv) {
       } else if (arg == "-h" || arg == "--help")
         printHelp(), exit(0);
       else if (arg == "-v" || arg == "--version")
-        cout << appName << " version " << version
-             << " ZeroMQ version: " << major << "." << minor << "." << patch
-             << endl,
+        cout << appName << " version " << version << " ZeroMQ version: " << major << "." << minor
+             << "." << patch << endl,
             exit(0);
     }
 
@@ -140,14 +133,11 @@ int main(int argc, char **argv) {
       addresses[SendResult] = {useRouterOutputSocket ? Router : Push,
                                splitString(outputAddress, ","), outputOp};
     } else if (connectToZmqProxy)
-      addresses[ReceiveJob] = {ProxyReply, splitString(proxyAddress, ","),
-                               monica::connect};
+      addresses[ReceiveJob] = {ProxyReply, splitString(proxyAddress, ","), monica::connect};
     else
-      addresses[ReceiveJob] = {Reply, splitString(serveAddress, ","),
-                               monica::bind};
+      addresses[ReceiveJob] = {Reply, splitString(serveAddress, ","), monica::bind};
 
-    addresses[Control] = {Subscribe, vector<string>{controlAddress},
-                          monica::connect};
+    addresses[Control] = {Subscribe, vector<string>{controlAddress}, monica::connect};
 
     serveZmqMonicaFull(&context, addresses);
 

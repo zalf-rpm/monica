@@ -42,8 +42,7 @@ double hourly_O3_reduction_Ac(double O3_up, double gamma1, double gamma2) {
   return fO3s_h;
 }
 
-double cumulative_O3_reduction_Ac(double fO3s_d, double fO3s_h, double rO3s,
-                                  int h) {
+double cumulative_O3_reduction_Ac(double fO3s_d, double fO3s_h, double rO3s, int h) {
   if (h == 0) {
     fO3s_d = fO3s_h * rO3s;
   } else {
@@ -76,11 +75,11 @@ double O3_senescence_factor(double gamma3, double O3_tot_up) {
   return fO3l;
 }
 
-double leaf_senescence_reduction_Ac(double fO3l, double reldev,
-                                    double GDD_flowering, double GDD_maturity) {
+double leaf_senescence_reduction_Ac(double fO3l, double reldev, double GDD_flowering,
+                                    double GDD_maturity) {
   // senescence is assumed to start at flowering in normal conditions
   double crit_reldev = GDD_flowering / GDD_maturity;
-  crit_reldev *= fO3l; // correction of onset due to O3 cumulative uptake
+  crit_reldev *= fO3l;                // correction of onset due to O3 cumulative uptake
   double senescence_impact_max = 0.4; // arbirary value
   double fLS = 1.0;
 
@@ -93,9 +92,8 @@ double leaf_senescence_reduction_Ac(double fO3l, double reldev,
   return fLS;
 }
 
-double water_stress_stomatal_closure(double upper_thr, double lower_thr,
-                                     double Fshape, double FC, double WP,
-                                     double SWC, double ET0) {
+double water_stress_stomatal_closure(double upper_thr, double lower_thr, double Fshape, double FC,
+                                     double WP, double SWC, double ET0) {
   // Raes et al., 2009.  Agronomy Journal, 101(3), 438-447
   double upper_threshold_adj =
       upper_thr + (0.04 * (5.0 - ET0)) * std::log10(10.0 - 9.0 * upper_thr);
@@ -177,19 +175,17 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par,
   O3_impact_out out;
 
   double fLA = O3_recovery_factor_leaf_age(in.reldev);
-  double rO3s =
-      O3_damage_recovery(in.fO3s_d_prev, fLA); // used only the first hour
+  double rO3s = O3_damage_recovery(in.fO3s_d_prev, fLA); // used only the first hour
   out.WS_st_clos = 1.0;
   if (WaterDeficitResponseStomata) {
-    out.WS_st_clos = water_stress_stomatal_closure(
-        par.upper_thr_stomatal, par.lower_thr_stomatal, par.Fshape_stomatal,
-        in.FC, in.WP, in.SWC, in.ET0);
+    out.WS_st_clos =
+        water_stress_stomatal_closure(par.upper_thr_stomatal, par.lower_thr_stomatal,
+                                      par.Fshape_stomatal, in.FC, in.WP, in.SWC, in.ET0);
   }
 
   double inst_O3_up = O3_uptake(in.O3a, in.gs, out.WS_st_clos); // nmol m-2 s-1
-  out.hourly_O3_up +=
-      inst_O3_up / 1000; // from nmol to �mol //* 3.6; //3.6 converts from nmol
-                         // to �mol and from s-1 to h-1
+  out.hourly_O3_up += inst_O3_up / 1000; // from nmol to �mol //* 3.6; //3.6 converts from nmol
+                                         // to �mol and from s-1 to h-1
   double fO3s_h = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
 
   // short term O3 effect on Ac
@@ -198,14 +194,12 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par,
   // sensescence + long term O3 effect on Ac. !!also with [O3]=0, senescence
   // will act to reduce fLS
   out.fO3l = O3_senescence_factor(par.gamma3, in.sum_O3_up);
-  out.fLS =
-      leaf_senescence_reduction_Ac(out.fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
+  out.fLS = leaf_senescence_reduction_Ac(out.fO3l, in.reldev, in.GDD_flo, in.GDD_mat);
 
 #ifdef TEST_O3_HOURLY_OUTPUT
-  tout() << "," << in.reldev << "," << fLA << "," << rO3s << ","
-         << out.WS_st_clos << "," << in.gs << "," << inst_O3_up << "," << fO3s_h
-         << "," << in.fO3s_d_prev << "," << out.fO3s_d << "," << in.sum_O3_up
-         << "," << out.fO3l << "," << out.fLS << endl;
+  tout() << "," << in.reldev << "," << fLA << "," << rO3s << "," << out.WS_st_clos << "," << in.gs
+         << "," << inst_O3_up << "," << fO3s_h << "," << in.fO3s_d_prev << "," << out.fO3s_d << ","
+         << in.sum_O3_up << "," << out.fO3l << "," << out.fLS << endl;
 #endif
 
   return out;

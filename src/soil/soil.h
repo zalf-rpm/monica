@@ -36,14 +36,11 @@ struct SoilParameters {
   std::function<Tools::Errors(SoilParameters *)> calculateAndSetPwpFcSat;
 
   // members
-  double vs_SoilSandContent{
-      -1.0}; //!< Soil layer's sand content [kg kg-1] //{0.4}
-  double vs_SoilClayContent{
-      -1.0};             //!< Soil layer's clay content [kg kg-1] (Ton) //{0.05}
-  double vs_SoilpH{6.9}; //!< Soil pH value [] //{7.0}
-  double vs_SoilStoneContent{
-      0.0};               //!< Soil layer's stone content in soil [m3 m-3]
-  double vs_Lambda{-1.0}; //!< Soil water conductivity coefficient [] //{0.5}
+  double vs_SoilSandContent{-1.0};       //!< Soil layer's sand content [kg kg-1] //{0.4}
+  double vs_SoilClayContent{-1.0};       //!< Soil layer's clay content [kg kg-1] (Ton) //{0.05}
+  double vs_SoilpH{6.9};                 //!< Soil pH value [] //{7.0}
+  double vs_SoilStoneContent{0.0};       //!< Soil layer's stone content in soil [m3 m-3]
+  double vs_Lambda{-1.0};                //!< Soil water conductivity coefficient [] //{0.5}
   double vs_FieldCapacity{-1.0};         //{0.21} //!< [m3 m-3]
   double vs_Saturation{-1.0};            //{0.43} //!< [m3 m-3]
   double vs_PermanentWiltingPoint{-1.0}; //{0.08} //!< [m3 m-3]
@@ -67,16 +64,14 @@ struct SoilParameters {
   double _vs_SoilOrganicMatter{-1.0}; //!< [kg kg-1]
 };
 
-SoilParameters makeSoilParameters(
-    std::function<Tools::Errors(SoilParameters *)> setPwpFcSat =
-        [](SoilParameters *sp) { return noSetPwpFcSat(sp); });
+SoilParameters makeSoilParameters(std::function<Tools::Errors(SoilParameters *)> setPwpFcSat =
+                                      [](SoilParameters *sp) { return noSetPwpFcSat(sp); });
 
 namespace soilparameters {
 
 void serialize(const SoilParameters *sp,
                mas::schema::model::monica::SoilParameters::Builder builder);
-void deserialize(SoilParameters *sp,
-                 mas::schema::model::monica::SoilParameters::Reader reader);
+void deserialize(SoilParameters *sp, mas::schema::model::monica::SoilParameters::Reader reader);
 
 Tools::Errors merge(SoilParameters *sp, json11::Json j);
 
@@ -123,18 +118,17 @@ const CapillaryRiseRates &readCapillaryRiseRates();
 typedef std::vector<SoilParameters> SoilPMs;
 typedef std::shared_ptr<SoilPMs> SoilPMsPtr;
 
-Tools::EResult<SoilPMs> createEqualSizedSoilPMs(
-    const std::function<Tools::Errors(SoilParameters *, int)> &setPwpFcSat,
-    const Tools::J11Array &jsonSoilPMs, double layerThickness = 0.1,
-    int numberOfLayers = 20);
+Tools::EResult<SoilPMs>
+createEqualSizedSoilPMs(const std::function<Tools::Errors(SoilParameters *, int)> &setPwpFcSat,
+                        const Tools::J11Array &jsonSoilPMs, double layerThickness = 0.1,
+                        int numberOfLayers = 20);
 
 Tools::EResult<SoilPMs>
 createSoilPMs(const std::function<Tools::Errors(SoilParameters *)> &setPwpFcSat,
               const Tools::J11Array &jsonSoilPMs);
 
 std::function<Tools::Errors(SoilParameters *, int)>
-getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
-    const std::string &pathToSoilDir);
+getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(const std::string &pathToSoilDir);
 
 struct VanGenuchtenParams {
   double thetaR{0};
@@ -147,22 +141,18 @@ struct VanGenuchtenParams {
 
 // calc volumetricWaterContentAtMatricHead if stone fraction and matric head are
 // provided
-VanGenuchtenParams
-calcVanGenuchtenVereeckenParams(double pwp, double sat, double sandFrac,
-                                double clayFrac, double bulkDensityKgPerM3,
-                                double organicCarbonFrac, double stoneFrac = -1,
-                                double matricHead = -1);
+VanGenuchtenParams calcVanGenuchtenVereeckenParams(double pwp, double sat, double sandFrac,
+                                                   double clayFrac, double bulkDensityKgPerM3,
+                                                   double organicCarbonFrac, double stoneFrac = -1,
+                                                   double matricHead = -1);
 
-VanGenuchtenParams
-calcVanGenuchtenTothParams(bool isTopSoil, double sandFrac, double clayFrac,
-                           double bulkDensityKgPerM3, double organicCarbonFrac,
-                           double stoneFrac = -1, double matricHead = -1);
+VanGenuchtenParams calcVanGenuchtenTothParams(bool isTopSoil, double sandFrac, double clayFrac,
+                                              double bulkDensityKgPerM3, double organicCarbonFrac,
+                                              double stoneFrac = -1, double matricHead = -1);
 
-Tools::Errors updateUnsetPwpFcSatFromVanGenuchtenVereecken(SoilParameters *sp,
-                                                           int layerNo = -1);
+Tools::Errors updateUnsetPwpFcSatFromVanGenuchtenVereecken(SoilParameters *sp, int layerNo = -1);
 
-Tools::Errors updateUnsetPwpFcSatFromVanGenuchtenToth(SoilParameters *sp,
-                                                      int layerNo = 0);
+Tools::Errors updateUnsetPwpFcSatFromVanGenuchtenToth(SoilParameters *sp, int layerNo = 0);
 
 Tools::Errors updateUnsetPwpFcSatFromToth(SoilParameters *sp, int layerNo = -1);
 } // namespace Soil

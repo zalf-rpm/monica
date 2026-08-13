@@ -111,8 +111,7 @@ Spec makeSpec(json11::Json j);
 
 Tools::Errors spec_merge(Spec *spec, json11::Json j);
 
-std::function<bool(const MonicaModel &)>
-spec_create_expression_func(json11::Json j);
+std::function<bool(const MonicaModel &)> spec_create_expression_func(json11::Json j);
 
 json11::Json spec_to_json(const Spec *spec);
 
@@ -130,19 +129,16 @@ void store_data_aggregate_results(StoreData *sd);
 
 void store_data_aggregate_results_obj(StoreData *sd);
 
-void store_data_store_results_if_spec_applies(StoreData *sd,
-                                              const MonicaModel &monica,
+void store_data_store_results_if_spec_applies(StoreData *sd, const MonicaModel &monica,
                                               bool storeObjOutputs = false);
 
-std::vector<StoreData> setupStorage(const json11::Json &event2oids,
-                                    const Tools::Date &startDate,
+std::vector<StoreData> setupStorage(const json11::Json &event2oids, const Tools::Date &startDate,
                                     const Tools::Date &endDate);
 
 //! main function for running monica under a given Env(ironment)
 //! @param env the environment completely defining what the model needs and gets
 //! @return a structure with all the Monica results
-std::pair<Output, Output> runMonicaIC(Env env,
-                                      bool isIntercropping = true);
+std::pair<Output, Output> runMonicaIC(Env env, bool isIntercropping = true);
 Output runMonica(Env env);
 
 } // namespace monica

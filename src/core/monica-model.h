@@ -53,7 +53,7 @@ struct MonicaModel {
   kj::Own<SoilMoisture> soilMoisture;       // moisture code
   kj::Own<SoilOrganic> soilOrganic;         // organic code
   kj::Own<SoilTransport> soilTransport;     // transport code
-  kj::Own<CropModule> currentCropModule; // crop code for possibly planted crop
+  kj::Own<CropModule> currentCropModule;    // crop code for possibly planted crop
 
   // store applied fertiliser during one production process
   double sumFertiliser{0.0};    // mineral N
@@ -96,57 +96,42 @@ struct MonicaModel {
 };
 
 kj::Own<MonicaModel> makeMonicaModel(const CentralParameterProvider &cpp);
-kj::Own<MonicaModel>
-makeMonicaModel(mas::schema::model::monica::MonicaModelState::Reader reader);
+kj::Own<MonicaModel> makeMonicaModel(mas::schema::model::monica::MonicaModelState::Reader reader);
 namespace monicamodel {
-void deserialize(MonicaModel *model,
-                 mas::schema::model::monica::MonicaModelState::Reader reader);
-void serialize(MonicaModel *model,
-               mas::schema::model::monica::MonicaModelState::Builder builder);
+void deserialize(MonicaModel *model, mas::schema::model::monica::MonicaModelState::Reader reader);
+void serialize(MonicaModel *model, mas::schema::model::monica::MonicaModelState::Builder builder);
 void step(MonicaModel *model);
 void generalStep(MonicaModel *model);
 void cropStep(MonicaModel *model);
-double
-CO2ForDate(double year, double julianDay, bool isLeapYear,
-           mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
-double
-CO2ForDate(const Tools::Date &d,
-           mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
-double groundwaterDepthForDate(double maxGroundwaterDepth,
-                               double minGroundwaterDepth,
-                               int minGroundwaterDepthMonth, double julianDay,
-                               bool isLeapYear);
-void seedCrop(MonicaModel *model,
-              mas::schema::model::monica::CropSpec::Reader reader);
+double CO2ForDate(double year, double julianDay, bool isLeapYear,
+                  mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
+double CO2ForDate(const Tools::Date &d,
+                  mas::schema::climate::RCP rcp = mas::schema::climate::RCP::RCP85);
+double groundwaterDepthForDate(double maxGroundwaterDepth, double minGroundwaterDepth,
+                               int minGroundwaterDepthMonth, double julianDay, bool isLeapYear);
+void seedCrop(MonicaModel *model, mas::schema::model::monica::CropSpec::Reader reader);
 // void seedCrop(MonicaModel *model, CropParameters *cropParams,
 //               CropResidueParameters *residueParams, Crop *crop);
-void harvestCurrentCrop(MonicaModel *model, bool exported,
-                        const HarvestData::Spec &spec,
-                        HarvestData::OptCarbonManagementData optCarbMgmtData =
-                            HarvestData::OptCarbonManagementData(),
-                        int incorporateIntoLayerIndex = 0);
+void harvestCurrentCrop(
+    MonicaModel *model, bool exported, const HarvestData::Spec &spec,
+    HarvestData::OptCarbonManagementData optCarbMgmtData = HarvestData::OptCarbonManagementData(),
+    int incorporateIntoLayerIndex = 0);
 void incorporateCurrentCrop(MonicaModel *model);
-void applyMineralFertiliser(MonicaModel *model,
-                            MineralFertilizerParameters partition,
+void applyMineralFertiliser(MonicaModel *model, MineralFertilizerParameters partition,
                             double amount);
-void applyOrganicFertiliser(MonicaModel *model,
-                            const OrganicMatterParameters &omps,
-                            double amountFM, bool incorporation,
-                            int incorporateIntoLayerIndex = 0);
-double
-applyMineralFertiliserViaNMinMethod(MonicaModel *model,
-                                    MineralFertilizerParameters partition,
-                                    NMinCropParameters cropParams);
+void applyOrganicFertiliser(MonicaModel *model, const OrganicMatterParameters &omps,
+                            double amountFM, bool incorporation, int incorporateIntoLayerIndex = 0);
+double applyMineralFertiliserViaNMinMethod(MonicaModel *model,
+                                           MineralFertilizerParameters partition,
+                                           NMinCropParameters cropParams);
 void addDailySumOrgFertiliser(MonicaModel *model, double amountFM,
                               const OrganicMatterParameters &params);
 void dailyReset(MonicaModel *model);
-void applyIrrigation(MonicaModel *model, double amount,
-                     double nitrateConcentration = 0,
+void applyIrrigation(MonicaModel *model, double amount, double nitrateConcentration = 0,
                      double sulfateConcentration = 0);
 void applyTillage(MonicaModel *model, double depth);
 void clearEvents(MonicaModel *model);
-void setOtherCropHeightAndLAIt(MonicaModel *model, double cropHeight,
-                               double lait);
+void setOtherCropHeightAndLAIt(MonicaModel *model, double cropHeight, double lait);
 void addDailySumFertiliser(MonicaModel *model, double amount);
 void addDailySumOrganicFertilizerDM(MonicaModel *model, double amountDM);
 void addDailySumIrrigationWater(MonicaModel *model, double amount);

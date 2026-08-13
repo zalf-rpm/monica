@@ -30,11 +30,9 @@ using namespace json11;
 using namespace Tools;
 using namespace Climate;
 
-const map<string, function<EResult<Json>(const Json &, const Json &)>> &
-supportedPatterns();
+const map<string, function<EResult<Json>(const Json &, const Json &)>> &supportedPatterns();
 
-EResult<Json> monica::findAndReplaceReferences(const Json &root,
-                                               const Json &j) {
+EResult<Json> monica::findAndReplaceReferences(const Json &root, const Json &j) {
   auto sp = supportedPatterns();
 
   // auto jstr = j.dump();
@@ -112,8 +110,7 @@ EResult<Json> monica::findAndReplaceReferences(const Json &root,
   return {j, errors};
 }
 
-const map<string, function<EResult<Json>(const Json &, const Json &)>> &
-supportedPatterns() {
+const map<string, function<EResult<Json>(const Json &, const Json &)>> &supportedPatterns() {
   auto ref = [](const Json &root, const Json &j) -> EResult<Json> {
     static map<pair<string, string>, EResult<Json>> cache;
     if (j.array_items().size() == 3 && j[1].is_string() && j[2].is_string()) {
@@ -145,12 +142,10 @@ supportedPatterns() {
       if (jo.success() && !jo.result.is_null())
         return {jo.result};
 
-      return {j,
-              string("Couldn't include file with path: '") + pathToFile + "'!"};
+      return {j, string("Couldn't include file with path: '") + pathToFile + "'!"};
     }
 
-    return {j,
-            string("Couldn't include file with function: ") + j.dump() + "!"};
+    return {j, string("Couldn't include file with function: ") + j.dump() + "!"};
   };
 
   auto humus2corg = [](const Json &, const Json &j) -> EResult<Json> {
@@ -161,14 +156,12 @@ supportedPatterns() {
       else
         return {j, ecorg.errors};
     }
-    return {j,
-            string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
+    return {j, string("Couldn't convert humus level to corg: ") + j.dump() + "!"};
   };
 
   auto bdc2rd = [](const Json &, const Json &j) -> EResult<Json> {
     if (j.array_items().size() == 3 && j[1].is_number() && j[2].is_number()) {
-      auto erd = Soil::bulkDensityClass2rawDensity(j[1].int_value(),
-                                                   j[2].number_value());
+      auto erd = Soil::bulkDensityClass2rawDensity(j[1].int_value(), j[2].number_value());
       if (erd.success())
         return {erd.result};
       else
@@ -187,8 +180,7 @@ supportedPatterns() {
       else
         return {j, ec.errors};
     }
-    return {j, string("Couldn't get soil clay content from KA5 soil class: ") +
-                   j.dump() + "!"};
+    return {j, string("Couldn't get soil clay content from KA5 soil class: ") + j.dump() + "!"};
   };
 
   auto KA52sand = [](const Json &, const Json &j) -> EResult<Json> {
@@ -199,28 +191,23 @@ supportedPatterns() {
       else
         return {j, es.errors};
     }
-    return {j, string("Couldn't get soil sand content from KA5 soil class: ") +
-                   j.dump() + "!"};
+    return {j, string("Couldn't get soil sand content from KA5 soil class: ") + j.dump() + "!"};
     ;
   };
 
   auto sandClay2lambda = [](const Json &, const Json &j) -> EResult<Json> {
     if (j.array_items().size() == 3 && j[1].is_number() && j[2].is_number()) {
-      return {
-          Soil::sandAndClay2lambda(j[1].number_value(), j[2].number_value())};
+      return {Soil::sandAndClay2lambda(j[1].number_value(), j[2].number_value())};
     }
-    return {
-        j,
-        string("Couldn't get lambda value from soil sand and clay content: ") +
-            j.dump() + "!"};
+    return {j,
+            string("Couldn't get lambda value from soil sand and clay content: ") + j.dump() + "!"};
   };
 
   auto percent = [](const Json &, const Json &j) -> EResult<Json> {
     if (j.array_items().size() == 2 && j[1].is_number()) {
       return {j[1].number_value() / 100.0};
     }
-    return {j, string("Couldn't convert percent to decimal percent value: ") +
-                   j.dump() + "!"};
+    return {j, string("Couldn't convert percent to decimal percent value: ") + j.dump() + "!"};
   };
 
   static map<string, function<EResult<Json>(const Json &, const Json &)>> m{
@@ -241,20 +228,17 @@ supportedPatterns() {
   return m;
 }
 
-Json monica::createEnvJsonFromJsonStrings(
-    std::map<std::string, std::string> params) {
+Json monica::createEnvJsonFromJsonStrings(std::map<std::string, std::string> params) {
   map<string, Json> ps;
-  for (const auto &p : map<string, string>({{"crop-json-str", "crop"},
-                                            {"site-json-str", "site"},
-                                            {"sim-json-str", "sim"}})) {
+  for (const auto &p : map<string, string>(
+           {{"crop-json-str", "crop"}, {"site-json-str", "site"}, {"sim-json-str", "sim"}})) {
     ps[p.second] = printPossibleErrors(parseJsonString(params[p.first]));
   }
 
   return createEnvJsonFromJsonObjects(ps);
 }
 
-Json monica::createEnvJsonFromJsonObjects(
-    std::map<std::string, json11::Json> params) {
+Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params) {
   vector<Json> cropSiteSim;
   for (auto name : {"crop", "site", "sim"})
     cropSiteSim.push_back(params[name]);
@@ -263,8 +247,7 @@ Json monica::createEnvJsonFromJsonObjects(
     if (j.is_null())
       return {};
 
-  string pathToParameters =
-      cropSiteSim.at(2)["include-file-base-path"].string_value();
+  string pathToParameters = cropSiteSim.at(2)["include-file-base-path"].string_value();
 
   auto addBasePath = [&](Json &j, const string &basePath) {
     string err;
@@ -303,16 +286,15 @@ Json monica::createEnvJsonFromJsonObjects(
   // store debug mode in env, take from sim.json, but prefer params map
   env["debugMode"] = simj["debug?"].bool_value();
 
-  J11Object cpp = {
-      {"type", "CentralParameterProvider"},
-      {"userCropParameters", cropj["CropParameters"]},
-      {"userEnvironmentParameters", sitej["EnvironmentParameters"]},
-      {"userSoilMoistureParameters", sitej["SoilMoistureParameters"]},
-      {"userSoilTemperatureParameters", sitej["SoilTemperatureParameters"]},
-      {"userSoilTransportParameters", sitej["SoilTransportParameters"]},
-      {"userSoilOrganicParameters", sitej["SoilOrganicParameters"]},
-      {"simulationParameters", simj},
-      {"siteParameters", sitej["SiteParameters"]}};
+  J11Object cpp = {{"type", "CentralParameterProvider"},
+                   {"userCropParameters", cropj["CropParameters"]},
+                   {"userEnvironmentParameters", sitej["EnvironmentParameters"]},
+                   {"userSoilMoistureParameters", sitej["SoilMoistureParameters"]},
+                   {"userSoilTemperatureParameters", sitej["SoilTemperatureParameters"]},
+                   {"userSoilTransportParameters", sitej["SoilTransportParameters"]},
+                   {"userSoilOrganicParameters", sitej["SoilOrganicParameters"]},
+                   {"simulationParameters", simj},
+                   {"siteParameters", sitej["SiteParameters"]}};
 
   if (!sitej["groundwaterInformation"].is_null()) {
     cpp["groundwaterInformation"] = sitej["groundwaterInformation"];
@@ -329,54 +311,42 @@ Json monica::createEnvJsonFromJsonObjects(
   if (simj["output"]["events"].is_array())
     env["events2"] = simj["output"]["events2"];
   env["outputs"] = J11Object{
-      {"output", J11Object{{"obj-outputs?",
-                            simj["output"]["obj-outputs"].bool_value()}}}};
+      {"output", J11Object{{"obj-outputs?", simj["output"]["obj-outputs"].bool_value()}}}};
 
   env["pathToClimateCSV"] = simj["climate.csv"];
   auto csvos = simj["climate.csv-options"].object_items();
   csvos["latitude"] = double_valueD(sitej["SiteParameters"], "Latitude", 0.0);
   env["csvViaHeaderOptions"] = csvos;
 
-  if (simj["climate.csv"].is_string() &&
-      !simj["climate.csv"].string_value().empty()) {
+  if (simj["climate.csv"].is_string() && !simj["climate.csv"].string_value().empty()) {
     if (simj["climate.csv"].string_value().find("capnp://") == string::npos) {
-      env["climateData"] =
-          printPossibleErrors(readClimateDataFromCSVFileViaHeaders(
-              simj["climate.csv"].string_value(), env["csvViaHeaderOptions"]));
+      env["climateData"] = printPossibleErrors(readClimateDataFromCSVFileViaHeaders(
+          simj["climate.csv"].string_value(), env["csvViaHeaderOptions"]));
     }
-  } else if (simj["climate.csv"].is_array() &&
-             !simj["climate.csv"].array_items().empty()) {
-    env["climateData"] =
-        printPossibleErrors(readClimateDataFromCSVFilesViaHeaders(
-            toStringVector(simj["climate.csv"].array_items()),
-            env["csvViaHeaderOptions"]));
+  } else if (simj["climate.csv"].is_array() && !simj["climate.csv"].array_items().empty()) {
+    env["climateData"] = printPossibleErrors(readClimateDataFromCSVFilesViaHeaders(
+        toStringVector(simj["climate.csv"].array_items()), env["csvViaHeaderOptions"]));
   }
 
   return env;
 }
 
-Env monica::createEnvFromJsonConfigFiles(
-    std::map<std::string, std::string> params) {
+Env monica::createEnvFromJsonConfigFiles(std::map<std::string, std::string> params) {
   Env env;
-  if (!Tools::printPossibleErrors(
-          env_merge(&env, createEnvJsonFromJsonStrings(kj::mv(params))),
-          Tools::activateDebug))
+  if (!Tools::printPossibleErrors(env_merge(&env, createEnvJsonFromJsonStrings(kj::mv(params))),
+                                  Tools::activateDebug))
     return {};
   return env;
 }
 
-Env monica::createEnvFromJsonObjects(
-    std::map<std::string, json11::Json> params) {
+Env monica::createEnvFromJsonObjects(std::map<std::string, json11::Json> params) {
   Env env;
-  if (!Tools::printPossibleErrors(
-          env_merge(&env, createEnvJsonFromJsonObjects(kj::mv(params))),
-          Tools::activateDebug))
+  if (!Tools::printPossibleErrors(env_merge(&env, createEnvJsonFromJsonObjects(kj::mv(params))),
+                                  Tools::activateDebug))
     return {};
   return env;
 }
 
-Errors
-monica::updateEnvFromJsonObjects(Env &env,
-                                 std::map<std::string, json11::Json> params) {
+Errors monica::updateEnvFromJsonObjects(Env &env, std::map<std::string, json11::Json> params) {
   return env_merge(&env, createEnvJsonFromJsonObjects(kj::mv(params)));
 }

@@ -68,10 +68,10 @@ Errors workstep::merge(AutomaticIrrigationData *ai, json11::Json j) {
 }
 
 json11::Json workstep::to_json(const AutomaticIrrigationData *ai) {
-  auto o = json11::Json::object{
-      {"type", "AutomaticIrrigation"},
-      {"irrigateCrop", ai->irrigateCrop},
-      {"parameters", automaticirrigationparameters::to_json(&ai->params)}};
+  auto o =
+      json11::Json::object{{"type", "AutomaticIrrigation"},
+                           {"irrigateCrop", ai->irrigateCrop},
+                           {"parameters", automaticirrigationparameters::to_json(&ai->params)}};
   if (ai->startStage > -1)
     o["startStage"] = ai->startStage + 1;
   if (ai->endStage > -1)
@@ -87,8 +87,7 @@ bool workstep::apply(AutomaticIrrigationData *ai, MonicaModel *model) {
   auto irrigationTriggered = false;
   auto irrigationAmount = 0.0;
   tie(irrigationTriggered, irrigationAmount) =
-      soilcolumn::applyIrrigationViaTrigger(model->soilColumn.get(),
-                                            ai->params);
+      soilcolumn::applyIrrigationViaTrigger(model->soilColumn.get(), ai->params);
   if (irrigationTriggered) {
     model->currentEvents.insert("AutomaticIrrigation");
     model->soilOrganic->irrigationAmount += irrigationAmount;
@@ -146,16 +145,16 @@ bool workstep::condition(AutomaticIrrigationData *ai, MonicaModel *model) {
   return ai->done || cropConditionMet;
 }
 
-bool workstep::reinit(AutomaticIrrigationData *ai, Workstep *ws,
-                      Tools::Date date, bool addYear, bool forceInitYear) {
+bool workstep::reinit(AutomaticIrrigationData *ai, Workstep *ws, Tools::Date date, bool addYear,
+                      bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
   workstep::setDate(ws, Tools::Date());
 
   bool startAddedYear, stopAddedYear;
-  tie(ai->absStartDate, startAddedYear) = workstep::makeInitAbsDate(
-      ai->params.startDate, date, addYear, forceInitYear);
-  tie(ai->absEndDate, stopAddedYear) = workstep::makeInitAbsDate(
-      ai->params.endDate, date, addYear, forceInitYear);
+  tie(ai->absStartDate, startAddedYear) =
+      workstep::makeInitAbsDate(ai->params.startDate, date, addYear, forceInitYear);
+  tie(ai->absEndDate, stopAddedYear) =
+      workstep::makeInitAbsDate(ai->params.endDate, date, addYear, forceInitYear);
   ai->done = false;
 
   return startAddedYear;

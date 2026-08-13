@@ -28,8 +28,7 @@ using namespace monica;
 using namespace Tools;
 using namespace Climate;
 
-std::pair<Date, bool> workstep::makeInitAbsDate(Date date, Date initDate,
-                                                bool addYear,
+std::pair<Date, bool> workstep::makeInitAbsDate(Date date, Date initDate, bool addYear,
                                                 bool forceInitYear) {
   bool addedYear = false;
 
@@ -90,29 +89,25 @@ string workstep::organNameFromId(int organId) {
   return res;
 }
 
-bool workstep::isSoilMoistureOk(MonicaModel *model, double minPercentASW,
-                                double maxPercentASW) {
+bool workstep::isSoilMoistureOk(MonicaModel *model, double minPercentASW, double maxPercentASW) {
   bool soilMoistureOk = false;
   double pwp = model->soilColumn->layers.at(0).vs_PermanentWiltingPoint;
   double sm = max(0.0, model->soilColumn->layers.at(0).vs_SoilMoisture_m3 - pwp);
   double asw = model->soilColumn->layers.at(0).vs_FieldCapacity - pwp;
   double currentPercentASW = sm / asw * 100.0;
-  soilMoistureOk =
-      minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW;
+  soilMoistureOk = minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW;
 
   return soilMoistureOk;
 }
 
-bool workstep::isPrecipitationOk(
-    const std::vector<std::map<Climate::ACD, double>> &climateData,
-    double max3dayPrecipSum, double maxCurrentDayPrecipSum) {
+bool workstep::isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>> &climateData,
+                                 double max3dayPrecipSum, double maxCurrentDayPrecipSum) {
   bool precipOk = false;
-  double psum3d =
-      std::accumulate(climateData.rbegin(), climateData.rbegin() + 3, 0.0,
-                      [](double acc, const map<ACD, double> &d) {
-                        auto it = d.find(Climate::precip);
-                        return acc + (it == d.end() ? 0 : it->second);
-                      });
+  double psum3d = std::accumulate(climateData.rbegin(), climateData.rbegin() + 3, 0.0,
+                                  [](double acc, const map<ACD, double> &d) {
+                                    auto it = d.find(Climate::precip);
+                                    return acc + (it == d.end() ? 0 : it->second);
+                                  });
   double currentp = climateData.back().at(Climate::precip);
   precipOk = psum3d <= max3dayPrecipSum && currentp <= maxCurrentDayPrecipSum;
 
@@ -128,8 +123,7 @@ Errors workstep::mergeCommon(Workstep *ws, json11::Json j) {
   // or transitively) was the sole place Json11Serializable::merge(j) got called
   // per external invocation, however many levels of subtype-chaining happened
   // above it.
-  Errors res =
-      defaultMerge(j, [ws](json11::Json j2) { return mergeCommon(ws, j2); });
+  Errors res = defaultMerge(j, [ws](json11::Json j2) { return mergeCommon(ws, j2); });
 
   set_iso_date_value(ws->date, j, "date");
   // at is a shortcut for after=event and days=1
@@ -161,21 +155,18 @@ bool workstep::conditionCommon(Workstep *ws, MonicaModel *model) {
   auto ceit = currEvents.find(ws->afterEvent);
   if (ws->daysAfterEventCountActivated) {
     ws->daysAfterEventCount++;
-  } else if (ceit != currEvents.end() ||
-             prevEvents.find(ws->afterEvent) != prevEvents.end()) {
+  } else if (ceit != currEvents.end() || prevEvents.find(ws->afterEvent) != prevEvents.end()) {
     ws->daysAfterEventCountActivated = true;
   }
 
   return ws->daysAfterEventCount == ws->applyNoOfDaysAfterEvent;
 }
 
-bool workstep::reinitCommon(Workstep *ws, Tools::Date date, bool addYear,
-                            bool forceInitYear) {
+bool workstep::reinitCommon(Workstep *ws, Tools::Date date, bool addYear, bool forceInitYear) {
   bool addedYear = false;
 
   if (ws->date.isValid()) {
-    tie(ws->absDate, addedYear) =
-        makeInitAbsDate(ws->date, date, addYear, forceInitYear);
+    tie(ws->absDate, addedYear) = makeInitAbsDate(ws->date, date, addYear, forceInitYear);
   } else {
     ws->absDate = Date();
   }
@@ -296,24 +287,18 @@ Errors workstep::merge(Workstep *ws, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const Workstep *ws,
-                               bool includeFullCropParameters) {
+json11::Json workstep::to_json(const Workstep *ws, bool includeFullCropParameters) {
   switch (type(ws)) {
   case WorkstepType::SOWING:
-    return to_json(&std::get<SowingData>(ws->data), ws,
-                   includeFullCropParameters);
+    return to_json(&std::get<SowingData>(ws->data), ws, includeFullCropParameters);
   case WorkstepType::AUTOMATIC_SOWING:
-    return to_json(&std::get<AutomaticSowingData>(ws->data), ws,
-                   includeFullCropParameters);
+    return to_json(&std::get<AutomaticSowingData>(ws->data), ws, includeFullCropParameters);
   case WorkstepType::TRANSPLANT:
-    return to_json(&std::get<TransplantData>(ws->data), ws,
-                   includeFullCropParameters);
+    return to_json(&std::get<TransplantData>(ws->data), ws, includeFullCropParameters);
   case WorkstepType::HARVEST:
-    return to_json(&std::get<HarvestData>(ws->data), ws,
-                   includeFullCropParameters);
+    return to_json(&std::get<HarvestData>(ws->data), ws, includeFullCropParameters);
   case WorkstepType::AUTOMATIC_HARVEST:
-    return to_json(&std::get<AutomaticHarvestData>(ws->data), ws,
-                   includeFullCropParameters);
+    return to_json(&std::get<AutomaticHarvestData>(ws->data), ws, includeFullCropParameters);
   case WorkstepType::CUTTING:
     return to_json(&std::get<CuttingData>(ws->data), ws);
   case WorkstepType::MINERAL_FERTILIZATION:
@@ -410,31 +395,26 @@ bool workstep::condition(Workstep *ws, MonicaModel *model) {
   }
 }
 
-bool workstep::reinit(Workstep *ws, Tools::Date date, bool addYear,
-                      bool forceInitYear) {
+bool workstep::reinit(Workstep *ws, Tools::Date date, bool addYear, bool forceInitYear) {
   switch (type(ws)) {
   case WorkstepType::AUTOMATIC_SOWING:
-    return reinit(&std::get<AutomaticSowingData>(ws->data), ws, date, addYear,
-                  forceInitYear);
+    return reinit(&std::get<AutomaticSowingData>(ws->data), ws, date, addYear, forceInitYear);
   case WorkstepType::AUTOMATIC_HARVEST:
-    return reinit(&std::get<AutomaticHarvestData>(ws->data), ws, date, addYear,
-                  forceInitYear);
+    return reinit(&std::get<AutomaticHarvestData>(ws->data), ws, date, addYear, forceInitYear);
   case WorkstepType::N_DEMAND_FERTILIZATION:
-    return reinit(&std::get<NDemandFertilizationData>(ws->data), ws, date,
-                  addYear, forceInitYear);
+    return reinit(&std::get<NDemandFertilizationData>(ws->data), ws, date, addYear, forceInitYear);
   case WorkstepType::AUTOMATIC_IRRIGATION:
-    return reinit(&std::get<AutomaticIrrigationData>(ws->data), ws, date,
-                  addYear, forceInitYear);
+    return reinit(&std::get<AutomaticIrrigationData>(ws->data), ws, date, addYear, forceInitYear);
   default:
     return reinitCommon(ws, date, addYear, forceInitYear);
   }
 }
 
-std::function<double(MonicaModel *)> workstep::registerDailyFunction(
-    Workstep *ws, std::function<std::vector<double> &()> getDailyValues) {
+std::function<double(MonicaModel *)>
+workstep::registerDailyFunction(Workstep *ws,
+                                std::function<std::vector<double> &()> getDailyValues) {
   if (type(ws) == WorkstepType::AUTOMATIC_SOWING)
-    return registerDailyFunction(&std::get<AutomaticSowingData>(ws->data),
-                                 getDailyValues);
+    return registerDailyFunction(&std::get<AutomaticSowingData>(ws->data), getDailyValues);
   return std::function<double(MonicaModel *)>();
 }
 
@@ -459,22 +439,19 @@ WSPtr monica::makeWorkstep(json11::Json j) {
   if (type == "Cutting") {
     return make_shared<Workstep>(makeCuttingWorkstep(j));
   }
-  if (type == "MineralFertilization" ||
-      type == "MineralFertiliserApplication") { // deprecated name
+  if (type == "MineralFertilization" || type == "MineralFertiliserApplication") { // deprecated name
     return make_shared<Workstep>(makeMineralFertilizationWorkstep(j));
   }
   if (type == "NDemandFertilization") {
     return make_shared<Workstep>(makeNDemandFertilizationWorkstep(j));
   }
-  if (type == "OrganicFertilization" ||
-      type == "OrganicFertiliserApplication") { // deprecated name
+  if (type == "OrganicFertilization" || type == "OrganicFertiliserApplication") { // deprecated name
     return make_shared<Workstep>(makeOrganicFertilizationWorkstep(j));
   }
   if (type == "Tillage" || type == "TillageApplication") { // deprecated name
     return make_shared<Workstep>(makeTillageWorkstep(j));
   }
-  if (type == "Irrigation" ||
-      type == "IrrigationApplication") { // deprecated name
+  if (type == "Irrigation" || type == "IrrigationApplication") { // deprecated name
     return make_shared<Workstep>(makeIrrigationWorkstep(j));
   }
   if (type == "AutomaticIrrigation") {

@@ -32,13 +32,12 @@ extern std::map<FvCB_Model_Consts, double>
 
 struct FvCB_canopy_hourly_params {
   double Vcmax_25;
-  double kn = {0.713}; // coefficient of leaf nitrogen allocation
-  double gb = {1.5};   // boundary layer conductance, mol m-2 s-1 bar-1; TODO:
-                       // function needed
-  double g0 = {0.01};  // residual stomatal conductance (with irradiance
-                       // approaching zero), mol m-2 s-1 bar-1
-  double gm_25 = {
-      0.10125}; // mesophyll conductance (C3) at 25�C, mol m-2 s-1 bar-1
+  double kn = {0.713};      // coefficient of leaf nitrogen allocation
+  double gb = {1.5};        // boundary layer conductance, mol m-2 s-1 bar-1; TODO:
+                            // function needed
+  double g0 = {0.01};       // residual stomatal conductance (with irradiance
+                            // approaching zero), mol m-2 s-1 bar-1
+  double gm_25 = {0.10125}; // mesophyll conductance (C3) at 25�C, mol m-2 s-1 bar-1
 };
 
 struct FvCB_canopy_hourly_in {
@@ -55,26 +54,25 @@ struct FvCB_canopy_hourly_in {
 };
 
 struct FvCB_leaf_fraction {
-  double LAI; // m2 m-2
-  double gs;  // mol m-2 s-1 bar-1 (unit ground area)
-  double kc;  // �mol mol-1 mbar-1 ... Michaelis - Menten constant for CO2
-              // reaction of rubisco per canopy layer
-  double ko;  // �mol mol-1 mbar-1 ... Michaelis - Menten constant for O2
-              // reaction of rubisco per canopy layer
-  double oi;  // �mol m-2 ... leaf internal O2 concentration per canopy layer
-  double
-      ci; // �mol m-2 ... leaf intercellular CO2 concentration per canopy layer
-  double cc; // �mol m-2 ... leaf chloroplast CO2 concentration per canopy layer
-  double comp;  // �mol mol-1 ... CCO2 compensation point at 25oC per canopy
-                // layer
-  double vcMax; // �mol m-2 s-1 ... actual activity state of rubisco  (unit leaf
-                // area)
-  double jMax; // �mol m-2 s-1 ... actual electron transport capacity (unit leaf
-               // area)
-  double rad;  // W m-2 ... global radiation (unit ground area)
-  double jj;   // umol m-2 s-1 ... electron provision (unit leaf area)
-  double jv;   // umol m-2 s-1 ... used electron transport for photosynthesis
-               // (unit leaf area)
+  double LAI;    // m2 m-2
+  double gs;     // mol m-2 s-1 bar-1 (unit ground area)
+  double kc;     // �mol mol-1 mbar-1 ... Michaelis - Menten constant for CO2
+                 // reaction of rubisco per canopy layer
+  double ko;     // �mol mol-1 mbar-1 ... Michaelis - Menten constant for O2
+                 // reaction of rubisco per canopy layer
+  double oi;     // �mol m-2 ... leaf internal O2 concentration per canopy layer
+  double ci;     // �mol m-2 ... leaf intercellular CO2 concentration per canopy layer
+  double cc;     // �mol m-2 ... leaf chloroplast CO2 concentration per canopy layer
+  double comp;   // �mol mol-1 ... CCO2 compensation point at 25oC per canopy
+                 // layer
+  double vcMax;  // �mol m-2 s-1 ... actual activity state of rubisco  (unit leaf
+                 // area)
+  double jMax;   // �mol m-2 s-1 ... actual electron transport capacity (unit leaf
+                 // area)
+  double rad;    // W m-2 ... global radiation (unit ground area)
+  double jj;     // umol m-2 s-1 ... electron provision (unit leaf area)
+  double jv;     // umol m-2 s-1 ... used electron transport for photosynthesis
+                 // (unit leaf area)
   double jj1000; // umol m-2 s-1 ... electron provision (unit leaf area) at
                  // normalized conditions
 };

@@ -51,9 +51,8 @@ Errors workstep::merge(TillageData *t, json11::Json j) {
 }
 
 json11::Json workstep::to_json(const TillageData *t, const Workstep *ws) {
-  return json11::Json::object{{"type", "Tillage"},
-                              {"date", ws->date.toIsoDateString()},
-                              {"depth", t->depth}};
+  return json11::Json::object{
+      {"type", "Tillage"}, {"date", ws->date.toIsoDateString()}, {"depth", t->depth}};
 }
 
 bool workstep::apply(TillageData *t, Workstep *ws, MonicaModel *model) {

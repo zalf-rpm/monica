@@ -48,8 +48,7 @@ struct HarvestData {
     std::map<int, Value> organ2specVal;
   };
 
-  SowingData *sowing{
-      nullptr}; // non-owning, points into another workstep's variant payload
+  SowingData *sowing{nullptr}; // non-owning, points into another workstep's variant payload
   bool exported{true};
   Spec spec;
   OptCarbonManagementData optCarbMgmtData;

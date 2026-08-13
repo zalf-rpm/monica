@@ -62,8 +62,7 @@ Errors workstep::merge(CuttingData *c, json11::Json j) {
       else {
         // treat no unit as percentage
         v.value = v.value / 100.0;
-        errors.append(string("Unknown unit: ") + p2 +
-                      " in Cutting workstep: " + j.dump());
+        errors.append(string("Unknown unit: ") + p2 + " in Cutting workstep: " + j.dump());
       }
     }
     if (arr.size() > 2) {
@@ -87,8 +86,7 @@ Errors workstep::merge(CuttingData *c, json11::Json j) {
     c->organId2exportFraction[oid] = int_valueD(p.second, 0) / 100.0;
   }
 
-  set_double_value(c->cutMaxAssimilationRateFraction, j,
-                   "cut-max-assimilation-rate",
+  set_double_value(c->cutMaxAssimilationRateFraction, j, "cut-max-assimilation-rate",
                    [](double v) { return v / 100.0; });
 
   return errors;
@@ -97,47 +95,41 @@ Errors workstep::merge(CuttingData *c, json11::Json j) {
 json11::Json workstep::to_json(const CuttingData *c, const Workstep *ws) {
   J11Object organs;
   for (auto p : c->organId2cuttingSpec)
-    organs[workstep::organNameFromId(p.first)] = J11Array{
-        p.second.value *
-            (p.second.unit == CuttingData::percentage ? 100.0 : 1.0),
-        p.second.unit == CuttingData::percentage
-            ? "%"
-            : (p.second.unit == CuttingData::biomass ? "kg ha-1" : "m2 m-2"),
-        p.second.cut_or_left == CuttingData::cut ? "cut" : "left"};
+    organs[workstep::organNameFromId(p.first)] =
+        J11Array{p.second.value * (p.second.unit == CuttingData::percentage ? 100.0 : 1.0),
+                 p.second.unit == CuttingData::percentage
+                     ? "%"
+                     : (p.second.unit == CuttingData::biomass ? "kg ha-1" : "m2 m-2"),
+                 p.second.cut_or_left == CuttingData::cut ? "cut" : "left"};
 
   // NOTE: computed but never actually included in the returned JSON below -
   // matches the original Cutting::to_json exactly (organsBiomAfterCutting is
   // built and then discarded there too).
   J11Object organsBiomAfterCutting;
   for (auto p : c->organId2biomAfterCutting)
-    organsBiomAfterCutting[workstep::organNameFromId(p.first)] =
-        J11Array{int(p.second), "kg ha-1"};
+    organsBiomAfterCutting[workstep::organNameFromId(p.first)] = J11Array{int(p.second), "kg ha-1"};
 
   J11Object exports;
   for (auto p : c->organId2exportFraction)
-    exports[workstep::organNameFromId(p.first)] =
-        J11Array{int(p.second * 100.0), "%"};
+    exports[workstep::organNameFromId(p.first)] = J11Array{int(p.second * 100.0), "%"};
 
   return json11::Json::object{
       {"type", "Cutting"},
       {"date", ws->date.toIsoDateString()},
       {"organs", organs},
       {"exports", exports},
-      {"cut-max-assimilation-rate",
-       J11Array{int(c->cutMaxAssimilationRateFraction * 100.0), "%"}}};
+      {"cut-max-assimilation-rate", J11Array{int(c->cutMaxAssimilationRateFraction * 100.0), "%"}}};
 }
 
 bool workstep::apply(CuttingData *c, Workstep *ws, MonicaModel *model) {
   workstep::applyCommon(ws, model);
 
   assert(model->currentCropModule);
-  debug() << "Cutting crop: "
-          << cropparameters::cropName(&model->currentCropModule->cropParams)
+  debug() << "Cutting crop: " << cropparameters::cropName(&model->currentCropModule->cropParams)
           << " at: " << ws->date.toString() << endl;
 
   cropmodule::applyCutting(model->currentCropModule, c->organId2cuttingSpec,
-                           c->organId2exportFraction,
-                           c->cutMaxAssimilationRateFraction);
+                           c->organId2exportFraction, c->cutMaxAssimilationRateFraction);
   model->currentEvents.insert("Cutting");
 
   return true;

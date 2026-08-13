@@ -125,11 +125,9 @@ int main(int argc, char **argv) {
         pathToOutput = argv[++i];
       else if ((arg == "-o" || arg == "--path-to-output-file") && i + 1 < argc)
         pathToOutputFile = argv[++i];
-      else if ((arg == "-o2" || arg == "--path-to-output-file2") &&
-               i + 1 < argc)
+      else if ((arg == "-o2" || arg == "--path-to-output-file2") && i + 1 < argc)
         pathToOutputFile2 = argv[++i];
-      else if ((arg == "-m" || arg == "--write-multiple-output-files") &&
-               i + 1 < argc)
+      else if ((arg == "-m" || arg == "--write-multiple-output-files") && i + 1 < argc)
         writeMultipleOutputFiles = writeMultipleOutputFiles2 = true;
       else if ((arg == "-c" || arg == "--path-to-crop") && i + 1 < argc)
         crop = argv[++i];
@@ -141,11 +139,9 @@ int main(int argc, char **argv) {
         printHelp(), exit(0);
       else if (arg == "-v" || arg == "--version")
         cout << appName << " version " << version << endl, exit(0);
-      else if ((arg == "-icrsr" || arg == "--intercropping-reader-sr") &&
-               i + 1 < argc)
+      else if ((arg == "-icrsr" || arg == "--intercropping-reader-sr") && i + 1 < argc)
         icReaderSr = argv[++i];
-      else if ((arg == "-icwsr" || arg == "--intercropping-writer-sr") &&
-               i + 1 < argc)
+      else if ((arg == "-icwsr" || arg == "--intercropping-writer-sr") && i + 1 < argc)
         icWriterSr = argv[++i];
       else
         pathToSimJson = argv[i];
@@ -205,8 +201,7 @@ int main(int argc, char **argv) {
       vector<string> ps;
       for (const auto &j : simm["climate.csv"].array_items()) {
         const auto &pathToClimateCSV = j.string_value();
-        if (pathToClimateCSV.find("capnp://") == 0 ||
-            isAbsolutePath(pathToClimateCSV)) {
+        if (pathToClimateCSV.find("capnp://") == 0 || isAbsolutePath(pathToClimateCSV)) {
           ps.push_back(pathToClimateCSV); // is a sturdy ref or absolute path
         } else
           ps.push_back(pathOfSimJson + pathToClimateCSV); // is relative path
@@ -216,26 +211,23 @@ int main(int argc, char **argv) {
 
     map<string, Json> ps;
     ps["sim"] = json11::Json(simm);
-    ps["crop"] = printPossibleErrors(
-        parseJsonString(printPossibleErrors(
-            readFile(simm["crop.json"].string_value()), activateDebug)),
-        activateDebug);
-    ps["site"] = printPossibleErrors(
-        parseJsonString(printPossibleErrors(
-            readFile(simm["site.json"].string_value()), activateDebug)),
-        activateDebug);
+    ps["crop"] =
+        printPossibleErrors(parseJsonString(printPossibleErrors(
+                                readFile(simm["crop.json"].string_value()), activateDebug)),
+                            activateDebug);
+    ps["site"] =
+        printPossibleErrors(parseJsonString(printPossibleErrors(
+                                readFile(simm["site.json"].string_value()), activateDebug)),
+                            activateDebug);
 
     // if the soil profile parameters refer to a sturdy ref, try to connect to
     // it
     if (ps["site"]["SiteParameters"]["SoilProfileParameters"].is_string()) {
-      auto soilSR =
-          ps["site"]["SiteParameters"]["SoilProfileParameters"].string_value();
+      auto soilSR = ps["site"]["SiteParameters"]["SoilProfileParameters"].string_value();
       // no soil data have been loaded, but there might be a capnp sturdy ref
       if (!soilSR.empty()) {
-        auto sp =
-            conMan.tryConnectB(soilSR).castAs<mas::schema::soil::Profile>();
-        auto soilpsj =
-            fromCapnpSoilProfile(kj::mv(sp)).wait(ioContext.waitScope);
+        auto sp = conMan.tryConnectB(soilSR).castAs<mas::schema::soil::Profile>();
+        auto soilpsj = fromCapnpSoilProfile(kj::mv(sp)).wait(ioContext.waitScope);
         auto siteMap = ps["site"].object_items();
         siteMap["SoilProfileParameters"] = soilpsj;
       }
@@ -244,18 +236,14 @@ int main(int argc, char **argv) {
     Env env;
 
     // set available functions to calculate pwp, fc and sat before env creation
-    auto pathToSoilDir =
-        fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+    auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
-        Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
-            pathToSoilDir);
+        Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
         Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-    env.params.siteParameters
-        .calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
         Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-    env.params.siteParameters
-        .calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
         Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
         Soil::updateUnsetPwpFcSatFromToth;
@@ -270,10 +258,8 @@ int main(int argc, char **argv) {
     Climate::DataAccessor finalDA = kj::mv(env.climateData);
     for (const auto &sr : env.pathsToClimateCSV) {
       if (sr.find("capnp://") == 0) {
-        auto ts =
-            conMan.tryConnectB(sr).castAs<mas::schema::climate::TimeSeries>();
-        auto da =
-            dataAccessorFromTimeSeries(kj::mv(ts)).wait(ioContext.waitScope);
+        auto ts = conMan.tryConnectB(sr).castAs<mas::schema::climate::TimeSeries>();
+        auto da = dataAccessorFromTimeSeries(kj::mv(ts)).wait(ioContext.waitScope);
         if (!finalDA.isValid()) {
           finalDA = kj::mv(da);
         } else {
@@ -285,11 +271,10 @@ int main(int argc, char **argv) {
     if (options.startDate.isValid() && options.endDate.isValid()) {
       int noOfDays = options.endDate - options.startDate + 1;
       if (finalDA.noOfStepsPossible() < size_t(noOfDays)) {
-        cerr << "Read time-series data between "
-             << options.startDate.toIsoDateString() << " and "
+        cerr << "Read time-series data between " << options.startDate.toIsoDateString() << " and "
              << options.endDate.toIsoDateString() << " (" << noOfDays
-             << " days) is incomplete. There are just "
-             << finalDA.noOfStepsPossible() << " days in read dataset.";
+             << " days) is incomplete. There are just " << finalDA.noOfStepsPossible()
+             << " days in read dataset.";
       }
     }
     env.climateData = kj::mv(finalDA);
@@ -300,18 +285,16 @@ int main(int argc, char **argv) {
       icWriterSr = env.params.userCropParameters.pc_intercropping_writer_sr;
 
     if (!icReaderSr.empty())
-      env.ic.reader =
-          conMan.tryConnectB(icReaderSr).castAs<Intercropping::Reader>();
+      env.ic.reader = conMan.tryConnectB(icReaderSr).castAs<Intercropping::Reader>();
     if (!icWriterSr.empty())
-      env.ic.writer =
-          conMan.tryConnectB(icWriterSr).castAs<Intercropping::Writer>();
+      env.ic.writer = conMan.tryConnectB(icWriterSr).castAs<Intercropping::Writer>();
     if (!icReaderSr.empty() && !icWriterSr.empty())
       env.ic.ioContext = &ioContext;
 
-    env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-        [](const string &soilTexture, size_t distance) {
-          return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
-        };
+    env.params.userSoilMoistureParameters.getCapillaryRiseRate = [](const string &soilTexture,
+                                                                    size_t distance) {
+      return Soil::readCapillaryRiseRates().getRate(soilTexture, distance);
+    };
 
     if (activateDebug)
       cout << "starting MONICA with JSON input files" << endl;
@@ -322,19 +305,15 @@ int main(int argc, char **argv) {
     Output output, output2;
     tie(output, output2) = runMonicaIC(kj::mv(env), isIC);
 
-    if (pathToOutputFile.empty() &&
-        simm["output"]["write-file?"].bool_value()) {
-      pathToOutputDir =
-          fixSystemSeparator(simm["output"]["path-to-output"].string_value());
-      pathToOutputFile = fixSystemSeparator(
-          pathToOutputDir + "/" + simm["output"]["file-name"].string_value());
+    if (pathToOutputFile.empty() && simm["output"]["write-file?"].bool_value()) {
+      pathToOutputDir = fixSystemSeparator(simm["output"]["path-to-output"].string_value());
+      pathToOutputFile =
+          fixSystemSeparator(pathToOutputDir + "/" + simm["output"]["file-name"].string_value());
     }
-    if (pathToOutputFile2.empty() &&
-        simm["output"]["write-file?"].bool_value()) {
-      pathToOutputDir2 =
-          fixSystemSeparator(simm["output"]["path-to-output"].string_value());
-      pathToOutputFile2 = fixSystemSeparator(
-          pathToOutputDir2 + "/" + simm["output"]["file-name2"].string_value());
+    if (pathToOutputFile2.empty() && simm["output"]["write-file?"].bool_value()) {
+      pathToOutputDir2 = fixSystemSeparator(simm["output"]["path-to-output"].string_value());
+      pathToOutputFile2 =
+          fixSystemSeparator(pathToOutputDir2 + "/" + simm["output"]["file-name2"].string_value());
     }
 
     if (writeMultipleOutputFiles) {
@@ -354,20 +333,14 @@ int main(int argc, char **argv) {
       ofstream fout;
       bool writeOutputFile = true;
       if (!pathToOutputDir.empty() && !ensureDirExists(pathToOutputDir)) {
-        cerr << "Error failed to create path: '" << pathToOutputDir << "'."
-             << endl;
+        cerr << "Error failed to create path: '" << pathToOutputDir << "'." << endl;
         writeOutputFile = false;
       }
 
-      string csvSep =
-          simm["output"]["csv-options"]["csv-separator"].string_value();
-      bool includeHeaderRow =
-          simm["output"]["csv-options"]["include-header-row"].bool_value();
-      bool includeUnitsRow =
-          simm["output"]["csv-options"]["include-units-row"].bool_value();
-      bool includeAggRows =
-          simm["output"]["csv-options"]["include-aggregation-rows"]
-              .bool_value();
+      string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+      bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+      bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+      bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
       for (const auto &d : output.data) {
         if (writeOutputFile) {
@@ -378,21 +351,19 @@ int main(int argc, char **argv) {
           sanitizedFileName = replace(sanitizedFileName, "<", "_lb_");
           sanitizedFileName = replace(sanitizedFileName, ">", "_rb_");
           sanitizedFileName = replace(sanitizedFileName, ":", "_colon_");
-          pathToOutputFile =
-              fixSystemSeparator(pathToOutputDir + "/" + filenameWithoutExt +
-                                 "_section_" + sanitizedFileName + ".csv");
+          pathToOutputFile = fixSystemSeparator(pathToOutputDir + "/" + filenameWithoutExt +
+                                                "_section_" + sanitizedFileName + ".csv");
           fout.open(pathToOutputFile);
           if (fout.fail()) {
-            cerr << "Error while opening output file \"" << pathToOutputFile
-                 << "\"" << endl;
+            cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
             writeOutputFile = false;
           }
         }
         ostream &out = writeOutputFile ? fout : cout;
         if (!writeOutputFile)
           out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
-        writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow,
-                              includeUnitsRow, includeAggRows);
+        writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow,
+                              includeAggRows);
         if (returnObjOutputs)
           writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
         else
@@ -412,28 +383,22 @@ int main(int argc, char **argv) {
         }
         fout.open(pathToOutputFile);
         if (fout.fail()) {
-          cerr << "Error while opening output file \"" << pathToOutputFile
-               << "\"" << endl;
+          cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
           writeOutputFile = false;
         }
       }
 
       ostream &out = writeOutputFile ? fout : cout;
 
-      string csvSep =
-          simm["output"]["csv-options"]["csv-separator"].string_value();
-      bool includeHeaderRow =
-          simm["output"]["csv-options"]["include-header-row"].bool_value();
-      bool includeUnitsRow =
-          simm["output"]["csv-options"]["include-units-row"].bool_value();
-      bool includeAggRows =
-          simm["output"]["csv-options"]["include-aggregation-rows"]
-              .bool_value();
+      string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+      bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+      bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
+      bool includeAggRows = simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
       for (const auto &d : output.data) {
         out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
-        writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow,
-                              includeUnitsRow, includeAggRows);
+        writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow,
+                              includeAggRows);
         if (returnObjOutputs)
           writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
         else
@@ -463,20 +428,15 @@ int main(int argc, char **argv) {
         ofstream fout;
         bool writeOutputFile = true;
         if (!pathToOutputDir2.empty() && !ensureDirExists(pathToOutputDir2)) {
-          cerr << "Error failed to create path: '" << pathToOutputDir2 << "'."
-               << endl;
+          cerr << "Error failed to create path: '" << pathToOutputDir2 << "'." << endl;
           writeOutputFile = false;
         }
 
-        string csvSep =
-            simm["output"]["csv-options"]["csv-separator"].string_value();
-        bool includeHeaderRow =
-            simm["output"]["csv-options"]["include-header-row"].bool_value();
-        bool includeUnitsRow =
-            simm["output"]["csv-options"]["include-units-row"].bool_value();
+        string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+        bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+        bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
         bool includeAggRows =
-            simm["output"]["csv-options"]["include-aggregation-rows"]
-                .bool_value();
+            simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
         for (const auto &d : output2.data) {
           if (writeOutputFile) {
@@ -487,21 +447,19 @@ int main(int argc, char **argv) {
             sanitizedFileName = replace(sanitizedFileName, "<", "_lb_");
             sanitizedFileName = replace(sanitizedFileName, ">", "_rb_");
             sanitizedFileName = replace(sanitizedFileName, ":", "_colon_");
-            pathToOutputFile =
-                fixSystemSeparator(pathToOutputDir + "/" + filenameWithoutExt2 +
-                                   "_2_section_" + sanitizedFileName + ".csv");
+            pathToOutputFile = fixSystemSeparator(pathToOutputDir + "/" + filenameWithoutExt2 +
+                                                  "_2_section_" + sanitizedFileName + ".csv");
             fout.open(pathToOutputFile);
             if (fout.fail()) {
-              cerr << "Error while opening output file \"" << pathToOutputFile
-                   << "\"" << endl;
+              cerr << "Error while opening output file \"" << pathToOutputFile << "\"" << endl;
               writeOutputFile = false;
             }
           }
           ostream &out = writeOutputFile ? fout : cout;
           if (!writeOutputFile)
             out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
-          writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow,
-                                includeUnitsRow, includeAggRows);
+          writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow,
+                                includeAggRows);
           if (returnObjOutputs)
             writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
           else
@@ -521,28 +479,23 @@ int main(int argc, char **argv) {
           }
           fout.open(pathToOutputFile2);
           if (fout.fail()) {
-            cerr << "Error while opening output file \"" << pathToOutputFile2
-                 << "\"" << endl;
+            cerr << "Error while opening output file \"" << pathToOutputFile2 << "\"" << endl;
             writeOutputFile2 = false;
           }
         }
 
         ostream &out = writeOutputFile2 ? fout : cout;
 
-        string csvSep =
-            simm["output"]["csv-options"]["csv-separator"].string_value();
-        bool includeHeaderRow =
-            simm["output"]["csv-options"]["include-header-row"].bool_value();
-        bool includeUnitsRow =
-            simm["output"]["csv-options"]["include-units-row"].bool_value();
+        string csvSep = simm["output"]["csv-options"]["csv-separator"].string_value();
+        bool includeHeaderRow = simm["output"]["csv-options"]["include-header-row"].bool_value();
+        bool includeUnitsRow = simm["output"]["csv-options"]["include-units-row"].bool_value();
         bool includeAggRows =
-            simm["output"]["csv-options"]["include-aggregation-rows"]
-                .bool_value();
+            simm["output"]["csv-options"]["include-aggregation-rows"].bool_value();
 
         for (const auto &d : output2.data) {
           out << "\"" << replace(d.origSpec, "\"", "") << "\"" << endl;
-          writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow,
-                                includeUnitsRow, includeAggRows);
+          writeOutputHeaderRows(out, d.outputIds, csvSep, includeHeaderRow, includeUnitsRow,
+                                includeAggRows);
           if (returnObjOutputs)
             writeOutputObj(out, d.outputIds, d.resultsObj, csvSep);
           else

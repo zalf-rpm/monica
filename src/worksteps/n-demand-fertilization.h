@@ -40,25 +40,19 @@ namespace workstep {
 // note: merge needs ws (it copies the just-parsed common date into
 // initialDate); to_json doesn't (it only ever emits its own initialDate/stage
 // fields, never the common ws->date).
-Tools::Errors merge(NDemandFertilizationData *nd, Workstep *ws,
-                    json11::Json j);
+Tools::Errors merge(NDemandFertilizationData *nd, Workstep *ws, json11::Json j);
 json11::Json to_json(const NDemandFertilizationData *nd);
-bool apply(NDemandFertilizationData *nd, Workstep *ws,
-          MonicaModel *model);
-bool condition(NDemandFertilizationData *nd, Workstep *ws,
-              MonicaModel *model);
-bool reinit(NDemandFertilizationData *nd, Workstep *ws,
-            Tools::Date date, bool addYear = false,
+bool apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model);
+bool condition(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *model);
+bool reinit(NDemandFertilizationData *nd, Workstep *ws, Tools::Date date, bool addYear = false,
             bool forceInitYear = false);
 
 } // namespace workstep
 
 Workstep makeNDemandFertilizationWorkstep(json11::Json object);
-Workstep makeNDemandFertilizationWorkstep(
-    int stage, double depth, MineralFertilizerParameters partition,
-    double Ndemand);
-Workstep makeNDemandFertilizationWorkstep(
-    Tools::Date date, double depth, MineralFertilizerParameters partition,
-    double Ndemand);
+Workstep makeNDemandFertilizationWorkstep(int stage, double depth,
+                                          MineralFertilizerParameters partition, double Ndemand);
+Workstep makeNDemandFertilizationWorkstep(Tools::Date date, double depth,
+                                          MineralFertilizerParameters partition, double Ndemand);
 
 } // namespace monica

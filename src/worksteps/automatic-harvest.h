@@ -46,8 +46,8 @@ json11::Json to_json(const AutomaticHarvestData *ah, const Workstep *ws,
                      bool includeFullCropParameters = true);
 bool apply(AutomaticHarvestData *ah, Workstep *ws, MonicaModel *model);
 bool condition(AutomaticHarvestData *ah, MonicaModel *model);
-bool reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date,
-            bool addYear = false, bool forceInitYear = false);
+bool reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date, bool addYear = false,
+            bool forceInitYear = false);
 
 } // namespace workstep
 

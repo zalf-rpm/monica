@@ -26,8 +26,7 @@ using namespace std;
 using namespace monica;
 using namespace Tools;
 
-Workstep monica::makeSetValueWorkstep(const Tools::Date &at, OId oid,
-                                      json11::Json value) {
+Workstep monica::makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value) {
   Workstep ws;
   ws.date = at;
   SetValueData s;
@@ -61,8 +60,7 @@ Errors workstep::merge(SetValueData *s, json11::Json j) {
     if (!jva.empty()) {
       // is an expression
       if (jva[0] == "=" && jva.size() == 4) {
-        auto f =
-            buildPrimitiveCalcExpression(J11Array(jva.begin() + 1, jva.end()));
+        auto f = buildPrimitiveCalcExpression(J11Array(jva.begin() + 1, jva.end()));
         s->getValue = [f](const MonicaModel *mm) { return f(*mm); };
       } else {
         auto oids2 = parseOutputIds({s->value});
@@ -72,9 +70,7 @@ Errors workstep::merge(SetValueData *s, json11::Json j) {
           auto ofi = ofs.find(oid.id);
           if (ofi != ofs.end()) {
             auto f = ofi->second;
-            s->getValue = [f, oid](const MonicaModel *mm) {
-              return f(*mm, oid);
-            };
+            s->getValue = [f, oid](const MonicaModel *mm) { return f(*mm, oid); };
           }
         }
       }

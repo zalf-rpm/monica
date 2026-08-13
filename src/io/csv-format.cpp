@@ -25,15 +25,14 @@ using namespace std;
 using namespace json11;
 
 // copied from MSVC string.h, because gcc 4.7.2 seams not to know ""s
-inline string
-operator""_s(const char *_Str,
-             size_t _Len) { // construct literal from [_Str, _Str + _Len)
+inline string operator""_s(const char *_Str,
+                           size_t _Len) { // construct literal from [_Str, _Str + _Len)
   return (string(_Str, _Len));
 }
 
-void monica::writeOutputHeaderRows(ostream &out, const vector<OId> &outputIds,
-                                   string csvSep, bool includeHeaderRow,
-                                   bool includeUnitsRow, bool includeTimeAgg) {
+void monica::writeOutputHeaderRows(ostream &out, const vector<OId> &outputIds, string csvSep,
+                                   bool includeHeaderRow, bool includeUnitsRow,
+                                   bool includeTimeAgg) {
   ostringstream oss1, oss2, oss3, oss4;
 
   // using namespace std::string_literals;
@@ -46,9 +45,8 @@ void monica::writeOutputHeaderRows(ostream &out, const vector<OId> &outputIds,
     bool isOrgan = monica::oid::isOrgan(&oid);
     bool isRange = monica::oid::isRange(&oid) && oid.layerAggOp == OId::NONE;
     if (isOrgan)
-      toLayer = fromLayer =
-          int(oid.organ); // organ is being represented just by the value of
-                          // fromLayer currently
+      toLayer = fromLayer = int(oid.organ); // organ is being represented just by the value of
+                                            // fromLayer currently
     else if (isRange)
       fromLayer++, toLayer++; // display 1-indexed layer numbers to users
     else
@@ -58,12 +56,10 @@ void monica::writeOutputHeaderRows(ostream &out, const vector<OId> &outputIds,
     for (int i = fromLayer; i <= toLayer; i++) {
       ostringstream oss11;
       if (isOrgan)
-        oss11 << (oid.displayName.empty()
-                      ? oid.name + "/" + monica::oid::toString(&oid, oid.organ)
-                      : oid.displayName);
-      else if (isRange)
-        oss11 << (oid.displayName.empty() ? oid.name + "_" + to_string(i)
+        oss11 << (oid.displayName.empty() ? oid.name + "/" + monica::oid::toString(&oid, oid.organ)
                                           : oid.displayName);
+      else if (isRange)
+        oss11 << (oid.displayName.empty() ? oid.name + "_" + to_string(i) : oid.displayName);
       else
         oss11 << (oid.displayName.empty() ? oid.name : oid.displayName);
       auto csvSep_ = j + 1 == oidsSize && i == toLayer ? "" : csvSep;
@@ -72,19 +68,13 @@ void monica::writeOutputHeaderRows(ostream &out, const vector<OId> &outputIds,
                    : "\""_s + oss11.str() + "\""_s)
            << csvSep_;
       auto os2 = "["_s + oid.unit + "]"_s;
-      oss2 << (os2.find_first_of(escapeTokens) == string::npos
-                   ? os2
-                   : "\""_s + os2 + "\""_s)
+      oss2 << (os2.find_first_of(escapeTokens) == string::npos ? os2 : "\""_s + os2 + "\""_s)
            << csvSep_;
       auto os3 = "m:"_s + monica::oid::toString(&oid, includeTimeAgg);
-      oss3 << (os3.find_first_of(escapeTokens) == string::npos
-                   ? os3
-                   : "\""_s + os3 + "\""_s)
+      oss3 << (os3.find_first_of(escapeTokens) == string::npos ? os3 : "\""_s + os3 + "\""_s)
            << csvSep_;
       auto os4 = "j:"_s + replace(oid.jsonInput, "\"", "");
-      oss4 << (os4.find_first_of(escapeTokens) == string::npos
-                   ? os4
-                   : "\""_s + os4 + "\""_s)
+      oss4 << (os4.find_first_of(escapeTokens) == string::npos ? os4 : "\""_s + os4 + "\""_s)
            << csvSep_;
     }
     ++j;
@@ -98,8 +88,8 @@ void monica::writeOutputHeaderRows(ostream &out, const vector<OId> &outputIds,
     out << oss3.str() << endl << oss4.str() << endl;
 }
 
-void monica::writeOutput(ostream &out, const vector<OId> &outputIds,
-                         const vector<J11Array> &values, string csvSep) {
+void monica::writeOutput(ostream &out, const vector<OId> &outputIds, const vector<J11Array> &values,
+                         string csvSep) {
   // using namespace std::string_literals;
   string escapeTokens = "\n\""_s + csvSep;
 
@@ -133,8 +123,7 @@ void monica::writeOutput(ostream &out, const vector<OId> &outputIds,
               out << jv.number_value() << csvSep__;
               break;
             case Json::STRING:
-              out << (jv.string_value().find_first_of(escapeTokens) ==
-                              string::npos
+              out << (jv.string_value().find_first_of(escapeTokens) == string::npos
                           ? jv.string_value()
                           : "\""_s + jv.string_value() + "\""_s)
                   << csvSep__;
@@ -199,8 +188,7 @@ void monica::writeOutputObj(ostream &out, const vector<OId> &outputIds,
                 out << jv.number_value() << csvSep__;
                 break;
               case Json::STRING:
-                out << (jv.string_value().find_first_of(escapeTokens) ==
-                                string::npos
+                out << (jv.string_value().find_first_of(escapeTokens) == string::npos
                             ? jv.string_value()
                             : "\""_s + jv.string_value() + "\""_s)
                     << csvSep__;

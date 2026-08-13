@@ -27,23 +27,20 @@ namespace monica {
 
 Climate::ACD climateElementToACD(mas::schema::climate::Element e);
 
-std::map<Climate::ACD, double> dailyClimateDataToDailyClimateMap(
-    const capnp::List<mas::schema::climate::Element>::Reader &header,
-    const capnp::List<double>::Reader &data);
+std::map<Climate::ACD, double>
+dailyClimateDataToDailyClimateMap(const capnp::List<mas::schema::climate::Element>::Reader &header,
+                                  const capnp::List<double>::Reader &data);
 
 std::map<Climate::ACD, double> dailyClimateDataToDailyClimateMap(
-    const capnp::List<mas::schema::model::monica::Params::DailyWeather::KV>::
-        Reader &dailyData);
+    const capnp::List<mas::schema::model::monica::Params::DailyWeather::KV>::Reader &dailyData);
 
-Climate::DataAccessor
-fromCapnpData(const Tools::Date &startDate, const Tools::Date &endDate,
-              capnp::List<mas::schema::climate::Element>::Reader header,
-              capnp::List<capnp::List<float>>::Reader data);
+Climate::DataAccessor fromCapnpData(const Tools::Date &startDate, const Tools::Date &endDate,
+                                    capnp::List<mas::schema::climate::Element>::Reader header,
+                                    capnp::List<capnp::List<float>>::Reader data);
 
 kj::Promise<Climate::DataAccessor>
 dataAccessorFromTimeSeries(mas::schema::climate::TimeSeries::Client ts);
 
-kj::Promise<Tools::J11Array>
-fromCapnpSoilProfile(mas::schema::soil::Profile::Client profile);
+kj::Promise<Tools::J11Array> fromCapnpSoilProfile(mas::schema::soil::Profile::Client profile);
 
 } // namespace monica

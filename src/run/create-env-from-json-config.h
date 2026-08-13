@@ -25,17 +25,14 @@ namespace monica {
 Tools::EResult<json11::Json> findAndReplaceReferences(const json11::Json &root,
                                                       const json11::Json &j);
 
-json11::Json
-createEnvJsonFromJsonStrings(std::map<std::string, std::string> params);
+json11::Json createEnvJsonFromJsonStrings(std::map<std::string, std::string> params);
 
-json11::Json
-createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params);
+json11::Json createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> params);
 
 Env createEnvFromJsonConfigFiles(std::map<std::string, std::string> params);
 
 Env createEnvFromJsonObjects(std::map<std::string, json11::Json> params);
 
-Tools::Errors
-updateEnvFromJsonObjects(Env &env, std::map<std::string, json11::Json> params);
+Tools::Errors updateEnvFromJsonObjects(Env &env, std::map<std::string, json11::Json> params);
 
 } // namespace monica

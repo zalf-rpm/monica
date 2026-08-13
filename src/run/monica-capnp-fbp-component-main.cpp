@@ -104,8 +104,8 @@ public:
   };
 
   explicit FBPMain(kj::ProcessContext &context)
-      : ioContext(kj::setupAsyncIo()), conMan(ioContext),
-        ports(conMan, inPortNames, outPortNames), context(context) {}
+      : ioContext(kj::setupAsyncIo()), conMan(ioContext), ports(conMan, inPortNames, outPortNames),
+        context(context) {}
 
   kj::MainBuilder::Validity setOutputJsonDefaultConfig() {
     outputJsonDefaultConfig = true;
@@ -180,14 +180,12 @@ public:
     try {
       if (ports.isInConnected(CONFIG)) {
         KJ_LOG(INFO, "CONFIG port is connected");
-        auto configMsg =
-            ports.in(CONFIG).readRequest().send().wait(ioContext.waitScope);
+        auto configMsg = ports.in(CONFIG).readRequest().send().wait(ioContext.waitScope);
         KJ_LOG(INFO, "received msg from CONFIG port");
         // check for end of data from in port
         if (!configMsg.isDone()) {
           auto configIp = configMsg.getValue();
-          auto configST = configIp.getContent()
-                              .getAs<mas::schema::common::StructuredText>();
+          auto configST = configIp.getContent().getAs<mas::schema::common::StructuredText>();
           auto configJson = parseJsonString(configST.getValue().cStr());
           if (configJson.success())
             config = configJson.result;
@@ -204,8 +202,7 @@ public:
 
       MonicaEnvInstance::Client runMonicaClient(nullptr);
       if (monicaSr.size() > 0) {
-        runMonicaClient =
-            conMan.tryConnectB(monicaSr.cStr()).castAs<MonicaEnvInstance>();
+        runMonicaClient = conMan.tryConnectB(monicaSr.cStr()).castAs<MonicaEnvInstance>();
       } else {
         runMonicaClient = kj::heap<RunMonica>(startedServerInDebugMode);
       }
@@ -257,8 +254,8 @@ public:
               outIp.initContent().setAs<capnp::Text>(resJsonStr);
             }
             // copy attributes, if any and set result as attribute, if requested
-            auto toAttrBuilder = mas::infrastructure::common::copyAndSetIPAttrs(
-                inIp, outIp, toAttr);
+            auto toAttrBuilder =
+                mas::infrastructure::common::copyAndSetIPAttrs(inIp, outIp, toAttr);
             //, capnp::toAny(resJsonStr));
             KJ_IF_MAYBE (builder, toAttrBuilder) {
               builder->setAs<capnp::Text>(resJsonStr);
@@ -280,27 +277,22 @@ public:
   }
 
   kj::MainFunc getMain() {
-    return kj::MainBuilder(
-               context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR),
-               "Offers a MONICA service.")
-        .expectOptionalArg("port_infos_reader_SR",
-                           KJ_BIND_METHOD(*this, setPortInfosReaderSr))
+    return kj::MainBuilder(context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR),
+                           "Offers a MONICA service.")
+        .expectOptionalArg("port_infos_reader_SR", KJ_BIND_METHOD(*this, setPortInfosReaderSr))
         .addOption({'O', "output_json_default_config"},
                    KJ_BIND_METHOD(*this, setOutputJsonDefaultConfig),
                    "Output JSON configuration file with default settings at "
                    "commandline. To be used with IIP at 'conf' port.")
-        .addOptionWithArg({"env_in_sr"}, KJ_BIND_METHOD(*this, setEnvInSr),
-                          "<sturdy_ref>", "Sturdy ref to input channel.")
-        .addOptionWithArg({"config_in_sr"},
-                          KJ_BIND_METHOD(*this, setConfigInSr), "<sturdy_ref>",
+        .addOptionWithArg({"env_in_sr"}, KJ_BIND_METHOD(*this, setEnvInSr), "<sturdy_ref>",
+                          "Sturdy ref to input channel.")
+        .addOptionWithArg({"config_in_sr"}, KJ_BIND_METHOD(*this, setConfigInSr), "<sturdy_ref>",
                           "Sturdy ref to config channel.")
-        .addOptionWithArg({"result_out_sr"},
-                          KJ_BIND_METHOD(*this, setResultOutSr), "<sturdy_ref>",
+        .addOptionWithArg({"result_out_sr"}, KJ_BIND_METHOD(*this, setResultOutSr), "<sturdy_ref>",
                           "Sturdy ref to output channel.")
-        .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName),
-                          "<name>", "Name of process to be started.")
-        .addOptionWithArg({'l', "log_level"},
-                          KJ_BIND_METHOD(*this, setLoglevel), "<loglevel> ",
+        .addOptionWithArg({'n', "name"}, KJ_BIND_METHOD(*this, setName), "<name>",
+                          "Name of process to be started.")
+        .addOptionWithArg({'l', "log_level"}, KJ_BIND_METHOD(*this, setLoglevel), "<loglevel> ",
                           "Set logging level.")
         .callAfterParsing(KJ_BIND_METHOD(*this, startComponent))
         .build();

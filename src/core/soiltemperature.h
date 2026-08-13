@@ -43,24 +43,20 @@ struct SoilTemperature {
   std::vector<double> heatFlow;
 };
 
+kj::Own<SoilTemperature> makeSoilTemperature(MonicaModel &monica,
+                                             const SoilTemperatureModuleParameters &params);
 kj::Own<SoilTemperature>
 makeSoilTemperature(MonicaModel &monica,
-                    const SoilTemperatureModuleParameters &params);
-kj::Own<SoilTemperature> makeSoilTemperature(
-    MonicaModel &monica,
-    mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
+                    mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
 
 namespace soiltemperature {
 
-void deserialize(
-    SoilTemperature *st,
-    mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
-void serialize(
-    const SoilTemperature *st,
-    mas::schema::model::monica::SoilTemperatureModuleState::Builder builder);
+void deserialize(SoilTemperature *st,
+                 mas::schema::model::monica::SoilTemperatureModuleState::Reader reader);
+void serialize(const SoilTemperature *st,
+               mas::schema::model::monica::SoilTemperatureModuleState::Builder builder);
 void step(SoilTemperature *st, double tmin, double tmax, double globrad);
-double calcSoilSurfaceTemperature(const SoilTemperature *st,
-                                  double prevSoilSurfaceTemperature,
+double calcSoilSurfaceTemperature(const SoilTemperature *st, double prevSoilSurfaceTemperature,
                                   double tmin, double tmax, double globrad);
 
 } // namespace soiltemperature

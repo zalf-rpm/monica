@@ -65,27 +65,23 @@ struct SoilTransport {
   CropModule *cropModule{nullptr};
 };
 
-kj::Own<SoilTransport>
-makeSoilTransport(SoilTransportModuleParameters modParams,
-                  SoilColumn *soilColumn, const SiteParameters *siteParams,
-                  const EnvironmentParameters *envParams,
-                  const CropModuleParameters *cropModParams);
+kj::Own<SoilTransport> makeSoilTransport(SoilTransportModuleParameters modParams,
+                                         SoilColumn *soilColumn, const SiteParameters *siteParams,
+                                         const EnvironmentParameters *envParams,
+                                         const CropModuleParameters *cropModParams);
 
-kj::Own<SoilTransport> makeSoilTransport(
-    SoilColumn *soilColumn,
-    mas::schema::model::monica::SoilTransportModuleState::Reader reader,
-    const SiteParameters *siteParams, const EnvironmentParameters *envParams,
-    const CropModuleParameters *cropModParams,
-    CropModule *cropModule = nullptr);
+kj::Own<SoilTransport>
+makeSoilTransport(SoilColumn *soilColumn,
+                  mas::schema::model::monica::SoilTransportModuleState::Reader reader,
+                  const SiteParameters *siteParams, const EnvironmentParameters *envParams,
+                  const CropModuleParameters *cropModParams, CropModule *cropModule = nullptr);
 
 namespace soiltransport {
 
-void deserialize(
-    SoilTransport *st,
-    mas::schema::model::monica::SoilTransportModuleState::Reader reader);
-void serialize(
-    const SoilTransport *st,
-    mas::schema::model::monica::SoilTransportModuleState::Builder builder);
+void deserialize(SoilTransport *st,
+                 mas::schema::model::monica::SoilTransportModuleState::Reader reader);
+void serialize(const SoilTransport *st,
+               mas::schema::model::monica::SoilTransportModuleState::Builder builder);
 void step(SoilTransport *st);
 void nDeposition(SoilTransport *st);
 void nUptake(SoilTransport *st);

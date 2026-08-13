@@ -70,70 +70,58 @@ Errors workstep::merge(AutomaticSowingData *as, json11::Json j) {
     set_double_value(as->soilDepthForAveraging, avgSoilTemp, "depth");
     set_int_value(as->daysInSoilTempWindow, avgSoilTemp, "days");
     set_double_value(as->sowingIfAboveAvgSoilTemp, avgSoilTemp, "Tavg");
-    as->checkForSoilTemperature = as->soilDepthForAveraging > 0 &&
-                                  as->daysInSoilTempWindow > 0 &&
+    as->checkForSoilTemperature = as->soilDepthForAveraging > 0 && as->daysInSoilTempWindow > 0 &&
                                   as->sowingIfAboveAvgSoilTemp > 0;
   }
 
   return res;
 }
 
-json11::Json workstep::to_json(const AutomaticSowingData *as,
-                               const Workstep *ws,
+json11::Json workstep::to_json(const AutomaticSowingData *as, const Workstep *ws,
                                bool includeFullCropParameters) {
-  auto o =
-      workstep::to_json(static_cast<const SowingData *>(as), ws).object_items();
+  auto o = workstep::to_json(static_cast<const SowingData *>(as), ws).object_items();
   o["type"] = "AutomaticSowing";
-  o["earliest-date"] =
-      J11Array{as->earliestDate.toIsoDateString(), "", "earliest sowing date"};
-  o["latest-date"] =
-      J11Array{as->latestDate.toIsoDateString(), "", "latest sowing date"};
+  o["earliest-date"] = J11Array{as->earliestDate.toIsoDateString(), "", "earliest sowing date"};
+  o["latest-date"] = J11Array{as->latestDate.toIsoDateString(), "", "latest sowing date"};
   o["min-temp"] = J11Array{as->minTempThreshold,
                            "\xEF\xBF\xBD"
                            "C",
                            "minimal air temperature for sowing (T >= thresh && "
                            "avg T in Twindow >= thresh)"};
   o["days-in-temp-window"] =
-      J11Array{as->daysInTempWindow, "d",
-               "days to be used for sliding window of min-temp"};
+      J11Array{as->daysInTempWindow, "d", "days to be used for sliding window of min-temp"};
   o["min-%-asw"] =
-      J11Array{as->minPercentASW, "%",
-               "minimal soil-moisture in percent of available soil-water"};
+      J11Array{as->minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"};
   o["max-%-asw"] =
-      J11Array{as->maxPercentASW, "%",
-               "maximal soil-moisture in percent of available soil-water"};
-  o["max-3d-precip-sum"] = J11Array{
-      as->max3dayPrecipSum, "mm",
-      "sum of precipitation in the last three days (including current day)"};
+      J11Array{as->maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water"};
+  o["max-3d-precip-sum"] =
+      J11Array{as->max3dayPrecipSum, "mm",
+               "sum of precipitation in the last three days (including current day)"};
   o["max-curr-day-precip"] =
-      J11Array{as->maxCurrentDayPrecipSum, "mm",
-               "max precipitation allowed at current day"};
-  o["temp-sum-above-base-temp"] =
-      J11Array{as->tempSumAboveBaseTemp,
-               "\xEF\xBF\xBD"
-               "C",
-               "temperature sum above T-base needed"};
-  o["base-temp"] = J11Array{
-      as->baseTemp,
-      "\xEF\xBF\xBD"
-      "C",
-      "base temperature above which temp-sum-above-base-temp is counted"};
-  o["avg-soil-temp"] = J11Object{
-      {"depth", J11Array{as->soilDepthForAveraging, "m",
-                         "soil depth until averaging will be done"}},
-      {"days", J11Array{as->daysInSoilTempWindow, "d",
-                        "window/number of days for which the average "
-                        "temperature must be greater"}},
-      {"Tavg", J11Array{as->sowingIfAboveAvgSoilTemp,
-                        "\xEF\xBF\xBD"
-                        "C",
-                        "temperature which has to be reached on average"}}};
+      J11Array{as->maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"};
+  o["temp-sum-above-base-temp"] = J11Array{as->tempSumAboveBaseTemp,
+                                           "\xEF\xBF\xBD"
+                                           "C",
+                                           "temperature sum above T-base needed"};
+  o["base-temp"] = J11Array{as->baseTemp,
+                            "\xEF\xBF\xBD"
+                            "C",
+                            "base temperature above which temp-sum-above-base-temp is counted"};
+  o["avg-soil-temp"] =
+      J11Object{{"depth", J11Array{as->soilDepthForAveraging, "m",
+                                   "soil depth until averaging will be done"}},
+                {"days", J11Array{as->daysInSoilTempWindow, "d",
+                                  "window/number of days for which the average "
+                                  "temperature must be greater"}},
+                {"Tavg", J11Array{as->sowingIfAboveAvgSoilTemp,
+                                  "\xEF\xBF\xBD"
+                                  "C",
+                                  "temperature which has to be reached on average"}}};
 
   return o;
 }
 
-bool workstep::apply(AutomaticSowingData *as, Workstep *ws,
-                     MonicaModel *model) {
+bool workstep::apply(AutomaticSowingData *as, Workstep *ws, MonicaModel *model) {
   auto currentDate = model->currentStepDate;
 
   as->sowingDate = currentDate;
@@ -146,9 +134,9 @@ bool workstep::apply(AutomaticSowingData *as, Workstep *ws,
   return true;
 }
 
-std::function<double(MonicaModel *)> workstep::registerDailyFunction(
-    AutomaticSowingData *as,
-    std::function<std::vector<double> &()> getDailyValues) {
+std::function<double(MonicaModel *)>
+workstep::registerDailyFunction(AutomaticSowingData *as,
+                                std::function<std::vector<double> &()> getDailyValues) {
   if (!as->checkForSoilTemperature)
     return std::function<double(MonicaModel *)>();
 
@@ -156,12 +144,11 @@ std::function<double(MonicaModel *)> workstep::registerDailyFunction(
   return [as](MonicaModel *model) -> double {
     double avgSoilTemp = 0;
     size_t i = 0;
-    for (auto size = soilcolumn::getLayerNumberForDepth(
-                         model->soilColumn.get(), as->soilDepthForAveraging) +
+    for (auto size = soilcolumn::getLayerNumberForDepth(model->soilColumn.get(),
+                                                        as->soilDepthForAveraging) +
                      1;
          i < size; i++) {
-      avgSoilTemp +=
-          model->soilTemperature->soilColumn->layers.at(int(i)).vs_SoilTemperature;
+      avgSoilTemp += model->soilTemperature->soilColumn->layers.at(int(i)).vs_SoilTemperature;
     }
     return avgSoilTemp / double(i);
   };
@@ -192,9 +179,7 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
   auto currentCd = cd.back();
 
   auto avg = [&](Climate::ACD acd) {
-    return accumulate(cd.rbegin(),
-                      cd.rbegin() +
-                          std::min(int(cd.size()), as->daysInTempWindow),
+    return accumulate(cd.rbegin(), cd.rbegin() + std::min(int(cd.size()), as->daysInTempWindow),
                       0.0,
                       [acd](double acc, const map<ACD, double> &d) {
                         auto it = d.find(acd);
@@ -223,15 +208,13 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
     return false;
 
   // check precipitation
-  if (!workstep::isPrecipitationOk(cd, as->max3dayPrecipSum,
-                                   as->maxCurrentDayPrecipSum))
+  if (!workstep::isPrecipitationOk(cd, as->max3dayPrecipSum, as->maxCurrentDayPrecipSum))
     return false;
 
   // check temperature sum
   double baseTemp = as->baseTemp;
-  double tempSum = accumulate(
-      cd.begin(), cd.end(), 0.0,
-      [baseTemp](double acc, const map<ACD, double> &d) {
+  double tempSum =
+      accumulate(cd.begin(), cd.end(), 0.0, [baseTemp](double acc, const map<ACD, double> &d) {
         auto it = d.find(Climate::tavg);
         return acc + (it == d.end() ? 0 : max(0.0, it->second - baseTemp));
       });
@@ -241,8 +224,8 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
   return true;
 }
 
-bool workstep::reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date,
-                      bool addYear, bool forceInitYear) {
+bool workstep::reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date, bool addYear,
+                      bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
 
   as->cropSeeded = as->inSowingRange = false;
@@ -254,8 +237,8 @@ bool workstep::reinit(AutomaticSowingData *as, Workstep *ws, Tools::Date date,
   // forced current (init) year, this will force both dates to this year
   tie(as->absLatestDate, addedYear1) =
       workstep::makeInitAbsDate(as->latestDate, date, addYear, forceInitYear);
-  tie(as->absEarliestDate, addedYear2) = workstep::makeInitAbsDate(
-      as->earliestDate, date, addYear, forceInitYear || !addedYear1);
+  tie(as->absEarliestDate, addedYear2) =
+      workstep::makeInitAbsDate(as->earliestDate, date, addYear, forceInitYear || !addedYear1);
 
   return addedYear1; // || addedYear2;
 }

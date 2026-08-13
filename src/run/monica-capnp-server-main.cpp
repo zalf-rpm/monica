@@ -36,8 +36,7 @@ using RSM = mas::infrastructure::common::RestorableServiceMain;
 class MonicaCapnpServerMain : public RSM {
 public:
   explicit MonicaCapnpServerMain(kj::ProcessContext &context)
-      : RSM(context,
-            kj::str("MONICA Cap'n Proto Server v", VER_FILE_VERSION_STR),
+      : RSM(context, kj::str("MONICA Cap'n Proto Server v", VER_FILE_VERSION_STR),
             "Offers a MONICA as a Cap'n Proto service.") {}
 
   kj::MainBuilder::Validity setDebug() {
@@ -67,9 +66,8 @@ public:
     startRestorerSetup(runMonicaClient);
     runMonica->setRestorer(restorer);
 
-    auto monicaSR = restorer->saveStr(runMonicaClient, srt, nullptr, false)
-                        .wait(ioContext.waitScope)
-                        .sturdyRef;
+    auto monicaSR =
+        restorer->saveStr(runMonicaClient, srt, nullptr, false).wait(ioContext.waitScope).sturdyRef;
     if (outputSturdyRefs && monicaSR.size() > 0)
       std::cout << "monicaSR=" << monicaSR.cStr() << std::endl;
 
@@ -82,10 +80,9 @@ public:
 
   kj::MainFunc getMain() {
     return addRestorableServiceOptions()
-        .addOption({'d', "debug"}, KJ_BIND_METHOD(*this, setDebug),
-                   "Activate debug output.")
-        .addOptionWithArg({'t', "srt"}, KJ_BIND_METHOD(*this, setSRT),
-                          "<sturdy-ref token>", "Set a fixed sturdy ref token.")
+        .addOption({'d', "debug"}, KJ_BIND_METHOD(*this, setDebug), "Activate debug output.")
+        .addOptionWithArg({'t', "srt"}, KJ_BIND_METHOD(*this, setSRT), "<sturdy-ref token>",
+                          "Set a fixed sturdy ref token.")
         .callAfterParsing(KJ_BIND_METHOD(*this, startService))
         .build();
   }

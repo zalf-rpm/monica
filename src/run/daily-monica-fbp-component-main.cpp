@@ -63,8 +63,8 @@ public:
   };
 
   explicit FBPMain(kj::ProcessContext &context)
-      : ioContext(kj::setupAsyncIo()), conMan(ioContext),
-        ports(conMan, inPortNames, outPortNames), context(context) {}
+      : ioContext(kj::setupAsyncIo()), conMan(ioContext), ports(conMan, inPortNames, outPortNames),
+        context(context) {}
 
   kj::MainBuilder::Validity setName(kj::StringPtr n) {
     name = str(n);
@@ -101,48 +101,37 @@ public:
         {"ports",
          toml::table{
              {"in",
-              toml::table{
-                  {inPortNames[ENV],
-                   toml::table{{"sr", ""},
-                               {"type", "common.capnp::StructuredText::json"},
-                               {"description",
-                                "json data representing the monica env"}}},
-                  {inPortNames[STATE_IN],
-                   toml::table{
-                       {"sr", ""},
-                       {"type",
-                        "model/monica/monica_state.capnp::RuntimeState"},
-                       {"description", "serialized MONICA state"}}},
-                  {inPortNames[EVENTS],
-                   toml::table{
-                       {"sr", ""},
-                       {"type", "model/monica/monica_management.capnp::Event"},
-                       {"description", "MONICA events"}}}}},
+              toml::table{{inPortNames[ENV],
+                           toml::table{{"sr", ""},
+                                       {"type", "common.capnp::StructuredText::json"},
+                                       {"description", "json data representing the monica env"}}},
+                          {inPortNames[STATE_IN],
+                           toml::table{{"sr", ""},
+                                       {"type", "model/monica/monica_state.capnp::RuntimeState"},
+                                       {"description", "serialized MONICA state"}}},
+                          {inPortNames[EVENTS],
+                           toml::table{{"sr", ""},
+                                       {"type", "model/monica/monica_management.capnp::Event"},
+                                       {"description", "MONICA events"}}}}},
              {"out",
               toml::table{
                   {outPortNames[RESULT],
-                   toml::table{
-                       {"sr", ""},
-                       {"type", "common.capnp::StructuredText::json"},
-                       {"description", "results of a MONICA simulation"}}},
+                   toml::table{{"sr", ""},
+                               {"type", "common.capnp::StructuredText::json"},
+                               {"description", "results of a MONICA simulation"}}},
                   {outPortNames[STATE_OUT],
-                   toml::table{
-                       {"sr", ""},
-                       {"type",
-                        "model/monica/monica_state.capnp::RuntimeState"},
-                       {"description",
-                        "serialized MONICA state after current day"}}}}}}}};
+                   toml::table{{"sr", ""},
+                               {"type", "model/monica/monica_state.capnp::RuntimeState"},
+                               {"description", "serialized MONICA state after current day"}}}}}}}};
 
     if (portInfosReaderSr.size() > 0) {
       // write a file and treat the reader sr as a file name
       auto fs = kj::newDiskFilesystem();
       auto file = isAbsolutePath(portInfosReaderSr.cStr())
-                      ? fs->getRoot().openFile(
-                            fs->getCurrentPath().eval(portInfosReaderSr),
-                            kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
-                      : fs->getCurrent().openFile(
-                            kj::Path::parse(portInfosReaderSr),
-                            kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
+                      ? fs->getRoot().openFile(fs->getCurrentPath().eval(portInfosReaderSr),
+                                               kj::WriteMode::CREATE | kj::WriteMode::MODIFY)
+                      : fs->getCurrent().openFile(kj::Path::parse(portInfosReaderSr),
+                                                  kj::WriteMode::CREATE | kj::WriteMode::MODIFY);
       ostringstream ss;
       ss << toml << endl;
       file->writeAll(ss.str());
@@ -155,8 +144,8 @@ public:
     try {
       return toml::parse(toml);
     } catch (const toml::parse_error &err) {
-      KJ_LOG(INFO, "Parsing TOML configuration failed. Error:\n", err.what(),
-             "\nTOML:\n", string(toml));
+      KJ_LOG(INFO, "Parsing TOML configuration failed. Error:\n", err.what(), "\nTOML:\n",
+             string(toml));
     }
     return toml::table();
   }
@@ -175,8 +164,7 @@ public:
     monica->simPs.noOfPreviousDaysSerializedClimateData =
         env.params.simulationParameters.noOfPreviousDaysSerializedClimateData;
 
-    store = setupStorage(env.events, env.climateData.startDate(),
-                         env.climateData.endDate());
+    store = setupStorage(env.events, env.climateData.startDate(), env.climateData.endDate());
     monica->currentEvents.insert("run-started");
   }
 
@@ -201,11 +189,9 @@ public:
   void finalizeMonica(Date currentDate) {
     if (env.params.simulationParameters.serializeMonicaStateAtEnd) {
       Workstep sms = makeSaveMonicaStateWorkstep(
-          currentDate,
-          env.params.simulationParameters.pathToSerializationAtEndFile,
+          currentDate, env.params.simulationParameters.pathToSerializationAtEndFile,
           env.params.simulationParameters.serializeMonicaStateAtEndToJson,
-          env.params.simulationParameters
-              .noOfPreviousDaysSerializedClimateData);
+          env.params.simulationParameters.noOfPreviousDaysSerializedClimateData);
       workstep::apply(&sms, monica.get());
     }
 
@@ -216,8 +202,7 @@ public:
         store_data_aggregate_results_obj(&sd);
       else
         store_data_aggregate_results(&sd);
-      out.data.push_back(
-          {sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
+      out.data.push_back({sd.spec.origSpec.dump(), sd.outputIds, sd.results, sd.resultsObj});
     }
   }
 
@@ -256,8 +241,7 @@ public:
       // read serialized state and create a monica instance with that state
       if (ports.isInConnected(ENV)) {
         KJ_LOG(INFO, "trying to read from env IN port");
-        auto msg =
-            ports.in(ENV).readIfMsgRequest().send().wait(ioContext.waitScope);
+        auto msg = ports.in(ENV).readIfMsgRequest().send().wait(ioContext.waitScope);
         switch (msg.which()) {
         case mas::schema::fbp::Channel<IP>::Msg::NO_MSG:
           break;
@@ -268,24 +252,17 @@ public:
         case mas::schema::fbp::Channel<IP>::Msg::VALUE:
           try {
             auto ip = msg.getValue();
-            auto stEnv =
-                ip.getContent().getAs<mas::schema::common::StructuredText>();
+            auto stEnv = ip.getContent().getAs<mas::schema::common::StructuredText>();
             std::string err;
-            const json11::Json &envJson =
-                json11::Json::parse(stEnv.getValue().cStr(), err);
+            const json11::Json &envJson = json11::Json::parse(stEnv.getValue().cStr(), err);
             auto envJsonStr = envJson.dump();
             // cout << "runMonica: " << envJson["customId"].dump() << endl;
-            auto pathToSoilDir = fixSystemSeparator(
-                replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
-            env.params.siteParameters
-                .calculateAndSetPwpFcSatFunctions["Wessolek2009"] = Soil::
-                getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
-                    pathToSoilDir);
-            env.params.siteParameters
-                .calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
+            auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+            env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
+                Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+            env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
                 Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-            env.params.siteParameters
-                .calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
+            env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
                 Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
             env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
                 Soil::updateUnsetPwpFcSatFromToth;
@@ -307,8 +284,7 @@ public:
       // no env could be read
       if (!envOrStateReceived && ports.isInConnected(STATE_IN)) {
         KJ_LOG(INFO, "trying to read from serialized_state IN port");
-        auto msg = ports.in(STATE_IN).readIfMsgRequest().send().wait(
-            ioContext.waitScope);
+        auto msg = ports.in(STATE_IN).readIfMsgRequest().send().wait(ioContext.waitScope);
         switch (msg.which()) {
         case mas::schema::fbp::Channel<IP>::Msg::NO_MSG:
           break;
@@ -320,34 +296,28 @@ public:
           try {
             auto ip = msg.getValue();
             try {
-              auto runtimeState =
-                  ip.getContent()
-                      .getAs<mas::schema::model::monica::RuntimeState>();
+              auto runtimeState = ip.getContent().getAs<mas::schema::model::monica::RuntimeState>();
               if (monica.get() == nullptr)
                 monica = makeMonicaModel(runtimeState.getModelState());
               else
-                monicamodel::deserialize(monica.get(),
-                                         runtimeState.getModelState());
+                monicamodel::deserialize(monica.get(), runtimeState.getModelState());
               envOrStateReceived = true;
             } catch (kj::Exception &e) {
               auto jsonState = ip.getContent().getAs<capnp::Text>();
               const capnp::JsonCodec json;
               capnp::MallocMessageBuilder mmb;
-              auto runtimeStateBuilder =
-                  mmb.initRoot<mas::schema::model::monica::RuntimeState>();
+              auto runtimeStateBuilder = mmb.initRoot<mas::schema::model::monica::RuntimeState>();
               json.decode(jsonState.asBytes().asChars(), runtimeStateBuilder);
               auto runtimeState = runtimeStateBuilder.asReader();
               if (monica.get() == nullptr)
                 monica = makeMonicaModel(runtimeState.getModelState());
               else
-                monicamodel::deserialize(monica.get(),
-                                         runtimeState.getModelState());
+                monicamodel::deserialize(monica.get(), runtimeState.getModelState());
               envOrStateReceived = true;
             }
             break;
           } catch (kj::Exception &e) {
-            KJ_LOG(INFO,
-                   "Exception reading serialized state:", e.getDescription());
+            KJ_LOG(INFO, "Exception reading serialized state:", e.getDescription());
             // treat state channel as disconnected and possibly leaf outer loop
             ports.setInDisconnected(STATE_IN);
             continue;
@@ -367,20 +337,16 @@ public:
         while (waitForMoreEvents) {
           // now wait for events
           KJ_LOG(INFO, "trying to read from events IN port");
-          auto msg =
-              ports.in(EVENTS).readRequest().send().wait(ioContext.waitScope);
+          auto msg = ports.in(EVENTS).readRequest().send().wait(ioContext.waitScope);
           KJ_LOG(INFO, "received msg from events IN port");
           // check for end of data from in port
-          if (msg.isDone() ||
-              msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
+          if (msg.isDone() || msg.getValue().getType() == IP::Type::CLOSE_BRACKET) {
             KJ_LOG(INFO, "received done -> finalizing monica run");
             // finalizeMonica(monica->currentStepDate());
             //  send results to out port
             if (false && ports.isOutConnected(RESULT)) {
               auto wrq = ports.out(RESULT).writeRequest();
-              auto st = wrq.initValue()
-                            .initContent()
-                            .initAs<mas::schema::common::StructuredText>();
+              auto st = wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
               st.setType(mas::schema::common::StructuredText::Type::JSON);
               st.setValue(output::to_json(&out).dump());
               wrq.send().wait(ioContext.waitScope);
@@ -405,14 +371,10 @@ public:
               case Event::ExternalType::WEATHER: {
                 if (event.getParams().isNull() || !event.isAt())
                   continue;
-                KJ_LOG(INFO, "received weather data at",
-                       eventDate.toIsoDateString());
+                KJ_LOG(INFO, "received weather data at", eventDate.toIsoDateString());
                 auto dw =
-                    event.getParams()
-                        .getAs<
-                            mas::schema::model::monica::Params::DailyWeather>();
-                auto climateData =
-                    dailyClimateDataToDailyClimateMap(dw.getData());
+                    event.getParams().getAs<mas::schema::model::monica::Params::DailyWeather>();
+                auto climateData = dailyClimateDataToDailyClimateMap(dw.getData());
                 monica->currentStepDate = eventDate;
                 monica->climateData.push_back(climateData);
                 runMonica();
@@ -421,9 +383,8 @@ public:
                 // send results to out port
                 if (ports.isOutConnected(RESULT)) {
                   auto wrq = ports.out(RESULT).writeRequest();
-                  auto st = wrq.initValue()
-                                .initContent()
-                                .initAs<mas::schema::common::StructuredText>();
+                  auto st =
+                      wrq.initValue().initContent().initAs<mas::schema::common::StructuredText>();
                   st.setType(mas::schema::common::StructuredText::Type::JSON);
                   st.setValue(output::to_json(&dailyOut).dump());
                   wrq.send().wait(ioContext.waitScope);
@@ -435,38 +396,27 @@ public:
                 break;
               }
               case Event::ExternalType::SOWING: {
-                auto sp =
-                    event.getParams()
-                        .getAs<mas::schema::model::monica::Params::Sowing>();
+                auto sp = event.getParams().getAs<mas::schema::model::monica::Params::Sowing>();
                 if (sp.hasCrop()) {
-                  auto snRes = sp.getCrop().speciesRequest().send().wait(
-                      ioContext.waitScope);
+                  auto snRes = sp.getCrop().speciesRequest().send().wait(ioContext.waitScope);
                   auto speciesName = snRes.getInfo().getName();
-                  auto cnRes = sp.getCrop().cultivarRequest().send().wait(
-                      ioContext.waitScope);
+                  auto cnRes = sp.getCrop().cultivarRequest().send().wait(ioContext.waitScope);
                   auto cultivarName = cnRes.getInfo().getName();
-                  auto res = sp.getCrop().parametersRequest().send().wait(
-                      ioContext.waitScope);
-                  auto cropParams =
-                      res.getParams()
-                          .getAs<mas::schema::model::monica::CropSpec>();
-                  KJ_LOG(INFO, "received sowing event for crop", speciesName,
-                         "/", cultivarName, " at", eventDate.toIsoDateString());
+                  auto res = sp.getCrop().parametersRequest().send().wait(ioContext.waitScope);
+                  auto cropParams = res.getParams().getAs<mas::schema::model::monica::CropSpec>();
+                  KJ_LOG(INFO, "received sowing event for crop", speciesName, "/", cultivarName,
+                         " at", eventDate.toIsoDateString());
                   monicamodel::seedCrop(monica.get(), cropParams);
                   monica->currentEvents.insert("Sowing");
                 }
                 break;
               }
               case Event::ExternalType::HARVEST: {
-                auto hp =
-                    event.getParams()
-                        .getAs<mas::schema::model::monica::Params::Harvest>();
+                auto hp = event.getParams().getAs<mas::schema::model::monica::Params::Harvest>();
                 if (monica->currentCropModule) {
-                  KJ_LOG(INFO, "received harvest event at",
-                         eventDate.toIsoDateString());
+                  KJ_LOG(INFO, "received harvest event at", eventDate.toIsoDateString());
                   HarvestData::Spec spec;
-                  monicamodel::harvestCurrentCrop(monica.get(),
-                                                  hp.getExported(), spec);
+                  monicamodel::harvestCurrentCrop(monica.get(), hp.getExported(), spec);
                   monica->currentEvents.insert("Harvest");
                 }
                 break;
@@ -476,39 +426,30 @@ public:
               case Event::ExternalType::AUTOMATIC_HARVEST:
                 break;
               case Event::ExternalType::IRRIGATION: {
-                KJ_LOG(INFO, "received irrigation event at",
-                       eventDate.toIsoDateString());
+                KJ_LOG(INFO, "received irrigation event at", eventDate.toIsoDateString());
                 auto irr =
-                    event.getParams()
-                        .getAs<
-                            mas::schema::model::monica::Params::Irrigation>();
+                    event.getParams().getAs<mas::schema::model::monica::Params::Irrigation>();
                 monicamodel::applyIrrigation(
                     monica.get(), irr.getAmount(),
-                    irr.hasParams() ? irr.getParams().getNitrateConcentration()
-                                    : 0.0);
+                    irr.hasParams() ? irr.getParams().getNitrateConcentration() : 0.0);
                 monica->currentEvents.insert("Irrigation");
                 break;
               }
               case Event::ExternalType::TILLAGE: {
-                KJ_LOG(INFO, "received tillage event at",
-                       eventDate.toIsoDateString());
-                auto till =
-                    event.getParams()
-                        .getAs<mas::schema::model::monica::Params::Tillage>();
+                KJ_LOG(INFO, "received tillage event at", eventDate.toIsoDateString());
+                auto till = event.getParams().getAs<mas::schema::model::monica::Params::Tillage>();
                 monicamodel::applyTillage(monica.get(), till.getDepth());
                 monica->currentEvents.insert("Tillage");
                 break;
               }
               case Event::ExternalType::ORGANIC_FERTILIZATION: {
                 auto of = event.getParams()
-                              .getAs<mas::schema::model::monica::Params::
-                                         OrganicFertilization>();
+                              .getAs<mas::schema::model::monica::Params::OrganicFertilization>();
                 if (of.hasParams() && of.getParams().hasParams()) {
                   KJ_LOG(INFO, "received organic fertilization event at",
                          eventDate.toIsoDateString());
                   monicamodel::applyOrganicFertiliser(
-                      monica.get(),
-                      makeOrganicMatterParameters(of.getParams().getParams()),
+                      monica.get(), makeOrganicMatterParameters(of.getParams().getParams()),
                       of.getAmount(), of.getIncorporation());
                   monica->currentEvents.insert("OrganicFertilization");
                 }
@@ -516,14 +457,12 @@ public:
               }
               case Event::ExternalType::MINERAL_FERTILIZATION: {
                 auto mf = event.getParams()
-                              .getAs<mas::schema::model::monica::Params::
-                                         MineralFertilization>();
+                              .getAs<mas::schema::model::monica::Params::MineralFertilization>();
                 if (mf.hasPartition()) {
                   KJ_LOG(INFO, "received mineral fertilization event at",
                          eventDate.toIsoDateString());
                   monicamodel::applyMineralFertiliser(
-                      monica.get(),
-                      makeMineralFertilizerParameters(mf.getPartition()),
+                      monica.get(), makeMineralFertilizerParameters(mf.getPartition()),
                       mf.getAmount());
                   monica->currentEvents.insert("MineralFertilization");
                 }
@@ -532,12 +471,9 @@ public:
               case Event::ExternalType::N_DEMAND_FERTILIZATION:
                 break;
               case Event::ExternalType::CUTTING: {
-                auto c =
-                    event.getParams()
-                        .getAs<mas::schema::model::monica::Params::Cutting>();
+                auto c = event.getParams().getAs<mas::schema::model::monica::Params::Cutting>();
                 if (c.hasCuttingSpec() && c.getCuttingSpec().size() > 0) {
-                  KJ_LOG(INFO, "received cutting event at",
-                         eventDate.toIsoDateString());
+                  KJ_LOG(INFO, "received cutting event at", eventDate.toIsoDateString());
                   std::map<int, CuttingData::Value> organId2cuttingSpec;
                   std::map<int, double> organId2exportFraction;
                   for (auto cs : c.getCuttingSpec()) {
@@ -587,14 +523,12 @@ public:
                     }
                     if (organId >= 0) {
                       organId2cuttingSpec[organId] = {cs.getValue(), unit, cl};
-                      organId2exportFraction[organId] =
-                          cs.getExportPercentage() / 100.0;
+                      organId2exportFraction[organId] = cs.getExportPercentage() / 100.0;
                     }
                   }
-                  cropmodule::applyCutting(
-                      monica->currentCropModule.get(), organId2cuttingSpec,
-                      organId2exportFraction,
-                      c.getCutMaxAssimilationRatePercentage() / 100.0);
+                  cropmodule::applyCutting(monica->currentCropModule.get(), organId2cuttingSpec,
+                                           organId2exportFraction,
+                                           c.getCutMaxAssimilationRatePercentage() / 100.0);
                   monica->currentEvents.insert("Cutting");
                 }
                 break;
@@ -604,18 +538,16 @@ public:
               case Event::ExternalType::SAVE_STATE: {
                 if (ports.isOutConnected(STATE_OUT)) {
                   try {
-                    auto ss = event.getParams()
-                                  .getAs<mas::schema::model::monica::Params::
-                                             SaveState>();
-                    KJ_LOG(INFO, "received save state event at",
-                           eventDate.toIsoDateString());
+                    auto ss =
+                        event.getParams().getAs<mas::schema::model::monica::Params::SaveState>();
+                    KJ_LOG(INFO, "received save state event at", eventDate.toIsoDateString());
 
                     monica->simPs.noOfPreviousDaysSerializedClimateData =
                         ss.getNoOfPreviousDaysSerializedClimateData();
 
                     capnp::MallocMessageBuilder message;
-                    auto runtimeState = message.initRoot<
-                        mas::schema::model::monica::RuntimeState>();
+                    auto runtimeState =
+                        message.initRoot<mas::schema::model::monica::RuntimeState>();
                     const auto modelState = runtimeState.initModelState();
                     monicamodel::serialize(monica.get(), modelState);
 
@@ -625,22 +557,16 @@ public:
                       const auto jStr = json.encode(runtimeState);
                       wrq.initValue().initContent().setAs<capnp::Text>(jStr);
                     } else {
-                      wrq.initValue()
-                          .initContent()
-                          .setAs<mas::schema::model::monica::RuntimeState>(
-                              runtimeState);
+                      wrq.initValue().initContent().setAs<mas::schema::model::monica::RuntimeState>(
+                          runtimeState);
                     }
 
                     wrq.send().wait(ioContext.waitScope);
-                    auto asWhat =
-                        ss.getAsJson() ? "as JSON" : "as capnp binary";
-                    KJ_LOG(INFO,
-                           "sent serialized MONICA state on output channel",
-                           asWhat);
+                    auto asWhat = ss.getAsJson() ? "as JSON" : "as capnp binary";
+                    KJ_LOG(INFO, "sent serialized MONICA state on output channel", asWhat);
                   } catch (kj::Exception &e) {
                     KJ_LOG(INFO,
-                           "Exception on attempt to serialize MONICA state:",
-                           e.getDescription());
+                           "Exception on attempt to serialize MONICA state:", e.getDescription());
                   }
                 }
                 break;
@@ -659,14 +585,11 @@ public:
   }
 
   kj::MainFunc getMain() {
-    return kj::MainBuilder(
-               context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR),
-               "Offers a MONICA service.")
-        .addOption({'g', "generate_toml_config"},
-                   KJ_BIND_METHOD(*this, setGenerateTOMLConfig),
+    return kj::MainBuilder(context, kj::str("MONICA FBP Component v", VER_FILE_VERSION_STR),
+                           "Offers a MONICA service.")
+        .addOption({'g', "generate_toml_config"}, KJ_BIND_METHOD(*this, setGenerateTOMLConfig),
                    "Give this component a name.")
-        .expectOptionalArg("port_infos_reader_SR",
-                           KJ_BIND_METHOD(*this, setPortInfosReaderSr))
+        .expectOptionalArg("port_infos_reader_SR", KJ_BIND_METHOD(*this, setPortInfosReaderSr))
         // .addOptionWithArg({'f', "from_attr"}, KJ_BIND_METHOD(*this,
         // setFromAttr),
         //                   "<attr>", "Which attribute to read the MONICA env

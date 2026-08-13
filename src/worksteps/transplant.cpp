@@ -57,8 +57,7 @@ Errors workstep::merge(TransplantData *t, json11::Json j) {
 json11::Json workstep::to_json(const TransplantData *t, const Workstep *ws,
                                bool includeFullCropParameters) {
   auto so =
-      to_json(static_cast<const SowingData *>(t), ws, includeFullCropParameters)
-          .object_items();
+      to_json(static_cast<const SowingData *>(t), ws, includeFullCropParameters).object_items();
   so["type"] = "Transplant";
   so["initialStage"] = static_cast<int>(t->initialStage);
   so["initialTemperatureSum"] = t->initialGDD;
@@ -78,9 +77,9 @@ bool workstep::apply(TransplantData *t, Workstep *ws, MonicaModel *model) {
   if (!cropModule)
     return false;
 
-  cropmodule::forceTransplantState(
-      cropModule, t->initialGDD, t->initLAI, t->initialStage, t->initRootMass,
-      t->initLeafMass, t->initShootMass, t->postTransplantDelay);
+  cropmodule::forceTransplantState(cropModule, t->initialGDD, t->initLAI, t->initialStage,
+                                   t->initRootMass, t->initLeafMass, t->initShootMass,
+                                   t->postTransplantDelay);
 
   if (model->simPs.dualKcMethod)
     cropModule->vc_Kcb_ini = t->initialKcb;

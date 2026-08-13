@@ -43,7 +43,6 @@ bool apply(SetValueData *s, Workstep *ws, MonicaModel *model);
 } // namespace workstep
 
 Workstep makeSetValueWorkstep(json11::Json object);
-Workstep makeSetValueWorkstep(const Tools::Date &at, OId oid,
-                              json11::Json value);
+Workstep makeSetValueWorkstep(const Tools::Date &at, OId oid, json11::Json value);
 
 } // namespace monica

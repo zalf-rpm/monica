@@ -42,43 +42,35 @@ static const double NMOL_IN_UMOL = KILO;               //!< nmol to umol
 static const double UMOL_IN_NMOL = 1.0 / NMOL_IN_UMOL; //!< umol to nmol
 static const double MOL_IN_MMOL = MILLI;
 static const double MMOL_IN_MOL = 1.0 / MOL_IN_MMOL;
-static const double FPAR = 0.45;     //!< conversion factor for global into PAR
-                                     //!< (Monteith 1965, Meek et al. 1984)
-static const double D_IN_K = 273.15; //!< kelvin at zero degree celsius
+static const double FPAR = 0.45;       //!< conversion factor for global into PAR
+                                       //!< (Monteith 1965, Meek et al. 1984)
+static const double D_IN_K = 273.15;   //!< kelvin at zero degree celsius
 static const double G_IN_KG = 1.0e+03; //!< 0.001 kg per g
-static const double UMOL_IN_W =
-    4.57; //!< conversion factor from Watt in umol PAR (Cox et al. 1998)
+static const double UMOL_IN_W = 4.57; //!< conversion factor from Watt in umol PAR (Cox et al. 1998)
 static const double W_IN_UMOL =
-    1.0 /
-    UMOL_IN_W; //!< conversion factor from umol PAR in Watt (Cox et al. 1998)
-static const double NG_IN_UG =
-    1.0e+03; //!< conversion factor from nano to micro (gramm)
+    1.0 / UMOL_IN_W; //!< conversion factor from umol PAR in Watt (Cox et al. 1998)
+static const double NG_IN_UG = 1.0e+03;        //!< conversion factor from nano to micro (gramm)
 static const double UG_IN_NG = 1.0 / NG_IN_UG; //!<
 
 // phys constants
 static const double RGAS = 8.3143; //!< general gas constant  [J mol-1 K-1]
 
 // chem constants
-static const double MC = 12.0;   //!< molecular weight of carbon  [g mol-1]
-static const double C_ISO = 5.0; //!< number of carbons in Isoprene (C5H8)
-static const double C_MONO =
-    10.0; //!< number of carbons in Monoterpene (C10H16)
+static const double MC = 12.0;     //!< molecular weight of carbon  [g mol-1]
+static const double C_ISO = 5.0;   //!< number of carbons in Isoprene (C5H8)
+static const double C_MONO = 10.0; //!< number of carbons in Monoterpene (C10H16)
 
 // time constants
-static const unsigned int SEC_IN_MIN = 60;     //<! minute to seconds
-static const unsigned int MIN_IN_HR = 60;      //!< hour to minutes
-static const unsigned int HR_IN_DAY = 24;      //!< day to hours
-static const unsigned int MONTHS_IN_YEAR = 12; //!< year to months
-static const unsigned int SEC_IN_HR =
-    (SEC_IN_MIN * MIN_IN_HR); //!< hour to seconds
-static const unsigned int MIN_IN_DAY =
-    (MIN_IN_HR * HR_IN_DAY); //!< day to minutes
-static const unsigned int SEC_IN_DAY =
-    (SEC_IN_HR * HR_IN_DAY); //!< day to seconds
+static const unsigned int SEC_IN_MIN = 60;                      //<! minute to seconds
+static const unsigned int MIN_IN_HR = 60;                       //!< hour to minutes
+static const unsigned int HR_IN_DAY = 24;                       //!< day to hours
+static const unsigned int MONTHS_IN_YEAR = 12;                  //!< year to months
+static const unsigned int SEC_IN_HR = (SEC_IN_MIN * MIN_IN_HR); //!< hour to seconds
+static const unsigned int MIN_IN_DAY = (MIN_IN_HR * HR_IN_DAY); //!< day to minutes
+static const unsigned int SEC_IN_DAY = (SEC_IN_HR * HR_IN_DAY); //!< day to seconds
 
 // meteo constants
-static const double PO2 =
-    0.208; //!< volumentric percentage of oxygen in the canopy air
+static const double PO2 = 0.208; //!< volumentric percentage of oxygen in the canopy air
 
 // voc module specific constants
 
@@ -140,8 +132,7 @@ static double const TK25 = 298.16;
 
 // crop photosynthesis result variables
 struct CPData {
-  void
-  serialize(mas::schema::model::monica::Voc::CPData::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::CPData::Builder builder) const {
     builder.setKc(kc);
     builder.setKo(ko);
     builder.setOi(oi);
@@ -166,29 +157,26 @@ struct CPData {
     jv = reader.getJv();
   }
 
-  double kc{0}; //!< Michaelis - Menten constant for CO2 reaction of rubisco per
-                //!< canopy layer(umol mol - 1 ubar - 1)
-  double ko{0}; //!< Michaelis - Menten constant for O2 reaction of rubisco per
-                //!< canopy layer(umol mol - 1 ubar - 1)
-  double oi{0}; //!< species and layer specific intercellular concentration of
-                //!< CO2 (umol mol-1)
-  double ci{0}; //!< leaf internal O2 concentration per canopy layer(umol m - 2)
-  double comp{
-      0}; //!< CO2 compensation point at 25oC per canopy layer (umol m-2)
-  double vcMax{
-      0}; //!< actual activity state of rubisco  per canopy layer (umol m-2 s-1)
-  double jMax{0}; //!<  actual electron transport capacity per canopy layer(umol
-                  //!<  m - 2 s - 1)
-  double jj{0};   // umol m-2 s-1 ... electron provision (unit leaf area)
+  double kc{0};     //!< Michaelis - Menten constant for CO2 reaction of rubisco per
+                    //!< canopy layer(umol mol - 1 ubar - 1)
+  double ko{0};     //!< Michaelis - Menten constant for O2 reaction of rubisco per
+                    //!< canopy layer(umol mol - 1 ubar - 1)
+  double oi{0};     //!< species and layer specific intercellular concentration of
+                    //!< CO2 (umol mol-1)
+  double ci{0};     //!< leaf internal O2 concentration per canopy layer(umol m - 2)
+  double comp{0};   //!< CO2 compensation point at 25oC per canopy layer (umol m-2)
+  double vcMax{0};  //!< actual activity state of rubisco  per canopy layer (umol m-2 s-1)
+  double jMax{0};   //!<  actual electron transport capacity per canopy layer(umol
+                    //!<  m - 2 s - 1)
+  double jj{0};     // umol m-2 s-1 ... electron provision (unit leaf area)
   double jj1000{0}; // umol m-2 s-1 ... electron provision (unit leaf area)
                     // under normalized conditions
-  double jv{0}; // umol m-2 s-1 ... used electron transport for photosynthesis
-                // (unit leaf area)
+  double jv{0};     // umol m-2 s-1 ... used electron transport for photosynthesis
+                    // (unit leaf area)
 };
 
 struct SpeciesData {
-  void serialize(
-      mas::schema::model::monica::Voc::SpeciesData::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::SpeciesData::Builder builder) const {
     builder.setId(id);
     builder.setEfMonos(EF_MONO);
     builder.setEfMono(EF_MONO);
@@ -220,8 +208,7 @@ struct SpeciesData {
     builder.setLai(lai);
     builder.setSla(sla);
   }
-  void
-  deserialize(mas::schema::model::monica::Voc::SpeciesData::Reader reader) {
+  void deserialize(mas::schema::model::monica::Voc::SpeciesData::Reader reader) {
     id = (int)reader.getId();
     EF_MONO = reader.getEfMonos();
     EF_MONO = reader.getEfMono();
@@ -261,13 +248,11 @@ struct SpeciesData {
                         //!< conditions (ug gDW-1 h-1)
   double EF_MONO{0.0};  //!< monoterpene emission rate under standard conditions
                         //!< (ug gDW-1 h-1)
-  double EF_ISO{
-      0.0}; //!< isoprene emission rate under standard conditions (ug gDW-1 h-1)
+  double EF_ISO{0.0};   //!< isoprene emission rate under standard conditions (ug gDW-1 h-1)
 
   // jjv
   double THETA{0.9}; //!< curvature parameter
-  double FAGE{
-      1.0}; //!< relative decrease of emission synthesis per foliage age class
+  double FAGE{1.0};  //!< relative decrease of emission synthesis per foliage age class
   double CT_IS{0.0}; //!< scaling constant for temperature sensitivity of
                      //!< isoprene synthase.
   double CT_MT{0.0}; //!< scaling constant for temperature sensitivity
@@ -275,14 +260,12 @@ struct SpeciesData {
   double HA_IS{0.0}; //!< activation energy for isoprene synthase (J mol-1)
   double HA_MT{0.0}; //!< activation energy for GDP synthase (J mol-1)
 
-  double DS_IS{0.0}; //!< entropy term for isoprene synthase sensitivity to
-                     //!< temperature (J:mol-1:K-1)
-  double DS_MT{0.0}; //!< entropy term for GDP synthase sensitivity to
-                     //!< temperature (J:mol-1:K-1)
-  double HD_IS{
-      284600.0}; //!< deactivation energy for isoprene synthase (J mol-1)
-  double HD_MT{
-      284600.0}; //!< deactivation energy for monoterpene synthase (J mol-1)
+  double DS_IS{0.0};      //!< entropy term for isoprene synthase sensitivity to
+                          //!< temperature (J:mol-1:K-1)
+  double DS_MT{0.0};      //!< entropy term for GDP synthase sensitivity to
+                          //!< temperature (J:mol-1:K-1)
+  double HD_IS{284600.0}; //!< deactivation energy for isoprene synthase (J mol-1)
+  double HD_MT{284600.0}; //!< deactivation energy for monoterpene synthase (J mol-1)
 
   double HDJ{220000.0}; //! fw: "HDJ": curvature parameter of jMax (J mol-1)
                         //! (Kattge et al. 2007: 200000; Farquhar et al. 1980:
@@ -290,25 +273,20 @@ struct SpeciesData {
   double SDJ{703.0};    //! fw: "SDJ": electron transport temperature response
                         //! parameter (Kattge et al. 2007: 647; Farquhar et al.
                         //! 1980: 710; Harley et al. 1992: 650)
-  double KC25{
-      260.0}; //!< Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
-  double KO25{
-      179.0}; //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
+  double KC25{260.0};   //!< Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
+  double KO25{179.0};   //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
   double VCMAX25{80.0}; //!< corn: 13.1 | maximum RubP saturated rate of
                         //!< carboxylation at 25oC for sun leaves (umol m-2 s-1)
-  double QJVC{2.0}; //!< relation between maximum electron transport rate and
-                    //!< RubP saturated rate of carboxylation (--)
+  double QJVC{2.0};     //!< relation between maximum electron transport rate and
+                        //!< RubP saturated rate of carboxylation (--)
 
   double AEKC{59356}; //!< for corn | activation energy for Michaelis-Menten
                       //!< constant for CO2 (J mol-1)
   double AEKO{35948}; //!< for corn | activation energy for Michaelis-Menten
                       //!< constant for O2 (J mol-1)
-  double AEJM{
-      37000}; //!< for corn | activation energy for electron transport (J mol-1)
-  double AEVC{
-      58520}; //!< for corn | activation energy for photosynthesis (J mol-1)
-  double SLAMIN{
-      20}; //!< for corn | specific leaf area under full light (m2 kg-1)
+  double AEJM{37000}; //!< for corn | activation energy for electron transport (J mol-1)
+  double AEVC{58520}; //!< for corn | activation energy for photosynthesis (J mol-1)
+  double SLAMIN{20};  //!< for corn | specific leaf area under full light (m2 kg-1)
 
   double SCALE_I{1.0};
   double SCALE_M{1.0};
@@ -337,8 +315,7 @@ struct SpeciesData {
 //----------------------------------------------------------------------------
 
 struct MicroClimateData {
-  void serialize(mas::schema::model::monica::Voc::MicroClimateData::Builder
-                     builder) const {
+  void serialize(mas::schema::model::monica::Voc::MicroClimateData::Builder builder) const {
     builder.setRad(rad);
     builder.setRad24(rad24);
     builder.setRad240(rad240);
@@ -349,8 +326,7 @@ struct MicroClimateData {
     builder.setSunlitfoliagefraction24(sunlitfoliagefraction24);
     builder.setCo2concentration(co2concentration);
   }
-  void deserialize(
-      mas::schema::model::monica::Voc::MicroClimateData::Reader reader) {
+  void deserialize(mas::schema::model::monica::Voc::MicroClimateData::Reader reader) {
     rad = reader.getRad();
     rad24 = reader.getRad24();
     rad240 = reader.getRad240();
@@ -398,8 +374,7 @@ struct MicroClimateData {
 //----------------------------------------------------------------------------
 
 struct Emissions {
-  void
-  serialize(mas::schema::model::monica::Voc::Emissions::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::Emissions::Builder builder) const {
     {
       auto isos = builder.initSpeciesIdToIsopreneEmission(
           (capnp::uint)speciesId_2_isoprene_emission.size());
@@ -447,38 +422,31 @@ struct Emissions {
     return *this;
   }
 
-  std::map<int, double>
-      speciesId_2_isoprene_emission; //!< [umol m-2Ground ts-1] isoprene
-                                     //!< emissions per timestep and plant
-  std::map<int, double>
-      speciesId_2_monoterpene_emission; //!< [umol m-2Ground ts-1] monoterpene
-                                        //!< emissions per timestep and plant
+  std::map<int, double> speciesId_2_isoprene_emission;    //!< [umol m-2Ground ts-1] isoprene
+                                                          //!< emissions per timestep and plant
+  std::map<int, double> speciesId_2_monoterpene_emission; //!< [umol m-2Ground ts-1] monoterpene
+                                                          //!< emissions per timestep and plant
 
-  double isoprene_emission{
-      0.0}; //!< [umol m-2Ground ts-1] isoprene emissions per timestep
-  double monoterpene_emission{
-      0.0}; //!< [umol m-2Ground ts-1] monoterpene emissions per timestep
+  double isoprene_emission{0.0};    //!< [umol m-2Ground ts-1] isoprene emissions per timestep
+  double monoterpene_emission{0.0}; //!< [umol m-2Ground ts-1] monoterpene emissions per timestep
 };
 
 //----------------------------------------------------------------------------
 
 struct photosynth_t {
-  void serialize(
-      mas::schema::model::monica::Voc::PhotosynthT::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::PhotosynthT::Builder builder) const {
     builder.setPar(par);
     builder.setPar24(par24);
     builder.setPar240(par240);
   }
-  void
-  deserialize(mas::schema::model::monica::Voc::PhotosynthT::Reader reader) {
+  void deserialize(mas::schema::model::monica::Voc::PhotosynthT::Reader reader) {
     par = reader.getPar();
     par24 = reader.getPar24();
     par240 = reader.getPar240();
   }
 
-  double par{0.0}; //!< photosynthetic active radiation (umol m-2 s-1)
-  double par24{
-      0.0}; //!< 1 day aggregated photosynthetic active radiation (umol m-2 s-1)
+  double par{0.0};    //!< photosynthetic active radiation (umol m-2 s-1)
+  double par24{0.0};  //!< 1 day aggregated photosynthetic active radiation (umol m-2 s-1)
   double par240{0.0}; //!< 10 days aggregated photosynthetic active radiation
                       //!< (umol m-2 s-1)
 };
@@ -486,8 +454,7 @@ struct photosynth_t {
 //----------------------------------------------------------------------------
 
 struct foliage_t {
-  void
-  serialize(mas::schema::model::monica::Voc::FoliageT::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::FoliageT::Builder builder) const {
     builder.setTempK(tempK);
     builder.setTempK24(tempK24);
     builder.setTempK240(tempK240);
@@ -498,9 +465,8 @@ struct foliage_t {
     tempK240 = reader.getTempK240();
   }
 
-  double tempK{0.0}; //!< foliage temperature within a canopy layer (K)
-  double tempK24{
-      0.0}; //!< 1 day aggregated foliage temperature within a canopy layer (K)
+  double tempK{0.0};    //!< foliage temperature within a canopy layer (K)
+  double tempK24{0.0};  //!< 1 day aggregated foliage temperature within a canopy layer (K)
   double tempK240{0.0}; //!< 10 days aggregated foliage temperature within a
                         //!< canopy layer (K)
 };
@@ -508,13 +474,11 @@ struct foliage_t {
 //----------------------------------------------------------------------------
 
 struct enzyme_activity_t {
-  void serialize(
-      mas::schema::model::monica::Voc::EnzymeActivityT::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::EnzymeActivityT::Builder builder) const {
     builder.setEfIso(ef_iso);
     builder.setEfMono(ef_mono);
   }
-  void
-  deserialize(mas::schema::model::monica::Voc::EnzymeActivityT::Reader reader) {
+  void deserialize(mas::schema::model::monica::Voc::EnzymeActivityT::Reader reader) {
     ef_iso = reader.getEfIso();
     ef_mono = reader.getEfMono();
   }
@@ -526,15 +490,13 @@ struct enzyme_activity_t {
 //----------------------------------------------------------------------------
 
 struct leaf_emission_t {
-  void serialize(
-      mas::schema::model::monica::Voc::LeafEmissionT::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::LeafEmissionT::Builder builder) const {
     builder.setFoliageLayer((uint16_t)foliage_layer);
     pho.serialize(builder.initPho());
     fol.serialize(builder.initFol());
     enz_act.serialize(builder.initEnzAct());
   }
-  void
-  deserialize(mas::schema::model::monica::Voc::LeafEmissionT::Reader reader) {
+  void deserialize(mas::schema::model::monica::Voc::LeafEmissionT::Reader reader) {
     foliage_layer = reader.getFoliageLayer();
     pho.deserialize(reader.getPho());
     fol.deserialize(reader.getFol());
@@ -554,13 +516,11 @@ struct LeafEmissions {
   LeafEmissions() {}
   LeafEmissions(double x, double y) : isoprene(x), monoterp(y) {}
 
-  void serialize(
-      mas::schema::model::monica::Voc::LeafEmissions::Builder builder) const {
+  void serialize(mas::schema::model::monica::Voc::LeafEmissions::Builder builder) const {
     builder.setIsoprene(isoprene);
     builder.setMonoterp(monoterp);
   }
-  void
-  deserialize(mas::schema::model::monica::Voc::LeafEmissions::Reader reader) {
+  void deserialize(mas::schema::model::monica::Voc::LeafEmissions::Reader reader) {
     isoprene = reader.getIsoprene();
     monoterp = reader.getMonoterp();
   }

@@ -41,8 +41,7 @@ using namespace mas;
 
 // std::map<std::string, DataAccessor> daCache;
 
-RunMonica::RunMonica(bool startedServerInDebugMode,
-                     mas::infrastructure::common::Restorer *restorer)
+RunMonica::RunMonica(bool startedServerInDebugMode, mas::infrastructure::common::Restorer *restorer)
     : _restorer(restorer), _startedServerInDebugMode(startedServerInDebugMode) {
   _id = kj::str(sole::uuid4().str());
   _name = kj::str("Monica capnp server");
@@ -66,8 +65,7 @@ kj::Promise<void> RunMonica::run(RunContext context) {
     std::string err;
     auto rest = envR.getRest();
     if (rest.getType() != mas::schema::common::StructuredText::Type::JSON) {
-      return monica::makeOutput(
-          std::string("Error: 'rest' field is not valid JSON!"));
+      return monica::makeOutput(std::string("Error: 'rest' field is not valid JSON!"));
     }
 
     const Json &envJson = Json::parse(rest.getValue().cStr(), err);
@@ -76,18 +74,14 @@ kj::Promise<void> RunMonica::run(RunContext context) {
     Env env;
 
     // set available functions to calculate pwp, fc and sat before env creation
-    auto pathToSoilDir =
-        fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+    auto pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
-        Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
-            pathToSoilDir);
+        Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
         Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-    env.params.siteParameters
-        .calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
         Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
-    env.params.siteParameters
-        .calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
+    env.params.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
         Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
     env.params.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] =
         Soil::updateUnsetPwpFcSatFromToth;
@@ -95,14 +89,12 @@ kj::Promise<void> RunMonica::run(RunContext context) {
     auto errors = env_merge(&env, envJson);
 
     if (!soilLayers.empty()) {
-      if (auto it = std::find(errors.errors.begin(), errors.errors.end(),
-                              "Soil profile is empty!");
+      if (auto it = std::find(errors.errors.begin(), errors.errors.end(), "Soil profile is empty!");
           it != errors.errors.end()) {
         errors.errors.erase(it);
       }
-      errors.append(siteparameters::merge(
-          &env.params.siteParameters,
-          J11Object{{"SoilProfileParameters", soilLayers}}));
+      errors.append(siteparameters::merge(&env.params.siteParameters,
+                                          J11Object{{"SoilProfileParameters", soilLayers}}));
     }
 
     Output out;
@@ -113,11 +105,10 @@ kj::Promise<void> RunMonica::run(RunContext context) {
         eda.result = da;
       } else if (!env.climateData.isValid()) {
         if (!env.climateCSV.empty()) {
-          eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV,
-                                                       env.csvViaHeaderOptions);
+          eda = readClimateDataFromCSVStringViaHeaders(env.climateCSV, env.csvViaHeaderOptions);
         } else if (!env.pathsToClimateCSV.empty()) {
-          eda = readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV,
-                                                      env.csvViaHeaderOptions);
+          eda =
+              readClimateDataFromCSVFilesViaHeaders(env.pathsToClimateCSV, env.csvViaHeaderOptions);
         }
       }
 
@@ -127,11 +118,10 @@ kj::Promise<void> RunMonica::run(RunContext context) {
         else
           assert(env.climateData.isValid());
         env.debugMode = _startedServerInDebugMode && env.debugMode;
-        env.params.userSoilMoistureParameters.getCapillaryRiseRate =
-            [](std::string soilTexture, size_t distance) {
-              return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture),
-                                                            distance);
-            };
+        env.params.userSoilMoistureParameters.getCapillaryRiseRate = [](std::string soilTexture,
+                                                                        size_t distance) {
+          return Soil::readCapillaryRiseRates().getRate(kj::mv(soilTexture), distance);
+        };
 
         out = monica::runMonica(kj::mv(env));
       } else {
@@ -166,9 +156,7 @@ kj::Promise<void> RunMonica::run(RunContext context) {
     auto layersProm = fromCapnpSoilProfile(envR.getSoilProfile());
     proms.add(layersProm.then(
         [this](auto &&layers) mutable { _soilLayers = layers; },
-        [](auto &&e) {
-          KJ_LOG(INFO, "Error while trying to get soil layers: ", e);
-        }));
+        [](auto &&e) { KJ_LOG(INFO, "Error while trying to get soil layers: ", e); }));
   } else {
     _soilLayers = J11Array();
     proms.add(kj::READY_NOW);
@@ -184,16 +172,11 @@ kj::Promise<void> RunMonica::run(RunContext context) {
             res.setValue(output::to_json(&out).dump());
           },
           [context](auto &&e) mutable {
-            KJ_LOG(
-                INFO,
-                "Error while trying to gather soil and/or time series data: ",
-                e);
+            KJ_LOG(INFO, "Error while trying to gather soil and/or time series data: ", e);
             auto rs = context.getResults();
             auto res = rs.initResult();
             res.setType(mas::schema::common::StructuredText::Type::JSON);
-            res.setValue(kj::str(
-                "Error while trying to gather soil and/or time series data: ",
-                e));
+            res.setValue(kj::str("Error while trying to gather soil and/or time series data: ", e));
           });
 }
 

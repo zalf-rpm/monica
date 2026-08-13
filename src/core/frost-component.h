@@ -42,30 +42,24 @@ struct FrostComponent {
 };
 
 namespace frostcomponent {
-void initialize(FrostComponent *fc, SoilColumn *soilColumn,
-                double pm_HydraulicConductivityRedux, double p_timeStep);
-void deserialize(FrostComponent *fc,
-                 mas::schema::model::monica::FrostModuleState::Reader reader);
+void initialize(FrostComponent *fc, SoilColumn *soilColumn, double pm_HydraulicConductivityRedux,
+                double p_timeStep);
+void deserialize(FrostComponent *fc, mas::schema::model::monica::FrostModuleState::Reader reader);
 void serialize(const FrostComponent *fc,
                mas::schema::model::monica::FrostModuleState::Builder builder);
-void calcSoilFrost(FrostComponent *fc, double mean_air_temperature,
-                   double snow_depth);
+void calcSoilFrost(FrostComponent *fc, double mean_air_temperature, double snow_depth);
 double getMeanBulkDensity(const FrostComponent *fc);
 double getMeanFieldCapacity(const FrostComponent *fc);
-double calcHeatConductivityFrozen(const FrostComponent *fc,
-                                  double mean_bulk_density, double sii);
-double calcHeatConductivityUnfrozen(const FrostComponent *fc,
-                                    double mean_bulk_density,
+double calcHeatConductivityFrozen(const FrostComponent *fc, double mean_bulk_density, double sii);
+double calcHeatConductivityUnfrozen(const FrostComponent *fc, double mean_bulk_density,
                                     double mean_field_capacity);
 double calcSii(double mean_field_capacity);
 double calcThawDepth(const FrostComponent *fc, double temperature_under_snow,
-                     double heat_conductivity_unfrozen,
-                     double mean_field_capacity);
+                     double heat_conductivity_unfrozen, double mean_field_capacity);
 double calcFrostDepth(FrostComponent *fc, double mean_field_capacity,
-                      double heat_conductivity_frozen,
-                      double temperature_under_snow);
-double calcTemperatureUnderSnow(const FrostComponent *fc,
-                                double mean_air_temperature, double snow_depth);
+                      double heat_conductivity_frozen, double temperature_under_snow);
+double calcTemperatureUnderSnow(const FrostComponent *fc, double mean_air_temperature,
+                                double snow_depth);
 void updateLambdaRedux(FrostComponent *fc);
 } // namespace frostcomponent
 

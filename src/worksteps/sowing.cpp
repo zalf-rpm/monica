@@ -65,9 +65,7 @@ Errors workstep::merge(SowingData *s, json11::Json j) {
 
       s->isValid = true;
     } else {
-      res.errors.push_back(
-          string("Couldn't find 'cropParams' key in JSON object:\n") +
-          jc.dump());
+      res.errors.push_back(string("Couldn't find 'cropParams' key in JSON object:\n") + jc.dump());
       s->isValid = false;
     }
 
@@ -88,9 +86,8 @@ Errors workstep::merge(SowingData *s, json11::Json j) {
     if (jc.has_shape({{"residueParams", json11::Json::OBJECT}}, err)) {
       cropresidueparameters::merge(&s->residueParams, jc["residueParams"]);
     } else {
-      res.errors.push_back(
-          string("Couldn't find 'residueParams' key in JSON object:\n") +
-          jc.dump());
+      res.errors.push_back(string("Couldn't find 'residueParams' key in JSON object:\n") +
+                           jc.dump());
       s->isValid = false;
     }
   }
@@ -106,12 +103,11 @@ Errors workstep::merge(SowingData *s, json11::Json j) {
 
 json11::Json workstep::to_json(const SowingData *s, const Workstep *ws,
                                bool includeFullCropParameters) {
-  auto co = json11::Json::object{
-      {"cropParams", cropparameters::to_json(&s->cropParams)},
-      {"residueParams", cropresidueparameters::to_json(&s->residueParams)}};
+  auto co =
+      json11::Json::object{{"cropParams", cropparameters::to_json(&s->cropParams)},
+                           {"residueParams", cropresidueparameters::to_json(&s->residueParams)}};
   if (s->separatePerennialCropParams)
-    co["perennialCropParams"] =
-        cropparameters::to_json(s->separatePerennialCropParams.get());
+    co["perennialCropParams"] = cropparameters::to_json(s->separatePerennialCropParams.get());
 
   auto o = json11::Json::object{
       {"type", "Sowing"},
@@ -141,23 +137,18 @@ bool workstep::apply(SowingData *s, Workstep *ws, MonicaModel *model) {
   if (s->isValid) {
     model->cultivationMethodCount++;
 
-    auto addOMFunc = [model](const std::map<size_t, double> &layer2amount,
-                             double nconc) {
+    auto addOMFunc = [model](const std::map<size_t, double> &layer2amount, double nconc) {
       soilorganic::addOrganicMatter(model->soilOrganic.get(),
-                                    model->currentCropModule->residueParams,
-                                    layer2amount, nconc);
+                                    model->currentCropModule->residueParams, layer2amount, nconc);
     };
     model->currentCropModule = nullptr;
     model->currentCropModule = makeCropModule(
-        model->soilColumn.get(), &s->cropParams, &s->residueParams,
-        &model->sitePs, &model->cropPs, &model->simPs,
-        [model](string event) {
-          model->currentEvents.insert(std::move(event));
-        },
+        model->soilColumn.get(), &s->cropParams, &s->residueParams, &model->sitePs, &model->cropPs,
+        &model->simPs, [model](string event) { model->currentEvents.insert(std::move(event)); },
         addOMFunc,
         [model](double avgAirTemp) {
-          return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-              model->soilMoisture.get(), avgAirTemp);
+          return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(model->soilMoisture.get(),
+                                                                       avgAirTemp);
         },
         &model->intercropping);
 
@@ -165,10 +156,8 @@ bool workstep::apply(SowingData *s, Workstep *ws, MonicaModel *model) {
       model->currentCropModule->perennialCropParams =
           kj::heap<CropParameters>(*s->separatePerennialCropParams.get());
 
-    soiltransport::putCrop(model->soilTransport.get(),
-                           model->currentCropModule.get());
-    soilcolumn::putCrop(model->soilColumn.get(),
-                        model->currentCropModule.get());
+    soiltransport::putCrop(model->soilTransport.get(), model->currentCropModule.get());
+    soilcolumn::putCrop(model->soilColumn.get(), model->currentCropModule.get());
     model->soilMoisture->cropModule = model->currentCropModule.get();
     model->soilOrganic->cropModule = model->currentCropModule.get();
 
@@ -178,10 +167,9 @@ bool workstep::apply(SowingData *s, Workstep *ws, MonicaModel *model) {
       debug() << "nMin fertilising summer crop" << endl;
       double fert_amount = monicamodel::applyMineralFertiliserViaNMinMethod(
           model, model->simPs.p_NMinFertiliserPartition,
-          makeNMinCropParameters(
-              s->cropParams.speciesParams.pc_SamplingDepth,
-              s->cropParams.speciesParams.pc_TargetNSamplingDepth,
-              s->cropParams.speciesParams.pc_TargetN30));
+          makeNMinCropParameters(s->cropParams.speciesParams.pc_SamplingDepth,
+                                 s->cropParams.speciesParams.pc_TargetNSamplingDepth,
+                                 s->cropParams.speciesParams.pc_TargetN30));
       monicamodel::addDailySumFertiliser(model, fert_amount);
     }
   }

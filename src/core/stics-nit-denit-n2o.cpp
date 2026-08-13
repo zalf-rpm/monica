@@ -17,8 +17,8 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm>
 
-double inline stepwiseLinearFunction3(double x, double xmin, double xmax,
-                                      double ymin = 0.0, double ymax = 1.0) {
+double inline stepwiseLinearFunction3(double x, double xmin, double xmax, double ymin = 0.0,
+                                      double ymax = 1.0) {
   if (x < xmin)
     return ymin;
   if (x > xmax)
@@ -26,9 +26,8 @@ double inline stepwiseLinearFunction3(double x, double xmin, double xmax,
   return ymin + (ymax - ymin) / (xmax - xmin) * (x - xmin);
 }
 
-inline double stepwiseLinearFunction4(double x, double xmin, double x1,
-                                      double x2, double xmax, double ymin = 0.0,
-                                      double ymax = 1.0) {
+inline double stepwiseLinearFunction4(double x, double xmin, double x1, double x2, double xmax,
+                                      double ymin = 0.0, double ymax = 1.0) {
   if (x <= xmin || x > xmax)
     return ymin;
   if (xmin < x && x < x1)
@@ -41,8 +40,7 @@ inline double stepwiseLinearFunction4(double x, double xmin, double x1,
 namespace nit {
 
 double fNH4(double NH4, double nh4_min, double w, double Kamm) {
-  return std::max(0.0, NH4 - nh4_min) /
-         (std::max(0.0, NH4 - nh4_min) + (w * Kamm));
+  return std::max(0.0, NH4 - nh4_min) / (std::max(0.0, NH4 - nh4_min) + (w * Kamm));
 }
 
 double fpH(double pHminnit, double pH, double pHmaxnit) {
@@ -53,23 +51,19 @@ double fTgauss(double t, double tnitopt_gauss, double scale_tnitopt) {
   return exp(-1 * pow(t - tnitopt_gauss, 2) / pow(scale_tnitopt, 2));
 }
 
-double fTstep(double t, double tnitmin, double tnitopt, double tnitopt2,
-              double tnitmax) {
-  return std::max(
-      0.0, stepwiseLinearFunction4(t, tnitmin, tnitopt, tnitopt2, tnitmax));
+double fTstep(double t, double tnitmin, double tnitopt, double tnitopt2, double tnitmax) {
+  return std::max(0.0, stepwiseLinearFunction4(t, tnitmin, tnitopt, tnitopt2, tnitmax));
 }
 
 double fWFPS(double wfps, double hminn, double hoptn, double fc, double sat) {
-  return stepwiseLinearFunction4(wfps, hminn * fc / sat, hoptn * fc / sat,
-                                 fc / sat, sat / sat);
+  return stepwiseLinearFunction4(wfps, hminn * fc / sat, hoptn * fc / sat, fc / sat, sat / sat);
 }
 
 } // namespace nit
 
 // nitrification
-double stics::vnit(const monica::SticsParameters &ps, double NH4, double pH,
-                   double soilT, double wfps, double soilWaterContent,
-                   double fc, double sat) {
+double stics::vnit(const monica::SticsParameters &ps, double NH4, double pH, double soilT,
+                   double wfps, double soilWaterContent, double fc, double sat) {
   auto vnitpot = 0.0;
   auto fNH4res = 0.0;
   switch (ps.code_vnit) {
@@ -116,23 +110,22 @@ double fWFPS(double wfps, double wfpsc) {
 } // namespace denit
 
 // denitrification
-double stics::vdenit(const monica::SticsParameters &ps, double corg, double NO3,
-                     double soilT, double wfps, double soilWaterContent) {
+double stics::vdenit(const monica::SticsParameters &ps, double corg, double NO3, double soilT,
+                     double wfps, double soilWaterContent) {
   auto vdenitpot = 0.0;
   switch (ps.code_pdenit) {
   case 1:
     vdenitpot = ps.vpotdenit;
     break;
   case 2:
-    vdenitpot = stepwiseLinearFunction3(corg, ps.cmin_pdenit, ps.cmax_pdenit,
-                                        ps.min_pdenit, ps.max_pdenit);
+    vdenitpot =
+        stepwiseLinearFunction3(corg, ps.cmin_pdenit, ps.cmax_pdenit, ps.min_pdenit, ps.max_pdenit);
     break;
   default:;
   }
 
   return vdenitpot * denit::fNO3(NO3, soilWaterContent, ps.Kd) *
-         denit::fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt) *
-         denit::fWFPS(wfps, ps.wfpsc);
+         denit::fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt) * denit::fWFPS(wfps, ps.wfpsc);
 }
 
 namespace n2o {
@@ -141,9 +134,7 @@ double fpH(double pH, double pHminden, double pHmaxden) {
   return stepwiseLinearFunction3(pH, pHminden, pHmaxden, 1.0, 0.0);
 }
 
-double fWFPS(double wfps, double wfpsc) {
-  return 1.0 - (wfps - wfpsc) / (1.0 - wfpsc);
-}
+double fWFPS(double wfps, double wfpsc) { return 1.0 - (wfps - wfpsc) / (1.0 - wfpsc); }
 
 double rcor(double wfpsc, double pH, double pHminden, double pHmaxden) {
   auto rest = fpH(pH, pHminden, pHmaxden);
@@ -154,9 +145,8 @@ double fNO3(double NO3) { return NO3 / (NO3 + 1); }
 
 } // namespace n2o
 
-stics::NitDenitN2O stics::N2O(const monica::SticsParameters &ps, double NO3,
-                              double wfps, double pH, double vnit,
-                              double vdenit) {
+stics::NitDenitN2O stics::N2O(const monica::SticsParameters &ps, double NO3, double wfps, double pH,
+                              double vnit, double vdenit) {
 
   auto z = 0.0;
   switch (ps.code_rationit) {
@@ -175,8 +165,8 @@ stics::NitDenitN2O stics::N2O(const monica::SticsParameters &ps, double NO3,
     r = ps.ratiodenit;
     break;
   case 2:
-    r = n2o::rcor(ps.wfpsc, pH, ps.pHminden, ps.pHmaxden) *
-        n2o::fWFPS(wfps, ps.wfpsc) * n2o::fNO3(NO3);
+    r = n2o::rcor(ps.wfpsc, pH, ps.pHminden, ps.pHmaxden) * n2o::fWFPS(wfps, ps.wfpsc) *
+        n2o::fNO3(NO3);
     break;
   default:;
   }
@@ -187,10 +177,9 @@ stics::NitDenitN2O stics::N2O(const monica::SticsParameters &ps, double NO3,
   return std::make_pair(N2Onit, N2Odenit);
 }
 
-stics::NitDenitN2O stics::N2O(const monica::SticsParameters &ps, double corg,
-                              double NO3, double soilT, double wfps,
-                              double soilWaterContent, double NH4, double pH,
-                              double fc, double sat) {
+stics::NitDenitN2O stics::N2O(const monica::SticsParameters &ps, double corg, double NO3,
+                              double soilT, double wfps, double soilWaterContent, double NH4,
+                              double pH, double fc, double sat) {
   auto nit = vnit(ps, NH4, pH, soilT, wfps, soilWaterContent, fc, sat);
   auto denit = vdenit(ps, corg, NO3, soilT, wfps, soilWaterContent);
   return N2O(ps, NO3, wfps, pH, nit, denit);

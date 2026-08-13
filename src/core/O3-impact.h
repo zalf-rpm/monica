@@ -28,16 +28,16 @@ struct O3_impact_params {
 };
 
 struct O3_impact_in {
-  double FC;      // field capacity, m3 m-3
-  double WP;      // wilting point, m3 m-3
-  double SWC;     // soil water content, m3 m-3
-  double ET0;     // reference ET, mm d-1
-  double O3a;     // ambient O3 partial pressure, nbar or nmol mol-1
-  double gs;      // stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
-  int h;          // hour of the day (0-23)
-  double reldev;  // relative development
-  double GDD_flo; // GDD from emergence to flowering
-  double GDD_mat; // GDD from emergence to maturity
+  double FC;          // field capacity, m3 m-3
+  double WP;          // wilting point, m3 m-3
+  double SWC;         // soil water content, m3 m-3
+  double ET0;         // reference ET, mm d-1
+  double O3a;         // ambient O3 partial pressure, nbar or nmol mol-1
+  double gs;          // stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
+  int h;              // hour of the day (0-23)
+  double reldev;      // relative development
+  double GDD_flo;     // GDD from emergence to flowering
+  double GDD_mat;     // GDD from emergence to maturity
   double fO3s_d_prev; // short term ozone induced reduction of Ac of the
                       // previous time step
   double sum_O3_up;   // cumulated O3 uptake, �mol m-2 (unit ground area)
@@ -47,9 +47,8 @@ struct O3_impact_out {
   double hourly_O3_up{0.0}; // hourly O3 uptake, �mol m-2 h-1 (unit ground area)
   double fO3s_d{1.0};       // short term ozone induced reduction of Ac
   double fO3l{1.0};         // long term ozone induced senescence
-  double fLS{
-      1.0}; // leaf senescence reduction of Ac, modified by O3 cumulative uptake
-  double WS_st_clos{1.0}; // water deficit factor for stomatal closure
+  double fLS{1.0};          // leaf senescence reduction of Ac, modified by O3 cumulative uptake
+  double WS_st_clos{1.0};   // water deficit factor for stomatal closure
 };
 
 O3_impact_out O3_impact_hourly(O3_impact_in in, O3_impact_params par,

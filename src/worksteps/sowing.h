@@ -34,9 +34,8 @@ struct SowingData {
   CropParameters cropParams;
   kj::Own<CropParameters> separatePerennialCropParams;
   CropResidueParameters residueParams;
-  int plantDensity{-1}; //[plants m-2]
-  double initialKcb{
-      0.15}; //!< FAO-56 Dual Kc: initial Kcb at planting (default = 0.15)
+  int plantDensity{-1};    //[plants m-2]
+  double initialKcb{0.15}; //!< FAO-56 Dual Kc: initial Kcb at planting (default = 0.15)
 };
 
 namespace workstep {

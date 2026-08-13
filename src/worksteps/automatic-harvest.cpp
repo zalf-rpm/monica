@@ -47,33 +47,26 @@ Errors workstep::merge(AutomaticHarvestData *ah, json11::Json j) {
   return res;
 }
 
-json11::Json workstep::to_json(const AutomaticHarvestData *ah,
-                               const Workstep *ws,
+json11::Json workstep::to_json(const AutomaticHarvestData *ah, const Workstep *ws,
                                bool includeFullCropParameters) {
-  auto o = workstep::to_json(static_cast<const HarvestData *>(ah), ws,
-                             includeFullCropParameters)
+  auto o = workstep::to_json(static_cast<const HarvestData *>(ah), ws, includeFullCropParameters)
                .object_items();
   o["type"] = "AutomaticHarvest";
-  o["latest-date"] =
-      J11Array{ah->latestDate.toIsoDateString(), "", "latest harvesting date"};
+  o["latest-date"] = J11Array{ah->latestDate.toIsoDateString(), "", "latest harvesting date"};
   o["min-%-asw"] =
-      J11Array{ah->minPercentASW, "%",
-               "minimal soil-moisture in percent of available soil-water"};
+      J11Array{ah->minPercentASW, "%", "minimal soil-moisture in percent of available soil-water"};
   o["max-%-asw"] =
-      J11Array{ah->maxPercentASW, "%",
-               "maximal soil-moisture in percent of available soil-water"};
+      J11Array{ah->maxPercentASW, "%", "maximal soil-moisture in percent of available soil-water"};
   o["max-3d-precip-sum"] = J11Array{ah->max3dayPrecipSum, "mm",
                                     "sum of precipitation in the last three "
                                     "days (including current day)"};
   o["max-curr-day-precip"] =
-      J11Array{ah->maxCurrentDayPrecipSum, "mm",
-               "max precipitation allowed at current day"};
+      J11Array{ah->maxCurrentDayPrecipSum, "mm", "max precipitation allowed at current day"};
   o["harvest-time"] = ah->harvestTime;
   return o;
 }
 
-bool workstep::apply(AutomaticHarvestData *ah, Workstep *ws,
-                     MonicaModel *model) {
+bool workstep::apply(AutomaticHarvestData *ah, Workstep *ws, MonicaModel *model) {
   workstep::apply(static_cast<HarvestData *>(ah), ws, model);
 
   model->currentEvents.insert("AutomaticHarvest");
@@ -89,23 +82,19 @@ bool workstep::condition(AutomaticHarvestData *ah, MonicaModel *model) {
   // got a crop and not yet harvested
   if (cg && !ah->cropHarvested)
     conditionMet =
-        model->currentStepDate >=
-            ah->absLatestDate // harvest after or at latest date
-        ||
-        (ah->harvestTime == "maturity" &&
-         cropmodule::maturityReached(
-             model->currentCropModule) // has maturity been reached
-         && workstep::isSoilMoistureOk(model, ah->minPercentASW,
-                                       ah->maxPercentASW) // check soil moisture
-         && workstep::isPrecipitationOk(
-                model->climateData, ah->max3dayPrecipSum,
-                ah->maxCurrentDayPrecipSum)); // check precipitation
+        model->currentStepDate >= ah->absLatestDate // harvest after or at latest date
+        || (ah->harvestTime == "maturity" &&
+            cropmodule::maturityReached(model->currentCropModule) // has maturity been reached
+            && workstep::isSoilMoistureOk(model, ah->minPercentASW,
+                                          ah->maxPercentASW) // check soil moisture
+            && workstep::isPrecipitationOk(model->climateData, ah->max3dayPrecipSum,
+                                           ah->maxCurrentDayPrecipSum)); // check precipitation
 
   return conditionMet;
 }
 
-bool workstep::reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date,
-                      bool addYear, bool forceInitYear) {
+bool workstep::reinit(AutomaticHarvestData *ah, Workstep *ws, Tools::Date date, bool addYear,
+                      bool forceInitYear) {
   workstep::reinitCommon(ws, date, addYear);
 
   ah->cropHarvested = false;

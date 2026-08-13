@@ -35,24 +35,20 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 using namespace Voc;
 using namespace Tools;
 
-LeafEmissions calcLeafEmission(const leaf_emission_t &lemi,
-                               double _species_EF_MONOS) {
+LeafEmissions calcLeafEmission(const leaf_emission_t &lemi, double _species_EF_MONOS) {
   LeafEmissions lems;
   {
     // isoprene, Guenther et al. 1999 (from Harley et al. 2004)
     double const x30 = (1.0 / TOPT - 1.0 / (30.0 + D_IN_K)) / RGAS;
-    double const cti30 =
-        CT2 * exp(CT1 * x30) / (CT2 - CT1 * (1.0 - exp(CT2 * x30)));
+    double const cti30 = CT2 * exp(CT1 * x30) / (CT2 - CT1 * (1.0 - exp(CT2 * x30)));
 
-    double const eopt = flt_equal_zero(cti30) ? lemi.enz_act.ef_iso
-                                              : (lemi.enz_act.ef_iso / cti30);
+    double const eopt = flt_equal_zero(cti30) ? lemi.enz_act.ef_iso : (lemi.enz_act.ef_iso / cti30);
     double const x = (1.0 / TOPT - 1.0 / lemi.fol.tempK) / RGAS;
 
     // emission scaling factor of isoprenes to temperature
     double const cti = CT2 * exp(CT1 * x) / (CT2 - CT1 * (1.0 - exp(CT2 * x)));
     // emission scaling factor to light
-    double const cl =
-        ALPHA * CL1 * lemi.pho.par / sqrt(1.0 + sqr(ALPHA) * sqr(lemi.pho.par));
+    double const cl = ALPHA * CL1 * lemi.pho.par / sqrt(1.0 + sqr(ALPHA) * sqr(lemi.pho.par));
 
     // std::cout << "eopt: " << eopt << " cl: " << cl << " cti: " << cti << " =
     // " << (eopt * bound_max(cl, 1.0) * cti) << std::endl;
@@ -66,22 +62,18 @@ LeafEmissions calcLeafEmission(const leaf_emission_t &lemi,
     // ??
     double const cti =
         exp(CT1 * (lemi.fol.tempK - TREF) / (RGAS * TREF * lemi.fol.tempK)) /
-        (0.961 +
-         exp(CT2 * (lemi.fol.tempK - TOPT) / (RGAS * TREF * lemi.fol.tempK)));
-    double const cl =
-        ALPHA * CL1 * lemi.pho.par / sqrt(1.0 + sqr(ALPHA) * sqr(lemi.pho.par));
+        (0.961 + exp(CT2 * (lemi.fol.tempK - TOPT) / (RGAS * TREF * lemi.fol.tempK)));
+    double const cl = ALPHA * CL1 * lemi.pho.par / sqrt(1.0 + sqr(ALPHA) * sqr(lemi.pho.par));
 
-    lems.monoterp = _species_EF_MONOS * ctm +
-                    lemi.enz_act.ef_mono * bound_max(cl, 1.0) * cti;
+    lems.monoterp = _species_EF_MONOS * ctm + lemi.enz_act.ef_mono * bound_max(cl, 1.0) * cti;
   }
 
   return lems;
 }
 
-Voc::Emissions
-Voc::calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
-                                                  const MicroClimateData &mcd,
-                                                  double dayFraction) {
+Voc::Emissions Voc::calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
+                                                                 const MicroClimateData &mcd,
+                                                                 double dayFraction) {
   Emissions ems;
 
   double const tslength = SEC_IN_DAY * dayFraction;
@@ -94,17 +86,14 @@ Voc::calculateGuentherVOCEmissionsMultipleSpecies(std::vector<SpeciesData> sds,
       // g-1 h-1) specific leaf weight (g m-2)
       double const lsw = G_IN_KG / species.sla;
       static double const C0 = SEC_IN_HR * MC * UG_IN_NG;
-      lemi.enz_act.ef_iso =
-          species.EF_ISO; // 5.0 * C0 * species.phys_isoAct_vtfl.at(fl) / (lsw *
-                          // species.SCALE_I);
-      lemi.enz_act.ef_mono =
-          species.EF_MONO; // 10.0 * C0 * species.phys_monoAct_vtfl.at(fl) /
-                           // (lsw * species.SCALE_M);
+      lemi.enz_act.ef_iso = species.EF_ISO;   // 5.0 * C0 * species.phys_isoAct_vtfl.at(fl) / (lsw *
+                                              // species.SCALE_I);
+      lemi.enz_act.ef_mono = species.EF_MONO; // 10.0 * C0 * species.phys_monoAct_vtfl.at(fl) /
+                                              // (lsw * species.SCALE_M);
 
       // conversion of microclimate variables
-      lemi.pho.par = mcd.rad * FPAR *
-                     W_IN_UMOL; // par [umol m-2 s-1 pa-radiation] = rad_fl [W
-                                // m-2 global radiation] * 0.45 * 4.57
+      lemi.pho.par = mcd.rad * FPAR * W_IN_UMOL; // par [umol m-2 s-1 pa-radiation] = rad_fl [W
+                                                 // m-2 global radiation] * 0.45 * 4.57
       // lemi.pho.par24 = mcd.rad24 * FPAR * W_IN_UMOL;
       // lemi.pho.par240 = mcd.rad240 * FPAR * W_IN_UMOL;
       lemi.fol.tempK = mcd.tFol + D_IN_K;

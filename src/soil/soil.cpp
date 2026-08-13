@@ -51,16 +51,14 @@ Errors Soil::noSetPwpFcSat(SoilParameters *sp, int) {
   return errors;
 }
 
-SoilParameters
-Soil::makeSoilParameters(std::function<Errors(SoilParameters *)> setPwpFcSat) {
+SoilParameters Soil::makeSoilParameters(std::function<Errors(SoilParameters *)> setPwpFcSat) {
   SoilParameters sp;
   sp.calculateAndSetPwpFcSat = kj::mv(setPwpFcSat);
   return sp;
 }
 
-void soilparameters::serialize(
-    const SoilParameters *sp,
-    mas::schema::model::monica::SoilParameters::Builder builder) {
+void soilparameters::serialize(const SoilParameters *sp,
+                               mas::schema::model::monica::SoilParameters::Builder builder) {
   builder.setSoilSandContent(sp->vs_SoilSandContent);
   builder.setSoilClayContent(sp->vs_SoilClayContent);
   builder.setSoilpH(sp->vs_SoilpH);
@@ -80,9 +78,8 @@ void soilparameters::serialize(
   builder.setSoilOrganicMatter(sp->_vs_SoilOrganicMatter);
 }
 
-void soilparameters::deserialize(
-    SoilParameters *sp,
-    mas::schema::model::monica::SoilParameters::Reader reader) {
+void soilparameters::deserialize(SoilParameters *sp,
+                                 mas::schema::model::monica::SoilParameters::Reader reader) {
   sp->vs_SoilSandContent = reader.getSoilSandContent();
   sp->vs_SoilClayContent = reader.getSoilClayContent();
   sp->vs_SoilpH = reader.getSoilpH();
@@ -124,18 +121,13 @@ Errors soilparameters::merge(SoilParameters *sp, json11::Json j) {
   auto &_vs_SoilOrganicMatter = sp->_vs_SoilOrganicMatter;
   auto &calculateAndSetPwpFcSat = sp->calculateAndSetPwpFcSat;
 
-  set_double_value(vs_SoilSandContent, j, "Sand",
-                   transformIfPercent(j, "Sand"));
-  set_double_value(vs_SoilClayContent, j, "Clay",
-                   transformIfPercent(j, "Clay"));
+  set_double_value(vs_SoilSandContent, j, "Sand", transformIfPercent(j, "Sand"));
+  set_double_value(vs_SoilClayContent, j, "Clay", transformIfPercent(j, "Clay"));
   set_double_value(vs_SoilpH, j, "pH");
-  set_double_value(vs_SoilStoneContent, j, "Sceleton",
-                   transformIfPercent(j, "Sceleton"));
+  set_double_value(vs_SoilStoneContent, j, "Sceleton", transformIfPercent(j, "Sceleton"));
   set_double_value(vs_Lambda, j, "Lambda");
-  set_double_value(vs_FieldCapacity, j, "FieldCapacity",
-                   transformIfPercent(j, "FieldCapacity"));
-  set_double_value(vs_Saturation, j, "PoreVolume",
-                   transformIfPercent(j, "PoreVolume"));
+  set_double_value(vs_FieldCapacity, j, "FieldCapacity", transformIfPercent(j, "FieldCapacity"));
+  set_double_value(vs_Saturation, j, "PoreVolume", transformIfPercent(j, "PoreVolume"));
   set_double_value(vs_PermanentWiltingPoint, j, "PermanentWiltingPoint",
                    transformIfPercent(j, "PermanentWiltingPoint"));
   set_string_value(vs_SoilTexture, j, "KA5TextureClass");
@@ -170,10 +162,8 @@ Errors soilparameters::merge(SoilParameters *sp, json11::Json j) {
       es.append(res);
   }
 
-  if (vs_SoilClayContent >= 0 && vs_SoilSandContent >= 0 &&
-      vs_SoilTexture.empty()) {
-    vs_SoilTexture =
-        sandAndClay2KA5texture(vs_SoilSandContent, vs_SoilClayContent);
+  if (vs_SoilClayContent >= 0 && vs_SoilSandContent >= 0 && vs_SoilTexture.empty()) {
+    vs_SoilTexture = sandAndClay2KA5texture(vs_SoilSandContent, vs_SoilClayContent);
   }
 
   // restrict sceleton to 80%, else FC, PWP and SAT could be calculated too low,
@@ -186,22 +176,20 @@ Errors soilparameters::merge(SoilParameters *sp, json11::Json j) {
 
   // restrict FC, PWP and SAT else the water transport algorithm gets instable
   if (vs_FieldCapacity < 0.05) {
-    es.appendWarning(kj::str("Field capacity is too low (",
-                             vs_FieldCapacity * 100, "%). Is being set to 5%.")
-                         .cStr());
+    es.appendWarning(
+        kj::str("Field capacity is too low (", vs_FieldCapacity * 100, "%). Is being set to 5%.")
+            .cStr());
     vs_FieldCapacity = 0.05;
   }
   if (vs_PermanentWiltingPoint < 0.01) {
-    es.appendWarning(kj::str("Permanent wilting point is too low (",
-                             vs_PermanentWiltingPoint * 100,
+    es.appendWarning(kj::str("Permanent wilting point is too low (", vs_PermanentWiltingPoint * 100,
                              "%). Is being set to 1%.")
                          .cStr());
     vs_PermanentWiltingPoint = 0.01;
   }
   if (vs_Saturation < 0.1) {
-    es.appendWarning(kj::str("Saturation is too low (", vs_Saturation * 100,
-                             "%). Is being set to 10%.")
-                         .cStr());
+    es.appendWarning(
+        kj::str("Saturation is too low (", vs_Saturation * 100, "%). Is being set to 10%.").cStr());
     vs_Saturation = 0.1;
   }
 
@@ -217,62 +205,49 @@ Errors soilparameters::merge(SoilParameters *sp, json11::Json j) {
   //   bounds [0, 1].").cStr());
   // }
   if (vs_SoilClayContent < 0 || vs_SoilClayContent > 1.0) {
-    es.appendError(kj::str("Clay content (", vs_SoilClayContent,
-                           ") is out of bounds [0, 1].")
-                       .cStr());
+    es.appendError(
+        kj::str("Clay content (", vs_SoilClayContent, ") is out of bounds [0, 1].").cStr());
   }
   if (vs_SoilpH < 0 || vs_SoilpH > 14) {
-    es.appendError(
-        kj::str("pH value (", vs_SoilpH, ") is out of bounds [0, 14].").cStr());
+    es.appendError(kj::str("pH value (", vs_SoilpH, ") is out of bounds [0, 14].").cStr());
   }
   if (vs_SoilStoneContent < 0 || vs_SoilStoneContent > 1.0) {
-    es.appendError(
-        kj::str("Sceleton (", vs_SoilStoneContent, ") is out of bounds [0, 1].")
-            .cStr());
+    es.appendError(kj::str("Sceleton (", vs_SoilStoneContent, ") is out of bounds [0, 1].").cStr());
   }
   if (vs_FieldCapacity < 0 || vs_FieldCapacity > 1.0) {
-    es.appendError(kj::str("FieldCapacity (", vs_FieldCapacity,
-                           ") is out of bounds [0, 1].")
-                       .cStr());
+    es.appendError(
+        kj::str("FieldCapacity (", vs_FieldCapacity, ") is out of bounds [0, 1].").cStr());
   }
   if (vs_Saturation < 0 || vs_Saturation > 1.0) {
-    es.appendError(
-        kj::str("PoreVolume (", vs_Saturation, ") is out of bounds [0, 1].")
-            .cStr());
+    es.appendError(kj::str("PoreVolume (", vs_Saturation, ") is out of bounds [0, 1].").cStr());
   }
   if (vs_PermanentWiltingPoint < 0 || vs_PermanentWiltingPoint > 1.0) {
-    es.appendError(kj::str("PermanentWiltingPoint (", vs_PermanentWiltingPoint,
-                           ") is out of bounds [0, 1].")
-                       .cStr());
+    es.appendError(
+        kj::str("PermanentWiltingPoint (", vs_PermanentWiltingPoint, ") is out of bounds [0, 1].")
+            .cStr());
   }
   if (vs_SoilMoisturePercentFC < 0 || vs_SoilMoisturePercentFC > 100) {
-    es.appendError(kj::str("SoilMoisturePercentFC (", vs_SoilMoisturePercentFC,
-                           ") is out of bounds [0, 100].")
-                       .cStr());
+    es.appendError(
+        kj::str("SoilMoisturePercentFC (", vs_SoilMoisturePercentFC, ") is out of bounds [0, 100].")
+            .cStr());
   }
-  if (_vs_SoilBulkDensity < 0 &&
-      (_vs_SoilRawDensity < 0 || _vs_SoilRawDensity > 2000)) {
-    es.appendWarning(kj::str("SoilRawDensity (", _vs_SoilRawDensity,
-                             ") is out of bounds [0, 2000].")
-                         .cStr());
+  if (_vs_SoilBulkDensity < 0 && (_vs_SoilRawDensity < 0 || _vs_SoilRawDensity > 2000)) {
+    es.appendWarning(
+        kj::str("SoilRawDensity (", _vs_SoilRawDensity, ") is out of bounds [0, 2000].").cStr());
   }
-  if (_vs_SoilRawDensity < 0 &&
-      (_vs_SoilBulkDensity < 0 || _vs_SoilBulkDensity > 2000)) {
-    es.appendWarning(kj::str("SoilBulkDensity (", _vs_SoilBulkDensity,
-                             ") is out of bounds [0, 2000].")
-                         .cStr());
+  if (_vs_SoilRawDensity < 0 && (_vs_SoilBulkDensity < 0 || _vs_SoilBulkDensity > 2000)) {
+    es.appendWarning(
+        kj::str("SoilBulkDensity (", _vs_SoilBulkDensity, ") is out of bounds [0, 2000].").cStr());
   }
-  if (_vs_SoilOrganicMatter < 0 &&
-      (_vs_SoilOrganicCarbon < 0 || _vs_SoilOrganicCarbon > 1.0)) {
-    es.appendError(kj::str("SoilOrganicCarbon content (", _vs_SoilOrganicCarbon,
-                           ") is out of bounds [0, 1].")
-                       .cStr());
+  if (_vs_SoilOrganicMatter < 0 && (_vs_SoilOrganicCarbon < 0 || _vs_SoilOrganicCarbon > 1.0)) {
+    es.appendError(
+        kj::str("SoilOrganicCarbon content (", _vs_SoilOrganicCarbon, ") is out of bounds [0, 1].")
+            .cStr());
   }
-  if (_vs_SoilOrganicCarbon < 0 &&
-      (_vs_SoilOrganicMatter < 0 || _vs_SoilOrganicMatter > 1.0)) {
-    es.appendError(kj::str("SoilOrganicMatter content (", _vs_SoilOrganicMatter,
-                           ") is out of bounds [0, 1].")
-                       .cStr());
+  if (_vs_SoilOrganicCarbon < 0 && (_vs_SoilOrganicMatter < 0 || _vs_SoilOrganicMatter > 1.0)) {
+    es.appendError(
+        kj::str("SoilOrganicMatter content (", _vs_SoilOrganicMatter, ") is out of bounds [0, 1].")
+            .cStr());
   }
 
   return es;
@@ -288,23 +263,19 @@ json11::Json soilparameters::to_json(const SoilParameters *sp) {
       {"Lambda", sp->vs_Lambda},
       {"FieldCapacity", J11Array{sp->vs_FieldCapacity, "vol% [0-1] (m3 m-3)"}},
       {"PoreVolume", J11Array{sp->vs_Saturation, "vol% [0-1] (m3 m-3)"}},
-      {"PermanentWiltingPoint",
-       J11Array{sp->vs_PermanentWiltingPoint, "vol% [0-1] (m3 m-3)"}},
+      {"PermanentWiltingPoint", J11Array{sp->vs_PermanentWiltingPoint, "vol% [0-1] (m3 m-3)"}},
       {"KA5TextureClass", sp->vs_SoilTexture},
       {"SoilAmmonium", J11Array{sp->vs_SoilAmmonium, "kg NH4-N m-3"}},
       {"SoilNitrate", J11Array{sp->vs_SoilNitrate, "kg NO3-N m-3"}},
       {"CN", sp->vs_Soil_CN_Ratio},
       {"SoilRawDensity", J11Array{sp->_vs_SoilRawDensity, "kg m-3"}},
       {"SoilBulkDensity", J11Array{sp->_vs_SoilBulkDensity, "kg m-3"}},
-      {"SoilOrganicCarbon",
-       J11Array{sp->_vs_SoilOrganicCarbon * 100.0, "mass% [0-100]"}},
+      {"SoilOrganicCarbon", J11Array{sp->_vs_SoilOrganicCarbon * 100.0, "mass% [0-100]"}},
       {"SoilOrganicMatter", J11Array{sp->_vs_SoilOrganicMatter, "mass% [0-1]"}},
-      {"SoilMoisturePercentFC",
-       J11Array{sp->vs_SoilMoisturePercentFC, "% [0-100]"}}};
+      {"SoilMoisturePercentFC", J11Array{sp->vs_SoilMoisturePercentFC, "% [0-100]"}}};
 }
 
-void CapillaryRiseRates::addRate(const std::string &soilType, size_t distance,
-                                 double value) {
+void CapillaryRiseRates::addRate(const std::string &soilType, size_t distance, double value) {
   //    std::cout << "Add cap rate: " << bodart.c_str() << "\tdist: " <<
   //    distance << "\tvalue: " << value << std::endl;
   // cap_rates_map.insert(std::pair<std::string,std::map<int,double>
@@ -315,8 +286,7 @@ void CapillaryRiseRates::addRate(const std::string &soilType, size_t distance,
 /**
  * Returns capillary rise rate for given soil type and distance to ground water.
  */
-double CapillaryRiseRates::getRate(const std::string &soilType,
-                                   size_t distance) const {
+double CapillaryRiseRates::getRate(const std::string &soilType, size_t distance) const {
   auto it = capillaryRiseRates.find(soilType);
   if (it == capillaryRiseRates.end()) {
     it = capillaryRiseRates.find(soilType.substr(0, 3));
@@ -341,33 +311,29 @@ const CapillaryRiseRates &Soil::readCapillaryRiseRates() {
     lock_guard<mutex> lock(lockable);
 
     if (!initialized) {
-      auto cacheAllData =
-          [](mas::schema::soil::CapillaryRiseRate::Reader data) {
-            for (const auto &scd : data.getList()) {
-              cap_rates.addRate(Tools::toUpper(scd.getSoilType()),
-                                scd.getDistance(), scd.getRate());
-            }
-          };
+      auto cacheAllData = [](mas::schema::soil::CapillaryRiseRate::Reader data) {
+        for (const auto &scd : data.getList()) {
+          cap_rates.addRate(Tools::toUpper(scd.getSoilType()), scd.getDistance(), scd.getRate());
+        }
+      };
 
       auto fs = kj::newDiskFilesystem();
 #ifdef _WIN32
-      auto pathToMonicaParamsSoil = fs->getCurrentPath().evalWin32(
-          replaceEnvVars("${MONICA_PARAMETERS}\\soil\\"));
+      auto pathToMonicaParamsSoil =
+          fs->getCurrentPath().evalWin32(replaceEnvVars("${MONICA_PARAMETERS}\\soil\\"));
 #else
-      auto pathToMonicaParamsSoil = fs->getCurrentPath().eval(
-          replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+      auto pathToMonicaParamsSoil =
+          fs->getCurrentPath().eval(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
 #endif
       try {
-        KJ_IF_MAYBE (file,
-                     fs->getRoot().tryOpenFile(pathToMonicaParamsSoil.append(
-                         "CapillaryRiseRates.sercapnp"))) {
+        KJ_IF_MAYBE (file, fs->getRoot().tryOpenFile(
+                               pathToMonicaParamsSoil.append("CapillaryRiseRates.sercapnp"))) {
           auto allBytes = (*file)->readAllBytes();
           kj::ArrayInputStream aios(allBytes);
           capnp::InputStreamMessageReader message(aios);
           cacheAllData(message.getRoot<mas::schema::soil::CapillaryRiseRate>());
         } else KJ_IF_MAYBE (file2, fs->getRoot().tryOpenFile(
-                                       pathToMonicaParamsSoil.append(
-                                           "CapillaryRiseRates.json"))) {
+                                       pathToMonicaParamsSoil.append("CapillaryRiseRates.json"))) {
           capnp::JsonCodec json;
           capnp::MallocMessageBuilder msg;
           auto builder = msg.initRoot<mas::schema::soil::CapillaryRiseRate>();
@@ -393,59 +359,52 @@ bool soilparameters::isValid(const SoilParameters *sp) {
   bool is_valid = true;
 
   if (sp->vs_FieldCapacity < 0) {
-    debug()
-        << "SoilParameters::Error: No field capacity defined in database for "
-        << sp->vs_SoilTexture << " , RawDensity: " << sp->_vs_SoilRawDensity
-        << endl;
+    debug() << "SoilParameters::Error: No field capacity defined in database for "
+            << sp->vs_SoilTexture << " , RawDensity: " << sp->_vs_SoilRawDensity << endl;
     is_valid = false;
   }
   if (sp->vs_Saturation < 0) {
-    debug() << "SoilParameters::Error: No saturation defined in database for "
-            << sp->vs_SoilTexture << " , RawDensity: " << sp->_vs_SoilRawDensity
-            << endl;
+    debug() << "SoilParameters::Error: No saturation defined in database for " << sp->vs_SoilTexture
+            << " , RawDensity: " << sp->_vs_SoilRawDensity << endl;
     is_valid = false;
   }
   if (sp->vs_PermanentWiltingPoint < 0) {
-    debug() << "SoilParameters::Error: No saturation defined in database for "
-            << sp->vs_SoilTexture << " , RawDensity: " << sp->_vs_SoilRawDensity
-            << endl;
+    debug() << "SoilParameters::Error: No saturation defined in database for " << sp->vs_SoilTexture
+            << " , RawDensity: " << sp->_vs_SoilRawDensity << endl;
     is_valid = false;
   }
 
   if (sp->vs_SoilSandContent < 0) {
-    debug() << "SoilParameters::Error: Invalid soil sand content: "
-            << sp->vs_SoilSandContent << endl;
+    debug() << "SoilParameters::Error: Invalid soil sand content: " << sp->vs_SoilSandContent
+            << endl;
     is_valid = false;
   }
 
   if (sp->vs_SoilClayContent < 0) {
-    debug() << "SoilParameters::Error: Invalid soil clay content: "
-            << sp->vs_SoilClayContent << endl;
+    debug() << "SoilParameters::Error: Invalid soil clay content: " << sp->vs_SoilClayContent
+            << endl;
     is_valid = false;
   }
 
   if (sp->vs_SoilpH < 0) {
-    debug() << "SoilParameters::Error: Invalid soil ph value: "
-            << sp->vs_SoilpH << endl;
+    debug() << "SoilParameters::Error: Invalid soil ph value: " << sp->vs_SoilpH << endl;
     is_valid = false;
   }
 
   if (sp->vs_SoilStoneContent < 0) {
-    debug() << "SoilParameters::Error: Invalid soil stone content: "
-            << sp->vs_SoilStoneContent << endl;
+    debug() << "SoilParameters::Error: Invalid soil stone content: " << sp->vs_SoilStoneContent
+            << endl;
     is_valid = false;
   }
 
   if (sp->vs_Saturation < 0) {
-    debug() << "SoilParameters::Error: Invalid value for saturation: "
-            << sp->vs_Saturation << endl;
+    debug() << "SoilParameters::Error: Invalid value for saturation: " << sp->vs_Saturation << endl;
     is_valid = false;
   }
 
   if (sp->vs_PermanentWiltingPoint < 0) {
-    debug()
-        << "SoilParameters::Error: Invalid value for permanent wilting point: "
-        << sp->vs_PermanentWiltingPoint << endl;
+    debug() << "SoilParameters::Error: Invalid value for permanent wilting point: "
+            << sp->vs_PermanentWiltingPoint << endl;
     is_valid = false;
   }
   /*
@@ -467,11 +426,10 @@ double soilparameters::soilSiltContent(const SoilParameters *sp) {
  * @return raw density of soil
  */
 double soilparameters::soilRawDensity(const SoilParameters *sp) {
-  auto srd = sp->_vs_SoilRawDensity < 0
-                 ? ((sp->_vs_SoilBulkDensity / 1000.0) -
-                    (0.009 * 100.0 * sp->vs_SoilClayContent)) *
-                       1000.0
-                 : sp->_vs_SoilRawDensity;
+  auto srd =
+      sp->_vs_SoilRawDensity < 0
+          ? ((sp->_vs_SoilBulkDensity / 1000.0) - (0.009 * 100.0 * sp->vs_SoilClayContent)) * 1000.0
+          : sp->_vs_SoilRawDensity;
 
   return srd;
 }
@@ -481,11 +439,10 @@ double soilparameters::soilRawDensity(const SoilParameters *sp) {
  * @return bulk density
  */
 double soilparameters::soilBulkDensity(const SoilParameters *sp) {
-  auto sbd = sp->_vs_SoilBulkDensity < 0
-                 ? ((sp->_vs_SoilRawDensity / 1000.0) +
-                    (0.009 * 100.0 * sp->vs_SoilClayContent)) *
-                       1000.0
-                 : sp->_vs_SoilBulkDensity;
+  auto sbd =
+      sp->_vs_SoilBulkDensity < 0
+          ? ((sp->_vs_SoilRawDensity / 1000.0) + (0.009 * 100.0 * sp->vs_SoilClayContent)) * 1000.0
+          : sp->_vs_SoilBulkDensity;
 
   return sbd;
 }
@@ -495,9 +452,8 @@ double soilparameters::soilBulkDensity(const SoilParameters *sp) {
  * @return soil organic carbon
  */
 double soilparameters::soilOrganicCarbon(const SoilParameters *sp) {
-  return sp->_vs_SoilOrganicCarbon < 0
-             ? sp->_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C
-             : sp->_vs_SoilOrganicCarbon;
+  return sp->_vs_SoilOrganicCarbon < 0 ? sp->_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C
+                                       : sp->_vs_SoilOrganicCarbon;
 }
 
 /**
@@ -505,14 +461,14 @@ double soilparameters::soilOrganicCarbon(const SoilParameters *sp) {
  * @return Soil organic matter
  */
 double soilparameters::soilOrganicMatter(const SoilParameters *sp) {
-  return sp->_vs_SoilOrganicMatter < 0
-             ? sp->_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C
-             : sp->_vs_SoilOrganicMatter;
+  return sp->_vs_SoilOrganicMatter < 0 ? sp->_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C
+                                       : sp->_vs_SoilOrganicMatter;
 }
 
-EResult<SoilPMs> Soil::createEqualSizedSoilPMs(
-    const std::function<Errors(SoilParameters *, int)> &setPwpFcSat,
-    const J11Array &jsonSoilPMs, double layerThickness, int numberOfLayers) {
+EResult<SoilPMs>
+Soil::createEqualSizedSoilPMs(const std::function<Errors(SoilParameters *, int)> &setPwpFcSat,
+                              const J11Array &jsonSoilPMs, double layerThickness,
+                              int numberOfLayers) {
   Errors errors;
 
   SoilPMs soilPMs;
@@ -525,8 +481,7 @@ EResult<SoilPMs> Soil::createEqualSizedSoilPMs(
     if (!sp["Thickness"].is_null()) {
       auto transf = transformIfNotMeters(sp, "Thickness");
       const auto lt = transf(double_valueD(sp, "Thickness", layerThickness));
-      auto noOfMonicaLayers =
-          static_cast<int>(Tools::round(lt / layerThickness));
+      auto noOfMonicaLayers = static_cast<int>(Tools::round(lt / layerThickness));
       repeatLayer = min(max(1, noOfMonicaLayers), numberOfLayers - layerCount);
     }
 
@@ -535,14 +490,12 @@ EResult<SoilPMs> Soil::createEqualSizedSoilPMs(
       repeatLayer = numberOfLayers - layerCount;
 
     for (int i = 1; i <= repeatLayer; i++) {
-      auto sps = makeSoilParameters(
-          [=](SoilParameters *sp) { return setPwpFcSat(sp, i); });
+      auto sps = makeSoilParameters([=](SoilParameters *sp) { return setPwpFcSat(sp, i); });
       auto es = soilparameters::merge(&sps, sp);
       soilPMs.push_back(sps);
       if (es.failure()) {
-        errors.appendError(kj::str("Config-layer:", spi + 1,
-                                   "Monica-layer:", layerCount + i, ":")
-                               .cStr());
+        errors.appendError(
+            kj::str("Config-layer:", spi + 1, "Monica-layer:", layerCount + i, ":").cStr());
         errors.append(es);
       }
     }
@@ -553,9 +506,8 @@ EResult<SoilPMs> Soil::createEqualSizedSoilPMs(
   return {soilPMs, errors};
 }
 
-EResult<SoilPMs>
-Soil::createSoilPMs(const std::function<Errors(SoilParameters *)> &setPwpFcSat,
-                    const J11Array &jsonSoilPMs) {
+EResult<SoilPMs> Soil::createSoilPMs(const std::function<Errors(SoilParameters *)> &setPwpFcSat,
+                                     const J11Array &jsonSoilPMs) {
   Errors errors;
   SoilPMs soilPMs;
   int layerCount = 0;
@@ -581,9 +533,8 @@ struct RPSCDRes {
   bool unset{true};
 };
 
-EResult<RPSCDRes>
-readPrincipalSoilCharacteristicData(const std::string &pathToSoilDir,
-                                    const string &soilType, double rawDensity) {
+EResult<RPSCDRes> readPrincipalSoilCharacteristicData(const std::string &pathToSoilDir,
+                                                      const string &soilType, double rawDensity) {
   static mutex lockable;
   typedef map<int, RPSCDRes> M1;
   typedef map<string, M1> M2;
@@ -594,47 +545,40 @@ readPrincipalSoilCharacteristicData(const std::string &pathToSoilDir,
     lock_guard<mutex> lock(lockable);
 
     if (!initialized) {
-      auto cacheAllData =
-          [](mas::schema::soil::SoilCharacteristicData::Reader data) {
-            for (const auto &scd : data.getList()) {
-              const double ac = scd.getAirCapacity();
-              const double fc = scd.getFieldCapacity();
-              const double nfc = scd.getNFieldCapacity();
+      auto cacheAllData = [](mas::schema::soil::SoilCharacteristicData::Reader data) {
+        for (const auto &scd : data.getList()) {
+          const double ac = scd.getAirCapacity();
+          const double fc = scd.getFieldCapacity();
+          const double nfc = scd.getNFieldCapacity();
 
-              RPSCDRes r;
-              r.sat = ac + fc;
-              r.fc = fc;
-              r.pwp = fc - nfc;
-              r.unset = false;
+          RPSCDRes r;
+          r.sat = ac + fc;
+          r.fc = fc;
+          r.pwp = fc - nfc;
+          r.unset = false;
 
-              m[Tools::toUpper(scd.getSoilType())]
-               [int(scd.getSoilRawDensity() / 100.0)] = r;
-            }
-          };
+          m[Tools::toUpper(scd.getSoilType())][int(scd.getSoilRawDensity() / 100.0)] = r;
+        }
+      };
 
       auto fs = kj::newDiskFilesystem();
 #ifdef _WIN32
-      auto pathToMonicaParamsSoil =
-          fs->getCurrentPath().evalWin32(pathToSoilDir);
+      auto pathToMonicaParamsSoil = fs->getCurrentPath().evalWin32(pathToSoilDir);
 #else
       auto pathToMonicaParamsSoil = fs->getCurrentPath().eval(pathToSoilDir);
 #endif
       try {
-        KJ_IF_MAYBE (file,
-                     fs->getRoot().tryOpenFile(pathToMonicaParamsSoil.append(
-                         "SoilCharacteristicData.sercapnp"))) {
+        KJ_IF_MAYBE (file, fs->getRoot().tryOpenFile(
+                               pathToMonicaParamsSoil.append("SoilCharacteristicData.sercapnp"))) {
           auto allBytes = (*file)->readAllBytes();
           kj::ArrayInputStream aios(allBytes);
           capnp::InputStreamMessageReader message(aios);
-          cacheAllData(
-              message.getRoot<mas::schema::soil::SoilCharacteristicData>());
-        } else KJ_IF_MAYBE (file2, fs->getRoot().tryOpenFile(
-                                       pathToMonicaParamsSoil.append(
-                                           "SoilCharacteristicData.json"))) {
+          cacheAllData(message.getRoot<mas::schema::soil::SoilCharacteristicData>());
+        } else KJ_IF_MAYBE (file2, fs->getRoot().tryOpenFile(pathToMonicaParamsSoil.append(
+                                       "SoilCharacteristicData.json"))) {
           capnp::JsonCodec json;
           capnp::MallocMessageBuilder msg;
-          auto builder =
-              msg.initRoot<mas::schema::soil::SoilCharacteristicData>();
+          auto builder = msg.initRoot<mas::schema::soil::SoilCharacteristicData>();
           json.decode((*file2)->readAllBytes().asChars(), builder);
           cacheAllData(builder.asReader());
         } else {
@@ -648,13 +592,11 @@ readPrincipalSoilCharacteristicData(const std::string &pathToSoilDir,
 
         initialized = true;
       } catch (const kj::Exception &e) {
-        errors.appendError(
-            kj::str(
-                "Wessolek2009: Couldn't read SoilCharacteristicData.sercapnp "
-                "nor SoilCharacteristicData.json from folder ",
-                pathToMonicaParamsSoil.toString(),
-                " ! Exception: ", e.getDescription())
-                .cStr());
+        errors.appendError(kj::str("Wessolek2009: Couldn't read SoilCharacteristicData.sercapnp "
+                                   "nor SoilCharacteristicData.json from folder ",
+                                   pathToMonicaParamsSoil.toString(),
+                                   " ! Exception: ", e.getDescription())
+                               .cStr());
       }
     }
   }
@@ -667,27 +609,23 @@ readPrincipalSoilCharacteristicData(const std::string &pathToSoilDir,
     M1::const_iterator ci2;
     // if we didn't find values for a given raw density, e.g. 1.1 (= 11)
     // we try to find the closest next one (up (1.1) or down (1.9))
-    while ((ci2 = ci->second.find(rd10)) == ci->second.end() &&
-           (11 <= rd10 && rd10 <= 19)) {
+    while ((ci2 = ci->second.find(rd10)) == ci->second.end() && (11 <= rd10 && rd10 <= 19)) {
       rd10 += delta;
     }
 
     return ci2 != ci->second.end()
                ? ci2->second
-               : EResult<RPSCDRes>(RPSCDRes(),
-                                   kj::str("Couldn't find soil characteristic "
-                                           "data for soil type ",
-                                           soilType, " and raw density ",
-                                           rawDensity)
-                                       .cStr());
+               : EResult<RPSCDRes>(RPSCDRes(), kj::str("Couldn't find soil characteristic "
+                                                       "data for soil type ",
+                                                       soilType, " and raw density ", rawDensity)
+                                                   .cStr());
   }
 
   return {{}, errors};
 }
 
-EResult<RPSCDRes>
-readSoilCharacteristicModifier(const std::string &pathToSoilDir,
-                               const string &soilType, double organicMatter) {
+EResult<RPSCDRes> readSoilCharacteristicModifier(const std::string &pathToSoilDir,
+                                                 const string &soilType, double organicMatter) {
   static mutex lockable;
   typedef map<int, RPSCDRes> M1;
   typedef map<string, M1> M2;
@@ -698,68 +636,58 @@ readSoilCharacteristicModifier(const std::string &pathToSoilDir,
     lock_guard<mutex> lock(lockable);
 
     if (!initialized) {
-      auto cacheAllData =
-          [](mas::schema::soil::SoilCharacteristicModifier::Reader data) {
-            for (const auto &scd : data.getList()) {
-              const double ac = scd.getAirCapacity();
-              const double fc = scd.getFieldCapacity();
-              const double nfc = scd.getNFieldCapacity();
+      auto cacheAllData = [](mas::schema::soil::SoilCharacteristicModifier::Reader data) {
+        for (const auto &scd : data.getList()) {
+          const double ac = scd.getAirCapacity();
+          const double fc = scd.getFieldCapacity();
+          const double nfc = scd.getNFieldCapacity();
 
-              RPSCDRes r;
-              r.sat = ac + fc;
-              r.fc = fc;
-              r.pwp = fc - nfc;
-              r.unset = false;
+          RPSCDRes r;
+          r.sat = ac + fc;
+          r.fc = fc;
+          r.pwp = fc - nfc;
+          r.unset = false;
 
-              m[Tools::toUpper(scd.getSoilType())]
-               [int(scd.getOrganicMatter() * 10)] = r;
-            }
-          };
+          m[Tools::toUpper(scd.getSoilType())][int(scd.getOrganicMatter() * 10)] = r;
+        }
+      };
 
       auto fs = kj::newDiskFilesystem();
 #ifdef _WIN32
-      auto pathToMonicaParamsSoil =
-          fs->getCurrentPath().evalWin32(pathToSoilDir);
+      auto pathToMonicaParamsSoil = fs->getCurrentPath().evalWin32(pathToSoilDir);
 #else
       auto pathToMonicaParamsSoil = fs->getCurrentPath().eval(pathToSoilDir);
 #endif
       try {
-        KJ_IF_MAYBE (file,
-                     fs->getRoot().tryOpenFile(pathToMonicaParamsSoil.append(
-                         "SoilCharacteristicModifier.sercapnp"))) {
+        KJ_IF_MAYBE (file, fs->getRoot().tryOpenFile(pathToMonicaParamsSoil.append(
+                               "SoilCharacteristicModifier.sercapnp"))) {
           auto allBytes = (*file)->readAllBytes();
           kj::ArrayInputStream aios(allBytes);
           capnp::InputStreamMessageReader message(aios);
-          cacheAllData(
-              message.getRoot<mas::schema::soil::SoilCharacteristicModifier>());
-        } else KJ_IF_MAYBE (file2,
-                            fs->getRoot().tryOpenFile(
-                                pathToMonicaParamsSoil.append(
-                                    "SoilCharacteristicModifier.json"))) {
+          cacheAllData(message.getRoot<mas::schema::soil::SoilCharacteristicModifier>());
+        } else KJ_IF_MAYBE (file2, fs->getRoot().tryOpenFile(pathToMonicaParamsSoil.append(
+                                       "SoilCharacteristicModifier.json"))) {
           capnp::JsonCodec json;
           capnp::MallocMessageBuilder msg;
-          auto builder =
-              msg.initRoot<mas::schema::soil::SoilCharacteristicModifier>();
+          auto builder = msg.initRoot<mas::schema::soil::SoilCharacteristicModifier>();
           json.decode((*file2)->readAllBytes().asChars(), builder);
           cacheAllData(builder.asReader());
         } else {
-          errors.appendError(
-              kj::str("Wessolek2009: Could neither load "
-                      "SoilCharacteristicModifier.sercapnp nor "
-                      "SoilCharacteristicModifier.json from folder ",
-                      pathToMonicaParamsSoil.toString(),
-                      ". No PWP, FC, SAT calculation possible!")
-                  .cStr());
+          errors.appendError(kj::str("Wessolek2009: Could neither load "
+                                     "SoilCharacteristicModifier.sercapnp nor "
+                                     "SoilCharacteristicModifier.json from folder ",
+                                     pathToMonicaParamsSoil.toString(),
+                                     ". No PWP, FC, SAT calculation possible!")
+                                 .cStr());
         }
 
         initialized = true;
       } catch (const kj::Exception &e) {
-        errors.appendError(
-            kj::str("Couldn't read SoilCharacteristicModifier.sercapnp nor "
-                    "SoilCharacteristicModifier.json from folder ",
-                    pathToMonicaParamsSoil.toString(),
-                    " ! Exception: ", e.getDescription())
-                .cStr());
+        errors.appendError(kj::str("Couldn't read SoilCharacteristicModifier.sercapnp nor "
+                                   "SoilCharacteristicModifier.json from folder ",
+                                   pathToMonicaParamsSoil.toString(),
+                                   " ! Exception: ", e.getDescription())
+                               .cStr());
       }
     }
   }
@@ -772,8 +700,7 @@ readSoilCharacteristicModifier(const std::string &pathToSoilDir,
                : EResult<RPSCDRes>(RPSCDRes(),
                                    kj::str("Couldn't find soil characteristic "
                                            "data for soil type ",
-                                           soilType, " and organic matter ",
-                                           organicMatter)
+                                           soilType, " and organic matter ", organicMatter)
                                        .cStr());
   }
 
@@ -786,10 +713,8 @@ struct FcSatPwp {
   double pwp{0.0};
 };
 
-EResult<FcSatPwp> fcSatPwpFromKA5textureClass(const std::string &pathToSoilDir,
-                                              std::string texture,
-                                              double stoneContent,
-                                              double soilRawDensity,
+EResult<FcSatPwp> fcSatPwpFromKA5textureClass(const std::string &pathToSoilDir, std::string texture,
+                                              double stoneContent, double soilRawDensity,
                                               double soilOrganicMatter) {
   debug() << "soilCharacteristicsKA5" << endl;
   texture = Tools::toUpper(texture);
@@ -838,16 +763,14 @@ EResult<FcSatPwp> fcSatPwpFromKA5textureClass(const std::string &pathToSoilDir,
   }
 
   // Boundaries for linear interpolation
-  auto lbRes = readPrincipalSoilCharacteristicData(pathToSoilDir, texture,
-                                                   srd_lowerBound);
+  auto lbRes = readPrincipalSoilCharacteristicData(pathToSoilDir, texture, srd_lowerBound);
   if (lbRes.failure())
     return EResult<FcSatPwp>({}, lbRes.errors);
   double sat_lowerBound = lbRes.result.sat;
   double fc_lowerBound = lbRes.result.fc;
   double pwp_lowerBound = lbRes.result.pwp;
 
-  auto ubRes = readPrincipalSoilCharacteristicData(pathToSoilDir, texture,
-                                                   srd_upperBound);
+  auto ubRes = readPrincipalSoilCharacteristicData(pathToSoilDir, texture, srd_upperBound);
   if (ubRes.failure())
     return EResult<FcSatPwp>({}, ubRes.errors);
   double sat_upperBound = ubRes.result.sat;
@@ -905,8 +828,7 @@ EResult<FcSatPwp> fcSatPwpFromKA5textureClass(const std::string &pathToSoilDir,
   double pwp_mod_lowerBound = 0.0;
   // modifier values are given only for organic matter > 1.0% (class h2)
   if (som_lowerBound != 0.0) {
-    auto lbRes2 =
-        readSoilCharacteristicModifier(pathToSoilDir, texture, som_lowerBound);
+    auto lbRes2 = readSoilCharacteristicModifier(pathToSoilDir, texture, som_lowerBound);
     if (lbRes2.failure())
       return EResult<FcSatPwp>({}, lbRes2.errors);
     sat_mod_lowerBound = lbRes2.result.sat;
@@ -918,8 +840,7 @@ EResult<FcSatPwp> fcSatPwpFromKA5textureClass(const std::string &pathToSoilDir,
   double sat_mod_upperBound = 0.0;
   double pwp_mod_upperBound = 0.0;
   if (som_upperBound != 0.0) {
-    auto ubRes2 =
-        readSoilCharacteristicModifier(pathToSoilDir, texture, som_upperBound);
+    auto ubRes2 = readSoilCharacteristicModifier(pathToSoilDir, texture, som_upperBound);
     if (ubRes2.failure())
       return EResult<FcSatPwp>({}, ubRes2.errors);
     sat_mod_upperBound = ubRes2.result.sat;
@@ -1003,15 +924,11 @@ EResult<FcSatPwp> fcSatPwpFromKA5textureClass(const std::string &pathToSoilDir,
   return res;
 }
 
-FcSatPwp fcSatPwpFromVanGenuchtenVereecken(double sandFrac, double clayFrac,
-                                           double stoneFrac,
-                                           double bulkDensityKgPerM3,
-                                           double organicCarbonFrac) {
+FcSatPwp fcSatPwpFromVanGenuchtenVereecken(double sandFrac, double clayFrac, double stoneFrac,
+                                           double bulkDensityKgPerM3, double organicCarbonFrac) {
   FcSatPwp res;
-  res.pwp =
-      (0.015 + 0.5 * clayFrac + 1.4 * organicCarbonFrac) * (1.0 - stoneFrac);
-  res.sat = (0.81 - 0.283 * (bulkDensityKgPerM3 / 1000.0) + 0.1 * clayFrac) *
-            (1.0 - stoneFrac);
+  res.pwp = (0.015 + 0.5 * clayFrac + 1.4 * organicCarbonFrac) * (1.0 - stoneFrac);
+  res.sat = (0.81 - 0.283 * (bulkDensityKgPerM3 / 1000.0) + 0.1 * clayFrac) * (1.0 - stoneFrac);
 
   //***** Van Genuchten retention curve to calculate volumetric water content at
   //***** moisture equivalent (Field capacity definition KA5)
@@ -1039,16 +956,15 @@ FcSatPwp fcSatPwpFromVanGenuchtenVereecken(double sandFrac, double clayFrac,
 
   double matricHead = pow(10, fc_pF);
 
-  auto vgps = calcVanGenuchtenVereeckenParams(
-      res.pwp, res.sat, sandFrac, clayFrac, bulkDensityKgPerM3,
-      organicCarbonFrac, stoneFrac, matricHead);
+  auto vgps =
+      calcVanGenuchtenVereeckenParams(res.pwp, res.sat, sandFrac, clayFrac, bulkDensityKgPerM3,
+                                      organicCarbonFrac, stoneFrac, matricHead);
   res.fc = vgps.volumetricWaterContentAtMatricHead;
   return res;
 }
 
-FcSatPwp fcSatPwpFromVanGenuchtenToth(bool isTopSoil, double sandFrac,
-                                      double clayFrac, double stoneFrac,
-                                      double bulkDensityKgPerM3,
+FcSatPwp fcSatPwpFromVanGenuchtenToth(bool isTopSoil, double sandFrac, double clayFrac,
+                                      double stoneFrac, double bulkDensityKgPerM3,
                                       double organicCarbonFrac) {
   FcSatPwp res;
 
@@ -1058,16 +974,14 @@ FcSatPwp fcSatPwpFromVanGenuchtenToth(bool isTopSoil, double sandFrac,
   // hFC = -100 for coarse soils
   // hFC = -330 for medium/fine soils
   double fcMatricHead = sandFrac > 0.60 ? -100 : -330;
-  auto fcVgps = calcVanGenuchtenTothParams(
-      isTopSoil, sandFrac, clayFrac, bulkDensityKgPerM3, organicCarbonFrac,
-      stoneFrac, fcMatricHead);
+  auto fcVgps = calcVanGenuchtenTothParams(isTopSoil, sandFrac, clayFrac, bulkDensityKgPerM3,
+                                           organicCarbonFrac, stoneFrac, fcMatricHead);
   res.sat = fcVgps.thetaS;
   res.fc = fcVgps.volumetricWaterContentAtMatricHead;
 
   double pwpMatricHead = -15000;
-  auto pwpVgps = calcVanGenuchtenTothParams(
-      isTopSoil, sandFrac, clayFrac, bulkDensityKgPerM3, organicCarbonFrac,
-      stoneFrac, pwpMatricHead);
+  auto pwpVgps = calcVanGenuchtenTothParams(isTopSoil, sandFrac, clayFrac, bulkDensityKgPerM3,
+                                            organicCarbonFrac, stoneFrac, pwpMatricHead);
   res.pwp = pwpVgps.volumetricWaterContentAtMatricHead;
 
   // I need to set a safegard
@@ -1077,12 +991,10 @@ FcSatPwp fcSatPwpFromVanGenuchtenToth(bool isTopSoil, double sandFrac,
   return res;
 }
 
-FcSatPwp fcSatPwpFromToth(double sandContent, double clayContent,
-                          double stoneContent, double soilBulkDensity,
-                          double soilOrganicCarbon) {
+FcSatPwp fcSatPwpFromToth(double sandContent, double clayContent, double stoneContent,
+                          double soilBulkDensity, double soilOrganicCarbon) {
   FcSatPwp res;
-  res.sat = (0.81 - 0.283 * (soilBulkDensity / 1000.0) + 0.1 * clayContent) *
-            (1.0 - stoneContent);
+  res.sat = (0.81 - 0.283 * (soilBulkDensity / 1000.0) + 0.1 * clayContent) * (1.0 - stoneContent);
   // sat function from MONICA, maybe not necessary
 
   double sluf = 100.0 - clayContent * 100.0 - sandContent * 100.0;
@@ -1090,16 +1002,15 @@ FcSatPwp fcSatPwpFromToth(double sandContent, double clayContent,
   // put the conversions inside the functions
   double ton = clayContent * 100.0;
   double oc =
-      soilOrganicCarbon *
-      100.0; // The SOC was 0.001 from the input, that’s why I added this line
+      soilOrganicCarbon * 100.0; // The SOC was 0.001 from the input, that’s why I added this line
 
-  res.fc = 0.24490 - 0.1887 * (1 / (oc + 1)) + 0.0045270 * ton +
-           0.001535 * sluf + 0.001442 * sluf * (1 / (oc + 1)) -
-           0.0000511 * sluf * ton + 0.0008676 * ton * (1 / (oc + 1));
+  res.fc = 0.24490 - 0.1887 * (1 / (oc + 1)) + 0.0045270 * ton + 0.001535 * sluf +
+           0.001442 * sluf * (1 / (oc + 1)) - 0.0000511 * sluf * ton +
+           0.0008676 * ton * (1 / (oc + 1));
 
-  res.pwp = 0.09878 + 0.002127 * ton - 0.0008366 * sluf -
-            0.0767 * (1 / (oc + 1)) + 0.00003853 * sluf * ton +
-            0.00233 * ton * (1 / (oc + 1)) + 0.0009498 * sluf * (1 / (oc + 1));
+  res.pwp = 0.09878 + 0.002127 * ton - 0.0008366 * sluf - 0.0767 * (1 / (oc + 1)) +
+            0.00003853 * sluf * ton + 0.00233 * ton * (1 / (oc + 1)) +
+            0.0009498 * sluf * (1 / (oc + 1));
 
   return res;
 }
@@ -1110,8 +1021,7 @@ Errors updateUnsetPwpFcSatFromKA5textureClass(const std::string &pathToSoilDir,
     return {"No soil texture defined!"};
 
   // we only need to update something, if any of the values is not already set
-  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 ||
-      sp->vs_PermanentWiltingPoint < 0) {
+  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 || sp->vs_PermanentWiltingPoint < 0) {
     auto res = fcSatPwpFromKA5textureClass(
         pathToSoilDir, sp->vs_SoilTexture, sp->vs_SoilStoneContent,
         soilparameters::soilRawDensity(sp), soilparameters::soilOrganicMatter(sp));
@@ -1128,10 +1038,10 @@ Errors updateUnsetPwpFcSatFromKA5textureClass(const std::string &pathToSoilDir,
 }
 } // namespace
 
-VanGenuchtenParams Soil::calcVanGenuchtenVereeckenParams(
-    double pwp, double sat, double sandFrac, double clayFrac,
-    double bulkDensityKgPerM3, double organicCarbonFrac, double stoneFrac,
-    double matricHead) {
+VanGenuchtenParams Soil::calcVanGenuchtenVereeckenParams(double pwp, double sat, double sandFrac,
+                                                         double clayFrac, double bulkDensityKgPerM3,
+                                                         double organicCarbonFrac, double stoneFrac,
+                                                         double matricHead) {
   VanGenuchtenParams res;
   res.thetaR = pwp;
   res.thetaS = sat;
@@ -1139,21 +1049,20 @@ VanGenuchtenParams Soil::calcVanGenuchtenVereeckenParams(
                   2.617 * (bulkDensityKgPerM3 / 1000.0) - 2.3 * clayFrac);
 
   res.m = 1.0;
-  res.n =
-      exp(0.053 - 0.9 * sandFrac - 1.3 * clayFrac + 1.5 * (pow(sandFrac, 2.0)));
+  res.n = exp(0.053 - 0.9 * sandFrac - 1.3 * clayFrac + 1.5 * (pow(sandFrac, 2.0)));
 
   if (stoneFrac >= 0)
     res.volumetricWaterContentAtMatricHead =
         (res.thetaR +
-         ((res.thetaS - res.thetaR) /
-          (pow(1.0 + pow(res.alpha * matricHead, res.n), res.m)))) *
+         ((res.thetaS - res.thetaR) / (pow(1.0 + pow(res.alpha * matricHead, res.n), res.m)))) *
         (1.0 - stoneFrac);
   return res;
 }
 
-VanGenuchtenParams Soil::calcVanGenuchtenTothParams(
-    bool isTopSoil, double sandFrac, double clayFrac, double bulkDensityKgPerM3,
-    double organicCarbonFrac, double stoneFrac, double matricHead) {
+VanGenuchtenParams Soil::calcVanGenuchtenTothParams(bool isTopSoil, double sandFrac,
+                                                    double clayFrac, double bulkDensityKgPerM3,
+                                                    double organicCarbonFrac, double stoneFrac,
+                                                    double matricHead) {
   VanGenuchtenParams res;
   double sandContentPerc = sandFrac * 100;
   double clayContentPerc = clayFrac * 100;
@@ -1167,15 +1076,13 @@ VanGenuchtenParams Soil::calcVanGenuchtenTothParams(
     res.thetaR = 0.041;
   else if (sandContentPerc < 20)
     res.thetaR = 0.179;
-  res.thetaS = 0.8308 - 0.28217 * soilBulkDensityGPerCm3 +
-               0.0002728 * clayContentPerc + 0.000187 * siltContentPerc;
+  res.thetaS = 0.8308 - 0.28217 * soilBulkDensityGPerCm3 + 0.0002728 * clayContentPerc +
+               0.000187 * siltContentPerc;
 
-  res.alpha = pow(
-      10, -0.43348 - 0.41729 * soilBulkDensityGPerCm3 -
-              0.04762 * soilOrganicCarbonPerc - 0.2181 * (isTopSoil ? 1 : 0) -
-              0.01581 * clayContentPerc - 0.01207 * siltContentPerc);
-  res.n = pow(10, 0.22236 - 0.30189 * soilBulkDensityGPerCm3 -
-                      0.05558 * (isTopSoil ? 1 : 0) -
+  res.alpha = pow(10, -0.43348 - 0.41729 * soilBulkDensityGPerCm3 -
+                          0.04762 * soilOrganicCarbonPerc - 0.2181 * (isTopSoil ? 1 : 0) -
+                          0.01581 * clayContentPerc - 0.01207 * siltContentPerc);
+  res.n = pow(10, 0.22236 - 0.30189 * soilBulkDensityGPerCm3 - 0.05558 * (isTopSoil ? 1 : 0) -
                       0.005306 * clayContentPerc - 0.003084 * siltContentPerc -
                       0.01072 * soilOrganicCarbonPerc) +
           1;
@@ -1186,8 +1093,7 @@ VanGenuchtenParams Soil::calcVanGenuchtenTothParams(
   //***** moisture equivalent, Field capacity and wilting point
   res.volumetricWaterContentAtMatricHead =
       (res.thetaR +
-       ((res.thetaS - res.thetaR) /
-        (pow(1.0 + pow(res.alpha * abs(matricHead), res.n), res.m)))) *
+       ((res.thetaS - res.thetaR) / (pow(1.0 + pow(res.alpha * abs(matricHead), res.n), res.m)))) *
       (1.0 - stoneFrac);
   return res;
 }
@@ -1200,10 +1106,8 @@ Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(
   };
 }
 
-Errors Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken(SoilParameters *sp,
-                                                          int) {
-  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 ||
-      sp->vs_PermanentWiltingPoint < 0) {
+Errors Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken(SoilParameters *sp, int) {
+  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 || sp->vs_PermanentWiltingPoint < 0) {
     auto res = fcSatPwpFromVanGenuchtenVereecken(
         sp->vs_SoilSandContent, sp->vs_SoilClayContent, sp->vs_SoilStoneContent,
         soilparameters::soilBulkDensity(sp), soilparameters::soilOrganicCarbon(sp));
@@ -1217,14 +1121,11 @@ Errors Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken(SoilParameters *sp,
   return {};
 }
 
-Errors Soil::updateUnsetPwpFcSatFromVanGenuchtenToth(SoilParameters *sp,
-                                                     int layerNo) {
-  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 ||
-      sp->vs_PermanentWiltingPoint < 0) {
+Errors Soil::updateUnsetPwpFcSatFromVanGenuchtenToth(SoilParameters *sp, int layerNo) {
+  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 || sp->vs_PermanentWiltingPoint < 0) {
     auto res = fcSatPwpFromVanGenuchtenToth(
-        layerNo <= 3, sp->vs_SoilSandContent, sp->vs_SoilClayContent,
-        sp->vs_SoilStoneContent, soilparameters::soilBulkDensity(sp),
-        soilparameters::soilOrganicCarbon(sp));
+        layerNo <= 3, sp->vs_SoilSandContent, sp->vs_SoilClayContent, sp->vs_SoilStoneContent,
+        soilparameters::soilBulkDensity(sp), soilparameters::soilOrganicCarbon(sp));
     if (sp->vs_FieldCapacity < 0)
       sp->vs_FieldCapacity = res.fc;
     if (sp->vs_Saturation < 0)
@@ -1236,11 +1137,10 @@ Errors Soil::updateUnsetPwpFcSatFromVanGenuchtenToth(SoilParameters *sp,
 }
 
 Errors Soil::updateUnsetPwpFcSatFromToth(SoilParameters *sp, int) {
-  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 ||
-      sp->vs_PermanentWiltingPoint < 0) {
-    auto res = fcSatPwpFromToth(
-        sp->vs_SoilSandContent, sp->vs_SoilClayContent, sp->vs_SoilStoneContent,
-        soilparameters::soilBulkDensity(sp), soilparameters::soilOrganicCarbon(sp));
+  if (sp->vs_FieldCapacity < 0 || sp->vs_Saturation < 0 || sp->vs_PermanentWiltingPoint < 0) {
+    auto res = fcSatPwpFromToth(sp->vs_SoilSandContent, sp->vs_SoilClayContent,
+                                sp->vs_SoilStoneContent, soilparameters::soilBulkDensity(sp),
+                                soilparameters::soilOrganicCarbon(sp));
     if (sp->vs_FieldCapacity < 0)
       sp->vs_FieldCapacity = res.fc;
     if (sp->vs_Saturation < 0)

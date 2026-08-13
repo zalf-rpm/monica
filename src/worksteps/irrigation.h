@@ -41,8 +41,7 @@ bool apply(IrrigationData *i, Workstep *ws, MonicaModel *model);
 } // namespace workstep
 
 Workstep makeIrrigationWorkstep(json11::Json object);
-Workstep
-makeIrrigationWorkstep(const Tools::Date &at, double amount,
-                       IrrigationParameters params = IrrigationParameters());
+Workstep makeIrrigationWorkstep(const Tools::Date &at, double amount,
+                                IrrigationParameters params = IrrigationParameters());
 
 } // namespace monica

@@ -49,9 +49,7 @@ public:
 
   kj::StringPtr getDescription() const { return _description; }
 
-  void setDescription(kj::StringPtr description) {
-    _description = kj::str(description);
-  }
+  void setDescription(kj::StringPtr description) { _description = kj::str(description); }
 
   MonicaEnvInstance::Client getClient() { return _client; }
 
@@ -71,9 +69,7 @@ public:
   // save @0 () -> (sturdyRef :Text, unsaveSR :Text);
   kj::Promise<void> save(SaveContext context) override;
 
-  void setRestorer(mas::infrastructure::common::Restorer *restorer) {
-    _restorer = restorer;
-  }
+  void setRestorer(mas::infrastructure::common::Restorer *restorer) { _restorer = restorer; }
 
 private:
   // Implementation of the Model::Instance Cap'n Proto interface

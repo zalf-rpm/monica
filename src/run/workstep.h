@@ -76,11 +76,10 @@ enum class WorkstepType {
 };
 
 using WorkstepData =
-    std::variant<SowingData, AutomaticSowingData, TransplantData, HarvestData,
-                 AutomaticHarvestData, CuttingData, MineralFertilizationData,
-                 NDemandFertilizationData, OrganicFertilizationData,
-                 TillageData, SetValueData, SaveMonicaStateData, IrrigationData,
-                 AutomaticIrrigationData>;
+    std::variant<SowingData, AutomaticSowingData, TransplantData, HarvestData, AutomaticHarvestData,
+                 CuttingData, MineralFertilizationData, NDemandFertilizationData,
+                 OrganicFertilizationData, TillageData, SetValueData, SaveMonicaStateData,
+                 IrrigationData, AutomaticIrrigationData>;
 
 struct Workstep {
   Tools::Date date;
@@ -100,28 +99,21 @@ typedef std::shared_ptr<Workstep> WSPtr;
 
 namespace workstep {
 
-inline WorkstepType type(const Workstep *ws) {
-  return static_cast<WorkstepType>(ws->data.index());
-}
+inline WorkstepType type(const Workstep *ws) { return static_cast<WorkstepType>(ws->data.index()); }
 
-inline bool isDynamicWorkstep(const Workstep *ws) {
-  return !ws->date.isValid();
-}
+inline bool isDynamicWorkstep(const Workstep *ws) { return !ws->date.isValid(); }
 
 // Shared helpers used by more than one concrete workstep's .cpp file (each was
 // originally a private, anonymous-namespace-scoped helper local to
 // workstep.cpp; promoted to declared functions here once splitting into
 // src/worksteps/*.cpp meant more than one translation unit needed them).
-std::pair<Tools::Date, bool>
-makeInitAbsDate(Tools::Date date, Tools::Date initDate, bool addYear,
-                bool forceInitYear = false);
+std::pair<Tools::Date, bool> makeInitAbsDate(Tools::Date date, Tools::Date initDate, bool addYear,
+                                             bool forceInitYear = false);
 int organIdFromName(const std::string &organName, Tools::Errors &err);
 std::string organNameFromId(int organId);
-bool isSoilMoistureOk(MonicaModel *model, double minPercentASW,
-                      double maxPercentASW);
-bool isPrecipitationOk(
-    const std::vector<std::map<Climate::ACD, double>> &climateData,
-    double max3dayPrecipSum, double maxCurrentDayPrecipSum);
+bool isSoilMoistureOk(MonicaModel *model, double minPercentASW, double maxPercentASW);
+bool isPrecipitationOk(const std::vector<std::map<Climate::ACD, double>> &climateData,
+                       double max3dayPrecipSum, double maxCurrentDayPrecipSum);
 
 // Common (former base-class, non-overridden-by-default) Workstep behavior. Used
 // both by the per-type make*Workstep(...) factories (in src/worksteps/*.cpp)
@@ -130,8 +122,7 @@ bool isPrecipitationOk(
 Tools::Errors mergeCommon(Workstep *ws, json11::Json j);
 bool applyCommon(Workstep *ws, MonicaModel *model);
 bool conditionCommon(Workstep *ws, MonicaModel *model);
-bool reinitCommon(Workstep *ws, Tools::Date date, bool addYear = false,
-                  bool forceInitYear = false);
+bool reinitCommon(Workstep *ws, Tools::Date date, bool addYear = false, bool forceInitYear = false);
 // setDate is inherently per-subtype dispatching (3 of the 14 subtypes override
 // it), so unlike merge/apply/condition/reinit there's no single "common" body
 // to factor out - this is already the full central dispatcher, not a "Common"
@@ -160,17 +151,14 @@ Tools::Date latestDate(const Workstep *ws);
 Tools::Date absLatestDate(const Workstep *ws);
 
 Tools::Errors merge(Workstep *ws, json11::Json j);
-json11::Json to_json(const Workstep *ws,
-                     bool includeFullCropParameters = true);
+json11::Json to_json(const Workstep *ws, bool includeFullCropParameters = true);
 bool isActive(const Workstep *ws);
 bool apply(Workstep *ws, MonicaModel *model);
 bool applyWithPossibleCondition(Workstep *ws, MonicaModel *model);
 bool condition(Workstep *ws, MonicaModel *model);
-bool reinit(Workstep *ws, Tools::Date date, bool addYear = false,
-            bool forceInitYear = false);
+bool reinit(Workstep *ws, Tools::Date date, bool addYear = false, bool forceInitYear = false);
 std::function<double(MonicaModel *)>
-registerDailyFunction(Workstep *ws,
-                      std::function<std::vector<double> &()> getDailyValues);
+registerDailyFunction(Workstep *ws, std::function<std::vector<double> &()> getDailyValues);
 
 } // namespace workstep
 

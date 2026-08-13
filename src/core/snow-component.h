@@ -39,49 +39,43 @@ struct SnowComponent {
   double vm_SnowAccumulationThresholdTemperature;
   double vm_TemperatureLimitForLiquidWater; //!< Lower temperature limit of
                                             //!< liquid water in snow
-  double vm_CorrectionRain; //!< Correction factor for rain (no correction used
-                            //!< here)
-  double vm_CorrectionSnow; //!< Correction factor for snow (value used in COUP
-                            //!< by Lars Egil H.)
-  double vm_RefreezeTemperature;      //!< Base temperature for refreeze [°C]
-  double vm_RefreezeP1;               //!< Refreeze parameter (Karvonen's value)
-  double vm_RefreezeP2;               //!< Refreeze exponent (Karvonen's value)
-  double vm_NewSnowDensityMin;        //!< Minimum density of new snow
-  double vm_SnowMaxAdditionalDensity; //!< Maximum additional density of snow
-                                      //!< (max rho = 0.35, Karvonen)
-  double vm_SnowPacking; //!< Snow packing factor (calibrated by Helge Bonesmo)
-  double vm_SnowRetentionCapacityMin; //!< Minimum liquid water retention
-                                      //!< capacity in snow [mm]
-  double vm_SnowRetentionCapacityMax; //!< Maximum liquid water retention
-                                      //!< capacity in snow [mm]
+  double vm_CorrectionRain;                 //!< Correction factor for rain (no correction used
+                                            //!< here)
+  double vm_CorrectionSnow;                 //!< Correction factor for snow (value used in COUP
+                                            //!< by Lars Egil H.)
+  double vm_RefreezeTemperature;            //!< Base temperature for refreeze [°C]
+  double vm_RefreezeP1;                     //!< Refreeze parameter (Karvonen's value)
+  double vm_RefreezeP2;                     //!< Refreeze exponent (Karvonen's value)
+  double vm_NewSnowDensityMin;              //!< Minimum density of new snow
+  double vm_SnowMaxAdditionalDensity;       //!< Maximum additional density of snow
+                                            //!< (max rho = 0.35, Karvonen)
+  double vm_SnowPacking;                    //!< Snow packing factor (calibrated by Helge Bonesmo)
+  double vm_SnowRetentionCapacityMin;       //!< Minimum liquid water retention
+                                            //!< capacity in snow [mm]
+  double vm_SnowRetentionCapacityMax;       //!< Maximum liquid water retention
+                                            //!< capacity in snow [mm]
 };
 
 namespace snowcomponent {
 void initialize(SnowComponent *sc, SoilColumn *soilColumn,
                 const SoilMoistureModuleParameters &smps);
-void deserialize(SnowComponent *sc,
-                 mas::schema::model::monica::SnowModuleState::Reader reader);
+void deserialize(SnowComponent *sc, mas::schema::model::monica::SnowModuleState::Reader reader);
 void serialize(const SnowComponent *sc,
                mas::schema::model::monica::SnowModuleState::Builder builder);
-void calcSnowLayer(SnowComponent *sc, double meanAirTemperature,
-                   double netPrecipitation);
+void calcSnowLayer(SnowComponent *sc, double meanAirTemperature, double netPrecipitation);
 double calcSnowMelt(const SnowComponent *sc, double meanAirTemperature);
 double calcNetPrecipitation(const SnowComponent *sc, double meanAirTemperature,
-                            double netPrecipitation,
-                            double &netPrecipitationWater,
+                            double netPrecipitation, double &netPrecipitationWater,
                             double &netPrecipitationSnow);
 double calcRefreeze(const SnowComponent *sc, double meanAirTemperature);
 double calcNewSnowDensity(const SnowComponent *sc, double meanAirTemperature,
                           double netPrecipitationSnow);
-double calcAverageSnowDensity(const SnowComponent *sc,
-                              double netPrecipitationSnow,
+double calcAverageSnowDensity(const SnowComponent *sc, double netPrecipitationSnow,
                               double newSnowDensity);
-double calcLiquidWaterRetainedInSnow(const SnowComponent *sc,
-                                     double frozenWaterInSnow,
+double calcLiquidWaterRetainedInSnow(const SnowComponent *sc, double frozenWaterInSnow,
                                      double snowWaterEquivalent);
 double calcPotentialInfiltration(SnowComponent *sc, double netPrecipitation,
-                                 double snowLayerWaterRelease,
-                                 double snowDepth);
+                                 double snowLayerWaterRelease, double snowDepth);
 void calcSnowDepth(SnowComponent *sc, double snowWaterEquivalent);
 } // namespace snowcomponent
 

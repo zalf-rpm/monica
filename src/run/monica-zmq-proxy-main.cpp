@@ -61,14 +61,12 @@ int main(int argc, char **argv) {
          << " -bst | --backend-type BACKEND_SOCKET_TYPE (default: DEALER) ... "
             "use given backend socket type"
          << endl
-         << " -f | --frontend-port FRONTEND-PORT (default: " << frontendPort
-         << ") ... run " << appName << " with given frontend port" << endl
-         << " -b | --backend-port BACKEND-PORT (default: " << backendPort
-         << ") ... run " << appName << " with given backend port" << endl
-         << " -c | --start-control-node [CONTROL-NODE-PORT] (default: "
-         << controlPort
-         << ") ... start control node, connected to proxy, on given port"
-         << endl
+         << " -f | --frontend-port FRONTEND-PORT (default: " << frontendPort << ") ... run "
+         << appName << " with given frontend port" << endl
+         << " -b | --backend-port BACKEND-PORT (default: " << backendPort << ") ... run " << appName
+         << " with given backend port" << endl
+         << " -c | --start-control-node [CONTROL-NODE-PORT] (default: " << controlPort
+         << ") ... start control node, connected to proxy, on given port" << endl
          << " -d | --debug ... enable debug outputs" << endl;
   };
 
@@ -104,15 +102,13 @@ int main(int argc, char **argv) {
       frontendSocketType = ZMQ_PULL, backendSocketType = ZMQ_PUSH;
     else if (arg == "-prs" || arg == "--pull-router-sockets")
       frontendSocketType = ZMQ_PULL, backendSocketType = ZMQ_ROUTER;
-    else if ((arg == "-fst" || arg == "--frontend-socket-type") &&
-             i + 1 < argc) {
+    else if ((arg == "-fst" || arg == "--frontend-socket-type") && i + 1 < argc) {
       frontendSocketType = parseSocketType(argv[++i]);
       if (-1 == frontendSocketType) {
         cerr << "invalid frontend-socket-type parameter" << endl;
         exit(1);
       }
-    } else if ((arg == "-bst" || arg == "--backend-socket-type") &&
-               i + 1 < argc) {
+    } else if ((arg == "-bst" || arg == "--backend-socket-type") && i + 1 < argc) {
       backendSocketType = parseSocketType(argv[++i]);
       if (-1 == backendSocketType) {
         cerr << "invalid backend-socket-type parameter" << endl;
@@ -135,13 +131,12 @@ int main(int argc, char **argv) {
   try {
     frontend.bind(feAddress);
   } catch (const zmq::error_t &e) {
-    cerr << "Couldn't bind frontend socket to address: " << feAddress
-         << "! Error: [" << e.what() << "]" << endl;
+    cerr << "Couldn't bind frontend socket to address: " << feAddress << "! Error: [" << e.what()
+         << "]" << endl;
     exit(1);
   }
-  debug() << "Bound " << appName
-          << " zeromq router socket to frontend address: " << feAddress << "!"
-          << endl;
+  debug() << "Bound " << appName << " zeromq router socket to frontend address: " << feAddress
+          << "!" << endl;
 
   // socket facing services
   zmq::socket_t backend(context, backendSocketType);
@@ -151,22 +146,21 @@ int main(int argc, char **argv) {
   try {
     backend.bind(beAddress);
   } catch (const zmq::error_t &e) {
-    cerr << "Couldn't bind backend socket to address: " << beAddress
-         << "! Error: [" << e.what() << "]" << endl;
+    cerr << "Couldn't bind backend socket to address: " << beAddress << "! Error: [" << e.what()
+         << "]" << endl;
     exit(1);
   }
-  debug() << "Bound " << appName
-          << " zeromq dealer socket to backend address: " << beAddress << "!"
+  debug() << "Bound " << appName << " zeromq dealer socket to backend address: " << beAddress << "!"
           << endl;
 
   if (startControlNode) {
     ostringstream oss;
 #ifdef WIN32
-    oss << "start /b monica-zmq-control -f " << frontendPort << " -b "
-        << backendPort << " -c " << controlPort;
+    oss << "start /b monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c "
+        << controlPort;
 #else
-    oss << "monica-zmq-control -f " << frontendPort << " -b " << backendPort
-        << " -c " << controlPort << " &";
+    oss << "monica-zmq-control -f " << frontendPort << " -b " << backendPort << " -c "
+        << controlPort << " &";
 #endif
 
     int res = system(oss.str().c_str());

@@ -36,16 +36,14 @@ struct OrganicFertilizationData {
 namespace workstep {
 
 Tools::Errors merge(OrganicFertilizationData *of, json11::Json j);
-json11::Json to_json(const OrganicFertilizationData *of,
-                     const Workstep *ws);
-bool apply(OrganicFertilizationData *of, Workstep *ws,
-          MonicaModel *model);
+json11::Json to_json(const OrganicFertilizationData *of, const Workstep *ws);
+bool apply(OrganicFertilizationData *of, Workstep *ws, MonicaModel *model);
 
 } // namespace workstep
 
 Workstep makeOrganicFertilizationWorkstep(json11::Json object);
-Workstep makeOrganicFertilizationWorkstep(
-    const Tools::Date &at, const OrganicMatterParameters &params, double amount,
-    bool incorp = true);
+Workstep makeOrganicFertilizationWorkstep(const Tools::Date &at,
+                                          const OrganicMatterParameters &params, double amount,
+                                          bool incorp = true);
 
 } // namespace monica
