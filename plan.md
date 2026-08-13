@@ -141,7 +141,8 @@ Each rename was followed by a full build + `monica-run` regression check against
    `_sps`, e.g. `vs_SoilOrganicCarbon()` -> `_sps.vs_SoilOrganicCarbon()`) were inlined at call sites
    and removed. This touched `frost-component.cpp`, `monica-model.cpp`, `soilmoisture.cpp`,
    `soilorganic.cpp`, `soiltemperature.cpp`, `build-output.cpp`, `cultivation-method.cpp`, and
-   `run-monica.cpp`.
+   `run-monica.cpp`. (`_sps` was later renamed to `sps` in `8c36201` and then removed entirely when
+   its fields were flattened into `SoilLayer` — see "Follow-up" step 4 below.)
 6. File renamed from `soilcolumn_simple.*` to `soilcolumn.*` (done in an earlier step, before the
    `SoilLayer` conversion).
 7. `SoilColumn` was converted in three stages, each with its own build + regression check:
@@ -154,8 +155,9 @@ Each rename was followed by a full build + `monica-run` regression check against
      `vs_NumberOfOrganicLayers`, `vs_LayerThickness`, `get_DailyCropNUptake`,
      `getLayerNumberForDepth`, `sumSoilTemperature`) got new free functions, all member methods and
      both constructors were removed, and `makeSoilColumn(...)` now builds the plain struct directly.
-     `SoilColumn` is now a genuine aggregate (public `std::vector<SoilLayer>` base, no user-declared
-     constructors).
+     `SoilColumn` became a genuine aggregate (at this point still with a public
+     `std::vector<SoilLayer>` base, no user-declared constructors; the base was replaced by an
+     explicit `layers` member later — see "Follow-up" below).
    - Stage 3: all `soilColumnXxx` free functions moved into a `monica::soilcolumn` namespace with the
      prefix dropped (e.g. `soilColumnApplyIrrigation` -> `soilcolumn::applyIrrigation`). `SoilColumn`
      itself and `makeSoilColumn(...)` stay directly in `monica` (leaner pattern, see goal #6 above),
@@ -164,8 +166,80 @@ Each rename was followed by a full build + `monica-run` regression check against
      unqualified name in field/parameter types — no nested-namespace forward declaration or alias
      needed.
 8. `DelayedNMinApplicationParams` (nested inside `SoilColumn`) and `AOM_Properties` (also declared in
-   `soilcolumn.h`) still have member `serialize`/`deserialize`; untouched so far, low priority given
-   their small size.
+   `soilcolumn.h`) still had member `serialize`/`deserialize` at this point — since converted, see
+   "Follow-up" step 2 below.
+
+### Follow-up: the `SoilColumn` / `SoilLayer` / `SoilParameters` refactor (status: complete)
+
+A four-step follow-up that finished off the soil data structures. Each step was its own commit with
+its own build + regression check; all four verified byte-identical against
+`sim-min-out_section_crop_3.6.60.csv` / `sim-min-out_section_daily_3.6.60.csv`.
+
+**Step 1 — `SoilColumn` drops the `std::vector<SoilLayer>` base (`038dbe6`).**
+`SoilColumn` no longer publicly inherits `std::vector<SoilLayer>`; it holds the layers as an
+explicit `layers` member. Every call site relying on the inherited vector semantics (`operator[]`,
+`.at()`, `.size()`, `.empty()`, `.back()`, range-for, `push_back`, `resize`) now goes through
+`.layers` — this touched `crop-module.cpp`, `soilmoisture.cpp`, `soilorganic.cpp`,
+`soiltemperature.cpp`, `soiltransport.cpp`, `frost-component.cpp`, `monica-model.cpp`,
+`build-output.cpp`, `run-monica.cpp`, `workstep.cpp` and `automatic-sowing.cpp`.
+
+**Step 2 — `AOM_Properties` / `DelayedNMinApplicationParams` serde (`eda85a7`).**
+- `AOM_Properties::serialize`/`deserialize` -> `aomproperties::serialize`/`deserialize`.
+- `SoilColumn::DelayedNMinApplicationParams::serialize`/`deserialize` -> free
+  `soilcolumn::serializeDelayedNMinApplicationParams` / `deserializeDelayedNMinApplicationParams`
+  (the struct itself stays nested inside `SoilColumn`).
+- The generic `setComplexCapnpList` / `setFromComplexCapnpList` helpers call `.serialize()` /
+  `.deserialize()` as *member* methods, so they no longer applied to `vo_AOM_Pool` /
+  `_delayedNMinApplications`; those call sites now use explicit loops calling the free functions,
+  mirroring how `soilcolumn::serialize`/`deserialize` already handled the list of layers.
+
+**Step 3 — `Soil::SoilParameters` proceduralized (`b6cc4ea`).**
+Brings `SoilParameters` in line with the plain-struct + free-procedures convention (goal #6). At
+this step it was still composed inside `SoilLayer` as the `sps` member (flattening is step 4).
+- Dropped `: public Tools::Json11Serializable`; `merge`/`to_json` are now free
+  `Soil::soilparameters::merge` / `to_json`.
+- Capnp `serialize`/`deserialize` -> free `soilparameters::serialize`/`deserialize`.
+- Constructor -> free `Soil::makeSoilParameters(...)`, same default `setPwpFcSat` callback behavior.
+- The four getter/setter pairs carrying fallback logic became free resolved-value procedures
+  `soilparameters::soilRawDensity` / `soilBulkDensity` / `soilOrganicCarbon` / `soilOrganicMatter`
+  `(const SoilParameters*)`. Their formerly-private backing fields are now plain public
+  `_vs_SoilRawDensity` / `_vs_SoilBulkDensity` / `_vs_SoilOrganicCarbon` / `_vs_SoilOrganicMatter`,
+  keeping the leading underscore both to match the existing `_delayedNMinApplications` convention
+  for "internal but not truly encapsulated" members and to avoid colliding with the new
+  resolved-value free procedures. `-1` means "unset"; read the underscore field only when the raw
+  override is genuinely what's wanted, otherwise call the resolved getter.
+- `vs_SoilSiltContent()` / `isValid()` -> free `soilparameters::soilSiltContent` / `isValid`.
+
+**Step 4 — `SoilLayer` embeds the `SoilParameters` fields (`a765e40`).**
+`SoilLayer` no longer composes a `Soil::SoilParameters sps` member. All of its fields are now
+directly on `SoilLayer`, except `thickness` and `calculateAndSetPwpFcSat`, which are config /
+parse-time-only concepts and stay behind in `SoilParameters`.
+- `makeSoilLayer(...)` copies the *resolved* `SoilParameters` values field-by-field onto the new
+  `SoilLayer` rather than storing the whole struct.
+- `soillayer::serialize`/`deserialize` read/write those fields directly (still into the capnp-nested
+  `Sps` sub-message), since there is no longer a `SoilParameters` sub-object to delegate to.
+- Added `soillayer::soilRawDensity` / `soilBulkDensity` / `soilOrganicCarbon` / `soilOrganicMatter`
+  / `soilSiltContent` `(const SoilLayer*)`, mirroring the step-3 `Soil::soilparameters::` procedures
+  but operating on `SoilLayer`'s own fields. On `SoilLayer` the raw/override fields were then
+  renamed *without* the leading underscore (`vs_SoilRawDensity` etc.), since they are no longer
+  private and there is no same-named member accessor left to collide with. The equivalent rename
+  in `Soil::SoilParameters` was simply missed — its fields are still `_vs_`-prefixed. This is an
+  oversight, not a deliberate distinction; see "What to do next".
+- ~110 `.sps.` / `->sps.` call sites were updated across `crop-module.cpp`, `soilorganic.cpp`
+  (heaviest), `build-output.cpp`, `soilmoisture.cpp`, `soilcolumn.cpp` and the rest.
+- `Soil::SoilParameters` itself is untouched by this step and is still used standalone for
+  `site.json` horizon-spec parsing (`SoilPMs`) before a `SoilColumn` is built.
+
+### `src/soil` (status: moved into the main tree, not yet transformed)
+
+`c419285` copied the soil library out of the `mas_cpp_misc` submodule into the main tree as
+`src/soil/{soil,conversion,constants}.{h,cpp}` and added them to the `monica_lib` target; the
+`add_subdirectory(mas_cpp_misc/soil soil)` block in `CMakeLists.txt` is commented out. Include
+paths are unchanged (`#include "soil/soil.h"` still resolves, now to `src/soil/`).
+
+This was done specifically so that this code can be refactored along with the rest of the project
+rather than across a submodule boundary — step 3 above (`SoilParameters`) is the first piece of it
+to be converted. `conversion.cpp` and `constants.cpp` are still in their original form.
 
 ### `MineralFertilizerParameters` (status: accessors inlined, real methods untouched)
 
@@ -179,14 +253,58 @@ Each rename was followed by a full build + `monica-run` regression check against
    (per goal of doing this as a first, low-risk step) — they already read/wrote the fields directly,
    never through the removed accessors.
 
+## Regression history: the `ff0f0fc` duplicate-state divergence (RESOLVED)
+
+Commit `ff0f0fc` ("removed copies of external params from crop module - is buggy and doesn't give
+the same result -> to be fixed") removed the remaining copied-external-param fields from
+`CropModule` and diverged from the 3.6.60 baseline (wrong yields, wrong harvest dates, starting in
+the first simulated season of `installer/Hohenfinow2/sim-min.json`). Two independent root causes:
+
+1. **Vernalisation factor.** `CropParameters::__enable_vernalisation_factor_fix__` was flattened
+   from `kj::Maybe<bool>` to a plain `bool{false}`, which silently dropped the fallback to
+   `CropModuleParameters::__enable_vernalisation_factor_fix__` (set to `true` by the top-level
+   `"CropParameters"` block in `crop-min.json`, and never set by the crop's own
+   `species`/`cultivar` JSON). Without it the `vc_VernalisationFactor` upper clamp in
+   `cropmodule::fcVernalisationFactor` never ran, so the factor grew past `1.0` through the winter
+   and wrecked phenology by year 1.
+
+2. **Stale duplicated-state reads.** Call sites still read `pc_`/`residuePs` members that had been
+   removed from `CropModule` — notably `soilcolumn::applyIrrigationViaTrigger` reading
+   `cropModule->pc_HeatSumIrrigationStart/End`, plus the `residuePs` -> `residueParams` uses in
+   `monica-model.cpp` and `sowing.cpp`. This surfaced as a small soil-moisture divergence that
+   *appeared* to originate inside `soilmoisture::evapotranspiration(...)`, even though
+   `soilmoisture.cpp` was textually unchanged — the actual cause was upstream.
+
+**Both fixed in `f31fe97`** ("fixed introduced bugs and crop module has now (almost) no duplicate
+state"): `__enable_vernalisation_factor_fix__` restored to `kj::Maybe<bool>` (with a comment
+explaining why unset must not mean `false`), and the stale reads repointed at
+`cropParams.cultivarParams.*` / `residueParams`.
+
+Verified at HEAD: `sim-min-out_section_crop.csv` and `sim-min-out_section_daily.csv` are
+byte-identical to `sim-min-out_section_crop_3.6.60.csv` / `sim-min-out_section_daily_3.6.60.csv`.
+
+**Lesson for future conversion steps.** When a refactor step changes results, first look for a
+field that used to be an *optional-with-fallback* (crop-specific override, else module-level
+default) that got flattened to a plain value carrying only the "unset" default, and for call sites
+still reading a duplicated copy that has since been removed. `git diff` filtered on `kj::Maybe<`
+and `.orDefault(` is the highest-signal search — much faster than diffing whole functions
+line-by-line. Note also that the *symptom* can appear in a file that is textually unchanged.
+
 ## What to do next (if starting fresh)
 
-1. Optionally convert `DelayedNMinApplicationParams` (nested in `SoilColumn`) and `AOM_Properties`
-   (both in `soilcolumn.h`) member `serialize`/`deserialize` to free procedures for consistency.
+1. ~~Convert `DelayedNMinApplicationParams` and `AOM_Properties` member `serialize`/`deserialize`
+   to free procedures.~~ **Done** in `eda85a7` — see "Follow-up" step 2 above.
 2. `MineralFertilizerParameters` still has its constructors/`deserialize`/`serialize`/`merge`/
    `to_json` as member methods (intentionally left for a later pass, see above) — could be
    proceduralized following the same pattern as the other modules if desired.
-3. After each conversion step, run build and fix regressions immediately.
+3. `src/soil/conversion.cpp` and `src/soil/constants.cpp` are still in their original
+   (pre-refactor) form now that they live in the main tree — convert if/when needed.
+4. Low priority cleanup: rename `Soil::SoilParameters`' four override fields from `_vs_...` to
+   `vs_...`, matching the rename already done on `SoilLayer` (they are no longer private, so the
+   leading underscore no longer carries meaning). Pure rename, no behavior change — but check the
+   `soilparameters::soilRawDensity` / `soilBulkDensity` / `soilOrganicCarbon` / `soilOrganicMatter`
+   resolved-value procedures for accidental name collisions while doing it.
+5. After each conversion step, run build and fix regressions immediately.
 
 ## Validation baseline
 
