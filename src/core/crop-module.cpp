@@ -41,6 +41,7 @@ const double PI = 3.14159265358979323;
 
 using namespace std;
 using namespace monica;
+using namespace Soil;
 using namespace Tools;
 
 void monica::cropmodule::setPerennialCropParameters(CropModule *cm,
@@ -5518,7 +5519,8 @@ kj::Own<CropModule> monica::makeCropModule(
     double f_S = cm->soilColumn->layers[0].sps.vs_SoilSandContent; // [kg kg-1]
     auto R_S = (f_S - 0.5) * -0.6;
 
-    double rho_B = cm->soilColumn->layers[0].sps.vs_SoilBulkDensity(); // [kg m-3]
+    double rho_B = soilparameters::soilBulkDensity(
+        &cm->soilColumn->layers[0].sps); // [kg m-3]
     auto R_D = (rho_B / 1000.0 - 1) * -0.3;
 
     cm->vc_MaxRootingDepth = R_P_max * ((R_P_max + (R_P_max * R_S)) / R_P_max) *

@@ -35,6 +35,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "tools/helper.h"
 
 using namespace monica;
+using namespace Soil;
 using namespace Tools;
 using namespace std;
 using namespace json11;
@@ -1248,7 +1249,8 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->layers.at(i).sps.vs_SoilOrganicCarbon();
+                    return soilparameters::soilOrganicCarbon(
+                        &monica.soilColumn->layers.at(i).sps);
                   },
                   6);
             });
@@ -1259,8 +1261,10 @@ BOTRes &monica::buildOutputTable() {
             return getComplexValues<double>(
                 oid,
                 [&](int i) {
-                  return monica.soilColumn->layers.at(i).sps.vs_SoilOrganicCarbon() *
-                         monica.soilColumn->layers.at(i).sps.vs_SoilBulkDensity() *
+                  return soilparameters::soilOrganicCarbon(
+                             &monica.soilColumn->layers.at(i).sps) *
+                         soilparameters::soilBulkDensity(
+                             &monica.soilColumn->layers.at(i).sps) *
                          monica.soilColumn->layers.at(i).vs_LayerThickness * 1000;
                 },
                 4);
@@ -1785,7 +1789,8 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid,
                   [&](int i) {
-                    return monica.soilColumn->layers.at(i).sps.vs_SoilSiltContent();
+                    return soilparameters::soilSiltContent(
+                        &monica.soilColumn->layers.at(i).sps);
                   },
                   2);
             });

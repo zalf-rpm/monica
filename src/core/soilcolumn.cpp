@@ -113,7 +113,7 @@ void soillayer::deserialize(
   sl->vs_SoilNO2 = reader.getSoilNO2();
   sl->vs_SoilNO3 = reader.getSoilNO3();
   sl->vs_SoilFrozen = reader.getSoilFrozen();
-  sl->sps.deserialize(reader.getSps());
+  soilparameters::deserialize(&sl->sps, reader.getSps());
   sl->vs_SoilMoisture_m3 = reader.getSoilMoistureM3();
   sl->vs_SoilTemperature = reader.getSoilTemperature();
 }
@@ -136,7 +136,7 @@ void soillayer::serialize(
   builder.setSoilNO2(sl->vs_SoilNO2);
   builder.setSoilNO3(sl->vs_SoilNO3);
   builder.setSoilFrozen(sl->vs_SoilFrozen);
-  sl->sps.serialize(builder.initSps());
+  soilparameters::serialize(&sl->sps, builder.initSps());
   builder.setSoilMoistureM3(sl->vs_SoilMoisture_m3);
   builder.setSoilTemperature(sl->vs_SoilTemperature);
 }
@@ -154,7 +154,8 @@ double soillayer::soilMoisturePF(const SoilLayer *sl) {
   auto ps = calcVanGenuchtenVereeckenParams(
       sl->sps.vs_PermanentWiltingPoint, sl->sps.vs_Saturation,
       sl->sps.vs_SoilSandContent, sl->sps.vs_SoilClayContent,
-      sl->sps.vs_SoilBulkDensity(), sl->sps.vs_SoilOrganicCarbon());
+      soilparameters::soilBulkDensity(&sl->sps),
+      soilparameters::soilOrganicCarbon(&sl->sps));
 
   // Van Genuchten retention curve
   auto sm = sl->vs_SoilMoisture_m3;
@@ -705,7 +706,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
 
   // add up all parameters that are affected by tillage
   for (size_t i = 0; i < layer_index; i++) {
-    soil_organic_carbon += sc->layers.at(i).sps.vs_SoilOrganicCarbon();
+    soil_organic_carbon += soilparameters::soilOrganicCarbon(&sc->layers.at(i).sps);
     // soil_organic_matter += at(i).vs_SoilOrganicMatter();
     soil_temperature += sc->layers.at(i).vs_SoilTemperature;
     soil_moisture += sc->layers.at(i).vs_SoilMoisture_m3;
@@ -741,7 +742,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
   for (size_t i = 0; i < layer_index; i++) {
     // assert((soil_organic_carbon - (soil_organic_matter *
     // OrganicConstants::po_SOM_to_C)) < 0.00001);
-    sc->layers.at(i).sps.set_vs_SoilOrganicCarbon(soil_organic_carbon);
+    sc->layers.at(i).sps._vs_SoilOrganicCarbon = soil_organic_carbon;
     // at(i).set_SoilOrganicMatter(soil_organic_matter);
     sc->layers.at(i).vs_SoilTemperature = soil_temperature;
     sc->layers.at(i).vs_SoilMoisture_m3 = soil_moisture;

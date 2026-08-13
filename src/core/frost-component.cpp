@@ -24,6 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 using namespace std;
 using namespace monica;
+using namespace Soil;
 using namespace Tools;
 
 void monica::frostcomponent::initialize(FrostComponent *fc,
@@ -124,7 +125,8 @@ double monica::frostcomponent::getMeanBulkDensity(const FrostComponent *fc) {
   auto vs_number_of_layers = soilcolumn::numberOfLayers(&soilColumn);
   double bulk_density_accu = 0.0;
   for (int i_Layer = 0; i_Layer < vs_number_of_layers; i_Layer++) {
-    bulk_density_accu += soilColumn.layers[i_Layer].sps.vs_SoilBulkDensity();
+    bulk_density_accu +=
+        soilparameters::soilBulkDensity(&soilColumn.layers[i_Layer].sps);
   }
   return (bulk_density_accu / double(vs_number_of_layers) / 1000.0); // [Mg m-3]
 }

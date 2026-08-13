@@ -1204,7 +1204,10 @@ void siteparameters::deserialize(
   sp->vs_ImpenetrableLayerDepth = reader.getImpenetrableLayerDepth();
   sp->vs_SoilSpecificHumusBalanceCorrection =
       reader.getSoilSpecificHumusBalanceCorrection();
-  setFromComplexCapnpList(sp->vs_SoilParameters, reader.getSoilParameters());
+  auto soilParams = reader.getSoilParameters();
+  sp->vs_SoilParameters.resize(soilParams.size());
+  for (uint32_t i = 0; i < soilParams.size(); i++)
+    Soil::soilparameters::deserialize(&sp->vs_SoilParameters[i], soilParams[i]);
 }
 
 void siteparameters::serialize(
@@ -1221,9 +1224,11 @@ void siteparameters::serialize(
   builder.setImpenetrableLayerDepth(sp->vs_ImpenetrableLayerDepth);
   builder.setSoilSpecificHumusBalanceCorrection(
       sp->vs_SoilSpecificHumusBalanceCorrection);
-  setComplexCapnpList(
-      sp->vs_SoilParameters,
-      builder.initSoilParameters((capnp::uint)sp->vs_SoilParameters.size()));
+  auto soilParamsBuilder =
+      builder.initSoilParameters((capnp::uint)sp->vs_SoilParameters.size());
+  for (capnp::uint i = 0; i < sp->vs_SoilParameters.size(); i++)
+    Soil::soilparameters::serialize(&sp->vs_SoilParameters[i],
+                                    soilParamsBuilder[i]);
 }
 
 Errors siteparameters::merge(SiteParameters *sp, json11::Json j) {
@@ -1302,7 +1307,12 @@ json11::Json siteparameters::to_json(const SiteParameters *sp) {
                 "humus equivalents"}},
       {"Bare_soil_KC_factor", sp->bareSoilKcFactor}};
 
-  sps["SoilProfileParameters"] = toJsonArray(sp->vs_SoilParameters);
+  {
+    J11Array soilProfileParams;
+    for (const auto &spItem : sp->vs_SoilParameters)
+      soilProfileParams.push_back(Soil::soilparameters::to_json(&spItem));
+    sps["SoilProfileParameters"] = soilProfileParams;
+  }
 
   return sps;
 }

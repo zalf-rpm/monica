@@ -28,48 +28,11 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11.hpp"
 
 namespace Soil {
-class SoilParameters;
+struct SoilParameters;
 Tools::Errors noSetPwpFcSat(SoilParameters *sp, int = -1);
 
 //! @author Claas Nendel, Michael Berg
-struct SoilParameters : public Tools::Json11Serializable {
-  explicit SoilParameters(
-      std::function<Tools::Errors(SoilParameters *)> setPwpFcSat =
-          [](SoilParameters *sp) { return noSetPwpFcSat(sp); });
-
-  void
-  serialize(mas::schema::model::monica::SoilParameters::Builder builder) const;
-  void deserialize(mas::schema::model::monica::SoilParameters::Reader reader);
-
-  Tools::Errors merge(json11::Json j) override;
-
-  json11::Json to_json() const override;
-
-  //! Soil layer's silt content [kg kg-1] (Schluff)
-  double vs_SoilSiltContent() const {
-    return 1.0 - vs_SoilSandContent - vs_SoilClayContent;
-  }
-
-  double vs_SoilRawDensity() const;
-  void set_vs_SoilRawDensity(double srd) { _vs_SoilRawDensity = srd; }
-
-  double vs_SoilBulkDensity() const;
-  void set_vs_SoilBulkDensity(double sbd) { _vs_SoilBulkDensity = sbd; }
-
-  //! returns soc [% [0-1]]
-  double vs_SoilOrganicCarbon()
-      const; //!< Soil layer's organic carbon content [kg C kg-1]
-  //! soc [% [0-1]]
-  void set_vs_SoilOrganicCarbon(double soc) { _vs_SoilOrganicCarbon = soc; }
-
-  //!< Soil layer's organic matter content [kg OM kg-1]
-  double vs_SoilOrganicMatter() const;
-  void set_vs_SoilOrganicMatter(double som) { _vs_SoilOrganicMatter = som; }
-
-  static double sandAndClay2lambda(double sand, double clay);
-
-  bool isValid() const;
-
+struct SoilParameters {
   std::function<Tools::Errors(SoilParameters *)> calculateAndSetPwpFcSat;
 
   // members
@@ -91,12 +54,52 @@ struct SoilParameters : public Tools::Json11Serializable {
   double vs_SoilMoisturePercentFC{100.0};
 
   double thickness{0}; // layer thickness in m
-private:
+
+  // Raw/override values; -1 means "unset" and the resolved value has to be
+  // computed via the corresponding soilparameters::soilXyz() free function
+  // (e.g. from the other value + clay content, or from organic carbon<->matter
+  // conversion). Kept as directly-named fields (not wrapped in accessors) -
+  // read/write the override directly if that's really what's needed, otherwise
+  // use the resolved soilparameters::... getter.
   double _vs_SoilRawDensity{-1.0};    //!< [kg m-3]
   double _vs_SoilBulkDensity{-1.0};   //!< [kg m-3]
   double _vs_SoilOrganicCarbon{-1.0}; //!< [kg kg-1]
   double _vs_SoilOrganicMatter{-1.0}; //!< [kg kg-1]
 };
+
+SoilParameters makeSoilParameters(
+    std::function<Tools::Errors(SoilParameters *)> setPwpFcSat =
+        [](SoilParameters *sp) { return noSetPwpFcSat(sp); });
+
+namespace soilparameters {
+
+void serialize(const SoilParameters *sp,
+               mas::schema::model::monica::SoilParameters::Builder builder);
+void deserialize(SoilParameters *sp,
+                 mas::schema::model::monica::SoilParameters::Reader reader);
+
+Tools::Errors merge(SoilParameters *sp, json11::Json j);
+
+json11::Json to_json(const SoilParameters *sp);
+
+//! Soil layer's silt content [kg kg-1] (Schluff)
+double soilSiltContent(const SoilParameters *sp);
+
+//! Resolved soil raw density (falls back to bulk density + clay content if unset)
+double soilRawDensity(const SoilParameters *sp);
+
+//! Resolved soil bulk density (falls back to raw density + clay content if unset)
+double soilBulkDensity(const SoilParameters *sp);
+
+//! Resolved soil organic carbon [kg C kg-1] (falls back to organic matter if unset)
+double soilOrganicCarbon(const SoilParameters *sp);
+
+//! Resolved soil organic matter [kg OM kg-1] (falls back to organic carbon if unset)
+double soilOrganicMatter(const SoilParameters *sp);
+
+bool isValid(const SoilParameters *sp);
+
+} // namespace soilparameters
 
 // Data structure that holds information about capillary rise rates.
 class CapillaryRiseRates {

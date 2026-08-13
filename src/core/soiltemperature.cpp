@@ -10,6 +10,7 @@
 
 using namespace std;
 using namespace monica;
+using namespace Soil;
 using namespace Tools;
 
 namespace {
@@ -263,8 +264,8 @@ makeSoilTemperature(MonicaModel &mm,
   const double ch = st->params.pt_SpecificHeatCapacityHumus;
 
   for (size_t i = 0; i < st->noOfSoilLayers; i++) {
-    const double sbdi =
-        soilTemperatureLayerAt(st.get(), i).sps.vs_SoilBulkDensity();
+    const double sbdi = soilparameters::soilBulkDensity(
+        &soilTemperatureLayerAt(st.get(), i).sps);
     const double smi = soilMoistureConst;
     st->heatConductivity[i] =
         ((3.0 * (sbdi / 1000.0) - 1.7) * 0.001) /
@@ -273,9 +274,9 @@ makeSoilTemperature(MonicaModel &mm,
         86400.0 * ts * 100.0 * 4.184;
 
     const double sati = soilTemperatureLayerAt(st.get(), i).sps.vs_Saturation;
-    const double somi =
-        soilTemperatureLayerAt(st.get(), i).sps.vs_SoilOrganicMatter() / da *
-        sbdi;
+    const double somi = soilparameters::soilOrganicMatter(
+                             &soilTemperatureLayerAt(st.get(), i).sps) /
+                         da * sbdi;
     st->heatCapacity[i] = (smi * dw * cw) + ((sati - smi) * da * ca) +
                           (somi * dh * ch) + ((1.0 - sati - somi) * dq * cq);
   }
