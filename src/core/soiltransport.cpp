@@ -346,7 +346,7 @@ void nTransport(SoilTransport *st, double leachingDepth,
                      timeStepFactor; // [mm t-1 --> m t-1] * [t t-1]
     const auto lti = st->soilColumn->layers[i].vs_LayerThickness;
     const auto NO3i = st->vq_SoilNO3_aq[i];
-    const auto fci = st->soilColumn->layers[i].sps.vs_FieldCapacity;
+    const auto fci = st->soilColumn->layers[i].vs_FieldCapacity;
     const auto smi = st->soilColumn->layers[i].vs_SoilMoisture_m3;
 
     // Original: W(I) --> um Steingehalt korrigierte Feldkapazität
@@ -356,7 +356,7 @@ void nTransport(SoilTransport *st, double leachingDepth,
       st->vq_PoreWaterVelocity[i] = fabs((pri) / fci); // [m t-1]
       soilMoistureGradient[i] = smi;                   //[m3 m-3]
     } else {
-      const auto fcip1 = st->soilColumn->layers[i + 1].sps.vs_FieldCapacity;
+      const auto fcip1 = st->soilColumn->layers[i + 1].vs_FieldCapacity;
       const auto smip1 = st->soilColumn->layers[i + 1].vs_SoilMoisture_m3;
       st->vq_PoreWaterVelocity[i] =
           fabs((pri) / ((fci + fcip1) * 0.5));       // [m t-1]

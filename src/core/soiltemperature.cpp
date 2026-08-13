@@ -264,8 +264,8 @@ makeSoilTemperature(MonicaModel &mm,
   const double ch = st->params.pt_SpecificHeatCapacityHumus;
 
   for (size_t i = 0; i < st->noOfSoilLayers; i++) {
-    const double sbdi = soilparameters::soilBulkDensity(
-        &soilTemperatureLayerAt(st.get(), i).sps);
+    const double sbdi =
+        soillayer::soilBulkDensity(&soilTemperatureLayerAt(st.get(), i));
     const double smi = soilMoistureConst;
     st->heatConductivity[i] =
         ((3.0 * (sbdi / 1000.0) - 1.7) * 0.001) /
@@ -273,10 +273,10 @@ makeSoilTemperature(MonicaModel &mm,
                    exp((-50.0) * pow((smi / (sbdi / 1000.0)), 1.5))) *
         86400.0 * ts * 100.0 * 4.184;
 
-    const double sati = soilTemperatureLayerAt(st.get(), i).sps.vs_Saturation;
-    const double somi = soilparameters::soilOrganicMatter(
-                             &soilTemperatureLayerAt(st.get(), i).sps) /
-                         da * sbdi;
+    const double sati = soilTemperatureLayerAt(st.get(), i).vs_Saturation;
+    const double somi =
+        soillayer::soilOrganicMatter(&soilTemperatureLayerAt(st.get(), i)) /
+        da * sbdi;
     st->heatCapacity[i] = (smi * dw * cw) + ((sati - smi) * da * ca) +
                           (somi * dh * ch) + ((1.0 - sati - somi) * dq * cq);
   }

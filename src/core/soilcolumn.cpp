@@ -21,6 +21,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <cmath>
 
 #include "crop-module.h"
+#include "soil/constants.h"
 #include "tools/debug.h"
 
 using namespace monica;
@@ -90,7 +91,23 @@ SoilLayer monica::makeSoilLayer(double vs_LayerThickness,
   sl.vs_LayerThickness = vs_LayerThickness;
   sl.vs_SoilNH4 = sps.vs_SoilAmmonium;
   sl.vs_SoilNO3 = sps.vs_SoilNitrate;
-  sl.sps = sps;
+  sl.vs_SoilSandContent = sps.vs_SoilSandContent;
+  sl.vs_SoilClayContent = sps.vs_SoilClayContent;
+  sl.vs_SoilpH = sps.vs_SoilpH;
+  sl.vs_SoilStoneContent = sps.vs_SoilStoneContent;
+  sl.vs_Lambda = sps.vs_Lambda;
+  sl.vs_FieldCapacity = sps.vs_FieldCapacity;
+  sl.vs_Saturation = sps.vs_Saturation;
+  sl.vs_PermanentWiltingPoint = sps.vs_PermanentWiltingPoint;
+  sl.vs_SoilTexture = sps.vs_SoilTexture;
+  sl.vs_SoilAmmonium = sps.vs_SoilAmmonium;
+  sl.vs_SoilNitrate = sps.vs_SoilNitrate;
+  sl.vs_Soil_CN_Ratio = sps.vs_Soil_CN_Ratio;
+  sl.vs_SoilMoisturePercentFC = sps.vs_SoilMoisturePercentFC;
+  sl._vs_SoilRawDensity = sps._vs_SoilRawDensity;
+  sl._vs_SoilBulkDensity = sps._vs_SoilBulkDensity;
+  sl._vs_SoilOrganicCarbon = sps._vs_SoilOrganicCarbon;
+  sl._vs_SoilOrganicMatter = sps._vs_SoilOrganicMatter;
   sl.vs_SoilMoisture_m3 =
       sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0;
   return sl;
@@ -113,7 +130,26 @@ void soillayer::deserialize(
   sl->vs_SoilNO2 = reader.getSoilNO2();
   sl->vs_SoilNO3 = reader.getSoilNO3();
   sl->vs_SoilFrozen = reader.getSoilFrozen();
-  soilparameters::deserialize(&sl->sps, reader.getSps());
+  {
+    auto sps = reader.getSps();
+    sl->vs_SoilSandContent = sps.getSoilSandContent();
+    sl->vs_SoilClayContent = sps.getSoilClayContent();
+    sl->vs_SoilpH = sps.getSoilpH();
+    sl->vs_SoilStoneContent = sps.getSoilStoneContent();
+    sl->vs_Lambda = sps.getLambda();
+    sl->vs_FieldCapacity = sps.getFieldCapacity();
+    sl->vs_Saturation = sps.getSaturation();
+    sl->vs_PermanentWiltingPoint = sps.getPermanentWiltingPoint();
+    sl->vs_SoilTexture = sps.getSoilTexture();
+    sl->vs_SoilAmmonium = sps.getSoilAmmonium();
+    sl->vs_SoilNitrate = sps.getSoilNitrate();
+    sl->vs_Soil_CN_Ratio = sps.getSoilCNRatio();
+    sl->vs_SoilMoisturePercentFC = sps.getSoilMoisturePercentFC();
+    sl->_vs_SoilRawDensity = sps.getSoilRawDensity();
+    sl->_vs_SoilBulkDensity = sps.getSoilBulkDensity();
+    sl->_vs_SoilOrganicCarbon = sps.getSoilOrganicCarbon();
+    sl->_vs_SoilOrganicMatter = sps.getSoilOrganicMatter();
+  }
   sl->vs_SoilMoisture_m3 = reader.getSoilMoistureM3();
   sl->vs_SoilTemperature = reader.getSoilTemperature();
 }
@@ -136,7 +172,26 @@ void soillayer::serialize(
   builder.setSoilNO2(sl->vs_SoilNO2);
   builder.setSoilNO3(sl->vs_SoilNO3);
   builder.setSoilFrozen(sl->vs_SoilFrozen);
-  soilparameters::serialize(&sl->sps, builder.initSps());
+  {
+    auto sps = builder.initSps();
+    sps.setSoilSandContent(sl->vs_SoilSandContent);
+    sps.setSoilClayContent(sl->vs_SoilClayContent);
+    sps.setSoilpH(sl->vs_SoilpH);
+    sps.setSoilStoneContent(sl->vs_SoilStoneContent);
+    sps.setLambda(sl->vs_Lambda);
+    sps.setFieldCapacity(sl->vs_FieldCapacity);
+    sps.setSaturation(sl->vs_Saturation);
+    sps.setPermanentWiltingPoint(sl->vs_PermanentWiltingPoint);
+    sps.setSoilTexture(sl->vs_SoilTexture);
+    sps.setSoilAmmonium(sl->vs_SoilAmmonium);
+    sps.setSoilNitrate(sl->vs_SoilNitrate);
+    sps.setSoilCNRatio(sl->vs_Soil_CN_Ratio);
+    sps.setSoilMoisturePercentFC(sl->vs_SoilMoisturePercentFC);
+    sps.setSoilRawDensity(sl->_vs_SoilRawDensity);
+    sps.setSoilBulkDensity(sl->_vs_SoilBulkDensity);
+    sps.setSoilOrganicCarbon(sl->_vs_SoilOrganicCarbon);
+    sps.setSoilOrganicMatter(sl->_vs_SoilOrganicMatter);
+  }
   builder.setSoilMoistureM3(sl->vs_SoilMoisture_m3);
   builder.setSoilTemperature(sl->vs_SoilTemperature);
 }
@@ -152,10 +207,9 @@ double soillayer::soilMoisturePF(const SoilLayer *sl) {
   // Derivation of Van Genuchten parameters (Vereecken at al. 1989)
 
   auto ps = calcVanGenuchtenVereeckenParams(
-      sl->sps.vs_PermanentWiltingPoint, sl->sps.vs_Saturation,
-      sl->sps.vs_SoilSandContent, sl->sps.vs_SoilClayContent,
-      soilparameters::soilBulkDensity(&sl->sps),
-      soilparameters::soilOrganicCarbon(&sl->sps));
+      sl->vs_PermanentWiltingPoint, sl->vs_Saturation, sl->vs_SoilSandContent,
+      sl->vs_SoilClayContent, soillayer::soilBulkDensity(sl),
+      soillayer::soilOrganicCarbon(sl));
 
   // Van Genuchten retention curve
   auto sm = sl->vs_SoilMoisture_m3;
@@ -176,6 +230,38 @@ double soillayer::soilMoisturePF(const SoilLayer *sl) {
 
 double soillayer::soilNmin(const SoilLayer *sl) {
   return sl->vs_SoilNO3 + sl->vs_SoilNO2 + sl->vs_SoilNH4;
+}
+
+double soillayer::soilSiltContent(const SoilLayer *sl) {
+  return 1.0 - sl->vs_SoilSandContent - sl->vs_SoilClayContent;
+}
+
+double soillayer::soilRawDensity(const SoilLayer *sl) {
+  return sl->_vs_SoilRawDensity < 0
+             ? ((sl->_vs_SoilBulkDensity / 1000.0) -
+                (0.009 * 100.0 * sl->vs_SoilClayContent)) *
+                   1000.0
+             : sl->_vs_SoilRawDensity;
+}
+
+double soillayer::soilBulkDensity(const SoilLayer *sl) {
+  return sl->_vs_SoilBulkDensity < 0
+             ? ((sl->_vs_SoilRawDensity / 1000.0) +
+                (0.009 * 100.0 * sl->vs_SoilClayContent)) *
+                   1000.0
+             : sl->_vs_SoilBulkDensity;
+}
+
+double soillayer::soilOrganicCarbon(const SoilLayer *sl) {
+  return sl->_vs_SoilOrganicCarbon < 0
+             ? sl->_vs_SoilOrganicMatter * OrganicConstants::po_SOM_to_C
+             : sl->_vs_SoilOrganicCarbon;
+}
+
+double soillayer::soilOrganicMatter(const SoilLayer *sl) {
+  return sl->_vs_SoilOrganicMatter < 0
+             ? sl->_vs_SoilOrganicCarbon / OrganicConstants::po_SOM_to_C
+             : sl->_vs_SoilOrganicMatter;
 }
 
 //------------------------------------------------------------------------------
@@ -500,7 +586,7 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
     double samplingDepth, double cropNTargetValue, double cropNTargetValue30,
     double fertiliserMaxApplication, double fertiliserMinApplication,
     int topDressingDelay) {
-  if (sc->layers.at(0).vs_SoilMoisture_m3 > sc->layers.at(0).sps.vs_FieldCapacity) {
+  if (sc->layers.at(0).vs_SoilMoisture_m3 > sc->layers.at(0).vs_FieldCapacity) {
     sc->_delayedNMinApplications.push_back(
         {fertiliserPartition, samplingDepth, cropNTargetValue,
          cropNTargetValue30, fertiliserMaxApplication, fertiliserMinApplication,
@@ -612,8 +698,8 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
        i++) {
     const auto &li = sc->layers.at(i);
     auto smi = li.vs_SoilMoisture_m3;
-    auto fci = li.sps.vs_FieldCapacity;
-    auto pwpi = li.sps.vs_PermanentWiltingPoint;
+    auto fci = li.vs_FieldCapacity;
+    auto pwpi = li.vs_PermanentWiltingPoint;
     auto lti = li.vs_LayerThickness;
 
     actPAW += (smi - pwpi) * lti * 1000.0; // [mm]
@@ -635,8 +721,8 @@ std::pair<bool, double> monica::soilcolumn::applyIrrigationViaTrigger(
            i < sc->layers.size() && layerDepthM < aips.criticalMoistureDepthM; i++) {
         auto &li = sc->layers.at(i);
         auto smi = li.vs_SoilMoisture_m3;
-        auto fci = li.sps.vs_FieldCapacity;
-        auto pwpi = li.sps.vs_PermanentWiltingPoint;
+        auto fci = li.vs_FieldCapacity;
+        auto pwpi = li.vs_PermanentWiltingPoint;
         auto lti = li.vs_LayerThickness;
 
         double percentNFCi = (fci - pwpi) * aips.percentNFC / 100.0;
@@ -706,7 +792,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
 
   // add up all parameters that are affected by tillage
   for (size_t i = 0; i < layer_index; i++) {
-    soil_organic_carbon += soilparameters::soilOrganicCarbon(&sc->layers.at(i).sps);
+    soil_organic_carbon += soillayer::soilOrganicCarbon(&sc->layers.at(i));
     // soil_organic_matter += at(i).vs_SoilOrganicMatter();
     soil_temperature += sc->layers.at(i).vs_SoilTemperature;
     soil_moisture += sc->layers.at(i).vs_SoilMoisture_m3;
@@ -742,7 +828,7 @@ void monica::soilcolumn::applyTillage(SoilColumn *sc, double depth) {
   for (size_t i = 0; i < layer_index; i++) {
     // assert((soil_organic_carbon - (soil_organic_matter *
     // OrganicConstants::po_SOM_to_C)) < 0.00001);
-    sc->layers.at(i).sps._vs_SoilOrganicCarbon = soil_organic_carbon;
+    sc->layers.at(i)._vs_SoilOrganicCarbon = soil_organic_carbon;
     // at(i).set_SoilOrganicMatter(soil_organic_matter);
     sc->layers.at(i).vs_SoilTemperature = soil_temperature;
     sc->layers.at(i).vs_SoilMoisture_m3 = soil_moisture;

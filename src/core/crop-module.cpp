@@ -584,8 +584,8 @@ void monica::cropmodule::step(
   if (!pc_Perennial || currentDate >= cm->perennialCropDormancyPeriodEndDate) {
     fcCropDevelopmentalStage(
         cm, meanAirTemperature, soilColumn->layers[0].vs_SoilMoisture_m3,
-        soilColumn->layers[0].sps.vs_FieldCapacity,
-        soilColumn->layers[0].sps.vs_PermanentWiltingPoint, currentDate);
+        soilColumn->layers[0].vs_FieldCapacity,
+        soilColumn->layers[0].vs_PermanentWiltingPoint, currentDate);
   }
 
   if (old_DevelopmentalStage == 0 && vc_DevelopmentalStage == 1) {
@@ -1074,7 +1074,7 @@ double monica::cropmodule::fcOxygenDeficiency(CropModule *cm,
       std::min(std::max(size_t(3), cm->vc_RootingDepth), soilColumn->layers.size());
   // MP: changed to consider at least first 30 cm and then rooting depth
   for (size_t i = 0; i < nols; i++) {
-    sumSaturation += soilColumn->layers[i].sps.vs_Saturation;
+    sumSaturation += soilColumn->layers[i].vs_Saturation;
     sumSoilMoisture += soilColumn->layers[i].vs_SoilMoisture_m3;
     sumLayers++;
   }
@@ -2396,8 +2396,8 @@ void monica::cropmodule::fcCropPhotosynthesis(
 #endif
           double FC = 0, WP = 0, SWC = 0;
           for (int i = 0; i < root_depth; i++) {
-            FC += soilColumn->layers[i].sps.vs_FieldCapacity;
-            WP += soilColumn->layers[i].sps.vs_PermanentWiltingPoint;
+            FC += soilColumn->layers[i].vs_FieldCapacity;
+            WP += soilColumn->layers[i].vs_PermanentWiltingPoint;
             SWC += soilColumn->layers[i].vs_SoilMoisture_m3;
           }
 
@@ -3685,13 +3685,13 @@ void monica::cropmodule::fcCropDryMatter(CropModule *cm,
     // In case of drought stress the root will grow deeper //MP: Access point
     // for drought optimisation (this could be changed for waterlogging)
     double vc_AvailableWater =
-        soilColumn->layers[layerIndexBelowRootingDepth].sps.vs_FieldCapacity -
+        soilColumn->layers[layerIndexBelowRootingDepth].vs_FieldCapacity -
         soilColumn->layers[layerIndexBelowRootingDepth]
-            .sps.vs_PermanentWiltingPoint;
+            .vs_PermanentWiltingPoint;
     vc_AvailableWaterPercentage =
         (soilColumn->layers[layerIndexBelowRootingDepth].vs_SoilMoisture_m3 -
          soilColumn->layers[layerIndexBelowRootingDepth]
-             .sps.vs_PermanentWiltingPoint) /
+             .vs_PermanentWiltingPoint) /
         vc_AvailableWater;
     if (vc_AvailableWaterPercentage < 0.0) {
       vc_AvailableWaterPercentage = 0.0;
@@ -3751,15 +3751,15 @@ void monica::cropmodule::fcCropDryMatter(CropModule *cm,
   // (source ??)
   double vc_RootPenetrationRate = 0.0; // [m °C-1 d-1]
 
-  if (soilColumn->layers[layerIndexBelowRootingDepth].sps.vs_SoilClayContent <=
+  if (soilColumn->layers[layerIndexBelowRootingDepth].vs_SoilClayContent <=
       0.02) {
     vc_RootPenetrationRate = 0.5 * pc_RootPenetrationRate;
   } else if (soilColumn->layers[layerIndexBelowRootingDepth]
-                 .sps.vs_SoilClayContent <= 0.08) {
+                 .vs_SoilClayContent <= 0.08) {
     vc_RootPenetrationRate =
         ((1.0 / 3.0) +
          (0.5 / 0.06 *
-          soilColumn->layers[layerIndexBelowRootingDepth].sps.vs_SoilClayContent)) *
+          soilColumn->layers[layerIndexBelowRootingDepth].vs_SoilClayContent)) *
         pc_RootPenetrationRate; // [m °C-1 d-1]
   } else {
     vc_RootPenetrationRate = pc_RootPenetrationRate; // [m °C-1 d-1]
@@ -4288,11 +4288,11 @@ void monica::cropmodule::fcCropWaterUptake(
 
     for (size_t i_Layer = 0; i_Layer < vc_RootingZone; i_Layer++) {
       double vc_AvailableWater =
-          soilColumn->layers[i_Layer].sps.vs_FieldCapacity -
-          soilColumn->layers[i_Layer].sps.vs_PermanentWiltingPoint;
+          soilColumn->layers[i_Layer].vs_FieldCapacity -
+          soilColumn->layers[i_Layer].vs_PermanentWiltingPoint;
       double vc_AvailableWaterPercentage =
           (soilColumn->layers[i_Layer].vs_SoilMoisture_m3 -
-           soilColumn->layers[i_Layer].sps.vs_PermanentWiltingPoint) /
+           soilColumn->layers[i_Layer].vs_PermanentWiltingPoint) /
           vc_AvailableWater;
       if (vc_AvailableWaterPercentage < 0.0) {
         vc_AvailableWaterPercentage = 0.0;
@@ -4399,11 +4399,11 @@ void monica::cropmodule::fcCropWaterUptake(
       }
       if (((vc_Transpiration[i_Layer] / 1000.0) / layerThickness) >
           ((soilColumn->layers[i_Layer].vs_SoilMoisture_m3 -
-            soilColumn->layers[i_Layer].sps.vs_PermanentWiltingPoint))) {
+            soilColumn->layers[i_Layer].vs_PermanentWiltingPoint))) {
         vc_PotentialTranspirationDeficit =
             (((vc_Transpiration[i_Layer] / 1000.0) / layerThickness) -
              (soilColumn->layers[i_Layer].vs_SoilMoisture_m3 -
-              soilColumn->layers[i_Layer].sps.vs_PermanentWiltingPoint)) *
+              soilColumn->layers[i_Layer].vs_PermanentWiltingPoint)) *
             layerThickness * 1000.0; // [mm]
         if (vc_PotentialTranspirationDeficit < 0.0) {
           vc_PotentialTranspirationDeficit = 0.0;
@@ -5516,11 +5516,11 @@ kj::Own<CropModule> monica::makeCropModule(
     //
     // std::cout << "old mrd: " << cm->vc_MaxRootingDepth << " -> ";
     auto R_P_max = cropSpecificMaxRootingDepth;
-    double f_S = cm->soilColumn->layers[0].sps.vs_SoilSandContent; // [kg kg-1]
+    double f_S = cm->soilColumn->layers[0].vs_SoilSandContent; // [kg kg-1]
     auto R_S = (f_S - 0.5) * -0.6;
 
-    double rho_B = soilparameters::soilBulkDensity(
-        &cm->soilColumn->layers[0].sps); // [kg m-3]
+    double rho_B = soillayer::soilBulkDensity(
+        &cm->soilColumn->layers[0]); // [kg m-3]
     auto R_D = (rho_B / 1000.0 - 1) * -0.3;
 
     cm->vc_MaxRootingDepth = R_P_max * ((R_P_max + (R_P_max * R_S)) / R_P_max) *

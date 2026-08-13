@@ -148,7 +148,29 @@ struct SoilLayer {
   double vs_SoilNO3{0.0001}; // Soil layer's NO3-N content [kg NO3-N m-3]
   bool vs_SoilFrozen{false};
 
-  Soil::SoilParameters sps;
+  // formerly composed via `Soil::SoilParameters sps;` - flattened directly.
+  double vs_SoilSandContent{
+      -1.0}; //!< Soil layer's sand content [kg kg-1] //{0.4}
+  double vs_SoilClayContent{
+      -1.0};             //!< Soil layer's clay content [kg kg-1] (Ton) //{0.05}
+  double vs_SoilpH{6.9}; //!< Soil pH value [] //{7.0}
+  double vs_SoilStoneContent{
+      0.0};               //!< Soil layer's stone content in soil [m3 m-3]
+  double vs_Lambda{-1.0}; //!< Soil water conductivity coefficient [] //{0.5}
+  double vs_FieldCapacity{-1.0};         //{0.21} //!< [m3 m-3]
+  double vs_Saturation{-1.0};            //{0.43} //!< [m3 m-3]
+  double vs_PermanentWiltingPoint{-1.0}; //{0.08} //!< [m3 m-3]
+  std::string vs_SoilTexture;
+  double vs_SoilAmmonium{0.0005}; //!< soil ammonium content [kg NH4-N m-3]
+  double vs_SoilNitrate{0.005};   //!< soil nitrate content [kg NO3-N m-3]
+  double vs_Soil_CN_Ratio{10.0};
+  double vs_SoilMoisturePercentFC{100.0};
+  // Raw/override values; -1 means "unset" and the resolved value has to be
+  // computed via the corresponding soillayer::soilXyz() free function.
+  double _vs_SoilRawDensity{-1.0};    //!< [kg m-3]
+  double _vs_SoilBulkDensity{-1.0};   //!< [kg m-3]
+  double _vs_SoilOrganicCarbon{-1.0}; //!< [kg kg-1]
+  double _vs_SoilOrganicMatter{-1.0}; //!< [kg kg-1]
 
   double vs_SoilMoisture_m3{0.25}; // Soil layer's moisture content [m3 m-3]
   double vs_SoilTemperature{0.0};  // Soil layer's temperature [°C]
@@ -169,6 +191,21 @@ double soilMoisturePF(const SoilLayer *sl);
 
 //! soil mineral N content [kg m-3]
 double soilNmin(const SoilLayer *sl);
+
+//! Soil layer's silt content [kg kg-1] (Schluff)
+double soilSiltContent(const SoilLayer *sl);
+
+//! Resolved soil raw density (falls back to bulk density + clay content if unset)
+double soilRawDensity(const SoilLayer *sl);
+
+//! Resolved soil bulk density (falls back to raw density + clay content if unset)
+double soilBulkDensity(const SoilLayer *sl);
+
+//! Resolved soil organic carbon [kg C kg-1] (falls back to organic matter if unset)
+double soilOrganicCarbon(const SoilLayer *sl);
+
+//! Resolved soil organic matter [kg OM kg-1] (falls back to organic carbon if unset)
+double soilOrganicMatter(const SoilLayer *sl);
 
 } // namespace soillayer
 
