@@ -274,7 +274,33 @@ therefore needs a **configured and built** CMake tree.
 `climateData` is stripped from the C++ Env before dumping, since reading climate CSV is phase 2;
 remove that strip in `env_ref_main.cpp` once phase 2 lands.
 
-### Phase 1c — the 26 parameter structs
+### Phase 1c — the 26 parameter structs — **IN PROGRESS**
+
+Tranche 1 (**done**): the five module-parameter structs in `odin/monica/params/module_parameters.odin` —
+`SoilMoistureModuleParameters`, `SoilTemperatureModuleParameters`,
+`SoilTransportModuleParameters`, `SticsParameters`, `SoilOrganicModuleParameters` — with `merge`,
+`to_json` and the C++ in-class initialisers. These are the structs fed by
+`monica-parameters/general/*.json`.
+
+**Oracle — green:** `bash odin/tests/cpp_ref/run_params.sh` merges the real `general/*.json` into
+each struct and diffs the `to_json` dumps (8,764 B, identical). Each struct is dumped twice: once
+default-constructed, which pins the C++ in-class initialisers, and once after the merge.
+
+`jsonx` gained `build.odin` (`f`/`i`/`b`/`s`/`sl`/`arr`/`vu`/`obj`) so `to_json` reads close to the
+C++ `json11::Json::object{...}` while keeping the Integer/Float choice explicit at each call site —
+`dump` formats them differently (`%d` vs `%.17g`).
+
+**Remaining tranches:**
+- Tranche 2: `EnvironmentParameters`, `CropModuleParameters`, `SimulationParameters`,
+  `SiteParameters`, `CentralParameterProvider`, plus the small ones they nest
+  (`IrrigationParameters`, `AutomaticIrrigationParameters`, `MineralFertilizerParameters`,
+  `NMinApplicationParameters`, `MeasuredGroundwaterTableInformation`) and
+  `Soil::SoilParameters` from `src/soil/soil.cpp`.
+- Tranche 3: `CropParameters` / `SpeciesParameters` / `CultivarParameters` / `YieldComponent`,
+  `OrganicMatterParameters` / `OrganicFertilizerParameters` / `CropResidueParameters`,
+  `AutomaticHarvestParameters`, `NMinCropParameters`.
+
+Both extend `run_params.sh` the same way; the pattern is established and mechanical.
 `jsonx`, `create-env-from-json-config` (incl. `findAndReplaceReferences` and the
 `include-from-file` / `ref` / `%` / KA5 patterns), all `merge` and `to_json` for the structs in
 `monica-parameters.h`.
