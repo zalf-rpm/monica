@@ -222,6 +222,21 @@ public:
                                         double vw_WindSpeedHeight,
                                         double vw_AtmosphericCO2Concentration);
 
+
+
+  double fc_ReferenceEvapotranspiration_h(double vw_DewAirTemperature,
+                                          double vw_RelativeHumidity_h,
+                                          double vw_MeanAirTemperature_h,
+                                          double vw_WindSpeed_h,
+                                          double vw_WindSpeedHeight,
+                                          double vw_AtmosphericCO2Concentration,
+                                          double vc_ExtraterrestrialRadiation_h, double vc_ExtraterrestrialRadiation_3h_b4_sunseth,
+                                          double vc_GlobalRadiation_h, double vc_GlobalRadiation_3h_b4_sunseth,
+                                          double vc_GrossPhotosynthesisReference_mol_h,
+                                          bool is_daytime);
+
+
+
   void fc_CropWaterUptake(size_t vm_GroundwaterTable,
                           double vw_GrossPrecipitation,
                           double vc_CurrentTotalTemperatureSum,
