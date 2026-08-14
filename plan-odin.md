@@ -306,10 +306,26 @@ phase 3's `src/soil/soil.cpp`. Only the raw `initSoilProfileSpec` array is captu
 `to_json` emits an empty `SoilProfileParameters`. Phase 3 fills this in; the merge signature does
 not need to change.
 
-**Remaining:** tranche 3 — `CropParameters` / `SpeciesParameters` / `CultivarParameters` /
-`YieldComponent`, `OrganicMatterParameters` / `OrganicFertilizerParameters` /
-`CropResidueParameters`, `AutomaticHarvestParameters`, `NMinCropParameters`. Extends
-`run_params.sh` the same way; the pattern is established and mechanical.
+Tranche 3a (**done**): `odin/monica/params/organic_parameters.odin` — `YieldComponent`,
+`AutomaticHarvestParameters`, `NMinCropParameters`, `OrganicMatterParameters`,
+`OrganicFertilizerParameters`, `CropResidueParameters`. `run_params.sh` now at 22,668 B,
+identical. Merges are exercised against the real `crop-residues/wheat.json` and
+`organic-fertilisers/CAM.json`.
+
+Two latent C++ bugs found and reproduced (see the `NOTE(c++-quirk)` blocks):
+- `organicmatterparameters::to_json` lists the key `"AOM_NO3Content"` **twice**; the second entry
+  is described as "Carbamide content" and was plainly meant to be `AOM_CarbamidContent`, but it
+  repeats both the key and the value. Since `json11::Json::object` is a `std::map` and its
+  initializer-list constructor inserts rather than assigns, the first entry wins — so
+  `vo_AOM_CarbamidContent` is **never emitted**, and a `to_json`/`merge` round trip zeroes it.
+  No parameter file in `monica-parameters` sets that field, so the impact today is nil.
+- `automaticharvestparameters::to_json` emits `"latestHavestDOY"` (missing the `r`) while `merge`
+  reads `"latestHarvestDOY"`, so that value does not survive a round trip either.
+
+**Remaining:** tranche 3b — `SpeciesParameters`, `CultivarParameters`, `CropParameters`. These are
+the two largest structs in the file (~80 and ~90 merge lines) plus a trivial wrapper; no new
+patterns, and `YieldComponent` (which `CultivarParameters` nests) is already done. Extends
+`run_params.sh` the same way.
 `jsonx`, `create-env-from-json-config` (incl. `findAndReplaceReferences` and the
 `include-from-file` / `ref` / `%` / KA5 patterns), all `merge` and `to_json` for the structs in
 `monica-parameters.h`.

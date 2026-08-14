@@ -213,4 +213,78 @@ main :: proc() {
 		_ = p.measured_groundwater_table_information_merge(&v, j, a)
 		dump("merged-Groundwater", p.measured_groundwater_table_information_to_json(&v, a), a)
 	}
+
+	// ---- tranche 3a ----------------------------------------------------------
+	{
+		v := p.make_yield_component()
+		dump("default-YieldComponent", p.yield_component_to_json(&v, a), a)
+	}
+	{
+		v := p.make_automatic_harvest_parameters()
+		dump("default-AutomaticHarvest", p.automatic_harvest_parameters_to_json(&v, a), a)
+	}
+	{
+		v: p.NMin_Crop_Parameters
+		dump("default-NMinCrop", p.nmin_crop_parameters_to_json(&v, a), a)
+	}
+	{
+		v: p.Organic_Matter_Parameters
+		dump("default-OrganicMatter", p.organic_matter_parameters_to_json(&v, a), a)
+	}
+	{
+		v: p.Organic_Fertilizer_Parameters
+		dump("default-OrganicFertilizer", p.organic_fertilizer_parameters_to_json(&v, a), a)
+	}
+	{
+		v: p.Crop_Residue_Parameters
+		dump("default-CropResidue", p.crop_residue_parameters_to_json(&v, a), a)
+	}
+
+	{
+		j := parse(`{"organId": 3, "yieldPercentage": 0.85, "yieldDryMatter": 0.86}`, a)
+		v := p.make_yield_component()
+		_ = p.yield_component_merge(&v, j)
+		dump("merged-YieldComponent", p.yield_component_to_json(&v, a), a)
+	}
+	{
+		// harvestTime 0 == maturity; also shows that to_json emits "latestHavestDOY"
+		// (sic) while merge reads "latestHarvestDOY"
+		j := parse(`{"harvestTime": 0, "latestHarvestDOY": 300}`, a)
+		v := p.make_automatic_harvest_parameters()
+		_ = p.automatic_harvest_parameters_merge(&v, j)
+		dump("merged-AutomaticHarvest", p.automatic_harvest_parameters_to_json(&v, a), a)
+	}
+	{
+		j := parse(
+			`{"samplingDepth": [0.9, "m"], "nTarget": [50, "kg"], "nTarget30": [30, "kg"]}`,
+			a,
+		)
+		v: p.NMin_Crop_Parameters
+		_ = p.nmin_crop_parameters_merge(&v, j)
+		dump("merged-NMinCrop", p.nmin_crop_parameters_to_json(&v, a), a)
+	}
+	{
+		// a real crop-residue file, exercising the whole OrganicMatterParameters
+		// merge including AOM_CarbamidContent (which to_json then drops - see the
+		// duplicate-key note in organic_parameters.odin)
+		v: p.Crop_Residue_Parameters
+		_ = p.crop_residue_parameters_merge(&v, load(dir, "../crop-residues/wheat.json", a))
+		dump("merged-CropResidue", p.crop_residue_parameters_to_json(&v, a), a)
+		// the value to_json cannot show, printed directly to pin the data loss
+		fmt.printf("merged-CropResidue-carbamid\t%s\n", fmt17(v.vo_AOM_CarbamidContent, a))
+	}
+	{
+		v: p.Organic_Fertilizer_Parameters
+		_ = p.organic_fertilizer_parameters_merge(
+			&v,
+			load(dir, "../organic-fertilisers/CAM.json", a),
+		)
+		dump("merged-OrganicFertilizer", p.organic_fertilizer_parameters_to_json(&v, a), a)
+		fmt.printf("merged-OrganicFertilizer-carbamid\t%s\n", fmt17(v.vo_AOM_CarbamidContent, a))
+	}
+}
+
+// C's "%.17g", reusing jsonx's dump of a Float so both sides agree exactly
+fmt17 :: proc(v: f64, a: jx.Allocator) -> string {
+	return jx.dump(jx.f(v), a)
 }

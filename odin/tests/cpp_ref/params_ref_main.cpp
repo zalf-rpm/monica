@@ -197,6 +197,74 @@ int main(int argc, char **argv) {
     DUMP("merged-Groundwater", measuredgroundwatertableinformation::to_json(&p));
   }
 
+  // ---- tranche 3a ----------------------------------------------------------
+  {
+    YieldComponent d;
+    DUMP("default-YieldComponent", yieldcomponent::to_json(&d));
+  }
+  {
+    AutomaticHarvestParameters d;
+    DUMP("default-AutomaticHarvest", automaticharvestparameters::to_json(&d));
+  }
+  {
+    NMinCropParameters d;
+    DUMP("default-NMinCrop", nmincropparameters::to_json(&d));
+  }
+  {
+    OrganicMatterParameters d;
+    DUMP("default-OrganicMatter", organicmatterparameters::to_json(&d));
+  }
+  {
+    OrganicFertilizerParameters d;
+    DUMP("default-OrganicFertilizer", organicfertilizerparameters::to_json(&d));
+  }
+  {
+    CropResidueParameters d;
+    DUMP("default-CropResidue", cropresidueparameters::to_json(&d));
+  }
+
+  {
+    std::string err;
+    auto j = json11::Json::parse(
+        R"({"organId": 3, "yieldPercentage": 0.85, "yieldDryMatter": 0.86})", err);
+    YieldComponent p;
+    yieldcomponent::merge(&p, j);
+    DUMP("merged-YieldComponent", yieldcomponent::to_json(&p));
+  }
+  {
+    // harvestTime 0 == maturity; also shows that to_json emits "latestHavestDOY"
+    // (sic) while merge reads "latestHarvestDOY"
+    std::string err;
+    auto j = json11::Json::parse(R"({"harvestTime": 0, "latestHarvestDOY": 300})", err);
+    AutomaticHarvestParameters p;
+    automaticharvestparameters::merge(&p, j);
+    DUMP("merged-AutomaticHarvest", automaticharvestparameters::to_json(&p));
+  }
+  {
+    std::string err;
+    auto j = json11::Json::parse(
+        R"({"samplingDepth": [0.9, "m"], "nTarget": [50, "kg"], "nTarget30": [30, "kg"]})", err);
+    NMinCropParameters p;
+    nmincropparameters::merge(&p, j);
+    DUMP("merged-NMinCrop", nmincropparameters::to_json(&p));
+  }
+  {
+    // a real crop-residue file, which exercises the whole OrganicMatterParameters
+    // merge including AOM_CarbamidContent (which to_json then drops - see the
+    // duplicate-key note in the Odin port)
+    CropResidueParameters p;
+    cropresidueparameters::merge(&p, load(dir + "/../crop-residues/wheat.json"));
+    DUMP("merged-CropResidue", cropresidueparameters::to_json(&p));
+    // the value to_json cannot show, printed directly to pin the data loss
+    printf("merged-CropResidue-carbamid\t%.17g\n", p.vo_AOM_CarbamidContent);
+  }
+  {
+    OrganicFertilizerParameters p;
+    organicfertilizerparameters::merge(&p, load(dir + "/../organic-fertilisers/CAM.json"));
+    DUMP("merged-OrganicFertilizer", organicfertilizerparameters::to_json(&p));
+    printf("merged-OrganicFertilizer-carbamid\t%.17g\n", p.vo_AOM_CarbamidContent);
+  }
+
 #undef DUMP
   return 0;
 }
