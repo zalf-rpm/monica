@@ -28,6 +28,11 @@ import tl "../tools"
 Value :: json.Value
 Object :: json.Object
 Array :: json.Array
+Null :: json.Null
+Integer :: json.Integer
+Float :: json.Float
+Boolean :: json.Boolean
+String :: json.String
 
 // ---------------------------------------------------------------------------
 // arena

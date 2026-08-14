@@ -255,7 +255,26 @@ Key findings:
   keys are silently dropped, and duplicate keys are an error rather than last-wins. See
   `odin/CONVENTIONS.md` §3a.
 
-### Phase 1b — `create-env-from-json-config` + all 26 parameter structs
+### Phase 1b — `create-env-from-json-config` — **DONE**
+`odin/monica/run/{create_env,create_env_json}.odin` (reference resolution + Env assembly) and
+`odin/monica/soil/conversion.odin` (the conversion subset the patterns reach; the rest of
+`src/soil/conversion.cpp` stays for phase 3).
+
+**Oracle — green:** `bash odin/tests/cpp_ref/run_env.sh` runs both fixtures through both
+implementations and diffs the three resolved documents plus the assembled Env:
+`sim-min.json` (50,468 B) and `sim+.json` (158,189 B) — **identical**. Between them they exercise
+recursive `include-from-file`, `ref` (incl. its cache), `%`, `KA5-texture-class->clay`,
+`bulk-density-class->raw-density` and `sand-and-clay->lambda`. `humus-class->corg` and
+`->sand` are reached by no config in the repo and are unit-tested instead.
+
+The C++ driver links against the already-built `monica_lib`/`monica_run_lib` and takes its compiler
+flags from `build/compile_commands.json`, so it always compiles the way the real build does — it
+therefore needs a **configured and built** CMake tree.
+
+`climateData` is stripped from the C++ Env before dumping, since reading climate CSV is phase 2;
+remove that strip in `env_ref_main.cpp` once phase 2 lands.
+
+### Phase 1c — the 26 parameter structs
 `jsonx`, `create-env-from-json-config` (incl. `findAndReplaceReferences` and the
 `include-from-file` / `ref` / `%` / KA5 patterns), all `merge` and `to_json` for the structs in
 `monica-parameters.h`.
