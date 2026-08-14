@@ -290,17 +290,26 @@ default-constructed, which pins the C++ in-class initialisers, and once after th
 C++ `json11::Json::object{...}` while keeping the Integer/Float choice explicit at each call site —
 `dump` formats them differently (`%d` vs `%.17g`).
 
-**Remaining tranches:**
-- Tranche 2: `EnvironmentParameters`, `CropModuleParameters`, `SimulationParameters`,
-  `SiteParameters`, `CentralParameterProvider`, plus the small ones they nest
-  (`IrrigationParameters`, `AutomaticIrrigationParameters`, `MineralFertilizerParameters`,
-  `NMinApplicationParameters`, `MeasuredGroundwaterTableInformation`) and
-  `Soil::SoilParameters` from `src/soil/soil.cpp`.
-- Tranche 3: `CropParameters` / `SpeciesParameters` / `CultivarParameters` / `YieldComponent`,
-  `OrganicMatterParameters` / `OrganicFertilizerParameters` / `CropResidueParameters`,
-  `AutomaticHarvestParameters`, `NMinCropParameters`.
+Tranche 2 (**done**): `odin/monica/params/site_sim_parameters.odin` — `MineralFertilizerParameters`,
+`NMinApplicationParameters`, `IrrigationParameters`, `AutomaticIrrigationParameters`,
+`MeasuredGroundwaterTableInformation`, `SiteParameters`, `SimulationParameters`,
+`CropModuleParameters`, `EnvironmentParameters`, `CentralParameterProvider`.
 
-Both extend `run_params.sh` the same way; the pattern is established and mechanical.
+`run_params.sh` grew to 15,283 B, still identical. It now also covers the rcp parser across all
+11 accepted spellings (`"85"`, `"8.5"`, `"rcp85"`, `"rcp8.5"`, `"19"`, `"nonsense"`, and the
+numeric forms), and synthetic merges for the structs no `general/*.json` feeds.
+
+**PHASE SCOPE — `SiteParameters.vs_SoilParameters` is not built.** The C++ `siteparameters::merge`
+calls `Soil::createEqualSizedSoilPMs`, which reaches `soilparameters::merge` ->
+`fcSatPwpFromKA5textureClass` -> the three `${MONICA_PARAMETERS}/soil/*.json` tables — i.e. most of
+phase 3's `src/soil/soil.cpp`. Only the raw `initSoilProfileSpec` array is captured, and
+`to_json` emits an empty `SoilProfileParameters`. Phase 3 fills this in; the merge signature does
+not need to change.
+
+**Remaining:** tranche 3 — `CropParameters` / `SpeciesParameters` / `CultivarParameters` /
+`YieldComponent`, `OrganicMatterParameters` / `OrganicFertilizerParameters` /
+`CropResidueParameters`, `AutomaticHarvestParameters`, `NMinCropParameters`. Extends
+`run_params.sh` the same way; the pattern is established and mechanical.
 `jsonx`, `create-env-from-json-config` (incl. `findAndReplaceReferences` and the
 `include-from-file` / `ref` / `%` / KA5 patterns), all `merge` and `to_json` for the structs in
 `monica-parameters.h`.
