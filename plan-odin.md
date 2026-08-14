@@ -235,7 +235,27 @@ concatenates lines without newlines. Also: `daysInMonth(month > 12)` *aborts* th
 `Tools::testDate()`'s relative-date assertions are dead code that would fail if enabled — see
 `odin/tests/date_test.odin` for the worked-through explanation.
 
-### Phase 1 — JSON config pipeline + all 26 parameter structs
+### Phase 1a — `jsonx` (the forgiving json11-compatible layer) — **DONE**
+`odin/support/jsonx/{value,accessors}.odin`: arena strategy, parse/dump, forgiving indexing, the
+full `json11-helper` accessor set, unit transforms, `iso_date_value`.
+
+**Oracle — green:** `bash odin/tests/cpp_ref/run_json.sh` parses and re-dumps **455 real MONICA
+parameter files** through both json11 and jsonx and diffs. Identical apart from one documented
+divergence. Plus 13 jsonx unit tests in `odin/tests/jsonx_test.odin`.
+
+Key findings:
+- json11's own header claims "all numbers are double", but `parse_number` returns a **`JsonInt`**
+  when the token has no `.`/exponent and ≤ 9 digits. Reading is transparent (`JsonInt::number_value`
+  widens, `JsonDouble::int_value` truncates), so the accessors accept both — this is the
+  Integer/Float trap, now closed and unit-tested.
+- Odin's `strconv` `'g'`/precision-17 emits **exactly** MSVC's `%.17g` digits (verified against a C
+  driver on 0.1, 1/3, 1e17, 1e20, 9.9999999999999995e-08, …); only a leading `+` needs stripping.
+  That is what makes the byte-identical dump — and hence the Phase 1b oracle — possible.
+- Two `core:encoding/json` divergences from json11, both accepted and pinned by tests: empty object
+  keys are silently dropped, and duplicate keys are an error rather than last-wins. See
+  `odin/CONVENTIONS.md` §3a.
+
+### Phase 1b — `create-env-from-json-config` + all 26 parameter structs
 `jsonx`, `create-env-from-json-config` (incl. `findAndReplaceReferences` and the
 `include-from-file` / `ref` / `%` / KA5 patterns), all `merge` and `to_json` for the structs in
 `monica-parameters.h`.

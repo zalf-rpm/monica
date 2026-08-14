@@ -75,6 +75,25 @@ package of the same name, so the call site reads almost identically.
 - The model state (`MonicaModel` and its submodules) is heap-allocated **once** and never moved:
   submodules hold back-pointers to `SoilColumn`. Take pointers only after allocation.
 
+## 3a. JSON: known `core:encoding/json` divergences from json11
+
+Established in phase 1 by re-dumping 455 real MONICA parameter files through both
+implementations (`odin/tests/cpp_ref/run_json.sh`). Two behavioural differences exist; both are
+accepted rather than worked around, and both are pinned by tests so a core-library update that
+changes them is noticed.
+
+1. **Empty object keys are silently dropped.** `core/encoding/json/parser.odin` has an explicit
+   `if key != ""` guard, so `{"": 13.1}` parses without error but loses the entry. Exactly one
+   parameter file hits this (`monica-parameters/projects/fnr-voce/maize.json`, evidently a typo),
+   it is not part of the Hohenfinow2 fixture, and MONICA never looks up `""`. Only empty keys are
+   affected — every other key is inserted normally.
+2. **Duplicate object keys are an error, not last-wins.** Odin returns `.Duplicate_Object_Key`;
+   json11 overwrites. No MONICA parameter file currently has duplicate keys (all 455 agreed on
+   parse success/failure), but a future one would fail loudly in Odin and silently in C++.
+
+Everything else matches byte for byte, including number classification, `%.17g` double formatting,
+sorted key order and string escaping.
+
 ## 4. Error handling
 
 Port `Tools::Errors` / `Tools::EResult<T>` rather than switching to Odin's `->  (T, Error)`
