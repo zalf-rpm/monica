@@ -11,10 +11,6 @@
  *
  * The Odin side (odin/tests/env_ref/) does the same through monica/run.
  *
- * "climateData" is stripped from the Env before dumping: reading climate CSV is
- * phase 2 of the port, so the Odin side does not produce it yet. Remove the
- * strip (here and in the Odin driver) once phase 2 lands.
- *
  * Usage: env_ref <pathToSimJson>
  * See odin/tests/cpp_ref/run_env.sh.
  */
@@ -85,9 +81,7 @@ int main(int argc, char **argv) {
 
   // --- 2. the assembled Env -------------------------------------------------
   auto env = createEnvJsonFromJsonObjects(ps);
-  auto envm = env.object_items();
-  envm.erase("climateData"); // phase 2, see the header comment
-  printf("ENV\t%s\n", Json(envm).dump().c_str());
+  printf("ENV\t%s\n", env.dump().c_str());
 
   return 0;
 }

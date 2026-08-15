@@ -387,14 +387,63 @@ One known gap needed active normalisation, one needed none:
   pre-existing, already-reproduced quirk — commented out in the C++), so it's simply untested here,
   not a source of mismatch requiring normalisation.
 
-### Phase 2 — climate
-`DataAccessor`, `ACD`, the header-driven CSV reader.
-**Oracle:** dump the loaded `DataAccessor` as a CSV of all ACDs × all steps; diff.
+### Phase 2 — climate — **DONE**
+`DataAccessor`, `ACD`, the header-driven CSV reader: `odin/support/climate/{climate_common,
+climate_file_io}.odin`.
 
-Watch for: `CSVViaHeaderOptions` carries a `std::map<ACD, std::function<double(double)>> convertFn`
-member. Per prep 2 that is not ported as a closure table — give it the same enum + apply treatment
-`jsonx.Transform` already uses. Once phase 2 lands, remove the `climateData` strip from
-`odin/tests/cpp_ref/env_ref_main.cpp` so `run_env.sh` compares the whole Env.
+**Oracle — green, and it subsumes the planned one.** Rather than a dedicated CSV-dump diff, phase
+2 wires `create_env_json_from_json_objects` (phase 1b) up to actually produce `env["climateData"]`
+(previously a documented gap), removes the corresponding strip in `env_ref_main.cpp` / `run_env.sh`,
+and lets the existing phase-1b oracle carry the load: `run_env.sh` now diffs the **whole** assembled
+Env, climate data included, for both Hohenfinow2 fixtures — **667,957 B identical** (was 208,657 B
+pre-phase-2). sim-min.json exercises the plain iso-date path; sim+.json's `climate.csv-options`
+turned out to exercise nearly everything else in one real fixture: the `header-to-acd-names` rename
+branch, the 3-element convert-tuple branch (`"globrad": ["globrad", "/", 100]`, i.e. `convertFn`),
+the `de-date` (`DD.MM.YYYY`) column format, an unmapped column falling back to `.skip`
+("Julian-day"), and a `start-date`/`end-date` window (exercising the date-validity filters and the
+strict-date-checking completeness check). `run_params.sh` and `run_central_params.sh` were re-run
+clean afterwards - no regressions in phase 1c from the `jsonx` accessor additions below.
+
+**The one real bug found, and the general lesson it leaves behind.** `read_climate_data_from_csv_lines`
+originally used `map[d.Date]map[ACD]f64` to bucket parsed rows by date (mirroring the C++
+`map<Date, map<ACD,double>> data`) - and it silently dropped ~85% of sim+.json's rows (2,526 days
+of data collapsed to 732). Root cause: **C++'s `Date::operator==` compares only
+`year()/month()/day()/isRelativeDate()`** - explicitly *not* the leap-year-table-selection flag
+(`date.h:121-124`). Odin's default map-key equality for a struct compares *every* field. Two
+`Date` values built through different paths (arithmetic via `d.add` vs field-by-field parsing via
+`set_day`/`set_month`/`set_year`) can represent the identical logical date while carrying different
+internal flag bits, so `map[d.Date]` silently treats them as different keys. Fixed by keying on a
+normalised `Date_Key{y, m, dy, is_relative}` tuple instead (`date_key()` in `climate_file_io.odin`)
+everywhere a `Date` is used as a map key or hashed/compared for equality outside the `date` package's
+own `d.eq`/`d.lt`/... procs (which already implement the correct C++-matching comparison and were
+never the problem). **Generalised risk, not fully resolved package-wide**: any future `map[d.Date]...`
+anywhere in this port has the same latent bug; grep for `map[d.Date]` / `map[Date]` before adding
+one, or route through a `Date_Key`-shaped normalisation the way this file does. This is exactly the
+class of bug the plan's risk register warns about for sentinel/derived-state fields, just surfacing
+in a new place (map key semantics) rather than the `Maybe<bool>` case it was originally written for.
+
+Two smaller decisions:
+- `CSVViaHeaderOptions.convertFn` (`std::map<ACD, std::function<double(double)>>`) is ported as
+  `map[ACD]Csv_Convert` (`{op: Convert_Op, value: f64}` + `apply_csv_convert`), the same enum+apply
+  treatment `jsonx.Transform` already uses for `%`/unit conversions, per prep 2.
+- `DataAccessor._data` (C++ `shared_ptr<vector<vector<double>>>`, so copies alias the same backing
+  storage) is ported as a plain `[dynamic][dynamic]f64` value field - each copy gets independent
+  storage. `cloneForRange` and the non-splice branches of `mergeClimateData` therefore don't share
+  mutations the way the C++ does. Nothing in phases 1-2 exercises that aliasing (a single
+  `climate.csv` per fixture, never cloned or merged with a second `DataAccessor`); flagged with a
+  `NOTE(simplification)` in `climate_common.odin` to revisit if a later phase's trace-diff oracle
+  needs genuine sharing semantics.
+
+Dropped (confirmed zero references anywhere under `src/`, so nothing to diff against and no
+oracle would exercise them): the CLM/Werex/WettReg/Carbiocial/UserSqlite/Star DB-column-name
+helpers, `availableClimateData2Name`/`2unit`, `YearRange`/`snapToRaster`, gzip (`.gz`) climate file
+support (needs `kj::GzipInputStream`), and the two `extern "C"` DLL exports.
+
+`jsonx` gained `set_string_vector`/`set_string_vector_d` in `accessors.odin` (the keyed-setter
+wrapper existed for `double`/`bool` but not `string`, needed for `CSVViaHeaderOptions.header`), and
+`tools` gained `trim` and `sunshine2global_radiation` in `algorithms.odin` (the latter not in the
+plan's "13 procs actually used" list, since that audit was scoped to `src/`, not
+`mas_cpp_misc/climate`) - none of them new patterns.
 
 ### Phase 3 — soil setup
 `src/soil/soil.cpp` (incl. the three JSON readers replacing the capnp path — read

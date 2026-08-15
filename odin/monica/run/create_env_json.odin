@@ -1,13 +1,9 @@
 // Port of createEnvJsonFromJsonObjects from
 // src/run/create-env-from-json-config.cpp.
-//
-// PHASE SCOPE: the climateData member is NOT produced here - reading climate CSV
-// is phase 2 (see plan-odin.md). Everything else is complete. The differential
-// driver strips "climateData" on the C++ side so the two can be compared today;
-// remove that strip once phase 2 lands.
 package run
 
 import "core:strings"
+import clim "../../support/climate"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
 
@@ -151,8 +147,36 @@ create_env_json_from_json_objects :: proc(
 	)
 	set(&env, "csvViaHeaderOptions", jx.Value(csvos), allocator)
 
-	// PHASE 2: env["climateData"] = readClimateDataFromCSVFile[s]ViaHeaders(...)
-	// is not produced yet.
+	// C++: env["climateData"] = printPossibleErrors(readClimateDataFromCSVFile[s]
+	//        ViaHeaders(simj["climate.csv"], env["csvViaHeaderOptions"]));
+	//
+	// `CSVViaHeaderOptions(json11::Json)` is an implicit constructor in the C++
+	// (climate-file-io.h) that just calls merge(); built explicitly here.
+	csv_opts := clim.make_csv_via_header_options()
+	_ = clim.csv_via_header_options_merge(&csv_opts, jx.Value(csvos), allocator)
+
+	climate_csv := jx.get(simj, "climate.csv")
+	if jx.is_string(climate_csv) && len(jx.string_value_of(climate_csv)) > 0 {
+		path := jx.string_value_of(climate_csv)
+		if !strings.contains(path, "capnp://") {
+			eda := clim.read_climate_data_from_csv_file_via_headers(
+				path,
+				csv_opts,
+				true,
+				allocator,
+			)
+			da := tl.print_possible_errors_r(eda, false)
+			set(&env, "climateData", clim.data_accessor_to_json(&da, allocator), allocator)
+		}
+	} else if jx.is_array(climate_csv) && len(jx.array_items(climate_csv)) > 0 {
+		paths := make([dynamic]string, 0, len(jx.array_items(climate_csv)), allocator)
+		for v in jx.array_items(climate_csv) {
+			append(&paths, jx.string_value_of(v))
+		}
+		eda := clim.read_climate_data_from_csv_files_via_headers(paths[:], csv_opts, allocator)
+		da := tl.print_possible_errors_r(eda, false)
+		set(&env, "climateData", clim.data_accessor_to_json(&da, allocator), allocator)
+	}
 
 	return jx.Value(env)
 }

@@ -7,6 +7,7 @@
 package tools
 
 import "core:math"
+import "core:strings"
 
 // C++: template<typename T> T Tools::bound(T lower, T value, T upper)
 bound :: proc(lower, value, upper: $T) -> T {
@@ -173,6 +174,37 @@ average :: proc(xs: []f64) -> f64 {
 		sum += x
 	}
 	return sum / f64(len(xs))
+}
+
+// C++: std::string Tools::trim(const std::string& s, const std::string& whitespaces = " \t\f\v\n\r")
+trim :: proc(s: string, whitespaces := " \t\f\v\n\r", allocator := context.allocator) -> string {
+	return strings.clone(strings.trim(s, whitespaces), allocator)
+}
+
+// C++: double Tools::sunshine2globalRadiation(int julianDay, double sunHours, double lat, bool asMJpm2pd)
+//
+// Returns MJ/m2/d by default; pass as_mj_pm2_pd = false for J/cm2/d.
+sunshine2global_radiation :: proc(
+	julian_day: int,
+	sun_hours: f64,
+	lat: f64,
+	as_mj_pm2_pd := true,
+) -> f64 {
+	pi := 4.0 * math.atan(1.0)
+	dec := -23.4 * math.cos(2 * pi * f64(julian_day + 10) / 365)
+	sinld := math.sin(dec * pi / 180) * math.sin(lat * pi / 180)
+	cosld := math.cos(dec * pi / 180) * math.cos(lat * pi / 180)
+	dl := 12 * (pi + 2 * math.asin(sinld / cosld)) / pi
+	dle := 12 * (pi + 2 * math.asin((-math.sin(8 * pi / 180) + sinld) / cosld)) / pi
+	rdn :=
+		3600 *
+		(sinld * dl + 24 / pi * cosld * math.sqrt(1.0 - (sinld / cosld) * (sinld / cosld)))
+	drc := 1300 * rdn * math.exp(-0.14 / (rdn / (dl * 3600)))
+	dro := 0.2 * drc
+	dtga := sun_hours / dle * drc + (1 - sun_hours / dle) * dro
+	t := dtga / 10000.0
+	// convert J/cm2/d to MJ/m2/d: (t * 100.0 * 100.0) / 1000000.0 -> t / 100
+	return as_mj_pm2_pd ? t / 100.0 : t
 }
 
 @(private)

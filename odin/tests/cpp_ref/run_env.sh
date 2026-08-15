@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
-# Phase 1b differential test for odin/monica/run (create-env-from-json-config).
+# Phase 1b/2 differential test for odin/monica/run (create-env-from-json-config).
 #
 # Runs the Hohenfinow2 fixture through both implementations up to the assembled
 # Env JSON and diffs. This exercises the whole reference-resolution machinery on
 # real data: include-from-file (recursive), ref (with its cache), %, the KA5
-# texture conversions, humus/bulk-density classes, and the Env assembly.
-#
-# Usage:  bash odin/tests/cpp_ref/run_env.sh
+# texture conversions, humus/bulk-density classes, and the Env assembly - and,
+# since phase 2, the whole climate CSV reader too: env["climateData"] is now
+# produced (and diffed) by both sides. sim+.json's climate.csv-options exercises
+# the header-to-acd-names rename branch, the 3-element convert-tuple branch
+# (globrad divided by 100), the deDate column format, and a start/end-date
+# window; sim-min.json's is the plain iso-date path.
 #
 # Requires a configured AND BUILT CMake tree: the C++ driver takes its compiler
 # flags from build/compile_commands.json and links against the libraries the real
 # build already produced (monica_lib et al). create-env-from-json-config.cpp
 # transitively pulls in monica-model.h, the generated Cap'n Proto headers and KJ,
 # so recompiling its dependencies standalone is not worth it.
-#
-# "climateData" is stripped from the C++ Env before dumping - reading climate CSV
-# is phase 2 and the Odin side does not produce it yet. Remove the strip in
-# env_ref_main.cpp and this comment once phase 2 lands.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"

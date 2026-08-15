@@ -490,6 +490,42 @@ string_vector_d :: proc(
 	return out
 }
 
+// C++: void Tools::set_string_vectorD(vector<string>& var, const Json& j, const string& key,
+//                                     const vector<string>& def, const string& defaultValue, bool useDefault)
+set_string_vector_d :: proc(
+	var: ^[dynamic]string,
+	j: Value,
+	key: string,
+	def: []string,
+	default_value: string = "",
+	use_default := true,
+	allocator := context.allocator,
+) {
+	v := get(j, key)
+	if is_null(v) && use_default {
+		clear(var)
+		append(var, ..def)
+	} else if is_array(v) {
+		if len(array_items(v)) > 1 && is_string(at(v, 1)) && is_array(at(v, 0)) {
+			assign_dyn_string(var, string_vector_d(at(v, 0), def, default_value, allocator))
+		} else {
+			assign_dyn_string(var, string_vector_d(v, def, default_value, allocator))
+		}
+	} else if is_object(v) && is_array(get(v, "value")) {
+		assign_dyn_string(var, string_vector_d(get(v, "value"), def, default_value, allocator))
+	}
+}
+
+// C++: inline void Tools::set_string_vector(vector<string>& var, const Json& j, const string& key)
+set_string_vector :: proc(
+	var: ^[dynamic]string,
+	j: Value,
+	key: string,
+	allocator := context.allocator,
+) {
+	set_string_vector_d(var, j, key, nil, "", false, allocator)
+}
+
 // C++: inline vector<double> Tools::toDoubleVector(const Json& arr)
 to_double_vector :: proc(arr: Value, allocator := context.allocator) -> [dynamic]f64 {
 	out := make([dynamic]f64, 0, len(array_items(arr)), allocator)
@@ -586,6 +622,15 @@ assign_dyn_f64 :: proc(dst: ^[dynamic]f64, src: [dynamic]f64) {
 
 @(private)
 assign_dyn_bool :: proc(dst: ^[dynamic]bool, src: [dynamic]bool) {
+	clear(dst)
+	for v in src {
+		append(dst, v)
+	}
+	delete(src)
+}
+
+@(private)
+assign_dyn_string :: proc(dst: ^[dynamic]string, src: [dynamic]string) {
 	clear(dst)
 	for v in src {
 		append(dst, v)
