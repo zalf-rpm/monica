@@ -490,6 +490,54 @@ interpolation *and* clamping are hit) × organic-matter values around the 1.5/3/
 explicitly. A few thousand rows costs nothing to run and converts "the fixture happens to pass"
 into "the function agrees across its domain".
 
+**Checkpoint 3a (done) — the pure-function half: `SoilParameters`, the three JSON table readers,
+the interpolation functions, `createSoilPMs`/`createEqualSizedSoilPMs`, and the required sweep
+oracle.** `odin/monica/soil/{constants,conversion,soil_parameters,soil_tables,soil_pwp_fc_sat}.odin`.
+`conversion.odin` existed already (phase 1b ported the 5 functions its reference patterns reach);
+this checkpoint adds the 6th, `sandAndClay2KA5texture`, completing the file.
+
+**Oracle — green:** `odin/tests/cpp_ref/run_soil_pwp_fc_sat.sh`, **15,978 rows identical** — every
+KA5 texture class in `SoilCharacteristicData.json` (39, plus one deliberately-unknown "XX" to
+exercise the error path) × 25 raw densities (900…2100 step 50) × 7 organic-matter values straddling
+the 0/1.5/3/6/11.5 breakpoints, 3 `soilRawDensity`/`soilOrganicMatter` fallback-resolution combos,
+plus a grid over `updateUnsetPwpFcSatFrom{VanGenuchtenVereecken,VanGenuchtenToth,Toth}` (sand × clay
+× bulk density × organic carbon × stone content × layer number, ~8,000 rows exercising
+`VanGenuchtenToth`'s `isTopSoil` branch both ways). Reached through the public
+`updateUnsetPwpFcSatFrom*` entry points, not the private `fcSatPwpFrom*` ones directly — see below.
+
+Two deliberate deviations from the plan's literal wording, both because the redesign this phase
+implements (prep 2's `std::function` removal) makes the literal C++ shape moot:
+
+- **`pathToSoilDir` is a parameter, not a `SiteParameters` field.** The plan's prep-2 table says
+  "store `pathToSoilDir` in `SiteParameters`". `SoilParameters.calculateAndSetPwpFcSat` (a
+  `std::function<Errors(SoilParameters*)>`, one per soil layer) is replaced by a
+  `Pwp_Fc_Sat_Method` enum (`NONE`/`WESSOLEK2009`/`VAN_GENUCHTEN_VEREECKEN`/`VAN_GENUCHTEN_TOTH`/
+  `TOTH` — mirroring the 5-entry `calculateAndSetPwpFcSatFunctions` map built once in
+  `monica-run-main.cpp:240-249`) dispatched by `apply_pwp_fc_sat_method`. `path_to_soil_dir` and
+  `layer_no` are threaded through as explicit parameters of `soil_parameters_merge` instead of a
+  stored/mutated field, since they're needed only at merge time and this keeps the merge call
+  self-contained and testable without a side-channel setup step. Zero observable difference — the
+  field is never serialized by any `to_json`. Site_Parameters wiring (checkpoint 3c below) will pass
+  `${MONICA_PARAMETERS}/soil/` through this parameter.
+- **The private `fcSatPwpFrom*` functions and `updateUnsetPwpFcSatFromKA5textureClass` are exported
+  in Odin**, unlike the C++ where they're anonymous-namespace/file-local (only reachable in the C++
+  test driver through the public `updateUnsetPwpFcSatFrom{VanGenuchtenVereecken,VanGenuchtenToth,
+  Toth}` and `getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction` wrappers, which is what
+  the sweep driver actually calls on the C++ side). Odin has no file-local-across-package-files
+  restriction matching C++'s anonymous namespace, and later phases need these directly.
+
+Caching: the three JSON table readers cache their parsed table in a package-level Odin global
+guarded by a `bool`, matching the C++'s function-local `static` + `if (!initialized)` pattern —
+minus the C++'s mutex, which existed for the RPC/zmq server mains this port drops (see plan-odin.md
+§7); `monica-run` is single-threaded.
+
+**Remaining for phase 3:**
+- Checkpoint 3b — `SoilLayer`/`SoilColumn`/`AOM_Properties` construction (`src/core/soilcolumn.{h,cpp}`,
+  881+298 lines) and the per-layer state oracle over the Hohenfinow2 fixture.
+- Checkpoint 3c — wire `siteparameters::merge`/`to_json` to build/emit the real `vs_SoilParameters`
+  (deferred from phase 1c), threading `path_to_soil_dir` through `Central_Parameter_Provider`'s merge
+  chain, and re-running `run_central_params.sh`/`run_env.sh` against a populated profile.
+
 ### Phase 4 — soil physics
 `soiltemperature`, `soilmoisture` (+ `snow-component`, `frost-component`), `soiltransport`,
 `soilorganic`, `stics-nit-denit-n2o`.

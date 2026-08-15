@@ -1,9 +1,9 @@
-// Partial port of src/soil/conversion.{h,cpp}.
+// Port of src/soil/conversion.{h,cpp}.
 //
-// Only the procedures reachable from create-env-from-json-config's reference
-// patterns are ported here, because phase 1b needs them. The rest of
-// conversion.cpp (percentSandAndClayToKA5Texture, texture2lambda, ...) belongs
-// to phase 3 - see plan-odin.md.
+// humusClass2corg, bulkDensityClass2rawDensity, sandAndClay2lambda,
+// KA5texture2sand and KA5texture2clay were already ported in phase 1b (needed
+// by create-env-from-json-config's reference patterns). Phase 3 adds the last
+// function: sandAndClay2KA5texture (the reverse direction).
 package soil
 
 import "core:strings"
@@ -324,4 +324,87 @@ ka5_texture_2_clay :: proc(soil_type: string, allocator := context.allocator) ->
 	res.result = 0.0
 	tl.append_errorf(&res, "Soil::KA5texture2clay Unknown soil type: %s!", upper)
 	return res
+}
+
+// C++: string percentSandAndClayToKA5Texture(uint8_t sand, uint8_t clay) - a
+// package-local (non-exported) helper in the C++ translation unit.
+//
+// NOTE: the C++ if-chain guards every branch with `silt >= 0`, which is always
+// true for the unsigned silt - dropped here as a no-op. `silt` itself wraps on
+// underflow (sand+clay > 100) exactly like the C++ uint8_t subtraction does;
+// not guarded against, matching the source.
+@(private)
+percent_sand_and_clay_to_ka5_texture :: proc(sand, clay: u8) -> string {
+	silt := u8(100) - sand - clay
+	switch {
+	case silt < 10 && clay < 5:
+		return "SS"
+	case silt < 10 && clay >= 5 && clay < 17:
+		return "ST2"
+	case silt < 15 && clay >= 17 && clay < 25:
+		return "ST3"
+	case silt >= 10 && silt < 25 && clay < 5:
+		return "SU2"
+	case silt >= 25 && silt < 40 && clay < 8:
+		return "SU3"
+	case silt >= 40 && silt < 50 && clay < 8:
+		return "SU4"
+	case silt >= 10 && silt < 25 && clay >= 5 && clay < 8:
+		return "SL2"
+	case silt >= 10 && silt < 40 && clay >= 8 && clay < 12:
+		return "SL3"
+	case silt >= 10 && silt < 40 && clay >= 12 && clay < 17:
+		return "SL4"
+	case silt >= 40 && silt < 50 && clay >= 8 && clay < 17:
+		return "SLU"
+	case silt >= 40 && silt < 50 && clay >= 17 && clay < 25:
+		return "LS2"
+	case silt >= 30 && silt < 40 && clay >= 17 && clay < 25:
+		return "LS3"
+	case silt >= 15 && silt < 30 && clay >= 17 && clay < 25:
+		return "LS4"
+	case silt >= 30 && silt < 50 && clay >= 25 && clay < 35:
+		return "LT2"
+	case silt >= 30 && silt < 50 && clay >= 35 && clay < 45:
+		return "LT3"
+	case silt >= 15 && silt < 30 && clay >= 25 && clay < 45:
+		return "LTS"
+	case silt >= 50 && silt < 65 && clay >= 17 && clay < 30:
+		return "LU"
+	case silt >= 50 && silt < 65 && clay >= 8 && clay < 17:
+		return "ULS"
+	case silt >= 50 && silt < 80 && clay < 8:
+		return "US"
+	case silt >= 80 && clay < 8:
+		return "UU"
+	case silt >= 65 && clay >= 8 && clay < 12:
+		return "UT2"
+	case silt >= 65 && clay >= 12 && clay < 17:
+		return "UT3"
+	case silt >= 65 && clay >= 17 && clay < 25:
+		return "UT4"
+	case silt < 15 && clay >= 45 && clay < 65:
+		return "TS2"
+	case silt < 15 && clay >= 35 && clay < 45:
+		return "TS3"
+	case silt < 15 && clay >= 25 && clay < 35:
+		return "TS4"
+	case silt >= 15 && silt < 30 && clay >= 45 && clay < 65:
+		return "TL"
+	case silt >= 50 && silt < 65 && clay >= 30 && clay < 45:
+		return "TU3"
+	case silt >= 30 && clay >= 45 && clay < 65:
+		return "TU2"
+	case silt >= 65 && clay >= 25:
+		return "TU4"
+	case clay >= 65:
+		return "TT"
+	}
+	return ""
+}
+
+// C++: string Soil::sandAndClay2KA5texture(double sand, double clay) - sand and
+// clay are fractions [0-1]
+sand_and_clay_2_ka5_texture :: proc(sand, clay: f64) -> string {
+	return percent_sand_and_clay_to_ka5_texture(u8(int(sand * 100.0)), u8(int(clay * 100.0)))
 }
