@@ -424,6 +424,47 @@ bool_vector_d :: proc(
 	return out
 }
 
+// C++: void Tools::set_bool_vectorD(vector<bool>& var, const Json& j, const string& key,
+//                                   const vector<bool>& def, bool defaultValue, bool useDefault)
+set_bool_vector_d :: proc(
+	var: ^[dynamic]bool,
+	j: Value,
+	key: string,
+	def: []bool,
+	default_value: bool = false,
+	use_default := true,
+	allocator := context.allocator,
+) {
+	v := get(j, key)
+	if is_null(v) && use_default {
+		clear(var)
+		append(var, ..def)
+	} else if is_array(v) {
+		if len(array_items(v)) > 1 && is_string(at(v, 1)) && is_array(at(v, 0)) {
+			assign_dyn_bool(var, bool_vector_d(at(v, 0), def, default_value, allocator))
+		} else {
+			assign_dyn_bool(var, bool_vector_d(v, def, default_value, allocator))
+		}
+	} else if is_object(v) && is_array(get(v, "value")) {
+		assign_dyn_bool(var, bool_vector_d(get(v, "value"), def, default_value, allocator))
+	}
+}
+
+// C++: inline void Tools::set_bool_vector(vector<bool>& var, const Json& j, const string& key)
+set_bool_vector :: proc(
+	var: ^[dynamic]bool,
+	j: Value,
+	key: string,
+	allocator := context.allocator,
+) {
+	set_bool_vector_d(var, j, key, nil, false, false, allocator)
+}
+
+// C++: inline vector<double> Tools::double_vector(const Json& j)
+double_vector :: proc(j: Value, allocator := context.allocator) -> [dynamic]f64 {
+	return double_vector_d(j, nil, 0.0, allocator)
+}
+
 // C++: vector<string> Tools::string_vectorD(const Json& j, const vector<string>& def, const string& defaultValue)
 string_vector_d :: proc(
 	j: Value,
@@ -536,6 +577,15 @@ has_object_shape :: proc(j: Value, key: string) -> bool {
 
 @(private)
 assign_dyn_f64 :: proc(dst: ^[dynamic]f64, src: [dynamic]f64) {
+	clear(dst)
+	for v in src {
+		append(dst, v)
+	}
+	delete(src)
+}
+
+@(private)
+assign_dyn_bool :: proc(dst: ^[dynamic]bool, src: [dynamic]bool) {
 	clear(dst)
 	for v in src {
 		append(dst, v)

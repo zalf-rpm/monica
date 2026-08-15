@@ -282,6 +282,78 @@ main :: proc() {
 		dump("merged-OrganicFertilizer", p.organic_fertilizer_parameters_to_json(&v, a), a)
 		fmt.printf("merged-OrganicFertilizer-carbamid\t%s\n", fmt17(v.vo_AOM_CarbamidContent, a))
 	}
+
+	// ---- tranche 3b ------------------------------------------------------
+	{
+		v := p.make_species_parameters()
+		dump("default-Species", p.species_parameters_to_json(&v, a), a)
+	}
+	{
+		v := p.make_cultivar_parameters()
+		dump("default-Cultivar", p.cultivar_parameters_to_json(&v, a), a)
+	}
+	{
+		v := p.make_crop_parameters()
+		dump("default-Crop", p.crop_parameters_to_json(&v, a), a)
+	}
+	{
+		// a real species file, exercising the full merge incl. the StageAfterCut
+		// decrement and the StageMobilFromStorageCoeff empty-vector fallback.
+		// wheat.json doesn't set every key, so the fields it omits (EF_MONO,
+		// VCMAX25, AEKC, ...) must keep the C++ in-class-initialiser defaults -
+		// hence starting from make_species_parameters(), not the zero value.
+		v := p.make_species_parameters()
+		_ = p.species_parameters_merge(&v, load(dir, "../crops/wheat.json", a))
+		dump("merged-Species", p.species_parameters_to_json(&v, a), a)
+	}
+	{
+		// a real cultivar file, exercising AssimilatePartitioningCoeff /
+		// OrganSenescenceRate (vector<vector<double>>) and all three
+		// OrganIdsForXxx YieldComponent arrays. Same in-class-initialiser
+		// concern as above (LightExtinctionCoefficient, EarlyRefLeafExp, ...).
+		v := p.make_cultivar_parameters()
+		_ = p.cultivar_parameters_merge(&v, load(dir, "../crops/wheat/winter-wheat.json", a))
+		dump("merged-Cultivar", p.cultivar_parameters_to_json(&v, a), a)
+	}
+	{
+		// the split-document overload, using the same two real files
+		v := p.make_crop_parameters()
+		_ = p.crop_parameters_merge_sj_cj(
+			&v,
+			load(dir, "../crops/wheat.json", a),
+			load(dir, "../crops/wheat/winter-wheat.json", a),
+		)
+		dump("merged-Crop", p.crop_parameters_to_json(&v, a), a)
+	}
+	{
+		// the single-document overload; also pins the Maybe(bool) tri-state
+		// for __enable_vernalisation_factor_fix__ - set to true here
+		j := parse(
+			`{"__enable_vernalisation_factor_fix__": true,
+			  "species": {"SpeciesName": "test-species"},
+			  "cultivar": {"CultivarName": "test-cultivar"}}`,
+			a,
+		)
+		v := p.make_crop_parameters()
+		_ = p.crop_parameters_merge(&v, j)
+		dump("merged-Crop-flag-true", p.crop_parameters_to_json(&v, a), a)
+		if val, ok := v.__enable_vernalisation_factor_fix__.?; ok {
+			fmt.printf("merged-Crop-flag-true-value\tset:%s\n", val ? "true" : "false")
+		} else {
+			fmt.printf("merged-Crop-flag-true-value\tunset\n")
+		}
+	}
+	{
+		// no flag key present at all - must stay unset, not collapse to false
+		j := parse(`{"species": {"SpeciesName": "x"}, "cultivar": {"CultivarName": "y"}}`, a)
+		v := p.make_crop_parameters()
+		_ = p.crop_parameters_merge(&v, j)
+		if val, ok := v.__enable_vernalisation_factor_fix__.?; ok {
+			fmt.printf("merged-Crop-flag-unset-value\tset:%s\n", val ? "true" : "false")
+		} else {
+			fmt.printf("merged-Crop-flag-unset-value\tunset\n")
+		}
+	}
 }
 
 // C's "%.17g", reusing jsonx's dump of a Float so both sides agree exactly

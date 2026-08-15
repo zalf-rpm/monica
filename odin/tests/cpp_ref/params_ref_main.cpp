@@ -265,6 +265,73 @@ int main(int argc, char **argv) {
     printf("merged-OrganicFertilizer-carbamid\t%.17g\n", p.vo_AOM_CarbamidContent);
   }
 
+  // ---- tranche 3b ----------------------------------------------------------
+  {
+    SpeciesParameters d;
+    DUMP("default-Species", speciesparameters::to_json(&d));
+  }
+  {
+    CultivarParameters d;
+    DUMP("default-Cultivar", cultivarparameters::to_json(&d));
+  }
+  {
+    CropParameters d;
+    DUMP("default-Crop", cropparameters::to_json(&d));
+  }
+  {
+    // a real species file, exercising the full merge incl. the StageAfterCut
+    // decrement and the StageMobilFromStorageCoeff empty-vector fallback
+    SpeciesParameters p;
+    speciesparameters::merge(&p, load(dir + "/../crops/wheat.json"));
+    DUMP("merged-Species", speciesparameters::to_json(&p));
+  }
+  {
+    // a real cultivar file, exercising AssimilatePartitioningCoeff /
+    // OrganSenescenceRate (vector<vector<double>>) and all three
+    // OrganIdsForXxx YieldComponent arrays
+    CultivarParameters p;
+    cultivarparameters::merge(&p, load(dir + "/../crops/wheat/winter-wheat.json"));
+    DUMP("merged-Cultivar", cultivarparameters::to_json(&p));
+  }
+  {
+    // the split-document overload, using the same two real files
+    CropParameters p;
+    cropparameters::merge(&p, load(dir + "/../crops/wheat.json"),
+                          load(dir + "/../crops/wheat/winter-wheat.json"));
+    DUMP("merged-Crop", cropparameters::to_json(&p));
+  }
+  {
+    // the single-document overload; also pins the kj::Maybe<bool> tri-state
+    // for __enable_vernalisation_factor_fix__ - set to true here
+    std::string err;
+    auto j = json11::Json::parse(
+        R"({"__enable_vernalisation_factor_fix__": true,
+            "species": {"SpeciesName": "test-species"},
+            "cultivar": {"CultivarName": "test-cultivar"}})",
+        err);
+    CropParameters p;
+    cropparameters::merge(&p, j);
+    DUMP("merged-Crop-flag-true", cropparameters::to_json(&p));
+    KJ_IF_MAYBE(v, p.__enable_vernalisation_factor_fix__) {
+      printf("merged-Crop-flag-true-value\tset:%s\n", *v ? "true" : "false");
+    } else {
+      printf("merged-Crop-flag-true-value\tunset\n");
+    }
+  }
+  {
+    // no flag key present at all - must stay unset, not collapse to false
+    std::string err;
+    auto j = json11::Json::parse(
+        R"({"species": {"SpeciesName": "x"}, "cultivar": {"CultivarName": "y"}})", err);
+    CropParameters p;
+    cropparameters::merge(&p, j);
+    KJ_IF_MAYBE(v, p.__enable_vernalisation_factor_fix__) {
+      printf("merged-Crop-flag-unset-value\tset:%s\n", *v ? "true" : "false");
+    } else {
+      printf("merged-Crop-flag-unset-value\tunset\n");
+    }
+  }
+
 #undef DUMP
   return 0;
 }

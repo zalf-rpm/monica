@@ -274,7 +274,7 @@ therefore needs a **configured and built** CMake tree.
 `climateData` is stripped from the C++ Env before dumping, since reading climate CSV is phase 2;
 remove that strip in `env_ref_main.cpp` once phase 2 lands.
 
-### Phase 1c — the 26 parameter structs — **IN PROGRESS**
+### Phase 1c — the 26 parameter structs — **DONE**
 
 Tranche 1 (**done**): the five module-parameter structs in `odin/monica/params/module_parameters.odin` —
 `SoilMoistureModuleParameters`, `SoilTemperatureModuleParameters`,
@@ -322,21 +322,73 @@ Two latent C++ bugs found and reproduced (see the `NOTE(c++-quirk)` blocks):
 - `automaticharvestparameters::to_json` emits `"latestHavestDOY"` (missing the `r`) while `merge`
   reads `"latestHarvestDOY"`, so that value does not survive a round trip either.
 
-**Remaining:** tranche 3b — `SpeciesParameters`, `CultivarParameters`, `CropParameters`. These are
-the two largest structs in the file (~80 and ~90 merge lines) plus a trivial wrapper; no new
-patterns, and `YieldComponent` (which `CultivarParameters` nests) is already done. Extends
-`run_params.sh` the same way.
-`jsonx`, `create-env-from-json-config` (incl. `findAndReplaceReferences` and the
-`include-from-file` / `ref` / `%` / KA5 patterns), all `merge` and `to_json` for the structs in
-`monica-parameters.h`.
-**Oracle — the most valuable checkpoint in the plan:** dump the fully-merged `Env` via
-`env_to_json` from *both* implementations (with sorted keys) and diff. This validates ~2,700
-lines of parameter merging plus the whole reference-resolution machinery in one shot, before
-any simulation code exists.
+Tranche 3b (**done**): `odin/monica/params/crop_parameters.odin` — `SpeciesParameters`,
+`CultivarParameters`, `CropParameters` (both `merge` overloads, incl. the split
+`merge(cp, speciesJson, cultivarJson)` form), plus the trivial `cropName`/`numberOfXxx`
+wrappers. `run_params.sh` now at 40,593 B, identical. Merges are exercised against real fixtures
+for the first time in phase 1c — `crops/wheat.json` (species) and `crops/wheat/winter-wheat.json`
+(cultivar) — rather than only `general/*.json`.
+
+Two `jsonx` additions were needed and went into `accessors.odin`, not this file: `set_bool_vector`
+(the key-form wrapper `bool_vector_d` was missing) and `double_vector` (the no-key overload of
+`double_vectorD`, needed for `AssimilatePartitioningCoeff`/`OrganSenescenceRate`,
+`vector<vector<double>>` fields merged element-by-element).
+
+`CropParameters::__enable_vernalisation_factor_fix__` is the one `kj::Maybe<bool>` in this whole
+struct family (CONVENTIONS §5) — mapped to Odin's builtin `Maybe(bool)`. `run_params.sh` pins the
+tri-state explicitly: one synthetic merge sets the flag true, another omits the key entirely, and
+the Odin side reads it back with `v, ok := x.?` (never `x.? or_else`) to confirm "unset" survives
+rather than collapsing to `false`. Odin's builtin `Maybe(T)` is `runtime.Maybe`, from
+`core_builtin.odin` — no import needed, matching the CONVENTIONS claim it's builtin.
+
+**Real-fixture gotcha caught while writing the driver, not the port:** `wheat.json` and
+`winter-wheat.json` don't set every key (e.g. `EF_MONO`, `VCMAX25`, `AEKC`, `LightExtinctionCoefficient`,
+`EarlyRefLeafExp` are absent from both). The C++ driver's `SpeciesParameters p;` default-constructs
+with the in-class initialisers *before* `merge` runs, so those omitted fields keep their non-zero
+defaults. The first Odin driver draft started merges from a zero-valued struct instead of
+`make_species_parameters()`/`make_cultivar_parameters()`, which would have silently zeroed those
+fields — caught by re-deriving the oracle's intent before running it, not by the diff (a
+zero-vs-0.5 mismatch would have failed loudly anyway, but the fix belongs in the test driver, not
+the port itself).
+
+**Phase 1c is now complete** — all 26 parameter structs in `monica-parameters.h` have `merge` and
+`to_json` ported, verified. Remaining phase-1 work per §6:
+`create-env-from-json-config` incl. `findAndReplaceReferences` and the `include-from-file` / `ref`
+/ `%` / KA5 patterns is already done (phase 1b). The one open item before phase 2 is the
+env-level checkpoint below.
+### Phase 1 capstone — the `CentralParameterProvider` checkpoint
+
+**Scope correction (important).** A *full* `env_to_json` diff is NOT achievable at this point and
+should not be attempted: `Env::to_json` emits `cropRotation` (-> `CultivationMethod` -> `Workstep`,
+phase 6) and `climateData` (-> `DataAccessor`, phase 2). Neither exists yet.
+
+What to build instead — and it is the valuable checkpoint the plan meant:
+
+1. Take the `params` sub-object of the assembled Env JSON that `run_env.sh` already produces
+   (`build/ref/env_*.txt`, key `"params"`).
+2. Merge it into `CentralParameterProvider` on both sides.
+3. Diff `centralparameterprovider::to_json`.
+
+That wires all 26 structs together against real fixture data instead of exercising them in
+isolation, which is precisely what the per-struct tests cannot catch: a field read under the wrong
+key, or a sub-struct never reached because its parent key is misspelled.
+
+Two known gaps mean this still is not exhaustive; dump each separately (the way
+`run_params.sh` already dumps the nested `sticsParams`):
+- `SiteParameters.vs_SoilParameters` is deliberately empty until phase 3.
+- `centralparameterprovider::to_json` does not emit `groundwaterInformation` — it is commented out
+  in the C++.
+
+Extend `run_params.sh`, or add a `run_cpp.sh` alongside it; do not modify `run_env.sh`.
 
 ### Phase 2 — climate
 `DataAccessor`, `ACD`, the header-driven CSV reader.
 **Oracle:** dump the loaded `DataAccessor` as a CSV of all ACDs × all steps; diff.
+
+Watch for: `CSVViaHeaderOptions` carries a `std::map<ACD, std::function<double(double)>> convertFn`
+member. Per prep 2 that is not ported as a closure table — give it the same enum + apply treatment
+`jsonx.Transform` already uses. Once phase 2 lands, remove the `climateData` strip from
+`odin/tests/cpp_ref/env_ref_main.cpp` so `run_env.sh` compares the whole Env.
 
 ### Phase 3 — soil setup
 `src/soil/soil.cpp` (incl. the three JSON readers replacing the capnp path — read
@@ -355,6 +407,17 @@ regression. Port the resolved-value procedures, never read the raw field directl
 does.** `Soil::SoilParameters` keeps `thickness` and `calculateAndSetPwpFcSat` and is still used
 standalone for `site.json` horizon parsing, with its own `_vs_`-prefixed override fields.
 **Oracle:** dump initial per-layer state after `createSoilPMs` + `SoilColumn` construction; diff.
+
+Also in scope, because phase 1c deliberately deferred it: `siteparameters::merge` must start
+building `vs_SoilParameters` via `createEqualSizedSoilPMs`, and `siteparameters::to_json` must emit
+the real `SoilProfileParameters` array. `Site_Parameters.initSoilProfileSpec` already captures the
+raw spec, so the merge signature does not change. Once done, the harness must compare a
+**populated** profile — a diff over two empty arrays proves nothing.
+
+Highest-risk part of this phase is `fcSatPwpFromKA5textureClass` (~200 lines of bounded
+interpolation between soil-raw-density and organic-matter breakpoints). It is dense mixed
+int/float arithmetic, i.e. exactly where the reassociation and integer-division traps of
+CONVENTIONS §1 bite. Transliterate term for term and do not fold constants.
 
 ### Phase 4 — soil physics
 `soiltemperature`, `soilmoisture` (+ `snow-component`, `frost-component`), `soiltransport`,
