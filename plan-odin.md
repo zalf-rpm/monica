@@ -352,34 +352,40 @@ zero-vs-0.5 mismatch would have failed loudly anyway, but the fix belongs in the
 the port itself).
 
 **Phase 1c is now complete** — all 26 parameter structs in `monica-parameters.h` have `merge` and
-`to_json` ported, verified. Remaining phase-1 work per §6:
-`create-env-from-json-config` incl. `findAndReplaceReferences` and the `include-from-file` / `ref`
-/ `%` / KA5 patterns is already done (phase 1b). The one open item before phase 2 is the
-env-level checkpoint below.
-### Phase 1 capstone — the `CentralParameterProvider` checkpoint
+`to_json` ported, verified. `create-env-from-json-config` incl. `findAndReplaceReferences` and the
+`include-from-file` / `ref` / `%` / KA5 patterns was already done (phase 1b). With the capstone
+below also green, **phase 1 as a whole is done** — phase 2 (climate) is next.
+
+### Phase 1 capstone — the `CentralParameterProvider` checkpoint — **DONE**
 
 **Scope correction (important).** A *full* `env_to_json` diff is NOT achievable at this point and
 should not be attempted: `Env::to_json` emits `cropRotation` (-> `CultivationMethod` -> `Workstep`,
 phase 6) and `climateData` (-> `DataAccessor`, phase 2). Neither exists yet.
 
-What to build instead — and it is the valuable checkpoint the plan meant:
+What was built instead — the valuable checkpoint the plan meant:
+`odin/tests/cpp_ref/central_params_ref_main.cpp` + `odin/tests/central_params_ref/main.odin`, run by
+the new `odin/tests/cpp_ref/run_central_params.sh` (`run_env.sh` itself is untouched):
 
-1. Take the `params` sub-object of the assembled Env JSON that `run_env.sh` already produces
-   (`build/ref/env_*.txt`, key `"params"`).
+1. Take the `params` sub-object of the assembled Env JSON (same `createEnvJsonFromJsonObjects` /
+   `create_env_json_from_json_objects` machinery `run_env.sh` already proves identical).
 2. Merge it into `CentralParameterProvider` on both sides.
 3. Diff `centralparameterprovider::to_json`.
 
-That wires all 26 structs together against real fixture data instead of exercising them in
-isolation, which is precisely what the per-struct tests cannot catch: a field read under the wrong
-key, or a sub-struct never reached because its parent key is misspelled.
+**Oracle — green:** both Hohenfinow2 fixtures, `sim-min.json` (6,949 B) and `sim+.json` (6,872 B),
+identical — 13,821 B total. That wires all 26 tranche-1c structs together against real fixture data
+in one shot, which the per-struct tests (`run_params.sh`) cannot catch: a field read under the
+wrong key, or a sub-struct never reached because its parent key is misspelled. None turned up.
 
-Two known gaps mean this still is not exhaustive; dump each separately (the way
-`run_params.sh` already dumps the nested `sticsParams`):
-- `SiteParameters.vs_SoilParameters` is deliberately empty until phase 3.
-- `centralparameterprovider::to_json` does not emit `groundwaterInformation` — it is commented out
-  in the C++.
-
-Extend `run_params.sh`, or add a `run_cpp.sh` alongside it; do not modify `run_env.sh`.
+One known gap needed active normalisation, one needed none:
+- `SiteParameters.vs_SoilParameters` (-> `SoilProfileParameters`) is real on the C++ side (phase 3
+  is done there) but always an empty array on the Odin side (phase 3 isn't ported yet — see
+  `site_parameters_to_json`'s "PHASE SCOPE" comment). The C++ driver force-overwrites
+  `SoilProfileParameters` to `[]` after computing `to_json`, matching what the Odin side already
+  always emits, so this expected gap doesn't mask a real regression in the other 2,700 lines. The
+  Odin driver needs no equivalent step.
+- `groundwaterInformation`: `centralparameterprovider::to_json` doesn't emit it on *either* side (a
+  pre-existing, already-reproduced quirk — commented out in the C++), so it's simply untested here,
+  not a source of mismatch requiring normalisation.
 
 ### Phase 2 — climate
 `DataAccessor`, `ACD`, the header-driven CSV reader.
