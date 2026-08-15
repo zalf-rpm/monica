@@ -474,6 +474,22 @@ interpolation between soil-raw-density and organic-matter breakpoints). It is de
 int/float arithmetic, i.e. exactly where the reassociation and integer-division traps of
 CONVENTIONS §1 bite. Transliterate term for term and do not fold constants.
 
+**Required second oracle: an interpolation sweep.** The per-layer state diff only exercises the
+soil types and densities the Hohenfinow2 fixtures happen to contain — a handful of paths through a
+function with many branches. That is not enough: a wrong interpolation in an unexercised branch
+would pass phase 3 silently and only surface in phase 4/5 as an unexplained soil-moisture
+divergence, which is the most expensive kind of bug to chase (see the `ff0f0fc` history in
+`plan.md`).
+
+So add a sweep driver, in the same shape as `odin/tests/cpp_ref/run.sh` does for `Date`: call
+`fcSatPwpFromKA5textureClass` (and the other `fcSatPwpFrom*` entry points, plus
+`updateUnsetPwpFcSatFrom*`) from both implementations over a grid — every KA5 texture class × raw
+densities spanning and straddling the table breakpoints (e.g. 900 … 2100 in steps of 50, so
+interpolation *and* clamping are hit) × organic-matter values around the 1.5/3/6/11.5 breakpoints
+— and diff the resulting sat/fc/pwp triples. Include the unset/`-1` sentinel combinations
+explicitly. A few thousand rows costs nothing to run and converts "the fixture happens to pass"
+into "the function agrees across its domain".
+
 ### Phase 4 — soil physics
 `soiltemperature`, `soilmoisture` (+ `snow-component`, `frost-component`), `soiltransport`,
 `soilorganic`, `stics-nit-denit-n2o`.
