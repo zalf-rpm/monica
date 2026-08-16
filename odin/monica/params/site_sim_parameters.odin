@@ -293,6 +293,25 @@ measured_groundwater_table_information_to_json :: proc(
 	)
 }
 
+// C++: std::pair<bool,double> measuredgroundwatertableinformation::
+//        getGroundwaterInformation(const MeasuredGroundwaterTableInformation*, Tools::Date)
+get_groundwater_information :: proc(
+	gwi: ^Measured_Groundwater_Table_Information,
+	gwDate: d.Date,
+	allocator := context.allocator,
+) -> (
+	available: bool,
+	depth: f64,
+) {
+	if gwi.groundwaterInformationAvailable && len(gwi.groundwaterInfo) > 0 {
+		key := d.to_iso_date_string(gwDate, "", allocator)
+		if v, ok := gwi.groundwaterInfo[key]; ok {
+			return true, v
+		}
+	}
+	return false, 0
+}
+
 // ---------------------------------------------------------------------------
 // SiteParameters
 // ---------------------------------------------------------------------------

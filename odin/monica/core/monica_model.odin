@@ -675,3 +675,241 @@ monica_model_incorporate_current_crop :: proc(model: ^Monica_Model, allocator :=
 
 	model.clearCropUponNextDay = true
 }
+
+// ---------------------------------------------------------------------------
+// Phase 6 checkpoint 6: step() / generalStep() / cropStep() - the daily
+// orchestration entry points, closing out src/core/monica-model.cpp.
+//
+// step() drops the Intercropping-async branch (Cap'n Proto RPC, per
+// plan-odin.md's "Explicitly dropped" table) - only the crop-step dispatch
+// survives.
+// ---------------------------------------------------------------------------
+
+// C++: void monica::monicamodel::step(MonicaModel*)
+monica_model_step :: proc(model: ^Monica_Model, allocator := context.allocator) {
+	if model.currentCropModule != nil && !model.clearCropUponNextDay {
+		monica_model_crop_step(model, allocator)
+	}
+
+	monica_model_general_step(model, allocator)
+}
+
+// C++: void monica::monicamodel::generalStep(MonicaModel*)
+//
+// soil_temperature_step takes soil_coverage/snow_depth/temp_under_snow as
+// explicit parameters instead of reading them through a `monica` back-
+// pointer the way the C++ SoilTemperature does (phase 4's design decision,
+// documented in soil_temperature.odin) - this is the first production call
+// site that actually supplies live values instead of a bare-soil 0.0/nil.
+monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.allocator) {
+	date := model.currentStepDate
+	julday := d.julian_day(date)
+	leapYear := d.is_leap_year(date)
+
+	dailyClimate := model.climateData[len(model.climateData) - 1]
+	tmin := dailyClimate[.tmin]
+	tavg := dailyClimate[.tavg]
+	tmax := dailyClimate[.tmax]
+	precip := dailyClimate[.precip]
+	wind := dailyClimate[.wind]
+	globrad := dailyClimate[.globrad]
+
+	// test if data for relhumid are available; if not, value is set to -1.0
+	relhumid := -1.0
+	if v, ok := dailyClimate[.relhumid]; ok {
+		relhumid = v
+	}
+
+	// test if simulated gw or measured values should be used
+	gw_available, gw_depth := p.get_groundwater_information(&model.groundwaterInformation, date, allocator)
+	if gw_available {
+		model.vs_GroundwaterDepth = max(0.0, gw_depth)
+	} else {
+		model.vs_GroundwaterDepth = groundwater_depth_for_date(
+			model.envPs.p_MaxGroundwaterDepth,
+			model.envPs.p_MinGroundwaterDepth,
+			model.envPs.p_MinGroundwaterDepthMonth,
+			f64(julday),
+			leapYear,
+		)
+	}
+
+	// first try to get CO2 concentration from climate data
+	if co2v, ok := dailyClimate[.co2]; ok {
+		model.vw_AtmosphericCO2Concentration = co2v
+	} else if co2s, ok2 := model.envPs.p_AtmosphericCO2s[d.year(date)]; ok2 {
+		// try to get yearly values from UserEnvironmentParameters
+		model.vw_AtmosphericCO2Concentration = co2s
+		// potentially use MONICA algorithm to calculate CO2 concentration
+	} else if int(model.envPs.p_AtmosphericCO2) <= 0 {
+		model.vw_AtmosphericCO2Concentration = co2_for_date_from_date(date, model.envPs.rcp)
+		// if everything fails value in UserEnvironmentParameters for the whole simulation
+	} else {
+		model.vw_AtmosphericCO2Concentration = model.envPs.p_AtmosphericCO2
+	}
+
+	delete_aom_pool(&model.soilColumn)
+
+	possibleDelayedFertilizerAmount := apply_possible_delayed_fertilizer(&model.soilColumn)
+	monica_model_add_daily_sum_fertiliser(model, possibleDelayedFertilizerAmount)
+	possibleTopDressingAmount := apply_possible_top_dressing(&model.soilColumn)
+	monica_model_add_daily_sum_fertiliser(model, possibleTopDressingAmount)
+
+	if model.currentCropModule != nil &&
+	   model.simPs.p_UseNMinMineralFertilisingMethod &&
+	   model.currentCropModule.cropParams.cultivarParams.winterCrop &&
+	   int(julday) == model.simPs.p_JulianDayAutomaticFertilising {
+		clear_top_dressing_params(&model.soilColumn)
+		sps := model.currentCropModule.cropParams.speciesParams
+		fertilizerAmount := monica_model_apply_mineral_fertiliser_via_n_min_method(
+			model,
+			model.simPs.p_NMinFertiliserPartition,
+			p.NMin_Crop_Parameters {
+				samplingDepth = sps.pc_SamplingDepth,
+				nTarget = sps.pc_TargetNSamplingDepth,
+				nTarget30 = sps.pc_TargetN30,
+			},
+		)
+		monica_model_add_daily_sum_fertiliser(model, fertilizerAmount)
+	}
+
+	soil_coverage := model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0.0
+	soil_temperature_step(
+		&model.soilTemperature,
+		tmin,
+		tmax,
+		globrad,
+		soil_coverage,
+		model.soilMoisture.snowComponent.vm_SnowDepth,
+		model.soilMoisture.frostComponent.vm_TemperatureUnderSnow,
+	)
+
+	// first try to get ReferenceEvapotranspiration from climate data
+	et0 := -1.0
+	if v, ok := dailyClimate[.et0]; ok {
+		et0 = v
+	}
+
+	soil_moisture_step(
+		&model.soilMoisture,
+		model.vs_GroundwaterDepth,
+		precip,
+		tmax,
+		tmin,
+		(relhumid / 100.0),
+		tavg,
+		wind,
+		model.envPs.p_WindSpeedHeight,
+		globrad,
+		int(julday),
+		et0,
+		model.simPs.dualKcMethod,
+	)
+
+	soil_organic_step(&model.soilOrganic, tavg, precip, wind)
+	soil_transport_step(&model.soilTransport)
+}
+
+// C++: void monica::monicamodel::cropStep(MonicaModel*)
+//
+// The commented-out VOC-emissions block at the end of the C++ function
+// (never compiled there either) is not ported.
+monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.allocator) {
+	date := model.currentStepDate
+	dailyClimate := model.climateData[len(model.climateData) - 1]
+
+	// do nothing if there is no crop
+	if model.currentCropModule == nil {
+		return
+	}
+
+	model.p_daysWithCrop += 1
+
+	// C++ genuine dead store: computed (`unsigned int julday =
+	// date.julianDay();`) but never read anywhere in the rest of cropStep -
+	// kept for fidelity, matching the same "_ = x, not removed" precedent
+	// phase 5 checkpoints 5-6 already established for other C++ dead stores.
+	julday := d.julian_day(date)
+	_ = julday
+
+	tavg := dailyClimate[.tavg]
+	tmax := dailyClimate[.tmax]
+	tmin := dailyClimate[.tmin]
+	globrad := dailyClimate[.globrad]
+
+	// first try to get CO2 concentration from climate data
+	if o3v, ok := dailyClimate[.o3]; ok {
+		model.vw_AtmosphericO3Concentration = o3v
+	} else if o3s, ok2 := model.envPs.p_AtmosphericO3s[d.year(date)]; ok2 {
+		// try to get yearly values from UserEnvironmentParameters
+		model.vw_AtmosphericO3Concentration = o3s
+		// if everything fails value in UserEnvironmentParameters for the whole simulation
+	} else {
+		model.vw_AtmosphericO3Concentration = model.envPs.p_AtmosphericO3
+	}
+
+	// test if data for sunhours are available; if not, value is set to -1.0
+	sunhours := -1.0
+	if v, ok := dailyClimate[.sunhours]; ok {
+		sunhours = v
+	}
+
+	// test if data for relhumid are available; if not, value is set to -1.0
+	relhumid := -1.0
+	if v, ok := dailyClimate[.relhumid]; ok {
+		relhumid = v
+	}
+
+	wind := -1.0
+	if v, ok := dailyClimate[.wind]; ok {
+		wind = v
+	}
+
+	precip := dailyClimate[.precip]
+
+	// check if reference evapotranspiration was provided via climate files
+	et0 := -1.0
+	if v, ok := dailyClimate[.et0]; ok {
+		et0 = v
+	}
+
+	vw_WindSpeedHeight := model.envPs.p_WindSpeedHeight
+
+	crop_module_step(
+		model.currentCropModule,
+		tavg,
+		tmax,
+		tmin,
+		globrad,
+		sunhours,
+		date,
+		(relhumid / 100.0),
+		wind,
+		vw_WindSpeedHeight,
+		model.vw_AtmosphericCO2Concentration,
+		model.vw_AtmosphericO3Concentration,
+		precip,
+		et0,
+		allocator,
+	)
+
+	if model.simPs.p_UseAutomaticIrrigation &&
+	   (!d.is_valid(model.simPs.p_AutoIrrigationParams.startDate) ||
+			   d.le(model.simPs.p_AutoIrrigationParams.startDate, date)) &&
+	   (!d.is_valid(model.simPs.p_AutoIrrigationParams.endDate) ||
+			   d.le(date, model.simPs.p_AutoIrrigationParams.endDate)) {
+		irrigationTriggered, irrigationAmount := apply_irrigation_via_trigger(
+			&model.soilColumn,
+			&model.simPs.p_AutoIrrigationParams,
+		)
+		if irrigationTriggered {
+			model.soilOrganic.irrigationAmount += irrigationAmount
+			monica_model_add_daily_sum_irrigation_water(model, irrigationAmount)
+		}
+	}
+
+	model.p_accuNStress += model.currentCropModule.vc_CropNRedux
+	model.p_accuWaterStress += model.currentCropModule.vc_TranspirationDeficit
+	model.p_accuHeatStress += model.currentCropModule.vc_CropHeatRedux
+	model.p_accuOxygenStress += model.currentCropModule.vc_OxygenDeficit
+}
