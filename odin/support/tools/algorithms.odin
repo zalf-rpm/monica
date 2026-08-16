@@ -8,6 +8,7 @@ package tools
 
 import "core:math"
 import "core:strings"
+import libc "core:c/libc"
 
 // C++: template<typename T> T Tools::bound(T lower, T value, T upper)
 bound :: proc(lower, value, upper: $T) -> T {
@@ -33,7 +34,7 @@ round_to_digits :: proc(value: f64, digits: int) -> (f64, bool) {
 		return 0, false
 	}
 	v := value
-	factor := math.pow(f64(10), f64(abs(digits)))
+	factor := libc.pow(f64(10), f64(abs(digits)))
 	if !is_finite(factor) || factor == 0 {
 		return 0, false
 	}
@@ -67,17 +68,17 @@ round :: proc(value: f64, round_to_digits_ := 0) -> f64 {
 // C++: double Tools::floor(double value, int digits, bool trailingDigits)
 floor :: proc(value: f64, digits := 0, trailing_digits := true) -> f64 {
 	if trailing_digits {
-		return math.floor(value * math.pow(f64(10), f64(digits))) / math.pow(f64(10), f64(digits))
+		return math.floor(value * libc.pow(f64(10), f64(digits))) / libc.pow(f64(10), f64(digits))
 	}
-	return math.floor(value / math.pow(f64(10), f64(digits))) * math.pow(f64(10), f64(digits))
+	return math.floor(value / libc.pow(f64(10), f64(digits))) * libc.pow(f64(10), f64(digits))
 }
 
 // C++: double Tools::ceil(double value, int digits, bool trailingDigits)
 ceil :: proc(value: f64, digits := 0, trailing_digits := true) -> f64 {
 	if trailing_digits {
-		return math.ceil(value * math.pow(f64(10), f64(digits))) / math.pow(f64(10), f64(digits))
+		return math.ceil(value * libc.pow(f64(10), f64(digits))) / libc.pow(f64(10), f64(digits))
 	}
-	return math.ceil(value / math.pow(f64(10), f64(digits))) * math.pow(f64(10), f64(digits))
+	return math.ceil(value / libc.pow(f64(10), f64(digits))) * libc.pow(f64(10), f64(digits))
 }
 
 // C++: template<typename ReturnType> ReturnType shiftDecimalPointRight(double value, uint8_t digits)
@@ -85,12 +86,12 @@ ceil :: proc(value: f64, digits := 0, trailing_digits := true) -> f64 {
 // The int specialisation. C++ double->int conversion truncates toward zero, as
 // does Odin's, so this matches.
 shift_decimal_point_right_int :: proc(value: f64, digits: u8) -> int {
-	return int(value * math.pow(f64(10), f64(digits)))
+	return int(value * libc.pow(f64(10), f64(digits)))
 }
 
 // C++: template<typename ReturnType> ReturnType shiftDecimalPointLeft(double value, uint8_t digits)
 shift_decimal_point_left_int :: proc(value: f64, digits: u8) -> int {
-	return int(value / math.pow(f64(10), f64(digits)))
+	return int(value / libc.pow(f64(10), f64(digits)))
 }
 
 // C++: int Tools::integerRound1stDigit(int value)
@@ -190,16 +191,16 @@ sunshine2global_radiation :: proc(
 	lat: f64,
 	as_mj_pm2_pd := true,
 ) -> f64 {
-	pi := 4.0 * math.atan(1.0)
-	dec := -23.4 * math.cos(2 * pi * f64(julian_day + 10) / 365)
-	sinld := math.sin(dec * pi / 180) * math.sin(lat * pi / 180)
-	cosld := math.cos(dec * pi / 180) * math.cos(lat * pi / 180)
-	dl := 12 * (pi + 2 * math.asin(sinld / cosld)) / pi
-	dle := 12 * (pi + 2 * math.asin((-math.sin(8 * pi / 180) + sinld) / cosld)) / pi
+	pi := 4.0 * libc.atan(f64(1.0))
+	dec := -23.4 * libc.cos(f64(2 * pi * f64(julian_day + 10) / 365))
+	sinld := libc.sin(f64(dec * pi / 180)) * libc.sin(f64(lat * pi / 180))
+	cosld := libc.cos(f64(dec * pi / 180)) * libc.cos(f64(lat * pi / 180))
+	dl := 12 * (pi + 2 * libc.asin(f64(sinld / cosld))) / pi
+	dle := 12 * (pi + 2 * libc.asin(f64((-libc.sin(f64(8 * pi / 180)) + sinld) / cosld))) / pi
 	rdn :=
 		3600 *
-		(sinld * dl + 24 / pi * cosld * math.sqrt(1.0 - (sinld / cosld) * (sinld / cosld)))
-	drc := 1300 * rdn * math.exp(-0.14 / (rdn / (dl * 3600)))
+		(sinld * dl + 24 / pi * cosld * libc.sqrt(f64(1.0 - (sinld / cosld) * (sinld / cosld))))
+	drc := 1300 * rdn * libc.exp(f64(-0.14 / (rdn / (dl * 3600))))
 	dro := 0.2 * drc
 	dtga := sun_hours / dle * drc + (1 - sun_hours / dle) * dro
 	t := dtga / 10000.0

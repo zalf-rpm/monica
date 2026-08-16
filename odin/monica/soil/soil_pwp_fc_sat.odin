@@ -13,7 +13,7 @@
 // them.
 package soil
 
-import "core:math"
+import libc "core:c/libc"
 import "core:strings"
 import tl "../../support/tools"
 
@@ -304,7 +304,7 @@ fc_sat_pwp_from_van_genuchten_vereecken :: proc(
 		fc_pF = 2.2
 	}
 
-	matric_head := math.pow(10.0, fc_pF)
+	matric_head := libc.pow(10.0, fc_pF)
 
 	vgps := calc_van_genuchten_vereecken_params(
 		res.pwp,
@@ -442,20 +442,20 @@ calc_van_genuchten_vereecken_params :: proc(
 	res.volumetricWaterContentAtMatricHead = -1 // C++ in-class initialiser default
 	res.thetaR = pwp
 	res.thetaS = sat
-	res.alpha = math.exp(
+	res.alpha = libc.exp(
 		-2.486 + 2.5 * sand_frac - 35.1 * organic_carbon_frac -
 		2.617 * (bulk_density_kg_per_m3 / 1000.0) -
 		2.3 * clay_frac,
 	)
 
 	res.m = 1.0
-	res.n = math.exp(0.053 - 0.9 * sand_frac - 1.3 * clay_frac + 1.5 * math.pow(sand_frac, 2.0))
+	res.n = libc.exp(0.053 - 0.9 * sand_frac - 1.3 * clay_frac + 1.5 * libc.pow(sand_frac, 2.0))
 
 	if stone_frac >= 0 {
 		res.volumetricWaterContentAtMatricHead =
 			(res.thetaR +
 					((res.thetaS - res.thetaR) /
-							(math.pow(1.0 + math.pow(res.alpha * matric_head, res.n), res.m)))) *
+							(libc.pow(1.0 + libc.pow(res.alpha * matric_head, res.n), res.m)))) *
 			(1.0 - stone_frac)
 	}
 	return res
@@ -486,7 +486,7 @@ calc_van_genuchten_toth_params :: proc(
 		0.000187 * silt_content_perc
 
 	is_top_soil_f: f64 = is_top_soil ? 1 : 0
-	res.alpha = math.pow(
+	res.alpha = libc.pow(
 		10.0,
 		-0.43348 - 0.41729 * soil_bulk_density_g_per_cm3 -
 		0.04762 * soil_organic_carbon_perc -
@@ -495,7 +495,7 @@ calc_van_genuchten_toth_params :: proc(
 		0.01207 * silt_content_perc,
 	)
 	res.n =
-		math.pow(
+		libc.pow(
 			10.0,
 			0.22236 - 0.30189 * soil_bulk_density_g_per_cm3 - 0.05558 * is_top_soil_f -
 			0.005306 * clay_content_perc -
@@ -510,8 +510,8 @@ calc_van_genuchten_toth_params :: proc(
 	res.volumetricWaterContentAtMatricHead =
 		(res.thetaR +
 				((res.thetaS - res.thetaR) /
-						(math.pow(
-									1.0 + math.pow(res.alpha * abs(matric_head), res.n),
+						(libc.pow(
+									1.0 + libc.pow(res.alpha * abs(matric_head), res.n),
 									res.m,
 								)))) *
 		(1.0 - stone_frac)

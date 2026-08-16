@@ -601,6 +601,48 @@ without breaking either.
 `soilorganic`, `stics-nit-denit-n2o`.
 **Oracle:** daily trace diff (§1). Build the Odin `dump_state` reflection dumper here.
 
+**Trace dumper — done.** `odin/monica/trace/trace.odin` (the `core:reflect` walker) and
+`odin/tests/cpp_ref/trace_common.h` (the C++ counterpart), validated by
+`odin/tests/cpp_ref/run_trace.sh` against the phase-3 `SoilColumn` (600 lines/fixture, 1,200
+total, identical). See the `6d0b203` commit message for the design notes (Maybe-unset handling,
+pointer/map policy, the `defer delete` temp-allocator bug found bringing it up). Phase 4 proper
+extends this with dump functions for `SoilMoisture`, `SoilTemperature`, `SoilTransport`,
+`SoilOrganic`, `SnowComponent`, `FrostComponent` on both sides, called once per simulated day.
+
+**Prep, done before the module work below — the libc sweep + soil sweep sentinel gap.**
+Two follow-ups flagged while closing out phase 3, done first since both touch code every phase-4
+module will lean on:
+
+1. **libc sweep.** Checkpoint 3a's finding (`soillayer::soilMoisturePF`, §6 above and
+   `CONVENTIONS.md` §1) — `core:math`'s `pow`/`exp`/... aren't always bit-identical to the C++
+   reference build's MSVC-CRT `<cmath>` calls — was fixed at the one site a diff happened to catch,
+   with two more sites (`calcVanGenuchtenVereeckenParams`/`calcVanGenuchtenTothParams`) deliberately
+   left on `core:math` pending "an opportunistic swap if either is touched again." Rather than wait
+   for phase 4/5's ~12,000 lines to hit the same trap piecemeal, swept the whole tree onto
+   `core:c/libc` for the full C `<math.h>` §7.12 family (trig/hyperbolic/exp/log/power/gamma — not
+   just the five named in the checkpoint-3a note): `support/tools/algorithms.odin`
+   (`round_to_digits`'s `pow`, `sunshine2global_radiation`'s trig chain), `support/date/date.odin`
+   (`day_lengths`'s trig chain — phase 0, already-`DONE`, reopened for this), and
+   `monica/soil/soil_pwp_fc_sat.odin` (the two deferred Van Genuchten functions). Added
+   `odin/tests/check_libc_transcendentals.sh`, a grep-based guard over every `*.odin` file for the
+   full function-name list, so the rule is enforced on every future file rather than relying on a
+   diff to catch a regression. All eight `cpp_ref` oracles (`run.sh`, `run_json.sh`, `run_env.sh`,
+   `run_params.sh`, `run_central_params.sh`, `run_soil_column.sh`, `run_soil_pwp_fc_sat.sh`,
+   `run_trace.sh`) plus the 44 `odin test odin/tests` unit tests re-ran clean afterwards — this
+   touched shared code without breaking anything phases 0-3 already proved.
+2. **`-1` sentinel rows in the phase-3 interpolation sweep.** Every existing row in
+   `soil_pwp_fc_sat_ref_main.cpp`/`soil_pwp_fc_sat_ref/main.odin` left
+   `vs_FieldCapacity`/`vs_Saturation`/`vs_PermanentWiltingPoint` **all** unset (`-1`) before calling
+   an `updateUnsetPwpFcSatFrom*` entry point. But the C++ (and the Odin port of it) checks each of
+   the three independently after the disjunctive "is anything unset" guard
+   (`if (sp->vs_FieldCapacity < 0) sp->vs_FieldCapacity = res.fc;`, same for the other two) — the
+   same sentinel-with-fallback shape as the `ff0f0fc` `Maybe<bool>` regression (`plan.md`), and a
+   caller that already knows e.g. field capacity from a `site.json` horizon override and wants only
+   saturation/wilting point computed exercises a per-field branch none of the existing ~16,000 rows
+   ever reached. Added a `*SENT` section sweeping all 8 combinations of which of the three are
+   preset (to fixed representative values) vs `-1`, through all four entry points (`KA5SENT`,
+   `VGVSENT`, `VGTSENT`, `TOTHSENT`) — 32 new rows, oracle now at 16,010 total, still identical.
+
 ### Phase 5 — crop
 `crop-module.cpp` (largest single file), `photosynthesis-FvCB`, `voc-guenther`, `voc-jjv`,
 `voc-common`, `O3-impact`.

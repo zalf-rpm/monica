@@ -188,4 +188,101 @@ main :: proc() {
 			}
 		}
 	}
+
+	// -1 sentinel combinations (plan-odin.md phase 3's "required second oracle"):
+	// every case above leaves vs_FieldCapacity/vs_Saturation/vs_PermanentWiltingPoint
+	// ALL unset (-1). But update_unset_pwp_fc_sat_from_* checks each of the three
+	// independently after the disjunctive "is anything unset" guard - the exact
+	// sentinel-with-fallback shape that caused the ff0f0fc regression (plan.md)
+	// elsewhere. Sweep all 8 combinations of which of the three are preset
+	// (non-negative) vs -1, through each of the four entry points. Mirrors
+	// odin/tests/cpp_ref/soil_pwp_fc_sat_ref_main.cpp's SENT section exactly.
+	{
+		fc_preset, sat_preset, pwp_preset :: 0.35, 0.45, 0.12
+		for mask in 0 ..< 8 {
+			fc_set := mask & 1 != 0
+			sat_set := mask & 2 != 0
+			pwp_set := mask & 4 != 0
+
+			{
+				sp := soil.make_soil_parameters()
+				sp.vs_SoilTexture = "LS2"
+				sp.vs_SoilStoneContent = 0.1
+				sp._vs_SoilRawDensity = 1500
+				sp._vs_SoilOrganicMatter = 0.03
+				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
+				sp.vs_Saturation = sat_set ? sat_preset : -1
+				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				e := soil.update_unset_pwp_fc_sat_from_ka5_texture_class(path_to_soil_dir, &sp, a)
+				fmt.printf(
+					"KA5SENT\t%d\t%d\t%s\t%s\t%s\n",
+					mask,
+					tl.success(e) ? 1 : 0,
+					g(sp.vs_FieldCapacity, a),
+					g(sp.vs_Saturation, a),
+					g(sp.vs_PermanentWiltingPoint, a),
+				)
+			}
+			{
+				sp := soil.make_soil_parameters()
+				sp.vs_SoilSandContent = 0.3
+				sp.vs_SoilClayContent = 0.15
+				sp.vs_SoilStoneContent = 0.1
+				sp._vs_SoilBulkDensity = 1500
+				sp._vs_SoilOrganicCarbon = 0.01
+				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
+				sp.vs_Saturation = sat_set ? sat_preset : -1
+				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				e := soil.update_unset_pwp_fc_sat_from_van_genuchten_vereecken(&sp)
+				fmt.printf(
+					"VGVSENT\t%d\t%d\t%s\t%s\t%s\n",
+					mask,
+					tl.success(e) ? 1 : 0,
+					g(sp.vs_FieldCapacity, a),
+					g(sp.vs_Saturation, a),
+					g(sp.vs_PermanentWiltingPoint, a),
+				)
+			}
+			{
+				sp := soil.make_soil_parameters()
+				sp.vs_SoilSandContent = 0.3
+				sp.vs_SoilClayContent = 0.15
+				sp.vs_SoilStoneContent = 0.1
+				sp._vs_SoilBulkDensity = 1500
+				sp._vs_SoilOrganicCarbon = 0.01
+				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
+				sp.vs_Saturation = sat_set ? sat_preset : -1
+				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				e := soil.update_unset_pwp_fc_sat_from_van_genuchten_toth(&sp, 1)
+				fmt.printf(
+					"VGTSENT\t%d\t%d\t%s\t%s\t%s\n",
+					mask,
+					tl.success(e) ? 1 : 0,
+					g(sp.vs_FieldCapacity, a),
+					g(sp.vs_Saturation, a),
+					g(sp.vs_PermanentWiltingPoint, a),
+				)
+			}
+			{
+				sp := soil.make_soil_parameters()
+				sp.vs_SoilSandContent = 0.3
+				sp.vs_SoilClayContent = 0.15
+				sp.vs_SoilStoneContent = 0.1
+				sp._vs_SoilBulkDensity = 1500
+				sp._vs_SoilOrganicCarbon = 0.01
+				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
+				sp.vs_Saturation = sat_set ? sat_preset : -1
+				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				e := soil.update_unset_pwp_fc_sat_from_toth(&sp)
+				fmt.printf(
+					"TOTHSENT\t%d\t%d\t%s\t%s\t%s\n",
+					mask,
+					tl.success(e) ? 1 : 0,
+					g(sp.vs_FieldCapacity, a),
+					g(sp.vs_Saturation, a),
+					g(sp.vs_PermanentWiltingPoint, a),
+				)
+			}
+		}
+	}
 }

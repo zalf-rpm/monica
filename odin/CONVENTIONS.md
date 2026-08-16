@@ -60,7 +60,24 @@ reference build does, eliminating the risk entirely rather than hoping a given i
 divergent case. This matters far more from phase 4 onward — `crop-module.cpp` alone is ~4,750 lines
 of agronomy arithmetic leaning on `exp`/`pow` for photosynthesis, respiration and phenology curves.
 `core:math` is still fine for the non-transcendental helpers (`math.round`, `math.floor`, `math.abs`,
-comparisons, ...) — this rule is specifically about `pow`/`exp`/`log`-family functions.
+`math.PI`, comparisons, ...) — this rule is specifically about the C `<math.h>` §7.12
+trig/hyperbolic/exponential/logarithmic/power/gamma families (`pow`, `exp`/`exp2`/`expm1`, `log`/
+`log2`/`log10`/`log1p`, `sqrt`/`cbrt`/`hypot`, `sin`/`cos`/`tan`/`asin`/`acos`/`atan`/`atan2`,
+`sinh`/`cosh`/`tanh`/`asinh`/`acosh`/`atanh`, `erf`/`erfc`/`lgamma`/`tgamma`), not `round`/`floor`/
+`ceil`/`abs`-style functions.
+
+Swept the whole tree onto this rule (not just the sites a diff happened to catch): `support/tools/
+algorithms.odin` (`round_to_digits`'s `pow`, `sunshine2global_radiation`'s full trig chain),
+`support/date/date.odin` (`day_lengths`'s trig chain), `monica/soil/soil_pwp_fc_sat.odin`
+(`calcVanGenuchtenVereeckenParams`/`calcVanGenuchtenTothParams`, the two functions plan-odin.md
+checkpoint 3a deliberately left on `core:math` pending an "opportunistic swap if either is touched
+again" — this is that swap). `monica/core/soil_column.odin`'s `soilMoisturePF` was already on
+`libc.pow`/`libc.log10` from checkpoint 3a, the finding that established the rule.
+
+**Enforced, not just documented:** `bash odin/tests/check_libc_transcendentals.sh` greps every
+`*.odin` file under `odin/` for `math.<name>(` against the full §7.12 family list above and fails
+if it finds one. Run it alongside `odin test odin/tests` — a passing test suite says nothing about
+this rule since it's a static tree-wide property, not something a unit test exercises.
 
 ## 2. Naming
 

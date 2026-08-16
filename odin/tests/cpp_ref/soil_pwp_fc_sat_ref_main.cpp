@@ -154,5 +154,79 @@ int main(int argc, char **argv) {
     }
   }
 
+  // -1 sentinel combinations (plan-odin.md phase 3's "required second oracle"):
+  // every case above leaves vs_FieldCapacity/vs_Saturation/vs_PermanentWiltingPoint
+  // ALL unset (-1). But updateUnsetPwpFcSatFrom* checks each of the three
+  // independently (`if (sp->vs_FieldCapacity < 0) ...`, `if (sp->vs_Saturation < 0)
+  // ...`, `if (sp->vs_PermanentWiltingPoint < 0) ...`) after the disjunctive
+  // "is anything unset" guard - the exact sentinel-with-fallback shape that caused
+  // the ff0f0fc regression (plan.md) elsewhere. A caller that already knows e.g.
+  // field capacity from a site.json horizon override, and only wants saturation and
+  // wilting point computed, exercises a per-field branch none of the rows above
+  // ever reach. Sweep all 8 combinations of which of the three are preset
+  // (non-negative) vs -1, through each of the four entry points.
+  {
+    const double fcPreset = 0.35, satPreset = 0.45, pwpPreset = 0.12;
+    for (int mask = 0; mask < 8; mask++) {
+      bool fcSet = mask & 1, satSet = mask & 2, pwpSet = mask & 4;
+
+      {
+        SoilParameters sp;
+        sp.vs_SoilTexture = "LS2";
+        sp.vs_SoilStoneContent = 0.1;
+        sp._vs_SoilRawDensity = 1500;
+        sp._vs_SoilOrganicMatter = 0.03;
+        sp.vs_FieldCapacity = fcSet ? fcPreset : -1;
+        sp.vs_Saturation = satSet ? satPreset : -1;
+        sp.vs_PermanentWiltingPoint = pwpSet ? pwpPreset : -1;
+        Errors e = ka5Fn(&sp, 1);
+        printf("KA5SENT\t%d\t%d\t%.17g\t%.17g\t%.17g\n", mask, e.success() ? 1 : 0,
+               sp.vs_FieldCapacity, sp.vs_Saturation, sp.vs_PermanentWiltingPoint);
+      }
+      {
+        SoilParameters sp;
+        sp.vs_SoilSandContent = 0.3;
+        sp.vs_SoilClayContent = 0.15;
+        sp.vs_SoilStoneContent = 0.1;
+        sp._vs_SoilBulkDensity = 1500;
+        sp._vs_SoilOrganicCarbon = 0.01;
+        sp.vs_FieldCapacity = fcSet ? fcPreset : -1;
+        sp.vs_Saturation = satSet ? satPreset : -1;
+        sp.vs_PermanentWiltingPoint = pwpSet ? pwpPreset : -1;
+        Errors e = Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken(&sp, 1);
+        printf("VGVSENT\t%d\t%d\t%.17g\t%.17g\t%.17g\n", mask, e.success() ? 1 : 0,
+               sp.vs_FieldCapacity, sp.vs_Saturation, sp.vs_PermanentWiltingPoint);
+      }
+      {
+        SoilParameters sp;
+        sp.vs_SoilSandContent = 0.3;
+        sp.vs_SoilClayContent = 0.15;
+        sp.vs_SoilStoneContent = 0.1;
+        sp._vs_SoilBulkDensity = 1500;
+        sp._vs_SoilOrganicCarbon = 0.01;
+        sp.vs_FieldCapacity = fcSet ? fcPreset : -1;
+        sp.vs_Saturation = satSet ? satPreset : -1;
+        sp.vs_PermanentWiltingPoint = pwpSet ? pwpPreset : -1;
+        Errors e = Soil::updateUnsetPwpFcSatFromVanGenuchtenToth(&sp, 1);
+        printf("VGTSENT\t%d\t%d\t%.17g\t%.17g\t%.17g\n", mask, e.success() ? 1 : 0,
+               sp.vs_FieldCapacity, sp.vs_Saturation, sp.vs_PermanentWiltingPoint);
+      }
+      {
+        SoilParameters sp;
+        sp.vs_SoilSandContent = 0.3;
+        sp.vs_SoilClayContent = 0.15;
+        sp.vs_SoilStoneContent = 0.1;
+        sp._vs_SoilBulkDensity = 1500;
+        sp._vs_SoilOrganicCarbon = 0.01;
+        sp.vs_FieldCapacity = fcSet ? fcPreset : -1;
+        sp.vs_Saturation = satSet ? satPreset : -1;
+        sp.vs_PermanentWiltingPoint = pwpSet ? pwpPreset : -1;
+        Errors e = Soil::updateUnsetPwpFcSatFromToth(&sp, 1);
+        printf("TOTHSENT\t%d\t%d\t%.17g\t%.17g\t%.17g\n", mask, e.success() ? 1 : 0,
+               sp.vs_FieldCapacity, sp.vs_Saturation, sp.vs_PermanentWiltingPoint);
+      }
+    }
+  }
+
   return 0;
 }

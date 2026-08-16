@@ -6,6 +6,7 @@
 // several quirks marked NOTE(c++-quirk) below, are load-bearing.
 package date
 
+import libc "core:c/libc"
 import "core:math"
 import "core:strconv"
 import "core:strings"
@@ -614,35 +615,35 @@ day_lengths :: proc(latitude: f64, julian_day_: f64) -> Day_Lengths {
 	}
 
 	// Calculation of declination - old DEC
-	declination: f64 = -23.4 * math.cos(2.0 * math.PI * ((julian_day_ + 10.0) / 365.0))
+	declination: f64 = -23.4 * libc.cos(2.0 * math.PI * ((julian_day_ + 10.0) / 365.0))
 
 	// old SINLD
 	decl_sin: f64 =
-		math.sin(declination * math.PI / 180.0) * math.sin(latitude * math.PI / 180.0)
+		libc.sin(declination * math.PI / 180.0) * libc.sin(latitude * math.PI / 180.0)
 	// old COSLD
 	decl_cos: f64 =
-		math.cos(declination * math.PI / 180.0) * math.cos(latitude * math.PI / 180.0)
+		libc.cos(declination * math.PI / 180.0) * libc.cos(latitude * math.PI / 180.0)
 
 	// Calculation of the atmospheric day length -> old DL
 	astro_day_length: f64 = decl_sin / decl_cos
 	// The argument of asin must be in the range of -1 to 1
 	astro_day_length = bound_f64(-1.0, astro_day_length, 1.0)
-	dls.astronomic_day_length = 12.0 * (math.PI + 2.0 * math.asin(astro_day_length)) / math.PI
+	dls.astronomic_day_length = 12.0 * (math.PI + 2.0 * libc.asin(astro_day_length)) / math.PI
 
 	// Calculation of the effective day length = old DLE
-	sin8: f64 = math.sin(f64(8.0) * math.PI / 180.0)
+	sin8: f64 = libc.sin(f64(8.0) * math.PI / 180.0)
 	edl_helper := (-sin8 + decl_sin) / decl_cos
 	if (edl_helper < -1.0) || (edl_helper > 1.0) {
 		dls.effective_day_length = 0.01
 	} else {
-		dls.effective_day_length = 12.0 * (math.PI + 2.0 * math.asin(edl_helper)) / math.PI
+		dls.effective_day_length = 12.0 * (math.PI + 2.0 * libc.asin(edl_helper)) / math.PI
 	}
 
 	// old DLP
-	sin_neg6: f64 = math.sin(f64(-6.0) * math.PI / 180.0)
+	sin_neg6: f64 = libc.sin(f64(-6.0) * math.PI / 180.0)
 	photo_day_length := (-sin_neg6 + decl_sin) / decl_cos
 	photo_day_length = bound_f64(-1.0, photo_day_length, 1.0)
-	dls.photoperiodic_daylength = 12.0 * (math.PI + 2.0 * math.asin(photo_day_length)) / math.PI
+	dls.photoperiodic_daylength = 12.0 * (math.PI + 2.0 * libc.asin(photo_day_length)) / math.PI
 
 	return dls
 }
