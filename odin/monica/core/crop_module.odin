@@ -26,6 +26,12 @@ import p "../params"
 import d "../../support/date"
 import tl "../../support/tools"
 
+// Phase 5 checkpoint 4 adds fcCropPhotosynthesis (the largest function in
+// crop-module.cpp, ~1100 lines) plus fcGrossPrimaryProduction,
+// fcNetPrimaryProduction and calculateVOCEmissions - the functions that wire
+// the phase-5-checkpoint-1 satellite modules (photosynthesis-FvCB,
+// O3-impact, voc-guenther, voc-jjv) into the crop module proper.
+
 // C++: monica::OId::ORGAN (src/io/output.h) - a plain (unscoped) C++ enum
 // nested in struct OId, so OId::LEAF etc. are usable directly as organ
 // indices into vc_OrganBiomass and friends. io/output.h itself is phase 7
@@ -1195,4 +1201,761 @@ set_stage :: proc(cm: ^Crop_Module, newStage: int) {
 	}
 
 	cm.vc_DevelopmentalStage = newStage
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 checkpoint 4: photosynthesis + assimilation
+// ---------------------------------------------------------------------------
+
+// C++: void monica::cropmodule::fcCropPhotosynthesis(CropModule*, double
+// vw_MeanAirTemperature, double vw_MaxAirTemperature, double
+// vw_MinAirTemperature, double vw_AtmosphericCO2Concentration, double
+// vw_AtmosphericO3Concentration, Tools::Date currentDate)
+//
+// The largest function in the port (~1100 lines in C++). Two departures from
+// a literal transliteration, both because the eliminated code is provably
+// dead or undefined, not because it's inconvenient to port:
+//   - the Intercropping branch of the C++ (a second, alternate call to its
+//     `code` lambda with a different fraction-of-intercepted-radiation
+//     function, gated on `intercroppingOtherCropHeight > zeroHeightEps`) is
+//     unreachable in this port: Intercropping itself is a dropped feature
+//     (Cap'n Proto RPC, see plan-odin.md's "Explicitly dropped" table), and
+//     `intercroppingOtherCropHeight` starts at -1 and nothing in this port
+//     ever sets it positive (setOtherCropHeightAndLAIt is only ever called by
+//     intercropping wiring). With only one surviving call to `code`, its body
+//     is inlined directly rather than reproduced as a `std::function`-taking
+//     closure (Odin's `proc` type has no capture).
+//   - the hourly sunrise-detection check reads C++'s `hourlyGlobrads.back()`
+//     on a still-empty, freshly-constructed `std::vector` at hour 0 -
+//     undefined behaviour (likely a null-pointer dereference), not a
+//     reproducible quirk. Reimplemented as an explicit "previous hour"
+//     tracker seeded at 0.0, which is what the logic clearly intends: "is
+//     this the first hour with positive radiation".
+fc_crop_photosynthesis :: proc(
+	cm: ^Crop_Module,
+	vw_MeanAirTemperature, vw_MaxAirTemperature, vw_MinAirTemperature: f64,
+	vw_AtmosphericCO2Concentration, vw_AtmosphericO3Concentration: f64,
+	currentDate: d.Date,
+	allocator := context.allocator,
+) {
+	cropPs := cm.cropModParams
+	soilColumn := cm.soilColumn
+	speciesPs := &cm.cropParams.speciesParams
+	cultivarPs := &cm.cropParams.cultivarParams
+	pc_AssimilatePartitioningCoeff := cm.cropParams.cultivarParams.pc_AssimilatePartitioningCoeff
+	pc_CarboxylationPathway := cm.cropParams.speciesParams.pc_CarboxylationPathway
+	pc_DefaultRadiationUseEfficiency := cm.cropParams.speciesParams.pc_DefaultRadiationUseEfficiency
+	pc_DroughtStressThresholdArr := cm.cropParams.cultivarParams.pc_DroughtStressThreshold
+	pc_FieldConditionModifier := cm.cropParams.speciesParams.pc_FieldConditionModifier
+	pc_GrowthRespirationParameter_2 := cm.cropModParams.pc_GrowthRespirationParameter2
+	pc_MaxAssimilationRate := cm.cropParams.cultivarParams.pc_MaxAssimilationRate
+	pc_MinimumTemperatureForAssimilation := cm.cropParams.speciesParams.pc_MinimumTemperatureForAssimilation
+	pc_MaximumTemperatureForAssimilation := cm.cropParams.speciesParams.pc_MaximumTemperatureForAssimilation
+	pc_OrganGrowthRespiration := cm.cropParams.speciesParams.pc_OrganGrowthRespiration
+	pc_OrganMaintenanceRespiration := cm.cropParams.speciesParams.pc_OrganMaintenanceRespiration
+	pc_OptimumTemperatureForAssimilation := cm.cropParams.speciesParams.pc_OptimumTemperatureForAssimilation
+	pc_SpecificLeafArea := cm.cropParams.cultivarParams.pc_SpecificLeafArea
+	pc_WaterDeficitResponseOn := cm.simParams.pc_WaterDeficitResponseOn
+	vs_Latitude := cm.siteParams.vs_Latitude
+
+	vc_AssimilationRateReference := 0.0
+
+	pc_ReferenceLeafAreaIndex := cropPs.pc_ReferenceLeafAreaIndex
+	pc_ReferenceMaxAssimilationRate := cropPs.pc_ReferenceMaxAssimilationRate
+	pc_MaintenanceRespirationParameter_1 := cropPs.pc_MaintenanceRespirationParameter1
+	pc_MaintenanceRespirationParameter_2 := cropPs.pc_MaintenanceRespirationParameter2
+
+	pc_GrowthRespirationParameter_1 := cropPs.pc_GrowthRespirationParameter1
+	pc_CanopyReflectionCoeff := cropPs.pc_CanopyReflectionCoefficient // old REFLC
+
+	vc_RadiationUseEfficiency := pc_DefaultRadiationUseEfficiency
+	vc_RadiationUseEfficiencyReference := pc_DefaultRadiationUseEfficiency
+
+	D_IN_K :: VOC_D_IN_K
+	RGAS :: VOC_RGAS
+	TK25 :: VOC_TK25
+
+	if pc_CarboxylationPathway == 1 {
+		// Calculation of CO2 impact on crop growth
+		if cm.pc_CO2Method == 3 {
+			// Long 1991 / Mitchell et al. 1995
+			tempK := vw_MeanAirTemperature + D_IN_K
+			term1 := (tempK - TK25) / (TK25 * tempK * RGAS)
+			term2 := libc.sqrt(tempK / TK25)
+			cm.vc_KTkc = libc.exp(speciesPs.AEKC * term1) * term2
+			cm.vc_KTko = libc.exp(speciesPs.AEKO * term1) * term2
+			Mkc := speciesPs.KC25 * cm.vc_KTkc // [umol mol-1]
+			cm.cropPhotosynthesisResults.kc = Mkc
+			Mko := speciesPs.KO25 * cm.vc_KTko // [mmol mol-1]
+			cm.cropPhotosynthesisResults.ko = Mko * 1000.0 // mmol -> umol
+
+			// OLD exponential response
+			KTvmax: f64
+			if cropPs.__enable_Photosynthesis_WangEngelTemperatureResponse__ {
+				KTvmax = max(
+					0.00001,
+					wang_engel_temperature_response(
+						vw_MeanAirTemperature,
+						pc_MinimumTemperatureForAssimilation,
+						pc_OptimumTemperatureForAssimilation,
+						pc_MaximumTemperatureForAssimilation,
+						1.0,
+					),
+				)
+			} else {
+				KTvmax = libc.exp(speciesPs.AEVC * term1) * term2
+			}
+
+			// Berechnung des Transformationsfaktors fuer pflanzenspez. AMAX bei
+			// 25 grad - old fakamax
+			vc_AmaxFactor := pc_MaxAssimilationRate / 34.668
+			vc_AmaxFactorReference := pc_ReferenceMaxAssimilationRate / 34.668
+			// old vcmax
+			vc_Vcmax := 98.0 * vc_AmaxFactor * KTvmax
+			cm.cropPhotosynthesisResults.vcMax = vc_Vcmax
+			vc_VcmaxReference := 98.0 * vc_AmaxFactorReference * KTvmax
+
+			Oi :=
+				210.0 *
+				(0.047 -
+						0.0013087 * vw_MeanAirTemperature +
+						0.000025603 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
+						0.00000021441 *
+							(vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature)) /
+				0.026934 // [mmol mol-1]
+			cm.cropPhotosynthesisResults.oi = Oi * 1000.0 // mmol -> umol
+
+			Ci :=
+				vw_AtmosphericCO2Concentration *
+				0.7 *
+				(1.674 -
+						0.061294 * vw_MeanAirTemperature +
+						0.0011688 * (vw_MeanAirTemperature * vw_MeanAirTemperature) -
+						0.0000088741 *
+							(vw_MeanAirTemperature * vw_MeanAirTemperature * vw_MeanAirTemperature)) /
+				0.73547 // [umol mol-1]
+			cm.cropPhotosynthesisResults.ci = Ci
+
+			// similar to LDNDC::jarvis.cpp:217 - old COcomp
+			vc_CO2CompensationPoint := 0.5 * 0.21 * vc_Vcmax * Mkc * Oi / (vc_Vcmax * Mko) // [umol mol-1]
+			vc_CO2CompensationPointReference :=
+				0.5 * 0.21 * vc_VcmaxReference * Mkc * Oi / (vc_VcmaxReference * Mko) // [umol mol-1]
+			cm.cropPhotosynthesisResults.comp = vc_CO2CompensationPoint
+
+			// Mitchell et al. 1995 - old EFF
+			vc_RadiationUseEfficiency = max(
+				0.0,
+				min(
+					0.77 / 2.1 * (Ci - vc_CO2CompensationPoint) /
+							(4.5 * Ci + 10.5 * vc_CO2CompensationPoint) *
+							8.3769,
+					0.5,
+				),
+			)
+			vc_RadiationUseEfficiencyReference = max(
+				0.0,
+				min(
+					0.77 / 2.1 * (Ci - vc_CO2CompensationPointReference) /
+							(4.5 * Ci + 10.5 * vc_CO2CompensationPointReference) *
+							8.3769,
+					0.5,
+				),
+			)
+
+			cm.vc_AssimilationRate =
+				(Ci - vc_CO2CompensationPoint) * vc_Vcmax / (Ci + Mkc * (1.0 + Oi / Mko)) * 1.656
+			vc_AssimilationRateReference =
+				(Ci - vc_CO2CompensationPointReference) *
+				vc_VcmaxReference /
+				(Ci + Mkc * (1.0 + Oi / Mko)) *
+				1.656
+
+			if vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation {
+				cm.vc_AssimilationRate = 0.0 // MP: warum gibt es fuer C3-Pflanzen keine maximale Temperatur
+				vc_AssimilationRateReference = 0.0
+			}
+		} else if cm.pc_CO2Method == 2 {
+			// Hoffmann 1995
+			t_response := wang_engel_temperature_response(
+				vw_MeanAirTemperature,
+				pc_MinimumTemperatureForAssimilation,
+				pc_OptimumTemperatureForAssimilation,
+				pc_MaximumTemperatureForAssimilation,
+				1.0,
+			)
+
+			cm.vc_AssimilationRate = pc_MaxAssimilationRate * t_response
+			vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * t_response
+
+			// old KCo1
+			vc_HoffmannK1 := 220.0 + 0.158 * (cm.vc_GlobalRadiation * 86400.0 / 1000000.0)
+			// old coco
+			vc_HoffmannC0 := 80.0 - 0.036 * (cm.vc_GlobalRadiation * 86400.0 / 1000000.0)
+			// old KCO2
+			vc_HoffmannKCO2 :=
+				((vw_AtmosphericCO2Concentration - vc_HoffmannC0) /
+						(vc_HoffmannK1 + vw_AtmosphericCO2Concentration - vc_HoffmannC0)) /
+				((350.0 - vc_HoffmannC0) / (vc_HoffmannK1 + 350.0 - vc_HoffmannC0))
+
+			cm.vc_AssimilationRate = cm.vc_AssimilationRate * vc_HoffmannKCO2
+			vc_AssimilationRateReference = vc_AssimilationRateReference * vc_HoffmannKCO2
+		}
+	} else { // pc_CarboxylationPathway == 2
+		t_response := wang_engel_temperature_response(
+			vw_MeanAirTemperature,
+			pc_MinimumTemperatureForAssimilation,
+			pc_OptimumTemperatureForAssimilation,
+			pc_MaximumTemperatureForAssimilation,
+			1.0,
+		)
+
+		cm.vc_AssimilationRate = pc_MaxAssimilationRate * t_response
+		vc_AssimilationRateReference = pc_ReferenceMaxAssimilationRate * t_response
+	}
+
+	if cm.vc_CuttingDelayDays > 0 {
+		cm.vc_AssimilationRate = 0.1
+	}
+
+	cm.vc_AssimilationRate = max(0.1, cm.vc_AssimilationRate)
+	vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference)
+
+	// ---------------------------------------------------------------------
+	// Calculation of light interception in the crop (Penning De Vries & van
+	// Laar 1982)
+	// ---------------------------------------------------------------------
+
+	PI :: 3.14159265358979323
+
+	// old EFFE
+	vc_NetRadiationUseEfficiency := (1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiency
+	vc_NetRadiationUseEfficiencyReference :=
+		(1.0 - pc_CanopyReflectionCoeff) * vc_RadiationUseEfficiencyReference
+
+	SSLAE := libc.sin((90.0 + cm.vc_Declination - vs_Latitude) * PI / 180.0) // = HERMES
+
+	X := libc.log(
+		1.0 +
+		0.45 * cm.vc_ClearDayRadiation / (cm.vc_EffectiveDayLength * 3600.0) *
+			vc_NetRadiationUseEfficiency /
+			(SSLAE * cm.vc_AssimilationRate),
+	) // = HERMES
+	XReference := libc.log(
+		1.0 +
+		0.45 * cm.vc_ClearDayRadiation / (cm.vc_EffectiveDayLength * 3600.0) *
+			vc_NetRadiationUseEfficiencyReference /
+			(SSLAE * vc_AssimilationRateReference),
+	)
+
+	PHCH1 := SSLAE * cm.vc_AssimilationRate * cm.vc_EffectiveDayLength * X / (1.0 + X) // = HERMES
+	PHCH1Reference :=
+		SSLAE * vc_AssimilationRateReference * cm.vc_EffectiveDayLength * XReference / (1.0 + XReference)
+
+	Y := libc.log(
+		1.0 +
+		0.55 * cm.vc_ClearDayRadiation / (cm.vc_EffectiveDayLength * 3600.0) *
+			vc_NetRadiationUseEfficiency /
+			((5.0 - SSLAE) * cm.vc_AssimilationRate),
+	) // = HERMES
+	YReference := libc.log(
+		1.0 +
+		0.55 * cm.vc_ClearDayRadiation / (cm.vc_EffectiveDayLength * 3600.0) *
+			vc_NetRadiationUseEfficiency /
+			((5.0 - SSLAE) * vc_AssimilationRateReference),
+	)
+
+	PHCH2 := (5.0 - SSLAE) * cm.vc_AssimilationRate * cm.vc_EffectiveDayLength * Y / (1.0 + Y) // = HERMES
+	PHCH2Reference :=
+		(5.0 - SSLAE) *
+		vc_AssimilationRateReference *
+		cm.vc_EffectiveDayLength *
+		YReference /
+		(1.0 + YReference)
+
+	PHCH := 0.95 * (PHCH1 + PHCH2) + 20.5 // = HERMES
+	PHCHReference := 0.95 * (PHCH1Reference + PHCH2Reference) + 20.5
+
+	// vc_OxygenDeficit separates drought stress (ETa/Etp) from saturation
+	// stress - old VSWELL
+	vc_DroughtStressThreshold :=
+		cm.vc_OxygenDeficit < 1.0 ? 0.0 : pc_DroughtStressThresholdArr[cm.vc_DevelopmentalStage]
+
+	// Calculation of time fraction for overcast sky situations by comparing
+	// clear day radiation and measured PAR in [J m-2]. HERMES uses PAR as 50%
+	// of global radiation - old FOV
+	vc_OvercastSkyTimeFraction := 0.0
+	if cm.vc_ClearDayRadiation != 0 {
+		vc_OvercastSkyTimeFraction =
+			(cm.vc_ClearDayRadiation - (1000000.0 * cm.vc_GlobalRadiation * 0.50)) /
+			(0.8 * cm.vc_ClearDayRadiation)
+	}
+	vc_OvercastSkyTimeFraction = max(0.0, min(vc_OvercastSkyTimeFraction, 1.0))
+
+	// C++'s `code` lambda inlined at its one surviving call site (see the
+	// function comment above) - only ever invoked with F_t1/vc_LeafAreaIndex.
+	LAI := cm.vc_LeafAreaIndex
+	fractionOfInterceptedRadiation := 1.0 - libc.exp(-cultivarPs.pc_LightExtinctionCoefficient * LAI)
+
+	PHC3 := PHCH * fractionOfInterceptedRadiation
+	PHC3Reference :=
+		PHCHReference *
+		(1.0 - libc.exp(-cultivarPs.pc_LightExtinctionCoefficient * pc_ReferenceLeafAreaIndex))
+
+	PHC4 := cm.vc_AstronomicDayLenght * LAI * cm.vc_AssimilationRate
+	PHC4Reference := cm.vc_AstronomicDayLenght * pc_ReferenceLeafAreaIndex * vc_AssimilationRateReference
+
+	PHCL :=
+		PHC3 < PHC4 \
+		? PHC3 * (1.0 - libc.exp(-PHC4 / PHC3)) \
+		: PHC4 * (1.0 - libc.exp(-PHC3 / PHC4))
+
+	PHCLReference :=
+		PHC3Reference < PHC4Reference \
+		? PHC3Reference * (1.0 - libc.exp(-PHC4Reference / PHC3Reference)) \
+		: PHC4Reference * (1.0 - libc.exp(-PHC3Reference / PHC4Reference))
+
+	Z :=
+		cm.vc_OvercastDayRadiation / (cm.vc_EffectiveDayLength * 3600.0) * vc_NetRadiationUseEfficiency /
+		(5.0 * cm.vc_AssimilationRate)
+
+	PHOH1 := 5.0 * cm.vc_AssimilationRate * cm.vc_EffectiveDayLength * Z / (1.0 + Z)
+	PHOH := 0.9935 * PHOH1 + 1.1
+	PHO3 := PHOH * fractionOfInterceptedRadiation
+	PHO3Reference :=
+		PHOH * (1.0 - libc.exp(-cultivarPs.pc_LightExtinctionCoefficient * pc_ReferenceLeafAreaIndex))
+
+	PHOL :=
+		PHO3 < PHC4 \
+		? PHO3 * (1.0 - libc.exp(-PHC4 / PHO3)) \
+		: PHC4 * (1.0 - libc.exp(-PHO3 / PHC4))
+
+	PHOLReference :=
+		PHO3Reference < PHC4Reference \
+		? PHO3Reference * (1.0 - libc.exp(-PHC4Reference / PHO3Reference)) \
+		: PHC4Reference * (1.0 - libc.exp(-PHO3Reference / PHC4Reference))
+
+	vc_ClearDayCO2Assimilation := LAI < 5.0 ? PHCL : PHCH // [J m-2]
+	vc_OvercastDayCO2Assimilation := LAI < 5.0 ? PHOL : PHOH // [J m-2]
+
+	vc_ClearDayCO2AssimilationReference := PHCLReference
+	vc_OvercastDayCO2AssimilationReference := PHOLReference
+
+	// old DTGA
+	vc_GrossCO2Assimilation :=
+		vc_OvercastSkyTimeFraction * vc_OvercastDayCO2Assimilation +
+		(1.0 - vc_OvercastSkyTimeFraction) * vc_ClearDayCO2Assimilation
+
+	// used for ET0 calculation
+	vc_GrossCO2AssimilationReference :=
+		vc_OvercastSkyTimeFraction * vc_OvercastDayCO2AssimilationReference +
+		(1.0 - vc_OvercastSkyTimeFraction) * vc_ClearDayCO2AssimilationReference
+
+	// Gross CO2 assimilation is used for reference evapotranspiration
+	// calculation. For this purpose it must not be affected by drought
+	// stress, as the grass reference is defined as being always well
+	// supplied with water. Water stress is acting at a later stage.
+	// NOTE(c++-quirk): the C++ multiplies vc_GrossCO2Assimilation by itself
+	// here (a no-op, per the source comment "* vc_TranspirationDeficit" being
+	// commented out) - reproduced as the no-op it is, not simplified away.
+	if cm.vc_TranspirationDeficit < vc_DroughtStressThreshold {
+		vc_GrossCO2Assimilation = vc_GrossCO2Assimilation
+	}
+
+	vs_JulianDay := int(d.julian_day(currentDate))
+	dailyGP := 0.0
+	if cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1 {
+		hourlyGlobrads := make([dynamic]f64, 0, 24, context.temp_allocator)
+		hourlyExtrarad := make([dynamic]f64, 0, 24, context.temp_allocator)
+		sunriseH := 0
+		// see the function comment above re: this vs. C++'s hourlyGlobrads.back()
+		prevHgr := 0.0
+
+		for h := 0; h < 24; h += 1 {
+			hgr := tl.hourly_rad(cm.vc_GlobalRadiation, vs_Latitude, vs_JulianDay, h)
+			if hgr > 0 && prevHgr == 0.0 {
+				sunriseH = h
+			}
+			append(&hourlyGlobrads, hgr)
+			prevHgr = hgr
+
+			append(
+				&hourlyExtrarad,
+				tl.hourly_rad(cm.vc_ExtraterrestrialRadiation, vs_Latitude, vs_JulianDay, h),
+			)
+		}
+
+		cm.guentherEmissions = Voc_Emissions{}
+		cm.jjvEmissions = Voc_Emissions{}
+
+		for h := 0; h < 24; h += 1 {
+			// hourly photosynthesis
+			FvCB_in: Fvcb_Canopy_Hourly_In
+
+			hourlyTemp := tl.hourly_t(vw_MinAirTemperature, vw_MaxAirTemperature, h, sunriseH)
+			FvCB_in.leaf_temp = hourlyTemp
+			FvCB_in.global_rad = hourlyGlobrads[h]
+			FvCB_in.extra_terr_rad = hourlyExtrarad[h]
+			FvCB_in.LAI = LAI
+			FvCB_in.solar_el = tl.solar_elevation(h, vs_Latitude, vs_JulianDay)
+			FvCB_in.VPD = tl.hourly_vapor_pressure_deficit(
+				hourlyTemp,
+				vw_MinAirTemperature,
+				vw_MeanAirTemperature,
+				vw_MaxAirTemperature,
+			)
+			FvCB_in.Ca = vw_AtmosphericCO2Concentration
+
+			hps := make_fvcb_canopy_hourly_params()
+			hps.Vcmax_25 = speciesPs.VCMAX25 * cm.vc_O3_shortTermDamage * cm.vc_O3_senescence
+
+			FvCB_res := fvcb_canopy_hourly_c3(FvCB_in, hps)
+
+			cm.vc_sunlitLeafAreaIndex[h] = FvCB_res.sunlit.LAI
+			cm.vc_shadedLeafAreaIndex[h] = FvCB_res.shaded.LAI
+
+			// [umol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
+			dailyGP += FvCB_res.canopy_gross_photos * 44.0 / 100.0 / 1000.0
+
+			// hourly O3 uptake and damage
+			O3_par := make_o3_impact_params()
+			O3_par.gamma3 = 0.05 // TODO: calibrate and add to crop params
+			O3_par.gamma1 = 0.025 // TODO: calibrate and add to crop params
+
+			root_depth := cm.vc_RootingDepth
+			if root_depth >= 1 { // the crop has emerged
+				FC := 0.0
+				WP := 0.0
+				SWC := 0.0
+				for i := 0; i < root_depth; i += 1 {
+					FC += soilColumn.layers[i].vs_FieldCapacity
+					WP += soilColumn.layers[i].vs_PermanentWiltingPoint
+					SWC += soilColumn.layers[i].vs_SoilMoisture_m3
+				}
+
+				// weighted average gs and conversion from unit ground area
+				// to unit leaf area
+				lai_sun_weight := FvCB_res.sunlit.LAI / (FvCB_res.sunlit.LAI + FvCB_res.shaded.LAI)
+				lai_sh_weight := 1 - lai_sun_weight
+				avg_leaf_gs := lai_sh_weight * FvCB_res.shaded.gs / FvCB_res.shaded.LAI
+				if FvCB_res.sunlit.LAI > 0 {
+					avg_leaf_gs += lai_sun_weight * FvCB_res.sunlit.gs / FvCB_res.sunlit.LAI
+				}
+
+				O3_in: O3_Impact_In
+				O3_in.FC = FC / f64(root_depth + 1) // field capacity, m3 m-3, avg in the rooted zone
+				O3_in.WP = WP / f64(root_depth + 1) // wilting point, m3 m-3
+				O3_in.SWC = SWC / f64(root_depth + 1) // soil water content, m3 m-3
+				O3_in.ET0 = cm.vc_ReferenceEvapotranspiration
+				O3_in.O3a = vw_AtmosphericO3Concentration
+				O3_in.gs = avg_leaf_gs
+				O3_in.h = h
+				O3_in.reldev = cm.vc_RelativeTotalDevelopment
+				O3_in.GDD_flo = cm.vc_TemperatureSumToFlowering
+				O3_in.GDD_mat = cm.vc_TotalTemperatureSum
+				O3_in.fO3s_d_prev = cm.vc_O3_shortTermDamage
+				O3_in.sum_O3_up = cm.vc_O3_sumUptake
+
+				O3_res := o3_impact_hourly(O3_in, O3_par, pc_WaterDeficitResponseOn)
+
+				cm.vc_O3_shortTermDamage = O3_res.fO3s_d
+				cm.vc_O3_longTermDamage = O3_res.fO3l
+				cm.vc_O3_senescence = O3_res.fLS
+				cm.vc_O3_sumUptake += O3_res.hourly_O3_up
+				cm.vc_O3_WStomatalClosure = O3_res.WS_st_clos
+			}
+
+			// calculate VOC emissions
+			globradWm2 := FvCB_in.global_rad * 1000000.0 / 3600 // MJ m-2 h-1 -> W m-2
+			if cm.index240 < cm.stepSize240 - 1 {
+				cm.index240 += 1
+			} else {
+				cm.index240 = 0
+				cm.full240 = true
+			}
+			cm.rad240[cm.index240] = globradWm2
+			cm.tfol240[cm.index240] = FvCB_in.leaf_temp
+
+			if cm.index24 < cm.stepSize24 - 1 {
+				cm.index24 += 1
+			} else {
+				cm.index24 = 0
+				cm.full24 = true
+			}
+			cm.rad24[cm.index24] = globradWm2
+			cm.tfol24[cm.index24] = FvCB_in.leaf_temp
+
+			mcd: Voc_Micro_Climate_Data
+			mcd.rad = globradWm2
+			rad24_sum := 0.0
+			for v in cm.rad24 {
+				rad24_sum += v
+			}
+			mcd.rad24 = rad24_sum / (cm.full24 ? f64(len(cm.rad24)) : f64(cm.index24 + 1))
+			rad240_sum := 0.0
+			for v in cm.rad240 {
+				rad240_sum += v
+			}
+			mcd.rad240 = rad240_sum / (cm.full240 ? f64(len(cm.rad240)) : f64(cm.index240 + 1))
+			mcd.tFol = FvCB_in.leaf_temp
+			tfol24_sum := 0.0
+			for v in cm.tfol24 {
+				tfol24_sum += v
+			}
+			mcd.tFol24 = tfol24_sum / (cm.full24 ? f64(len(cm.tfol24)) : f64(cm.index24 + 1))
+			tfol240_sum := 0.0
+			for v in cm.tfol240 {
+				tfol240_sum += v
+			}
+			mcd.tFol240 = tfol240_sum / (cm.full240 ? f64(len(cm.tfol240)) : f64(cm.index240 + 1))
+			mcd.co2concentration = vw_AtmosphericCO2Concentration
+
+			species: Voc_Species_Data
+			species.lai = LAI
+			species.mFol = cm.vc_OrganGreenBiomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
+			species.sla =
+				species.mFol > 0 \
+				? species.lai / species.mFol \
+				: pc_SpecificLeafArea[cm.vc_DevelopmentalStage] * 100.0 * 100.0 // ha/kg -> m2/kg
+
+			species.EF_MONO = speciesPs.EF_MONO
+			species.EF_MONOS = speciesPs.EF_MONOS
+			species.EF_ISO = speciesPs.EF_ISO
+			species.VCMAX25 = speciesPs.VCMAX25
+			species.AEKC = speciesPs.AEKC
+			species.AEKO = speciesPs.AEKO
+			species.AEVC = speciesPs.AEVC
+			species.KC25 = speciesPs.KC25
+
+			ges := voc_guenther_emissions(species, &mcd, 1.0 / 24.0, allocator)
+			voc_emissions_add(&cm.guentherEmissions, &ges, allocator)
+
+			sun_LAI := FvCB_res.sunlit.LAI
+			sh_LAI := FvCB_res.shaded.LAI
+			leaf_fractions := []Fvcb_Leaf_Fraction{FvCB_res.sunlit, FvCB_res.shaded}
+			for lf in leaf_fractions {
+				species.lai = lf.LAI
+				species.mFol =
+					cm.vc_OrganGreenBiomass[Organ_Leaf] / (100.0 * 100.0) * lf.LAI / (sun_LAI + sh_LAI) // kg/ha -> kg/m2
+				species.sla =
+					species.mFol > 0 \
+					? species.lai / species.mFol \
+					: pc_SpecificLeafArea[cm.vc_DevelopmentalStage] * 100.0 * 100.0 // ha/kg -> m2/kg
+
+				mcd.rad = lf.rad // W m-2 global incident
+
+				cm.cropPhotosynthesisResults.kc = lf.kc
+				cm.cropPhotosynthesisResults.ko = lf.ko * 1000
+				cm.cropPhotosynthesisResults.oi = lf.oi * 1000
+				cm.cropPhotosynthesisResults.ci = lf.ci
+				cm.cropPhotosynthesisResults.vcMax =
+					fvcb_Vcmax_bernacchi_f(mcd.tFol, speciesPs.VCMAX25) *
+					cm.vc_CropNRedux *
+					cm.vc_TranspirationDeficit
+				cm.cropPhotosynthesisResults.jMax =
+					fvcb_Jmax_bernacchi_f(mcd.tFol, 120) * cm.vc_CropNRedux * cm.vc_TranspirationDeficit
+				cm.cropPhotosynthesisResults.jj = lf.jj
+				cm.cropPhotosynthesisResults.jj1000 = lf.jj1000
+				cm.cropPhotosynthesisResults.jv = lf.jv
+
+				jjves := voc_jjv_emissions(
+					species,
+					&mcd,
+					cm.cropPhotosynthesisResults,
+					1.0 / 24.0,
+					false,
+					allocator,
+				)
+				voc_emissions_add(&cm.jjvEmissions, &jjves, allocator)
+			}
+		}
+	}
+
+	vc_GrossCO2Assimilation =
+		cropPs.__enable_hourly_FvCB_photosynthesis__ && pc_CarboxylationPathway == 1 \
+		? dailyGP \
+		: vc_GrossCO2Assimilation
+
+	cm.fractionOfInterceptedRadiation1 = fractionOfInterceptedRadiation
+
+	// [TRANSPLANT SHOCK] Photosynthesis Limitation.
+	if cm.vc_TransplantEfficiency < 1.0 {
+		vc_GrossCO2Assimilation *= cm.vc_TransplantEfficiency
+	}
+
+	// Calculation of photosynthesis rate from [kg CO2 ha-1 d-1] to [kg CH2O ha-1 d-1]
+	cm.vc_GrossPhotosynthesis = vc_GrossCO2Assimilation * 30.0 / 44.0
+
+	// Calculation of photosynthesis rate from [kg CO2 ha-1 d-1] to [mol m-2 s-1]
+	cm.vc_GrossPhotosynthesis_mol = vc_GrossCO2Assimilation * 22414.0 / (10.0 * 3600.0 * 24.0 * 44.0)
+	cm.vc_GrossPhotosynthesisReference_mol =
+		vc_GrossCO2AssimilationReference * 22414.0 / (10.0 * 3600.0 * 24.0 * 44.0)
+
+	// Converting photosynthesis rate from [kg CO2 ha leaf-1 d-1] to [kg CH2O ha-1 d-1]
+	cm.vc_Assimilates = vc_GrossCO2Assimilation * 30.0 / 44.0
+
+	// reduction value for assimilate amount to simulate field conditions
+	cm.vc_Assimilates *= pc_FieldConditionModifier
+	// reduction value for assimilate amount to simulate frost damage
+	cm.vc_Assimilates *= cm.vc_CropFrostRedux
+	// MP: added reduction value for assimilate amount to simulate waterlogging
+	cm.vc_Assimilates *= cm.vc_OxygenDeficit
+
+	if cm.vc_TranspirationDeficit < vc_DroughtStressThreshold { // MP: Access point for drought optimisation
+		cm.vc_Assimilates = cm.vc_Assimilates * cm.vc_TranspirationDeficit
+	}
+
+	cm.vc_GrossAssimilates = cm.vc_Assimilates
+
+	// ---------------------------------------------------------------------
+	// AGROSIM night and day maintenance and growth respiration
+	// ---------------------------------------------------------------------
+
+	vc_PhotoTemperature := vw_MaxAirTemperature - ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0)
+	vc_NightTemperature := vw_MinAirTemperature + ((vw_MaxAirTemperature - vw_MinAirTemperature) / 4.0)
+
+	vc_MaintenanceRespirationSum := 0.0
+	for i_Organ := 0; i_Organ < cm.noOfOrgans; i_Organ += 1 {
+		vc_MaintenanceRespirationSum +=
+			cm.vc_OrganGreenBiomass[i_Organ] * pc_OrganMaintenanceRespiration[i_Organ] // [kg CH2O ha-1]
+	}
+
+	vc_NormalisedDayLength := 2.0 - (cm.vc_PhotoperiodicDaylength / 12.0)
+
+	vc_PhotoMaintenanceRespiration :=
+		vc_MaintenanceRespirationSum *
+		libc.pow(
+			2.0,
+			(pc_MaintenanceRespirationParameter_1 * (vc_PhotoTemperature - pc_MaintenanceRespirationParameter_2)),
+		) *
+		(2.0 - vc_NormalisedDayLength) // @todo: [g m-2] --> [kg ha-1]
+
+	vc_DarkMaintenanceRespiration :=
+		vc_MaintenanceRespirationSum *
+		libc.pow(
+			2.0,
+			(pc_MaintenanceRespirationParameter_1 * (vc_NightTemperature - pc_MaintenanceRespirationParameter_2)),
+		) *
+		vc_NormalisedDayLength // @todo: [g m-2] --> [kg ha-1]
+
+	cm.vc_MaintenanceRespirationAS = vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration // [kg CH2O ha-1]
+
+	cm.vc_Assimilates -= vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration // [kg CH2O ha-1]
+
+	vc_GrowthRespirationSum := 0.0
+	if cm.vc_Assimilates > 0 {
+		for i_Organ := 0; i_Organ < cm.noOfOrgans; i_Organ += 1 {
+			vc_GrowthRespirationSum +=
+				pc_AssimilatePartitioningCoeff[cm.vc_DevelopmentalStage][i_Organ] *
+				cm.vc_Assimilates *
+				pc_OrganGrowthRespiration[i_Organ]
+		}
+	}
+
+	vc_PhotoGrowthRespiration := 0.0
+	if cm.vc_Assimilates > 0.0 {
+		vc_PhotoGrowthRespiration =
+			vc_GrowthRespirationSum *
+			libc.pow(
+				2.0,
+				(pc_GrowthRespirationParameter_1 * (vc_PhotoTemperature - pc_GrowthRespirationParameter_2)),
+			) *
+			(2.0 - vc_NormalisedDayLength) // [kg CH2O ha-1]
+
+		if cm.vc_Assimilates > vc_PhotoGrowthRespiration {
+			cm.vc_Assimilates -= vc_PhotoGrowthRespiration
+		} else {
+			vc_PhotoGrowthRespiration = cm.vc_Assimilates // in this case the plant will be restricted in growth!
+			cm.vc_Assimilates = 0.0
+		}
+	}
+
+	// NOTE(c++-quirk): uses vc_PhotoTemperature here too, not
+	// vc_NightTemperature - asymmetric with the maintenance-respiration split
+	// just above (which correctly uses Photo/Night respectively). Reproduced
+	// exactly, not "fixed".
+	vc_DarkGrowthRespiration := 0.0
+	if cm.vc_Assimilates > 0.0 {
+		vc_DarkGrowthRespiration =
+			vc_GrowthRespirationSum *
+			libc.pow(
+				2.0,
+				(pc_GrowthRespirationParameter_1 * (vc_PhotoTemperature - pc_GrowthRespirationParameter_2)),
+			) *
+			vc_NormalisedDayLength // [kg CH2O ha-1]
+
+		if cm.vc_Assimilates > vc_DarkGrowthRespiration {
+			cm.vc_Assimilates -= vc_DarkGrowthRespiration
+		} else {
+			vc_DarkGrowthRespiration = cm.vc_Assimilates // in this case the plant will be restricted in growth!
+			cm.vc_Assimilates = 0.0
+		}
+	}
+	cm.vc_GrowthRespirationAS = vc_PhotoGrowthRespiration + vc_DarkGrowthRespiration // [kg CH2O ha-1]
+	cm.vc_TotalRespired = cm.vc_GrossAssimilates - cm.vc_Assimilates // [kg CH2O ha-1]
+
+	// ---------------------------------------------------------------------
+	// HERMES calculation of maintenance respiration in dependence of
+	// temperature (to reactivate, vc_NetPhotosynthesis needs to be used
+	// instead of vc_Assimilates in the subsequent methods)
+	// ---------------------------------------------------------------------
+
+	// old TEFF
+	vc_MaintenanceTemperatureDependency := libc.pow(2.0, (0.1*vw_MeanAirTemperature - 2.5))
+
+	// old MAINTS
+	vc_MaintenanceRespiration := 0.0
+	for i_Organ := 0; i_Organ < cm.noOfOrgans; i_Organ += 1 {
+		vc_MaintenanceRespiration +=
+			cm.vc_OrganGreenBiomass[i_Organ] * pc_OrganMaintenanceRespiration[i_Organ]
+	}
+
+	if cm.vc_GrossPhotosynthesis < (vc_MaintenanceRespiration * vc_MaintenanceTemperatureDependency) {
+		cm.vc_NetMaintenanceRespiration = cm.vc_GrossPhotosynthesis
+	} else {
+		cm.vc_NetMaintenanceRespiration = vc_MaintenanceRespiration * vc_MaintenanceTemperatureDependency
+	}
+
+	if vw_MeanAirTemperature < pc_MinimumTemperatureForAssimilation {
+		cm.vc_GrossPhotosynthesis = cm.vc_NetMaintenanceRespiration
+	}
+}
+
+// C++: double monica::cropmodule::fcGrossPrimaryProduction(const CropModule*)
+fc_gross_primary_production :: proc(cm: ^Crop_Module) -> f64 {
+	// Converting photosynthesis rate from [kg CH2O ha-1 d-1] back to [kg C ha-1 d-1]
+	return cm.vc_GrossAssimilates / 30.0 * 12.0
+}
+
+// C++: double monica::cropmodule::fcNetPrimaryProduction(CropModule*, double vc_TotalRespired)
+fc_net_primary_production :: proc(cm: ^Crop_Module, vc_TotalRespired: f64) -> f64 {
+	// Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
+	cm.vc_Respiration = vc_TotalRespired / 30.0 * 12.0
+	return cm.vc_GrossPrimaryProduction - cm.vc_Respiration
+}
+
+// C++: void monica::cropmodule::calculateVOCEmissions(CropModule*, const Voc::MicroClimateData&)
+calculate_voc_emissions :: proc(
+	cm: ^Crop_Module,
+	mcd: ^Voc_Micro_Climate_Data,
+	allocator := context.allocator,
+) {
+	pc_SpecificLeafArea := cm.cropParams.cultivarParams.pc_SpecificLeafArea
+	speciesPs := &cm.cropParams.speciesParams
+
+	species: Voc_Species_Data
+	species.lai = cm.vc_LeafAreaIndex
+	species.mFol = cm.vc_OrganBiomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
+	species.sla = pc_SpecificLeafArea[cm.vc_DevelopmentalStage] * 100.0 * 100.0 // ha/kg -> m2/kg
+
+	species.EF_MONO = speciesPs.EF_MONO
+	species.EF_MONOS = speciesPs.EF_MONOS
+	species.EF_ISO = speciesPs.EF_ISO
+	species.VCMAX25 = speciesPs.VCMAX25
+	species.AEKC = speciesPs.AEKC
+	species.AEKO = speciesPs.AEKO
+	species.AEVC = speciesPs.AEVC
+	species.KC25 = speciesPs.KC25
+
+	cm.guentherEmissions = voc_guenther_emissions(species, mcd, 1.0, allocator)
+	cm.jjvEmissions = voc_jjv_emissions(species, mcd, cm.cropPhotosynthesisResults, 1.0, false, allocator)
 }

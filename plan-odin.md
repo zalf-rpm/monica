@@ -1095,6 +1095,82 @@ No bugs found bringing this oracle up - the only issue was a build error (missin
 sub-namespace, unlike `makeCropModule`/`setStage`'s parent `monica::` namespace), not a translation
 divergence.
 
+**Checkpoint 4 — photosynthesis + assimilation — done.** `fcCropPhotosynthesis` (~1100 lines, the
+largest function in the port), plus `fcGrossPrimaryProduction`, `fcNetPrimaryProduction` -
+appended to `odin/monica/core/crop_module.odin`. This is where the phase-5-checkpoint-1 satellite
+modules (`photosynthesis-FvCB`, `O3-impact`, `voc-guenther`, `voc-jjv`) actually get wired into the
+crop module. Also added the 4 `Tools::` hourly-weather helper functions this needed
+(`hourlyT`/`hourlyVaporPressureDeficit`/`solarElevation`/`hourlyRad`, plus their shared
+`solarDeclination` dependency) to `odin/support/tools/algorithms.odin` - `mas_cpp_misc/tools/
+algorithms.{h,cpp}` functions never needed until now.
+
+**Two departures from a literal transliteration, both because the eliminated code is provably dead
+or undefined, not inconvenience:**
+- The Intercropping branch of `fcCropPhotosynthesis` (a second, alternate call to its `code` lambda
+  with a different fraction-of-intercepted-radiation function, gated on
+  `intercroppingOtherCropHeight > zeroHeightEps`) is unreachable in this port: `Intercropping`
+  itself is a dropped feature (Cap'n Proto RPC), and `intercroppingOtherCropHeight` starts at -1
+  and nothing in this port ever sets it positive. With only one surviving call to `code`, its body
+  is inlined directly at that call site rather than reproduced as a `std::function`-taking closure
+  - Odin's `proc` type has no capture, and building a capture-workaround for a lambda with one
+    caller would be pure overhead.
+- The hourly sunrise-detection check reads C++'s `hourlyGlobrads.back()` on a still-empty, freshly-
+  constructed `std::vector` at hour 0 - undefined behaviour (likely a null-pointer dereference),
+  not a reproducible quirk. Reimplemented as an explicit "previous hour" tracker seeded at 0.0,
+  matching what the logic clearly intends ("is this the first hour with positive radiation").
+
+**One quirk reproduced exactly, flagged `NOTE(c++-quirk)`:** the dark-growth-respiration term uses
+`vc_PhotoTemperature`, not `vc_NightTemperature` - asymmetric with the maintenance-respiration split
+immediately above it (which correctly uses Photo/Night respectively) and with the photo-growth-
+respiration term right next to it (which is *supposed* to use Photo). Reproduced exactly, not fixed.
+
+**A second, wider instance of checkpoint 1's `FvCB_leaf_fraction.ci/cc` gap, found by the oracle,
+not anticipated going in.** `FvCB_canopy_hourly_out`'s "no photosynthesis can occur" branch
+(`global_rad<=0`, `photosynthesis-FvCB.cpp:597-602`) only sets `canopy_gross_photos`/
+`canopy_net_photos`/`sunlit.gs`/`shaded.gs` - every other per-leaf-fraction field (`kc`, `ko`, `oi`,
+`ci`, `comp`, `vcMax`, `jMax`, `rad`, `jj`, `jj1000`, `jv`) is left as indeterminate stack garbage,
+not just `ci`/`cc` as checkpoint 1's own grid happened to surface. Because the hourly loop always
+ends at h=23 (11pm - virtually always night for any real latitude/date), `cropPhotosynthesisResults`'
+end-of-day snapshot is built from this genuinely undefined data on essentially every real day, not
+an edge case. The oracle first caught this as a live divergence (`cropPhotosynthesisResults.ci`
+showing `-9.26e+61` in C++ against Odin's well-defined `0`, then cascading into `jjvEmissions`
+showing real numbers in C++ against `NaN` in Odin, since JJV consumes `cropPhotosynthesisResults` as
+its `CPData` input). Fix: stopped dumping `cropPhotosynthesisResults`' kc/ko/oi/ci/comp/vcMax/jMax/
+jj/jj1000/jv fields and `jjvEmissions` entirely (documented in both drivers) - genuinely
+unverifiable, not a translation bug. `vc_sunlitLeafAreaIndex`/`vc_shadedLeafAreaIndex` (from `LAI`,
+well-defined in both branches), the O3-impact chain (consumes `.gs`, also well-defined), and
+`guentherEmissions` (built from LAI/radiation/temperature aggregates, never touches the tainted
+fields) all stay in the oracle and are still fully verified.
+
+**Oracle - four scenarios, extending checkpoint 3's day-step driver.**
+`odin/tests/cpp_ref/crop_module_photosynthesis_ref_main.cpp` +
+`odin/tests/crop_module_photosynthesis_ref/main.odin`, run by `run_crop_module_photosynthesis.sh`:
+**11,005 lines identical.** The driver's `day_step` is checkpoint 3's `phenology_day_step` extended
+with `fcCropPhotosynthesis`/`fcGrossPrimaryProduction`/`fcNetPrimaryProduction` in the
+`vc_DevelopmentalStage>0` block, matching `step()`'s real call order exactly. Still not ported
+(checkpoints 5-7, and so not replicated): `fcHeatStressImpact`, `fcFrostKill`,
+`fcDroughtImpactOnFertility`, `fcCropNitrogen`, `fcCropDryMatter`, `fcCropWaterUptake`,
+`fcCropNUptake`, every `fireEvent` call - so `vc_CropNRedux`/`vc_TranspirationDeficit`/
+`vc_OrganGreenBiomass` stay at their checkpoint-2 construction-time values for the whole run
+(nothing in checkpoints 2-4's scope mutates them), the same "degenerate but correct" situation as
+checkpoint 3's `fcCropGreenArea` test - the photosynthesis math itself still varies meaningfully day
+to day from real weather and real phenology-driven Kc/LAI/height progression.
+- **Scenario A** - real wheat, default flags (`pc_CO2Method=3`, the Long/Mitchell CO2 response;
+  hourly FvCB off, so the daily Penning De Vries/HERMES radiation-interception path), past
+  germination via `setStage(1)`, `NUM_DAYS_A=100` real Hohenfinow2 climate days.
+- **Scenario B** - real wheat with `__enable_hourly_FvCB_photosynthesis__` forced true and
+  `vc_RootingDepth` manually forced to `3` (root distribution is checkpoint 6, not yet ported, so
+  it stays `0` by default - which would skip the O3 block entirely), 15 real climate days -
+  exercises the entire hourly FvCB/O3-impact/VOC-guenther/VOC-jjv wiring, the main point of this
+  checkpoint. Confirmed genuinely exercised: `vc_O3_sumUptake` accumulates across days, and
+  `guentherEmissions.monoterpene_emission` is nonzero every day.
+- **Scenario C** - real wheat with `cm->pc_CO2Method` forced to `2`, the Hoffmann 1995 CO2 response
+  branch (`pc_CO2Method` is a plain `CropModule` member, never set from any parameter file in the
+  real system either - scenario A's default of `3` is the only value any fixture in this repo ever
+  produces).
+- **Scenario D** - a synthetic cultivar with `speciesParams.pc_CarboxylationPathway` forced to `2`,
+  the non-C3 branch (real wheat is `CarboxylationPathway=1`, so scenario A never reaches this).
+
 ### Phase 6 — orchestration
 `monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
 seeding/harvest/incorporation, CO2 + groundwater helpers), `workstep.cpp` +

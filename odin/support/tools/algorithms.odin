@@ -213,6 +213,88 @@ is_finite :: proc(v: f64) -> bool {
 	return !math.is_nan(v) && !math.is_inf(v)
 }
 
+// C++: double Tools::solarDeclination(int dayOfTheYear)
+solar_declination :: proc(day_of_the_year: int) -> f64 {
+	PI :: 3.14159265358979323846
+	return -0.4093 * libc.cos(2.0 * PI * (f64(day_of_the_year) + 10.0) / 365.0)
+}
+
+// C++: double Tools::hourlyT(double tmin, double tmax, int h, int sunrise_h)
+//
+// H_1 is only ever read on the branch where it was just assigned (the two
+// if-chains correlate exactly), so Odin's zero-initialised default for the
+// "never assigned" case is never actually observed - transliterated as two
+// parallel if-statements rather than restructured into one if/else, to keep
+// that correlation visible.
+hourly_t :: proc(tmin, tmax: f64, h, sunrise_h: int) -> f64 {
+	PI :: 3.14159265358979323846
+	tavg := (tmin + tmax) / 2
+	amp := (tmax - tmin) / 2
+	H_1: f64
+	hourly_T: f64
+
+	if h < sunrise_h {
+		H_1 = f64(h) + 10.0
+	} else if h > 14 {
+		H_1 = f64(h) - 14.0
+	}
+
+	if h < sunrise_h || h > 14 {
+		hourly_T = tavg + amp*libc.cos(PI*H_1/(10.0 + f64(sunrise_h)))
+	} else {
+		hourly_T = tavg - amp*libc.cos(PI*f64(h - sunrise_h)/(14.0 - f64(sunrise_h)))
+	}
+
+	return hourly_T
+}
+
+// C++: double Tools::hourlyVaporPressureDeficit(double hourlyTemperature,
+// double dailyTmin, double dailyTavg, double dailyTmax)
+hourly_vapor_pressure_deficit :: proc(
+	hourlyTemperature, dailyTmin, dailyTavg, dailyTmax: f64,
+) -> f64 {
+	saturationVapourPressureHourly :=
+		0.6108 * libc.exp(17.27 * hourlyTemperature / (hourlyTemperature + 237.3))
+
+	dewPointTemperatureHourly :=
+		-0.0360 * dailyTavg + 0.9679*dailyTmin + 0.0072*(dailyTmax - dailyTmin) + 1.0019
+
+	actualVapourPressureHourly :=
+		0.6108 * libc.exp(17.27 * dewPointTemperatureHourly / (dewPointTemperatureHourly + 237.3))
+
+	return saturationVapourPressureHourly - actualVapourPressureHourly
+}
+
+// C++: double Tools::solarElevation(int hour, double latitude, int dayOfTheYear)
+solar_elevation :: proc(hour: int, latitude: f64, dayOfTheYear: int) -> f64 {
+	PI :: 3.14159265358979323846
+	lat_rad := latitude * PI / 180.0
+
+	dDecl := solar_declination(dayOfTheYear)
+	dA := libc.sin(dDecl) * libc.sin(lat_rad)
+	dB := libc.cos(dDecl) * libc.cos(lat_rad)
+	dHa := PI * (f64(hour) - 12) / 12
+	return libc.asin(dA + dB*libc.cos(dHa)) // can be -ve
+}
+
+// C++: double Tools::hourlyRad(double globrad, double lat, int doy, int h)
+hourly_rad :: proc(globrad, lat: f64, doy, h: int) -> f64 {
+	PI :: 3.14159265358979323846
+	dDecl := solar_declination(doy)
+	lat_rad := lat * PI / 180.0
+
+	dA := libc.sin(dDecl) * libc.sin(lat_rad)
+	dB := libc.cos(dDecl) * libc.cos(lat_rad)
+	dAoB := dA / dB
+	dPhi := (PI * globrad / 86400.0) / (dA*libc.acos(-dAoB) + dB*libc.sqrt(1 - dAoB*dAoB))
+	dCoefA := -dB * dPhi
+	dCoefB := dA * dPhi
+
+	dTotrad := max((dCoefA*libc.cos(PI*f64(h)/12.0) + dCoefB) * 3600, 0.0)
+
+	return dTotrad
+}
+
 // C++: template<typename T> bool Tools::flt_equal_eps(T, T, T eps =
 //        std::numeric_limits<T>::epsilon())
 flt_equal_eps :: proc(f1, f2: f64, eps: f64 = math.F64_EPSILON) -> bool {
