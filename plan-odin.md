@@ -792,6 +792,30 @@ each header for `{[0-9]` before considering a struct port complete: Odin's zero-
 silently swallows every non-zero C++ in-class initialiser, and the trace-diff oracle only catches it
 if the affected field is actually reached by the day range and code path under test.
 
+**Module 3 — soiltransport — done.** `odin/monica/core/soil_transport.odin`: `Soil_Transport`,
+`make_soil_transport`, `soil_transport_step`, `n_deposition`, `n_uptake`, `n_transport`,
+`soil_transport_put_crop`, `soil_transport_remove_crop`. Simpler than soiltemperature/soilmoisture:
+the C++ struct already takes `siteParams`/`envParams`/`cropModParams` as raw pointers passed
+directly into `makeSoilTransport`, never through a `MonicaModel&`, so no back-pointer-to-parameter
+deviation was needed at all — a straight 1:1 translation, like snow/frost. `cropModule` reads one
+field (`vc_NUptakeFromLayer`) added to the phase-5 `Crop_Module` stub from module 2b.
+`putCrop`/`removeCrop` pre-emptively got the owning-struct-prefix treatment (`soil_transport_put_crop`
+/`soil_transport_remove_crop`) even though nothing collides with them yet — `soilorganic.cpp` (next)
+almost certainly declares its own `putCrop`/`removeCrop` too, per the `CONVENTIONS.md §2` correction
+from module 2b.
+
+**Oracle — green, first try.** `odin/tests/cpp_ref/soil_transport_ref_main.cpp` +
+`odin/tests/soil_transport_ref/main.odin`, run by `run_soil_transport.sh`: **77,015 trace lines
+identical** over a full 365-day year. Unlike the bare-inputs approach elsewhere, this driver chains
+the already-verified `soilmoisture::step`/`soil_moisture_step` before
+`soiltransport::step`/`soil_transport_step` each day — real production data flow, since `soiltransport`
+reads soil-layer NO3/water-flux state that only `soilmoisture` (not yet `soilorganic`, which isn't
+ported) actually produces. `soilorganic::step` normally runs between them and updates `vs_SoilNO3`
+via mineralisation; without it, `vs_SoilNO3` evolves purely through `soiltransport`'s own
+mass-conservation math starting from the fixture's initial value — a valid, self-contained test of
+`soiltransport` in isolation, matching the same "prove what's provable now, defer the rest with a
+documented gap" pattern used throughout phase 4.
+
 ### Phase 5 — crop
 `crop-module.cpp` (largest single file), `photosynthesis-FvCB`, `voc-guenther`, `voc-jjv`,
 `voc-common`, `O3-impact`.
