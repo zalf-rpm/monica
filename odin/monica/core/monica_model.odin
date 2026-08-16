@@ -15,12 +15,15 @@
 // (checkpoint 3) inline the equivalent crop-construction logic directly,
 // exactly like the real seedCrop's caller-less sibling would have.
 //
-// harvestCurrentCrop/incorporateCurrentCrop are deferred to checkpoint 3:
-// they need HarvestData::Spec/OptCarbonManagementData (workstep types) and
-// ~10 cropmodule:: yield/N-content getters that phase 5 checkpoint 5
-// explicitly deferred to "whichever checkpoint actually needs them" - that's
-// the Harvest workstep, not this one. step()/generalStep()/cropStep() are
-// checkpoint 6.
+// harvestCurrentCrop/incorporateCurrentCrop are added at the end of this
+// file (their prerequisites - the cropmodule:: yield/N-content getters and
+// HarvestData::Spec/OptCarbonManagementData - now exist: the getters landed
+// in crop_module.odin, and Spec/OptCarbonManagementData are hoisted into
+// this package below as Harvest_Spec/Harvest_Opt_Carbon_Management_Data,
+// the same circular-dependency break used for Cutting_Value in
+// crop_module.odin - the Harvest workstep lives in the `run` package, which
+// imports `core`, so `core` cannot import it back).
+// step()/generalStep()/cropStep() are checkpoint 6.
 //
 // Every monicamodel:: function here is prefixed monica_model_ to avoid
 // colliding with the same-named soilcolumn:: function it wraps (e.g.
@@ -29,6 +32,7 @@
 // already used for soil_temperature_step/soil_moisture_step/crop_module_step.
 package core
 
+import "core:slice"
 import libc "core:c/libc"
 import p "../params"
 import d "../../support/date"
@@ -395,4 +399,225 @@ monica_model_set_other_crop_height_and_lait :: proc(model: ^Monica_Model, cropHe
 	if model.currentCropModule != nil {
 		set_other_crop_height_and_lait(model.currentCropModule, cropHeight, lait)
 	}
+}
+
+// ---------------------------------------------------------------------------
+// harvestCurrentCrop / incorporateCurrentCrop, and the HarvestData::Spec /
+// OptCarbonManagementData payload types they need, hoisted from the Harvest
+// workstep (src/worksteps/harvest.h) for the same reason Cutting_Value was
+// hoisted into crop_module.odin: `core` cannot import the `run` package that
+// will own the Harvest workstep itself.
+// ---------------------------------------------------------------------------
+
+// C++: enum HarvestData::CropUsage { greenManure = 0, biomassProduction }
+Harvest_Crop_Usage :: enum {
+	Green_Manure,
+	Biomass_Production,
+}
+
+// C++: struct HarvestData::Spec::Value
+Harvest_Spec_Value :: struct {
+	exportPercentage: f64, // C++ in-class default: 100.0
+	incorporate:      bool, // C++ in-class default: true
+}
+
+// C++: struct HarvestData::Spec
+Harvest_Spec :: struct {
+	organ2specVal: map[int]Harvest_Spec_Value,
+}
+
+// C++: struct HarvestData::OptCarbonManagementData
+Harvest_Opt_Carbon_Management_Data :: struct {
+	optCarbonConservation:      bool,
+	cropImpactOnHumusBalance:   f64,
+	maxResidueRecoverFraction:  f64, // C++ in-class default: 1
+	cropUsage:                  Harvest_Crop_Usage, // C++ in-class default: biomassProduction
+	residueHeq:                 f64,
+	organicFertilizerHeq:       f64,
+}
+
+// C++ in-class defaults for OptCarbonManagementData
+make_harvest_opt_carbon_management_data :: proc() -> Harvest_Opt_Carbon_Management_Data {
+	return Harvest_Opt_Carbon_Management_Data {
+		maxResidueRecoverFraction = 1,
+		cropUsage                 = .Biomass_Production,
+	}
+}
+
+// C++: void monica::monicamodel::harvestCurrentCrop(MonicaModel*, bool,
+//        const HarvestData::Spec&, HarvestData::OptCarbonManagementData, int)
+//
+// Iterates spec.organ2specVal in ascending key order to match C++
+// std::map's sorted iteration - the accumulators below (cropYield,
+// primaryCropYield, sumOrganResidueBiomassAsOverlay,
+// sumOrganResidueBiomassToIncorporate) are order-sensitive floating-point
+// sums, the same "sort keys first" precaution phase 5 checkpoint 6's oracle
+// regression and this phase's applyCutting both already needed.
+monica_model_harvest_current_crop :: proc(
+	model: ^Monica_Model,
+	exported: bool,
+	spec: Harvest_Spec,
+	optCarbMgmtData: Harvest_Opt_Carbon_Management_Data = {
+		maxResidueRecoverFraction = 1,
+		cropUsage = .Biomass_Production,
+	},
+	incorporateIntoLayerIndex: int = 0,
+	allocator := context.allocator,
+) {
+	if model.currentCropModule != nil {
+		cm := model.currentCropModule
+
+		// prepare to add root and crop residues to soilorganic (AOMs)
+		// dead root biomass has already been added daily, so just living root
+		// biomass is left
+		rootBiomass := cm.vc_OrganGreenBiomass[0]
+		add_and_distribute_root_biomass_in_soil(cm, rootBiomass, allocator)
+
+		if exported && len(spec.organ2specVal) == 0 {
+			if optCarbMgmtData.optCarbonConservation {
+				residueBiomass := get_residue_biomass(cm, false, -1)
+				// kg ha-1, secondary yield is ignored with this approach
+				cropContribToHumus := optCarbMgmtData.cropImpactOnHumusBalance
+				appliedOrganicFertilizerDryMatter := model.sumOrganicFertilizerDM // kg ha-1
+				intermediateHumusBalance :=
+					model.humusBalanceCarryOver +
+					cropContribToHumus +
+					appliedOrganicFertilizerDryMatter / 1000.0 * optCarbMgmtData.organicFertilizerHeq -
+					model.sitePs.vs_SoilSpecificHumusBalanceCorrection
+				potentialHumusFromResidues := residueBiomass / 1000.0 * optCarbMgmtData.residueHeq
+
+				fractionToBeLeftOnField := 0.0
+				if potentialHumusFromResidues > 0 {
+					fractionToBeLeftOnField = -intermediateHumusBalance / potentialHumusFromResidues
+					if fractionToBeLeftOnField > 1 {
+						fractionToBeLeftOnField = 1.0
+					} else if fractionToBeLeftOnField < 0 {
+						fractionToBeLeftOnField = 0.0
+					}
+				}
+
+				if optCarbMgmtData.cropUsage == .Green_Manure {
+					// if the crop is used as green manure, all the residues are
+					// incorporated regardless the humus balance
+					fractionToBeLeftOnField = 1.0
+				}
+
+				// calculate theoretical residue removal
+				model.optCarbonReturnedResidues = residueBiomass * fractionToBeLeftOnField
+				model.optCarbonExportedResidues = residueBiomass - model.optCarbonReturnedResidues
+
+				// adjust it if technically unfeasible
+				maxExportedResidues := residueBiomass * optCarbMgmtData.maxResidueRecoverFraction
+				if model.optCarbonExportedResidues > maxExportedResidues {
+					model.optCarbonExportedResidues = maxExportedResidues
+					model.optCarbonReturnedResidues = residueBiomass - model.optCarbonExportedResidues
+				}
+
+				soil_organic_add_organic_matter_amount(
+					&model.soilOrganic,
+					&cm.residueParams.base,
+					model.optCarbonReturnedResidues,
+					get_residues_n_concentration(cm, -1),
+					incorporateIntoLayerIndex,
+					allocator,
+				)
+
+				model.humusBalanceCarryOver =
+					intermediateHumusBalance +
+					model.optCarbonReturnedResidues / 1000.0 * optCarbMgmtData.residueHeq
+			} else { // old default behavior
+				residueBiomass := get_residue_biomass(cm, model.simPs.p_UseSecondaryYields, -1)
+				residueNConcentration := get_residues_n_concentration(cm, -1)
+				soil_organic_add_organic_matter_amount(
+					&model.soilOrganic,
+					&cm.residueParams.base,
+					residueBiomass,
+					residueNConcentration,
+					incorporateIntoLayerIndex,
+					allocator,
+				)
+			}
+		} else if len(spec.organ2specVal) != 0 { // harvest with a more detailed specification
+			cropYield := 0.0
+			primaryCropYield := 0.0
+			sumOrganResidueBiomassAsOverlay := 0.0
+			sumOrganResidueBiomassToIncorporate := 0.0
+			organIdsForPrimaryYield := organ_ids_for_primary_yield(cm, allocator)
+
+			keys := make([dynamic]int, 0, len(spec.organ2specVal), allocator)
+			for k in spec.organ2specVal {
+				append(&keys, k)
+			}
+			slice.sort(keys[:])
+
+			for organId in keys {
+				specVal := spec.organ2specVal[organId]
+				// ignore root, is probably an error, when the user specified the
+				// root organ (0) as something to harvest
+				if organId == 0 {
+					continue
+				}
+				organBiomass := cm.vc_OrganBiomass[organId]
+				organYield := organBiomass * specVal.exportPercentage / 100.0
+				cropYield += organYield
+				if organIdsForPrimaryYield[organId + 1] {
+					primaryCropYield += organYield
+				}
+				if specVal.incorporate {
+					sumOrganResidueBiomassToIncorporate += organBiomass - organYield
+				} else {
+					sumOrganResidueBiomassAsOverlay += organBiomass - organYield
+				}
+			}
+			totalResidueBiomass := get_residue_biomass(cm, false, cropYield)
+			totalResidueBiomassToIncorporate := totalResidueBiomass - sumOrganResidueBiomassAsOverlay
+			residuesNConcentration := get_residues_n_concentration(cm, primaryCropYield)
+			soil_organic_add_organic_matter_amount(
+				&model.soilOrganic,
+				&cm.residueParams.base,
+				totalResidueBiomassToIncorporate,
+				residuesNConcentration,
+				incorporateIntoLayerIndex,
+				allocator,
+			)
+		} else {
+			// prepare to add the total plant to soilorganic (AOMs)
+			abovegroundBiomass := cm.vc_AbovegroundBiomass
+			abovegroundBiomassNConcentration := cm.vc_NConcentrationAbovegroundBiomass
+			soil_organic_add_organic_matter_amount(
+				&model.soilOrganic,
+				&cm.residueParams.base,
+				abovegroundBiomass,
+				abovegroundBiomassNConcentration,
+				incorporateIntoLayerIndex,
+				allocator,
+			)
+		}
+	}
+
+	model.clearCropUponNextDay = true
+}
+
+// C++: void monica::monicamodel::incorporateCurrentCrop(MonicaModel*)
+monica_model_incorporate_current_crop :: proc(model: ^Monica_Model, allocator := context.allocator) {
+	if model.currentCropModule != nil {
+		cm := model.currentCropModule
+
+		// prepare to add root and crop residues to soilorganic (AOMs)
+		total_biomass := cm.vc_TotalBiomass
+		totalNContent :=
+			get_aboveground_biomass_n_content(cm) + cm.vc_NConcentrationRoot * cm.vc_OrganBiomass[0]
+		totalNConcentration := totalNContent / total_biomass
+
+		soil_organic_add_organic_matter_amount(
+			&model.soilOrganic,
+			&cm.residueParams.base,
+			total_biomass,
+			totalNConcentration,
+			0,
+			allocator,
+		)
+	}
+
+	model.clearCropUponNextDay = true
 }
