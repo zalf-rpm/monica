@@ -212,3 +212,15 @@ sunshine2global_radiation :: proc(
 is_finite :: proc(v: f64) -> bool {
 	return !math.is_nan(v) && !math.is_inf(v)
 }
+
+// C++: template<typename T> bool Tools::flt_equal_eps(T, T, T eps =
+//        std::numeric_limits<T>::epsilon())
+flt_equal_eps :: proc(f1, f2: f64, eps: f64 = math.F64_EPSILON) -> bool {
+	return (libc.fabs(f1) < eps && libc.fabs(f2) < eps) || libc.fabs(f1-f2) < eps
+}
+
+// C++: template<typename T> bool Tools::flt_equal_zero(T, T eps =
+//        std::numeric_limits<T>::epsilon())
+flt_equal_zero :: proc(f: f64, eps: f64 = math.F64_EPSILON) -> bool {
+	return flt_equal_eps(0.0, f, eps)
+}

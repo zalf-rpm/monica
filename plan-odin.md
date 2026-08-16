@@ -884,12 +884,82 @@ friends) or phase 6 (orchestration / `variant`→`union` worksteps) — crop-mod
 every phase-4 oracle's bare-soil scope to a live crop, per each module's package-comment notes above.
 
 ### Phase 5 — crop
-`crop-module.cpp` (largest single file), `photosynthesis-FvCB`, `voc-guenther`, `voc-jjv`,
-`voc-common`, `O3-impact`.
-**Oracle:** daily trace diff. Pay particular attention to the vernalisation-factor three-state
-flag — see the resolved `ff0f0fc` regression in `plan.md`, whose two root causes (an
-optional-with-fallback flattened to a plain default, and stale reads of removed duplicated state)
-are exactly the two failure modes this port can reintroduce.
+
+Scoped into checkpoints at the user's request, since `crop-module.cpp` alone is ~5,500 lines — the
+largest single file in the port by a wide margin. Checkpoint order: (1) the four satellite modules
+`crop-module.cpp` depends on, (2) `CropModule` scaffolding, (3) phenology + canopy, (4)
+photosynthesis, (5) biomass/dry-matter + stress, (6) water + nitrogen, (7) `step()` orchestration
+(which also widens every phase-4 module's bare-soil oracle to a live crop).
+
+**Checkpoint 1 — satellite modules — done.** `photosynthesis-FvCB` (698 lines, the FvCB C3
+photosynthesis + Yin/Struik stomatal-conductance model), `O3-impact` (207 lines, hourly ozone
+damage to assimilation + FAO-56 water-stress stomatal closure), `voc-guenther` (131 lines, Guenther
+et al. biogenic VOC emissions), `voc-jjv` (323 lines, the Grote et al. 2014 JJV VOC model),
+`voc-common` (532-line header, pure data structs, no `.cpp`). Confirmed by reading every header
+before starting: **all four are fully self-contained** — plain struct-in/struct-out functions, zero
+`CropModule`/`MonicaModel` coupling — exactly the snow/frost situation from phase 4, and a genuine
+first checkpoint rather than an artificial one.
+
+`odin/monica/core/{photosynthesis_fvcb,o3_impact,voc_common,voc_guenther,voc_jjv}.odin`. C++'s
+`std::map<FvCB_Model_Consts,double>` static globals (`c_bernacchi`/`deltaH_bernacchi`, 7 entries
+each, populated once and never mutated) became switch-accessor procs instead of package-level map
+globals — same values, no mutable-global-map-init-order question to reason about. Added
+`tl.flt_equal_eps`/`tl.flt_equal_zero` (`mas_cpp_misc/tools/helper.h`, used by 3 C++ files including
+this checkpoint's `voc-guenther.cpp`) to `support/tools/algorithms.odin`, the first genuinely new
+`tools` addition since phase 0.
+
+**Two real C++ quirks found and reproduced:**
+- `FvCB_canopy_hourly_C3`'s shaded branch has a copy-paste bug — `out.shaded.cc = get<0>(sh_ci_cc_gs)`
+  uses index 0 (`Ci`) instead of index 1 (`Cc`), unlike the sunlit branch three lines above which
+  correctly uses `get<1>` for `.cc`. So `out.shaded.cc` always duplicates `out.shaded.ci` in the real
+  C++. Reproduced exactly.
+- `calculateJJVVOCEmissionsMultipleSpecies`'s own `calculateParTempTerm` parameter is never passed
+  through to its internal `calcLeafEmission` call — the C++ call site omits the argument entirely,
+  so the callee always uses its default (`false`) regardless of what the outer function's caller
+  passed in. Reproduced by hardcoding `false` at that one call site, not threading the parameter
+  through.
+
+**A genuine, not-reproducible gap: uninitialised memory, not a C++ quirk.** `FvCB_leaf_fraction`'s
+`ci`/`cc` fields have no in-class initialiser, and `FvCB_canopy_hourly_C3`'s "no photosynthesis can
+occur" branch (`global_rad <= 0`) never assigns them — so a local, non-value-initialised
+`FvCB_canopy_hourly_out out;` leaves `out.{sunlit,shaded}.{ci,cc}` as indeterminate stack garbage in
+that branch, which showed up in the oracle as wildly different numbers between runs
+(`-9.2559631349317831e+61` one build, presumably something else another). This is honest undefined
+behaviour in the reference build itself, not a value any translation could or should reproduce —
+normalized both sides to `0` (what Odin's zero-initialised local naturally produces) when
+`global_rad <= 0`, the same "documented gap, symmetric normalisation" move used for
+`SoilProfileParameters` in the phase 1 capstone, rather than chasing a compiler-dependent garbage
+value.
+
+**Oracle — green.** `odin/tests/cpp_ref/phase5_satellite_ref_main.cpp` +
+`odin/tests/phase5_satellite_ref/main.odin`, run by `run_phase5_satellite.sh`: **3,012 rows
+identical**. Unlike every phase-4 driver, none of these four modules take a `SoilColumn`/climate/
+`MonicaModel` — every function is a pure calculation really called *hourly* from inside
+`crop-module.cpp`'s not-yet-ported photosynthesis loop, so "daily trace diff" doesn't apply. This is
+a parameter-sweep oracle instead, the same shape as phase 3's `fcSatPwpFromKA5textureClass` sweep: a
+full 7-dimension grid (864 rows) for FvCB, curated scenario sets for O3-impact/voc-guenther/voc-jjv.
+
+**Two bugs caught bringing the oracle up, both in the test driver, not the port:**
+- A raw-`printf` format-string/argument-count mismatch (one extra `out.sunlit.jv` argument with no
+  matching `%.17g` slot silently shifted every subsequent field by one, corrupting the whole
+  `shaded.*` column group without any compiler warning under Windows' varargs printf). Fixed by
+  rewriting the C++ driver's output to build a `vector<string>` and tab-join it - mirroring the Odin
+  driver's `row()` helper - which makes a field-count mismatch a compile-time-obvious list-length
+  difference instead of a silently-shifted format string. Worth adopting for future multi-field-sweep
+  drivers over raw `printf`.
+- `NaN` formats differently across the two runtimes for the *same* underlying IEEE754 value - MSVC's
+  `printf` renders it `nan` or `-nan(ind)` depending on how it arose, Odin's `strconv` renders it
+  `NaN` - genuine, deterministic floating-point NaN propagation (a couple of `LAI=0` FvCB grid points
+  drive a real division by zero), not a translation divergence. Both drivers' number-formatting
+  helpers now special-case `is_nan` to the literal `"NAN"` rather than diffing an arbitrary NaN
+  payload's text rendering.
+- Also caught, while investigating the JJV-section-only divergence: the Odin driver's own
+  `Voc_Species_Data` sweep values were built from a bare zero-valued struct instead of
+  `make_voc_species_data()`, so `SCALE_I`/`SCALE_M` (C++ in-class default `1.0`) were `0` -
+  `voc_jjv_calc_leaf_emission` divides by `species.SCALE_I`, so this produced spurious `NaN`s the
+  real C++ driver's properly-defaulted struct never hit. The same "re-derive the oracle's default
+  construction path, don't zero-init" lesson from phase 1c tranche 3b's `SpeciesParameters` mistake,
+  recurring in a new driver.
 
 ### Phase 6 — orchestration
 `monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
