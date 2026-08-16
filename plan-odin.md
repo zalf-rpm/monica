@@ -1171,6 +1171,74 @@ to day from real weather and real phenology-driven Kc/LAI/height progression.
 - **Scenario D** - a synthetic cultivar with `speciesParams.pc_CarboxylationPathway` forced to `2`,
   the non-C3 branch (real wheat is `CarboxylationPathway=1`, so scenario A never reaches this).
 
+**Checkpoint 5 — biomass/dry matter + stress — done.** `fcHeatStressImpact`, `fcFrostKill`,
+`fcDroughtImpactOnFertility`, `fcCropNitrogen`, `fcCropDryMatter` (~635 lines), plus the root-growth
+support trio `fcMoveDeadRootBiomassToSoil`, `addAndDistributeRootBiomassInSoil`,
+`calcRootDensityFactorAndSum` - all appended to `odin/monica/core/crop_module.odin`.
+
+**One scope call: `fcCropNitrogen` was pulled forward from the "water + nitrogen" bucket into this
+checkpoint.** Despite its name it's mostly the crop's root-growth-rate machinery (`vc_RootingDepth`/
+`vc_RootingZone`/`vc_TotalRootLength`/`vc_MaxNUptake`) plus the N-stress redux factor
+(`vc_CropNRedux`/`rootNRedux`) - `fcCropDryMatter`'s root distribution and organ-growth stress
+terms both genuinely depend on its output to be worth testing, and it sits directly upstream of
+`fcCropDryMatter` in `step()`'s real call order. `fcCropNUptake` (the actual N uptake *amounts*
+extracted from soil layers - a separate, larger concern) stays in checkpoint 6 as planned.
+Deliberately **not** ported here either: the ~15 yield/N-content getters
+(`getFruitBiomassNContent`, `getPrimaryCropYield`, `getResiduesNConcentration`, ...) and
+`numberOfAbovegroundOrgans`/`organIdsForPrimaryYield` - grepped and confirmed none of them are
+called anywhere inside `crop-module.cpp` itself; they're pure output-API surface for
+`build-output.cpp`, so whichever checkpoint actually needs them (phase 7's output table) can port
+them then.
+
+**One quirk reproduced exactly, flagged `NOTE(c++-quirk)`:** `calcRootDensityFactorAndSum`'s
+`(i_Layer - vc_RootingDepth) / (vc_RootingZone - vc_RootingDepth)` term is genuine integer division
+(all `size_t` operands) - the C++ source has a commented-out double-cast "fix" for this deliberately
+left unapplied, with a comment reading "changes the outputs enough to talk about it first". Reproduced
+with plain `int`/`int` division, not the double-cast fix.
+
+**Two genuine dead stores kept for fidelity** (computed in the C++ but never read again afterward,
+confirmed by re-scanning the rest of `fcCropDryMatter`): `vc_NConcentrationOptimum` and
+`vc_RootNIncrement`. Odin errors on unused locals, so both keep an explicit `_ = x` discard with a
+comment explaining they're genuine C++ dead stores, not omitted-by-mistake logic.
+
+**Real callback wiring, not noop stubs, for the first time this phase.** `fcFrostKill` calls
+`cm->getSnowDepthAndCalcTempUnderSnow` and `fcMoveDeadRootBiomassToSoil` (via `fcCropDryMatter`)
+calls `cm->addOrganicMatter` - both dead ends in checkpoints 2-4's noop stubs, but real, exercised
+code paths here. Since Odin `proc` values can't capture (no closures, unlike C++'s lambdas), the
+Odin driver stores the callback's needed state in file-level globals (`g_soil_moisture`,
+`g_last_organic_matter_total`/`_nconc`/`g_organic_matter_call_count`) with a plain wrapper `proc`
+reading them - a test-driver-only pattern, not something the port itself needed.
+`getSnowDepthAndCalcTempUnderSnow` is wired to a real, daily-stepped `SoilTemperature`+
+`SoilMoisture` pair (same `soiltemperature::step` -> `soilmoisture::step` chaining phase 4's
+soilorganic checkpoint used) via the already-ported
+`get_snow_depth_and_calc_temperature_under_snow` - needed for `fcFrostKill`'s snow-depth branch to
+be more than dead code. `addOrganicMatter` is **not** wired to a real `SoilOrganic` (already
+verified in phase 4; re-verifying it here would be scope creep) - instead a recording callback sums
+whatever map is passed and remembers the last `nConcentration` and a running call count, enough to
+confirm `fcMoveDeadRootBiomassToSoil` computes and passes sensible values.
+`model->soilMoisture->cropModule` stays `nullptr` throughout (bare soil, matching every phase-4
+driver) - this checkpoint verifies `CropModule`'s own functions, not full crop/soil coupling
+(checkpoint 7's job).
+
+**Oracle - two scenarios, extending checkpoint 3/4's day-step driver.**
+`odin/tests/cpp_ref/crop_module_biomass_ref_main.cpp` + `odin/tests/crop_module_biomass_ref/main.odin`,
+run by `run_crop_module_biomass.sh`: **32,725 lines identical** (also spot-checked at 1,000 days -
+2.7 years - to confirm long-run stability, still identical).
+- **Scenario A** - real wheat, past germination via `setStage(1)`, the real Hohenfinow2
+  `climate-min.csv` record for a full year (`NUM_DAYS=365`) - long enough for real winter frost
+  dynamics (`pc_FrostKillOn=true` by default and in `sim-min.json`; confirmed genuinely exercised,
+  `vc_LT50` hardens from -5.7 to about -24 over the winter) and a real growing season's dry-matter
+  accumulation (confirmed genuinely exercised, `vc_TotalBiomass` climbs from ~106 to a ~23,000
+  kg/ha plateau). Real wheat's `pc_OrganSenescenceRate` for the root organ is exactly `0` at every
+  stage, so `dailyDeadRootBiomassIncrement` is genuinely, correctly always `0` here and
+  `addOrganicMatter` never fires in this scenario - confirmed by checking the real fixture data, not
+  assumed.
+- **Scenario B** - a synthetic cultivar (cloned from wheat) with the root organ's
+  `pc_OrganSenescenceRate` forced to `0.01` at every stage, 60 real climate days - exercises
+  `fcMoveDeadRootBiomassToSoil`'s real `addOrganicMatter` call path scenario A cannot reach.
+  Confirmed genuinely exercised: the callback fires every day once past stage 0 (60/60 days), with a
+  realistic, monotonically growing total (0.57 to 0.68 kg by day 59-60).
+
 ### Phase 6 — orchestration
 `monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
 seeding/harvest/incorporation, CO2 + groundwater helpers), `workstep.cpp` +
