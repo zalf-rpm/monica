@@ -445,7 +445,7 @@ wrapper existed for `double`/`bool` but not `string`, needed for `CSVViaHeaderOp
 plan's "13 procs actually used" list, since that audit was scoped to `src/`, not
 `mas_cpp_misc/climate`) - none of them new patterns.
 
-### Phase 3 — soil setup
+### Phase 3 — soil setup — **DONE**
 `src/soil/soil.cpp` (incl. the three JSON readers replacing the capnp path — read
 `${MONICA_PARAMETERS}/soil/*.json` directly with `core:encoding/json`; the `.sercapnp`
 variants are ignored), `src/soil/conversion.cpp`, `src/soil/constants.cpp`, `soilcolumn.cpp`,
@@ -572,10 +572,29 @@ everywhere. The already-passing `calcVanGenuchtenVereeckenParams`/`calcVanGenuch
 (checkpoint 3a) were deliberately left on `core:math` rather than churned without a failing test
 to justify it; worth an opportunistic swap if either is touched again.
 
-**Remaining for phase 3:**
-- Checkpoint 3c — wire `siteparameters::merge`/`to_json` to build/emit the real `vs_SoilParameters`
-  (deferred from phase 1c), threading `path_to_soil_dir` through `Central_Parameter_Provider`'s merge
-  chain, and re-running `run_central_params.sh`/`run_env.sh` against a populated profile.
+**Checkpoint 3c (done) — `siteparameters::merge`/`to_json` build/emit the real
+`vs_SoilParameters`.** `odin/monica/params/site_sim_parameters.odin`. `Site_Parameters` gains the
+`vs_SoilParameters: [dynamic]soil.Soil_Parameters` field deferred since phase 1c tranche 2.
+`site_parameters_merge` resolves `pwpFcSatFunction` to a `Pwp_Fc_Sat_Method` via
+`soil.pwp_fc_sat_method_from_name` (warning on an unresolved name, exactly like the C++ map-miss
+branch) and calls `soil.create_equal_sized_soil_pms`; `site_parameters_to_json` emits one
+`soil.soil_parameters_to_json` per layer instead of the placeholder empty array. Needed an extra
+parameter (`path_to_soil_dir`), so — like `environment_parameters_merge` before it — the generic
+`default_merge` helper doesn't fit and the `DEFAULT`/`=` unwrap is inlined by hand.
+`central_parameter_provider_merge` threads `path_to_soil_dir` one level further down; its C++-side
+test-driver counterpart now pre-populates `calculateAndSetPwpFcSatFunctions` before merging, exactly
+as `monica-run-main.cpp:239-249` does before `env_merge`.
+
+**Oracle — green, no new driver needed.** `run_central_params.sh` (the phase 1 capstone) already
+merges real fixture data into `CentralParameterProvider` and diffs its `to_json` — it was only ever
+passing because both sides normalised `SoilProfileParameters` to `[]`. Removed that normalisation
+(both the "Odin always emits empty" comment and the C++ driver's forced overwrite) and it stays
+green with the *real* 20-layer profile now on both sides: **44,809 B identical** across
+`sim-min.json` and `sim+.json` (up from 13,821 B). `run_params.sh` (40,593 B) and `run_env.sh`
+(667,957 B) re-verified clean afterwards — this phase touched shared code (`site_sim_parameters.odin`)
+without breaking either.
+
+**Phase 3 is now complete.**
 
 ### Phase 4 — soil physics
 `soiltemperature`, `soilmoisture` (+ `snow-component`, `frost-component`), `soiltransport`,

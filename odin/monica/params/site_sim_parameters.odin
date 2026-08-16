@@ -13,6 +13,7 @@ import "core:strings"
 import d "../../support/date"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
+import "../soil"
 
 // ---------------------------------------------------------------------------
 // MineralFertilizerParameters
@@ -298,16 +299,9 @@ measured_groundwater_table_information_to_json :: proc(
 
 // C++: struct monica::SiteParameters
 //
-// PHASE SCOPE: vs_SoilParameters (Soil::SoilPMs) is NOT built here. Doing so
-// needs Soil::createEqualSizedSoilPMs -> soilparameters::merge ->
-// fcSatPwpFromKA5textureClass, which reads the three
-// ${MONICA_PARAMETERS}/soil/*.json tables - i.e. essentially all of phase 3's
-// src/soil/soil.cpp. initSoilProfileSpec is captured so phase 3 can build the
-// profile from it without changing this merge.
-//
 // The C++ `calculateAndSetPwpFcSatFunctions` map<string, std::function> is not a
 // data member here (plan-odin.md prep 2); pwpFcSatFunction selects the method by
-// name at the point of use.
+// name at the point of use, via soil.pwp_fc_sat_method_from_name.
 Site_Parameters :: struct {
 	vs_Latitude:                         f64, // ZALF latitude
 	vs_Slope:                            f64, // [m m-1]
@@ -322,6 +316,7 @@ Site_Parameters :: struct {
 	bareSoilKcFactor:                    f64,
 	numberOfLayers:                      int,
 	layerThickness:                      f64,
+	vs_SoilParameters:                   [dynamic]soil.Soil_Parameters,
 	initSoilProfileSpec:                 jx.Value, // the raw SoilProfileParameters array
 	pwpFcSatFunction:                    string,
 }
@@ -347,8 +342,25 @@ make_site_parameters :: proc() -> Site_Parameters {
 }
 
 // C++: Errors siteparameters::merge(SiteParameters*, Json)
-site_parameters_merge :: proc(sp: ^Site_Parameters, j: jx.Value) -> tl.Errors {
-	res := default_merge(sp, j, site_parameters_merge)
+//
+// path_to_soil_dir replaces the C++'s calculateAndSetPwpFcSatFunctions map
+// entry for "Wessolek2009" (see soil_parameters.odin's Pwp_Fc_Sat_Method doc
+// comment) - it's threaded in as a parameter since this merge needs it, unlike
+// the generic single-signature default_merge helper; the DEFAULT/= unwrap is
+// therefore inlined here the same way environment_parameters_merge does.
+site_parameters_merge :: proc(
+	sp: ^Site_Parameters,
+	j: jx.Value,
+	path_to_soil_dir: string,
+	allocator := context.allocator,
+) -> tl.Errors {
+	res: tl.Errors
+	if jx.is_object(jx.get(j, "DEFAULT")) {
+		res = site_parameters_merge(sp, jx.get(j, "DEFAULT"), path_to_soil_dir, allocator)
+	}
+	if jx.is_object(jx.get(j, "=")) {
+		res = site_parameters_merge(sp, jx.get(j, "="), path_to_soil_dir, allocator)
+	}
 
 	jx.set_double_value(&sp.vs_Latitude, j, "Latitude")
 	jx.set_double_value(&sp.vs_Slope, j, "Slope")
@@ -370,10 +382,31 @@ site_parameters_merge :: proc(sp: ^Site_Parameters, j: jx.Value) -> tl.Errors {
 	jx.set_int_value(&sp.numberOfLayers, j, "NumberOfLayers")
 	jx.set_double_value(&sp.layerThickness, j, "LayerThickness")
 
-	// PHASE 3: the C++ resolves pwpFcSatFunction to a callback here and builds
-	// vs_SoilParameters via createEqualSizedSoilPMs. Only the raw spec is kept.
+	// C++: std::function selectedSetPwpFcSatFunction = noSetPwpFcSat; if (find in
+	// calculateAndSetPwpFcSatFunctions) ... else warn
+	method, found := soil.pwp_fc_sat_method_from_name(sp.pwpFcSatFunction)
+	if !found {
+		tl.append_warningf(&res, "Couldn't find pwpFcSatFunction: %s", sp.pwpFcSatFunction)
+	}
+
 	if jx.is_array(jx.get(j, "SoilProfileParameters")) {
 		sp.initSoilProfileSpec = jx.get(j, "SoilProfileParameters")
+		r := soil.create_equal_sized_soil_pms(
+			method,
+			path_to_soil_dir,
+			jx.array_items(sp.initSoilProfileSpec),
+			sp.layerThickness,
+			sp.numberOfLayers,
+			allocator,
+		)
+		if tl.success(r.errs) {
+			sp.vs_SoilParameters = r.result
+			if len(sp.vs_SoilParameters) == 0 {
+				tl.append_error(&res, "Soil profile is empty!")
+			}
+		} else {
+			tl.append_errors(&res, r.errs)
+		}
 	} else if jx.is_string(jx.get(j, "SoilProfileParameters")) &&
 	   !strings.has_prefix(jx.string_value_of(jx.get(j, "SoilProfileParameters")), "capnp") {
 		tl.append_error(
@@ -386,10 +419,6 @@ site_parameters_merge :: proc(sp: ^Site_Parameters, j: jx.Value) -> tl.Errors {
 }
 
 // C++: json11::Json siteparameters::to_json(const SiteParameters*)
-//
-// PHASE SCOPE: "SoilProfileParameters" is emitted as an empty array, since
-// vs_SoilParameters is not built yet (see the struct comment). The differential
-// driver therefore feeds site JSON with that key removed on both sides.
 site_parameters_to_json :: proc(sp: ^Site_Parameters, a: Allocator) -> jx.Value {
 	o := jx.obj(
 		a,
@@ -416,7 +445,11 @@ site_parameters_to_json :: proc(sp: ^Site_Parameters, a: Allocator) -> jx.Value 
 		{"Bare_soil_KC_factor", jx.f(sp.bareSoilKcFactor)},
 	)
 	oo := o.(jx.Object)
-	jx.obj_set(&oo, "SoilProfileParameters", jx.arr(a), a)
+	soil_profile_params := make(jx.Array, 0, len(sp.vs_SoilParameters), a)
+	for &sp_item in sp.vs_SoilParameters {
+		append(&soil_profile_params, soil.soil_parameters_to_json(&sp_item, a))
+	}
+	jx.obj_set(&oo, "SoilProfileParameters", jx.Value(soil_profile_params), a)
 	return jx.Value(oo)
 }
 
@@ -1039,9 +1072,14 @@ make_central_parameter_provider :: proc(a: Allocator) -> Central_Parameter_Provi
 }
 
 // C++: Errors centralparameterprovider::merge(CentralParameterProvider*, Json)
+//
+// path_to_soil_dir is threaded through to site_parameters_merge - see its doc
+// comment. The C++ instead pre-populates SiteParameters.calculateAndSetPwpFcSatFunctions
+// with a closure over this same path before merge ever runs (monica-run-main.cpp:239-249).
 central_parameter_provider_merge :: proc(
 	cpp: ^Central_Parameter_Provider,
 	j: jx.Value,
+	path_to_soil_dir: string,
 	a: Allocator,
 ) -> tl.Errors {
 	res: tl.Errors
@@ -1090,7 +1128,15 @@ central_parameter_provider_merge :: proc(
 		&res,
 		simulation_parameters_merge(&cpp.simulationParameters, jx.get(j, "simulationParameters")),
 	)
-	tl.append_errors(&res, site_parameters_merge(&cpp.siteParameters, jx.get(j, "siteParameters")))
+	tl.append_errors(
+		&res,
+		site_parameters_merge(
+			&cpp.siteParameters,
+			jx.get(j, "siteParameters"),
+			path_to_soil_dir,
+			a,
+		),
+	)
 
 	if !jx.is_null(jx.get(j, "groundwaterInformation")) {
 		tl.append_errors(

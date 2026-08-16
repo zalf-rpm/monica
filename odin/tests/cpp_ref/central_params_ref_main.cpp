@@ -1,4 +1,5 @@
-/* Differential-test driver for the Phase 1 capstone checkpoint.
+/* Differential-test driver for the Phase 1 capstone checkpoint (extended in
+ * phase 3 checkpoint 3c to cover the now-populated soil profile).
  *
  * Runs the Hohenfinow2 fixture through the whole reference-resolution /
  * Env-assembly machinery (same as env_ref_main.cpp), then merges the assembled
@@ -9,17 +10,15 @@
  * checkpoint": it wires all 26 tranche-1c parameter structs together against
  * real fixture data, which per-struct tests (run_params.sh) cannot catch - a
  * field read under the wrong key, or a sub-struct never reached because its
- * parent key is misspelled.
+ * parent key is misspelled. Since checkpoint 3c it also exercises the real
+ * SiteParameters.vs_SoilParameters build (siteparameters::merge ->
+ * createEqualSizedSoilPMs -> fcSatPwpFromKA5textureClass), which
+ * centralparameterprovider::merge alone doesn't reach: SiteParameters.
+ * calculateAndSetPwpFcSatFunctions must be pre-populated first, exactly as
+ * monica-run-main.cpp:239-249 does before calling env_merge.
  *
- * PHASE 3 GAP: SiteParameters.vs_SoilParameters (-> SoilProfileParameters) is
- * not built on the Odin side yet (see site_parameters_to_json's "PHASE SCOPE"
- * comment) - its to_json always emits an empty array there. The C++ side here
- * is normalised to match (SoilProfileParameters forced to []) so the rest of
- * the merge is actually exercised instead of failing on a known, expected gap.
- * `groundwaterInformation` is a second known gap, but needs no normalisation:
- * centralparameterprovider::to_json doesn't emit it on either side (it's
- * commented out in the C++), so it is simply untested here, not a source of
- * mismatch.
+ * `groundwaterInformation` remains untested here: centralparameterprovider::
+ * to_json doesn't emit it on either side (it's commented out in the C++).
  *
  * Usage: central_params_ref <pathToSimJson>
  * See odin/tests/cpp_ref/run_central_params.sh.
@@ -32,6 +31,7 @@
 #include "core/monica-parameters.h"
 #include "json11/json11-helper.h"
 #include "run/create-env-from-json-config.h"
+#include "soil/soil.h"
 #include "tools/helper.h"
 
 using namespace Tools;
@@ -74,15 +74,24 @@ int main(int argc, char **argv) {
   auto env = createEnvJsonFromJsonObjects(ps);
   auto envParams = env["params"];
 
+  // set available functions to calculate pwp, fc and sat before merging, exactly
+  // as monica-run-main.cpp:238-249 does before env_merge
   CentralParameterProvider cpp;
+  std::string pathToSoilDir = fixSystemSeparator(replaceEnvVars("${MONICA_PARAMETERS}/soil/"));
+  cpp.siteParameters.calculateAndSetPwpFcSatFunctions["Wessolek2009"] =
+      Soil::getInitializedUpdateUnsetPwpFcSatfromKA5textureClassFunction(pathToSoilDir);
+  cpp.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchten"] =
+      Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+  cpp.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenVereecken"] =
+      Soil::updateUnsetPwpFcSatFromVanGenuchtenVereecken;
+  cpp.siteParameters.calculateAndSetPwpFcSatFunctions["VanGenuchtenToth"] =
+      Soil::updateUnsetPwpFcSatFromVanGenuchtenToth;
+  cpp.siteParameters.calculateAndSetPwpFcSatFunctions["Toth"] = Soil::updateUnsetPwpFcSatFromToth;
+
   centralparameterprovider::merge(&cpp, envParams);
 
-  auto cppJson = centralparameterprovider::to_json(&cpp).object_items();
-  auto sitej = cppJson["siteParameters"].object_items();
-  sitej["SoilProfileParameters"] = Json::array{}; // phase 3 gap - see header comment
-  cppJson["siteParameters"] = sitej;
-
-  printf("CPP\t%s\n", Json(cppJson).dump().c_str());
+  auto cppJson = centralparameterprovider::to_json(&cpp);
+  printf("CPP\t%s\n", cppJson.dump().c_str());
 
   return 0;
 }

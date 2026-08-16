@@ -1,11 +1,8 @@
-// Odin side of the Phase 1 capstone checkpoint.
+// Odin side of the Phase 1 capstone checkpoint (extended in phase 3
+// checkpoint 3c to cover the now-populated soil profile).
 //
 // Must emit byte-identical output to odin/tests/cpp_ref/central_params_ref_main.cpp.
 // Run odin/tests/cpp_ref/run_central_params.sh to build both and diff them.
-//
-// Unlike the C++ side, no SoilProfileParameters normalisation is needed here:
-// site_parameters_to_json (phase 1c, tranche 2) already always emits an empty
-// array for that key - see its "PHASE SCOPE" comment.
 package central_params_ref
 
 import "core:fmt"
@@ -65,8 +62,13 @@ main :: proc() {
 	env := mrun.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
 	env_params := jx.get(env, "params")
 
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
+
 	cpp := p.make_central_parameter_provider(a)
-	_ = p.central_parameter_provider_merge(&cpp, env_params, a)
+	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	cpp_json := p.central_parameter_provider_to_json(&cpp, a)
 	fmt.printf("CPP\t%s\n", jx.dump(cpp_json, a))
