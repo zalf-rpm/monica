@@ -21,6 +21,7 @@
 // getEffectiveRootingDepth (root/water, checkpoint 6).
 package core
 
+import "core:fmt"
 import libc "core:c/libc"
 import p "../params"
 import d "../../support/date"
@@ -3171,4 +3172,437 @@ get_effective_rooting_depth :: proc(cm: ^Crop_Module) -> f64 {
 	}
 
 	return f64(nols + 1) / 10.0
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 checkpoint 7: step() orchestration
+//
+// Ported: step() itself (crop_module_step - "step" collides with the other
+// core/*.odin files' own step functions, so it gets the same owning-struct
+// prefix soil_temperature_step/soil_moisture_step/soil_organic_step already
+// established), the FAO-56 dual-Kc block (never a separate cropmodule::
+// function in C++ - inline in step() there too), forceTransplantState,
+// setPerennialCropParameters. This is where every function ported in
+// checkpoints 3-6 is finally wired together into one real, callable daily
+// entry point, and where fireEvent stops being a no-op stub in the oracle.
+//
+// Deliberately not ported here: applyCutting. It takes a
+// map<int, CuttingData::Value> - CuttingData is declared in
+// src/worksteps/cutting.h, which this port hasn't reached yet (worksteps are
+// phase 6, a separate later phase from this phase-5 checkpoint). Deferred to
+// whichever phase-6 checkpoint ports the Cutting workstep itself.
+// ---------------------------------------------------------------------------
+
+// C++: void monica::cropmodule::setPerennialCropParameters(CropModule*, const CropParameters&)
+//
+// kj::heap<CropParameters>(cps) copy-constructs onto the heap - deep-copies
+// via CropParameters' implicit copy constructor, same as makeCropModule's
+// constructor and fcUpdateCropParametersForPerennial. Reuses
+// clone_crop_parameters for the same reason those do.
+set_perennial_crop_parameters :: proc(cm: ^Crop_Module, cps: p.Crop_Parameters, allocator := context.allocator) {
+	ptr := new(p.Crop_Parameters, allocator)
+	ptr^ = clone_crop_parameters(cps, allocator)
+	cm.perennialCropParams = ptr
+}
+
+// C++: void monica::cropmodule::forceTransplantState(CropModule*, double
+// temperatureSum, double lai, size_t stage, double rootMass, double
+// leafMass, double shootMass, int postTransplantDelay)
+//
+// --- BEGIN TRANSPLANT MODIFICATION --- (matching the C++ source's own
+// begin/end markers around this function)
+force_transplant_state :: proc(
+	cm: ^Crop_Module,
+	temperatureSum, lai: f64,
+	stage: int,
+	rootMass, leafMass, shootMass: f64,
+	postTransplantDelay: int,
+) {
+	soilColumn := cm.soilColumn
+	pc_InitialRootingDepth := cm.cropParams.speciesParams.pc_InitialRootingDepth
+	pc_NConcentrationAbovegroundBiomass := cm.cropParams.speciesParams.pc_NConcentrationAbovegroundBiomass
+	pc_NConcentrationRoot := cm.cropParams.speciesParams.pc_NConcentrationRoot
+	pc_StageTemperatureSum := cm.cropParams.cultivarParams.pc_StageTemperatureSum
+
+	// Initialize transplant shock duration parameters
+	cm.vc_TransplantShockDuration = postTransplantDelay
+	cm.vc_DaysSinceTransplant = 0
+
+	// --- Step 1: Force developmental stage and LAI ---
+	set_stage(cm, stage)
+	cm.vc_LeafAreaIndex = lai
+
+	// --- Step 2: Force cumulative and stage-specific GDD temperature sums ---
+	cm.vc_CurrentTotalTemperatureSum = temperatureSum
+
+	remainingGDD := temperatureSum
+	for i := 0; i < len(cm.vc_CurrentTemperatureSum); i += 1 {
+		if i < stage {
+			threshold := pc_StageTemperatureSum[i]
+			cm.vc_CurrentTemperatureSum[i] = threshold
+			remainingGDD -= threshold
+		} else if i == stage {
+			cm.vc_CurrentTemperatureSum[i] = max(0.0, remainingGDD)
+		} else {
+			cm.vc_CurrentTemperatureSum[i] = 0.0
+		}
+	}
+
+	// --- Step 3: Initialize organ biomass pools ---
+	if len(cm.vc_OrganBiomass) > 2 {
+		cm.vc_OrganBiomass[0] = rootMass
+		cm.vc_OrganBiomass[1] = leafMass
+		cm.vc_OrganBiomass[2] = shootMass
+		cm.vc_OrganGreenBiomass[0] = rootMass
+		cm.vc_OrganGreenBiomass[1] = leafMass
+		cm.vc_OrganGreenBiomass[2] = shootMass
+	}
+
+	// --- Step 4: Update carbon balance and rooting depth state variables ---
+	cm.vc_RootBiomass = rootMass
+	cm.vc_AbovegroundBiomass = leafMass + shootMass
+	cm.vc_TotalBiomass = rootMass + leafMass + shootMass
+
+	// Settle rooting zone and layers based on standard species parameters
+	nols := len(soilColumn.layers)
+	layerThickness := soilColumn.layers[0].vs_LayerThickness
+	cm.vc_RootingDepth_m = pc_InitialRootingDepth
+	cm.vc_RootingDepth = min(int(libc.round(cm.vc_RootingDepth_m / layerThickness)), nols)
+	cm.vc_RootingZone = min(int(libc.round(1.3 * cm.vc_RootingDepth_m / layerThickness)), nols)
+
+	// Force total root length based on physical constants
+	cm.vc_TotalRootLength =
+		(cm.vc_RootBiomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * 3.14159265358979323)
+
+	// Force nitrogen pools to prevent severe immediate starvation stress in
+	// new seedlings
+	cm.vc_NConcentrationAbovegroundBiomass = pc_NConcentrationAbovegroundBiomass
+	cm.vc_NConcentrationRoot = pc_NConcentrationRoot
+	cm.vc_TotalBiomassNContent =
+		(cm.vc_AbovegroundBiomass * pc_NConcentrationAbovegroundBiomass) +
+		(cm.vc_RootBiomass * pc_NConcentrationRoot)
+}
+
+// --- END TRANSPLANT MODIFICATION ---
+
+// C++: the icSendRcv lambda inside step(). The intercropping RPC exchange
+// body is unreachable (Intercropping is a dropped feature, see
+// plan-odin.md's "Explicitly dropped" table; cropModParams.isIntercropping
+// is false in every fixture in this repo) and is not ported, matching
+// checkpoint 4's fcCropPhotosynthesis precedent. Kept as a real, callable
+// no-op so step()'s call sites and control flow stay literal.
+@(private)
+crop_module_ic_send_rcv :: proc(cm: ^Crop_Module, outmsg: string) {
+	if cm.cropModParams.isIntercropping {
+		// intercropping RPC exchange - dropped feature, not ported.
+	}
+}
+
+// C++: void monica::cropmodule::step(CropModule*, double meanAirTemperature,
+// double maxAirTemperature, double minAirTemperature, double globalRadiation,
+// double sunshineHours, Tools::Date currentDate, double relativeHumidity,
+// double windSpeed, double windSpeedHeight, double
+// atmosphericCO2Concentration, double atmosphericO3Concentration, double
+// grossPrecipitation, double referenceEvapotranspiration)
+//
+// The daily orchestration entry point: calls every cropmodule:: function
+// ported in checkpoints 3-6 in step()'s real order, plus the FAO-56 dual-Kc
+// block below.
+crop_module_step :: proc(
+	cm: ^Crop_Module,
+	meanAirTemperature, maxAirTemperature, minAirTemperature: f64,
+	globalRadiation, sunshineHours: f64,
+	currentDate: d.Date,
+	relativeHumidity, windSpeed, windSpeedHeight: f64,
+	atmosphericCO2Concentration, atmosphericO3Concentration: f64,
+	grossPrecipitation, referenceEvapotranspiration: f64,
+	allocator := context.allocator,
+) {
+	pc_BaseDaylength := cm.cropParams.cultivarParams.pc_BaseDaylength
+	pc_CriticalOxygenContent := cm.cropParams.speciesParams.pc_CriticalOxygenContent
+	pc_DaylengthRequirement := cm.cropParams.cultivarParams.pc_DaylengthRequirement
+	pc_MaxCropHeight := cm.cropParams.cultivarParams.pc_MaxCropHeight
+	pc_Perennial := cm.cropParams.cultivarParams.pc_Perennial
+	pc_SpecificLeafArea := cm.cropParams.cultivarParams.pc_SpecificLeafArea
+	pc_StageKcFactor := cm.cropParams.cultivarParams.pc_StageKcFactor
+	pc_StageTemperatureSum := cm.cropParams.cultivarParams.pc_StageTemperatureSum
+	pc_VernalisationRequirement := cm.cropParams.cultivarParams.pc_VernalisationRequirement
+	soilColumn := cm.soilColumn
+	speciesPs := &cm.cropParams.speciesParams
+
+	vs_JulianDay := int(d.julian_day(currentDate))
+
+	if cm.vc_CuttingDelayDays > 0 {
+		cm.vc_CuttingDelayDays -= 1
+	}
+
+	// [TRANSPLANT SHOCK] Daily stress recovery calculation. The daily
+	// transplant efficiency factors in transplant shock, increasing linearly
+	// from a baseline of 0.2 (80% initial stress) to 1.0 (no stress) over
+	// the post-transplant delay duration.
+	cm.vc_TransplantEfficiency = 1.0
+	if cm.vc_DaysSinceTransplant >= 0 && cm.vc_DaysSinceTransplant < cm.vc_TransplantShockDuration {
+		cm.vc_TransplantEfficiency =
+			0.2 + 0.8 * (f64(cm.vc_DaysSinceTransplant) / f64(cm.vc_TransplantShockDuration))
+		cm.vc_DaysSinceTransplant += 1
+	} else if cm.vc_DaysSinceTransplant >= cm.vc_TransplantShockDuration {
+		cm.vc_DaysSinceTransplant = -1 // Recovery period has successfully concluded
+	}
+
+	fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
+
+	cm.vc_OxygenDeficit = fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.vc_DevelopmentalStage])
+
+	old_DevelopmentalStage := cm.vc_DevelopmentalStage
+
+	// start accumulating temperature sums only after dormancy
+	if !d.is_valid(cm.perennialCropDormancyPeriodEndDate) {
+		if speciesPs.dormancyEndDoy == 0 {
+			cm.perennialCropDormancyPeriodEndDate = currentDate
+		} else {
+			cm.perennialCropDormancyPeriodEndDate = d.add(
+				d.make_date(1, 1, u16(d.year(currentDate)), false, false, d.DEFAULT_USE_LEAP_YEARS),
+				u64(speciesPs.dormancyEndDoy - 1),
+			)
+		}
+	}
+	if !pc_Perennial || d.ge(currentDate, cm.perennialCropDormancyPeriodEndDate) {
+		fc_crop_developmental_stage(
+			cm,
+			meanAirTemperature,
+			soilColumn.layers[0].vs_SoilMoisture_m3,
+			soilColumn.layers[0].vs_FieldCapacity,
+			soilColumn.layers[0].vs_PermanentWiltingPoint,
+			currentDate,
+			allocator,
+		)
+	}
+
+	if old_DevelopmentalStage == 0 && cm.vc_DevelopmentalStage == 1 {
+		if cm.fireEvent != nil {
+			cm.fireEvent("emergence")
+		}
+	} else if is_anthesis_day(cm, old_DevelopmentalStage, cm.vc_DevelopmentalStage) {
+		cm.vc_AnthesisDay = vs_JulianDay
+		if cm.fireEvent != nil {
+			cm.fireEvent("anthesis")
+		}
+	} else if is_maturity_day(cm, old_DevelopmentalStage, cm.vc_DevelopmentalStage) {
+		cm.vc_MaturityDay = vs_JulianDay
+		cm.vc_MaturityReached = true
+		if cm.fireEvent != nil {
+			cm.fireEvent("maturity")
+		}
+	}
+
+	// NOTE(c++-quirk): this fireEvent call is not guarded by a nil check,
+	// unlike every other call site in this function - harmless in practice
+	// since fireEvent is a required, always-set constructor parameter, but
+	// reproduced exactly rather than "fixed" to match the others.
+	if !cm.stemElongationEventFired &&
+	   cm.vc_CurrentTotalTemperatureSum >= pc_StageTemperatureSum[2]*0.25+pc_StageTemperatureSum[1] {
+		cm.fireEvent("cereal-stem-elongation")
+		cm.stemElongationEventFired = true
+	}
+
+	// fire stage event on stage change or right after sowing
+	if old_DevelopmentalStage != cm.vc_DevelopmentalStage || cm.noOfCropSteps == 0 {
+		if cm.fireEvent != nil {
+			cm.fireEvent(fmt.tprintf("Stage-%d", cm.vc_DevelopmentalStage + 1))
+		}
+	}
+
+	cm.vc_DaylengthFactor = fc_daylength_factor(
+		cm,
+		pc_DaylengthRequirement[cm.vc_DevelopmentalStage],
+		cm.vc_EffectiveDayLength,
+		cm.vc_PhotoperiodicDaylength,
+		pc_BaseDaylength[cm.vc_DevelopmentalStage],
+	)
+
+	cm.vc_VernalisationFactor, cm.vc_VernalisationDays = fc_vernalisation_factor(
+		cm,
+		meanAirTemperature,
+		pc_VernalisationRequirement[cm.vc_DevelopmentalStage],
+		cm.vc_VernalisationDays,
+	)
+
+	if cm.vc_TotalTemperatureSum == 0.0 {
+		cm.vc_RelativeTotalDevelopment = 0.0
+	} else {
+		cm.vc_RelativeTotalDevelopment = cm.vc_CurrentTotalTemperatureSum / cm.vc_TotalTemperatureSum
+	}
+
+	if cm.vc_DevelopmentalStage == 0 {
+		cm.vc_KcFactor = cm.siteParams.bareSoilKcFactor // @todo Claas: muss hier etwas Genaueres hin, siehe FAO?
+	} else {
+		cm.vc_KcFactor = fc_kc_factor(
+			cm,
+			pc_StageTemperatureSum[cm.vc_DevelopmentalStage],
+			cm.vc_CurrentTemperatureSum[cm.vc_DevelopmentalStage],
+			pc_StageKcFactor[cm.vc_DevelopmentalStage],
+			pc_StageKcFactor[cm.vc_DevelopmentalStage - 1],
+		)
+	}
+
+	// FAO-56 Dual Kc: GDD-based 4-phase trapezoidal Kcb curve (replaces
+	// static per-stage arrays). Phase 1 (flat initial) | Phase 2 (linear
+	// ascent) | Phase 3 (mid-season) | Phase 4 (descent). Not a
+	// cropmodule:: function in C++ - inline in step() itself there too.
+	{
+		nStages := len(pc_StageKcFactor)
+		if nStages > 0 {
+			// Compute total elapsed GDD as sum of all completed stages plus
+			// current stage progress
+			elapsed_GDD := 0.0
+			for s := 0; s < nStages; s += 1 {
+				elapsed_GDD += cm.vc_CurrentTemperatureSum[s]
+			}
+
+			// Identify mid-season start: first stage where Kc equals the maximum
+			max_Kc := pc_StageKcFactor[0]
+			for v in pc_StageKcFactor {
+				if v > max_Kc {
+					max_Kc = v
+				}
+			}
+			mid_stage_start := nStages - 1
+			for i := 1; i < nStages; i += 1 {
+				if pc_StageKcFactor[i] >= max_Kc - 1e-6 {
+					mid_stage_start = i
+					break
+				}
+			}
+			// Identify late-season start: first stage after plateau where Kc drops
+			late_stage_start := nStages - 1
+			for i := mid_stage_start + 1; i < nStages; i += 1 {
+				if pc_StageKcFactor[i] < max_Kc - 1e-6 {
+					late_stage_start = i
+					break
+				}
+			}
+
+			// GDD boundaries
+			gdd_phase1_end := pc_StageTemperatureSum[0] // end of germination/initial phase
+			gdd_to_mid := 0.0
+			for i := 0; i < mid_stage_start; i += 1 {
+				gdd_to_mid += pc_StageTemperatureSum[i]
+			}
+			gdd_late_start := 0.0
+			for i := 0; i < late_stage_start; i += 1 {
+				gdd_late_start += pc_StageTemperatureSum[i]
+			}
+			gdd_late_total := 0.0
+			for i := late_stage_start; i < nStages; i += 1 {
+				gdd_late_total += pc_StageTemperatureSum[i]
+			}
+
+			if elapsed_GDD <= gdd_phase1_end {
+				// Phase 1: flat initial
+				cm.vc_KcbFactor = cm.vc_Kcb_ini
+			} else if cm.vc_DevelopmentalStage < mid_stage_start {
+				// Phase 2: linear development ascent
+				denom := gdd_to_mid - gdd_phase1_end
+				frac := denom > 0.0 ? min(1.0, (elapsed_GDD-gdd_phase1_end)/denom) : 1.0
+				cm.vc_KcbFactor = cm.vc_Kcb_ini + frac*(cm.vc_Kcb_mid-cm.vc_Kcb_ini)
+			} else if cm.vc_DevelopmentalStage < late_stage_start {
+				// Phase 3: mid-season plateau
+				cm.vc_KcbFactor = cm.vc_Kcb_mid
+			} else {
+				// Phase 4: late-season linear descent
+				gdd_since_late := elapsed_GDD - gdd_late_start
+				frac := gdd_late_total > 0.0 ? min(1.0, gdd_since_late/gdd_late_total) : 1.0
+				cm.vc_KcbFactor = cm.vc_Kcb_mid + frac*(cm.vc_Kcb_end-cm.vc_Kcb_mid)
+			}
+			cm.vc_KcbFactor = max(0.0, cm.vc_KcbFactor)
+		}
+	}
+
+	if cm.vc_DevelopmentalStage > 0 {
+		maxCropHeight :=
+			cm.cropModParams.isIntercropping && cm.intercroppingOtherCropHeight > cm.vc_CropHeight \
+			? pc_MaxCropHeight * cm.cropModParams.pc_intercropping_phRedux \
+			: pc_MaxCropHeight
+
+		fc_crop_size(cm, maxCropHeight)
+
+		crop_module_ic_send_rcv(cm, "devstage > 0: ")
+
+		fc_crop_green_area(
+			cm,
+			meanAirTemperature,
+			cm.vc_OrganGrowthIncrement[Organ_Leaf],
+			cm.vc_OrganSenescenceIncrement[Organ_Leaf],
+			pc_SpecificLeafArea[cm.vc_DevelopmentalStage - 1],
+			pc_SpecificLeafArea[cm.vc_DevelopmentalStage],
+			pc_SpecificLeafArea[1],
+			pc_StageTemperatureSum[cm.vc_DevelopmentalStage],
+			cm.vc_CurrentTemperatureSum[cm.vc_DevelopmentalStage],
+		)
+
+		cm.vc_SoilCoverage = fc_soil_coverage(cm)
+
+		fc_crop_photosynthesis(
+			cm,
+			meanAirTemperature,
+			maxAirTemperature,
+			minAirTemperature,
+			atmosphericCO2Concentration,
+			atmosphericO3Concentration,
+			currentDate,
+			allocator,
+		)
+
+		fc_heat_stress_impact(cm, maxAirTemperature, minAirTemperature)
+
+		if cm.simParams.pc_FrostKillOn {
+			fc_frost_kill(cm, maxAirTemperature, minAirTemperature)
+		}
+
+		fc_drought_impact_on_fertility(cm)
+
+		fc_crop_nitrogen(cm)
+
+		fc_crop_dry_matter(cm, meanAirTemperature, allocator)
+
+		// calculate reference evapotranspiration if not provided directly
+		// via climate files
+		if referenceEvapotranspiration < 0 {
+			cm.vc_ReferenceEvapotranspiration = fc_reference_evapotranspiration(
+				cm,
+				maxAirTemperature,
+				minAirTemperature,
+				relativeHumidity,
+				meanAirTemperature,
+				windSpeed,
+				windSpeedHeight,
+				atmosphericCO2Concentration,
+			)
+		} else {
+			// use reference evapotranspiration from climate file
+			cm.vc_ReferenceEvapotranspiration = referenceEvapotranspiration
+		}
+		fc_crop_water_uptake(
+			cm,
+			soilColumn.vm_GroundwaterTableLayer,
+			grossPrecipitation,
+			cm.vc_CurrentTotalTemperatureSum,
+			cm.vc_TotalTemperatureSum,
+		)
+
+		fc_crop_n_uptake(
+			cm,
+			soilColumn.vm_GroundwaterTableLayer,
+			cm.vc_CurrentTotalTemperatureSum,
+			cm.vc_TotalTemperatureSum,
+		)
+
+		cm.vc_GrossPrimaryProduction = fc_gross_primary_production(cm)
+
+		cm.vc_NetPrimaryProduction = fc_net_primary_production(cm, cm.vc_TotalRespired)
+	} else {
+		crop_module_ic_send_rcv(cm, "devstage 0: ")
+	}
+
+	cm.noOfCropSteps += 1
 }

@@ -1283,6 +1283,85 @@ first (the same insertion-sort technique `dump_map_int_f64` uses) before summing
 because checkpoint 6's regression sweep happened to re-run checkpoint 5's oracle in a process with a
 different map hash layout than whatever run originally reported PASS.
 
+**Checkpoint 7 — step() orchestration — done. Phase 5 (crop-module.cpp) is now complete.**
+`step()` itself (as `crop_module_step` - `step` collides with every other `core/*.odin` file's own
+step function, so it gets the same owning-struct prefix `soil_temperature_step`/
+`soil_moisture_step`/`soil_organic_step` already established), the FAO-56 dual-Kc block (never a
+separate `cropmodule::` function in C++ - inline in `step()` there too, ported the same way here),
+`forceTransplantState`, `setPerennialCropParameters` - all appended to
+`odin/monica/core/crop_module.odin`. Every function ported in checkpoints 3-6 is finally wired
+together into one real, callable daily entry point, and `fireEvent` stops being a no-op stub in the
+oracle for the first time.
+
+**`applyCutting` is deliberately not ported.** It takes a `map<int, CuttingData::Value>` -
+`CuttingData` is declared in `src/worksteps/cutting.h`, which this port hasn't reached yet
+(worksteps are phase 6, a separate later phase from this phase-5 checkpoint, not to be confused with
+this phase's checkpoint numbering). Deferred to whichever phase-6 checkpoint ports the Cutting
+workstep itself.
+
+**One quirk reproduced exactly:** the `cereal-stem-elongation` `fireEvent` call is not guarded by a
+nil check, unlike every other call site in `step()` - harmless in practice since `fireEvent` is a
+required, always-set constructor parameter, but reproduced exactly rather than "fixed" to match the
+others.
+
+**Oracle - the biggest integration test in the port so far, and genuinely new: real callbacks, a
+full four-module soil chain, and natural germination.** Unlike every earlier checkpoint's driver,
+which hand-copied `step()`'s body into a local `day_step` (since `step()` itself wasn't ported yet),
+`odin/tests/cpp_ref/crop_module_step_ref_main.cpp` + `odin/tests/crop_module_step_ref/main.odin`
+(run by `run_crop_module_step.sh`) call the real, now-ported `crop_module_step` directly - there is
+nothing left to hand-replicate. **79,510 lines identical** over 500 real Hohenfinow2 climate days
+(more than a full year).
+
+- **Full soil-module chain** for the first time since phase 4 itself: `soiltemperature::step` ->
+  `soilmoisture::step` -> `cropmodule::step` -> `soilorganic::step` -> `soiltransport::step`
+  (soilorganic before soiltransport matches the real `monicamodel::generalStep` order per
+  `soil_organic_ref_main.cpp`'s file comment; crop step sits between soilmoisture and soilorganic so
+  today's dead root biomass, added via the real `addOrganicMatter` callback, gets incorporated by
+  soilorganic the same day - the true canonical position relative to `monica-model.cpp`'s real step
+  is that file's job, not this checkpoint's).
+- **All three `CropModule` callbacks are real for the first time:** `fireEvent` traces every fired
+  event as its own line, so the C++/Odin event *sequence* is diffed exactly like every other field;
+  `addOrganicMatter` is wired to the real, now-shared `SoilOrganic` (not checkpoint 5's recording
+  stand-in); `getSnowDepthAndCalcTempUnderSnow` is wired to the real, now-shared `SoilMoisture`.
+- **`soilMoisture`/`soilOrganic`/`soilTransport`'s `cropModule` pointers are all set to the real
+  `CropModule`** (matching production `soilcolumn::putCrop`/`soiltransport::putCrop` wiring) - this
+  is what actually widens phase 4's bare-soil coverage to a live crop: soilmoisture's
+  Kc/soil-coverage/height/devStage read paths, soilorganic's NPP read (for NEP/NEE), and
+  soiltransport's N-uptake read all activate for the first time since being ported, dormant, in
+  phase 4.
+- **No `setStage(1)` forcing, unlike every earlier checkpoint:** with a real, daily-stepped
+  `SoilTemperature` now driving `soilColumn->layers[0]`'s temperature, germination is real and
+  exercised, not skipped. Confirmed genuinely exercised via the event log: sown "Stage-1" on day 0,
+  germinates ("emergence"/"Stage-2") on day 61, "cereal-stem-elongation" day 146, "anthesis"/"Stage-5"
+  day 175, "maturity"/"Stage-6" day 201 - a fully realistic winter wheat phenology sequence, and one
+  no earlier checkpoint could produce (they all started already past germination).
+
+**Two real bugs found and fixed by this oracle - both in the test drivers, not the port - and both
+exactly the kind of thing a "widen to a live crop" integration test is supposed to catch, since
+neither's code path was ever live before this checkpoint:**
+- **C++ driver:** `soiltemperature.cpp`'s and `soilmoisture.cpp`'s crop-coupling "outer gate" reads
+  `sm->monica.currentCropModule`/`st->monica->currentCropModule` - a `MonicaModel`-level pointer,
+  *separate* from `SoilMoisture`'s own `cropModule` field that this driver was already setting. The
+  Odin port deliberately unifies the two onto one field (`soil_moisture.odin`'s package comment
+  already documents this), so only the C++ driver needed both set - and it only set one. Every
+  earlier checkpoint's C++ driver left `model->currentCropModule` at its default `nullptr` because
+  none of them needed it (bare soil throughout); this checkpoint needed it and initially missed it,
+  silently leaving C++ in bare-soil mode for this one read path while Odin correctly took the
+  crop-coupled branch. Found via a `vc_KcFactor` diagnostic dump showing C++ reading the bare-soil
+  `pm_KcFactor` parameter (0.75, from the real fixture) instead of the crop's `vc_KcFactor` (0.6).
+  Fixed by moving the `CropModule`'s ownership directly into `model->currentCropModule` instead of a
+  separate local `kj::Own<CropModule>`, so both read paths point at the same instance.
+- **Odin driver:** `calcSoilSurfaceTemperature` reads
+  `st->monica->currentCropModule ? ->vc_SoilCoverage : 0.0` in the real C++; the Odin port's
+  `soil_temperature_step` exposes this as an explicit `soil_coverage` parameter instead (no
+  `monica` back-pointer at all, an established phase-4 design decision). Every earlier checkpoint's
+  driver correctly passed `0.0` there, since every earlier checkpoint ran genuinely bare soil. This
+  driver kept the same hardcoded `0.0` by copy-paste inertia instead of updating it to the live
+  crop's real `vc_SoilCoverage` now that one exists. Found by bisecting the first divergent day (62,
+  one day after germination) down to `vc_LT50` in `fcFrostKill`, which reads
+  `soilColumn->vt_SoilSurfaceTemperature` - itself downstream of the coverage-dependent shading
+  coefficient in `calcSoilSurfaceTemperature`.
+
 ### Phase 6 — orchestration
 `monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
 seeding/harvest/incorporation, CO2 + groundwater helpers), `workstep.cpp` +
