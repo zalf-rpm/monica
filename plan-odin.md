@@ -643,6 +643,69 @@ module will lean on:
    preset (to fixed representative values) vs `-1`, through all four entry points (`KA5SENT`,
    `VGVSENT`, `VGTSENT`, `TOTHSENT`) — 32 new rows, oracle now at 16,010 total, still identical.
 
+**Module 1 — soiltemperature — done.** `odin/monica/core/soil_temperature.odin`: `Soil_Temperature`,
+`make_soil_temperature`, `step`, `calc_soil_surface_temperature`, the file-local
+`soil_temperature_layer_at` helper.
+
+**Deliberate deviation, made explicit because the plan flags it as consequential
+("MonicaModel ownership + back-pointer layout... wrong choice = rewrite").** The C++ struct carries
+a `monica: *MonicaModel` back-pointer, read in exactly three places: the constructor's
+`monica.envPs.p_timeStep`, and `calcSoilSurfaceTemperature`'s `monica.currentCropModule ?
+->vc_SoilCoverage : 0.0` and `monica.soilMoisture->{snowComponent->vm_SnowDepth,
+frostComponent->vm_TemperatureUnderSnow}`. Neither `MonicaModel` (phase 6) nor `CropModule` (phase
+5) exist yet, and `SoilMoisture` is a phase-4 *sibling* not yet ported either — so there is no
+back-pointer target to take literally. Rather than invent a placeholder `MonicaModel` now (a
+decision every later phase-4/5/6 file would then copy), the Odin port drops the `monica` field
+entirely and threads the three values it would have supplied as explicit parameters on
+`make_soil_temperature`/`step`/`calc_soil_surface_temperature` instead — the same move checkpoint
+3a made for `pathToSoilDir` ("needed only at merge time... keeps merge self-contained and testable
+without a side-channel setup step"). Phase 6's real orchestration call site becomes a mechanical
+substitution (`model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0`, etc.
+passed positionally), not a redesign. Full rationale is in the file's package comment.
+
+**Oracle — green.** `odin/tests/cpp_ref/soil_temperature_ref_main.cpp` +
+`odin/tests/soil_temperature_ref/main.odin`, run by `run_soil_temperature.sh`: **23,220 trace
+lines identical** over 60 simulated days. Both drivers build a *real* `MonicaModel` from
+`sim-min.json` via the unmodified `makeMonicaModel` (reusing the exact CentralParameterProvider
+pipeline checkpoint 3c already proved identical), so `soilColumn`/`soilTemperature`/`soilMoisture`
+(incl. real `snowComponent`/`frostComponent`) are all constructed by production code — only
+`soiltemperature::step` itself is driven directly rather than through `generalStep`. Each day reads
+real `tmin`/`tmax`/`globrad` from `climate-min.csv` (2,557 available days, capped at 60) and pokes
+`snowComponent.vm_SnowDepth`/`frostComponent.vm_TemperatureUnderSnow` to a synthetic, deterministic
+sequence identical on both sides (`(day%30)<10 ? 50.0 : 0.0`, exercising both branches of the snow
+check repeatedly) rather than running `soilmoisture::step` — `currentCropModule` stays null
+throughout (bare soil, `vc_SoilCoverage` always 0), which is the scope this checkpoint proves;
+widening it to a live crop is phase 5's job once `CropModule` exists, the same kind of documented,
+symmetric gap as the phase-1-capstone's `SoilProfileParameters` normalisation.
+
+Three bugs caught before/while bringing the oracle up, all worth recording:
+- **A real port bug, not a harness bug: `dampingFactor` never got its C++ in-class initialiser.**
+  `struct SoilTemperature { ... double dampingFactor{0.8}; ... }` — `makeSoilTemperature`'s body
+  never assigns it explicitly, so a zero-initialised Odin struct silently kept `0.0`. Since
+  `calcSoilSurfaceTemperature`'s shading-coefficient formula divides through `dampingFactor` on the
+  `soilCoverage == 0` (bare-soil) path this oracle exercises, the bug would have shown up
+  immediately as a divergent `soilSurfaceTemperature` on day 0 — caught by re-deriving the
+  constructor from the header before running anything, the same "re-derive the oracle's intent"
+  discipline noted in phase 1c tranche 3b. Fixed with an explicit `st.dampingFactor = 0.8` and a
+  comment naming the in-class initialiser it stands in for.
+- **`CSVViaHeaderOptions`/`Csv_Via_Header_Options` must go through `merge()`, not hand-set fields,
+  on both sides.** Constructing the options with `separator`/`noOfHeaderLines` assigned directly
+  (skipping `.merge(json)`) leaves `lineNoOfDataStart` at its raw in-class default (`-2`) instead of
+  the value `merge()` derives (`lineNoOfHeaderLine + noOfHeaderLines`) — and the stale default
+  crashed the CSV parser outright (C++ abort, exit code 3) rather than misreading data. Fixed by
+  building the options from a small JSON object (`{"no-of-climate-file-header-lines": 2,
+  "csv-separator": ","}`) through the real constructor/`csv_via_header_options_merge` path on both
+  sides, mirroring `sim-min.json`'s actual `"climate.csv-options"` keys instead of hand-picking
+  struct fields. General lesson for phases 4-5: any C++ struct whose `merge()` *derives* a field
+  from others is unsafe to partially hand-construct in a driver; go through `merge()`.
+- **`createEnvJsonFromJsonObjects`/`create_env_json_from_json_objects` need a `climate.csv` path
+  fixup, not just `crop.json`/`site.json`.** Copied the `central_params_ref_main.cpp` fixup block,
+  which (because that driver strips `climateData` before dumping) never needed one — missing it
+  produced a silently-swallowed "could not open climate file" from the *internal* resolution
+  attempt (a second, separate read of the same file, done directly by this driver with the correct
+  path, still worked, but the misleading stray stderr line cost real time to trace). `env_ref_main.cpp` /
+  `env_ref/main.odin` already had the right fixup; copied from there instead.
+
 ### Phase 5 — crop
 `crop-module.cpp` (largest single file), `photosynthesis-FvCB`, `voc-guenther`, `voc-jjv`,
 `voc-common`, `O3-impact`.
