@@ -2634,3 +2634,541 @@ fc_crop_dry_matter :: proc(cm: ^Crop_Module, vw_MeanAirTemperature: f64, allocat
 		cm.vc_CropNDemand = cm.vc_CropNDemand / 10000.0 // [kg ha-1 -> kg m-2]
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Phase 5 checkpoint 6: water + nitrogen uptake
+//
+// Ported: fcReferenceEvapotranspiration, fcCropWaterUptake, fcCropNUptake,
+// getEffectiveRootingDepth (deferred here from checkpoint 3 - it reads
+// vc_RootEffectivity, populated by fcCropWaterUptake below, so this is where
+// it's actually meaningful to test). Together with checkpoint 5's
+// fcCropNitrogen (root growth + N-redux factor) and fcCropDryMatter, this
+// closes out every cropmodule:: function step() calls in its
+// vc_DevelopmentalStage>0 block except the fireEvent-driven bookkeeping
+// (checkpoint 7).
+// ---------------------------------------------------------------------------
+
+// C++: double monica::cropmodule::fcReferenceEvapotranspiration(CropModule*,
+// double vw_MaxAirTemperature, double vw_MinAirTemperature, double
+// vw_RelativeHumidity, double vw_MeanAirTemperature, double vw_WindSpeed,
+// double vw_WindSpeedHeight, double vw_AtmosphericCO2Concentration)
+//
+// FAO-56 Penman-Monteith reference evapotranspiration (Allen, Pereira, Raes
+// & Smith 1998, FAO Irrigation and Drainage Paper 56).
+fc_reference_evapotranspiration :: proc(
+	cm: ^Crop_Module,
+	vw_MaxAirTemperature, vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature: f64,
+	vw_WindSpeed, vw_WindSpeedHeight, vw_AtmosphericCO2Concentration: f64,
+) -> f64 {
+	cropPs := cm.cropModParams
+	pc_CarboxylationPathway := cm.cropParams.speciesParams.pc_CarboxylationPathway
+	vs_HeightNN := cm.siteParams.vs_HeightNN
+
+	pc_SaturationBeta := cropPs.pc_SaturationBeta // Yu et al. 2001; beta = 3.5
+	pc_StomataConductanceAlpha := cropPs.pc_StomataConductanceAlpha // Yu et al. 2001; alpha = 0.06
+	pc_ReferenceAlbedo := cropPs.pc_ReferenceAlbedo // FAO green grass reference albedo, Allen et al. 1998
+
+	// Calculation of atmospheric pressure
+	vc_AtmosphericPressure := 101.3 * libc.pow((293.0-(0.0065*vs_HeightNN))/293.0, 5.26)
+
+	// Calculation of psychrometer constant
+	vc_PsycrometerConstant := 0.000665 * vc_AtmosphericPressure
+
+	// Calc. of saturated water vapour pressure at daily max/min temperature
+	vc_SaturatedVapourPressureMax :=
+		0.6108 * libc.exp((17.27 * vw_MaxAirTemperature) / (237.3 + vw_MaxAirTemperature))
+	vc_SaturatedVapourPressureMin :=
+		0.6108 * libc.exp((17.27 * vw_MinAirTemperature) / (237.3 + vw_MinAirTemperature))
+
+	vc_SaturatedVapourPressure := (vc_SaturatedVapourPressureMax + vc_SaturatedVapourPressureMin) / 2.0
+
+	vc_VapourPressure: f64
+	if vw_RelativeHumidity <= 0.0 {
+		// Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
+		vc_VapourPressure = vc_SaturatedVapourPressureMin
+	} else {
+		vc_VapourPressure = vw_RelativeHumidity * vc_SaturatedVapourPressure
+	}
+
+	vc_SaturationDeficit := vc_SaturatedVapourPressure - vc_VapourPressure
+
+	// Slope of saturation water vapour pressure-to-temperature relation
+	vc_SaturatedVapourPressureSlope :=
+		(4098.0 * (0.6108 * libc.exp((17.27 * vw_MeanAirTemperature) / (vw_MeanAirTemperature + 237.3)))) /
+		((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3))
+
+	// 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
+	vc_WindSpeed_2m := max(0.5, vw_WindSpeed*(4.87/libc.log(67.8*vw_WindSpeedHeight-5.42)))
+
+	vc_AerodynamicResistance := 208.0 / vc_WindSpeed_2m
+
+	if cm.vc_GrossPhotosynthesisReference_mol <= 0.0 {
+		cm.vc_StomataResistance = 999999.9
+	} else {
+		if pc_CarboxylationPathway == 1 {
+			cm.vc_StomataResistance =
+				(vw_AtmosphericCO2Concentration * (1.0 + vc_SaturationDeficit/pc_SaturationBeta)) /
+				(pc_StomataConductanceAlpha * cm.vc_GrossPhotosynthesisReference_mol)
+		} else {
+			cm.vc_StomataResistance =
+				(vw_AtmosphericCO2Concentration * (1.0 + vc_SaturationDeficit/pc_SaturationBeta)) /
+				(pc_StomataConductanceAlpha * cm.vc_GrossPhotosynthesisReference_mol)
+		}
+	}
+
+	vc_SurfaceResistance := cm.vc_StomataResistance / 1.44
+
+	vc_ClearSkyShortwaveRadiation := (0.75 + 0.00002*vs_HeightNN) * cm.vc_ExtraterrestrialRadiation
+
+	vc_RelativeShortwaveRadiation :=
+		vc_ClearSkyShortwaveRadiation > 0 ? cm.vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation : 0.0
+
+	vc_NetShortwaveRadiation := (1.0 - pc_ReferenceAlbedo) * cm.vc_GlobalRadiation
+
+	pc_BolzmanConstant :: 0.0000000049 // 4.903 * 10^-9 MJ m-2 K-4 d-1
+	vw_NetRadiation :=
+		vc_NetShortwaveRadiation -
+		(pc_BolzmanConstant *
+				(libc.pow(vw_MinAirTemperature+273.16, 4.0) + libc.pow(vw_MaxAirTemperature+273.16, 4.0)) /
+				2.0 *
+				(1.35*vc_RelativeShortwaveRadiation - 0.35) *
+				(0.34 - 0.14*libc.sqrt(vc_VapourPressure)))
+
+	// Penman-Monteith-Method FAO
+	vc_ReferenceEvapotranspiration :=
+		((0.408 * vc_SaturatedVapourPressureSlope * vw_NetRadiation) +
+				(vc_PsycrometerConstant *
+						(900.0 / (vw_MeanAirTemperature + 273.0)) *
+						vc_WindSpeed_2m *
+						vc_SaturationDeficit)) /
+		(vc_SaturatedVapourPressureSlope +
+				vc_PsycrometerConstant * (1.0 + (vc_SurfaceResistance / vc_AerodynamicResistance)))
+
+	if vc_ReferenceEvapotranspiration < 0.0 {
+		vc_ReferenceEvapotranspiration = 0.0
+	}
+
+	return vc_ReferenceEvapotranspiration
+}
+
+// C++: void monica::cropmodule::fcCropWaterUptake(CropModule*, size_t
+// vc_GroundwaterTable, double vw_GrossPrecipitation, double, double)
+//
+// Water uptake by the crop: potential transpiration from potential
+// evapotranspiration by soil cover fraction, reduced by water availability
+// in the soil according to actual water contents, root distribution and root
+// effectivity. The trailing two C++ parameters are unused in the C++ body
+// too (their names are commented out there) - kept for signature fidelity
+// with step()'s call site.
+fc_crop_water_uptake :: proc(
+	cm: ^Crop_Module,
+	vc_GroundwaterTable: int,
+	vw_GrossPrecipitation: f64,
+	_vc_CurrentTotalTemperatureSum: f64,
+	_vc_TotalTemperatureSum: f64,
+) {
+	soilColumn := cm.soilColumn
+	pc_WaterDeficitResponseOn := cm.simParams.pc_WaterDeficitResponseOn
+	vs_MaxEffectiveRootingDepth := cm.siteParams.vs_MaxEffectiveRootingDepth
+
+	nols := len(soilColumn.layers)
+	layerThickness := soilColumn.layers[0].vs_LayerThickness
+	cm.vc_PotentialTranspirationDeficit = 0.0 // [mm]
+	cm.vc_PotentialTranspiration = 0.0 // old TRAMAX [mm]
+	vc_PotentialEvapotranspiration := 0.0 // [mm]
+	cm.vc_TranspirationReduced = 0.0 // old TDRED [mm]
+	cm.vc_ActualTranspiration = 0.0 // [mm]
+	vc_RemainingTotalRootEffectivity := 0.0 // old WEFFREST [m]
+	vc_CropWaterUptakeFromGroundwater := 0.0 // old GAUF [mm]
+	vc_TotalRootEffectivity := 0.0 // old WEFF [m]
+	cm.vc_ActualTranspirationDeficit = 0.0 // old TREST [mm]
+	vc_Interception := 0.0
+	cm.vc_RemainingEvapotranspiration = 0.0
+
+	for i_Layer := 0; i_Layer < nols; i_Layer += 1 {
+		cm.vc_Transpiration[i_Layer] = 0.0 // old TP [mm]
+		cm.vc_TranspirationRedux[i_Layer] = 0.0 // old TRRED []
+		cm.vc_RootEffectivity[i_Layer] = 0.0 // old WUEFF [?]
+	}
+
+	// --- Interception ---
+	vc_InterceptionStorageOld := cm.vc_InterceptionStorage
+
+	// Interception in [mm d-1]
+	vc_Interception = (2.5 * cm.vc_CropHeight * cm.vc_SoilCoverage) - cm.vc_InterceptionStorage
+	if vc_Interception < 0 {
+		vc_Interception = 0.0
+	}
+	// If no precipitation occurs, interception = 0
+	if vw_GrossPrecipitation <= 0 {
+		vc_Interception = 0.0
+	}
+
+	// Calculating net precipitation and adding to surface water
+	if vw_GrossPrecipitation <= vc_Interception {
+		vc_Interception = vw_GrossPrecipitation
+		cm.vc_NetPrecipitation = 0.0
+	} else {
+		cm.vc_NetPrecipitation = vw_GrossPrecipitation - vc_Interception
+	}
+
+	// add intercepted precipitation to the virtual interception water storage
+	cm.vc_InterceptionStorage = vc_InterceptionStorageOld + vc_Interception
+
+	// --- Transpiration ---
+	vc_PotentialEvapotranspiration = cm.vc_ReferenceEvapotranspiration * cm.vc_KcFactor // [mm]
+
+	// from HERMES
+	if vc_PotentialEvapotranspiration > 6.5 {
+		vc_PotentialEvapotranspiration = 6.5
+	}
+
+	cm.vc_RemainingEvapotranspiration = vc_PotentialEvapotranspiration // [mm]
+
+	// If crop holds intercepted water, first evaporation from crop surface
+	if cm.vc_InterceptionStorage > 0.0 {
+		if cm.vc_RemainingEvapotranspiration >= cm.vc_InterceptionStorage {
+			cm.vc_RemainingEvapotranspiration -= cm.vc_InterceptionStorage
+			cm.vc_EvaporatedFromIntercept = cm.vc_InterceptionStorage
+			cm.vc_InterceptionStorage = 0.0
+		} else {
+			cm.vc_InterceptionStorage -= cm.vc_RemainingEvapotranspiration
+			cm.vc_EvaporatedFromIntercept = cm.vc_RemainingEvapotranspiration
+			cm.vc_RemainingEvapotranspiration = 0.0
+		}
+	} else {
+		cm.vc_EvaporatedFromIntercept = 0.0
+	}
+
+	// if the plant has matured, no transpiration occurs!
+	if cm.vc_DevelopmentalStage < cm.vc_FinalDevelopmentalStage {
+		cm.vc_PotentialTranspiration = cm.vc_RemainingEvapotranspiration * cm.vc_SoilCoverage // [mm]
+
+		for i_Layer := 0; i_Layer < cm.vc_RootingZone; i_Layer += 1 {
+			vc_AvailableWater :=
+				soilColumn.layers[i_Layer].vs_FieldCapacity - soilColumn.layers[i_Layer].vs_PermanentWiltingPoint
+			vc_AvailableWaterPercentage :=
+				(soilColumn.layers[i_Layer].vs_SoilMoisture_m3 - soilColumn.layers[i_Layer].vs_PermanentWiltingPoint) /
+				vc_AvailableWater
+			if vc_AvailableWaterPercentage < 0.0 {
+				vc_AvailableWaterPercentage = 0.0
+			}
+			// MP: access point for drought optimisation (this could be
+			// extended for waterlogging); an alternative approach for
+			// compensatory effects is a soil water-dependent root
+			// penetration rate.
+			switch {
+			case vc_AvailableWaterPercentage < 0.15:
+				cm.vc_TranspirationRedux[i_Layer] = vc_AvailableWaterPercentage * 3.0 // []
+				cm.vc_RootEffectivity[i_Layer] = 0.15 + 0.45*vc_AvailableWaterPercentage/0.15 // [] MP: essentially *3
+			case vc_AvailableWaterPercentage < 0.3:
+				cm.vc_TranspirationRedux[i_Layer] = 0.45 + (0.25 * (vc_AvailableWaterPercentage - 0.15) / 0.15)
+				cm.vc_RootEffectivity[i_Layer] = 0.6 + (0.2 * (vc_AvailableWaterPercentage - 0.15) / 0.15)
+			case vc_AvailableWaterPercentage < 0.5: // MP: ab hier hat das fast keinen Effekt mehr
+				cm.vc_TranspirationRedux[i_Layer] = 0.7 + (0.275 * (vc_AvailableWaterPercentage - 0.3) / 0.2)
+				cm.vc_RootEffectivity[i_Layer] = 0.8 + (0.2 * (vc_AvailableWaterPercentage - 0.3) / 0.2)
+			case vc_AvailableWaterPercentage < 0.75: // MP: ab hier ist nur mehr die Transpiration betroffen
+				cm.vc_TranspirationRedux[i_Layer] = 0.975 + (0.025 * (vc_AvailableWaterPercentage - 0.5) / 0.25)
+				cm.vc_RootEffectivity[i_Layer] = 1.0
+			case:
+				cm.vc_TranspirationRedux[i_Layer] = 1.0
+				cm.vc_RootEffectivity[i_Layer] = 1.0
+			}
+			if cm.vc_TranspirationRedux[i_Layer] < 0 {
+				cm.vc_TranspirationRedux[i_Layer] = 0.0
+			}
+			if cm.vc_RootEffectivity[i_Layer] < 0 {
+				cm.vc_RootEffectivity[i_Layer] = 0.0
+			}
+			if i_Layer == vc_GroundwaterTable { // old GRW
+				cm.vc_RootEffectivity[i_Layer] = 0.5
+			}
+			if i_Layer > vc_GroundwaterTable { // old GRW
+				cm.vc_RootEffectivity[i_Layer] = 0.0
+			}
+			if f64(i_Layer+1)*layerThickness >= vs_MaxEffectiveRootingDepth {
+				cm.vc_RootEffectivity[i_Layer] = 0.0
+			}
+
+			vc_TotalRootEffectivity += cm.vc_RootEffectivity[i_Layer] * cm.vc_RootDensity[i_Layer] // [m m-3]
+			vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity
+		}
+
+		// [TRANSPLANT SHOCK] Water Uptake Limitation.
+		if cm.vc_TransplantEfficiency < 1.0 {
+			vc_TotalRootEffectivity *= cm.vc_TransplantEfficiency
+			vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity
+		}
+
+		for i_Layer := 0; i_Layer < nols; i_Layer += 1 {
+			if i_Layer > min(cm.vc_RootingZone, vc_GroundwaterTable+1) {
+				cm.vc_Transpiration[i_Layer] = 0.0 // [mm]
+			} else {
+				if vc_TotalRootEffectivity != 0.0 {
+					cm.vc_Transpiration[i_Layer] =
+						cm.vc_PotentialTranspiration *
+						((cm.vc_RootEffectivity[i_Layer] * cm.vc_RootDensity[i_Layer]) / vc_TotalRootEffectivity) *
+						cm.vc_OxygenDeficit
+				} else {
+					// MP: why is this not changing anything? (probably only
+					// matters for too-dry conditions)
+					cm.vc_Transpiration[i_Layer] = 0
+				}
+			}
+		}
+
+		for i_Layer := 0; i_Layer < min(cm.vc_RootingZone, vc_GroundwaterTable+1); i_Layer += 1 {
+			vc_RemainingTotalRootEffectivity -= cm.vc_RootEffectivity[i_Layer] * cm.vc_RootDensity[i_Layer] // [m m-3]
+
+			if vc_RemainingTotalRootEffectivity <= 0.0 {
+				vc_RemainingTotalRootEffectivity = 0.00001
+			}
+			if ((cm.vc_Transpiration[i_Layer] / 1000.0) / layerThickness) >
+			   (soilColumn.layers[i_Layer].vs_SoilMoisture_m3 - soilColumn.layers[i_Layer].vs_PermanentWiltingPoint) {
+				cm.vc_PotentialTranspirationDeficit =
+					(((cm.vc_Transpiration[i_Layer] / 1000.0) / layerThickness) -
+							(soilColumn.layers[i_Layer].vs_SoilMoisture_m3 - soilColumn.layers[i_Layer].vs_PermanentWiltingPoint)) *
+					layerThickness *
+					1000.0 // [mm]
+				if cm.vc_PotentialTranspirationDeficit < 0.0 {
+					cm.vc_PotentialTranspirationDeficit = 0.0
+				}
+				if cm.vc_PotentialTranspirationDeficit > cm.vc_Transpiration[i_Layer] {
+					cm.vc_PotentialTranspirationDeficit = cm.vc_Transpiration[i_Layer] // [mm]
+				}
+			} else {
+				cm.vc_PotentialTranspirationDeficit = 0.0
+			}
+			cm.vc_TranspirationReduced = cm.vc_Transpiration[i_Layer] * (1.0 - cm.vc_TranspirationRedux[i_Layer])
+
+			// MP: this is a key line for water stress response
+			cm.vc_ActualTranspirationDeficit = max(cm.vc_TranspirationReduced, cm.vc_PotentialTranspirationDeficit) // [mm]
+			if cm.vc_ActualTranspirationDeficit > 0.0 {
+				if i_Layer < min(cm.vc_RootingZone, vc_GroundwaterTable+1) {
+					for i_Layer2 := i_Layer + 1; i_Layer2 < min(cm.vc_RootingZone, vc_GroundwaterTable+1); i_Layer2 += 1 {
+						cm.vc_Transpiration[i_Layer2] +=
+							cm.vc_ActualTranspirationDeficit *
+							(cm.vc_RootEffectivity[i_Layer2] * cm.vc_RootDensity[i_Layer2] / vc_RemainingTotalRootEffectivity)
+					}
+				}
+			}
+			cm.vc_Transpiration[i_Layer] = cm.vc_Transpiration[i_Layer] - cm.vc_ActualTranspirationDeficit
+			if cm.vc_Transpiration[i_Layer] < 0.0 {
+				cm.vc_Transpiration[i_Layer] = 0.0
+			}
+			cm.vc_ActualTranspiration += cm.vc_Transpiration[i_Layer]
+			if i_Layer == vc_GroundwaterTable {
+				vc_CropWaterUptakeFromGroundwater = (cm.vc_Transpiration[i_Layer] / 1000.0) / layerThickness // [m3 m-3]
+			}
+		}
+		if cm.vc_PotentialTranspiration > 0 {
+			cm.vc_TranspirationDeficit = cm.vc_ActualTranspiration / cm.vc_PotentialTranspiration
+		} else {
+			cm.vc_TranspirationDeficit = 1.0
+		}
+
+		vm_GroundwaterDistance := vc_GroundwaterTable - cm.vc_RootingDepth
+		if vm_GroundwaterDistance <= 1 {
+			cm.vc_TranspirationDeficit = 1.0
+		}
+		if !pc_WaterDeficitResponseOn {
+			cm.vc_TranspirationDeficit = 1.0
+		}
+	}
+	// vc_CropWaterUptakeFromGroundwater: computed but unused elsewhere in the
+	// C++ too - a genuine dead store, kept for fidelity.
+	_ = vc_CropWaterUptakeFromGroundwater
+}
+
+// C++: void monica::cropmodule::fcCropNUptake(CropModule*, size_t
+// vc_GroundwaterTable, double, double)
+//
+// The trailing two C++ parameters are unused in the C++ body too (their
+// names are commented out there) - kept for signature fidelity.
+fc_crop_n_uptake :: proc(
+	cm: ^Crop_Module,
+	vc_GroundwaterTable: int,
+	_vc_CurrentTotalTemperatureSum: f64,
+	_vc_TotalTemperatureSum: f64,
+) {
+	cropPs := cm.cropModParams
+	soilColumn := cm.soilColumn
+	pc_PartBiologicalNFixation := cm.cropParams.speciesParams.pc_PartBiologicalNFixation
+	pc_ResidueNRatio := cm.cropParams.cultivarParams.pc_ResidueNRatio
+	pc_StageMaxRootNConcentration := cm.cropParams.speciesParams.pc_StageMaxRootNConcentration
+	pc_Tortuosity := cm.cropModParams.pc_Tortuosity
+
+	nols := len(soilColumn.layers)
+	layerThickness := soilColumn.layers[0].vs_LayerThickness
+
+	vc_ConvectiveNUptake := 0.0 // old TRNSUM
+	vc_DiffusiveNUptake := 0.0 // old SUMDIFF
+	vc_ConvectiveNUptakeFromLayer := make([dynamic]f64, nols, context.temp_allocator) // old MASS
+
+	vc_DiffusionCoeff := make([dynamic]f64, nols, context.temp_allocator) // old D
+	vc_DiffusiveNUptakeFromLayer := make([dynamic]f64, nols, context.temp_allocator) // old DIFF
+	vc_ConvectiveNUptake_1 := 0.0 // old MASSUM
+	vc_DiffusiveNUptake_1 := 0.0 // old DIFFSUM
+	pc_MinimumAvailableN := cropPs.pc_MinimumAvailableN // kg m-3
+	pc_MinimumNConcentrationRoot := cropPs.pc_MinimumNConcentrationRoot // kg kg-1
+	pc_MaxCropNDemand := cropPs.pc_MaxCropNDemand
+
+	cm.vc_TotalNUptake = 0.0
+	cm.vc_TotalNInput = 0.0
+	cm.vc_FixedN = 0.0
+	for &v in cm.vc_NUptakeFromLayer {
+		v = 0.0
+	}
+
+	PI :: 3.14159265358979323
+
+	// if the plant has matured, no N uptake occurs!
+	if cm.vc_DevelopmentalStage < cm.vc_FinalDevelopmentalStage {
+		for i_Layer := 0; i_Layer < min(cm.vc_RootingZone, vc_GroundwaterTable); i_Layer += 1 {
+			cm.vs_SoilMineralNContent[i_Layer] = soilColumn.layers[i_Layer].vs_SoilNO3 // [kg m-3]
+
+			// Convective N uptake per layer
+			vc_ConvectiveNUptakeFromLayer[i_Layer] =
+				(cm.vc_Transpiration[i_Layer] / 1000.0) * // [mm -> m]
+				(cm.vs_SoilMineralNContent[i_Layer] / // [kg m-3]
+						soilColumn.layers[i_Layer].vs_SoilMoisture_m3) * // old WG [m3 m-3]
+				cm.vc_TimeStep // -->[kg m-2]
+
+			vc_ConvectiveNUptake += vc_ConvectiveNUptakeFromLayer[i_Layer] // [kg m-2]
+
+			vc_DiffusionCoeff[i_Layer] =
+				0.000214 * (pc_Tortuosity * libc.exp(soilColumn.layers[i_Layer].vs_SoilMoisture_m3 * 10)) /
+				soilColumn.layers[i_Layer].vs_SoilMoisture_m3 // [m2 d-1]
+
+			vc_DiffusiveNUptakeFromLayer[i_Layer] =
+				(vc_DiffusionCoeff[i_Layer] * // [m2 d-1]
+						soilColumn.layers[i_Layer].vs_SoilMoisture_m3 * // [m3 m-3]
+						2.0 *
+						PI *
+						cm.vc_RootDiameter[i_Layer] * // [m]
+						(cm.vs_SoilMineralNContent[i_Layer]/1000.0/ // [kg m-3]
+										soilColumn.layers[i_Layer].vs_SoilMoisture_m3 -
+								0.000014) * // [m3 m-3]
+						libc.sqrt(PI * cm.vc_RootDensity[i_Layer])) * // [m m-3]
+				cm.vc_RootDensity[i_Layer] *
+				1000.0 *
+				cm.vc_TimeStep // -->[kg m-2]
+
+			if vc_DiffusiveNUptakeFromLayer[i_Layer] < 0.0 {
+				vc_DiffusiveNUptakeFromLayer[i_Layer] = 0
+			}
+
+			vc_DiffusiveNUptake += vc_DiffusiveNUptakeFromLayer[i_Layer] // [kg m-2]
+		}
+
+		for i_Layer := 0; i_Layer < min(cm.vc_RootingZone, vc_GroundwaterTable); i_Layer += 1 {
+			if cm.vc_CropNDemand > 0.0 {
+				if vc_ConvectiveNUptake >= cm.vc_CropNDemand {
+					// convective N uptake is sufficient
+					cm.vc_NUptakeFromLayer[i_Layer] =
+						cm.vc_CropNDemand * vc_ConvectiveNUptakeFromLayer[i_Layer] / vc_ConvectiveNUptake
+				} else {
+					// N demand is not covered
+					if (cm.vc_CropNDemand - vc_ConvectiveNUptake) < vc_DiffusiveNUptake {
+						cm.vc_NUptakeFromLayer[i_Layer] =
+							vc_ConvectiveNUptakeFromLayer[i_Layer] +
+							((cm.vc_CropNDemand - vc_ConvectiveNUptake) * vc_DiffusiveNUptakeFromLayer[i_Layer] / vc_DiffusiveNUptake)
+					} else {
+						cm.vc_NUptakeFromLayer[i_Layer] =
+							vc_ConvectiveNUptakeFromLayer[i_Layer] + vc_DiffusiveNUptakeFromLayer[i_Layer]
+					}
+				}
+
+				vc_ConvectiveNUptake_1 += vc_ConvectiveNUptakeFromLayer[i_Layer]
+				vc_DiffusiveNUptake_1 += vc_DiffusiveNUptakeFromLayer[i_Layer]
+
+				if cm.vc_NUptakeFromLayer[i_Layer] >
+				   ((cm.vs_SoilMineralNContent[i_Layer] * layerThickness) - pc_MinimumAvailableN) {
+					cm.vc_NUptakeFromLayer[i_Layer] = (cm.vs_SoilMineralNContent[i_Layer] * layerThickness) - pc_MinimumAvailableN
+				}
+
+				if cm.vc_NUptakeFromLayer[i_Layer] > (pc_MaxCropNDemand / 10000.0 * 0.75) {
+					cm.vc_NUptakeFromLayer[i_Layer] = pc_MaxCropNDemand / 10000.0 * 0.75
+				}
+
+				if cm.vc_NUptakeFromLayer[i_Layer] < 0.0 {
+					cm.vc_NUptakeFromLayer[i_Layer] = 0.0
+				}
+			} else {
+				cm.vc_NUptakeFromLayer[i_Layer] = 0.0
+			}
+
+			cm.vc_TotalNUptake += cm.vc_NUptakeFromLayer[i_Layer] * 10000.0 // [kg m-2] -> [kg ha-1]
+		}
+
+		// Biological N Fixation - part of the deficit which can be covered
+		// by biological N fixation.
+		cm.vc_FixedN = pc_PartBiologicalNFixation * cm.vc_CropNDemand * 10000.0 // [kg N ha-1]
+
+		if ((cm.vc_CropNDemand * 10000.0) - cm.vc_TotalNUptake) < cm.vc_FixedN {
+			cm.vc_TotalNInput = cm.vc_CropNDemand * 10000.0
+			cm.vc_FixedN = (cm.vc_CropNDemand * 10000.0) - cm.vc_TotalNUptake
+		} else {
+			cm.vc_TotalNInput = cm.vc_TotalNUptake + cm.vc_FixedN
+		}
+	}
+	// vc_ConvectiveNUptake_1/vc_DiffusiveNUptake_1: computed but unused
+	// elsewhere in the C++ too - genuine dead stores, kept for fidelity.
+	_ = vc_ConvectiveNUptake_1
+	_ = vc_DiffusiveNUptake_1
+
+	cm.vc_SumTotalNUptake += cm.vc_TotalNUptake
+	cm.vc_TotalBiomassNContent += cm.vc_TotalNInput
+
+	if cm.vc_RootBiomass > cm.vc_RootBiomassOld {
+		// root has been growing
+		cm.vc_NConcentrationRoot =
+			((cm.vc_RootBiomassOld * cm.vc_NConcentrationRoot) +
+					((cm.vc_RootBiomass - cm.vc_RootBiomassOld) /
+							(cm.vc_AbovegroundBiomass - cm.vc_AbovegroundBiomassOld + cm.vc_BelowgroundBiomass -
+									cm.vc_BelowgroundBiomassOld +
+									cm.vc_RootBiomass -
+									cm.vc_RootBiomassOld) *
+							cm.vc_TotalNInput)) /
+			cm.vc_RootBiomass
+
+		cm.vc_NConcentrationRoot = tl.bound(
+			pc_MinimumNConcentrationRoot,
+			cm.vc_NConcentrationRoot,
+			pc_StageMaxRootNConcentration[cm.vc_DevelopmentalStage],
+		)
+	}
+
+	cm.vc_NConcentrationAbovegroundBiomass =
+		(cm.vc_TotalBiomassNContent - (cm.vc_RootBiomass * cm.vc_NConcentrationRoot)) /
+		(cm.vc_AbovegroundBiomass + (cm.vc_BelowgroundBiomass / pc_ResidueNRatio))
+
+	if (cm.vc_NConcentrationAbovegroundBiomass * cm.vc_AbovegroundBiomass) <
+	   (cm.vc_NConcentrationAbovegroundBiomassOld * cm.vc_AbovegroundBiomassOld) {
+		tempNConcentrationAbovegroundBiomass :=
+			cm.vc_NConcentrationAbovegroundBiomassOld * cm.vc_AbovegroundBiomassOld / cm.vc_AbovegroundBiomass
+
+		tempNConcentrationRoot :=
+			(cm.vc_TotalBiomassNContent - (cm.vc_NConcentrationAbovegroundBiomass * cm.vc_AbovegroundBiomass) -
+					(cm.vc_NConcentrationAbovegroundBiomass * cm.vc_BelowgroundBiomass / pc_ResidueNRatio)) /
+			cm.vc_RootBiomass
+
+		if tempNConcentrationRoot >= pc_MinimumNConcentrationRoot {
+			cm.vc_NConcentrationAbovegroundBiomass = tempNConcentrationAbovegroundBiomass
+			cm.vc_NConcentrationRoot = tempNConcentrationRoot
+		}
+	}
+}
+
+// C++: double monica::cropmodule::getEffectiveRootingDepth(const CropModule*)
+get_effective_rooting_depth :: proc(cm: ^Crop_Module) -> f64 {
+	nols := len(cm.soilColumn.layers)
+
+	for i_Layer := 0; i_Layer < nols; i_Layer += 1 {
+		if cm.vc_RootEffectivity[i_Layer] == 0.0 {
+			return f64(i_Layer + 1) / 10.0
+		}
+	}
+
+	return f64(nols + 1) / 10.0
+}

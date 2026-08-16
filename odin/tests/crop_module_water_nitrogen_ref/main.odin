@@ -1,12 +1,11 @@
-// Odin side of the phase 5 checkpoint 5 (biomass/dry matter + stress)
+// Odin side of the phase 5 checkpoint 6 (water + nitrogen uptake)
 // differential test.
 //
 // Must emit byte-identical output to
-// odin/tests/cpp_ref/crop_module_biomass_ref_main.cpp - see that file's
-// header comment for the callback-wiring rationale and the day_step this
-// driver replicates.
-// Run odin/tests/cpp_ref/run_crop_module_biomass.sh to build both and diff them.
-package crop_module_biomass_ref
+// odin/tests/cpp_ref/crop_module_water_nitrogen_ref_main.cpp - see that
+// file's header comment for the day_step this driver replicates.
+// Run odin/tests/cpp_ref/run_crop_module_water_nitrogen.sh to build both and diff them.
+package crop_module_water_nitrogen_ref
 
 import "core:fmt"
 import "core:os"
@@ -25,48 +24,13 @@ ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
 noop_fire_event :: proc(event: string) {}
+noop_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {}
 
-// Odin `proc` values can't capture surrounding state (no closures), unlike
-// C++'s capturing lambdas - these test-driver-only globals are the
-// workaround, matching the "driver globals for callback wiring" pattern this
-// checkpoint's C++ side does natively via lambda capture.
+// Odin `proc` values can't capture - see checkpoint 5's file comment.
 g_soil_moisture: ^core.Soil_Moisture
-
-g_last_organic_matter_total: f64
-g_last_organic_matter_nconc: f64
-g_organic_matter_call_count: int
 
 real_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {
 	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avgAirTemp)
-}
-
-recording_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {
-	// Odin map iteration order is unspecified, unlike C++'s std::map (sorted
-	// ascending by key) - and floating-point addition is not associative, so
-	// summing in map-iteration order can round differently than the C++
-	// side's sorted-order sum by a bit or two. Sort keys first, matching the
-	// technique odin/monica/trace/trace.odin's dump_map_int_f64 already uses.
-	keys := make([dynamic]int, 0, len(layer2amount), context.temp_allocator)
-	for k in layer2amount {
-		append(&keys, k)
-	}
-	for i in 1 ..< len(keys) {
-		k := keys[i]
-		j := i - 1
-		for j >= 0 && keys[j] > k {
-			keys[j + 1] = keys[j]
-			j -= 1
-		}
-		keys[j + 1] = k
-	}
-
-	total := 0.0
-	for k in keys {
-		total += layer2amount[k]
-	}
-	g_last_organic_matter_total = total
-	g_last_organic_matter_nconc = nConcentration
-	g_organic_matter_call_count += 1
 }
 
 @(private)
@@ -74,56 +38,48 @@ jn :: proc(path, name: string) -> string {
 	return fmt.tprintf("%s.%s", path, name)
 }
 
-dump_crop_module_biomass :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module) {
-	tr.dump(t, jn(path, "vc_CropHeatRedux"), cm.vc_CropHeatRedux)
-	tr.dump(t, jn(path, "vc_TotalCropHeatImpact"), cm.vc_TotalCropHeatImpact)
-	tr.dump(t, jn(path, "vc_DaysAfterBeginFlowering"), cm.vc_DaysAfterBeginFlowering)
+dump_crop_module_water_nitrogen :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module) {
+	tr.dump(t, jn(path, "vc_ReferenceEvapotranspiration"), cm.vc_ReferenceEvapotranspiration)
+	tr.dump(t, jn(path, "vc_StomataResistance"), cm.vc_StomataResistance)
 
-	tr.dump(t, jn(path, "vc_LT50"), cm.vc_LT50)
-	tr.dump(t, jn(path, "vc_LT50M"), cm.vc_LT50M)
-	tr.dump(t, jn(path, "vc_CropFrostRedux"), cm.vc_CropFrostRedux)
+	tr.dump(t, jn(path, "vc_NetPrecipitation"), cm.vc_NetPrecipitation)
+	tr.dump(t, jn(path, "vc_InterceptionStorage"), cm.vc_InterceptionStorage)
+	tr.dump(t, jn(path, "vc_EvaporatedFromIntercept"), cm.vc_EvaporatedFromIntercept)
+	tr.dump(t, jn(path, "vc_PotentialTranspiration"), cm.vc_PotentialTranspiration)
+	tr.dump(t, jn(path, "vc_RemainingEvapotranspiration"), cm.vc_RemainingEvapotranspiration)
+	tr.dump(t, jn(path, "vc_ActualTranspiration"), cm.vc_ActualTranspiration)
+	tr.dump(t, jn(path, "vc_ActualTranspirationDeficit"), cm.vc_ActualTranspirationDeficit)
+	tr.dump(t, jn(path, "vc_PotentialTranspirationDeficit"), cm.vc_PotentialTranspirationDeficit)
+	tr.dump(t, jn(path, "vc_TranspirationReduced"), cm.vc_TranspirationReduced)
+	tr.dump(t, jn(path, "vc_TranspirationDeficit"), cm.vc_TranspirationDeficit)
+	tr.dump(t, jn(path, "vc_Transpiration"), cm.vc_Transpiration)
+	tr.dump(t, jn(path, "vc_TranspirationRedux"), cm.vc_TranspirationRedux)
+	tr.dump(t, jn(path, "vc_RootEffectivity"), cm.vc_RootEffectivity)
+	tr.dump(t, jn(path, "getEffectiveRootingDepth"), core.get_effective_rooting_depth(cm))
 
-	tr.dump(t, jn(path, "vc_DroughtImpactOnFertility"), cm.vc_DroughtImpactOnFertility)
-
-	tr.dump(t, jn(path, "vc_CriticalNConcentration"), cm.vc_CriticalNConcentration)
-	tr.dump(t, jn(path, "vc_TargetNConcentration"), cm.vc_TargetNConcentration)
-	tr.dump(t, jn(path, "rootNRedux"), cm.rootNRedux)
-	tr.dump(t, jn(path, "vc_CropNRedux"), cm.vc_CropNRedux)
-
-	tr.dump(t, jn(path, "vc_AbovegroundBiomass"), cm.vc_AbovegroundBiomass)
-	tr.dump(t, jn(path, "vc_BelowgroundBiomass"), cm.vc_BelowgroundBiomass)
-	tr.dump(t, jn(path, "vc_TotalBiomass"), cm.vc_TotalBiomass)
-	tr.dump(t, jn(path, "vc_OrganBiomass"), cm.vc_OrganBiomass)
-	tr.dump(t, jn(path, "vc_OrganDeadBiomass"), cm.vc_OrganDeadBiomass)
-	tr.dump(t, jn(path, "vc_OrganGreenBiomass"), cm.vc_OrganGreenBiomass)
-	tr.dump(t, jn(path, "vc_OrganGrowthIncrement"), cm.vc_OrganGrowthIncrement)
-	tr.dump(t, jn(path, "vc_OrganSenescenceIncrement"), cm.vc_OrganSenescenceIncrement)
-	tr.dump(t, jn(path, "vc_RootBiomass"), cm.vc_RootBiomass)
-	tr.dump(t, jn(path, "vc_TotalBiomassNContent"), cm.vc_TotalBiomassNContent)
-	tr.dump(t, jn(path, "vc_CropNDemand"), cm.vc_CropNDemand)
-
-	tr.dump(t, jn(path, "vc_MaxRootingDepth"), cm.vc_MaxRootingDepth)
-	tr.dump(t, jn(path, "vc_RootingDepth_m"), cm.vc_RootingDepth_m)
-	tr.dump(t, jn(path, "vc_RootingDepth"), cm.vc_RootingDepth)
-	tr.dump(t, jn(path, "vc_RootingZone"), cm.vc_RootingZone)
-	tr.dump(t, jn(path, "vc_TotalRootLength"), cm.vc_TotalRootLength)
-	tr.dump(t, jn(path, "vc_RootDensity"), cm.vc_RootDensity)
-	tr.dump(t, jn(path, "vc_RootDiameter"), cm.vc_RootDiameter)
-	tr.dump(t, jn(path, "vc_MaxNUptake"), cm.vc_MaxNUptake)
-	tr.dump(t, jn(path, "vc_CurrentTotalTemperatureSumRoot"), cm.vc_CurrentTotalTemperatureSumRoot)
+	tr.dump(t, jn(path, "vs_SoilMineralNContent"), cm.vs_SoilMineralNContent)
+	tr.dump(t, jn(path, "vc_NUptakeFromLayer"), cm.vc_NUptakeFromLayer)
+	tr.dump(t, jn(path, "vc_TotalNUptake"), cm.vc_TotalNUptake)
+	tr.dump(t, jn(path, "vc_TotalNInput"), cm.vc_TotalNInput)
+	tr.dump(t, jn(path, "vc_FixedN"), cm.vc_FixedN)
+	tr.dump(t, jn(path, "vc_SumTotalNUptake"), cm.vc_SumTotalNUptake)
+	tr.dump(t, jn(path, "vc_NConcentrationRoot"), cm.vc_NConcentrationRoot)
+	tr.dump(t, jn(path, "vc_NConcentrationAbovegroundBiomass"), cm.vc_NConcentrationAbovegroundBiomass)
 
 	tr.dump(t, jn(path, "vc_GrossPrimaryProduction"), cm.vc_GrossPrimaryProduction)
 	tr.dump(t, jn(path, "vc_NetPrimaryProduction"), cm.vc_NetPrimaryProduction)
 }
 
-// checkpoint 3/4's day_step, extended with the checkpoint-5 functions in
-// step()'s real order - see crop_module_biomass_ref_main.cpp's day_step.
+// checkpoint 5's day_step, extended with the checkpoint-6 functions in
+// step()'s real order - GPP/NPP move to their real position, after
+// fc_crop_water_uptake/fc_crop_n_uptake.
 day_step :: proc(
 	cm: ^core.Crop_Module,
 	meanAirTemperature, maxAirTemperature, minAirTemperature: f64,
 	globalRadiation, sunshineHours: f64,
 	currentDate: d.Date,
 	frostKillOn: bool,
+	relativeHumidity, windSpeed, windSpeedHeight, grossPrecipitation: f64,
 	allocator := context.allocator,
 ) {
 	pc_BaseDaylength := cm.cropParams.cultivarParams.pc_BaseDaylength
@@ -136,6 +92,7 @@ day_step :: proc(
 	pc_StageTemperatureSum := cm.cropParams.cultivarParams.pc_StageTemperatureSum
 	pc_VernalisationRequirement := cm.cropParams.cultivarParams.pc_VernalisationRequirement
 	speciesPs := &cm.cropParams.speciesParams
+	soilColumn := cm.soilColumn
 
 	vs_JulianDay := int(d.julian_day(currentDate))
 
@@ -247,6 +204,39 @@ day_step :: proc(
 
 		core.fc_crop_dry_matter(cm, meanAirTemperature, allocator)
 
+		// climate-min.csv has no et0 column, so this is always the live
+		// branch (referenceEvapotranspiration < 0)
+		referenceEvapotranspiration := -1.0
+		if referenceEvapotranspiration < 0 {
+			cm.vc_ReferenceEvapotranspiration = core.fc_reference_evapotranspiration(
+				cm,
+				maxAirTemperature,
+				minAirTemperature,
+				relativeHumidity,
+				meanAirTemperature,
+				windSpeed,
+				windSpeedHeight,
+				ATM_CO2,
+			)
+		} else {
+			cm.vc_ReferenceEvapotranspiration = referenceEvapotranspiration
+		}
+
+		core.fc_crop_water_uptake(
+			cm,
+			soilColumn.vm_GroundwaterTableLayer,
+			grossPrecipitation,
+			cm.vc_CurrentTotalTemperatureSum,
+			cm.vc_TotalTemperatureSum,
+		)
+
+		core.fc_crop_n_uptake(
+			cm,
+			soilColumn.vm_GroundwaterTableLayer,
+			cm.vc_CurrentTotalTemperatureSum,
+			cm.vc_TotalTemperatureSum,
+		)
+
 		cm.vc_GrossPrimaryProduction = core.fc_gross_primary_production(cm)
 		cm.vc_NetPrimaryProduction = core.fc_net_primary_production(cm, cm.vc_TotalRespired)
 	}
@@ -257,7 +247,7 @@ day_step :: proc(
 main :: proc() {
 	args := os.args
 	if len(args) < 4 {
-		fmt.eprintln("usage: crop_module_biomass_ref <pathToSimJson> <pathToClimateCsv> <numDays>")
+		fmt.eprintln("usage: crop_module_water_nitrogen_ref <pathToSimJson> <pathToClimateCsv> <numDays>")
 		os.exit(2)
 	}
 	path_to_sim_json := args[1]
@@ -314,8 +304,6 @@ main :: proc() {
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
-	// --- real SoilColumn/SoilTemperature/SoilMoisture, bare soil (no
-	// cropModule wiring - checkpoint 7's job) ---
 	sc := core.make_soil_column(
 		cpp.simulationParameters.p_LayerThickness,
 		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
@@ -372,7 +360,7 @@ main :: proc() {
 		&cpp.userCropParameters,
 		&cpp.simulationParameters,
 		noop_fire_event,
-		recording_add_organic_matter,
+		noop_add_organic_matter,
 		real_get_snow_depth,
 		nil,
 		a,
@@ -433,122 +421,24 @@ main :: proc() {
 			et0,
 		)
 
-		day_step(&cm, tavg, tmax, tmin, globrad, 0.0, current_date, frost_kill_on, a)
+		day_step(
+			&cm,
+			tavg,
+			tmax,
+			tmin,
+			globrad,
+			0.0,
+			current_date,
+			frost_kill_on,
+			(relhumid / 100.0),
+			wind,
+			cpp.userEnvironmentParameters.p_WindSpeedHeight,
+			precip,
+			a,
+		)
 
 		tr.set_day(&t, day)
-		dump_crop_module_biomass(&t, "cropModule", &cm)
-		tr.write_line_f64(&t, "cropModule.recording.lastOrganicMatterTotal", g_last_organic_matter_total)
-		tr.write_line_f64(&t, "cropModule.recording.lastOrganicMatterNConc", g_last_organic_matter_nconc)
-		tr.write_line_int(&t, "cropModule.recording.organicMatterCallCount", g_organic_matter_call_count)
+		dump_crop_module_water_nitrogen(&t, "cropModule", &cm)
 		free_all(context.temp_allocator)
-	}
-
-	// === Scenario B: synthetic forced root senescence ===
-	// Real wheat's pc_OrganSenescenceRate for the root organ is 0 at every
-	// stage - scenario A's dailyDeadRootBiomassIncrement is genuinely,
-	// correctly always 0 there, and recording_add_organic_matter never fires.
-	// This scenario forces a small positive root senescence rate to exercise
-	// fc_move_dead_root_biomass_to_soil's real addOrganicMatter call.
-	{
-		sc2 := core.make_soil_column(
-			cpp.simulationParameters.p_LayerThickness,
-			cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-			cpp.siteParameters.vs_SoilParameters[:],
-			a,
-		)
-		st2 := core.make_soil_temperature(
-			&sc2,
-			cpp.userSoilTemperatureParameters,
-			cpp.userEnvironmentParameters.p_timeStep,
-		)
-		sm2 := core.make_soil_moisture(
-			&sc2,
-			&cpp.siteParameters,
-			cpp.userSoilMoistureParameters,
-			&cpp.userEnvironmentParameters,
-			&cpp.userCropParameters,
-			cpp.simulationParameters.p_LayerThickness,
-			a,
-		)
-		sm2.cropModule = nil
-		g_soil_moisture = &sm2
-
-		senescent_crop_params := wheat_crop_params
-		senescent_crop_params.cultivarParams.pc_OrganSenescenceRate = make(
-			[dynamic][dynamic]f64,
-			len(wheat_crop_params.cultivarParams.pc_OrganSenescenceRate),
-			a,
-		)
-		for row, i in wheat_crop_params.cultivarParams.pc_OrganSenescenceRate {
-			senescent_crop_params.cultivarParams.pc_OrganSenescenceRate[i] = make(
-				[dynamic]f64,
-				len(row),
-				a,
-			)
-			copy(senescent_crop_params.cultivarParams.pc_OrganSenescenceRate[i][:], row[:])
-			if len(row) > 0 {
-				senescent_crop_params.cultivarParams.pc_OrganSenescenceRate[i][0] = 0.01 // root organ
-			}
-		}
-
-		g_last_organic_matter_total = 0
-		g_last_organic_matter_nconc = 0
-		g_organic_matter_call_count = 0
-
-		cm_b := core.make_crop_module(
-			&sc2,
-			&senescent_crop_params,
-			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
-			noop_fire_event,
-			recording_add_organic_matter,
-			real_get_snow_depth,
-			nil,
-			a,
-		)
-		core.set_stage(&cm_b, 1)
-
-		n_b := min(60, clim.data_accessor_no_of_steps_possible(&da))
-		for day in 0 ..< n_b {
-			tmin := clim.data_accessor_data_for_timestep(&da, .tmin, day)
-			tmax := clim.data_accessor_data_for_timestep(&da, .tmax, day)
-			tavg := clim.data_accessor_data_for_timestep(&da, .tavg, day)
-			wind := clim.data_accessor_data_for_timestep(&da, .wind, day)
-			globrad := clim.data_accessor_data_for_timestep(&da, .globrad, day)
-			precip := clim.data_accessor_data_for_timestep(&da, .precip, day)
-			relhumid := clim.data_accessor_data_for_timestep(&da, .relhumid, day)
-			current_date := clim.data_accessor_date_for_step(&da, day)
-			julday := clim.data_accessor_julian_day_for_step(&da, day)
-
-			vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
-			et0 := -1.0
-
-			core.soil_temperature_step(&st2, tmin, tmax, globrad, 0.0, sm2.snowComponent.vm_SnowDepth, sm2.frostComponent.vm_TemperatureUnderSnow)
-			core.soil_moisture_step(
-				&sm2,
-				vs_GroundwaterDepth,
-				precip,
-				tmax,
-				tmin,
-				(relhumid / 100.0),
-				tavg,
-				wind,
-				cpp.userEnvironmentParameters.p_WindSpeedHeight,
-				globrad,
-				julday,
-				et0,
-			)
-
-			day_step(&cm_b, tavg, tmax, tmin, globrad, 0.0, current_date, frost_kill_on, a)
-
-			tr.set_day(&t, day)
-			tr.dump(&t, "cropModuleB.vc_OrganDeadBiomass[0]", cm_b.vc_OrganDeadBiomass[0])
-			tr.write_line_f64(&t, "cropModuleB.recording.lastOrganicMatterTotal", g_last_organic_matter_total)
-			tr.write_line_f64(&t, "cropModuleB.recording.lastOrganicMatterNConc", g_last_organic_matter_nconc)
-			tr.write_line_int(&t, "cropModuleB.recording.organicMatterCallCount", g_organic_matter_call_count)
-			free_all(context.temp_allocator)
-		}
 	}
 }

@@ -1239,6 +1239,50 @@ run by `run_crop_module_biomass.sh`: **32,725 lines identical** (also spot-check
   Confirmed genuinely exercised: the callback fires every day once past stage 0 (60/60 days), with a
   realistic, monotonically growing total (0.57 to 0.68 kg by day 59-60).
 
+**Checkpoint 6 — water + nitrogen uptake — done.** `fcReferenceEvapotranspiration` (FAO-56
+Penman-Monteith), `fcCropWaterUptake`, `fcCropNUptake`, and `getEffectiveRootingDepth` (deferred
+here from checkpoint 3 - it reads `vc_RootEffectivity`, populated by `fcCropWaterUptake`, so this is
+where testing it is actually meaningful) - all appended to `odin/monica/core/crop_module.odin`.
+Together with checkpoint 5's `fcCropNitrogen`/`fcCropDryMatter`, this closes out every
+`cropmodule::` function `step()` calls in its `vc_DevelopmentalStage>0` block except the
+`fireEvent`-driven bookkeeping itself (checkpoint 7's job).
+
+**Several genuine C++ dead stores kept for fidelity**, same pattern as checkpoint 5:
+`vc_CropWaterUptakeFromGroundwater` in `fcCropWaterUptake`, `vc_ConvectiveNUptake_1`/
+`vc_DiffusiveNUptake_1` in `fcCropNUptake` - all computed but never read again afterward in the C++
+either. Kept with explicit `_ = x` discards (Odin errors on unused locals). Also noted, not flagged
+as a quirk since it has zero behavioural effect: `fcReferenceEvapotranspiration`'s
+`pc_CarboxylationPathway == 1` branch and its `else` branch compute the exact same formula -
+harmless C++ redundancy, reproduced as-is (both branches present) rather than collapsed, since
+collapsing would be an improvement, not a translation.
+
+**Oracle - one scenario, extending checkpoint 5's day-step driver to the real position of
+GPP/NPP.** `odin/tests/cpp_ref/crop_module_water_nitrogen_ref_main.cpp` +
+`odin/tests/crop_module_water_nitrogen_ref/main.odin`, run by `run_crop_module_water_nitrogen.sh`:
+**44,165 lines identical.** Real wheat, past germination via `setStage(1)`, a full year
+(`NUM_DAYS=365`) of the real Hohenfinow2 `climate-min.csv` record, same real daily-stepped
+`SoilTemperature`+`SoilMoisture` pair and real `getSnowDepthAndCalcTempUnderSnow` wiring checkpoint
+5 established. `climate-min.csv` has no `et0` column, so `fcReferenceEvapotranspiration` is always
+the live branch, never step()'s "use the climate file's et0" pass-through. Confirmed genuinely
+exercised: `vc_ActualTranspiration` varies with the season, `vc_SumTotalNUptake` accumulates to a
+~441 kg N/ha plateau by day 362, and `getEffectiveRootingDepth` swings between 0.1m and 1.3m across
+the year.
+
+**One real bug caught and fixed, not in the port - in checkpoint 5's oracle driver.** Re-running
+checkpoint 5's oracle as a regression check after checkpoint 6 landed turned up a divergence in
+`cropModuleB.recording.lastOrganicMatterTotal` at day 55, differing in the last couple of digits
+(`...492427` vs `...492438`). Root cause: `recording_add_organic_matter` (the checkpoint-5 driver's
+test-only stand-in for a real `SoilOrganic`, see checkpoint 5's writeup) summed
+`layer2amount`'s values via a raw `for _, v in layer2amount` loop - Odin map iteration order is
+unspecified, unlike C++'s `std::map` (sorted ascending by key), and IEEE754 addition is commutative
+but not associative, so summing 3+ values in a different order can round differently in the last
+bit or two. This is exactly the class of gotcha `odin/monica/trace/trace.odin`'s own
+`dump_map_int_f64` comment already warns about, recurring in a new driver. Fixed by sorting keys
+first (the same insertion-sort technique `dump_map_int_f64` uses) before summing. Not a bug in
+`fc_move_dead_root_biomass_to_soil` or any ported code - purely a test-driver artifact, caught only
+because checkpoint 6's regression sweep happened to re-run checkpoint 5's oracle in a process with a
+different map hash layout than whatever run originally reported PASS.
+
 ### Phase 6 — orchestration
 `monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
 seeding/harvest/incorporation, CO2 + groundwater helpers), `workstep.cpp` +
