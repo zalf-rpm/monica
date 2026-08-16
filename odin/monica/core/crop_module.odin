@@ -22,6 +22,7 @@
 package core
 
 import "core:fmt"
+import "core:slice"
 import libc "core:c/libc"
 import p "../params"
 import d "../../support/date"
@@ -3605,4 +3606,282 @@ crop_module_step :: proc(
 	}
 
 	cm.noOfCropSteps += 1
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6 checkpoint 2 prerequisite: the yield/N-content getters and
+// applyCutting, deferred from phase 5 (checkpoint 5's writeup: "whichever
+// checkpoint actually needs them") - the Harvest workstep (harvestCurrentCrop,
+// monica_model.odin) and the Cutting workstep both need these.
+//
+// getRawProteinConcentration is NOT ported: grepped and confirmed it has no
+// callers anywhere in crop-module.cpp, harvestCurrentCrop, or any workstep in
+// this port's scope - pure build-output.cpp API surface (phase 7), same
+// "port on demand" call phase 5 checkpoint 5 already made for its siblings.
+// ---------------------------------------------------------------------------
+
+// C++: std::set<int> monica::cropmodule::organIdsForPrimaryYield(const CropModule*)
+//
+// std::set<int> -> map[int]bool, the same set idiom used elsewhere in this
+// port (e.g. MonicaModel.currentEvents, phase 6 checkpoint 1).
+organ_ids_for_primary_yield :: proc(cm: ^Crop_Module, allocator := context.allocator) -> map[int]bool {
+	ids := make(map[int]bool, 0, allocator)
+	for yc in cm.cropParams.cultivarParams.pc_OrganIdsForPrimaryYield {
+		ids[yc.organId] = true
+	}
+	return ids
+}
+
+// C++: double calculateCropYield(const VYC&, const vector<double>&) - anonymous namespace
+@(private)
+calculate_crop_yield :: proc(ycs: [dynamic]p.Yield_Component, bmv: [dynamic]f64) -> f64 {
+	yield := 0.0
+	for yc in ycs {
+		yield += bmv[yc.organId - 1] * yc.yieldPercentage
+	}
+	return yield
+}
+
+// C++: double monica::cropmodule::getPrimaryCropYield(const CropModule*)
+get_primary_crop_yield :: proc(cm: ^Crop_Module) -> f64 {
+	return calculate_crop_yield(cm.cropParams.cultivarParams.pc_OrganIdsForPrimaryYield, cm.vc_OrganBiomass)
+}
+
+// C++: double monica::cropmodule::getSecondaryCropYield(const CropModule*)
+get_secondary_crop_yield :: proc(cm: ^Crop_Module) -> f64 {
+	return calculate_crop_yield(cm.cropParams.cultivarParams.pc_OrganIdsForSecondaryYield, cm.vc_OrganBiomass)
+}
+
+// C++: double monica::cropmodule::getResidueBiomass(const CropModule*, bool, double)
+get_residue_biomass :: proc(
+	cm: ^Crop_Module,
+	useSecondaryCropYields: bool = true,
+	alternativeCropYield: f64 = -1,
+) -> f64 {
+	cropYield :=
+		alternativeCropYield >= 0 \
+		? alternativeCropYield \
+		: get_primary_crop_yield(cm) + (useSecondaryCropYields ? get_secondary_crop_yield(cm) : 0)
+
+	return cm.vc_TotalBiomass - cm.vc_OrganBiomass[0] - cropYield
+}
+
+// C++: double monica::cropmodule::getResiduesNConcentration(const CropModule*, double)
+get_residues_n_concentration :: proc(cm: ^Crop_Module, alternativePrimaryCropYield: f64 = -1) -> f64 {
+	primaryCropYield :=
+		alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_primary_crop_yield(cm)
+	rootBiomass := cm.vc_OrganBiomass[0]
+
+	return (cm.vc_TotalBiomassNContent - (rootBiomass * cm.vc_NConcentrationRoot)) /
+		((primaryCropYield / cm.cropParams.cultivarParams.pc_ResidueNRatio) +
+			(cm.vc_TotalBiomass - rootBiomass - primaryCropYield))
+}
+
+// C++: double monica::cropmodule::getPrimaryYieldNConcentration(const CropModule*, double)
+get_primary_yield_n_concentration :: proc(
+	cm: ^Crop_Module,
+	alternativePrimaryCropYield: f64 = -1,
+) -> f64 {
+	primaryCropYield :=
+		alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_primary_crop_yield(cm)
+	rootBiomass := cm.vc_OrganBiomass[0]
+
+	return (cm.vc_TotalBiomassNContent - (rootBiomass * cm.vc_NConcentrationRoot)) /
+		(primaryCropYield +
+			(cm.cropParams.cultivarParams.pc_ResidueNRatio *
+				(cm.vc_TotalBiomass - rootBiomass - primaryCropYield)))
+}
+
+// C++: double monica::cropmodule::getResiduesNContent(const CropModule*, bool, double, double)
+get_residues_n_content :: proc(
+	cm: ^Crop_Module,
+	useSecondaryCropYields: bool = true,
+	alternativePrimaryCropYield: f64 = -1,
+	alternativeCropYield: f64 = -1,
+) -> f64 {
+	return(
+		get_residue_biomass(cm, useSecondaryCropYields, alternativeCropYield) *
+		get_residues_n_concentration(cm, alternativePrimaryCropYield) \
+	)
+}
+
+// C++: double monica::cropmodule::getPrimaryYieldNContent(const CropModule*, double)
+get_primary_yield_n_content :: proc(cm: ^Crop_Module, alternativePrimaryCropYield: f64 = -1) -> f64 {
+	primaryCropYield :=
+		alternativePrimaryCropYield >= 0 ? alternativePrimaryCropYield : get_primary_crop_yield(cm)
+	return primaryCropYield * get_primary_yield_n_concentration(cm, alternativePrimaryCropYield)
+}
+
+// C++: double monica::cropmodule::getSecondaryYieldNContent(const CropModule*, double, double)
+get_secondary_yield_n_content :: proc(
+	cm: ^Crop_Module,
+	alternativePrimaryCropYield: f64 = -1,
+	alternativeSecondaryCropYield: f64 = -1,
+) -> f64 {
+	secondaryCropYield :=
+		alternativeSecondaryCropYield >= 0 ? alternativeSecondaryCropYield : get_secondary_crop_yield(cm)
+	return secondaryCropYield * get_residues_n_concentration(cm, alternativePrimaryCropYield)
+}
+
+// C++: double monica::cropmodule::getAbovegroundBiomassNContent(const CropModule*)
+get_aboveground_biomass_n_content :: proc(cm: ^Crop_Module) -> f64 {
+	return cm.vc_AbovegroundBiomass * cm.vc_NConcentrationAbovegroundBiomass
+}
+
+// ---------------------------------------------------------------------------
+// applyCutting - deferred from phase 5 checkpoint 7 to whichever checkpoint
+// ports the Cutting workstep (this one). Its payload types (CuttingData::
+// Value's Unit/CL enums) are hoisted into `core` here, the same
+// circular-dependency-breaking move phase 6 checkpoint 1 used for
+// HarvestData::Spec - the Cutting workstep itself lives in the `run` package,
+// which imports `core`, so `core` cannot import it back.
+// ---------------------------------------------------------------------------
+
+// C++: enum CuttingData::Unit { percentage, biomass, LAI }
+Cutting_Unit :: enum {
+	Percentage,
+	Biomass,
+	LAI,
+}
+
+// C++: enum CuttingData::CL { cut, left, none }
+Cutting_Cl :: enum {
+	Cut,
+	Left,
+	None,
+}
+
+// C++: struct CuttingData::Value
+Cutting_Value :: struct {
+	value:       f64,
+	unit:        Cutting_Unit, // C++ in-class default: percentage
+	cut_or_left: Cutting_Cl, // C++ in-class default: cut
+}
+
+// C++: void monica::cropmodule::applyCutting(CropModule*,
+//        std::map<int, CuttingData::Value>&, std::map<int, double>&, double)
+//
+// `organs`/`exports` are genuine in-out maps in the C++ (organs gets
+// populated from pc_OrganIdsForCutting when passed in empty) - Odin's
+// map[K]V parameters already alias the caller's backing store like a C++
+// reference, so no extra indirection is needed to reproduce that.
+//
+// Iterates `organs` in ascending key order to match C++ std::map's sorted
+// iteration - Odin map iteration order is unspecified and floating-point
+// addition (vc_AbovegroundBiomass -=, sumCutBiomass +=, sumResidueBiomass +=)
+// is not associative, the same "sort keys first" fix phase 5 checkpoint 6's
+// oracle regression needed.
+apply_cutting :: proc(
+	cm: ^Crop_Module,
+	organs: map[int]Cutting_Value,
+	exports: map[int]f64,
+	cutMaxAssimilationFraction: f64,
+	allocator := context.allocator,
+) {
+	oldAbovegroundBiomass := cm.vc_AbovegroundBiomass
+	oldAgbNcontent := cm.vc_AbovegroundBiomass * cm.vc_NConcentrationAbovegroundBiomass
+	sumCutBiomass := 0.0
+	currentSLA := cm.vc_LeafAreaIndex / cm.vc_OrganGreenBiomass[Organ_Leaf]
+
+	organs := organs
+	if len(organs) == 0 {
+		for yc in cm.cropParams.cultivarParams.pc_OrganIdsForCutting {
+			organs[yc.organId - 1] = Cutting_Value{value = yc.yieldPercentage}
+		}
+	}
+
+	keys := make([dynamic]int, 0, len(organs), allocator)
+	for k in organs {
+		append(&keys, k)
+	}
+	slice.sort(keys[:])
+
+	sumResidueBiomass := 0.0
+	for organId in keys {
+		organSpec := organs[organId]
+
+		oldOrganBiomass := cm.vc_OrganBiomass[organId]
+		oldOrganDeadBiomass := cm.vc_OrganDeadBiomass[organId]
+		oldOrganGreenBiomass := oldOrganBiomass - oldOrganDeadBiomass
+		newOrganBiomass := 0.0
+		cutOrganBiomass := 0.0
+
+		if organSpec.unit == .Biomass {
+			if organSpec.cut_or_left == .Cut {
+				cutOrganBiomass = min(organSpec.value, oldOrganBiomass)
+				newOrganBiomass = oldOrganBiomass - cutOrganBiomass
+			} else if organSpec.cut_or_left == .Left {
+				newOrganBiomass = min(organSpec.value, oldOrganBiomass)
+				cutOrganBiomass = oldOrganBiomass - newOrganBiomass
+			}
+
+			if oldOrganBiomass == 0 {
+				cm.vc_OrganDeadBiomass[organId] = 0
+			} else {
+				cm.vc_OrganDeadBiomass[organId] = newOrganBiomass * min(oldOrganDeadBiomass / oldOrganBiomass, 1.0)
+			}
+		} else if organSpec.unit == .Percentage {
+			if organSpec.cut_or_left == .Cut {
+				cutOrganBiomass = organSpec.value * oldOrganBiomass
+				newOrganBiomass = oldOrganBiomass - cutOrganBiomass
+			} else if organSpec.cut_or_left == .Left {
+				newOrganBiomass = organSpec.value * oldOrganBiomass
+				cutOrganBiomass = oldOrganBiomass - newOrganBiomass
+			}
+
+			if oldOrganBiomass == 0 {
+				cm.vc_OrganDeadBiomass[organId] = 0
+			} else {
+				cm.vc_OrganDeadBiomass[organId] = newOrganBiomass * min(oldOrganDeadBiomass / oldOrganBiomass, 1.0)
+			}
+		} else if organSpec.unit == .LAI {
+			// only "left" is supported for LAI
+			currentLAI := cm.vc_LeafAreaIndex
+			if organSpec.value > currentLAI {
+				newOrganBiomass = oldOrganGreenBiomass
+				cutOrganBiomass = oldOrganDeadBiomass
+				cm.vc_OrganDeadBiomass[organId] = 0 // all the dead biomass is assumed to be cut
+			} else {
+				newOrganBiomass = min(organSpec.value / currentSLA, oldOrganGreenBiomass)
+				cutOrganBiomass = oldOrganBiomass - newOrganBiomass
+				cm.vc_OrganDeadBiomass[organId] = 0 // all the dead biomass is assumed to be cut
+			}
+		}
+
+		exportBiomass := cutOrganBiomass * exports[organId]
+
+		cm.vc_AbovegroundBiomass -= cutOrganBiomass
+		sumCutBiomass += cutOrganBiomass
+		sumResidueBiomass += cutOrganBiomass - exportBiomass
+		cm.vc_OrganBiomass[organId] = newOrganBiomass
+		cm.vc_OrganGreenBiomass[organId] = cm.vc_OrganBiomass[organId] - cm.vc_OrganDeadBiomass[organId]
+	}
+
+	cm.vc_exportedCutBiomass = sumCutBiomass - sumResidueBiomass
+	cm.vc_sumExportedCutBiomass += cm.vc_exportedCutBiomass
+	cm.vc_residueCutBiomass = sumResidueBiomass
+	cm.vc_sumResidueCutBiomass += cm.vc_residueCutBiomass
+
+	if sumResidueBiomass > 0 {
+		// prepare to add crop residues to soilorganic (AOMs)
+		residueNConcentration := cm.vc_NConcentrationAbovegroundBiomass
+		residueMap := make(map[int]f64, 1, allocator)
+		residueMap[0] = sumResidueBiomass
+		cm.addOrganicMatter(residueMap, residueNConcentration)
+	}
+
+	// update LAI
+	if cm.vc_OrganGreenBiomass[Organ_Leaf] > 0 {
+		cm.vc_LeafAreaIndex = cm.vc_OrganGreenBiomass[Organ_Leaf] * currentSLA
+	}
+
+	// reset stage and temperature sum after cutting
+	set_stage(cm, cm.cropParams.speciesParams.pc_StageAfterCut)
+
+	cm.vc_CuttingDelayDays = cm.cropParams.speciesParams.pc_CuttingDelayDays
+	cm.cropParams.cultivarParams.pc_MaxAssimilationRate *= cutMaxAssimilationFraction
+
+	if oldAbovegroundBiomass > 0.0 {
+		cm.vc_TotalBiomassNContent -= (1 - cm.vc_AbovegroundBiomass / oldAbovegroundBiomass) * oldAgbNcontent
+	}
 }
