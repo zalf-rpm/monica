@@ -140,7 +140,61 @@ make_monica_model :: proc(
 		&model.cropPs,
 	)
 
+	// C++ in-class initialisers: std::set<std::string> currentEvents/
+	// previousDaysEvents default-construct empty, never nullptr. Odin's zero
+	// map value is nil, which panics on write (m[k] = v) - initialise both to
+	// real, empty maps so monica_model_fire_event_cb (below) and clearEvents/
+	// dailyReset's map reassignment can write to them from day one.
+	model.currentEvents = make(map[string]bool, 0, allocator)
+	model.previousDaysEvents = make(map[string]bool, 0, allocator)
+
+	// Every CropModule created by a Sowing/Transplant/AutomaticSowing
+	// workstep's apply() needs real fireEvent/addOrganicMatter/
+	// getSnowDepthAndCalcTempUnderSnow callbacks wired to *this* model - see
+	// monica_model_fire_event_cb's doc comment below for why this is a
+	// package-level global rather than a captured closure.
+	g_current_model = model
+
 	return model
+}
+
+// This is the real resolution of the "Odin proc type has no capture" gap
+// phase 5 checkpoint 2 deliberately deferred (crop_module.odin's own
+// comment on Crop_Module.fireEvent/addOrganicMatter/
+// getSnowDepthAndCalcTempUnderSnow): the C++ lambdas
+// (sowing.cpp/automatic-sowing.cpp/transplant.cpp) capture `model` by value,
+// but Odin's `proc(_: string)` etc. field types cannot close over anything.
+// monica-run is a single-simulation-per-process CLI tool - there is only
+// ever one live MonicaModel at a time in this port's scope (matching the
+// real C++'s actual usage, not just a convenient shortcut) - so a
+// package-level "the current model" pointer, set once by make_monica_model
+// and never reassigned (the model is heap-allocated once and never moved,
+// same invariant the risk register already requires), is behaviourally
+// identical to the C++ capture for every caller in this port.
+g_current_model: ^Monica_Model
+
+// C++: [model](string event) { model->currentEvents.insert(std::move(event)); }
+monica_model_fire_event_cb :: proc(event: string) {
+	g_current_model.currentEvents[event] = true
+}
+
+// C++: [model](const std::map<size_t,double>& layer2amount, double nconc) {
+//        soilorganic::addOrganicMatter(model->soilOrganic.get(),
+//          model->currentCropModule->residueParams, layer2amount, nconc); }
+monica_model_add_organic_matter_cb :: proc(layer2amount: map[int]f64, nconc: f64) {
+	soil_organic_add_organic_matter(
+		&g_current_model.soilOrganic,
+		&g_current_model.currentCropModule.residueParams.base,
+		layer2amount,
+		nconc,
+	)
+}
+
+// C++: [model](double avgAirTemp) {
+//        return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
+//          model->soilMoisture.get(), avgAirTemp); }
+monica_model_get_snow_depth_cb :: proc(avgAirTemp: f64) -> (f64, f64) {
+	return get_snow_depth_and_calc_temperature_under_snow(&g_current_model.soilMoisture, avgAirTemp)
 }
 
 // C++: void monica::monicamodel::addDailySumFertiliser(MonicaModel*, double)
