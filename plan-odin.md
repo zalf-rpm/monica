@@ -1362,11 +1362,229 @@ neither's code path was ever live before this checkpoint:**
   `soilColumn->vt_SoilSurfaceTemperature` - itself downstream of the coverage-dependent shading
   coefficient in `calcSoilSurfaceTemperature`.
 
-### Phase 6 — orchestration
-`monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
-seeding/harvest/incorporation, CO2 + groundwater helpers), `workstep.cpp` +
-`src/worksteps/*` (the `std::variant` → Odin `union` translation), `cultivation-method.cpp`.
-**Oracle:** event-log diff plus daily trace diff.
+### Phase 6 — orchestration — **DONE**
+
+`monica-model.cpp` (`MonicaModel` scaffolding, `step`/`generalStep`/`cropStep`,
+fertiliser/irrigation/tillage, harvest/incorporation, CO2 + groundwater helpers),
+`workstep.cpp` + `src/worksteps/*` (the `std::variant` → Odin `union` translation, all
+12 concrete worksteps), `cultivation-method.cpp`.
+
+**Discovered mid-phase: Odin's `union` forces a different checkpoint split than
+planned.** The plan originally scoped this phase as "workstep infra + 4 simple
+worksteps" / "crop-lifecycle worksteps" / "conditional worksteps + `applyCutting`" as
+three separate checkpoints. Odin's `union` (the direct translation of
+`std::variant`) requires every member's *full type* to exist at the point the union
+itself is declared - unlike C++, where each payload struct and its functions can live
+in separate translation units compiled independently against a forward-declared
+variant alternative. So all 12 workstep data structs had to be declared together
+before any dispatch function could compile, which made porting all 12 concrete
+worksteps in one pass more natural than the planned three-way split. The actual
+checkpoints that emerged instead:
+
+**Checkpoint 1 — `MonicaModel` scaffolding + standalone helpers — done.** The
+`MonicaModel` struct and every non-`step()` function in `monica-model.cpp`:
+`makeMonicaModel`, `CO2ForDate` (both overloads), `groundwaterDepthForDate`,
+`clearEvents`, the daily-sum accumulators, `dailyReset`, and the fertiliser/
+irrigation/tillage apply wrappers. Also fills in the `soilcolumn.h` mutators these
+wrap that phase 3 deliberately deferred (its own package comment already named this
+checkpoint as the destination): `applyMineralFertiliser*`, `applyIrrigation*`,
+`applyTillage`, the delayed-N-min queue, `putCrop`/`removeCrop`,
+`clearTopDressingParams`, `deleteAOMPool`. `SoilColumn.cropModule` is upgraded from
+phase 3's placeholder `rawptr` to a real `^Crop_Module`, matching every other
+phase-4 module's own `cropModule` field since phase 5 checkpoint 2.
+
+Two real bugs found and fixed by the oracle:
+- `applyTillage`'s "merge aom pool" block is dead code in the C++: its write-back
+  loop uses `for (auto aomp : layer.vo_AOM_Pool)` - a by-value range-for copy, not
+  `auto &aomp` - so every `aomp.vo_AOM_Slow = ...` mutates only the loop-local copy,
+  never `layer.vo_AOM_Pool[pool_index]` itself. The whole block computes per-pool
+  averages and then discards them without touching any `SoilColumn` state (its own
+  debug `cout` lines are all commented out too, so there's no observable side effect
+  at all). Omitted here rather than reproduced as unreachable computation with a
+  provably-dead write-back.
+- `applyPossibleDelayedFerilizer`'s C++ bounds its drain loop on a *copy* of the
+  delayed-application queue (`auto delayedApps = sc->_delayedNMinApplications;`), not
+  the live one - necessary because `applyMineralFertiliserViaNMinMethod` can itself
+  re-append to the live queue (a still-too-wet re-delay). A literal "loop while the
+  live queue's length is nonzero" translation infinite-loops the moment a re-delay
+  happens (each iteration removes one entry and, if still too wet, adds one back, net
+  zero) - caught only because the oracle itself hung. Fixed by snapshotting the
+  original length up front instead of copying the list.
+
+Also resolves, for real production code, the CropModule-callback capture question
+phase 5 checkpoint 2 deliberately deferred ("Odin's `proc` type has no capture...
+revisit at phase 6 when `step()` actually needs to fire them"): `fireEvent`/
+`addOrganicMatter`/`getSnowDepthAndCalcTempUnderSnow` need a `MonicaModel*` that
+Odin `proc` values cannot close over. Since monica-run is a single-simulation-per-
+process CLI tool - genuinely one live `MonicaModel` at a time, not just a convenient
+shortcut - a package-level `g_current_model` pointer (set once by `makeMonicaModel`,
+matching the heap-allocate-once-never-move invariant the risk register already
+required) plus three plain wrapper procs reading it is behaviourally identical to the
+C++ lambda captures for every caller in this port.
+
+**Oracle - 752 lines identical, 12 scenarios** (construction, then each fertiliser/
+irrigation/tillage function exercised directly against a real, live `SoilColumn`,
+plus the delayed-fertiliser/top-dressing drain sequences and a `CO2ForDate`/
+`groundwaterDepthForDate` parameter sweep). `odin/tests/cpp_ref/
+monica_model_ref_main.cpp` + `odin/tests/monica_model_ref/main.odin`, run by
+`run_monica_model.sh`.
+
+**Prerequisite — crop-module yield getters + `applyCutting` — done.** `harvestCurrentCrop`
+and the `Harvest`/`Cutting` worksteps all need `cropmodule::` functions phase 5
+checkpoints 5 and 7 explicitly deferred to "whichever checkpoint actually needs
+them": the ~10 yield/N-content getters (`getPrimaryCropYield`, `getSecondaryCropYield`,
+`getResidueBiomass`, `getResiduesNConcentration`, `getPrimaryYieldNConcentration`,
+`getResiduesNContent`, `getPrimaryYieldNContent`, `getSecondaryYieldNContent`,
+`getAbovegroundBiomassNContent`, `organIdsForPrimaryYield`) and `applyCutting` itself
+(~150 lines, the largest single function still unported after phase 5).
+`getRawProteinConcentration` is not ported - grepped and confirmed it has no callers
+anywhere in this port's scope, pure `build-output.cpp` (phase 7) API surface.
+
+`CuttingData::Value`'s `Unit`/`CL` enums are hoisted into `core` as `Cutting_Value`/
+`Cutting_Unit`/`Cutting_Cl` - the same circular-dependency break used repeatedly this
+phase (see below): the Cutting workstep lives in the `run` package, which imports
+`core`, so `core` cannot import it back to reach a workstep-owned payload type.
+
+**Oracle - 124 lines identical, 5 scenarios** (the getters read-only on a real
+300-day-grown wheat crop, then four chained `applyCutting` calls exercising the
+biomass/percentage/LAI unit branches and the empty-`organs` auto-fill branch).
+`odin/tests/cpp_ref/crop_module_yield_ref_main.cpp` + `odin/tests/
+crop_module_yield_ref/main.odin`, run by `run_crop_module_yield.sh`.
+
+**Prerequisite — `harvestCurrentCrop` + `incorporateCurrentCrop` — done.** The other
+half of checkpoint 1's deferral: needs `HarvestData::Spec`/`OptCarbonManagementData`
+(workstep payload types) and the yield getters above. `Harvest_Spec`/
+`Harvest_Opt_Carbon_Management_Data` (+ `Harvest_Spec_Value`, `Harvest_Crop_Usage`)
+are hoisted into `monica_model.odin` for the same reason `Cutting_Value` was hoisted
+into `crop_module.odin`. Iterates `spec.organ2specVal` in sorted key order to match
+C++ `std::map`'s iteration - the accumulators are order-sensitive floating-point
+sums, the same precaution `applyCutting` and several earlier checkpoints' oracles
+already needed.
+
+**Oracle - 42 lines identical, 6 scenarios** (both `harvestCurrentCrop` branches -
+old default and `optCarbonConservation`, plus its `greenManure`/detailed-spec/
+`exported=false` sub-branches - then `incorporateCurrentCrop`, all on a real
+300-day-grown wheat crop). `odin/tests/cpp_ref/monica_model_harvest_ref_main.cpp` +
+`odin/tests/monica_model_harvest_ref/main.odin`, run by `run_monica_model_harvest.sh`.
+
+**Checkpoint 2 — `workstep.odin`, all 12 concrete worksteps — done.** `WorkstepType`,
+`WorkstepData` (the union), `Workstep`, the shared helpers (`makeInitAbsDate`,
+`organIdFromName`/`organNameFromId`, `isSoilMoistureOk`/`isPrecipitationOk`),
+`mergeCommon`/`applyCommon`/`conditionCommon`/`reinitCommon`, and the full central
+dispatch, plus every concrete workstep's own `merge`/`apply`/`condition`/`reinit`
+(normally spread across `src/worksteps/*.{h,cpp}`): Sowing, Transplant,
+AutomaticSowing, Harvest, AutomaticHarvest, Cutting, MineralFertilization,
+NDemandFertilization, OrganicFertilization, Tillage, Irrigation,
+AutomaticIrrigation.
+
+**Dropped:** `SaveMonicaState` (Cap'n Proto, per the "Explicitly dropped" table).
+**Deferred:** `SetValue` - needs `OId`/`build-output.cpp`'s `Spec` expression
+evaluator, none of which exist yet (phase 7); `to_json` for all 12 types - its only
+real callers are workflow-dump/env-round-trip features this port's regression
+fixture never exercises, the same "port on demand" call already made for
+`getRawProteinConcentration`.
+
+**One genuine C++ inheritance quirk that doesn't survive translation cleanly:**
+`TransplantData` declares its own `initialKcb`, which *shadows* (not shares)
+`SowingData`'s - two distinct storage locations in C++, both parsed from the same
+JSON `"initialKcb"` key during merge (kept in sync by redundant parsing, not
+aliasing), but only the derived one is actually read in `apply()` (C++ unqualified-
+name lookup prefers the derived member). Odin's `using` field promotion does **not**
+allow an outer field to share a name with a promoted one - a hard redeclaration
+error, not a shadow - so `Transplant_Data` has no second field at all; since both
+C++ storage locations always held the same value anyway, reusing the single
+promoted `sowing.initialKcb` for both merge and apply is behaviourally identical,
+not an approximation.
+
+**Two real bugs found and fixed by the oracle**, both missing-default-value bugs of
+the same shape phase 1c tranche 3b and phase 5 checkpoint 1 already hit once each:
+- `Workstep`'s C++ in-class defaults (`isActive{true}`, `runAtStartOfDay{true}`)
+  weren't applied by Odin's zero-initialising `new()` - every `make_*_workstep`
+  factory now goes through a `new_workstep()` helper that sets both explicitly.
+- Sowing/Transplant/AutomaticSowing's `initialKcb` (0.15) and `plantDensity` (-1)
+  C++ in-class defaults were similarly missing from their Odin struct literals -
+  caught because a synthetic Sowing scenario in the oracle didn't set `"initialKcb"`
+  in its JSON (real `sim-min.json` doesn't either), so the gap was silent until the
+  oracle compared the resulting `vc_Kcb_ini` against the C++ side.
+
+A third apparent divergence (`applyCutting`'s "before/after" LAI differing by ~5x in
+an early oracle draft) turned out not to be a port bug at all: the draft scenario
+re-sowed a second crop immediately after harvest and regrew it for 30 days without
+ever calling `dailyReset` (which is what actually clears `currentCropModule` after a
+harvest - not yet ported at that point in the session) or re-stepping soil
+temperature/moisture during the regrowth window. Once the scenario was simplified to
+apply `Cutting` mid-season to the still-growing primary crop instead - the realistic
+use case, and one that doesn't depend on any of that missing machinery - both sides
+matched exactly. Recorded as a caution for future oracle authors: an oracle scenario
+that exercises a code path the *real* system never exercises in that shape can
+manufacture its own divergence.
+
+**Oracle - 226 lines identical.** `odin/tests/cpp_ref/workstep_ref_main.cpp` +
+`odin/tests/workstep_ref/main.odin`, run by `run_workstep.sh`. Reuses the real
+Hohenfinow2 `crop-min.json` rotation (`AutomaticIrrigation`/`Sowing`/
+`NDemandFertilization` x3/`AutomaticHarvest`/`OrganicFertilization`, with its
+`"include-from-file"`/`"ref"` JSON patterns pre-resolved by hand - embedding the
+already-loaded species/cultivar/residue/fertiliser JSON objects directly rather than
+routing through `create-env-from-json-config`, since the full date-matching/
+`unfinishedDynamicWorksteps` dispatch is cultivation-method's job, not this
+checkpoint's) end to end over a real 500-day Hohenfinow2 climate run: sowing, three
+N-demand fertiliser applications on their exact dates, automatic-irrigation trigger
+logic, automatic-harvest maturity detection - plus synthetic JSON exercising the five
+workstep types the fixture doesn't use, including `Cutting` applied mid-season to the
+live, still-growing crop.
+
+**Checkpoint 5 — `cultivation_method.odin` — done.** `CultivationMethod`,
+`makeCultivationMethod`, `merge`, the three `apply()` overloads (exact-date static
+dispatch, the absolute-date variant, and the `unfinishedDynamicWorksteps`/
+`applyWithPossibleCondition` dispatch), `workstepsAt`/`absWorkstepsAt`,
+`areOnlyAbsoluteWorksteps`, `staticWorksteps`, `allDynamicWorksteps(Finished)`,
+`startDate`/`absStartDate`/`absLatestSowingDate`/`endDate`/`absEndDate`, `reinit`.
+`to_json`/`toString` are not ported, matching checkpoint 2's own `to_json` deferral.
+
+**Oracle - 96 lines identical, first oracle in the port to drive worksteps through
+the real production dispatcher** (`cultivationmethod::apply`'s three overloads)
+rather than a hand-rolled per-type sequence: builds one real `CultivationMethod`
+from the exact `crop-min.json` rotation and runs the full real Hohenfinow2 season
+through it end to end. `odin/tests/cpp_ref/cultivation_method_ref_main.cpp` +
+`odin/tests/cultivation_method_ref/main.odin`, run by `run_cultivation_method.sh`.
+
+**Checkpoint 6 — `step`/`generalStep`/`cropStep` — done, phase 6 complete.** The
+daily orchestration entry points that wire every earlier phase-6 checkpoint together.
+`step()` drops the Intercropping-async branch (Cap'n Proto RPC). `generalStep`
+resolves groundwater depth (measured, falling back to the `groundwaterDepthForDate`
+sine-curve model) and atmospheric CO2 (climate data, then yearly
+`UserEnvironmentParameters`, then the logistic `CO2ForDate` model, then a flat
+fallback) before stepping soil temperature/moisture/organic/transport; `cropStep`
+does the same for atmospheric O3 before stepping the crop and checking
+`simParams`-level automatic irrigation - a *separate* mechanism from the
+`AutomaticIrrigation` **workstep**: `simPs.p_AutoIrrigationParams` +
+`applyIrrigationViaTrigger` called directly, gated on its own start/end dates, not
+routed through any workstep at all.
+
+`soil_temperature_step`'s `soil_coverage`/`snow_depth`/`temp_under_snow` parameters
+(phase 4's explicit-parameter design instead of a `monica` back-pointer) are finally
+supplied by real production code here, not just test drivers, for the first time.
+
+Added `measuredgroundwatertableinformation::getGroundwaterInformation`
+(`params/site_sim_parameters.odin`) as a small prerequisite - `generalStep` needed it
+and it hadn't been ported yet (an ISO-date-string-keyed map lookup, matching how
+`groundwaterInfo`'s `Date` keys are already stored as canonicalised ISO strings from
+its own `merge`).
+
+**Oracle - 206 lines identical, and the first oracle in the port that doesn't
+hand-step the four soil modules, doesn't supply a synthetic groundwater depth, and
+doesn't hardcode atmospheric CO2/O3** - `monicamodel::step`'s `generalStep`/
+`cropStep` halves resolve all of that internally now, for real. The daily loop is
+exactly the sequence `run-monica.cpp`'s `runMonica` (phase 7, not yet ported) will
+use: `cultivationmethod::apply(date)` → `cultivationmethod::apply(model, true)` →
+`monicamodel::step(model)` → `cultivationmethod::apply(model, false)` →
+`monicamodel::dailyReset(model)` - which drives the full real Hohenfinow2 season
+through the real `crop-min.json` rotation end to end, including the real
+`currentCropModule` clear-to-null after automatic harvest fires (via `dailyReset`,
+never exercised in this form by any earlier phase-6 oracle, all of which left the
+harvested crop module stale rather than actually cleared). `odin/tests/cpp_ref/
+monica_model_step_ref_main.cpp` + `odin/tests/monica_model_step_ref/main.odin`, run
+by `run_monica_model_step.sh`.
 
 ### Phase 7 — run loop + output
 `run-monica.cpp` (`runMonica`, `StoreData`, `setupStorage`, `Spec` evaluation),
