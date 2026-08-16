@@ -1023,6 +1023,78 @@ only); `guentherEmissions`/`jjvEmissions`/`vocSpecies`/`cropPhotosynthesisResult
 right checkpoint to verify them is whichever one actually populates them);
 `fireEvent`/`addOrganicMatter`/`getSnowDepthAndCalcTempUnderSnow` (function values, not dumpable).
 
+**Checkpoint 3 — phenology + canopy geometry — done.** The `cropmodule::` functions that turn
+accumulated heat units into developmental stage, crop height/diameter, leaf area index and soil
+coverage: `fcRadiation`, `fcDaylengthFactor`, `fcVernalisationFactor`, `fcOxygenDeficiency`,
+`fcCropDevelopmentalStage` (+ its `fcUpdateCropParametersForPerennial` dependency, and the
+file-scope `WangEngelTemperatureResponse` helper), `fcKcFactor`, `fcCropSize`, `fcCropGreenArea`,
+`fcSoilCoverage`, `setStage`, the anthesis/maturity query functions
+(`isAnthesisDay`/`anthesisBetweenStages`/`isMaturityDay`/`getAnthesisDay`/`getMaturityDay`/
+`maturityReached`), and the small pure getters (`sunlitAndShadedLAI`,
+`getFractionOfInterceptedRadiation1`/`2`, `setOtherCropHeightAndLAIt`,
+`getCurrentTotalTemperatureSum`, `getCurrentStageTemperatureSum`, `getTotalTemperatureSum`,
+`sumStageTemperatureSums`) - all appended to `odin/monica/core/crop_module.odin`. Not yet ported:
+`fcCropPhotosynthesis` onward (checkpoint 4+), `step()` itself and every `fireEvent`-driven bit of
+orchestration inline in it (checkpoint 7), `forceTransplantState` (fired by a Transplant workstep,
+checkpoint 7), `setPerennialCropParameters` (fired by Sowing, checkpoint 7),
+`organIdsForPrimaryYield` (yield, checkpoint 5), `getEffectiveRootingDepth` (root/water, checkpoint 6).
+
+**`fcRadiation` is a second, independent day-length/declination/radiation implementation** - not
+the same code as `soilmoisture.odin`'s own copy (different consumer, same HERMES-derived formulas).
+Not deduplicated, matching the C++ (`soilmoisture.cpp` and `crop-module.cpp` each have their own).
+
+**The `cropParams`/`perennialCropParams` deep-copy discipline established in checkpoint 2 recurs
+here for real, not just defensively.** `fcUpdateCropParametersForPerennial` does
+`cm->cropParams = *cm->perennialCropParams;` - the same C++ deep-copy-via-copy-constructor
+semantics as `makeCropModule`'s `cropParams = *cropParams`, so it reuses `clone_crop_parameters`
+rather than a plain assignment. The oracle actually exercises this: scenario B's `perennialCropParams`
+is a second, distinctly-named synthetic `CropParameters`, and the trace shows
+`cropParams.cultivarParams.pc_CultivarId` switching from `"synthetic-season-1"` to
+`"synthetic-next-season"` at the exact reset day, confirming the swap-by-value (not by-reference)
+semantics on both sides.
+
+**One design call: the size_t/int unsigned-wraparound edge case in `sumStageTemperatureSums`
+was not reproduced bit-for-bit.** C++ computes `endAtInclStage2` as
+`cm->noOfDevStages + endAtInclStage + 1` in mixed `size_t`/`int` arithmetic - when `endAtInclStage`
+is negative, the signed operand converts to a huge unsigned value and wraps back around modulo
+2^64 to the numerically-intended result for any realistic (small-magnitude) negative offset like
+`-1`. Reproduced with plain `int`/`f64` arithmetic instead of chasing the wraparound literally,
+since the two only diverge for pathological inputs (offsets more negative than `-noOfDevStages`)
+that no caller in this codebase ever passes.
+
+**Oracle - two scenarios, no full `step()` replication.** `fcRadiation` through `fcSoilCoverage`
+aren't `step()` itself, so the oracle drivers (`odin/tests/cpp_ref/crop_module_phenology_ref_main.cpp`
++ `odin/tests/crop_module_phenology_ref/main.odin`, run by `run_crop_module_phenology.sh`) replicate
+only the step()-body excerpt this checkpoint needs (matching its call order exactly) - not the
+FAO-56 inline Kcb block (not a `cropmodule::` function) and not any `fireEvent` call, both left for
+checkpoint 7. **15,960 lines identical:**
+- **Scenario A** - real wheat `CropParameters` against `NUM_DAYS_A=400` days of the real
+  Hohenfinow2 `climate-min.csv` record, started past germination via `setStage(cm, 1)` (germination
+  itself needs `soiltemperature::step`, checkpoint 7's job to chain in; `EmergenceMoistureControlOn`/
+  `EmergenceFloodingControlOn` are both `false` in `sim-min.json`, so `soilMoisture_m3`/
+  `fieldCapacity`/`permanentWiltingPoint` are provably unused once past stage 0 regardless). Exercises
+  real long-day `fcDaylengthFactor`, real vernalisation dynamics across a genuine winter/summer
+  temperature swing, and whatever N-/water-stress developmental acceleration wheat's own
+  `pc_AssimilatePartitioningCoeff` triggers near maturity.
+- **Scenario B** - a synthetic cultivar (cloned from wheat, then overridden: `pc_Perennial=true`,
+  a `dormancyStartDoy` reset trigger, negative `pc_DaylengthRequirement` for the short-day branch,
+  sane `pc_MinTempDev_WE`/`pc_OptTempDev_WE`/`pc_MaxTempDev_WE` bounds plus
+  `__enable_Phenology_WangEngelTemperatureResponse__` forced on, an explicit
+  `CropParameters`-level `__enable_vernalisation_factor_fix__` override (`Some(false)`, overriding
+  the `CropModuleParameters` default of `true`), a `perennialCropParams` set to a second,
+  distinctly-named synthetic instance) run against a small hand-written 20-day weather sequence
+  (identical on both sides) with a rising `soilColumn.layers[0].vs_SoilTemperature` crossing
+  `pc_BaseTemperature[0]` partway through (stage-0 germination) and one day with
+  `globalRadiation<=0` and nonzero `sunshineHours` (`fcRadiation`'s other branch). The trace confirms
+  the perennial reset actually fires - `vc_DevelopmentalStage` drops back to 0 and
+  `cropParams.cultivarParams.pc_CultivarId` switches to the second synthetic instance's id on the
+  same day `dormancyStartDoy` is crossed.
+
+No bugs found bringing this oracle up - the only issue was a build error (missing
+`using namespace monica::cropmodule;` in the C++ driver, `fcRadiation` et al. live in that
+sub-namespace, unlike `makeCropModule`/`setStage`'s parent `monica::` namespace), not a translation
+divergence.
+
 ### Phase 6 — orchestration
 `monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
 seeding/harvest/incorporation, CO2 + groundwater helpers), `workstep.cpp` +
