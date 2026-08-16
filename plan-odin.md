@@ -706,6 +706,27 @@ Three bugs caught before/while bringing the oracle up, all worth recording:
   path, still worked, but the misleading stray stderr line cost real time to trace). `env_ref_main.cpp` /
   `env_ref/main.odin` already had the right fixup; copied from there instead.
 
+**Module 2a — snow-component + frost-component — done.**
+`odin/monica/core/{snow_component,frost_component}.odin`: `Snow_Component`/`Frost_Component` and
+every `snowcomponent::`/`frostcomponent::` proc. Split out of soilmoisture as their own checkpoint
+before tackling `soilmoisture.cpp` itself: reading the whole of both C++ files first showed neither
+touches `MonicaModel`/`CropModule` at all (unlike `soiltemperature.cpp` and, much more heavily,
+`soilmoisture.cpp` itself — see Module 2b below), so both ported as direct 1:1 translations with
+none of `soil_temperature.odin`'s back-pointer-to-parameter deviation.
+
+**Oracle — green, first try.** `odin/tests/cpp_ref/snow_frost_ref_main.cpp` +
+`odin/tests/snow_frost_ref/main.odin`, run by `run_snow_frost.sh`: **18,980 trace lines identical**
+over a full 365-day year (long enough to guarantee a real winter, unlike soiltemperature's synthetic
+snow injection — here the snow is real, computed from real `tavg`/`precip`). Both drivers reuse the
+real, already-constructed `model->soilMoisture->{snowComponent,frostComponent}` (built by the
+unmodified `makeMonicaModel -> makeSoilMoisture -> initializeFromParams` chain — `initializeFromParams`
+itself doesn't touch `CropModule` either, only the snow/frost setup lines are exercised here) and
+drive `snowcomponent::calcSnowLayer`/`frostcomponent::calcSoilFrost` directly, in the same order and
+with the same bare-soil simplification (`vc_NetPrecipitation == precipitation`, no live crop)
+`soil_temperature_ref_main.cpp` established. The Odin driver constructs `Snow_Component`/
+`Frost_Component` directly via `initialize_snow_component`/`initialize_frost_component` (mirroring
+`initializeFromParams`'s two `initialize` calls) since `Soil_Moisture` itself isn't ported yet.
+
 ### Phase 5 — crop
 `crop-module.cpp` (largest single file), `photosynthesis-FvCB`, `voc-guenther`, `voc-jjv`,
 `voc-common`, `O3-impact`.
