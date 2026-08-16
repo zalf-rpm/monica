@@ -816,6 +816,73 @@ mass-conservation math starting from the fixture's initial value — a valid, se
 `soiltransport` in isolation, matching the same "prove what's provable now, defer the rest with a
 documented gap" pattern used throughout phase 4.
 
+**Module 4 — stics-nit-denit-n2o + soilorganic — done. Phase 4 is now complete.**
+
+**Prerequisite folded in: `stics-nit-denit-n2o.cpp` (233 lines).** `odin/monica/core/stics.odin`:
+`stics_vnit`, `stics_vdenit`, `stics_n2o` (5-arg), `stics_n2o_full` (9-arg convenience overload), and
+the file-local `nit::`/`denit::`/`n2o::` C++ namespaces as `@(private)` procs prefixed accordingly
+(`nit_fNH4`, `denit_fT`, `n2o_rcor`, ...). The plan lists this as its own phase-4 module, but
+`soilorganic::step` calls `stics::vnit`/`vdenit`/`N2O` directly when `SticsParameters.use_nit`/
+`use_denit`/`use_n2o` are enabled, so `soilorganic.odin` would not compile without it — folded in now
+rather than left as a stub. Fully self-contained (only depends on the already-ported
+`p.Stics_Parameters`), no oracle-scope caveats needed. Real fixtures and the C++ in-class defaults
+both set `use_nit`/`use_denit`/`use_n2o` to `false`, so `soilorganic`'s own oracle (below) exercises
+the non-STICS `foNitrification`/`foDenitrification`/`foN2OProduction` path; the STICS branch is
+ported and compiles correctly but is dead code in every fixture in this repo, the same "correct but
+currently unexercised" status as `soilmoisture.odin`'s `dualKcPrecomputation`.
+
+**`odin/monica/core/soil_organic.odin` (~1,500 lines): `Soil_Organic`, `make_soil_organic`,
+`soil_organic_initialize_from_params`, `soil_organic_step`, and every other `soilorganic::` proc**
+(`fo_urea`, `fo_mit`, `fo_volatilisation`, `fo_nitrification`/`fo_stics_nitrification`,
+`fo_denitrification`/`fo_stics_denitrification`, `fo_n2o_production`/`fo_stics_n2o_production`,
+`fo_pool_update`, the eleven `fo_*_on_*` rate-modifier helpers, `add_organic_matter` (both C++
+overloads), and the `get*` accessors). No `monica`-back-pointer deviation needed — like
+`soiltransport`, the C++ struct takes `SoilColumn&` and `SoilOrganicModuleParameters` directly.
+`cropModule` reads one more field (`vc_NetPrimaryProduction`) added to the phase-5 `Crop_Module` stub.
+
+**Two real C++ copy-vs-reference bugs found by reading the source, reproduced exactly (not fixed) —
+the highest-value find of this checkpoint.** `foUrea`'s `auto layer0 = so->soilColumn.layers.at(0);`
+and `foVolatilisation`'s `auto lay0 = so->soilColumn.layers.at(0);` are BY-VALUE copies (every other
+loop variable in this ~1,900-line file is `auto &layi`). Mutations made through them —
+`foUrea`'s `vs_SoilNH4 -=` after ammonia volatilisation, and `foVolatilisation`'s `vs_SoilNH4 -=`
+*and* the `vo_DaysAfterApplication++` on every pool in `lay0.vo_AOM_Pool` (bound as a reference into
+the copy) — never reach the real soil column. This is a genuine, confirmed upstream bug, not a
+translation hazard; CONVENTIONS discipline says reproduce it, not "fix" it. Reproducing it exactly
+was itself non-trivial: Odin's `[dynamic]T` struct-field copy is a *shallow header copy* (same
+backing array), unlike `std::vector`'s deep-copying copy constructor, so a naive `lay0 :=
+sc.layers[0]` would have made `lay0.vo_AOM_Pool` mutations *visible* on the real layer — the exact
+opposite of the C++ bug being reproduced. Fixed by adding `clone_aom_pool`, an explicit deep-copy
+helper, used only where `foVolatilisation` needs it (`foUrea`'s copy never touches `vo_AOM_Pool`, so
+no clone needed there). Dormant in this checkpoint's oracle regardless — `vo_AOM_Pool` is empty for
+every layer all year, since nothing in the bare-soil/no-workstep scope ever calls
+`addOrganicMatter` — but real once phase 6 wires up fertiliser/residue worksteps, so this needed to
+be gotten right now rather than deferred.
+
+**A second, unrelated shadowing quirk, confirmed harmless.** `foMIT`'s local `vo_AOM_FastDeltaSum`/
+`vo_AOM_SlowDeltaSum` (declared partway through the C++ function body) share names with
+`SoilOrganic` struct fields but are genuinely fresh function-local vectors, not aliases — the real
+struct fields of the same name are populated later, by `foPoolUpdate`. Reproduced as true Odin
+locals, never touching `so.vo_AOM_FastDeltaSum`/`so.vo_AOM_SlowDeltaSum` inside `soil_organic_fo_mit`.
+
+**Oracle — green.** `odin/tests/cpp_ref/soil_organic_ref_main.cpp` + `odin/tests/soil_organic_ref/main.odin`,
+run by `run_soil_organic.sh`: **68,255 trace lines identical** over a full 365-day year. Chains all
+three modules that run before `soilorganic` in the real `monicamodel::generalStep` order —
+`soiltemperature::step` → `soilmoisture::step` → `soilorganic::step` — rather than isolating
+`soilorganic` behind synthetic inputs. A side benefit: since `soilmoisture` is now real and verified
+(module 2b), `soiltemperature` no longer needs `soil_temperature_ref_main.cpp`'s original synthetic
+snow-depth injection here — it reads the real, live `model->soilMoisture->snowComponent`/
+`frostComponent` state through the unmodified `st->monica` back-pointer, exactly like production.
+One small oracle bug of its own: the C++ dump function initially missed four real `SticsParameters`
+fields (`code_hourly_wfps_nit`, `code_hourly_wfps_denit`, `k_desat`, `profdenit`) that exist on the
+C++ struct but aren't read by `stics-nit-denit-n2o.cpp` — caught immediately as an Odin-only extra
+line in the diff (not a value mismatch), fixed by adding them to the C++ dump.
+
+**Phase 4 (soil physics) is now complete: soiltemperature, snow-component, frost-component,
+soilmoisture, soiltransport, stics-nit-denit-n2o, soilorganic all ported and independently verified
+against real, chained-where-possible daily trace-diff oracles.** Next: phase 5 (crop-module and
+friends) or phase 6 (orchestration / `variant`→`union` worksteps) — crop-module unblocks widening
+every phase-4 oracle's bare-soil scope to a live crop, per each module's package-comment notes above.
+
 ### Phase 5 — crop
 `crop-module.cpp` (largest single file), `photosynthesis-FvCB`, `voc-guenther`, `voc-jjv`,
 `voc-common`, `O3-impact`.

@@ -22,4 +22,5 @@ Crop_Module :: struct {
 	vc_EvaporatedFromIntercept:    f64,
 	vc_Transpiration:              [dynamic]f64,
 	vc_NUptakeFromLayer:           [dynamic]f64, // soiltransport.cpp
+	vc_NetPrimaryProduction:       f64, // soilorganic.cpp
 }
