@@ -727,6 +727,71 @@ with the same bare-soil simplification (`vc_NetPrecipitation == precipitation`, 
 `Frost_Component` directly via `initialize_snow_component`/`initialize_frost_component` (mirroring
 `initializeFromParams`'s two `initialize` calls) since `Soil_Moisture` itself isn't ported yet.
 
+**Module 2b — soilmoisture.cpp — done.** `odin/monica/core/soil_moisture.odin` (~700 lines):
+`Soil_Moisture`, `make_soil_moisture`, `initialize_from_params`, `soil_moisture_step`, and every
+other `soilmoisture::` proc (`infiltration`, `capillary_rise`, `percolation_with_groundwater`,
+`groundwater_replenishment`, `percolation_without_groundwater`, `backwater_replenishment`,
+`dual_kc_precomputation`, `evapotranspiration`, `reference_evapotranspiration`, `get_e_reducer_1`,
+`get_deprivation_factor`, `mean_water_content`/`mean_water_content_to_depth`,
+`get_snow_depth_and_calc_temperature_under_snow`).
+
+**`CropModule` entanglement, and how it's scoped.** Unlike snow/frost, `soilmoisture.cpp` reads
+`CropModule` state at 10 call sites (rooting depth, Kc/Kcb factors, crop height, transpiration
+per layer, remaining/reference evapotranspiration, evaporated-from-intercept) across
+`step`/`evapotranspiration`/`dualKcPrecomputation`/`capillaryRise`. `CropModule` itself is phase 5's
+~4,750-line struct, not ported yet. Two decisions handle this, both following
+`soil_temperature.odin`'s no-`monica`-field precedent:
+- `Crop_Module` (new file `crop_module_stub.odin`) is a **phase-5 stub**: a real (not `rawptr`)
+  struct carrying only the 10 fields this file reads, each with its final C++ name so phase 5's
+  real struct is a drop-in replacement, not a rename.
+- The C++ struct already carries its own `CropModule *cropModule` field (kept in sync with
+  `monica.currentCropModule.get()` by monica-model.cpp at every plant/harvest event) alongside the
+  `monica`-mediated reads — so unlike `soil_temperature.odin`, this isn't inventing a new field to
+  read through, just unifying two provably-equal C++ pointers onto the one Odin already has.
+  `dualKcMethod`/`dailySumIrrigationWater` (the two genuinely `monica`-only reads, not mirrored onto
+  any `SoilMoisture` field) become explicit parameters on `soil_moisture_step`/`evapotranspiration`/
+  `dual_kc_precomputation`, the same move used for `p_timeStep` in `make_soil_temperature`.
+
+**Real C++-quirk reproduced, not fixed:** `dualKcPrecomputation`'s KA5-texture REW lookup compares
+against mixed-case strings (`"Ss"`, `"Su2"`, ...) while every real KA5 texture in this port's
+fixtures is uppercase (`"SS"`, `"SU2"`, ...) — so on real data every branch misses and `REW` always
+falls through to the `FC0`-based fallback. Reproduced with a `NOTE(c++-quirk)` rather than
+case-folded to what was "obviously" intended, since fixing it would change simulated evaporation on
+every future crop-planted run. Dormant in this checkpoint's oracle regardless (the whole `useDualKc`
+branch requires `cropModule != nil`, so it doesn't execute at all yet).
+
+**A same-package procedure-name collision, and a `CONVENTIONS.md` correction it exposed.**
+`soiltemperature::step` and `soilmoisture::step` both map to `core.step` under the "one Odin package
+per C++ *directory*" rule checkpoint 3b actually established (`odin/monica/core/` mirrors
+`src/core/`) — a different rule than `CONVENTIONS.md §2`'s naming table literally showed
+(`monica::soilmoisture::step -> soilmoisture.step`, implying one package per C++ *namespace*). Fixed
+by renaming both to `soil_temperature_step`/`soil_moisture_step` (disambiguating by owning-struct
+prefix, not leaving one bare) and correcting `CONVENTIONS.md §2` to document the directory-based rule
+that's actually in effect, with an explicit "check for a collision before adding a new free
+procedure to `core`" note — `soiltransport`/`soilorganic` (later phase-4 modules) almost certainly
+have their own `step` too.
+
+**Oracle — green.** `odin/tests/cpp_ref/soil_moisture_ref_main.cpp` +
+`odin/tests/soil_moisture_ref/main.odin`, run by `run_soil_moisture.sh`: **189,070 trace lines
+identical** over a full 365-day year. Same "real `MonicaModel`, bare soil" approach as the
+soiltemperature and snow/frost checkpoints (`model->soilMoisture`, incl. its real
+`snowComponent`/`frostComponent`, built by the unmodified `makeMonicaModel`), with one more
+synthesized input: `vs_GroundwaterDepth` isn't produced by anything ported yet
+(`monicamodel::groundwaterDepthForDate` is phase-6 orchestration), so both drivers use a
+deterministic alternating shallow/deep sequence (`(day % 40) < 15 ? 3.0 : 15.0`) to exercise both
+`percolationWithGroundwater` and `percolationWithoutGroundwater` repeatedly over the run. `et0` is
+`-1.0` throughout, matching `climate-min.csv`'s actual shape (no `et0` column).
+
+One real port bug caught by the oracle, same class as `soil_temperature.odin`'s `dampingFactor`
+miss: **`vm_irrigFwEvent` never got its C++ in-class initialiser** (`double vm_irrigFwEvent{1.0};`).
+First diff was a clean, single-field divergence (`vm_irrigFwEvent`: C++ `1`, Odin `0`) on day 0,
+immediately localizing the bug. Fixed alongside the two initialisers already caught in `crop_module_stub.odin`'s
+sibling struct (`vc_KcFactor{0.6}`, `vm_ReferenceEvapotranspiration{6.0}`) — all three now set
+explicitly in `make_default_soil_moisture`. Worth noting for the remaining phase-4/5 modules: grep
+each header for `{[0-9]` before considering a struct port complete: Odin's zero-value default
+silently swallows every non-zero C++ in-class initialiser, and the trace-diff oracle only catches it
+if the affected field is actually reached by the day range and code path under test.
+
 ### Phase 5 — crop
 `crop-module.cpp` (largest single file), `photosynthesis-FvCB`, `voc-guenther`, `voc-jjv`,
 `voc-common`, `O3-impact`.

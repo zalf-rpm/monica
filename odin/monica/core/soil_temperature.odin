@@ -199,10 +199,13 @@ make_soil_temperature :: proc(
 // C++: void monica::soiltemperature::step(SoilTemperature*, double tmin, double
 //        tmax, double globrad)
 //
-// soil_coverage/snow_depth/temperature_under_snow stand in for the C++'s
-// st->monica->... reads inside calcSoilSurfaceTemperature - see the package
-// comment.
-step :: proc(
+// Named soil_temperature_step, not step: this package mirrors src/core/ (one
+// Odin package per C++ *directory*, not per C++ *namespace* - see
+// CONVENTIONS.md §2), so soiltemperature::step and soilmoisture::step would
+// otherwise collide. soil_coverage/snow_depth/temperature_under_snow stand in
+// for the C++'s st->monica->... reads inside calcSoilSurfaceTemperature - see
+// the package comment.
+soil_temperature_step :: proc(
 	st: ^Soil_Temperature,
 	tmin, tmax, globrad: f64,
 	soil_coverage, snow_depth, temperature_under_snow: f64,

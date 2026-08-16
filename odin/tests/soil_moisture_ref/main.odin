@@ -1,12 +1,10 @@
-// Odin side of the phase 4 soiltemperature differential test.
+// Odin side of the phase 4 module 2b (soilmoisture.cpp) differential test.
 //
 // Must emit byte-identical output to
-// odin/tests/cpp_ref/soil_temperature_ref_main.cpp - see that file's header
-// comment for why the two drivers poke synthetic snow-depth/temperature-under-
-// snow values directly rather than running a live SoilMoisture, and why
-// currentCropModule stays "absent" (soil_coverage always 0) on both sides.
-// Run odin/tests/cpp_ref/run_soil_temperature.sh to build both and diff them.
-package soil_temperature_ref
+// odin/tests/cpp_ref/soil_moisture_ref_main.cpp - see that file's header
+// comment for the bare-soil/synthetic-groundwater-depth rationale.
+// Run odin/tests/cpp_ref/run_soil_moisture.sh to build both and diff them.
+package soil_moisture_ref
 
 import "core:bufio"
 import "core:fmt"
@@ -25,7 +23,7 @@ import tl "../../support/tools"
 main :: proc() {
 	args := os.args
 	if len(args) < 4 {
-		fmt.eprintln("usage: soil_temperature_ref <pathToSimJson> <pathToClimateCsv> <numDays>")
+		fmt.eprintln("usage: soil_moisture_ref <pathToSimJson> <pathToClimateCsv> <numDays>")
 		os.exit(2)
 	}
 	path_to_sim_json := args[1]
@@ -83,27 +81,27 @@ main :: proc() {
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
-	// --- build SoilColumn + SoilTemperature, mirroring
-	// initializeMonicaModelFromParams (monica-model.cpp) minus the modules
-	// soiltemperature doesn't need ---
+	// --- build SoilColumn + SoilMoisture (incl. its snow/frost sub-components),
+	// mirroring initializeMonicaModelFromParams minus the modules soilmoisture
+	// doesn't need ---
 	sc := core.make_soil_column(
 		cpp.simulationParameters.p_LayerThickness,
 		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
 		cpp.siteParameters.vs_SoilParameters[:],
 		a,
 	)
-	st := core.make_soil_temperature(
+	sm := core.make_soil_moisture(
 		&sc,
-		cpp.userSoilTemperatureParameters,
-		cpp.userEnvironmentParameters.p_timeStep,
+		&cpp.siteParameters,
+		cpp.userSoilMoistureParameters,
+		&cpp.userEnvironmentParameters,
+		&cpp.userCropParameters,
+		cpp.simulationParameters.p_LayerThickness,
+		a,
 	)
+	sm.cropModule = nil // bare soil - see the file comment
 
 	// --- climate ---
-	// Built via csv_via_header_options_merge (which derives lineNoOfDataStart
-	// from lineNoOfHeaderLine+noOfHeaderLines), not by hand-setting fields on a
-	// zero-valued Csv_Via_Header_Options: skipping merge leaves a stale
-	// default that crashes the CSV parser. Mirrors sim-min.json's
-	// "climate.csv-options" keys exactly.
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
 		&copts,
@@ -139,18 +137,35 @@ main :: proc() {
 	for day in 0 ..< n {
 		tmin := clim.data_accessor_data_for_timestep(&da, .tmin, day)
 		tmax := clim.data_accessor_data_for_timestep(&da, .tmax, day)
+		tavg := clim.data_accessor_data_for_timestep(&da, .tavg, day)
+		wind := clim.data_accessor_data_for_timestep(&da, .wind, day)
 		globrad := clim.data_accessor_data_for_timestep(&da, .globrad, day)
+		precip := clim.data_accessor_data_for_timestep(&da, .precip, day)
+		relhumid := clim.data_accessor_data_for_timestep(&da, .relhumid, day)
+		julday := clim.data_accessor_julian_day_for_step(&da, day)
 
-		// synthetic, deterministic snow sequence - identical on both sides, not
-		// derived from any model. Exercises both branches of
-		// calc_soil_surface_temperature's snow check repeatedly over the run.
-		snow_depth: f64 = (day % 30) < 10 ? 50.0 : 0.0
-		temperature_under_snow: f64 = -2.0 - f64(day % 5)
+		// synthetic, deterministic groundwater depth sequence - identical on
+		// both sides, not produced by any not-yet-ported orchestration code.
+		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
+		et0 := -1.0 // climate-min.csv has no et0 column
 
-		core.soil_temperature_step(&st, tmin, tmax, globrad, 0.0, snow_depth, temperature_under_snow)
+		core.soil_moisture_step(
+			&sm,
+			vs_GroundwaterDepth,
+			precip,
+			tmax,
+			tmin,
+			(relhumid / 100.0),
+			tavg,
+			wind,
+			cpp.userEnvironmentParameters.p_WindSpeedHeight,
+			globrad,
+			julday,
+			et0,
+		)
 
 		tr.set_day(&t, day)
-		tr.dump(&t, "soilTemperature", st)
+		tr.dump(&t, "soilMoisture", sm)
 		free_all(context.temp_allocator)
 	}
 

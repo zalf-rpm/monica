@@ -88,11 +88,20 @@ C++ is `namespace::camelCase`; Odin is `package` + `snake_case`. Map mechanicall
 | `Tools::Errors` | `tools.Errors` |
 | `Tools::readFile` | `tools.read_file` |
 | `Tools::Date` | `date.Date` |
-| `monica::soilmoisture::step` | `soilmoisture.step` |
-| `monica::makeSoilColumn` | `soilcolumn.make_soil_column` |
+| `monica::makeSoilColumn` | `core.make_soil_column` |
 | struct field `vs_SoilMoisture_m3` | field `vs_SoilMoisture_m3` (**unchanged**) |
 
 Struct **field** names keep their exact C++ spelling — they are what the trace diff matches on.
+
+**Correction to an earlier plan (superseded by what phase 3-4 actually built):** `src/core/`
+becomes **one** Odin package, `core` — per C++ *directory*, not per C++ *namespace* — not a separate
+Odin package per `monica::soilcolumn`/`monica::soiltemperature`/`monica::soilmoisture`/... the way
+`monica::soilmoisture::step -> soilmoisture.step` might suggest. `SoilColumn`, `SoilTemperature`,
+`SoilMoisture`, `SnowComponent`, `FrostComponent` and their free procedures all live in
+`odin/monica/core/`. Two C++ namespaces both declaring a same-named free function (`soiltemperature::
+step` and `soilmoisture::step`) therefore collide in the flat package — disambiguate by prefixing
+with the owning struct's snake_case name (`soil_temperature_step`, `soil_moisture_step`), not by
+picking one to leave bare. Check for a name collision before adding any new free procedure to `core`.
 Only procedure and package names get snake_cased.
 
 C++ free procedures that live in a lowercase namespace (`monica::soilmoisture::...`) become a
