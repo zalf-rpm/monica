@@ -44,6 +44,24 @@ build) `long double == double`, so `f64` is exact. On a GCC/Linux reference buil
 and results could differ in the last bit — if the baseline is ever regenerated on Linux, revisit
 `tools.round`.
 
+### Transcendental functions: `core:c/libc`, not `core:math`
+
+`core:math`'s `pow`/`log`/`log10`/`exp`/... are a pure-Odin implementation and are **not always
+bit-identical** to the C++ reference build's `<cmath>` calls (which resolve to the MSVC CRT).
+Confirmed in phase 3 (`soillayer::soilMoisturePF`, `plan-odin.md`): a `pow(pow(x, 1/m) - 1, 1/n)`
+chain diverged in the last 2 ULP against the C++ reference on a real fixture, while every other
+value in that oracle (~1,440 of them, plus the unrelated 15,978-row interpolation sweep, which
+also calls `pow`/`exp` heavily) matched exactly — so this is a real but *intermittent* risk, not a
+translation bug, and not something a differential test on a handful of inputs reliably catches.
+
+**Use `core:c/libc`'s `pow`/`log`/`log10`/`exp`/`sqrt`/... instead of `core:math`'s.** They are FFI
+bindings to the platform C runtime, so on Windows they call the exact same function the C++
+reference build does, eliminating the risk entirely rather than hoping a given input doesn't hit a
+divergent case. This matters far more from phase 4 onward — `crop-module.cpp` alone is ~4,750 lines
+of agronomy arithmetic leaning on `exp`/`pow` for photosynthesis, respiration and phenology curves.
+`core:math` is still fine for the non-transcendental helpers (`math.round`, `math.floor`, `math.abs`,
+comparisons, ...) — this rule is specifically about `pow`/`exp`/`log`-family functions.
+
 ## 2. Naming
 
 C++ is `namespace::camelCase`; Odin is `package` + `snake_case`. Map mechanically:

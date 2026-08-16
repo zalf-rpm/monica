@@ -531,9 +531,48 @@ guarded by a `bool`, matching the C++'s function-local `static` + `if (!initiali
 minus the C++'s mutex, which existed for the RPC/zmq server mains this port drops (see plan-odin.md
 §7); `monica-run` is single-threaded.
 
+**Checkpoint 3b (done) — `AOM_Properties`/`SoilLayer`/`SoilColumn` construction.**
+`odin/monica/core/soil_column.odin` (a new package, `odin/monica/core/`, mirroring `src/core/`).
+Ports `AOM_Properties` (data only), `SoilLayer` + `makeSoilLayer` + the `soillayer::` resolved
+getters (`soilMoisturePF`, `soilNmin`, `soilSiltContent`, `soilRawDensity`, `soilBulkDensity`,
+`soilOrganicCarbon`, `soilOrganicMatter`), `SoilColumn` + `makeSoilColumn` (the `Soil::SoilPMs`
+overload only), and the handful of `soilcolumn::` getters that don't depend on a running
+CropModule/worksteps (`calculateNumberOfOrganicLayers`, `numberOfLayers`, `numberOfOrganicLayers`,
+`layerThickness`, `dailyCropNUptake`, `getLayerNumberForDepth`, `sumSoilTemperature`).
+
+**Not ported** (all `soilcolumn.h`-declared but phase 6, not phase 3 — they run against a live
+`MonicaModel`/worksteps, not at construction time): `applyMineralFertiliser*`, `applyIrrigation*`,
+`applyTillage`, the delayed-N-min machinery (including the `DelayedNMinApplicationParams` struct
+and `_delayedNMinApplications` list — always empty at construction, so dropping them changes
+nothing the phase-3 oracle observes), `putCrop`/`removeCrop`, `clearTopDressingParams`,
+`deleteAOMPool`. `SoilColumn.cropModule` is kept as a `rawptr` placeholder (never dereferenced by
+anything ported so far) until `CropModule` exists in phase 5.
+
+**Oracle — green:** `odin/tests/cpp_ref/run_soil_column.sh`, both `site-min.json` and `site.json` -
+**18,972 B identical**. Builds the real 20-layer soil column via `createEqualSizedSoilPMs` +
+`makeSoilColumn` from each fixture's inline `SoilProfileParameters` (no `include-from-file`/`ref`
+resolution needed for either — see below) and dumps all 36 fields of every layer plus 5
+`getLayerNumberForDepth` probes, `sumSoilTemperature` and `calculateNumberOfOrganicLayers`.
+`site+.json` is deliberately not used: its profile uses `"bulk-density-class->raw-density"`/
+`"sand-and-clay->lambda"` reference patterns that need the phase-1b resolution pipeline this
+driver doesn't run - checkpoint 3c (which does go through that pipeline) exercises it instead.
+
+**Finding with consequences for phases 4-6: use `core:c/libc`, not `core:math`, for
+`pow`/`log`/`exp`/...** `soilMoisturePF`'s `pow(pow(x, 1/m) - 1, 1/n)` chain initially diverged
+from the C++ reference in the last 2 ULP on one layer of one fixture, while all ~1,440 other
+values in this oracle (and the unrelated 15,978-row interpolation sweep, which also leans on
+`pow`/`exp`) matched exactly — `core:math`'s pure-Odin implementation is not always bit-identical
+to the MSVC CRT `<cmath>` the C++ build calls. Fixed by switching to `core:c/libc`'s `pow`/`log10`
+(FFI bindings to the platform CRT, so they call the literal same function on Windows) — now
+byte-identical. Documented as a general rule in `CONVENTIONS.md` §1: use `core:c/libc` for every
+transcendental function from phase 4 onward, not just where a diff happens to catch it, since
+`crop-module.cpp` alone leans on `exp`/`pow` for ~4,750 lines of agronomy arithmetic and a
+differential test on finitely many inputs cannot prove a pure-Odin implementation matches
+everywhere. The already-passing `calcVanGenuchtenVereeckenParams`/`calcVanGenuchtenTothParams`
+(checkpoint 3a) were deliberately left on `core:math` rather than churned without a failing test
+to justify it; worth an opportunistic swap if either is touched again.
+
 **Remaining for phase 3:**
-- Checkpoint 3b — `SoilLayer`/`SoilColumn`/`AOM_Properties` construction (`src/core/soilcolumn.{h,cpp}`,
-  881+298 lines) and the per-layer state oracle over the Hohenfinow2 fixture.
 - Checkpoint 3c — wire `siteparameters::merge`/`to_json` to build/emit the real `vs_SoilParameters`
   (deferred from phase 1c), threading `path_to_soil_dir` through `Central_Parameter_Provider`'s merge
   chain, and re-running `run_central_params.sh`/`run_env.sh` against a populated profile.
