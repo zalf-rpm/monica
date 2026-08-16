@@ -961,6 +961,68 @@ full 7-dimension grid (864 rows) for FvCB, curated scenario sets for O3-impact/v
   construction path, don't zero-init" lesson from phase 1c tranche 3b's `SpeciesParameters` mistake,
   recurring in a new driver.
 
+**Checkpoint 2 — CropModule scaffolding — done.** `crop-module.h`'s `CropModule` struct (~175
+fields) and `crop-module.cpp`'s `makeCropModule` constructor (the first overload only - the
+second, `CropModuleState::Reader`-based, is Cap'n Proto deserialize and dropped).
+`odin/monica/core/crop_module.odin` replaces `crop_module_stub.odin`'s 11-field placeholder
+wholesale; every field keeps its exact C++ name, so the phase-4 modules already holding a
+`cropModule: ^Crop_Module` pointer (soilmoisture, soiltransport, soilorganic) compile unchanged
+against the drop-in. Not yet ported: any of the ~40 `cropmodule::` step functions (`fcRadiation`,
+`step`, ...) - those are checkpoints 3-7.
+
+**Two design calls, not direct transliteration:**
+- `Intercropping *intercropping` becomes a typed-but-inert `rawptr`, always nil. `Intercropping`
+  itself is dropped (Cap'n Proto RPC, see the "Explicitly dropped" table); every real use of this
+  field in `crop-module.cpp` is behind `if (isIntercropping)`, false in every fixture in this repo.
+- `fireEvent` / `addOrganicMatter` / `getSnowDepthAndCalcTempUnderSnow` (C++ `std::function`
+  members capturing a `MonicaModel*`, prep-2's flagged std::function-removal site) become plain
+  Odin `proc` fields with matching signatures (`proc(_: string)`, `proc(_: map[int]f64, _: f64)`,
+  `proc(_: f64) -> (f64, f64)`). Odin's `proc` type has no capture, so this defers - not solves -
+  prep 2's actual design question (`store a MonicaModel* model in CropModule and call
+  monicamodel::... directly`); `MonicaModel` doesn't exist yet (phase 6), and this checkpoint never
+  calls these fields, only assigns them, so the field-shape decision was enough for now. Revisit at
+  phase 6 when `step()` actually needs to fire them.
+
+**One real bug caught and fixed, not a C++ quirk: shallow- vs deep-copy of `cropParams`.**
+`cm->cropParams = *cropParams;` in C++ deep-copies via `CropParameters`' implicit copy constructor
+(every `std::vector` member copies). Odin's plain struct assignment only copies `[dynamic]T`
+headers, aliasing the backing storage - the same class of bug as phase 4's `clone_aom_pool`
+(`soilorganic.odin`), but this one is not hypothetical: `cropParams` typically points at a Sowing
+workstep's own, long-lived `CropParameters` (`src/worksteps/sowing.cpp`), reused every time that
+workstep fires again across a multi-year crop rotation. Without a deep clone, a later checkpoint
+mutating `cm.cropParams` (perennial-crop handling, cutting) would corrupt the workstep's source
+object for the next season instead of only this crop's own copy. Added `clone_crop_parameters`
+(+ private `clone_species_parameters`/`clone_cultivar_parameters`/`clone_f64_array`/
+`clone_f64_2d_array`/`clone_bool_array`/`clone_yield_component_array` helpers) to `crop_module.odin`,
+deep-cloning every `[dynamic]T` reachable from `CropParameters`, including the two
+`[dynamic][dynamic]f64` fields (`pc_AssimilatePartitioningCoeff`/`pc_OrganSenescenceRate`).
+`residueParams` needs no such clone - `CropResidueParameters`/`OrganicMatterParameters` are all
+scalar fields, nothing to alias.
+
+**Oracle - green, no daily loop needed.** `odin/tests/cpp_ref/crop_module_ref_main.cpp` +
+`odin/tests/crop_module_ref/main.odin`, run by `run_crop_module.sh`: **3,540 lines identical**
+across 4 construction scenarios (indexed as trace "days" 0-3, since `makeCropModule` is a single
+construction, not a step function, and `makeMonicaModel` only needs a `CentralParameterProvider` -
+no climate data or day loop at all). Real wheat `CropParameters`/`CropResidueParameters` loaded the
+same way `params_ref_main.cpp` loads them; a real, live `SoilColumn` from the same
+`CentralParameterProvider`-merge pipeline every phase-4 oracle uses. The 4 scenarios exercise every
+branch in the constructor: (0) baseline (`pc_AdjustRootDepthForSoilProps=true`,
+`vs_ImpenetrableLayerDepth=-1` -> no clamp), (1) `pc_AdjustRootDepthForSoilProps` forced false
+(skips the soil-adjusted rooting-depth branch), (2) `vs_ImpenetrableLayerDepth` forced positive and
+below the computed max rooting depth (clamp branch), (3) a synthetic cultivar with
+`pc_StageKcFactor` scaled to peak below 1.0 (the Kcb "low-coverage crop" branch - real wheat peaks
+at 1.1, so scenario 0 alone already covers the "high-coverage" side of that `if`).
+
+Deliberately **not** dumped by the oracle, and so not re-verified here: `cropParams`/
+`residueParams`/`perennialCropParams` (already round-tripped through `cropparameters::merge`/
+`to_json` in the phase-1 params oracle - only the deep-clone itself is new here, and the byte-exact
+match across all vector fields on 4 differently-shaped inputs is enough to confirm it works);
+`soilColumn`/`siteParams`/`simParams`/`cropModParams`/`intercropping` (pointers, dumped as set/nil
+only); `guentherEmissions`/`jjvEmissions`/`vocSpecies`/`cropPhotosynthesisResults`/
+`perennialCropDormancyPeriodEndDate` (default-constructed, never touched by this constructor - the
+right checkpoint to verify them is whichever one actually populates them);
+`fireEvent`/`addOrganicMatter`/`getSnowDepthAndCalcTempUnderSnow` (function values, not dumpable).
+
 ### Phase 6 — orchestration
 `monica-model.cpp` (step/generalStep/cropStep, fertiliser/irrigation/tillage,
 seeding/harvest/incorporation, CO2 + groundwater helpers), `workstep.cpp` +
