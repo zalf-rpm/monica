@@ -1586,34 +1586,125 @@ harvested crop module stale rather than actually cleared). `odin/tests/cpp_ref/
 monica_model_step_ref_main.cpp` + `odin/tests/monica_model_step_ref/main.odin`, run
 by `run_monica_model_step.sh`.
 
-### Phase 7 — run loop + output
+### Phase 7 — run loop + output — **DONE, phase 8's regression goal reached along the way**
 `run-monica.cpp` (`runMonica`, `StoreData`, `setupStorage`, `Spec` evaluation),
 `io/output.cpp` (`OId`, `Output`), `io/csv-format.cpp`, `cmd/monica-run`.
 
-**`build-output` replacement.** `sim-min.json` needs exactly **21 distinct output ids**:
+**Checkpoint 1 — `io/output.odin` — done.** `OId` (+ its two enums, `isRange`/`isOrgan`/
+`toString`/`outputName`) and the `Output`/`Output::Data` shapes the CSV write path builds and
+consumes. `oid::merge`/`to_json` and `Output::merge`/`to_json`/`customId`/`errors`/`warnings`
+are not ported - RPC/env-round-trip-only callers this port drops, same "port on demand" already
+used throughout phase 6. `resultsObj` (the `"obj-outputs?"` path) is dropped too: `sim-min.json`
+never sets that flag. Pure data structure / pure functions - verified via `odin check` only, no
+oracle needed.
 
-```
-Date  Crop  CM-count  Year  Stage  Kc  Irrig  ETa/ETc  AbBiom  OrgBiom  Yield
-LAI   Precip  Mois  SOC  N  Tavg  Globrad  RunOff  NLeach  Recharge
-```
+**Checkpoint 2 — `io/build_output.odin` — done.** `applyOIdOP`, `getComplexValues`, and
+`parseOutputIds`, plus a 21-entry `buildOutputTable` replacement covering exactly the ids
+`sim-min.json`'s `output.events` needs (CM-count, Date, Year, Crop, Stage, AbBiom, OrgBiom,
+Yield, LAI, Mois, Irrig, RunOff, Kc, Recharge, NLeach, SOC, Tavg, Precip, Globrad, N, ETa/ETc)
+instead of the full ~300-entry C++ table. Each entry's `id` is purely an internal map key in
+both languages (csv-format.cpp writes `name`/`displayName`/`unit`, never `id`), so this port's
+own 0..20 numbering doesn't need to match C++'s registration-order numbering - only internal
+self-consistency (`parseOutputIds` resolves a name to an id, the table resolves that id to a
+function) matters. Drops the `setfs`/`SetValue`-workstep machinery and the
+`getCompareOp`/`buildCompareExpression` machinery: grepped `sim-min.json`'s entire
+`output.events`/`_events` section (the `_events`/`__events` siblings are underscore-disabled and
+never read) and confirmed every spec is a shortcut string, a workstep-event-name string, or a
+plain output-id array - never the `["while"|"at", [oid, "op", value]]` comparison-expression
+array syntax that machinery exists for.
 
-plus the event-qualified forms `Date|sowing` / `Date|harvest`, the layer forms
-(`["Mois",[1,3]]`, `["SOC",[1,3]]`, `["N",[1,3,"AVG"]]`), the organ forms
-(`["OrgBiom","Leaf"]`, `["OrgBiom","Fruit"]`) and the aggregations
-(`FIRST`, `LAST`, `SUM`, `AVG`).
+**Checkpoint 3 — `io/csv_format.odin` — done.** `writeOutputHeaderRows` and `writeOutput`.
+`writeOutputObj` is not ported (unreachable, same reason as `resultsObj` above). Two format
+details needed empirical verification, not just reading the source:
+- **Number formatting.** C++'s `ostream << double` with no precision/flags set anywhere in
+  `csv-format.cpp` uses the stream's default - 6 significant digits, `%g`-style (scientific
+  below 1e-4 or at/above 1e6, trailing zeros trimmed, `e+06` not `e+006`, `-0` preserved).
+  Verified empirically (a throwaway C++ probe vs a throwaway Odin probe over representative
+  magnitudes) that Odin's `fmt` `"%.6g"` verb reproduces this byte-for-byte. That's the
+  formatting `write_json_scalar` uses for every NUMBER value.
+- **Line endings.** The checked-in `sim-min-out_section_*.csv` baselines use `\r\n`: the C++
+  side writes through a `std::ofstream` opened without `ios::binary`, and Windows text-mode
+  translates `endl`/`'\n'` to `\r\n`. `io.Writer` does no such translation, so every line in
+  `csv_format.odin` ends with an explicit `"\r\n"` rather than relying on the OS.
 
-Write these 21 as a small table of `proc(^MonicaModel, OId) -> Value` — i.e. exactly what
-`build-output.cpp` does, with 21 entries instead of ~300. Reflection alone cannot produce
-these: the ids are computed expressions with layer aggregation, organ indexing and rounding,
-not struct field names. (The reflection dumper from Phase 4 is a *separate*, complementary
-debugging tool.)
+**Oracle - byte-identical**, a synthetic set of `OId`s (organ-indexed, layer-range, layer-
+aggregate, plain scalar, string-valued) and values chosen to exercise both format details above
+plus the escaping paths (a display name containing commas, a JSON-input string containing
+quotes). `odin/tests/cpp_ref/csv_format_ref_main.cpp` + `odin/tests/csv_format_ref/main.odin`,
+run by `run_csv_format.sh`.
 
-`monica-run-main.cpp` shrinks from 518 to ~200 lines once the Intercropping `output2` half is
-dropped.
+**Checkpoint 4 — `run/run_monica.odin` — done.** `CropRotation`, `Env` (+ `env_merge`), `Spec`
+(+ `setupStorage`), `StoreData` (+ `store_data_aggregate_results`,
+`store_data_store_results_if_spec_applies`), and a genuinely single-model `run_monica` written
+directly rather than as an `isIC=false` branch of a dual-model function. `Spec`'s six
+`std::function<bool(const MonicaModel&)>` fields become a `Spec_Expr` (data: a kind tag +
+day/month/year/eventName) plus a single `spec_expr_eval` dispatcher, not function pointers -
+Odin procs can't capture, and unlike the "one live model" global-pointer workaround used
+elsewhere in this port, here many differently-parameterised expressions (every shortcut's date
+pattern, every workstep event name) coexist at once, so there's no single global to redirect
+calls through; the captured data has to live somewhere, and a plain struct is the direct Odin
+equivalent. Drops the second `MonicaModel`/all Intercropping sync branches, Cap'n Proto state
+load/save, and the daily-function registration loop (`workstep::registerDailyFunction` - the
+only workstep needing it, `AutomaticSowing`, is unused by `crop-min.json`'s rotation).
 
-### Phase 8 — regression close-out
-All five `sim-min-out_section_*.csv` byte-identical to the `_3.6.60` baselines. Then widen:
-run `sim.json` / `sim+.json` (the larger Hohenfinow2 configs) and add output ids as needed.
+**This oracle is the first thing in the whole port to exercise the production
+`absApply`/`nextAbsoluteCMApplicationDate` crop-rotation-cycling path end to end** - every
+earlier crop-growth oracle, including phase 6 checkpoint 6's, drove worksteps through the
+simpler literal-date `apply()` overload instead as a shortcut, which (being matched against a
+genuinely *relative* `Tools::Date`, whose `operator==` compares `isRelativeDate()` too) never
+actually fired a relative-dated static workstep like `Sowing` at all - meaning no earlier oracle
+had actually validated real crop growth past its initial state. This one caught a real bug:
+`workstep.odin`'s `sowing_merge` merged species/cultivar JSON straight into a zero-value
+`Crop_Parameters` instead of one built via `make_crop_parameters()` first. C++'s
+`CropParameters` carries in-class defaults (the Farquhar-model constants KC25/KO25/AEKC/AEKO/
+AEVC), and species/cultivar files routinely omit fields meant to just take those defaults;
+without the `make_` call every such field silently read back as 0. For wheat this zeroed
+KC25/KO25, turning the CO2Method==3 assimilation formula's `Mkc*Oi/Mko` term into a 0/0 NaN as
+soon as the crop reached its second developmental stage - `max(0.1, NaN)` returns the non-NaN
+operand, so this failed silently (no crash) as a hard floor on `vc_AssimilationRate`, freezing
+biomass growth solid from then on. Fixed by calling `make_crop_parameters()` before merging in
+`sowing_merge` (shared by `Sowing`/`Transplant`/`AutomaticSowing`). See
+`[[monica-odin-port-make-before-merge-bug]]` - worth a grep pass for the same shape elsewhere.
+
+**Oracle - byte-identical, 2593 lines, 5 sections, the full ~7-year Hohenfinow2 crop rotation.**
+`odin/tests/cpp_ref/run_monica_ref_main.cpp` (calls the real C++ `runMonica`) vs
+`odin/tests/monica_run_ref` (calls the real `run_monica`), both loading the actual
+`installer/Hohenfinow2/sim-min.json`+`crop-min.json`+`site-min.json` and dumping every output
+section through the checkpoint-3-verified CSV writer. `run_monica_run.sh`.
+
+**Checkpoint 5 — `cmd/monica-run` — done.** Full CLI arg parsing
+(`-d`/`-sd`/`-ed`/`-m`/`-op`/`-o`/`-c`/`-s`/`-w`/`-h`/`-v`), sim.json loading and crop/site/
+climate path resolution, env construction via `create_env_json_from_json_objects` + `env_merge`,
+and both output-writing modes (`-m`: one CSV per output section; default: all sections in one
+file). Dropped, all "port on demand": Cap'n Proto/ZeroMQ RPC (`-icrsr`/`-icwsr` and the sturdy-
+ref soil/climate/intercropping connections), the entire `output2`/`-o2` Intercropping half, and
+the `getCapillaryRiseRate` closure wiring - already baked directly into
+`soil_moisture.odin`'s `read_capillary_rise_rates`, no per-run wiring needed (same pattern
+already used for `calculateAndSetPwpFcSatFunctions` in `central_parameter_provider_merge`).
+
+Also fixed a second latent bug, found the same way as checkpoint 4's: a heap-corrupted output-
+directory string traced back to `support/tools/files.odin`'s `fix_system_separator`. `strings.
+replace_all` returns its input string unallocated (aliased, not copied) when there's nothing to
+replace (e.g. `path=="."`, no `/` to turn into `\`), but `fix_system_separator`'s `defer
+delete(step1, allocator)` deleted it unconditionally - freeing the *caller's own* string out
+from under it whenever the path needed no separator substitution. Nothing before this checkpoint
+had happened to both call `fix_system_separator` (or `ensure_dir_exists`, which calls it) *and*
+keep using the original argument string afterward. Fixed by only deleting `step1` when
+`strings.replace_all`'s `was_allocation` return says it actually allocated.
+
+**Phase 8's regression goal reached here, via the real CLI rather than just an in-process
+oracle:** `build/monica-run.exe -m` (C++) and the new Odin `monica-run.exe -m` (checkpoint 5),
+run independently (separate working directories - `-op` turns out to be a no-op in the real
+C++ too, see the CLI's own header comment) over the real `sim-min.json`, produce byte-identical
+output in **both** CLI modes:
+- `-m` (one file per section): all 5 `sim-min-out_section_*.csv` files identical between the two
+  binaries, and `daily`/`crop` are additionally byte-identical to the checked-in
+  `sim-min-out_section_{daily,crop}_3.6.60.csv` baselines.
+- default (single combined file): identical between the two binaries.
+
+### Phase 8 — regression close-out — **DONE, folded into phase 7 checkpoint 5**
+Widening beyond `sim-min.json` (the larger `sim.json`/`sim+.json` Hohenfinow2 configs, more
+output ids) is future "port on demand" work, not required for this port's original scope.
 
 ---
 
