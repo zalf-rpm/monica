@@ -22,8 +22,21 @@ import tl "../../support/tools"
 // ---------------------------------------------------------------------------
 
 // C++: Errors workstep::merge(SowingData*, json11::Json)
+//
+// s.cropParams is default-constructed via make_crop_parameters() before the
+// merge below, not left at Odin's zero value: C++'s CropParameters has
+// in-class member defaults (e.g. SpeciesParameters::KC25/KO25/AEKC/AEKO/AEVC,
+// the Farquhar-model constants), and species/cultivar JSON files routinely
+// omit fields that are meant to just take those defaults. Without this,
+// every such field silently reads back as 0 instead of its real default -
+// this exact gap froze crop growth solid from the second phenological stage
+// onward (KC25=KO25=0 makes vc_CO2CompensationPoint's Mkc*Oi/Mko a 0/0 NaN),
+// caught by the phase 7 checkpoint 4 runMonica oracle. The same
+// "make_X() before merge" fix already applies to Env.params in
+// run_monica.odin's env_merge.
 sowing_merge :: proc(s: ^Sowing_Data, j: jx.Value, allocator := context.allocator) -> tl.Errors {
 	res: tl.Errors
+	s.cropParams = p.make_crop_parameters()
 
 	jx.set_iso_date_value(&s.sowingDate, j, "seedDate")
 	jx.set_iso_date_value(&s.harvestDate, j, "harvestDate")
@@ -68,6 +81,7 @@ sowing_merge :: proc(s: ^Sowing_Data, j: jx.Value, allocator := context.allocato
 				jcps := jx.get(jc, "perennialCropParams")
 				if jx.has_object_shape(jcps, "species") && jx.has_object_shape(jcps, "cultivar") {
 					s.separatePerennialCropParams = new(p.Crop_Parameters, allocator)
+					s.separatePerennialCropParams^ = p.make_crop_parameters()
 					_ = p.crop_parameters_merge(s.separatePerennialCropParams, jcps)
 				}
 			}
