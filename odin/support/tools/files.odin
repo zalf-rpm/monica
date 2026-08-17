@@ -94,8 +94,16 @@ is_absolute_path :: proc(path: string) -> bool {
 // Elsewhere: collapse '//' -> '/'.
 fix_system_separator :: proc(path: string, allocator := context.allocator) -> string {
 	when ODIN_OS == .Windows {
-		step1, _ := strings.replace_all(path, "/", "\\", allocator)
-		defer delete(step1, allocator)
+		// strings.replace_all returns the input `path` itself, unallocated, when
+		// there's no "/" to replace (e.g. path == "."). Only delete step1 when it
+		// was actually a fresh allocation - otherwise this frees the caller's own
+		// `path` string out from under it, a real use-after-free this port hit in
+		// the phase 7 checkpoint 5 CLI (ensure_dir_exists -> fix_system_separator
+		// on a "." directory, corrupting the caller's still-live path variable).
+		step1, was_allocation := strings.replace_all(path, "/", "\\", allocator)
+		defer if was_allocation {
+			delete(step1, allocator)
+		}
 		out := collapse_doubles(step1, "\\\\", "\\", allocator)
 		return out
 	} else {
