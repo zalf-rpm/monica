@@ -74,10 +74,12 @@ checkpoint 3a deliberately left on `core:math` pending an "opportunistic swap if
 again" — this is that swap). `monica/core/soil_column.odin`'s `soilMoisturePF` was already on
 `libc.pow`/`libc.log10` from checkpoint 3a, the finding that established the rule.
 
-**Enforced, not just documented:** `bash odin/tests/check_libc_transcendentals.sh` greps every
-`*.odin` file under `odin/` for `math.<name>(` against the full §7.12 family list above and fails
-if it finds one. Run it alongside `odin test odin/tests` — a passing test suite says nothing about
-this rule since it's a static tree-wide property, not something a unit test exercises.
+**Enforced, not just documented, two ways:** `bash odin/tests/check_libc_transcendentals.sh` greps
+every `*.odin` file under `odin/` for `math.<name>(` against the full §7.12 family list above and
+fails if it finds one - a quick manual check. `odin/tests/conventions_test.odin`'s
+`test_no_core_math_transcendentals` does the identical check as a real `@(test)` proc, so it runs
+automatically every time `odin test odin/tests` does (the standard command this file's own §7
+documents) instead of needing the standalone script remembered and invoked separately.
 
 ## 2. Naming
 
