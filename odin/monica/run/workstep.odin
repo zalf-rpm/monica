@@ -8,11 +8,15 @@
 // functions can live in separate translation units compiled independently.
 //
 // Dropped, per plan-odin.md's "Explicitly dropped" table: SaveMonicaState
-// (Cap'n Proto). Also dropped for now: SetValue - it needs OId/
-// buildOutputTable/the Spec expression evaluator (io/output.h,
-// io/build-output.cpp), none of which exist yet (phase 7); sim-min.json
-// doesn't use it. Both are simply absent from WorkstepType/WorkstepData
-// rather than half-implemented; add them back when phase 7 lands.
+// (Cap'n Proto).
+//
+// SetValue was also dropped here in phase 6 (needed OId/buildOutputTable/
+// the Spec expression evaluator, none of which existed yet) but is ported
+// now that phase 7 built all three - see Set_Value_Data below and
+// set_value_merge/set_value_apply/make_set_value_workstep in worksteps.odin.
+// sim-min.json's crop-min.json rotation still doesn't use it, so it has no
+// oracle coverage of its own; ported for completeness now that nothing
+// blocks it, translated as literally as everything else in this file.
 //
 // to_json is not ported for any workstep in this checkpoint: its only real
 // callers are cultivation-method::to_json/toString (CLI workflow dumps) and
@@ -26,6 +30,7 @@
 package run
 
 import core "../core"
+import mio "../io"
 import p "../params"
 import d "../../support/date"
 import clim "../../support/climate"
@@ -50,6 +55,7 @@ Workstep_Type :: enum {
 	Tillage,
 	Irrigation,
 	Automatic_Irrigation,
+	Set_Value,
 }
 
 // ---------------------------------------------------------------------------
@@ -207,6 +213,32 @@ Automatic_Irrigation_Data :: struct {
 	cropPlanted:  bool,
 }
 
+// C++: std::function<json11::Json(const MonicaModel*)> SetValueData::getValue
+//
+// Materialised as data + a dispatcher (set_value_get_value, worksteps.odin)
+// instead of a closure - Odin procs can't capture, the same shape used for
+// run_monica.odin's Spec_Expr. NONE matches the C++ empty/falsy
+// std::function (SetValueData::merge leaves it unset when its expression
+// can't be resolved; SetValueData::apply's `if (!s->getValue) return true;`
+// becomes a `kind == .NONE` check).
+Set_Value_Get_Value_Kind :: enum {
+	NONE,
+	CONSTANT, // return SetValueData::value unchanged
+	OID_LOOKUP, // return buildOutputTable().ofs[sourceOid.id](model, sourceOid)
+}
+
+Set_Value_Get_Value :: struct {
+	kind:      Set_Value_Get_Value_Kind,
+	sourceOid: mio.OId, // used when kind == .OID_LOOKUP
+}
+
+// C++: struct SetValueData
+Set_Value_Data :: struct {
+	oid:      mio.OId,
+	value:    jx.Value,
+	getValue: Set_Value_Get_Value,
+}
+
 // C++: using WorkstepData = std::variant<...>
 Workstep_Data :: union {
 	Sowing_Data,
@@ -221,6 +253,7 @@ Workstep_Data :: union {
 	Tillage_Data,
 	Irrigation_Data,
 	Automatic_Irrigation_Data,
+	Set_Value_Data,
 }
 
 // C++: struct Workstep
@@ -446,6 +479,8 @@ workstep_type :: proc(ws: ^Workstep) -> Workstep_Type {
 		return .Irrigation
 	case Automatic_Irrigation_Data:
 		return .Automatic_Irrigation
+	case Set_Value_Data:
+		return .Set_Value
 	}
 	unreachable()
 }
@@ -534,6 +569,8 @@ workstep_merge :: proc(ws: ^Workstep, j: jx.Value) -> tl.Errors {
 		tl.append_errors(&res, irrigation_merge(&ws.data.(Irrigation_Data), j))
 	case Automatic_Irrigation_Data:
 		tl.append_errors(&res, automatic_irrigation_merge(&ws.data.(Automatic_Irrigation_Data), j))
+	case Set_Value_Data:
+		tl.append_errors(&res, set_value_merge(&ws.data.(Set_Value_Data), j))
 	}
 
 	return res
@@ -580,6 +617,8 @@ workstep_apply :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> bool {
 		return irrigation_apply(&ws.data.(Irrigation_Data), ws, model)
 	case Automatic_Irrigation_Data:
 		return automatic_irrigation_apply(&ws.data.(Automatic_Irrigation_Data), model)
+	case Set_Value_Data:
+		return set_value_apply(&ws.data.(Set_Value_Data), ws, model)
 	}
 	return false // unreachable, all WorkstepType values handled above
 }
@@ -699,6 +738,8 @@ make_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep 
 		return make_irrigation_workstep(j, allocator)
 	case "AutomaticIrrigation":
 		return make_automatic_irrigation_workstep(j, allocator)
+	case "SetValue":
+		return make_set_value_workstep(j, allocator)
 	}
 
 	return nil

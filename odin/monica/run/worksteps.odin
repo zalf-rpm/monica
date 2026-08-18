@@ -11,6 +11,7 @@ package run
 
 import "core:strings"
 import core "../core"
+import mio "../io"
 import p "../params"
 import d "../../support/date"
 import clim "../../support/climate"
@@ -1153,6 +1154,114 @@ make_automatic_irrigation_workstep :: proc(j: jx.Value, allocator := context.all
 	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, automatic_irrigation_merge(&ws.data.(Automatic_Irrigation_Data), j))
+	ws.errors = res
+	return ws
+}
+
+// ---------------------------------------------------------------------------
+// SetValue (src/worksteps/set-value.{h,cpp})
+// ---------------------------------------------------------------------------
+
+// C++: Json workstep::(anonymous getValue lambda)(const MonicaModel*)
+//
+// The dispatcher for Set_Value_Data.getValue (workstep.odin) - see that
+// struct's own doc comment for why this is data + a dispatcher instead of a
+// closure.
+set_value_get_value :: proc(s: ^Set_Value_Data, model: ^core.Monica_Model) -> jx.Value {
+	switch s.getValue.kind {
+	case .CONSTANT:
+		return s.value
+	case .OID_LOOKUP:
+		ofs := mio.build_output_table().ofs
+		if of, ok := ofs[s.getValue.sourceOid.id]; ok {
+			return of(model, s.getValue.sourceOid)
+		}
+	case .NONE:
+	}
+	return jx.Value{}
+}
+
+// C++: Errors workstep::merge(SetValueData*, json11::Json)
+set_value_merge :: proc(s: ^Set_Value_Data, j: jx.Value, allocator := context.allocator) -> tl.Errors {
+	res: tl.Errors
+
+	oids := mio.parse_output_ids([]jx.Value{jx.get(j, "var")}, allocator)
+	if len(oids) > 0 {
+		s.oid = oids[0]
+	} else {
+		return res
+	}
+
+	s.value = jx.get(j, "value")
+	if jx.is_array(s.value) {
+		jva := jx.array_items(s.value)
+		if len(jva) > 0 {
+			if len(jva) == 4 && jx.is_string(jva[0]) && jx.string_value_of(jva[0]) == "=" {
+				// C++: buildPrimitiveCalcExpression(J11Array(jva.begin()+1, jva.end()))
+				// - the ["=", a, op, b] arithmetic-expression array syntax
+				// (build-output.cpp's getPrimitiveCalcOp/applyPrimitiveCalcOp/
+				// buildExpression<double,Json> machinery). Not ported: this is a
+				// separate, self-contained sub-feature from what blocked SetValue
+				// itself (OId/buildOutputTable/the Spec evaluator, all now built) -
+				// it's build-output.cpp's *other* deferred expression machinery,
+				// the same one buildCompareExpression belongs to (see
+				// build_output.odin's header comment). No JSON anywhere in this
+				// port's scope uses SetValue at all yet, let alone this sub-syntax
+				// of it - "port on demand" if a future fixture needs it. getValue
+				// stays at its zero value (.NONE), matching the C++ leaving
+				// s->getValue unset when this branch is taken without building a
+				// real function (a pre-existing gap in the C++ itself, not
+				// introduced here - see set-value.cpp:62-64: the branch only
+				// *assigns* the built function, and buildPrimitiveCalcExpression
+				// can itself return an empty std::function).
+			} else {
+				oids2 := mio.parse_output_ids([]jx.Value{s.value}, allocator)
+				if len(oids2) > 0 {
+					oid2 := oids2[0]
+					ofs := mio.build_output_table().ofs
+					if _, ok := ofs[oid2.id]; ok {
+						s.getValue = Set_Value_Get_Value{kind = .OID_LOOKUP, sourceOid = oid2}
+					}
+				}
+			}
+		}
+	} else {
+		s.getValue = Set_Value_Get_Value{kind = .CONSTANT}
+	}
+
+	return res
+}
+
+// C++: bool workstep::apply(SetValueData*, Workstep*, MonicaModel*)
+set_value_apply :: proc(s: ^Set_Value_Data, ws: ^Workstep, model: ^core.Monica_Model) -> bool {
+	workstep_apply_common(ws, model)
+
+	if s.getValue.kind == .NONE {
+		return true
+	}
+
+	setfs := mio.build_output_table().setfs
+	if setf, ok := setfs[s.oid.id]; ok {
+		v := set_value_get_value(s, model)
+		setf(model, s.oid, v)
+	}
+
+	model.currentEvents["SetValue"] = true
+
+	return true
+}
+
+// C++: Workstep monica::makeSetValueWorkstep(json11::Json)
+//
+// The (Date, OId, Json) non-JSON overload is not ported - grepped src/ and
+// confirmed it has no caller anywhere in this codebase, the same "only the
+// JSON-taking overload is ever called" finding already made for every other
+// make*Workstep (see this file's own header comment).
+make_set_value_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
+	ws := new_workstep(allocator)
+	ws.data = Set_Value_Data{}
+	res := workstep_merge_common(ws, j)
+	tl.append_errors(&res, set_value_merge(&ws.data.(Set_Value_Data), j, allocator))
 	ws.errors = res
 	return ws
 }

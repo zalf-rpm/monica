@@ -81,7 +81,8 @@ cultivation_method_merge :: proc(
 		     Organic_Fertilization_Data,
 		     Tillage_Data,
 		     Irrigation_Data,
-		     Automatic_Irrigation_Data:
+		     Automatic_Irrigation_Data,
+		     Set_Value_Data:
 		// no-op, matches C++'s `default: break;`
 		}
 	}

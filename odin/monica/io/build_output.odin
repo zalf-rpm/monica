@@ -12,15 +12,23 @@
 // (parseOutputIds resolves a name to an id, buildOutputTable resolves that
 // id to a function) matters.
 //
-// Dropped: the `setfs`/setComplexValues (SetValue-workstep-only, itself
-// deferred - see workstep.odin) and the getCompareOp/applyCompareOp/
-// buildExpression/buildCompareExpression machinery. Grepped sim-min.json's
-// entire output.events/_events section: every spec is either a shortcut
-// string ("daily"/"crop"/"yearly"/"run"), a workstep-event-name string
+// `setfs`/`setComplexValues` (the SetValue workstep's write side) ARE ported
+// - see set_complex_values below and run/worksteps.odin's set_value_* - but
+// only for the two ids the real C++ table actually registers a setter for
+// among these 21 (Stage, Mois); the other 19 have no C++ setf either.
+//
+// Dropped: the getCompareOp/applyCompareOp/buildExpression/
+// buildCompareExpression machinery, AND its sibling getPrimitiveCalcOp/
+// applyPrimitiveCalcOp/buildPrimitiveCalcExpression (the SetValue-only
+// `["=", a, op, b]` arithmetic-expression array syntax) - see
+// run/worksteps.odin's set_value_merge for why the latter stays deferred
+// even though SetValue itself is now ported. Grepped sim-min.json's entire
+// output.events/_events section: every spec is either a shortcut string
+// ("daily"/"crop"/"yearly"/"run"), a workstep-event-name string
 // ("OrganicFertilization"), or a plain output-id array - never the
 // `["while"|"at", [oid, "op", value]]` comparison-expression array syntax
 // buildCompareExpression exists for. "Port on demand" if a future fixture
-// needs it.
+// needs either.
 //
 // No mutex/lazy-static-init: the C++ guards buildOutputTable's one-time
 // construction with a mutex because MonicaModel instances can run
@@ -120,6 +128,47 @@ get_complex_values :: proc(
 		return jx.Value(jx.Array(multipleValues))
 	}
 	return jx.f(apply_oid_op(oid.layerAggOp, vs[:]))
+}
+
+// C++: void setComplexValues(OId, function<void(int, Json)>, Json) - the
+// setfs-side counterpart to get_complex_values, used by the SetValue
+// workstep. set_value takes `model` as an explicit parameter for the same
+// no-capture reason get_value does above.
+set_complex_values :: proc(
+	model: ^core.Monica_Model,
+	oid_in: OId,
+	set_value: proc(_: ^core.Monica_Model, _: int, _: jx.Value),
+	value: jx.Value,
+	allocator := context.allocator,
+) {
+	oid := oid_in
+	if oid_is_organ(&oid) {
+		oid.toLayer = int(oid.organ)
+		oid.fromLayer = int(oid.organ)
+	}
+
+	if jx.is_object(value) || jx.is_null(value) {
+		return
+	}
+
+	values: []jx.Value
+	if jx.is_array(value) {
+		values = jx.array_items(value)
+	} else {
+		n := oid.toLayer - oid.fromLayer + 1
+		fill := make([]jx.Value, max(n, 0), allocator)
+		for i in 0 ..< len(fill) {
+			fill[i] = value
+		}
+		values = fill
+	}
+
+	k := 0
+	for i := oid.fromLayer; i <= oid.toLayer && k < len(values); i, k = i + 1, k + 1 {
+		if i >= 0 {
+			set_value(model, i, values[k])
+		}
+	}
 }
 
 // C++: vector<OId> monica::parseOutputIds(const Tools::J11Array&)
@@ -296,6 +345,13 @@ of_stage :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 }
 
 @(private)
+of_stage_set :: proc(model: ^core.Monica_Model, oid: OId, value: jx.Value) {
+	if jx.is_number(value) && model.currentCropModule != nil {
+		core.set_stage(model.currentCropModule, max(0, jx.int_value_of(value) - 1))
+	}
+}
+
+@(private)
 of_ab_biom :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.currentCropModule != nil {
 		return jx.f(tl.round(model.currentCropModule.vc_AbovegroundBiomass, 1))
@@ -339,6 +395,18 @@ mois_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
 @(private)
 of_mois :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	return get_complex_values(model, oid, mois_get_value, 3)
+}
+
+@(private)
+mois_set_value :: proc(model: ^core.Monica_Model, i: int, value: jx.Value) {
+	if jx.is_number(value) {
+		model.soilColumn.layers[i].vs_SoilMoisture_m3 = jx.number_value(value)
+	}
+}
+
+@(private)
+of_mois_set :: proc(model: ^core.Monica_Model, oid: OId, value: jx.Value) {
+	set_complex_values(model, oid, mois_set_value, value)
 }
 
 @(private)
@@ -423,9 +491,10 @@ of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	return jx.f(1.0)
 }
 
-// C++: struct BOTRes (setfs dropped - see file header comment)
+// C++: struct BOTRes
 BOT_Res :: struct {
 	ofs:           map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value,
+	setfs:         map[int]proc(_: ^core.Monica_Model, _: OId, _: jx.Value),
 	name2metadata: map[string]OutputMetadata,
 }
 
@@ -446,8 +515,12 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 		unit: string,
 		description: string,
 		of: proc(_: ^core.Monica_Model, _: OId) -> jx.Value,
+		setf: proc(_: ^core.Monica_Model, _: OId, _: jx.Value) = nil,
 	) {
 		g_output_table.ofs[id] = of
+		if setf != nil {
+			g_output_table.setfs[id] = setf
+		}
 		g_output_table.name2metadata[name] = OutputMetadata {
 			id          = id,
 			name        = name,
@@ -457,18 +530,19 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	}
 
 	g_output_table.ofs = make(map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value, allocator)
+	g_output_table.setfs = make(map[int]proc(_: ^core.Monica_Model, _: OId, _: jx.Value), allocator)
 	g_output_table.name2metadata = make(map[string]OutputMetadata, allocator)
 
 	build(0, "CM-count", "", "output the order number of the current cultivation method", of_cm_count)
 	build(1, "Date", "", "output current date", of_date)
 	build(2, "Year", "", "output current Year", of_year)
 	build(3, "Crop", "", "crop name", of_crop)
-	build(4, "Stage", "1-6/7", "DevelopmentalStage", of_stage)
+	build(4, "Stage", "1-6/7", "DevelopmentalStage", of_stage, of_stage_set)
 	build(5, "AbBiom", "kgDM ha-1", "AbovegroundBiomass", of_ab_biom)
 	build(6, "OrgBiom", "kgDM ha-1", "get_OrganBiomass(i)", of_org_biom)
 	build(7, "Yield", "kgDM ha-1", "get_PrimaryCropYield", of_yield)
 	build(8, "LAI", "m2 m-2", "LeafAreaIndex", of_lai)
-	build(9, "Mois", "m3 m-3", "Soil moisture content", of_mois)
+	build(9, "Mois", "m3 m-3", "Soil moisture content", of_mois, of_mois_set)
 	build(10, "Irrig", "mm", "Irrigation", of_irrig)
 	build(11, "RunOff", "mm", "Surface runoff of current day", of_runoff)
 	build(12, "Kc", "", "plant coefficient to calculate with ET0 the plants water use (ET0 * Kc)", of_kc)
