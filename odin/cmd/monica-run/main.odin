@@ -17,6 +17,7 @@
 // and run_monica.odin, neither of which carry a debug-trace facility.
 package main
 
+import "core:bufio"
 import "core:fmt"
 import "core:io"
 import "core:os"
@@ -266,7 +267,6 @@ main :: proc() {
 
 			usingFile := false
 			fout: ^os.File
-			w: io.Writer
 			if writeOutputFile {
 				sectionPath := tl.fix_system_separator(
 					strings.concatenate({pathToOutputDir, "/", filenameWithoutExt, "_section_", sanitized, ".csv"}, a),
@@ -280,10 +280,14 @@ main :: proc() {
 					usingFile = true
 				}
 			}
-			if usingFile {
-				w = os.to_stream(fout)
-			} else {
-				w = os.to_stream(os.stdout)
+
+			// buffered: sim-min-out_section_daily.csv alone is thousands of rows -
+			// unbuffered os.File writes were one write() syscall per cell.
+			bw: bufio.Writer
+			bufio.writer_init(&bw, usingFile ? os.to_stream(fout) : os.to_stream(os.stdout), 1 << 16, a)
+			w := bufio.writer_to_stream(&bw)
+
+			if !usingFile {
 				io.write_string(w, "\"")
 				io.write_string(w, sanitized)
 				io.write_string(w, "\"\r\n")
@@ -292,6 +296,8 @@ main :: proc() {
 			mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
 			mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
 
+			bufio.writer_flush(&bw)
+			bufio.writer_destroy(&bw)
 			if usingFile {
 				os.close(fout)
 			}
@@ -299,7 +305,6 @@ main :: proc() {
 	} else {
 		writeOutputFile := pathToOutputFile != ""
 		fout: ^os.File
-		w: io.Writer
 		if writeOutputFile {
 			path, _ := tl.split_path_to_file(pathToOutputFile, a)
 			if !tl.ensure_dir_exists(path, a) {
@@ -312,11 +317,12 @@ main :: proc() {
 				writeOutputFile = false
 			}
 		}
-		if writeOutputFile {
-			w = os.to_stream(fout)
-		} else {
-			w = os.to_stream(os.stdout)
-		}
+
+		// buffered: sim-min-out.csv alone is thousands of rows - unbuffered
+		// os.File writes were one write() syscall per cell.
+		bw: bufio.Writer
+		bufio.writer_init(&bw, writeOutputFile ? os.to_stream(fout) : os.to_stream(os.stdout), 1 << 16, a)
+		w := bufio.writer_to_stream(&bw)
 
 		for section in out.data {
 			io.write_string(w, "\"")
@@ -327,6 +333,8 @@ main :: proc() {
 			io.write_string(w, "\r\n")
 		}
 
+		bufio.writer_flush(&bw)
+		bufio.writer_destroy(&bw)
 		if writeOutputFile {
 			os.close(fout)
 		}
