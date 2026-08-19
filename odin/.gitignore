@@ -8,5 +8,10 @@
 # Microsoft's Visual Studio license does NOT allow redistributing this.
 msvc/
 
+# .cab/.vsix packages portable-msvc.py downloads before unpacking into msvc/.
+# It hardcodes this path and keeps them as a re-run cache (~0.5 GB); the same
+# license applies. `setup-msvc` deletes them unless --keep-downloads is given.
+downloads/
+
 # build outputs
 build/

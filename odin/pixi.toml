@@ -10,8 +10,10 @@
 # without MSVC's lib\x64 and the Windows SDK um\x64 / ucrt\x64 import
 # libraries, and the Windows SDK EULA forbids redistributing .lib files.
 # tools/odinw.py resolves it in this order: an already-active developer
-# environment, $VCVARS, a locally installed Visual Studio, then a portable
-# toolchain fetched by `pixi run setup-msvc`.
+# environment, $VCVARS, a portable toolchain fetched by `pixi run setup-msvc`,
+# then a locally installed Visual Studio. The portable one is preferred over
+# the system install because odin/msvc only exists if it was fetched on
+# purpose; `pixi run check-msvc` reports which one a build would pick.
 #
 #   pixi run build     # monica-run + monica-zmq-server into odin/build/
 #   pixi run test      # the odin/tests unit suite
@@ -53,3 +55,4 @@ odin = { cmd = "python tools/odinw.py exec", depends-on = ["bootstrap"], descrip
 
 [target.win-64.tasks]
 setup-msvc = { cmd = "python tools/odinw.py setup-msvc", description = "Fetch a portable MSVC toolchain (needs -- --accept-license)" }
+check-msvc = { cmd = "python tools/odinw.py check-msvc", description = "Report which MSVC toolchain a build would use" }

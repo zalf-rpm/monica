@@ -18,7 +18,14 @@ Why a Python driver instead of plain pixi tasks:
   themselves. `-linker:lld` does not help: Odin ships its own `bin/lld-link.exe`
   and still hard-fails with "VS library path not found", a check that is not
   gated on the linker choice. So Windows needs a real toolchain located at
-  build time, which is what `windows_msvc_env` does.
+  build time, which is what `windows_msvc_env` does, in this order: an
+  already-active developer environment, `$VCVARS`, a portable toolchain under
+  `odin/msvc`, then a locally installed Visual Studio. The portable toolchain
+  outranks the system one because it only exists if someone ran `setup-msvc`
+  on purpose; each candidate is rejected with a reason rather than silently.
+- Every candidate is a vcvars-style .bat whose environment has to be captured
+  by running it. That subprocess call must NOT use subprocess's list form -
+  see `_env_from_bat`. Getting this wrong breaks all four sources at once.
 - `odin test odin/tests` must run from the REPO ROOT, not from `odin/`:
   `tests/conventions_test.odin` walks the literal relative path "odin" to grep
   for stray `core:math` transcendentals, so running it from `odin/` fails with
@@ -75,6 +82,7 @@ DIST_DIR = ODIN_DIR / "dist"
 STAMP = ODIN_DIR / "installed.txt"
 BUILD_DIR = ROOT / "build"
 MSVC_DIR = ROOT / "msvc"                           # portable-msvc output
+DOWNLOADS_DIR = ROOT / "downloads"                 # portable-msvc scratch/cache
 
 IS_WINDOWS = sys.platform == "win32"
 ODIN_EXE = DIST_DIR / ("odin.exe" if IS_WINDOWS else "odin")
@@ -189,34 +197,76 @@ def bootstrap(force: bool = False) -> Path:
 # --- Windows MSVC discovery ---------------------------------------------------
 
 
+# One import library per directory Odin's linker resolves against, probed by
+# name. Checking for actual FILES rather than just the %LIB% path strings is
+# what catches a toolchain whose unpack was interrupted: on Windows an
+# antivirus or file-sync client (Sophos, Tresorit, OneDrive, ...) will happily
+# lock or quarantine files mid-extraction, leaving a directory tree that looks
+# complete but links nothing.
+_LIB_PROBES = (
+    ("um\\x64", "kernel32.lib"),
+    ("ucrt\\x64", "ucrt.lib"),
+)
+
+
+def _msvc_env_problem(env: dict) -> str | None:
+    """Mirror what Odin itself requires: MSVC tools plus SDK um/ucrt import libs.
+
+    Returns None when the environment is usable, else a one-line reason.
+    """
+    tools = env.get("VCToolsInstallDir")
+    if not tools:
+        return "VCToolsInstallDir is not set"
+
+    vc_lib = Path(tools) / "lib" / "x64"
+    if not (vc_lib / "libcmt.lib").is_file():
+        return f"missing MSVC import libraries ({vc_lib / 'libcmt.lib'})"
+
+    lib_dirs = [Path(p) for p in env.get("LIB", "").split(";") if p.strip()]
+    for suffix, probe in _LIB_PROBES:
+        hit = next(
+            (d for d in lib_dirs if str(d).lower().rstrip("\\/").endswith(suffix)),
+            None,
+        )
+        if hit is None:
+            return f"no Windows SDK {suffix} directory on %LIB%"
+        if not (hit / probe).is_file():
+            return f"incomplete Windows SDK ({hit / probe} is missing)"
+    return None
+
+
 def _msvc_env_ok(env: dict) -> bool:
-    """Mirror what Odin itself requires: MSVC tools plus SDK um/ucrt import libs."""
-    if not env.get("VCToolsInstallDir"):
-        return False
-    parts = [p.lower().rstrip("\\/") for p in env.get("LIB", "").split(";") if p]
-    has_um = any(p.endswith(("um\\x64", "um/x64")) for p in parts)
-    has_ucrt = any(p.endswith(("ucrt\\x64", "ucrt/x64")) for p in parts)
-    return has_um and has_ucrt
+    return _msvc_env_problem(env) is None
 
 
 def _env_from_bat(bat: Path) -> dict | None:
-    """Run a vcvars-style batch file and capture the environment it exports."""
+    """Run a vcvars-style batch file and capture the environment it exports.
+
+    The command line is assembled by hand and handed to CreateProcess as ONE
+    string. It cannot go through subprocess's list form: that runs the args
+    through `list2cmdline`, which escapes the quotes around `bat` as \\" - a
+    convention cmd.exe does not implement. cmd then reads \\"C:\\... as the
+    program name, and every toolchain fails identically with "the system cannot
+    find the path specified". `/s` is the documented escape hatch: it strips
+    exactly the outer quote pair and leaves the rest of the line alone.
+
+    Decoding is lenient because `set` dumps the whole environment, which on a
+    non-English Windows can hold bytes that are not valid in the ANSI codepage
+    Python decodes with.
+    """
+    line = f'cmd.exe /s /c "call "{bat}" >nul 2>&1 && set"'
     try:
-        out = subprocess.run(
-            ["cmd", "/c", f'call "{bat}" >nul 2>&1 && set'],
-            capture_output=True,
-            text=True,
-        )
+        out = subprocess.run(line, capture_output=True, text=True, errors="replace")
     except OSError:
         return None
     if out.returncode != 0:
         return None
     env = {}
-    for line in out.stdout.splitlines():
-        if "=" in line:
-            k, v = line.split("=", 1)
+    for entry in out.stdout.splitlines():
+        if "=" in entry:
+            k, v = entry.split("=", 1)
             env[k] = v
-    return env if _msvc_env_ok(env) else None
+    return env or None
 
 
 def _find_vcvars() -> Path | None:
@@ -252,10 +302,32 @@ def _find_vcvars() -> Path | None:
     return None
 
 
+def _try_bat(bat: Path, label: str, notes: list[str]) -> dict | None:
+    """Evaluate one candidate vcvars-style script, recording why it was rejected."""
+    if not bat.exists():
+        notes.append(f"{label}: not present ({bat})")
+        return None
+    env = _env_from_bat(bat)
+    if env is None:
+        notes.append(f"{label}: {bat} could not be run")
+    elif (why := _msvc_env_problem(env)):
+        notes.append(f"{label}: {why}")
+    else:
+        print(f"==> MSVC from {label} ({bat})")
+        return env
+    # The script exists, so someone meant to use it - say so even if a later
+    # candidate ends up working, otherwise a half-unpacked msvc/ stays silent.
+    print(f"warning: {notes[-1]}", file=sys.stderr)
+    return None
+
+
 def windows_msvc_env() -> dict:
-    """Resolve an MSVC-capable environment: local VS first, portable MSVC second."""
+    """Resolve an MSVC-capable environment, most explicit source first."""
+    notes: list[str] = []
+
     # 1. Already configured - a VS developer prompt, or an outer vcvars call.
     if _msvc_env_ok(dict(os.environ)):
+        print("==> MSVC from the ambient environment")
         return dict(os.environ)
 
     # 2. Explicit override. Same VCVARS knob odin/tests/cpp_ref/run*.sh use.
@@ -263,30 +335,41 @@ def windows_msvc_env() -> dict:
         bat = Path(vc)
         if not bat.exists():
             die(f"VCVARS points at a missing file: {bat}")
-        if (env := _env_from_bat(bat)):
-            print(f"==> MSVC from $VCVARS ({bat})")
+        if (env := _try_bat(bat, "$VCVARS", notes)):
             return env
-        die(f"VCVARS did not yield a usable MSVC environment: {bat}")
+        die(f"VCVARS did not yield a usable MSVC environment\n  {notes[-1]}")
 
-    # 3. Locally installed Visual Studio.
-    if (bat := _find_vcvars()) and (env := _env_from_bat(bat)):
-        print(f"==> MSVC from installed Visual Studio ({bat})")
+    # 3. Portable MSVC fetched by `pixi run setup-msvc`. Probed BEFORE the
+    #    system Visual Studio: msvc/ exists only because someone deliberately
+    #    fetched it, which makes it the stronger signal of intent - and it is
+    #    the only way to exercise the portable path on a machine that also has
+    #    VS installed. An incomplete tree warns and falls through to VS.
+    if (env := _try_bat(MSVC_DIR / "setup_x64.bat", "portable toolchain", notes)):
         return env
 
-    # 4. Portable MSVC fetched by `pixi run setup-msvc`.
-    setup = MSVC_DIR / "setup_x64.bat"
-    if setup.exists() and (env := _env_from_bat(setup)):
-        print(f"==> MSVC from portable toolchain ({setup})")
-        return env
+    # 4. Locally installed Visual Studio.
+    if (bat := _find_vcvars()):
+        if (env := _try_bat(bat, "installed Visual Studio", notes)):
+            return env
+    else:
+        notes.append(
+            "installed Visual Studio: not found by vswhere or in the "
+            "conventional install locations"
+        )
 
     die(
-        "no MSVC toolchain found, and Odin cannot link on Windows without one.\n"
-        "  Odin needs MSVC's lib\\x64 plus the Windows SDK um\\x64 / ucrt\\x64\n"
+        "no usable MSVC toolchain found, and Odin cannot link on Windows without\n"
+        "  one. Odin needs MSVC's lib\\x64 plus the Windows SDK um\\x64 / ucrt\\x64\n"
         "  import libraries; conda-forge cannot ship these for licensing reasons.\n"
-        "  Pick one:\n"
+        "  Candidates tried:\n"
+        + "\n".join(f"    - {n}" for n in notes)
+        + "\n  Pick one:\n"
         "    - install VS 2022 Build Tools with 'Desktop development with C++'\n"
         "    - set VCVARS=<path to vcvars64.bat>\n"
-        "    - fetch a portable toolchain:  pixi run setup-msvc -- --accept-license"
+        "    - fetch a portable toolchain:  pixi run setup-msvc -- --accept-license\n"
+        "      (if it was fetched but is reported incomplete above, an antivirus or\n"
+        "      file-sync client likely interfered - re-run it, with odin/msvc and\n"
+        "      odin/downloads excluded from on-access scanning and file sync)"
     )
 
 
@@ -353,20 +436,60 @@ def cmd_setup_msvc(ns: argparse.Namespace) -> int:
             "  has to be your explicit choice, so re-run as:\n"
             "    pixi run setup-msvc -- --accept-license"
         )
+    # Ours, not portable-msvc.py's - strip it before forwarding.
+    keep_downloads = "--keep-downloads" in ns.odin_args
+    forwarded = [a for a in ns.odin_args if a != "--keep-downloads"]
+
     script = fetch_verified(
         PMSVC_URL, CACHE_DIR / "portable-msvc.py", PMSVC_SHA256, "portable-msvc.py"
     )
     print(f"==> fetching portable MSVC into {MSVC_DIR}")
     # The script hardcodes its output to ./msvc, so run it from odin/.
     rc = subprocess.call(
-        [sys.executable, str(script), "--target", "x64", *ns.odin_args], cwd=str(ROOT)
+        [sys.executable, str(script), "--target", "x64", *forwarded], cwd=str(ROOT)
     )
     if rc != 0:
         return rc
     setup = MSVC_DIR / "setup_x64.bat"
     if not setup.exists():
         die(f"portable-msvc.py finished but {setup} is missing")
+
+    # Verify here rather than leaving it to the next build. Unpacking ~1.3 GB of
+    # .cab/.vsix trips on-access scanners and file-sync clients, which can lock
+    # or quarantine individual files without failing the script - so confirm the
+    # import libraries Odin links against actually landed.
+    env = _env_from_bat(setup)
+    if env is None:
+        die(f"{setup} exists but could not be run")
+    if (why := _msvc_env_problem(env)):
+        die(
+            f"the fetched toolchain is not usable: {why}\n"
+            "  Unpacking was most likely interrupted by antivirus or a file-sync\n"
+            "  client. Exclude odin/msvc and odin/downloads from on-access scanning\n"
+            "  and file sync, then re-run:\n"
+            "    pixi run setup-msvc -- --accept-license"
+        )
+
+    if not keep_downloads and DOWNLOADS_DIR.is_dir():
+        # ~0.5 GB of .cab/.vsix that portable-msvc.py keeps as a re-run cache.
+        print(f"==> removing {DOWNLOADS_DIR} (pass --keep-downloads to keep it)")
+        shutil.rmtree(DOWNLOADS_DIR, ignore_errors=True)
+
     print(f"==> portable MSVC ready ({setup})")
+    return 0
+
+
+def cmd_check_msvc(ns: argparse.Namespace) -> int:
+    """Report which toolchain a build would use, without building anything."""
+    if not IS_WINDOWS:
+        print("==> not Windows; no MSVC toolchain needed")
+        return 0
+    env = windows_msvc_env()  # dies with a per-candidate diagnostic if none work
+    print(f"    VCToolsInstallDir = {env.get('VCToolsInstallDir')}")
+    print(f"    WindowsSDKVersion = {env.get('WindowsSDKVersion')}")
+    for entry in env.get("LIB", "").split(";"):
+        if entry.strip():
+            print(f"    LIB               = {entry}")
     return 0
 
 
@@ -393,6 +516,11 @@ def main() -> int:
 
     p = sub.add_parser("setup-msvc", help="[Windows] fetch a portable MSVC toolchain")
     p.set_defaults(fn=cmd_setup_msvc)
+
+    p = sub.add_parser(
+        "check-msvc", help="[Windows] report which MSVC toolchain a build would use"
+    )
+    p.set_defaults(fn=cmd_check_msvc)
 
     # Anything this parser doesn't recognise is forwarded to odin (or to
     # portable-msvc.py). Both spellings have to work: `odinw exec -- version`
