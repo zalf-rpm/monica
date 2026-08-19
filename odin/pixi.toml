@@ -1,0 +1,55 @@
+# Reproducible build environment for the Odin port (see ../plan-odin.md).
+#
+# Two halves, pinned separately:
+#   - the conda-forge dependencies below, locked by pixi.lock (commit it);
+#   - the Odin compiler itself, pinned by release tag + SHA256 in
+#     tools/odinw.py, because Odin is not packaged on conda-forge.
+#
+# Linux needs nothing preinstalled. Windows additionally needs an MSVC
+# toolchain, which conda-forge cannot supply - Odin cannot link a PE binary
+# without MSVC's lib\x64 and the Windows SDK um\x64 / ucrt\x64 import
+# libraries, and the Windows SDK EULA forbids redistributing .lib files.
+# tools/odinw.py resolves it in this order: an already-active developer
+# environment, $VCVARS, a locally installed Visual Studio, then a portable
+# toolchain fetched by `pixi run setup-msvc`.
+#
+#   pixi run build     # monica-run + monica-zmq-server into odin/build/
+#   pixi run test      # the odin/tests unit suite
+#   pixi run odin -- version
+
+[workspace]
+name = "monica-odin"
+version = "0.1.0"
+channels = ["conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[dependencies]
+# Drives tools/odinw.py. Any 3.11+ works; tarfile's `filter=` needs 3.12+ and
+# is guarded for older versions.
+python = ">=3.11"
+# libzmq for cmd/monica-zmq-server. 4.3.5 matches the API version the vendored
+# bindings in support/zeromq were generated against. On Linux this is what
+# `foreign import lib "system:zmq"` links against; conda's clang bakes an rpath
+# to it automatically. On Windows pixi puts Library/bin on PATH, so
+# libzmq-mt-4_3_5.dll is found at runtime without copying it next to the .exe.
+zeromq = "4.3.5.*"
+
+[target.linux-64.dependencies]
+# Odin shells out to `clang` to link on Linux. This also pulls in
+# sysroot_linux-64 and binutils, which is why no extra linker flags are needed.
+clang = "*"
+
+# Deliberately NOT depending on conda-forge's `vs2022_win-64`: its activation
+# script assumes a locally installed Visual Studio and would run on every
+# `pixi run`, which conflicts with the portable-MSVC fallback. tools/odinw.py
+# locates Visual Studio itself via vswhere instead.
+
+[tasks]
+bootstrap = { cmd = "python tools/odinw.py bootstrap", description = "Download the pinned Odin compiler into .odin/" }
+build = { cmd = "python tools/odinw.py build", depends-on = ["bootstrap"], description = "Build monica-run and monica-zmq-server into build/" }
+build-release = { cmd = "python tools/odinw.py build --release", depends-on = ["bootstrap"], description = "Build with -o:speed (re-validate numerics against the C++ baseline)" }
+test = { cmd = "python tools/odinw.py test", depends-on = ["bootstrap"], description = "Run the odin/tests unit suite from the repo root" }
+odin = { cmd = "python tools/odinw.py exec", depends-on = ["bootstrap"], description = "Run the pinned odin, e.g. pixi run odin -- version" }
+
+[target.win-64.tasks]
+setup-msvc = { cmd = "python tools/odinw.py setup-msvc", description = "Fetch a portable MSVC toolchain (needs -- --accept-license)" }

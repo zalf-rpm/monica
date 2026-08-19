@@ -182,7 +182,11 @@ C++ does, to keep the dependency graph acyclic.
 
 ## 7. Testing
 
-`odin test odin/tests`.
+`odin test odin/tests` — run it **from the repo root**, not from `odin/`:
+`tests/conventions_test.odin` walks the literal relative path `odin`, so it fails with `ENOENT`
+from anywhere else.
+
+Or `pixi run test` (see §8), which sets that working directory for you.
 
 Two kinds of test, both required for anything numeric:
 
@@ -194,3 +198,28 @@ Two kinds of test, both required for anything numeric:
 
 From Phase 4 the primary oracle becomes the daily trace diff (see `../plan-odin.md` §1), not unit
 tests.
+
+## 8. Building reproducibly (`pixi.toml`)
+
+`pixi run build` produces `build/monica-run` and `build/monica-zmq-server`; `pixi run test` runs the
+suite above. Verified byte-identical `sim-min.json` output against a system-toolchain build.
+
+Two halves are pinned separately, because **Odin is not packaged on conda-forge**:
+
+- the conda-forge dependencies (`clang` on Linux, `zeromq` 4.3.5 everywhere) via `pixi.lock`;
+- the compiler itself by release tag **and SHA256** in `tools/odinw.py` (`ODIN_TAG`). Bump all
+  three fields there together.
+
+**Windows additionally needs an MSVC toolchain, and always will.** Odin cannot link a PE binary
+without MSVC's `lib\x64` plus the Windows SDK `um\x64` / `ucrt\x64` import libraries; conda-forge
+ships none of those, and the Windows SDK EULA permits redistributing only "the results of running
+such Distributable Code through a linker", never the `.lib` files. `-linker:lld` does **not** avoid
+this — Odin ships its own `bin/lld-link.exe` and still hard-fails with `VS library path not found`,
+a check that is not gated on the linker choice. `tools/odinw.py` resolves a toolchain in this order:
+an already-active developer environment → `$VCVARS` (the same knob `tests/cpp_ref/run*.sh` use) → a
+locally installed Visual Studio via `vswhere` → a portable toolchain from
+`pixi run setup-msvc -- --accept-license`. That last one downloads Microsoft's compiler under the
+Visual Studio license into `msvc/`, which is gitignored and **must not be redistributed**.
+
+Anything under a hidden directory (`.odin/`, `.pixi/`) is out of scope for the §1 transcendentals
+guard — the bootstrapped compiler's own `core` library legitimately calls `math.pow`/`math.atanh`.

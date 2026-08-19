@@ -24,6 +24,12 @@ import "core:testing"
 // function through core:math. core:math is still fine - and not flagged -
 // for round/floor/ceil/abs/is_nan/is_inf/comparisons/PI/etc, since those
 // aren't FFI-risk transcendentals.
+//
+// Hidden directories are not descended into: only this port's own sources are
+// in scope. odin/pixi.toml's build setup puts the bootstrapped Odin compiler in
+// odin/.odin/ and its conda environment in odin/.pixi/, and Odin's own core
+// library legitimately calls math.atanh/math.pow/... - 1568 false positives
+// before this was skipped.
 @(test)
 test_no_core_math_transcendentals :: proc(t: ^testing.T) {
 	names := []string {
@@ -69,7 +75,13 @@ test_no_core_math_transcendentals :: proc(t: ^testing.T) {
 			testing.expectf(t, false, "failed walking %s: %v", path, err)
 			continue
 		}
-		if info.type == .Directory || !strings.has_suffix(info.name, ".odin") {
+		if info.type == .Directory {
+			if strings.has_prefix(info.name, ".") {
+				os.walker_skip_dir(&w)
+			}
+			continue
+		}
+		if !strings.has_suffix(info.name, ".odin") {
 			continue
 		}
 

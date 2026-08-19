@@ -1,0 +1,12 @@
+# pixi environment
+.pixi/
+
+# bootstrapped Odin compiler (pinned in tools/odinw.py, not vendored)
+.odin/
+
+# portable MSVC toolchain fetched by `pixi run setup-msvc`.
+# Microsoft's Visual Studio license does NOT allow redistributing this.
+msvc/
+
+# build outputs
+build/

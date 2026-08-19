@@ -20,7 +20,11 @@ cd "$REPO"
 
 PATTERN='math\.(pow|exp2?|expm1|ln|log|log2|log10|log1p|sqrt|cbrt|sin|cos|tan|asin|acos|atan2?|sinh|cosh|tanh|asinh|acosh|atanh|hypot|erf|erfc|lgamma|tgamma)\('
 
-if hits=$(grep -rnE "$PATTERN" --include='*.odin' odin/) && [ -n "$hits" ]; then
+# --exclude-dir='.*' keeps this to the port's own sources: odin/pixi.toml's build
+# setup puts the bootstrapped Odin compiler in odin/.odin/ and its conda env in
+# odin/.pixi/, and Odin's own core library legitimately calls math.sin/pow/...
+# Mirrors the same skip in tests/conventions_test.odin.
+if hits=$(grep -rnE "$PATTERN" --include='*.odin' --exclude-dir='.*' odin/) && [ -n "$hits" ]; then
   echo "FAIL - stray core:math transcendental call(s); use core:c/libc instead (CONVENTIONS.md §1):"
   echo "$hits"
   exit 1
