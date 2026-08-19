@@ -172,9 +172,79 @@ Output_Data :: struct {
 
 // C++: struct monica::Output
 //
-// customId/errors/warnings are not ported: sim-min.json never sets a
-// customId, and nothing in the CSV write path reads Output::errors/
-// warnings - "port on demand".
+// customId/errors/warnings were dropped by phase 7 ("nothing in the CSV
+// write path reads them" - "port on demand"); the ZMQ server phase is that
+// demand, since serve-monica-zmq.cpp round-trips customId and reports
+// env-merge/climate-read errors back over the wire via output::to_json.
 Output :: struct {
-	data: [dynamic]Output_Data,
+	data:     [dynamic]Output_Data,
+	customId: jx.Value,
+	errors:   [dynamic]string,
+	warnings: [dynamic]string,
+}
+
+// C++: json11::Json oid::to_json(const OId*)
+oid_to_json :: proc(oid: ^OId, allocator := context.allocator) -> jx.Value {
+	return jx.obj(
+		allocator,
+		{"type", jx.sl("OId")},
+		{"id", jx.i(oid.id)},
+		{"name", jx.s(oid.name, allocator)},
+		{"displayName", jx.s(oid.displayName, allocator)},
+		{"unit", jx.s(oid.unit, allocator)},
+		{"jsonInput", jx.s(oid.jsonInput, allocator)},
+		{"layerAggOp", jx.i(int(oid.layerAggOp))},
+		{"timeAggOp", jx.i(int(oid.timeAggOp))},
+		{"organ", jx.i(int(oid.organ))},
+		{"fromLayer", jx.i(oid.fromLayer)},
+		{"toLayer", jx.i(oid.toLayer)},
+	)
+}
+
+// C++: json11::Json output::to_json(const Output*)
+//
+// The resultsObj branch (d.resultsObj non-empty) is not ported, matching
+// Output_Data's own comment - this port's results are always the J11Array
+// form.
+output_to_json :: proc(out: ^Output, allocator := context.allocator) -> jx.Value {
+	ds := make(jx.Array, 0, len(out.data), allocator)
+	for &dd in out.data {
+		rs := make(jx.Array, 0, len(dd.results), allocator)
+		for r in dd.results {
+			row := make(jx.Array, 0, len(r), allocator)
+			append(&row, ..r[:])
+			append(&rs, jx.Value(row))
+		}
+		outputIds := make(jx.Array, 0, len(dd.outputIds), allocator)
+		for &o in dd.outputIds {
+			append(&outputIds, oid_to_json(&o, allocator))
+		}
+		append(
+			&ds,
+			jx.obj(
+				allocator,
+				{"origSpec", jx.s(dd.origSpec, allocator)},
+				{"outputIds", jx.Value(outputIds)},
+				{"results", jx.Value(rs)},
+			),
+		)
+	}
+
+	errs := make(jx.Array, 0, len(out.errors), allocator)
+	for e in out.errors {
+		append(&errs, jx.s(e, allocator))
+	}
+	warns := make(jx.Array, 0, len(out.warnings), allocator)
+	for w in out.warnings {
+		append(&warns, jx.s(w, allocator))
+	}
+
+	return jx.obj(
+		allocator,
+		{"type", jx.sl("Output")},
+		{"customId", out.customId},
+		{"data", jx.Value(ds)},
+		{"errors", jx.Value(errs)},
+		{"warnings", jx.Value(warns)},
+	)
 }

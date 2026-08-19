@@ -1,0 +1,23 @@
+package zeromq
+
+/***************************************************************************** */
+/* 0MQ errors. */
+/***************************************************************************** */
+ENOTSUP :: (HAUSNUMERO + 1)
+EPROTONOSUPPORT :: (HAUSNUMERO + 2)
+ENOBUFS :: (HAUSNUMERO + 3)
+ENETDOWN :: (HAUSNUMERO + 4)
+EADDRINUSE :: (HAUSNUMERO + 5)
+EADDRNOTAVAIL :: (HAUSNUMERO + 6)
+ECONNREFUSED :: (HAUSNUMERO + 7)
+EINPROGRESS :: (HAUSNUMERO + 8)
+ENOTSOCK :: (HAUSNUMERO + 9)
+EMSGSIZE :: (HAUSNUMERO + 10)
+EAFNOSUPPORT :: (HAUSNUMERO + 11)
+ENETUNREACH :: (HAUSNUMERO + 12)
+ECONNABORTED :: (HAUSNUMERO + 13)
+ECONNRESET :: (HAUSNUMERO + 14)
+ENOTCONN :: (HAUSNUMERO + 15)
+ETIMEDOUT :: (HAUSNUMERO + 16)
+EHOSTUNREACH :: (HAUSNUMERO + 17)
+ENETRESET :: (HAUSNUMERO + 18)

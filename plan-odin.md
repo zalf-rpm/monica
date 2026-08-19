@@ -1706,6 +1706,65 @@ output in **both** CLI modes:
 Widening beyond `sim-min.json` (the larger `sim.json`/`sim+.json` Hohenfinow2 configs, more
 output ids) is future "port on demand" work, not required for this port's original scope.
 
+### Phase 9 — ZeroMQ server — **DONE**
+`src/run/serve-monica-zmq.{h,cpp}` (`serveZmqMonicaFull`), `src/run/monica-zmq-server-main.cpp`,
+`src/run/monica-zmq-defaults.h`, and the `Msg`/`receiveMsg`/`s_send`/`s_sendmore` pieces of
+`mas_cpp_misc/zeromq/zmq-helper.{h,cpp}` it depends on. Originally table-1 "explicitly dropped"
+as an "RPC entry point"; revisited because the server itself has no Cap'n Proto dependency once
+`INCLUDE_SR_SUPPORT` (sturdy-ref soil/climate lookups) and Intercropping are dropped, same as
+`cmd/monica-run` already drops them.
+
+**Odin ZMQ bindings.** No Odin standard-library ZMQ support exists; vendored
+`github.com/qxuken/odin-zmq-bindings` (libzmq 4.3.5 C API) into `odin/support/zeromq`, with two
+changes from upstream:
+- The Windows `foreign import` pointed at an ambient `libzmq.lib` on the linker's `LIB` path;
+  replaced with a vendored import lib (`windows/libzmq.lib`, built from vcpkg's
+  `zeromq:x64-windows` dynamic-triplet port) so the build doesn't depend on machine-local linker
+  configuration. The matching runtime DLL (`windows/libzmq-mt-4_3_5.dll`) has to sit next to any
+  built `.exe` that imports this package - Windows' default DLL search order includes the exe's
+  own directory.
+- **Fixed a real upstream bug**: `zmq_pollitem_t.events`/`.revents` are `short` (2 bytes) in
+  `zmq.h` on every platform, and `.fd` is the platform socket handle (`SOCKET`, 8 bytes, on
+  Windows). The upstream binding declared both as `c.int`, which happens to keep `sizeof(Poll_Item)`
+  right (padding absorbs the difference) but shifts every field after `fd` to the wrong byte
+  offset - `zmq_poll()` (compiled against the real 2-byte-`short` layout) then reads garbage
+  `revents`, so `POLLIN` is never observed even though the message already arrived. Silent hang,
+  not a crash: `serve_zmq_monica_full` blocked forever in its poll loop despite the peer having
+  already sent and the socket having real data queued. Fixed in the vendored copy
+  (`bindings.odin`): `FD` is `uintptr` on Windows / `c.int` elsewhere, and `Poll_Item`/
+  `Poller_Event`'s event fields are `i16`.
+
+**Dropped**, matching `run_monica.odin`'s own file header and this port's established
+"port on demand" pattern: the `INCLUDE_SR_SUPPORT` Cap'n Proto sturdy-ref branches
+(`kj::setupAsyncIo`/`ConnectionManager`, soil-profile and climate-timeseries sturdy-ref lookups)
+and Intercropping (`isIC`, the second `MonicaModel`/`out2` half, the `"1"`/`"2"` object reply).
+`debug()` trace calls are dropped too, consistent with `cmd/monica-run` (no debug-trace facility
+is ported); `env.debugMode`'s assignment is kept for structural parity even though nothing reads
+it.
+
+**`Env`'s dropped `climateCSV`/`pathsToClimateCSV`/`csvViaHeaderOptions` fields.** `run_monica.odin`
+dropped these from `Env` because `cmd/monica-run`'s CLI path always resolves climate data into
+`env["climateData"]` before `env_merge` runs (`create_env_json_from_json_objects` reads the CSV
+itself). The ZMQ server doesn't have that luxury - real producers
+(`installer/Hohenfinow2/python/run-producer.py`) send `pathToClimateCSV`/`csvViaHeaderOptions`
+over the wire and expect the server to read the CSV. Rather than re-adding the fields to `Env`
+(which `run_monica`'s 12,000 lines of phase-4/5 code never needed), `serve_zmq.odin` reads those
+three keys directly off the incoming `jx.Value` message and resolves the `Data_Accessor` itself,
+mirroring what `env_merge` used to do with them before this port's `Env` was slimmed down.
+
+**`output::to_json`/`oid::to_json`**, dropped by phase 7 checkpoint 1 ("nothing in the CSV write
+path reads them"), were the demand this phase supplied: added to `io/output.odin` along with the
+`customId`/`errors`/`warnings` fields `Output` had also dropped, since `serveZmqMonicaFull`
+round-trips `customId` and reports env-merge/climate-read errors back over the wire.
+
+**Regression - byte-identical**, via the real producer/consumer pipeline rather than an in-process
+oracle: `installer/Hohenfinow2/python`'s `pixi run run_prod_cons_pipeline` (see that directory's
+`run_producer_consumer_pipeline.cmd` - swap the `monica-zmq-server`/`monica-zmq-server-odin` path
+there to switch backends) drives the real `run-producer.py`/`run-consumer.py` against
+`sim-min.json` over live ZMQ sockets. All 5 output sections
+(`crop`/`daily`/`run`/`yearly`/`OrganicFertilization`) came back byte-identical between the C++
+and Odin servers.
+
 ---
 
 ## 7. Explicitly dropped
@@ -1715,7 +1774,8 @@ output ids) is future "port on demand" work, not required for this port's origin
 | `Intercropping` (`monica-parameters.h:997`, `env.ic`, `runMonicaIC`'s second output) | needs Cap'n Proto RPC; also removes the duplicated `output2` half of `monica-run-main.cpp` |
 | `SaveMonicaState` workstep + `deserializeFullState` (`run-monica.cpp:547-607`) | inherently Cap'n Proto. `sim-min.json`'s `serializedMonicaState` has `load.atStart=false` / `save.atEnd=false`, so the fixture is unaffected |
 | all `serialize` / `deserialize` | Cap'n Proto; isolated by Prep 1 |
-| `run/monica-capnp-*`, `run/monica-zmq-*`, `run/serve-monica-zmq.cpp`, `run/run-monica-capnp.*`, `run/capnp-helper.*`, `run/daily-monica-fbp-component-main.cpp` | RPC/FBP entry points |
+| `run/monica-capnp-*`, `run/run-monica-capnp.*`, `run/capnp-helper.*`, `run/daily-monica-fbp-component-main.cpp` | Cap'n Proto RPC/FBP entry points |
+| `run/monica-zmq-*`, `run/serve-monica-zmq.cpp` | ~~RPC entry points~~ **ported, see phase 9** - the ZMQ server itself needs no Cap'n Proto; only its `INCLUDE_SR_SUPPORT` sturdy-ref branches (still Cap'n Proto) and Intercropping stayed dropped |
 | ~280 of the ~300 `build-output.cpp` ids | add on demand |
 
 ---
