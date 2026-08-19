@@ -13,42 +13,45 @@
 #
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-import json
-import sys
-import zmq
-import os
-from zalfmas_common.model import monica_io
 import errno
+import json
+import os
+import sys
+
+import zmq
+from zalfmas_common.model import monica_io
 
 
-def run_producer(server = {"server": None, "port": None}, shared_id = None):
+def run_producer(server={"server": None, "port": None}, shared_id=None):
 
     context = zmq.Context()
-    socket = context.socket(zmq.PUSH) # pylint: disable=no-member
+    socket = context.socket(zmq.PUSH)  # pylint: disable=no-member
 
     config = {
         "port": server["port"] if server["port"] else "6666",
         "server": server["server"] if server["server"] else "localhost",
-        "sim.json": os.path.join(os.path.dirname(__file__), '../sim-min.json'),
-        "crop.json": os.path.join(os.path.dirname(__file__), '../crop-min.json'),
-        "site.json": os.path.join(os.path.dirname(__file__), '../site-min.json'),
-        "climate.csv": os.path.abspath(os.path.join(os.path.dirname(__file__), '../climate-min.csv')),
+        "sim.json": os.path.join(os.path.dirname(__file__), "../sim-min.json"),
+        "crop.json": os.path.join(os.path.dirname(__file__), "../crop-min.json"),
+        "site.json": os.path.join(os.path.dirname(__file__), "../site-min.json"),
+        "climate.csv": os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../climate-min.csv")
+        ),
         "debugout": "debug_out",
-        "writenv": True,
-        "shared_id": shared_id 
+        "writenv": False,
+        "shared_id": shared_id,
     }
     # read commandline args only if script is invoked directly from commandline
     if len(sys.argv) > 1 and __name__ == "__main__":
         for arg in sys.argv[1:]:
             k, v = arg.split("=")
             if k in config:
-                if k == "writenv" :
+                if k == "writenv":
                     config[k] = bool(v)
-                else :
+                else:
                     config[k] = v
 
     print("config:", config)
-    
+
     socket.connect("tcp://" + config["server"] + ":" + config["port"])
 
     with open(config["sim.json"]) as _:
@@ -60,12 +63,14 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
     with open(config["crop.json"]) as _:
         crop_json = json.load(_)
 
-    env = monica_io.create_env_json_from_json_config({
-        "crop": crop_json,
-        "site": site_json,
-        "sim": sim_json,
-        "climate": "" #climate_csv
-    })
+    env = monica_io.create_env_json_from_json_config(
+        {
+            "crop": crop_json,
+            "site": site_json,
+            "sim": sim_json,
+            "climate": "",  # climate_csv
+        }
+    )
     env["csvViaHeaderOptions"] = sim_json["climate.csv-options"]
     env["pathToClimateCSV"] = config["climate.csv"]
 
@@ -73,23 +78,27 @@ def run_producer(server = {"server": None, "port": None}, shared_id = None):
     if config["shared_id"]:
         env["sharedId"] = config["shared_id"]
 
-    if config["writenv"] :
-        filename = os.path.join(os.path.dirname(__file__), config["debugout"], 'generated_env.json')
-        WriteEnv(filename, env) 
+    if config["writenv"]:
+        filename = os.path.join(
+            os.path.dirname(__file__), config["debugout"], "generated_env.json"
+        )
+        WriteEnv(filename, env)
 
     socket.send_json(env)
 
     print("done")
 
-def WriteEnv(filename, env) :
+
+def WriteEnv(filename, env):
     if not os.path.exists(os.path.dirname(filename)):
         try:
             os.makedirs(os.path.dirname(filename))
-        except OSError as exc: # Guard against race condition
+        except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-    with open(filename, 'w') as outfile:
+    with open(filename, "w") as outfile:
         json.dump(env, outfile)
+
 
 if __name__ == "__main__":
     run_producer()

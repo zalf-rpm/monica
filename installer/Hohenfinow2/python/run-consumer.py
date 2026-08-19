@@ -13,31 +13,39 @@
 #
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-import sys
 import csv
 import os
-import json
+import sys
+
 import zmq
 from zalfmas_common.model import monica_io
 
-def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, server = {"server": None, "port": None}, shared_id = None):
+
+def run_consumer(
+    path_to_output_dir=None,
+    leave_after_finished_run=True,
+    server={"server": None, "port": None},
+    shared_id=None,
+):
     "collect data from workers"
 
     config = {
         "port": server["port"] if server["port"] else "7777",
-        "server": server["server"] if server["server"] else "localhost", 
+        "server": server["server"] if server["server"] else "localhost",
         "shared_id": shared_id,
-        "out": path_to_output_dir if path_to_output_dir else os.path.join(os.path.dirname(__file__), './'),
-        "leave_after_finished_run": leave_after_finished_run
+        "out": path_to_output_dir
+        if path_to_output_dir
+        else os.path.join(os.path.dirname(__file__), "./"),
+        "leave_after_finished_run": leave_after_finished_run,
     }
     if len(sys.argv) > 1 and __name__ == "__main__":
         for arg in sys.argv[1:]:
-            k,v = arg.split("=")
+            k, v = arg.split("=")
             if k in config:
                 if k == "leave_after_finished_run":
-                    if (v == 'True' or v == 'true'): 
+                    if v == "True" or v == "true":
                         config[k] = True
-                    else: 
+                    else:
                         config[k] = False
                 else:
                     config[k] = v
@@ -52,7 +60,7 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, ser
         socket = context.socket(zmq.PULL)
     socket.connect("tcp://" + config["server"] + ":" + config["port"])
 
-    #socket.RCVTIMEO = 1000
+    # socket.RCVTIMEO = 1000
     leave = False
 
     def process_message(msg):
@@ -67,7 +75,12 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, ser
             leave = True
 
         else:
-            print("c: received work result ", process_message.received_env_count, " customId: ", str(msg.get("customId", "")))
+            print(
+                "c: received work result ",
+                process_message.received_env_count,
+                " customId: ",
+                str(msg.get("customId", "")),
+            )
 
             process_message.received_env_count += 1
 
@@ -75,29 +88,42 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, ser
             if msg.get("errors", []):
                 print("c: received errors: ", msg["errors"])
 
+            for data_ in msg.get("data", []):
+                results = data_.get("results", [])
+                orig_spec = data_.get("origSpec", "")
+                output_ids = data_.get("outputIds", [])
 
-            #with open("out/out-" + str(i) + ".csv", 'wb') as _:
-            with open(config["out"] + str(process_message.received_env_count) + ".csv", 'w', newline='') as _:
-                writer = csv.writer(_, delimiter=",")
+                # print(orig_spec)
 
-                for data_ in msg.get("data", []):
-                    results = data_.get("results", [])
-                    orig_spec = data_.get("origSpec", "")
-                    output_ids = data_.get("outputIds", [])
+                with open(
+                    config["out"]
+                    + str(process_message.received_env_count)
+                    + "_section_"
+                    + orig_spec.replace('"', "")
+                    + ".csv",
+                    "w",
+                    newline="",
+                ) as _:
+                    writer = csv.writer(_, delimiter=",")
 
                     if len(results) > 0:
-                        writer.writerow([orig_spec.replace("\"", "")])
-                        for row in monica_io3.write_output_header_rows(output_ids,
-                                                                      include_header_row=True,
-                                                                      include_units_row=True,
-                                                                      include_time_agg=False):
+                        # writer.writerow([orig_spec.replace('"', "")])
+                        for row in monica_io.write_output_header_rows(
+                            output_ids,
+                            include_header_row=True,
+                            include_units_row=True,
+                            include_time_agg=False,
+                        ):
                             writer.writerow(row)
 
-                        for row in monica_io.write_output(output_ids, results):
+                        # print(output_ids)
+                        for row in monica_io.write_output(
+                            output_ids, results, round_ids={"Mois": 6}
+                        ):
                             writer.writerow(row)
 
                     writer.writerow([])
-            if config["leave_after_finished_run"] == True :
+            if config["leave_after_finished_run"] == True:
                 leave = True
 
         return leave
@@ -111,8 +137,8 @@ def run_consumer(path_to_output_dir = None, leave_after_finished_run = True, ser
             continue
 
     print("c: exiting run_consumer()")
-    #debug_file.close()
+    # debug_file.close()
+
 
 if __name__ == "__main__":
     run_consumer()
-    

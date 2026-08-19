@@ -1,0 +1,23 @@
+[project]
+authors = [{name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de"}]
+dependencies = ["pyzmq>=27.1.0,<28", "zalfmas-common>=0.1.47,<0.2"]
+name = "python"
+requires-python = ">= 3.11"
+version = "0.1.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tool.pixi.pypi-dependencies]
+python = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+run_prod_cons_pipeline = { cmd = "./run_producer_consumer_pipeline.cmd", cwd = "." }
