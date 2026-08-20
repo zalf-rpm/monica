@@ -12,11 +12,11 @@
 //     than forked.
 package monica_io
 
-import "core:fmt"
-import core "../core"
 import jx "../../support/jsonx"
 import rp "../../support/reflectpath"
 import tl "../../support/tools"
+import core "../core"
+import "core:fmt"
 
 // A legacy output name's replacement: where the value lives, and the
 // rounding/truncation that its lambda used to apply. `round`/`cast_to` are
@@ -72,7 +72,10 @@ g_alias_table := []Alias_Entry {
 	{"ET0", {"soilMoisture.vm_ReferenceEvapotranspiration", 1, .NONE, "mm"}},
 	{"Evaporated_from_surface", {"soilMoisture.vm_EvaporatedFromSurface", 1, .NONE, "mm"}},
 	{"Evaporation", {"currentCropModule.vc_EvaporatedFromIntercept", 1, .NONE, "mm"}},
-	{"Evaporation_from_intercept", {"currentCropModule.vc_EvaporatedFromIntercept", 1, .NONE, "mm"}},
+	{
+		"Evaporation_from_intercept",
+		{"currentCropModule.vc_EvaporatedFromIntercept", 1, .NONE, "mm"},
+	},
 	{"Evapotranspiration", {"currentCropModule.vc_RemainingEvapotranspiration", 1, .NONE, "mm"}},
 	{"exportedCutBiomass", {"currentCropModule.vc_exportedCutBiomass", 1, .NONE, "kgDM ha-1"}},
 	{"Fc", {"soilColumn.layers.vs_FieldCapacity", 4, .NONE, "m3 m-3"}},
@@ -83,8 +86,19 @@ g_alias_table := []Alias_Entry {
 	{"GroPhot", {"currentCropModule.vc_GrossPhotosynthesis", 4, .NONE, "kgCH2O ha-1"}},
 	{"Groundw", {"vs_GroundwaterDepth", 2, .NONE, "m"}},
 	{"GrowthR", {"currentCropModule.vc_GrowthRespirationAS", 4, .NONE, "kgCH2O ha-1"}},
-	{"guenther-isoprene-emission", {"currentCropModule.guentherEmissions.isoprene_emission", 5, .NONE, "umol m-2Ground d-1"}},
-	{"guenther-monoterpene-emission", {"currentCropModule.guentherEmissions.monoterpene_emission", 5, .NONE, "umol m-2Ground d-1"}},
+	{
+		"guenther-isoprene-emission",
+		{"currentCropModule.guentherEmissions.isoprene_emission", 5, .NONE, "umol m-2Ground d-1"},
+	},
+	{
+		"guenther-monoterpene-emission",
+		{
+			"currentCropModule.guentherEmissions.monoterpene_emission",
+			5,
+			.NONE,
+			"umol m-2Ground d-1",
+		},
+	},
 	{"HeatRed", {"currentCropModule.vc_CropHeatRedux", 2, .NONE, "0;1"}},
 	{"Height", {"currentCropModule.vc_CropHeight", 2, .NONE, "m"}},
 	{"humusBalanceCarryOver", {"humusBalanceCarryOver", 1, .NONE, "Heq-NRW ha-1"}},
@@ -94,15 +108,21 @@ g_alias_table := []Alias_Entry {
 	{"IncShoot", {"currentCropModule.vc_OrganGrowthIncrement.2", 2, .NONE, "kg ha-1"}},
 	{"Infilt", {"soilMoisture.vm_Infiltration", 1, .NONE, "mm"}},
 	{"Irrig", {"dailySumIrrigationWater", 3, .NONE, "mm"}},
-	{"jjv-isoprene-emission", {"currentCropModule.jjvEmissions.isoprene_emission", 5, .NONE, "umol m-2Ground d-1"}},
-	{"jjv-monoterpene-emission", {"currentCropModule.jjvEmissions.monoterpene_emission", 5, .NONE, "umol m-2Ground d-1"}},
+	{
+		"jjv-isoprene-emission",
+		{"currentCropModule.jjvEmissions.isoprene_emission", 5, .NONE, "umol m-2Ground d-1"},
+	},
+	{
+		"jjv-monoterpene-emission",
+		{"currentCropModule.jjvEmissions.monoterpene_emission", 5, .NONE, "umol m-2Ground d-1"},
+	},
 	{"Kc", {"soilMoisture.vc_KcFactor", 3, .NONE, ""}},
 	{"Kcb", {"currentCropModule.vc_KcbFactor", 3, .NONE, ""}},
 	{"Ke", {"soilMoisture.vm_Ke", 3, .NONE, ""}},
 	{"LAI", {"currentCropModule.vc_LeafAreaIndex", 4, .NONE, "m2 m-2"}},
 	{"LT50", {"currentCropModule.vc_LT50", 1, .NONE, "°C"}},
 	{"MaintR", {"currentCropModule.vc_MaintenanceRespirationAS", 4, .NONE, "kgCH2O ha-1"}},
-	{"Mois", {"soilMoisture.soilColumn.layers.vs_SoilMoisture_m3", 3, .NONE, "m3 m-3"}},
+	{"Mois", {"soilMoisture.soil_column.layers.vs_SoilMoisture_m3", 3, .NONE, "m3 m-3"}},
 	{"N2O", {"soilOrganic.vo_N2O_Produced", 5, .NONE, "kgN ha-1"}},
 	{"N2Odenit", {"soilOrganic.vo_N2O_Produced_Denit", 5, .NONE, "kgN ha-1"}},
 	{"N2Onit", {"soilOrganic.vo_N2O_Produced_Nit", 5, .NONE, "kgN ha-1"}},
@@ -151,7 +171,10 @@ g_alias_table := []Alias_Entry {
 	{"STemp", {"soilTemperature.soilColumn.layers.vs_SoilTemperature", 1, .NONE, "�C"}},
 	{"StomRes", {"currentCropModule.vc_StomataResistance", 2, .NONE, "s m-1"}},
 	{"Stone", {"soilColumn.layers.vs_SoilStoneContent", 2, .NONE, "kg kg-1"}},
-	{"sumExportedCutBiomass", {"currentCropModule.vc_sumExportedCutBiomass", 1, .NONE, "kgDM ha-1"}},
+	{
+		"sumExportedCutBiomass",
+		{"currentCropModule.vc_sumExportedCutBiomass", 1, .NONE, "kgDM ha-1"},
+	},
 	{"SumNFert", {"sumFertiliser", 1, .NONE, "kgN ha-1"}},
 	{"SumNOrgFert", {"sumOrgFertiliser", 1, .NONE, "kgN ha-1"}},
 	{"SumNUp", {"currentCropModule.vc_SumTotalNUptake", 2, .NONE, "kgN ha-1"}},
