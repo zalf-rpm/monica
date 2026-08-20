@@ -11,6 +11,7 @@ package monica_io
 import "core:fmt"
 import "core:strings"
 import jx "../../support/jsonx"
+import rp "../../support/reflectpath"
 
 // C++: enum OId::OP
 OId_Op :: enum {
@@ -36,18 +37,40 @@ OId_Organ :: enum {
 	UNDEFINED_ORGAN,
 }
 
+// How a reflection-backed oid's leaf is turned into the JSON the CSV writer
+// prints. A handful of legacy entries truncate (RootDep is
+// `int(vc_RootingDepth)`); without CAST_INT those columns would gain decimals.
+OId_Cast :: enum {
+	NONE,
+	INT,
+}
+
 // C++: struct monica::OId
+//
+// path/plan/roundToDigits/castTo are this port's extension, not in the C++:
+// they are what let an oid name a field by *path* rather than by a
+// pre-registered lambda id (plan-reflective-outputs.md §2.3). An oid is
+// reflection-backed iff `plan != nil`; everything else still goes through
+// build_output_table's ofs/setfs keyed by `id`.
 OId :: struct {
-	id:          int, // C++ default: -1
-	name:        string,
-	displayName: string,
-	unit:        string,
-	jsonInput:   string,
-	layerAggOp:  OId_Op, // C++ default: NONE
-	timeAggOp:   OId_Op, // C++ default: AVG
-	organ:       OId_Organ, // C++ default: UNDEFINED_ORGAN
-	fromLayer:   int, // C++ default: -1
-	toLayer:     int, // C++ default: -1
+	id:            int, // C++ default: -1
+	name:          string,
+	displayName:   string,
+	unit:          string,
+	jsonInput:     string,
+	layerAggOp:    OId_Op, // C++ default: NONE
+	timeAggOp:     OId_Op, // C++ default: AVG
+	organ:         OId_Organ, // C++ default: UNDEFINED_ORGAN
+	fromLayer:     int, // C++ default: -1
+	toLayer:       int, // C++ default: -1
+
+	path:          string, // "" for lambda-backed oids
+	// OId is copied by value all over this port (`oid := oid_in`), so the
+	// plan MUST be a pointer into a setup-time allocation and never an owned
+	// value - see the risk register in plan-reflective-outputs.md §8.
+	plan:          ^rp.Path_Plan, // nil for lambda-backed oids
+	roundToDigits: int, // -1 = do not round
+	castTo:        OId_Cast,
 }
 
 // C++ in-class defaults: id{-1}, layerAggOp{NONE}, timeAggOp{AVG},
@@ -60,6 +83,8 @@ make_default_oid :: proc() -> OId {
 		organ = .UNDEFINED_ORGAN,
 		fromLayer = -1,
 		toLayer = -1,
+		roundToDigits = -1,
+		castTo = .NONE,
 	}
 }
 
@@ -193,6 +218,7 @@ oid_to_json :: proc(oid: ^OId, allocator := context.allocator) -> jx.Value {
 		{"displayName", jx.s(oid.displayName, allocator)},
 		{"unit", jx.s(oid.unit, allocator)},
 		{"jsonInput", jx.s(oid.jsonInput, allocator)},
+		{"path", jx.s(oid.path, allocator)},
 		{"layerAggOp", jx.i(int(oid.layerAggOp))},
 		{"timeAggOp", jx.i(int(oid.timeAggOp))},
 		{"organ", jx.i(int(oid.organ))},

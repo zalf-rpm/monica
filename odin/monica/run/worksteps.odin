@@ -1185,7 +1185,7 @@ set_value_get_value :: proc(s: ^Set_Value_Data, model: ^core.Monica_Model) -> jx
 set_value_merge :: proc(s: ^Set_Value_Data, j: jx.Value, allocator := context.allocator) -> tl.Errors {
 	res: tl.Errors
 
-	oids := mio.parse_output_ids([]jx.Value{jx.get(j, "var")}, allocator)
+	oids := mio.parse_output_ids([]jx.Value{jx.get(j, "var")}, allocator = allocator)
 	if len(oids) > 0 {
 		s.oid = oids[0]
 	} else {
@@ -1215,7 +1215,7 @@ set_value_merge :: proc(s: ^Set_Value_Data, j: jx.Value, allocator := context.al
 				// *assigns* the built function, and buildPrimitiveCalcExpression
 				// can itself return an empty std::function).
 			} else {
-				oids2 := mio.parse_output_ids([]jx.Value{s.value}, allocator)
+				oids2 := mio.parse_output_ids([]jx.Value{s.value}, allocator = allocator)
 				if len(oids2) > 0 {
 					oid2 := oids2[0]
 					ofs := mio.build_output_table().ofs

@@ -1765,6 +1765,35 @@ there to switch backends) drives the real `run-producer.py`/`run-consumer.py` ag
 (`crop`/`daily`/`run`/`yearly`/`OrganicFertilization`) came back byte-identical between the C++
 and Odin servers.
 
+### Phase 10 — reflection-driven output access — **read side DONE**
+See **`plan-reflective-outputs.md`** for the full design; the short version of what it changes
+here.
+
+Phase 7 checkpoint 2 deliberately scoped `buildOutputTable` down to the 21 ids `sim-min.json`
+needs, out of the C++'s 181. That scoping is what this phase removes. `support/reflectpath`
+compiles a field *path* (`"soilColumn.layers.vs_SoilNH4"`, `"climateData.#last.tavg"`) against
+`Monica_Model` into flat pointer arithmetic, and `OId` gains a `plan` pointer that
+`store_results` dispatches on. A `name -> path` alias table then restores **125 of the 181**
+legacy output names for one table row each - `python odin/tools/gen_output_aliases.py`
+regenerates it from `build-output.cpp`. The remaining 56 are genuinely computed (proc calls,
+arithmetic, `Date` methods, organ-count guards, the `numberOfOrganicLayers` clamp) and stay as
+lambdas; `output_paths.odin` lists them and says why for each group.
+
+Unknown output names now warn at setup instead of silently costing you a column, and a raw path
+or a `{"path": ..., "unit": ..., "round": ...}` object works in `sim.json` with no table entry at
+all.
+
+**Regression - byte-identical.** `bash odin/tests/diff_outputs.sh` self-diffs both fixtures; the
+12 ids that moved onto the engine on the pre-existing `sim-min.json` baseline (CM-count, Kc,
+Irrig, AbBiom, LAI, Mois, RunOff, NLeach, Recharge + the Tavg/Precip/Globrad map paths) did not
+move a byte, and neither did the 9 computed ones still on lambdas. `"use-legacy-output-fns?":
+true` in `sim.json`'s `output` section forces the lambda tier for A/B bisection; that A/B is also
+byte-identical, and un-measurable in wall clock (0.31s either way).
+
+Still open: the reflection **setter** fallback (`set_value_apply` for any field, not just the two
+ids with a registered `setf`) - `plan-reflective-outputs.md` §2.7, gated on the SetValue
+workstep's own tests.
+
 ---
 
 ## 7. Explicitly dropped

@@ -129,6 +129,15 @@ create_env_json_from_json_objects :: proc(
 		jx.Value(jx.Boolean(jx.bool_value_of(jx.get(output, "obj-outputs")))),
 		allocator,
 	)
+	// Not in the C++: forces build_output_table's lambdas ahead of the path
+	// alias table, for A/B bisecting a moved CSV column
+	// (plan-reflective-outputs.md §2.5).
+	set(
+		&inner,
+		"use-legacy-output-fns?",
+		jx.Value(jx.Boolean(jx.bool_value_of(jx.get(output, "use-legacy-output-fns?")))),
+		allocator,
+	)
 	outputs := make(jx.Object, 0, allocator)
 	set(&outputs, "output", jx.Value(inner), allocator)
 	set(&env, "outputs", jx.Value(outputs), allocator)

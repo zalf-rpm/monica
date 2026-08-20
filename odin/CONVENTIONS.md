@@ -173,6 +173,7 @@ odin/
     date/             <- Tools::Date
     jsonx/            <- (Phase 1) forgiving json11-style accessors
     climate/          <- (Phase 2) DataAccessor + CSV reader
+    reflectpath/      <- (Phase 10) compiled field-path resolver; no monica import
   monica/             <- (Phase 3+) port of src/
   tests/
 ```
@@ -223,3 +224,20 @@ Visual Studio license into `msvc/`, which is gitignored and **must not be redist
 
 Anything under a hidden directory (`.odin/`, `.pixi/`) is out of scope for the §1 transcendentals
 guard — the bootstrapped compiler's own `core` library legitimately calls `math.pow`/`math.atanh`.
+
+## 9. Output ids: prefer a path over a lambda
+
+`monica/io/output_paths.odin` maps a legacy output name to a *path* into `Monica_Model`
+(`"soilColumn.layers.vs_SoilNH4"`), which `support/reflectpath` resolves. Adding an output that is
+just "read this field, round to N digits" is one table row, not a new proc - and
+`python odin/tools/gen_output_aliases.py` regenerates the whole table from
+`src/io/build-output.cpp`. Write a lambda in `build_output.odin` only when the value is genuinely
+computed: a proc call, arithmetic over two fields, a `Date` method, or a guard that is not the
+array bound. See `../plan-reflective-outputs.md`.
+
+Two consequences for the rules above. Field names keep mattering for a new reason - §2's "struct
+field names keep their exact C++ spelling" is now what makes 125 generated alias rows resolve, and
+`odin/tests/output_paths_test.odin` fails if one drifts. And a path leaf reached through a nil
+pointer or an unset `Maybe` yields *missing*, which the output layer turns into `0.0` - that is
+the C++ `... ? ... : 0.0` ternary, not a violation of §5; §5 still governs everything that reads
+a `Maybe` in model code.

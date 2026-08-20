@@ -166,6 +166,14 @@ env_return_obj_outputs :: proc(env: ^Env) -> bool {
 	return jx.bool_value_of(jx.get(env.outputs, "obj-outputs?"))
 }
 
+// Not in the C++: the A/B bisection switch for the reflection-driven output
+// tier (sim.json: output."use-legacy-output-fns?"). See
+// plan-reflective-outputs.md §2.5 - when a CSV column moves, this is what
+// pins it to the engine rather than to anything else in the same commit.
+env_use_legacy_output_fns :: proc(env: ^Env) -> bool {
+	return jx.bool_value_of(jx.get(jx.get(env.outputs, "output"), "use-legacy-output-fns?"))
+}
+
 // ---------------------------------------------------------------------------
 // Spec
 // ---------------------------------------------------------------------------
@@ -326,7 +334,12 @@ store_results :: proc(
 		resize(results, len(outputIds))
 	}
 	for oid, i in outputIds {
-		if of, ok := ofs[oid.id]; ok {
+		// Reflection-backed oids (an alias or a raw path in sim.json) resolve
+		// their value by walking a plan compiled at setup; everything else is
+		// still a registered lambda. plan-reflective-outputs.md §2.5.
+		if oid.plan != nil {
+			append(&results^[i], mio.resolve_oid_value(model, oid))
+		} else if of, ok := ofs[oid.id]; ok {
 			append(&results^[i], of(model, oid))
 		}
 	}
@@ -470,6 +483,7 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 setup_storage :: proc(
 	event2oids: jx.Value,
 	startDate, endDate: d.Date,
+	use_legacy_output_fns := false,
 	allocator := context.allocator,
 ) -> [dynamic]Store_Data {
 	shortcuts := make(map[string]jx.Value, 0, context.temp_allocator)
@@ -537,7 +551,11 @@ setup_storage :: proc(
 		}
 
 		spec_merge(&sd.spec, spec)
-		sd.outputIds = mio.parse_output_ids(jx.array_items(e2os[i + 1]), allocator)
+		sd.outputIds = mio.parse_output_ids(
+			jx.array_items(e2os[i + 1]),
+			use_legacy_output_fns,
+			allocator,
+		)
 
 		append(&storeData, sd)
 	}
@@ -718,6 +736,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 		env.events,
 		clim.data_accessor_start_date(&env.climateData),
 		clim.data_accessor_end_date(&env.climateData),
+		env_use_legacy_output_fns(env),
 		allocator,
 	)
 	model.currentEvents["run-started"] = true

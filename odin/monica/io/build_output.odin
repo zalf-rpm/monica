@@ -41,6 +41,7 @@ import "core:strings"
 import core "../core"
 import p "../params"
 import jx "../../support/jsonx"
+import rp "../../support/reflectpath"
 import tl "../../support/tools"
 import d "../../support/date"
 
@@ -115,10 +116,18 @@ get_complex_values :: proc(
 	for i := oid.fromLayer; i <= oid.toLayer; i += 1 {
 		v := 0.0
 		if i >= 0 {
-			v = get_value(model, i)
+			// A reflection-backed oid reuses this loop instead of forking the
+			// layer-range and aggregation semantics into a second copy - the
+			// open (unindexed) dimension of its path IS `i`. get_value is nil
+			// for those oids (output_paths.odin: resolve_oid_value).
+			if oid.plan != nil {
+				v, _ = rp.resolve_f64(oid.plan, model_root(model), i)
+			} else {
+				v = get_value(model, i)
+			}
 		}
 		if oid.layerAggOp == .NONE {
-			append(&multipleValues, jx.f(tl.round(v, roundToDigits)))
+			append(&multipleValues, jx.f(round_or_not(v, roundToDigits)))
 		} else {
 			append(&vs, v)
 		}
@@ -171,133 +180,276 @@ set_complex_values :: proc(
 	}
 }
 
+// Resolves an output name to an OId, in the tier order of
+// plan-reflective-outputs.md §2.5:
+//
+//   1. the name has a path alias    -> reflection-backed (compiled here)
+//   2. the name is a registered id  -> lambda-backed (the pre-reflection path)
+//   3. the name IS a path           -> reflection-backed, no metadata
+//   4. otherwise                    -> skipped WITH A WARNING
+//
+// Tier 1 deliberately outranks tier 2: it means the ids sim-min.json already
+// exercises run through the new engine on the existing fixture, which is what
+// turns the CSV self-diff into a test of the engine instead of a test of
+// nothing. `use_legacy` swaps 1 and 2 back for A/B bisection.
+//
+// All of this happens at SETUP. Nothing here runs per day.
+@(private)
+resolve_oid_name :: proc(
+	n0: string,
+	name2metadata: map[string]OutputMetadata,
+	use_legacy: bool,
+	allocator: jx.Allocator,
+) -> (
+	oid: OId,
+	ok: bool,
+) {
+	oid = make_default_oid()
+	md, has_md := name2metadata[n0]
+
+	if !use_legacy {
+		if a, has_alias := legacy_aliases(allocator)[n0]; has_alias {
+			err := oid_bind_path(&oid, a.path, allocator)
+			if !rp.failed(err) {
+				oid.roundToDigits = a.round
+				oid.castTo = a.cast_to
+				// Keep the legacy id, name and unit: the CSV header prints
+				// name/unit, and worksteps.odin still dispatches setfs by id.
+				oid.id = has_md ? md.id : -1
+				oid.name = has_md ? md.name : n0
+				oid.unit = has_md ? md.unit : a.unit
+				return oid, true
+			}
+			// An alias that does not compile is a bug in the table, not in
+			// the user's sim.json - say so and fall through to the lambda.
+			warn_bad_path(n0, err)
+		}
+	}
+
+	if has_md {
+		oid.id = md.id
+		oid.name = md.name
+		oid.unit = md.unit
+		return oid, true
+	}
+
+	err := oid_bind_path(&oid, n0, allocator)
+	if !rp.failed(err) {
+		oid.name = n0
+		return oid, true
+	}
+
+	// Tier 4. Before this, an unknown name was a silent skip - a typo cost
+	// you a column and no message.
+	warn_bad_path(n0, err)
+	return oid, false
+}
+
+// C++: the `getAggregationOp` lambda inside parseOutputIds. Lifted to file
+// scope so the object form (below) can share the exact same parsing rather
+// than reimplementing it slightly differently.
+@(private)
+oid_aggregation_op :: proc(arr: []jx.Value, index: int, def: OId_Op = .UNDEFINED_OP) -> OId_Op {
+	if len(arr) > index && jx.is_string(arr[index]) {
+		ops := strings.to_upper(jx.string_value_of(arr[index]), context.temp_allocator)
+		switch ops {
+		case "SUM":
+			return .SUM
+		case "AVG":
+			return .AVG
+		case "MEDIAN":
+			return .MEDIAN
+		case "MIN":
+			return .MIN
+		case "MAX":
+			return .MAX
+		case "FIRST":
+			return .FIRST
+		case "LAST":
+			return .LAST
+		case "NONE":
+			return .NONE
+		}
+	}
+	return def
+}
+
+// C++: the `getOrgan` lambda inside parseOutputIds.
+@(private)
+oid_organ_of :: proc(arr: []jx.Value, index: int, def: OId_Organ = .UNDEFINED_ORGAN) -> OId_Organ {
+	if len(arr) > index && jx.is_string(arr[index]) {
+		ops := strings.to_upper(jx.string_value_of(arr[index]), context.temp_allocator)
+		switch ops {
+		case "ROOT":
+			return .ROOT
+		case "LEAF":
+			return .LEAF
+		case "SHOOT":
+			return .SHOOT
+		case "FRUIT":
+			return .FRUIT
+		case "STRUCT":
+			return .STRUCT
+		case "SUGAR":
+			return .SUGAR
+		}
+	}
+	return def
+}
+
+// C++: the body of parseOutputIds' `if(arr.size() >= 2)` block - slot 1 of
+// the array form, which is a layer number, a layer range, an organ name or a
+// time-aggregation op depending on its JSON type. Lifted verbatim so the
+// object form's "layers" key means exactly what the array form's slot 1
+// means (plan-reflective-outputs.md §2.6).
+@(private)
+oid_apply_slot1 :: proc(oid: ^OId, val1: jx.Value) {
+	if jx.is_number(val1) {
+		oid.fromLayer = jx.int_value_of(val1) - 1
+		oid.toLayer = oid.fromLayer
+	} else if jx.is_string(val1) {
+		one := []jx.Value{val1}
+		op := oid_aggregation_op(one, 0)
+		if op != .UNDEFINED_OP {
+			oid.timeAggOp = op
+		} else {
+			oid.organ = oid_organ_of(one, 0, .UNDEFINED_ORGAN)
+		}
+	} else if jx.is_array(val1) {
+		arr2 := jx.array_items(val1)
+		if len(arr2) >= 1 {
+			val1_0 := arr2[0]
+			if jx.is_number(val1_0) {
+				oid.fromLayer = jx.int_value_of(val1_0) - 1
+			} else if jx.is_string(val1_0) {
+				oid.organ = oid_organ_of(arr2, 0, .UNDEFINED_ORGAN)
+			}
+		}
+		if len(arr2) >= 2 {
+			val1_1 := arr2[1]
+			if jx.is_number(val1_1) {
+				oid.toLayer = jx.int_value_of(val1_1) - 1
+			} else if jx.is_string(val1_1) {
+				oid.toLayer = oid.fromLayer
+				oid.layerAggOp = oid_aggregation_op(arr2, 1, .AVG)
+			}
+		}
+		if len(arr2) >= 3 {
+			oid.layerAggOp = oid_aggregation_op(arr2, 2, .AVG)
+		}
+	}
+}
+
+@(private)
+oid_split2 :: proc(name: string, allocator: jx.Allocator) -> (n0: string, n1: string) {
+	parts := strings.split(name, "|", allocator)
+	n0 = len(parts) > 0 ? parts[0] : ""
+	n1 = len(parts) > 1 ? parts[1] : ""
+	return
+}
+
+// Not in the C++: the object form of an output spec.
+//
+// A raw path carries no unit and no display name, and the positional slots of
+// the array form ([name, layers, timeAgg]) are all taken - so metadata needs
+// somewhere to live:
+//
+//   { "path": "soilMoisture.vm_ActualEvaporation", "name": "ActEvap",
+//     "unit": "mm", "round": 3 }
+//   { "path": "soilColumn.layers.vs_SoilNH4", "unit": "kgN m-3", "round": 6,
+//     "layers": [1, 6, "AVG"], "agg": "SUM" }
+//
+// Purely additive: parseOutputIds already ignores anything that is not a
+// string or an array.
+//
+// A raw path is NOT rounded unless it says so - roundToDigits stays -1 and
+// the CSV writer's %.6g decides. Only the legacy aliases carry digits, which
+// is what keeps them byte-identical.
+@(private)
+oid_from_object :: proc(idj: jx.Value, allocator: jx.Allocator) -> (oid: OId, ok: bool) {
+	pathj := jx.get(idj, "path")
+	if !jx.is_string(pathj) {
+		return oid, false
+	}
+	path := jx.string_value_of(pathj)
+
+	oid = make_default_oid()
+	if err := oid_bind_path(&oid, path, allocator); rp.failed(err) {
+		warn_bad_path(path, err)
+		return oid, false
+	}
+
+	if namej := jx.get(idj, "name"); jx.is_string(namej) {
+		oid.name = jx.string_value_of(namej)
+	} else {
+		oid.name = oid.path
+	}
+	oid.unit = jx.string_value_of(jx.get(idj, "unit"))
+	if roundj := jx.get(idj, "round"); jx.is_number(roundj) {
+		oid.roundToDigits = jx.int_value_of(roundj)
+	}
+	if strings.to_upper(jx.string_value_of(jx.get(idj, "cast")), context.temp_allocator) == "INT" {
+		oid.castTo = .INT
+	}
+	if layersj := jx.get(idj, "layers"); !jx.is_null(layersj) {
+		oid_apply_slot1(&oid, layersj)
+	}
+	if organj := jx.get(idj, "organ"); jx.is_string(organj) {
+		oid.organ = oid_organ_of([]jx.Value{organj}, 0, .UNDEFINED_ORGAN)
+	}
+	if op := oid_aggregation_op([]jx.Value{jx.get(idj, "agg")}, 0); op != .UNDEFINED_OP {
+		oid.timeAggOp = op
+	}
+	oid.jsonInput = jx.dump(idj, allocator)
+	return oid, true
+}
+
 // C++: vector<OId> monica::parseOutputIds(const Tools::J11Array&)
-parse_output_ids :: proc(oidArray: []jx.Value, allocator := context.allocator) -> [dynamic]OId {
+parse_output_ids :: proc(
+	oidArray: []jx.Value,
+	use_legacy_output_fns := false,
+	allocator := context.allocator,
+) -> [dynamic]OId {
 	outputIds := make([dynamic]OId, 0, allocator)
-
-	get_aggregation_op :: proc(arr: []jx.Value, index: int, def: OId_Op = .UNDEFINED_OP) -> OId_Op {
-		if len(arr) > index && jx.is_string(arr[index]) {
-			ops := strings.to_upper(jx.string_value_of(arr[index]), context.temp_allocator)
-			switch ops {
-			case "SUM":
-				return .SUM
-			case "AVG":
-				return .AVG
-			case "MEDIAN":
-				return .MEDIAN
-			case "MIN":
-				return .MIN
-			case "MAX":
-				return .MAX
-			case "FIRST":
-				return .FIRST
-			case "LAST":
-				return .LAST
-			case "NONE":
-				return .NONE
-			}
-		}
-		return def
-	}
-
-	get_organ :: proc(arr: []jx.Value, index: int, def: OId_Organ = .UNDEFINED_ORGAN) -> OId_Organ {
-		if len(arr) > index && jx.is_string(arr[index]) {
-			ops := strings.to_upper(jx.string_value_of(arr[index]), context.temp_allocator)
-			switch ops {
-			case "ROOT":
-				return .ROOT
-			case "LEAF":
-				return .LEAF
-			case "SHOOT":
-				return .SHOOT
-			case "FRUIT":
-				return .FRUIT
-			case "STRUCT":
-				return .STRUCT
-			case "SUGAR":
-				return .SUGAR
-			}
-		}
-		return def
-	}
-
-	split2 :: proc(name: string, allocator: jx.Allocator) -> (n0: string, n1: string) {
-		parts := strings.split(name, "|", allocator)
-		n0 = len(parts) > 0 ? parts[0] : ""
-		n1 = len(parts) > 1 ? parts[1] : ""
-		return
-	}
 
 	name2metadata := build_output_table().name2metadata
 
 	for idj in oidArray {
 		if jx.is_string(idj) {
 			name := jx.string_value_of(idj)
-			n0, n1 := split2(name, allocator)
-			if data, ok := name2metadata[n0]; ok {
-				oid := make_default_oid()
-				oid.id = data.id
-				oid.name = data.name
-				oid.displayName = n1
-				oid.unit = data.unit
-				oid.jsonInput = name
-				append(&outputIds, oid)
+			n0, n1 := oid_split2(name, allocator)
+			oid, ok := resolve_oid_name(n0, name2metadata, use_legacy_output_fns, allocator)
+			if !ok {
+				continue
 			}
+			oid.displayName = n1
+			oid.jsonInput = name
+			append(&outputIds, oid)
 		} else if jx.is_array(idj) {
 			arr := jx.array_items(idj)
-			if len(arr) >= 1 {
-				name := jx.string_value_of(arr[0])
-				n0, n1 := split2(name, allocator)
-				if data, ok := name2metadata[n0]; ok {
-					oid := make_default_oid()
-					oid.id = data.id
-					oid.name = data.name
-					oid.displayName = n1
-					oid.unit = data.unit
-					oid.jsonInput = jx.dump(idj, allocator)
+			if len(arr) < 1 {
+				continue
+			}
+			name := jx.string_value_of(arr[0])
+			n0, n1 := oid_split2(name, allocator)
+			oid, ok := resolve_oid_name(n0, name2metadata, use_legacy_output_fns, allocator)
+			if !ok {
+				continue
+			}
+			oid.displayName = n1
+			oid.jsonInput = jx.dump(idj, allocator)
 
-					if len(arr) >= 2 {
-						val1 := arr[1]
-						if jx.is_number(val1) {
-							oid.fromLayer = jx.int_value_of(val1) - 1
-							oid.toLayer = oid.fromLayer
-						} else if jx.is_string(val1) {
-							op := get_aggregation_op(arr, 1)
-							if op != .UNDEFINED_OP {
-								oid.timeAggOp = op
-							} else {
-								oid.organ = get_organ(arr, 1, .UNDEFINED_ORGAN)
-							}
-						} else if jx.is_array(val1) {
-							arr2 := jx.array_items(val1)
-							if len(arr2) >= 1 {
-								val1_0 := arr2[0]
-								if jx.is_number(val1_0) {
-									oid.fromLayer = jx.int_value_of(val1_0) - 1
-								} else if jx.is_string(val1_0) {
-									oid.organ = get_organ(arr2, 0, .UNDEFINED_ORGAN)
-								}
-							}
-							if len(arr2) >= 2 {
-								val1_1 := arr2[1]
-								if jx.is_number(val1_1) {
-									oid.toLayer = jx.int_value_of(val1_1) - 1
-								} else if jx.is_string(val1_1) {
-									oid.toLayer = oid.fromLayer
-									oid.layerAggOp = get_aggregation_op(arr2, 1, .AVG)
-								}
-							}
-							if len(arr2) >= 3 {
-								oid.layerAggOp = get_aggregation_op(arr2, 2, .AVG)
-							}
-						}
-					}
-					if len(arr) >= 3 {
-						oid.timeAggOp = get_aggregation_op(arr, 2, .AVG)
-					}
+			if len(arr) >= 2 {
+				oid_apply_slot1(&oid, arr[1])
+			}
+			if len(arr) >= 3 {
+				oid.timeAggOp = oid_aggregation_op(arr, 2, .AVG)
+			}
 
-					append(&outputIds, oid)
-				}
+			append(&outputIds, oid)
+		} else if jx.is_object(idj) {
+			if oid, ok := oid_from_object(idj, allocator); ok {
+				append(&outputIds, oid)
 			}
 		}
 	}
