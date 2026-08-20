@@ -14,7 +14,7 @@ new code has to obey.
 
 ---
 
-## STATUS (implemented) — steps 1-7 done, step 8 open
+## STATUS (implemented) — steps 1-8 done
 
 The read side is built, and `bash odin/tests/diff_outputs.sh` passes on both fixtures. What
 landed, and where the plan below turned out to be wrong:
@@ -35,10 +35,42 @@ Also built beyond the plan text:
   makes step 3's gate meaningful).
 - `reflectpath.map_lookup_scan` — the `iterate_map` oracle, exported so the hashed-vs-scan
   agreement test can live in `odin/tests`.
+- `monica_io.destroy_output_tables` — test-only teardown for the two lazily-built package globals.
+  Nothing in production calls it; without it their one-time init shows up forever as a leak under
+  the test runner's tracking allocator, which is how leak reports stop being read.
 
-**Step 8 (the reflection setter fallback, §2.7) is not done.** `set_value_apply` still dispatches
-only on `setfs[oid.id]`. Alias-backed oids keep their legacy `id`, so `Stage` and `Mois` still
-set correctly; every other field is still unsettable.
+**Step 8 (§2.7) is done**, and went further than the plan text: the SetValue workstep now writes
+through the path tier, so any field a path reaches is settable, not just the two ids
+(`Stage`, `Mois`) with a registered `setf`. Both sides go through one pair of tier-agnostic entry
+points, `oid_get_value`/`oid_set_value`, so a name can never read through one tier and write
+through the other. `reflectpath.is_writable` refuses the one plan that looks writable but is not:
+`#len`, whose `resolve` hands back the plan's own scratch slot rather than a pointer into the
+model.
+
+**`buildPrimitiveCalcExpression` is ported too** — the `["=", a, op, b]` arithmetic form in a
+SetValue's `value`, which phase 7 had deferred. Because its operands go through `parse_output_ids`
+like everything else, they reach the path tier as well:
+`["=", "soilMoisture.vm_ActualEvaporation", "*", 2]` needs no table entry on either side. Three
+C++ behaviours it faithfully keeps, each pinned by a test: an unrecognised operator builds fine and
+evaluates to `0.0` forever; two literal operands do **not** build (`buildExpression` has no branch
+for it); and the array/array case returns **booleans**, because the C++ accumulates into a
+`vector<bool>` — a copy-paste slip from the `applyCompareOp` sibling directly above it.
+
+Two places this deliberately diverges from the C++, both documented at the call site:
+
+- An unbuildable `["=", …]` leaves `getValue` unset. The C++ wraps the *empty* `std::function` in
+  a non-empty lambda, so its `if (!s->getValue) return true;` guard passes and the call then
+  throws `std::bad_function_call`. That is a crash, not a value to match.
+- A `"value"` that is an array of **numbers** is now a literal per-layer value list. The C++ reads
+  every non-`"="` array as an output-id spec, finds nothing, and silently writes nothing;
+  `set_complex_values` has handled array values since it was ported and simply had no way to
+  receive one. An id spec always leads with a string, so the two cannot be confused.
+
+Verified end to end by a third fixture, `installer/Hohenfinow2/sim-min-setvalue.json`, wired into
+`diff_outputs.sh`: three pokes on the reflection tier — a raw path written from
+`[0.05, 0.03, 0.01]`, a layer-ranged alias filled from a scalar, and
+`["=", ["Mois",[1,3]], "*", 1.5]` read-modify-writing the field it reads. Each column jumps on
+exactly its poke date and stays changed; the per-layer array lands on the layers in order.
 
 ---
 

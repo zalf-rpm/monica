@@ -28,12 +28,23 @@
 #                          to have been byte-identical TO. Its baseline only
 #                          pins today's values against future drift; it does
 #                          not certify them against the C++.
+#
+#   sim-min-setvalue.json  the SetValue workstep, which no fixture exercised
+#                          before and which the C++ can barely express (only
+#                          two of its 181 ids have a setter). Three pokes, all
+#                          on the reflection tier: a raw path written from a
+#                          literal per-layer array, a layer-ranged alias filled
+#                          from a scalar, and an ["=", oid, "*", n] expression
+#                          read-modify-writing the field it reads. Same
+#                          caveat as events2 - a drift pin, not a C++ oracle -
+#                          but its baseline is worth reading: the poked columns
+#                          jump on exactly the poke date and stay changed.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO"
 
-SIMS="${SIMS:-installer/Hohenfinow2/sim-min.json installer/Hohenfinow2/sim-min-events2.json}"
+SIMS="${SIMS:-installer/Hohenfinow2/sim-min.json installer/Hohenfinow2/sim-min-events2.json installer/Hohenfinow2/sim-min-setvalue.json}"
 BASE="${BASE:-build/out-baseline}"
 WORK="build/out-current"
 export MONICA_PARAMETERS="${MONICA_PARAMETERS:-$HOME/GitHub/monica-parameters}"

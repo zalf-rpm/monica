@@ -282,6 +282,123 @@ resolve_oid_value :: proc(
 	return jx.f(round_or_not(v, oid.roundToDigits))
 }
 
+// ---------------------------------------------------------------------------
+// the tier-agnostic read/write entry points
+// ---------------------------------------------------------------------------
+//
+// Everything that reads or writes an oid goes through these two, so a caller
+// never has to know whether the oid is lambda-backed or path-backed:
+// store_results, the SetValue workstep, and the primitive-calc expression
+// operands all just ask.
+
+// Is there any way to read this oid?
+@(require_results)
+oid_has_getter :: proc(oid: OId) -> bool {
+	if oid.plan != nil {
+		return true
+	}
+	_, ok := build_output_table().ofs[oid.id]
+	return ok
+}
+
+// C++: `ofs[oid.id](monica, oid)`, widened by the path tier.
+oid_get_value :: proc(
+	model: ^core.Monica_Model,
+	oid: OId,
+	allocator := context.allocator,
+) -> (
+	jx.Value,
+	bool,
+) {
+	if oid.plan != nil {
+		return resolve_oid_value(model, oid, allocator), true
+	}
+	if of, ok := build_output_table().ofs[oid.id]; ok {
+		return of(model, oid), true
+	}
+	return jx.Value{}, false
+}
+
+// Is there any way to WRITE this oid?
+//
+// The path tier is what makes this interesting. Before it, exactly two of the
+// C++'s 181 ids had a registered setf (Stage and Mois) - deliberately, but it
+// means a model state that no one thought to expose was simply unreachable
+// from a SetValue workstep. Any path-backed oid whose leaf is a real,
+// writable number now is.
+@(require_results)
+oid_has_setter :: proc(oid: OId) -> bool {
+	if oid.plan != nil && rp.is_writable(oid.plan) {
+		return true
+	}
+	_, ok := build_output_table().setfs[oid.id]
+	return ok
+}
+
+// C++: `setfs[oid.id](monica, oid, value)`, widened by the path tier.
+//
+// The path tier is tried FIRST, mirroring the read side's tier order
+// (§2.5) so that a name cannot read through one tier and write through the
+// other. That is safe for the two ids where both exist: `Mois`' C++ setf is a
+// bare assignment to the same field its alias points at, and `Stage` - whose
+// setf is *not* a bare assignment - has no alias row at all, because it is in
+// the computed tier.
+//
+// Returns false when nothing was written, which is a real outcome and not
+// just an error: a path through a nil `currentCropModule`, or an out-of-range
+// layer, resolves to *missing*, and the C++ ternaries this mirrors skip the
+// write too.
+oid_set_value :: proc(
+	model: ^core.Monica_Model,
+	oid: OId,
+	value: jx.Value,
+	allocator := context.allocator,
+) -> bool {
+	if oid.plan != nil && rp.is_writable(oid.plan) {
+		if oid.plan.open_step >= 0 {
+			// the layer/organ range and the scalar-fills-every-layer rule are
+			// set_complex_values', exactly as on the read side
+			set_complex_values(model, oid, nil, value, allocator)
+			return true
+		}
+		v, ok := json_to_f64(value)
+		if !ok {
+			return false
+		}
+		return rp.write_f64_at(oid.plan, model_root(model), v)
+	}
+	if setf, ok := build_output_table().setfs[oid.id]; ok {
+		setf(model, oid, value)
+		return true
+	}
+	return false
+}
+
+// The value side of a write. Numbers are numbers; a JSON bool is accepted as
+// 1/0 so a bool-typed model field can be set the obvious way. Anything else -
+// a string, an object, null - is not a write.
+@(private)
+json_to_f64 :: proc(value: jx.Value) -> (f64, bool) {
+	if jx.is_number(value) {
+		return jx.number_value(value), true
+	}
+	if jx.is_bool(value) {
+		return jx.bool_value_of(value) ? 1 : 0, true
+	}
+	return 0, false
+}
+
+// The per-index write set_complex_values delegates to for a path-backed oid,
+// the counterpart of the resolve_f64 call on the read side.
+@(private)
+set_plan_value_at :: proc(model: ^core.Monica_Model, oid: OId, i: int, value: jx.Value) {
+	v, ok := json_to_f64(value)
+	if !ok {
+		return
+	}
+	rp.write_f64_at(oid.plan, model_root(model), v, i)
+}
+
 // tools.round(v, -1) rounds to TENS (the C++ round_to_digits takes a signed
 // digit count and means it), so "do not round" needs its own branch rather
 // than a sentinel passed through.

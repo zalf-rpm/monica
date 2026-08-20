@@ -413,6 +413,93 @@ test_reflectpath_write_through :: proc(t: ^testing.T) {
 	testing.expect_value(t, v, 9.75)
 }
 
+// The write side the SetValue workstep runs on: write_f64 has to reach every
+// leaf kind resolve can land on, and is_writable has to refuse the one that
+// looks writable but is not.
+@(test)
+test_reflectpath_write_f64_leaf_kinds :: proc(t: ^testing.T) {
+	Leaves :: struct {
+		f:  f64,
+		f3: f32,
+		i:  int,
+		i8v: i8,
+		u:  u32,
+		b:  bool,
+		e:  Key,
+	}
+	l: Leaves
+
+	testing.expect(t, rp.write_f64(any{&l.f, typeid_of(f64)}, 2.5))
+	testing.expect_value(t, l.f, 2.5)
+
+	testing.expect(t, rp.write_f64(any{&l.f3, typeid_of(f32)}, 0.5))
+	testing.expect_value(t, l.f3, f32(0.5))
+
+	// f64 -> int truncates toward zero, matching C++ and Odin's own conversion
+	testing.expect(t, rp.write_f64(any{&l.i, typeid_of(int)}, 2.9))
+	testing.expect_value(t, l.i, 2)
+	testing.expect(t, rp.write_f64(any{&l.i, typeid_of(int)}, -2.9))
+	testing.expect_value(t, l.i, -2)
+
+	testing.expect(t, rp.write_f64(any{&l.i8v, typeid_of(i8)}, -7))
+	testing.expect_value(t, l.i8v, i8(-7))
+	testing.expect(t, rp.write_f64(any{&l.u, typeid_of(u32)}, 9))
+	testing.expect_value(t, l.u, u32(9))
+
+	testing.expect(t, rp.write_f64(any{&l.b, typeid_of(bool)}, 1))
+	testing.expect(t, l.b)
+	testing.expect(t, rp.write_f64(any{&l.b, typeid_of(bool)}, 0))
+	testing.expect(t, !l.b)
+
+	// an enum leaf is written as its underlying integer
+	testing.expect(t, rp.write_f64(any{&l.e, typeid_of(Key)}, 2))
+	testing.expect_value(t, l.e, Key.globrad)
+
+	// a string leaf is not a number and must be refused, not memcpy'd into
+	str := "x"
+	testing.expect(t, !rp.write_f64(any{&str, typeid_of(string)}, 1))
+	testing.expect(t, !rp.write_f64(nil, 1))
+}
+
+@(test)
+test_reflectpath_writable :: proc(t: ^testing.T) {
+	m := make_model(context.temp_allocator)
+
+	// through the open dimension, one layer at a time
+	plan := must_compile(t, "column.layers.nh4")
+	testing.expect(t, rp.is_writable(plan))
+	testing.expect(t, rp.write_f64_at(plan, m^, 42, 1))
+	testing.expect_value(t, m.column.layers[1].nh4, 42.0)
+	// out of range writes nothing and says so
+	testing.expect(t, !rp.write_f64_at(plan, m^, 42, 99))
+
+	// a missing value is not a write target either
+	m.crop = nil
+	crop := must_compile(t, "crop.lai")
+	testing.expect(t, rp.is_writable(crop))
+	testing.expect(t, !rp.write_f64_at(crop, m^, 1.0))
+
+	// #len has an int leaf but resolve() hands back the plan's scratch slot,
+	// so writing it would silently change nothing - refused instead
+	len_plan := must_compile(t, "column.layers.#len")
+	testing.expect(t, rp.leaf_is_numeric(len_plan))
+	testing.expect(t, !rp.is_writable(len_plan))
+	testing.expect(t, !rp.write_f64_at(len_plan, m^, 7))
+	testing.expect_value(t, len(m.column.layers), 3)
+
+	// neither is a whole struct
+	struct_plan := must_compile(t, "column.layers.0")
+	testing.expect(t, !rp.is_writable(struct_plan))
+
+	// a map value IS writable - the climate series is real state
+	cd := must_compile(t, "climate.#last.tavg")
+	testing.expect(t, rp.is_writable(cd))
+	testing.expect(t, rp.write_f64_at(cd, m^, 33.5))
+	v, ok := rp.resolve_f64(cd, m^)
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 33.5)
+}
+
 @(test)
 test_reflectpath_leaf_typing :: proc(t: ^testing.T) {
 	numeric := []string {

@@ -1790,9 +1790,21 @@ move a byte, and neither did the 9 computed ones still on lambdas. `"use-legacy-
 true` in `sim.json`'s `output` section forces the lambda tier for A/B bisection; that A/B is also
 byte-identical, and un-measurable in wall clock (0.31s either way).
 
-Still open: the reflection **setter** fallback (`set_value_apply` for any field, not just the two
-ids with a registered `setf`) - `plan-reflective-outputs.md` §2.7, gated on the SetValue
-workstep's own tests.
+**The SetValue workstep writes through the same engine.** Phase 7 could only set the two ids the
+C++ registers a `setf` for (`Stage`, `Mois`); any field a path reaches is now settable, via one
+pair of tier-agnostic entry points (`oid_get_value`/`oid_set_value`) that both the read and write
+sides share. `#len` is refused - its `resolve` returns the plan's scratch slot, so a write would
+silently change nothing.
+
+**`buildPrimitiveCalcExpression` is ported** (the `["=", a, op, b]` form in a SetValue's `value`),
+which phase 7 checkpoint 2 had deferred alongside `buildCompareExpression`. Its operands run
+through `parse_output_ids`, so they reach the path tier too. Three C++ behaviours kept and pinned
+by tests - an unknown operator evaluates to `0.0` forever, two literal operands do not build, and
+the array/array case returns booleans because the C++ accumulates into a `vector<bool>`.
+`buildCompareExpression` itself stays unported: the `Spec` evaluator has its own.
+
+`installer/Hohenfinow2/sim-min-setvalue.json` is the third fixture in `diff_outputs.sh` and the
+only coverage SetValue has ever had here.
 
 ---
 

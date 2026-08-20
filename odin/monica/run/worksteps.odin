@@ -1172,10 +1172,11 @@ set_value_get_value :: proc(s: ^Set_Value_Data, model: ^core.Monica_Model) -> jx
 	case .CONSTANT:
 		return s.value
 	case .OID_LOOKUP:
-		ofs := mio.build_output_table().ofs
-		if of, ok := ofs[s.getValue.sourceOid.id]; ok {
-			return of(model, s.getValue.sourceOid)
+		if v, ok := mio.oid_get_value(model, s.getValue.sourceOid); ok {
+			return v
 		}
+	case .CALC_EXPR:
+		return mio.calc_expr_eval(s.getValue.calc, model)
 	case .NONE:
 	}
 	return jx.Value{}
@@ -1198,31 +1199,41 @@ set_value_merge :: proc(s: ^Set_Value_Data, j: jx.Value, allocator := context.al
 		if len(jva) > 0 {
 			if len(jva) == 4 && jx.is_string(jva[0]) && jx.string_value_of(jva[0]) == "=" {
 				// C++: buildPrimitiveCalcExpression(J11Array(jva.begin()+1, jva.end()))
-				// - the ["=", a, op, b] arithmetic-expression array syntax
-				// (build-output.cpp's getPrimitiveCalcOp/applyPrimitiveCalcOp/
-				// buildExpression<double,Json> machinery). Not ported: this is a
-				// separate, self-contained sub-feature from what blocked SetValue
-				// itself (OId/buildOutputTable/the Spec evaluator, all now built) -
-				// it's build-output.cpp's *other* deferred expression machinery,
-				// the same one buildCompareExpression belongs to (see
-				// build_output.odin's header comment). No JSON anywhere in this
-				// port's scope uses SetValue at all yet, let alone this sub-syntax
-				// of it - "port on demand" if a future fixture needs it. getValue
-				// stays at its zero value (.NONE), matching the C++ leaving
-				// s->getValue unset when this branch is taken without building a
-				// real function (a pre-existing gap in the C++ itself, not
-				// introduced here - see set-value.cpp:62-64: the branch only
-				// *assigns* the built function, and buildPrimitiveCalcExpression
-				// can itself return an empty std::function).
-			} else {
-				oids2 := mio.parse_output_ids([]jx.Value{s.value}, allocator = allocator)
-				if len(oids2) > 0 {
-					oid2 := oids2[0]
-					ofs := mio.build_output_table().ofs
-					if _, ok := ofs[oid2.id]; ok {
-						s.getValue = Set_Value_Get_Value{kind = .OID_LOOKUP, sourceOid = oid2}
-					}
+				// - the ["=", a, op, b] arithmetic form.
+				//
+				// NOTE(c++-quirk, NOT reproduced): the C++ assigns
+				// `s->getValue = [f](auto mm){ return f(*mm); }` here
+				// unconditionally, wrapping `f` even when
+				// buildPrimitiveCalcExpression returned an EMPTY std::function
+				// (two literal operands, an operand that names nothing, a
+				// malformed array). The outer lambda is non-empty, so apply()'s
+				// `if (!s->getValue) return true;` guard passes and the call
+				// then throws std::bad_function_call. That is a crash, not a
+				// value this port can match, so an unbuildable expression is
+				// left as .NONE - the same "no write happens" outcome the guard
+				// was plainly meant to produce.
+				e := mio.build_primitive_calc_expression(jva[1:], allocator)
+				if e.set {
+					s.getValue = Set_Value_Get_Value{kind = .CALC_EXPR, calc = e}
 				}
+			} else if jx.is_string(jva[0]) {
+				oids2 := mio.parse_output_ids([]jx.Value{s.value}, allocator = allocator)
+				if len(oids2) > 0 && mio.oid_has_getter(oids2[0]) {
+					s.getValue = Set_Value_Get_Value{kind = .OID_LOOKUP, sourceOid = oids2[0]}
+				}
+			} else {
+				// NOT in the C++: a literal per-layer value list,
+				// "value": [0.05, 0.04, 0.03].
+				//
+				// The C++ treats *every* non-"=" array as an output-id spec,
+				// so an array of numbers falls through parseOutputIds finding
+				// nothing, getValue stays empty, and apply() silently writes
+				// nothing at all. set_complex_values has handled an array
+				// value since it was ported - it just had no way to receive
+				// one, since only an oid returning a layer range could produce
+				// it. Additive and unambiguous: an oid spec array always leads
+				// with a string ("Mois"), a value array never does.
+				s.getValue = Set_Value_Get_Value{kind = .CONSTANT}
 			}
 		}
 	} else {
@@ -1240,10 +1251,19 @@ set_value_apply :: proc(s: ^Set_Value_Data, ws: ^Workstep, model: ^core.Monica_M
 		return true
 	}
 
-	setfs := mio.build_output_table().setfs
-	if setf, ok := setfs[s.oid.id]; ok {
+	// C++: `setfs.find(s->oid.id)`, widened by the path tier - oid_set_value
+	// writes through a compiled path when the oid has one and falls back to a
+	// registered setf otherwise. Before this, only the two ids with a setf
+	// (Stage, Mois) could be set at all; now any field reachable by a path is
+	// settable, which is what makes SetValue useful for the state pokes
+	// experiment designs actually need.
+	//
+	// The value is fetched only when there is somewhere to put it, matching
+	// the C++'s ordering (`getValue` runs inside the `if`, not before it) -
+	// it matters because reading an oid can allocate.
+	if mio.oid_has_setter(s.oid) {
 		v := set_value_get_value(s, model)
-		setf(model, s.oid, v)
+		mio.oid_set_value(model, s.oid, v)
 	}
 
 	model.currentEvents["SetValue"] = true

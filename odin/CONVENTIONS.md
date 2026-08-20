@@ -235,6 +235,9 @@ just "read this field, round to N digits" is one table row, not a new proc - and
 computed: a proc call, arithmetic over two fields, a `Date` method, or a guard that is not the
 array bound. See `../plan-reflective-outputs.md`.
 
+The same table is the *write* side: the SetValue workstep sets any field a path reaches, through
+`oid_set_value`. Do not add a `setf` for something a path can already reach.
+
 Two consequences for the rules above. Field names keep mattering for a new reason - §2's "struct
 field names keep their exact C++ spelling" is now what makes 125 generated alias rows resolve, and
 `odin/tests/output_paths_test.odin` fails if one drifts. And a path leaf reached through a nil

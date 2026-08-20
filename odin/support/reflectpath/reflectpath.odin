@@ -568,6 +568,100 @@ read_tag :: proc(p: rawptr, size: int) -> i64 {
 	return 0
 }
 
+// The write counterpart of as_f64, for the SetValue workstep: `resolve`
+// returns an `any` aimed at the real field, so a plan compiled for reading is
+// also a plan for writing.
+//
+// f64 -> integer truncates toward zero, matching both C++ and Odin's own
+// conversion. An out-of-range value wraps rather than saturating, exactly as
+// the C++ `(int)someDouble` would; a caller handing a model field a value its
+// type cannot hold has already lost.
+write_f64 :: proc(a: any, v: f64) -> bool {
+	if a == nil || a.data == nil {
+		return false
+	}
+	// type_info_core strips Named AND Enum, so writing to an enum-typed field
+	// writes its underlying integer. That can produce a value with no name in
+	// the enum - allowed on purpose (the point of the feature is to reach any
+	// state), and the caller's problem, not this procedure's.
+	ti := runtime.type_info_core(type_info_of(a.id))
+	#partial switch info in ti.variant {
+	case runtime.Type_Info_Float:
+		switch ti.size {
+		case 2:
+			(^f16)(a.data)^ = f16(v)
+			return true
+		case 4:
+			(^f32)(a.data)^ = f32(v)
+			return true
+		case 8:
+			(^f64)(a.data)^ = v
+			return true
+		}
+	case runtime.Type_Info_Integer:
+		switch ti.size {
+		case 1:
+			if info.signed {(^i8)(a.data)^ = i8(v)} else {(^u8)(a.data)^ = u8(v)}
+			return true
+		case 2:
+			if info.signed {(^i16)(a.data)^ = i16(v)} else {(^u16)(a.data)^ = u16(v)}
+			return true
+		case 4:
+			if info.signed {(^i32)(a.data)^ = i32(v)} else {(^u32)(a.data)^ = u32(v)}
+			return true
+		case 8:
+			if info.signed {(^i64)(a.data)^ = i64(v)} else {(^u64)(a.data)^ = u64(v)}
+			return true
+		case 16:
+			if info.signed {(^i128)(a.data)^ = i128(v)} else {(^u128)(a.data)^ = u128(v)}
+			return true
+		}
+	case runtime.Type_Info_Boolean:
+		switch ti.size {
+		case 1:
+			(^b8)(a.data)^ = v != 0
+			return true
+		case 2:
+			(^b16)(a.data)^ = v != 0
+			return true
+		case 4:
+			(^b32)(a.data)^ = v != 0
+			return true
+		case 8:
+			(^b64)(a.data)^ = v != 0
+			return true
+		}
+	}
+	return false
+}
+
+// Can this plan be written through at all?
+//
+// A numeric leaf is necessary but not sufficient: a `#len` plan also has an
+// `int` leaf, but `resolve` hands back a pointer into the plan's own scratch
+// slot rather than into the model, so a write would silently succeed and
+// change nothing. Refusing here turns that into a visible no-op at the call
+// site instead of a mystery.
+@(require_results)
+is_writable :: proc(plan: ^Path_Plan) -> bool {
+	if !leaf_is_numeric(plan) {
+		return false
+	}
+	if len(plan.steps) > 0 && plan.steps[len(plan.steps) - 1].kind == .LEN {
+		return false
+	}
+	return true
+}
+
+// resolve + write, the shape the output layer actually calls.
+write_f64_at :: proc(plan: ^Path_Plan, root: any, v: f64, open_index := 0) -> bool {
+	if !is_writable(plan) {
+		return false
+	}
+	a := resolve(plan, root, open_index) or_return
+	return write_f64(a, v)
+}
+
 // ---------------------------------------------------------------------------
 // the reflect.iterate_map oracle
 // ---------------------------------------------------------------------------

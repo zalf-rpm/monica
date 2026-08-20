@@ -224,12 +224,14 @@ Automatic_Irrigation_Data :: struct {
 Set_Value_Get_Value_Kind :: enum {
 	NONE,
 	CONSTANT, // return SetValueData::value unchanged
-	OID_LOOKUP, // return buildOutputTable().ofs[sourceOid.id](model, sourceOid)
+	OID_LOOKUP, // read sourceOid - a registered lambda or a compiled path
+	CALC_EXPR, // the ["=", a, op, b] arithmetic form
 }
 
 Set_Value_Get_Value :: struct {
 	kind:      Set_Value_Get_Value_Kind,
 	sourceOid: mio.OId, // used when kind == .OID_LOOKUP
+	calc:      mio.Calc_Expr, // used when kind == .CALC_EXPR
 }
 
 // C++: struct SetValueData

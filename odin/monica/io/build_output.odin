@@ -175,7 +175,14 @@ set_complex_values :: proc(
 	k := 0
 	for i := oid.fromLayer; i <= oid.toLayer && k < len(values); i, k = i + 1, k + 1 {
 		if i >= 0 {
-			set_value(model, i, values[k])
+			// mirrors get_complex_values: a path-backed oid drives the same
+			// range/organ loop, writing through its open dimension instead of
+			// calling a registered setter. set_value is nil for those.
+			if oid.plan != nil {
+				set_plan_value_at(model, oid, i, values[k])
+			} else {
+				set_value(model, i, values[k])
+			}
 		}
 	}
 }
@@ -205,6 +212,16 @@ resolve_oid_name :: proc(
 	ok: bool,
 ) {
 	oid = make_default_oid()
+
+	// An empty name is not a typo to report: it is what an output spec whose
+	// first element is not a string (a SetValue "value" that is a plain
+	// per-layer number array, say) reduces to, and parse_output_ids is called
+	// on those speculatively. Nothing was named, so there is nothing to warn
+	// about - just no oid.
+	if n0 == "" {
+		return oid, false
+	}
+
 	md, has_md := name2metadata[n0]
 
 	if !use_legacy {
@@ -643,6 +660,254 @@ of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	return jx.f(1.0)
 }
 
+// ---------------------------------------------------------------------------
+// the primitive-calc expression: ["=", a, op, b] in a SetValue's "value"
+// ---------------------------------------------------------------------------
+//
+// C++: getPrimitiveCalcOp / applyPrimitiveCalcOp / buildPrimitiveCalcExpression
+// (build-output.{h,cpp}), i.e. buildExpression<double, Json> - the arithmetic
+// half of the same template buildCompareExpression uses.
+//
+// Data + an eval proc rather than a std::function, for the usual reason: Odin
+// proc values cannot capture. The C++ closes over `lf`/`rf`/`loid`/`roid`/`op`;
+// Calc_Expr just stores them.
+
+// C++: the operand slots of buildExpression - `leftj`/`rightj`, each either a
+// literal number or an output id resolved per day.
+Calc_Operand_Kind :: enum {
+	NONE,
+	CONSTANT,
+	OID,
+}
+
+Calc_Operand :: struct {
+	kind:  Calc_Operand_Kind,
+	value: jx.Value, // CONSTANT
+	oid:   OId, // OID
+}
+
+// C++: getPrimitiveCalcOp's four recognised operator strings, plus the
+// fall-through it returns for anything else.
+//
+// NOTE(c++-quirk): an unrecognised operator is NOT an error there - the
+// default `[](double, double) { return 0.0; }` is returned, and since
+// buildExpression only tests `if (op)` (always true for a non-empty
+// std::function) the expression builds fine and evaluates to 0.0 forever.
+// ZERO reproduces that.
+Calc_Op :: enum {
+	ADD,
+	SUB,
+	MUL,
+	DIV,
+	ZERO,
+}
+
+// C++: the std::function buildPrimitiveCalcExpression returns. `set = false`
+// is the empty std::function.
+Calc_Expr :: struct {
+	set:   bool,
+	op:    Calc_Op,
+	left:  Calc_Operand,
+	right: Calc_Operand,
+}
+
+// C++: function<double(double,double)> monica::getPrimitiveCalcOp(string)
+get_primitive_calc_op :: proc(ops: string) -> Calc_Op {
+	switch ops {
+	case "+":
+		return .ADD
+	case "-":
+		return .SUB
+	case "*":
+		return .MUL
+	case "/":
+		return .DIV
+	}
+	return .ZERO
+}
+
+@(private)
+calc_op_apply :: proc(op: Calc_Op, l, r: f64) -> f64 {
+	switch op {
+	case .ADD:
+		return l + r
+	case .SUB:
+		return l - r
+	case .MUL:
+		return l * r
+	case .DIV:
+		return l / r
+	case .ZERO:
+	}
+	return 0.0
+}
+
+// C++: Json monica::applyPrimitiveCalcOp(op, Json lj, Json rj)
+//
+// Four shapes, because either side can be the array a layer-range oid
+// produces: scalar/scalar, array/scalar, scalar/array and array/array.
+apply_primitive_calc_op :: proc(
+	op: Calc_Op,
+	lj, rj: jx.Value,
+	allocator := context.allocator,
+) -> jx.Value {
+	if jx.is_number(lj) && jx.is_number(rj) {
+		return jx.f(calc_op_apply(op, jx.number_value(lj), jx.number_value(rj)))
+	}
+
+	if jx.is_array(lj) && jx.is_number(rj) {
+		rn := jx.number_value(rj)
+		lja := jx.array_items(lj)
+		res := make(jx.Array, 0, len(lja), allocator)
+		for left in lja {
+			append(&res, jx.f(jx.is_number(left) ? calc_op_apply(op, jx.number_value(left), rn) : 0.0))
+		}
+		return jx.Value(res)
+	}
+
+	if jx.is_number(lj) && jx.is_array(rj) {
+		ln := jx.number_value(lj)
+		rja := jx.array_items(rj)
+		res := make(jx.Array, 0, len(rja), allocator)
+		for right in rja {
+			append(&res, jx.f(jx.is_number(right) ? calc_op_apply(op, ln, jx.number_value(right)) : 0.0))
+		}
+		return jx.Value(res)
+	}
+
+	if jx.is_array(lj) && jx.is_array(rj) {
+		lja := jx.array_items(lj)
+		rja := jx.array_items(rj)
+
+		// NOTE(c++-quirk): the C++ array/array branch collects into a
+		// `vector<bool>`, not a `vector<double>` - a copy-paste slip from its
+		// applyCompareOp sibling directly above it. Every arithmetic result is
+		// therefore narrowed to a boolean before toPrimJsonArray turns it into
+		// JSON, so `[[1,2],"+",[10,20]]` yields [true, true] rather than
+		// [11, 22], and any pair summing to exactly 0 yields false.
+		// Reproduced, not fixed.
+		//
+		// NOTE(c++-quirk, NOT reproduced): the C++ transform() walks lja's full
+		// length while reading rja through an unchecked iterator, so a shorter
+		// right operand reads past the end of the vector - undefined behaviour,
+		// not a value this port could match. Clamped to the shorter of the two.
+		n := min(len(lja), len(rja))
+		res := make(jx.Array, 0, n, allocator)
+		for k in 0 ..< n {
+			left, right := lja[k], rja[k]
+			v :=
+				jx.is_number(left) && jx.is_number(right) \
+				? calc_op_apply(op, jx.number_value(left), jx.number_value(right)) \
+				: 0.0
+			append(&res, jx.b(v != 0))
+		}
+		return jx.Value(res)
+	}
+
+	return jx.f(0.0)
+}
+
+// C++: buildExpression<double, Json>(a, getPrimitiveCalcOp, applyPrimitiveCalcOp)
+//
+// `a` is the ["=", a, op, b] array with the "=" already stripped, so exactly
+// [left, op, right].
+//
+// The three accepted combinations are the C++'s, verbatim: oid/oid,
+// oid/number, number/oid. Two literal numbers do NOT build - the C++ has no
+// branch for it - and neither does an operand that names something with no
+// getter.
+build_primitive_calc_expression :: proc(
+	a: []jx.Value,
+	allocator := context.allocator,
+) -> Calc_Expr {
+	operand_ok :: proc(v: jx.Value) -> bool {
+		return jx.is_number(v) || jx.is_string(v) || jx.is_array(v)
+	}
+
+	if len(a) != 3 || !operand_ok(a[0]) || !jx.is_string(a[1]) || !operand_ok(a[2]) {
+		return Calc_Expr{}
+	}
+
+	op := get_primitive_calc_op(jx.string_value_of(a[1]))
+
+	// A non-number operand is an output id spec - the same string/array forms
+	// parse_output_ids takes everywhere else, so it reaches the path tier too:
+	// ["=", "soilMoisture.vm_ActualEvaporation", "*", 2] works with no table
+	// entry for either side.
+	loid, roid: OId
+	lf, rf: bool
+	if !jx.is_number(a[0]) {
+		if loids := parse_output_ids([]jx.Value{a[0]}, allocator = allocator); len(loids) > 0 {
+			loid = loids[0]
+			lf = oid_has_getter(loid)
+		}
+	}
+	if !jx.is_number(a[2]) {
+		if roids := parse_output_ids([]jx.Value{a[2]}, allocator = allocator); len(roids) > 0 {
+			roid = roids[0]
+			rf = oid_has_getter(roid)
+		}
+	}
+
+	if lf && rf {
+		return Calc_Expr {
+			set = true,
+			op = op,
+			left = {kind = .OID, oid = loid},
+			right = {kind = .OID, oid = roid},
+		}
+	}
+	if lf && jx.is_number(a[2]) {
+		return Calc_Expr {
+			set = true,
+			op = op,
+			left = {kind = .OID, oid = loid},
+			right = {kind = .CONSTANT, value = a[2]},
+		}
+	}
+	if jx.is_number(a[0]) && rf {
+		return Calc_Expr {
+			set = true,
+			op = op,
+			left = {kind = .CONSTANT, value = a[0]},
+			right = {kind = .OID, oid = roid},
+		}
+	}
+	return Calc_Expr{}
+}
+
+@(private)
+calc_operand_eval :: proc(
+	o: Calc_Operand,
+	model: ^core.Monica_Model,
+	allocator: jx.Allocator,
+) -> jx.Value {
+	switch o.kind {
+	case .CONSTANT:
+		return o.value
+	case .OID:
+		if v, ok := oid_get_value(model, o.oid, allocator); ok {
+			return v
+		}
+	case .NONE:
+	}
+	return jx.Value{}
+}
+
+// C++: the lambda buildExpression returns - `applyOp(op, lf(m, loid), rf(m, roid))`.
+calc_expr_eval :: proc(
+	e: Calc_Expr,
+	model: ^core.Monica_Model,
+	allocator := context.allocator,
+) -> jx.Value {
+	return apply_primitive_calc_op(
+		e.op,
+		calc_operand_eval(e.left, model, allocator),
+		calc_operand_eval(e.right, model, allocator),
+		allocator,
+	)
+}
+
 // C++: struct BOTRes
 BOT_Res :: struct {
 	ofs:           map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value,
@@ -709,4 +974,23 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 
 	g_output_table_built = true
 	return &g_output_table
+}
+
+// Test-only teardown for the two lazily-built package globals
+// (build_output_table's three maps and legacy_aliases' one).
+//
+// monica-run builds each exactly once and lets the process exit own them, so
+// nothing in production calls this. `odin test` runs under a tracking
+// allocator, though, and a one-time global init it cannot tell apart from a
+// leak becomes a permanent WARN that trains everyone to ignore leak reports.
+destroy_output_tables :: proc() {
+	delete(g_output_table.ofs)
+	delete(g_output_table.setfs)
+	delete(g_output_table.name2metadata)
+	g_output_table = BOT_Res{}
+	g_output_table_built = false
+
+	delete(g_legacy_aliases)
+	g_legacy_aliases = nil
+	g_legacy_aliases_built = false
 }

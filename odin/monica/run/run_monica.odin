@@ -329,18 +329,17 @@ store_results :: proc(
 	results: ^[dynamic][dynamic]jx.Value,
 	model: ^core.Monica_Model,
 ) {
-	ofs := mio.build_output_table().ofs
 	if len(results^) < len(outputIds) {
 		resize(results, len(outputIds))
 	}
 	for oid, i in outputIds {
 		// Reflection-backed oids (an alias or a raw path in sim.json) resolve
 		// their value by walking a plan compiled at setup; everything else is
-		// still a registered lambda. plan-reflective-outputs.md §2.5.
-		if oid.plan != nil {
-			append(&results^[i], mio.resolve_oid_value(model, oid))
-		} else if of, ok := ofs[oid.id]; ok {
-			append(&results^[i], of(model, oid))
+		// still a registered lambda. oid_get_value picks
+		// (plan-reflective-outputs.md §2.5), and reports false only when the
+		// oid has neither, in which case the C++ appends nothing either.
+		if v, ok := mio.oid_get_value(model, oid); ok {
+			append(&results^[i], v)
 		}
 	}
 }
