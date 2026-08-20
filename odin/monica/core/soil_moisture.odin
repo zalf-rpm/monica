@@ -1,5 +1,5 @@
 // Port of src/core/soilmoisture.{h,cpp}: SoilMoisture, make_soil_moisture,
-// initialize_from_params, step, and every soilmoisture:: proc.
+// step, and every soilmoisture:: proc.
 //
 // Deliberate deviations, both following soil_temperature.odin's precedent of
 // dropping the `monica: *MonicaModel` back-pointer (MonicaModel is phase 6 and
@@ -128,7 +128,10 @@ make_default_soil_moisture :: proc() -> Soil_Moisture {
 //
 // Takes soil_column/site_parameters/env_ps/crop_ps/p_layer_thickness directly
 // instead of a MonicaModel& - see the package comment. Returns by value,
-// matching make_soil_column/make_soil_temperature's precedent.
+// matching make_soil_column/make_soil_temperature's precedent. Inlines C++'s
+// soilmoisture::initializeFromParams(SoilMoisture*), which has no other
+// caller; p_layer_thickness stands in for the C++'s `mm.simPs.p_LayerThickness`
+// - see the package comment.
 make_soil_moisture :: proc(
 	soil_column: ^Soil_Column,
 	site_parameters: ^p.Site_Parameters,
@@ -144,15 +147,7 @@ make_soil_moisture :: proc(
 	sm.params = params
 	sm.envPs = env_ps
 	sm.cropPs = crop_ps
-	initialize_from_params(&sm, p_layer_thickness, allocator)
-	return sm
-}
 
-// C++: void monica::soilmoisture::initializeFromParams(SoilMoisture*)
-//
-// p_layer_thickness stands in for the C++'s `mm.simPs.p_LayerThickness` - see
-// the package comment.
-initialize_from_params :: proc(sm: ^Soil_Moisture, p_layer_thickness: f64, allocator := context.allocator) {
 	sc := sm.soilColumn
 	smPs := &sm.params
 	envPs := sm.envPs
@@ -205,6 +200,8 @@ initialize_from_params :: proc(sm: ^Soil_Moisture, p_layer_thickness: f64, alloc
 
 	initialize_snow_component(&sm.snowComponent, sc, smPs)
 	initialize_frost_component(&sm.frostComponent, sc, smPs.pm_HydraulicConductivityRedux, envPs.p_timeStep, allocator)
+
+	return sm
 }
 
 // C++: void monica::soilmoisture::step(SoilMoisture*, double, double, double,
