@@ -1,6 +1,5 @@
 // Port of src/core/soilorganic.{h,cpp}: SoilOrganic, make_soil_organic,
-// soil_organic_initialize_from_params, soil_organic_step, and every other
-// soilorganic:: proc.
+// soil_organic_step, and every other soilorganic:: proc.
 //
 // No monica-back-pointer deviation: the C++ struct takes `SoilColumn&` and
 // `SoilOrganicModuleParameters` directly (no MonicaModel&), just like
@@ -82,7 +81,8 @@ Soil_Organic :: struct {
 //        SoilOrganicModuleParameters)
 //
 // Returns by value, matching make_soil_column/make_soil_temperature/
-// make_soil_moisture/make_soil_transport's precedent.
+// make_soil_moisture/make_soil_transport's precedent. Inlines C++'s
+// soilorganic::initializeFromParams(SoilOrganic*), which has no other caller.
 make_soil_organic :: proc(
 	soil_column: ^Soil_Column,
 	params: p.Soil_Organic_Module_Parameters,
@@ -90,12 +90,7 @@ make_soil_organic :: proc(
 	so: Soil_Organic
 	so.soilColumn = soil_column
 	so.params = params
-	soil_organic_initialize_from_params(&so)
-	return so
-}
 
-// C++: void monica::soilorganic::initializeFromParams(SoilOrganic*)
-soil_organic_initialize_from_params :: proc(so: ^Soil_Organic) {
 	sc := so.soilColumn
 	nools := sc.vs_NumberOfOrganicLayers
 
@@ -178,6 +173,8 @@ soil_organic_initialize_from_params :: proc(so: ^Soil_Organic) {
 
 		so.vo_ActDenitrificationRate[i] = 0.0
 	}
+
+	return so
 }
 
 // C++: void monica::soilorganic::foUrea(SoilOrganic*)
