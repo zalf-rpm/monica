@@ -37,13 +37,13 @@
 // up front by the CLI entry point (phase 7 checkpoint 5) instead.
 package monica_io
 
-import "core:strings"
-import core "../core"
-import p "../params"
+import d "../../support/date"
 import jx "../../support/jsonx"
 import rp "../../support/reflectpath"
 import tl "../../support/tools"
-import d "../../support/date"
+import core "../core"
+import p "../params"
+import "core:strings"
 
 // C++: struct monica::OutputMetadata
 OutputMetadata :: struct {
@@ -534,7 +534,7 @@ of_org_biom :: proc(model: ^core.Monica_Model, oid_in: OId) -> jx.Value {
 	if oid_is_organ(&oid) &&
 	   model.currentCropModule != nil &&
 	   p.species_parameters_number_of_organs(&model.currentCropModule.cropParams.speciesParams) >
-			   int(oid.organ) {
+		   int(oid.organ) {
 		return jx.f(tl.round(model.currentCropModule.vc_OrganBiomass[int(oid.organ)], 1))
 	}
 	return jx.f(0.0)
@@ -590,7 +590,7 @@ of_runoff :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_kc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilMoisture.vc_KcFactor, 3))
+	return jx.f(tl.round(core.kc_factor(&model.soilMoisture), 3))
 }
 
 @(private)
@@ -652,7 +652,8 @@ of_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	potET := model.soilMoisture.vm_ReferenceEvapotranspiration * model.soilMoisture.vc_KcFactor
+	potET :=
+		model.soilMoisture.vm_ReferenceEvapotranspiration * core.kc_factor(&model.soilMoisture)
 	actET := model.soilMoisture.vm_ActualEvapotranspiration
 	if potET > 0 {
 		return jx.f(tl.round(actET / potET, 2))
@@ -760,7 +761,10 @@ apply_primitive_calc_op :: proc(
 		lja := jx.array_items(lj)
 		res := make(jx.Array, 0, len(lja), allocator)
 		for left in lja {
-			append(&res, jx.f(jx.is_number(left) ? calc_op_apply(op, jx.number_value(left), rn) : 0.0))
+			append(
+				&res,
+				jx.f(jx.is_number(left) ? calc_op_apply(op, jx.number_value(left), rn) : 0.0),
+			)
 		}
 		return jx.Value(res)
 	}
@@ -770,7 +774,10 @@ apply_primitive_calc_op :: proc(
 		rja := jx.array_items(rj)
 		res := make(jx.Array, 0, len(rja), allocator)
 		for right in rja {
-			append(&res, jx.f(jx.is_number(right) ? calc_op_apply(op, ln, jx.number_value(right)) : 0.0))
+			append(
+				&res,
+				jx.f(jx.is_number(right) ? calc_op_apply(op, ln, jx.number_value(right)) : 0.0),
+			)
 		}
 		return jx.Value(res)
 	}
@@ -796,9 +803,7 @@ apply_primitive_calc_op :: proc(
 		for k in 0 ..< n {
 			left, right := lja[k], rja[k]
 			v :=
-				jx.is_number(left) && jx.is_number(right) \
-				? calc_op_apply(op, jx.number_value(left), jx.number_value(right)) \
-				: 0.0
+				jx.is_number(left) && jx.is_number(right) ? calc_op_apply(op, jx.number_value(left), jx.number_value(right)) : 0.0
 			append(&res, jx.b(v != 0))
 		}
 		return jx.Value(res)
@@ -947,10 +952,19 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	}
 
 	g_output_table.ofs = make(map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value, allocator)
-	g_output_table.setfs = make(map[int]proc(_: ^core.Monica_Model, _: OId, _: jx.Value), allocator)
+	g_output_table.setfs = make(
+		map[int]proc(_: ^core.Monica_Model, _: OId, _: jx.Value),
+		allocator,
+	)
 	g_output_table.name2metadata = make(map[string]OutputMetadata, allocator)
 
-	build(0, "CM-count", "", "output the order number of the current cultivation method", of_cm_count)
+	build(
+		0,
+		"CM-count",
+		"",
+		"output the order number of the current cultivation method",
+		of_cm_count,
+	)
 	build(1, "Date", "", "output current date", of_date)
 	build(2, "Year", "", "output current Year", of_year)
 	build(3, "Crop", "", "crop name", of_crop)
@@ -962,7 +976,13 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	build(9, "Mois", "m3 m-3", "Soil moisture content", of_mois, of_mois_set)
 	build(10, "Irrig", "mm", "Irrigation", of_irrig)
 	build(11, "RunOff", "mm", "Surface runoff of current day", of_runoff)
-	build(12, "Kc", "", "plant coefficient to calculate with ET0 the plants water use (ET0 * Kc)", of_kc)
+	build(
+		12,
+		"Kc",
+		"",
+		"plant coefficient to calculate with ET0 the plants water use (ET0 * Kc)",
+		of_kc,
+	)
 	build(13, "Recharge", "mm", "Groundwater recharge", of_recharge)
 	build(14, "NLeach", "kgN ha-1", "N leaching", of_nleach)
 	build(15, "SOC", "kgC kg-1", "get soil organic carbon content", of_soc)

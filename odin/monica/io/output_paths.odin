@@ -116,7 +116,7 @@ g_alias_table := []Alias_Entry {
 		"jjv-monoterpene-emission",
 		{"currentCropModule.jjvEmissions.monoterpene_emission", 5, .NONE, "umol m-2Ground d-1"},
 	},
-	{"Kc", {"soilMoisture.vc_KcFactor", 3, .NONE, ""}},
+	// {"Kc", {"soilMoisture.vc_KcFactor", 3, .NONE, ""}},
 	{"Kcb", {"currentCropModule.vc_KcbFactor", 3, .NONE, ""}},
 	{"Ke", {"soilMoisture.vm_Ke", 3, .NONE, ""}},
 	{"LAI", {"currentCropModule.vc_LeafAreaIndex", 4, .NONE, "m2 m-2"}},

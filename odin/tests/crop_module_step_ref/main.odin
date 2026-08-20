@@ -8,17 +8,17 @@
 // Run odin/tests/cpp_ref/run_crop_module_step.sh to build both and diff them.
 package crop_module_step_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
@@ -34,7 +34,12 @@ real_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {
 }
 
 real_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {
-	core.soil_organic_add_organic_matter(g_soil_organic, g_residue_params, layer2amount, nConcentration)
+	core.soil_organic_add_organic_matter(
+		g_soil_organic,
+		g_residue_params,
+		layer2amount,
+		nConcentration,
+	)
 }
 
 recording_fire_event :: proc(event: string) {
@@ -238,7 +243,10 @@ main :: proc() {
 	g_soil_moisture = &sm
 	g_soil_organic = &so
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 		path := strings.concatenate({dir, "/", name}, a)
@@ -290,7 +298,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -329,7 +342,15 @@ main :: proc() {
 		// ->vc_SoilCoverage : 0.0 - now that a live crop is wired in (unlike
 		// every earlier checkpoint, all bare soil), pass its real coverage
 		// instead of the hardcoded 0.0 those checkpoints used.
-		core.soil_temperature_step(&st, tmin, tmax, globrad, cm.vc_SoilCoverage, sm.snowComponent.vm_SnowDepth, sm.frostComponent.vm_TemperatureUnderSnow)
+		core.soil_temperature_step(
+			&st,
+			tmin,
+			tmax,
+			globrad,
+			cm.vc_SoilCoverage,
+			sm.snowComponent.vm_SnowDepth,
+			sm.frostComponent.vm_TemperatureUnderSnow,
+		)
 		core.soil_moisture_step(
 			&sm,
 			vs_GroundwaterDepth,
@@ -368,8 +389,8 @@ main :: proc() {
 		core.soil_transport_step(&str)
 
 		dump_crop_module(&t, &cm)
-		tr.dump(&t, "soilMoistureDiag.vc_PercentageSoilCoverage", sm.vc_PercentageSoilCoverage)
-		tr.dump(&t, "soilMoistureDiag.vc_KcFactor", sm.vc_KcFactor)
+		tr.dump(&t, "soilMoistureDiag.vc_PercentageSoilCoverage", sm.cropModule.vc_SoilCoverage)
+		tr.dump(&t, "soilMoistureDiag.vc_KcFactor", core.kc_factor(sm))
 		tr.dump(&t, "soilMoistureDiag.vc_NetPrecipitation", sm.vc_NetPrecipitation)
 		free_all(context.temp_allocator)
 	}
