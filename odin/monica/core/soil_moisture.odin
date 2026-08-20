@@ -73,10 +73,7 @@ Soil_Moisture :: struct {
 	vc_KcFactor:                       f64,
 	vm_Lambda:                         [dynamic]f64,
 	vm_LayerThickness:                 [dynamic]f64,
-	pm_LayerThickness:                 f64,
-	pm_LeachingDepth:                  f64,
 	pm_LeachingDepthLayer:             int,
-	pm_MaxPercolationRate:             f64,
 	vc_NetPrecipitation:               f64,
 	vm_LastWettingWasRain:             bool,
 	vm_Ke:                             f64,
@@ -98,7 +95,6 @@ Soil_Moisture :: struct {
 	vm_SurfaceRunOff:                  f64,
 	vm_SumSurfaceRunOff:               f64,
 	vm_SurfaceWaterStorage:            f64,
-	pt_TimeStep:                       f64,
 	vm_TotalWaterRemoval:              f64,
 	vm_Transpiration:                  [dynamic]f64,
 	vm_WaterFlux:                      [dynamic]f64,
@@ -177,16 +173,11 @@ make_soil_moisture :: proc(
 	resize(&sm.vm_WaterFlux, sm.numberOfMoistureLayers)
 
 	sm.vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux
-	sm.pt_TimeStep = envPs.p_timeStep
 	sm.vm_SurfaceRoughness = smPs.pm_SurfaceRoughness
 	sm.vm_GroundwaterDischarge = smPs.pm_GroundwaterDischarge
-	sm.pm_MaxPercolationRate = smPs.pm_MaxPercolationRate
-	sm.pm_LeachingDepth = envPs.p_LeachingDepth
-
-	sm.pm_LayerThickness = layer_thickness
 
 	sm.pm_LeachingDepthLayer =
-		int(libc.floor(0.5 + (sm.pm_LeachingDepth / sm.pm_LayerThickness))) - 1
+		int(libc.floor(0.5 + (sm.env_params.p_LeachingDepth / layer_thickness))) - 1
 
 	resize(&sm.vm_SaturatedHydraulicConductivity, sm.numberOfMoistureLayers)
 	for i in 0 ..< sm.numberOfMoistureLayers {
@@ -424,8 +415,8 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		sm.vm_PercolationRate[0] =
 			(sm.vm_GravitationalWater[0] * sm.vm_GravitationalWater[0] * vm_LambdaReduced) /
 			vm_PercolationFactor
-		if sm.vm_PercolationRate[0] > sm.pm_MaxPercolationRate {
-			sm.vm_PercolationRate[0] = sm.pm_MaxPercolationRate
+		if sm.vm_PercolationRate[0] > sm.mod_params.pm_MaxPercolationRate {
+			sm.vm_PercolationRate[0] = sm.mod_params.pm_MaxPercolationRate
 		}
 		sm.vm_GravitationalWater[0] = sm.vm_GravitationalWater[0] - sm.vm_PercolationRate[0]
 		sm.vm_GravitationalWater[0] = max(0.0, sm.vm_GravitationalWater[0])
@@ -681,6 +672,7 @@ groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
 
 // C++: void monica::soilmoisture::percolationWithoutGroundwater(SoilMoisture*)
 percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
+	max_percolation_rate := sm.mod_params.pm_MaxPercolationRate
 	for i in 0 ..< sm.numberOfMoistureLayers - 1 {
 		indexOfLayerBelow := i + 1
 		sm.vm_SoilMoisture[indexOfLayerBelow] +=
@@ -703,8 +695,8 @@ percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
 					vm_LambdaReduced) /
 				vm_PercolationFactor
 
-			if sm.vm_PercolationRate[indexOfLayerBelow] > sm.pm_MaxPercolationRate {
-				sm.vm_PercolationRate[indexOfLayerBelow] = sm.pm_MaxPercolationRate
+			if sm.vm_PercolationRate[indexOfLayerBelow] > max_percolation_rate {
+				sm.vm_PercolationRate[indexOfLayerBelow] = max_percolation_rate
 			}
 
 			sm.vm_GravitationalWater[indexOfLayerBelow] =
