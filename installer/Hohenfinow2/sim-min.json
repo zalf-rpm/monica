@@ -62,6 +62,7 @@
         {
           "path": "soilColumn.layers.vs_SoilMoisture_m3",
           "name": "Mois",
+          "unit": "m3 m-3",
           "round": 6,
           "layers": [1, 3]
         },
