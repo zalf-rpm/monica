@@ -49,8 +49,7 @@ Soil_Moisture :: struct {
 	mod_params:                        p.Soil_Moisture_Module_Parameters,
 	env_params:                        ^p.Environment_Parameters,
 	crop_params:                       ^p.Crop_Module_Parameters,
-	numberOfMoistureLayers:            int,
-	numberOfSoilLayers:                int,
+	no_of_soil_layers:                 int,
 	vm_ActualEvaporation:              f64,
 	vm_ActualEvapotranspiration:       f64,
 	vm_ActualTranspiration:            f64,
@@ -60,7 +59,8 @@ Soil_Moisture :: struct {
 	vm_CapillaryWater70:               [dynamic]f64,
 	vm_Evaporation:                    [dynamic]f64,
 	vm_Evapotranspiration:             [dynamic]f64,
-	vm_FieldCapacity:                  [dynamic]f64,
+	// vm_FieldCapacity:                    [dynamic]f64,
+	field_capacity_below_m3_m3:        f64,
 	vm_FluxAtLowerBoundary:            f64,
 	vm_GravitationalWater:             [dynamic]f64,
 	vm_GrossPrecipitation:             f64,
@@ -72,8 +72,10 @@ Soil_Moisture :: struct {
 	vm_Infiltration:                   f64,
 	vm_Interception:                   f64,
 	kc_factor:                         f64,
-	vm_Lambda:                         [dynamic]f64,
-	vm_LayerThickness:                 [dynamic]f64,
+	// vm_Lambda:                           [dynamic]f64,
+	lambda_below:                      f64,
+	// vm_LayerThickness:                 [dynamic]f64,
+	layer_thickness_m:                 f64,
 	leaching_depth_layer_idx:          int,
 	net_precipitation_mm:              f64,
 	vm_LastWettingWasRain:             bool,
@@ -81,38 +83,31 @@ Soil_Moisture :: struct {
 	vm_irrigFwEvent:                   f64,
 	vm_irrigIsDripEvent:               bool,
 	vw_NetRadiation:                   f64,
-	vm_PermanentWiltingPoint:          [dynamic]f64,
+	// vm_PermanentWiltingPoint:            [dynamic]f64,
+	// permanent_wilting_point_below_m3_m3: f64,
 	soil_coverage_percent:             f64,
 	vm_PercolationRate:                [dynamic]f64,
 	vm_ReferenceEvapotranspiration:    f64,
 	vm_ResidualEvapotranspiration:     [dynamic]f64,
 	vm_SaturatedHydraulicConductivity: [dynamic]f64,
-	vm_SoilMoisture:                   [dynamic]f64,
+	// vm_SoilMoisture:                     [dynamic]f64,
+	soil_moisture_below_m3_m3:         f64,
 	vm_SoilMoisture_crit:              f64,
 	vm_SoilMoistureDeficit:            f64,
-	vm_SoilPoreVolume:                 [dynamic]f64,
+	// vm_SoilPoreVolume:                   [dynamic]f64,
+	pore_volume_below_m3_m3:           f64,
 	vm_SurfaceRoughness:               f64,
 	vm_SurfaceRunOff:                  f64,
 	vm_SumSurfaceRunOff:               f64,
 	vm_SurfaceWaterStorage:            f64,
 	vm_TotalWaterRemoval:              f64,
 	vm_Transpiration:                  [dynamic]f64,
-	vm_WaterFlux:                      [dynamic]f64,
+	// vm_WaterFlux:                        [dynamic]f64,
+	water_flux_below:                  f64,
 	vm_XSACriticalSoilMoisture:        f64,
 	snow_component:                    Snow_Component,
 	frost_component:                   Frost_Component,
 	crop_module:                       ^Crop_Module,
-}
-
-// C++ in-class initialisers not covered by Odin's zero value: vc_KcFactor{0.6},
-// vm_irrigFwEvent{1.0}, vm_ReferenceEvapotranspiration{6.0}.
-@(private)
-make_default_soil_moisture :: proc() -> Soil_Moisture {
-	sm: Soil_Moisture
-	sm.kc_factor = 0.6
-	sm.vm_irrigFwEvent = 1.0
-	sm.vm_ReferenceEvapotranspiration = 6.0
-	return sm
 }
 
 // C++: kj::Own<SoilMoisture> monica::makeSoilMoisture(MonicaModel&, const
@@ -133,7 +128,11 @@ make_soil_moisture :: proc(
 	layer_thickness: f64,
 	allocator := context.allocator,
 ) -> Soil_Moisture {
-	sm := make_default_soil_moisture()
+	sm: Soil_Moisture
+	sm.kc_factor = 0.6
+	sm.vm_irrigFwEvent = 1.0
+	sm.vm_ReferenceEvapotranspiration = 6.0
+
 	sm.soil_column = soil_column
 	sm.site_params = site_parameters
 	sm.mod_params = mod_params
@@ -144,32 +143,33 @@ make_soil_moisture :: proc(
 	smPs := &sm.mod_params
 	envPs := sm.env_params
 
-	sm.numberOfMoistureLayers = len(sc.layers) + 1
-	sm.numberOfSoilLayers = len(sc.layers)
+	sm.no_of_soil_layers = len(sc.layers)
+	no_of_mois_layers := sm.no_of_soil_layers + 1
 
-	resize(&sm.vm_AvailableWater, sm.numberOfMoistureLayers)
-	resize(&sm.vm_CapillaryWater, sm.numberOfMoistureLayers)
-	resize(&sm.vm_CapillaryWater70, sm.numberOfMoistureLayers)
-	resize(&sm.vm_Evaporation, sm.numberOfMoistureLayers)
-	resize(&sm.vm_Evapotranspiration, sm.numberOfMoistureLayers)
-	resize(&sm.vm_FieldCapacity, sm.numberOfMoistureLayers)
-	resize(&sm.vm_GravitationalWater, sm.numberOfMoistureLayers)
-	resize(&sm.vm_HeatConductivity, sm.numberOfMoistureLayers)
-	resize(&sm.vm_Lambda, sm.numberOfMoistureLayers)
-	resize(&sm.vm_LayerThickness, sm.numberOfMoistureLayers)
-	for i in 0 ..< len(sm.vm_LayerThickness) {
-		sm.vm_LayerThickness[i] = 0.01
-	}
-	resize(&sm.vm_PermanentWiltingPoint, sm.numberOfMoistureLayers)
-	resize(&sm.vm_PercolationRate, sm.numberOfMoistureLayers)
-	resize(&sm.vm_ResidualEvapotranspiration, sm.numberOfMoistureLayers)
-	resize(&sm.vm_SoilMoisture, sm.numberOfMoistureLayers)
-	for i in 0 ..< len(sm.vm_SoilMoisture) {
-		sm.vm_SoilMoisture[i] = 0.20
-	}
-	resize(&sm.vm_SoilPoreVolume, sm.numberOfMoistureLayers)
-	resize(&sm.vm_Transpiration, sm.numberOfMoistureLayers)
-	resize(&sm.vm_WaterFlux, sm.numberOfMoistureLayers)
+	resize(&sm.vm_AvailableWater, no_of_mois_layers)
+	resize(&sm.vm_CapillaryWater, no_of_mois_layers)
+	resize(&sm.vm_CapillaryWater70, no_of_mois_layers)
+	resize(&sm.vm_Evaporation, no_of_mois_layers)
+	resize(&sm.vm_Evapotranspiration, no_of_mois_layers)
+	// resize(&sm.vm_FieldCapacity, sm.numberOfMoistureLayers)
+	resize(&sm.vm_GravitationalWater, no_of_mois_layers)
+	resize(&sm.vm_HeatConductivity, no_of_mois_layers)
+	// resize(&sm.vm_Lambda, sm.numberOfMoistureLayers)
+	// resize(&sm.vm_LayerThickness, sm.numberOfMoistureLayers)
+	sm.layer_thickness_m = layer_thickness
+	// for i in 0 ..< len(sm.vm_LayerThickness) {
+	// 	sm.vm_LayerThickness[i] = 0.01
+	// }
+	// resize(&sm.vm_PermanentWiltingPoint, sm.numberOfMoistureLayers)
+	resize(&sm.vm_PercolationRate, no_of_mois_layers)
+	resize(&sm.vm_ResidualEvapotranspiration, no_of_mois_layers)
+	// resize(&sm.vm_SoilMoisture, sm.numberOfMoistureLayers)
+	// for i in 0 ..< len(sm.vm_SoilMoisture) {
+	// 	sm.vm_SoilMoisture[i] = 0.20
+	// }
+	// resize(&sm.vm_SoilPoreVolume, sm.numberOfMoistureLayers)
+	resize(&sm.vm_Transpiration, no_of_mois_layers)
+	// resize(&sm.vm_WaterFlux, sm.numberOfMoistureLayers)
 
 	sm.vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux
 	sm.vm_SurfaceRoughness = smPs.pm_SurfaceRoughness
@@ -178,8 +178,8 @@ make_soil_moisture :: proc(
 	sm.leaching_depth_layer_idx =
 		int(libc.floor(0.5 + (sm.env_params.p_LeachingDepth / layer_thickness))) - 1
 
-	resize(&sm.vm_SaturatedHydraulicConductivity, sm.numberOfMoistureLayers)
-	for i in 0 ..< sm.numberOfMoistureLayers {
+	resize(&sm.vm_SaturatedHydraulicConductivity, no_of_mois_layers)
+	for i in 0 ..< sm.no_of_soil_layers + 1 {
 		sm.vm_SaturatedHydraulicConductivity[i] = smPs.pm_SaturatedHydraulicConductivity
 	}
 
@@ -220,27 +220,37 @@ soil_moisture_step :: proc(
 ) {
 	sc := sm.soil_column
 
-	for i in 0 ..< sm.numberOfSoilLayers {
-		sm.vm_SoilMoisture[i] = sc.layers[i].vs_SoilMoisture_m3
-		sm.vm_WaterFlux[i] = 0.0
-		sm.vm_FieldCapacity[i] = sc.layers[i].vs_FieldCapacity
-		sm.vm_SoilPoreVolume[i] = sc.layers[i].vs_Saturation
-		sm.vm_PermanentWiltingPoint[i] = sc.layers[i].vs_PermanentWiltingPoint
-		sm.vm_LayerThickness[i] = sc.layers[i].vs_LayerThickness
-		sm.vm_Lambda[i] = sc.layers[i].vs_Lambda
+	// for i in 0 ..< sm.numberOfSoilLayers {
+	// 	sm.vm_SoilMoisture[i] = sc.layers[i].vs_SoilMoisture_m3
+	// 	sm.vm_WaterFlux[i] = 0.0
+	// 	sm.vm_FieldCapacity[i] = sc.layers[i].vs_FieldCapacity
+	// 	sm.vm_SoilPoreVolume[i] = sc.layers[i].vs_Saturation
+	// 	sm.vm_PermanentWiltingPoint[i] = sc.layers[i].vs_PermanentWiltingPoint
+	// 	sm.vm_LayerThickness[i] = sc.layers[i].vs_LayerThickness
+	// 	sm.vm_Lambda[i] = sc.layers[i].vs_Lambda
+	// }
+
+	// sm.vm_SoilMoisture[sm.numberOfMoistureLayers - 1] =
+	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_SoilMoisture_m3
+	// sm.vm_WaterFlux[sm.numberOfMoistureLayers - 1] = 0.0
+	// sm.vm_FieldCapacity[sm.numberOfMoistureLayers - 1] =
+	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_FieldCapacity
+	// sm.vm_SoilPoreVolume[sm.numberOfMoistureLayers - 1] =
+	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_Saturation
+	// sm.vm_LayerThickness[sm.numberOfMoistureLayers - 1] =
+	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_LayerThickness
+	// sm.vm_Lambda[sm.numberOfMoistureLayers - 1] =
+	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_Lambda
+
+	for i in 0 ..< sm.no_of_soil_layers {
+		sc.layers[i].vs_SoilWaterFlux = 0.0
 	}
 
-	sm.vm_SoilMoisture[sm.numberOfMoistureLayers - 1] =
-		sc.layers[sm.numberOfMoistureLayers - 2].vs_SoilMoisture_m3
-	sm.vm_WaterFlux[sm.numberOfMoistureLayers - 1] = 0.0
-	sm.vm_FieldCapacity[sm.numberOfMoistureLayers - 1] =
-		sc.layers[sm.numberOfMoistureLayers - 2].vs_FieldCapacity
-	sm.vm_SoilPoreVolume[sm.numberOfMoistureLayers - 1] =
-		sc.layers[sm.numberOfMoistureLayers - 2].vs_Saturation
-	sm.vm_LayerThickness[sm.numberOfMoistureLayers - 1] =
-		sc.layers[sm.numberOfMoistureLayers - 2].vs_LayerThickness
-	sm.vm_Lambda[sm.numberOfMoistureLayers - 1] =
-		sc.layers[sm.numberOfMoistureLayers - 2].vs_Lambda
+	sm.soil_moisture_below_m3_m3 = sc.layers[sm.no_of_soil_layers - 1].vs_SoilMoisture_m3
+	sm.water_flux_below = 0.0
+	sm.field_capacity_below_m3_m3 = sc.layers[sm.no_of_soil_layers - 1].vs_FieldCapacity
+	sm.pore_volume_below_m3_m3 = sc.layers[sm.no_of_soil_layers - 1].vs_Saturation
+	sm.lambda_below = sc.layers[sm.no_of_soil_layers - 1].vs_Lambda
 
 	sm.vm_SurfaceWaterStorage = sc.vs_SurfaceWaterStorage
 
@@ -270,17 +280,18 @@ soil_moisture_step :: proc(
 	_ = vc_CropHeight
 
 	// Recalculates current depth of groundwater table
-	sm.vm_GroundwaterTableLayer = sm.numberOfSoilLayers + 2
-	i := sm.numberOfSoilLayers - 1
-	for i >= 0 && int(sm.vm_SoilMoisture[i] * 10000) == int(sm.vm_SoilPoreVolume[i] * 10000) {
+	sm.vm_GroundwaterTableLayer = sm.no_of_soil_layers + 2
+	for i := sm.no_of_soil_layers - 1;
+	    i >= 0 &&
+	    int(sc.layers[i].vs_SoilMoisture_m3 * 10000) == int(sc.layers[i].vs_Saturation * 10000); {
 		sm.vm_GroundwaterTableLayer = i
 		i -= 1
 	}
 
 	oscillGroundWaterLayer := int(vs_GroundwaterDepth / sc.layers[0].vs_LayerThickness)
 	if (sm.vm_GroundwaterTableLayer > oscillGroundWaterLayer &&
-		   sm.vm_GroundwaterTableLayer < sm.numberOfSoilLayers + 2) ||
-	   sm.vm_GroundwaterTableLayer >= sm.numberOfSoilLayers + 2 {
+		   sm.vm_GroundwaterTableLayer < sm.no_of_soil_layers + 2) ||
+	   sm.vm_GroundwaterTableLayer >= sm.no_of_soil_layers + 2 {
 		sm.vm_GroundwaterTableLayer = oscillGroundWaterLayer
 	}
 
@@ -329,10 +340,10 @@ soil_moisture_step :: proc(
 
 	capillary_rise(sm)
 
-	for i_Layer in 0 ..< sm.numberOfSoilLayers {
-		sc.layers[i_Layer].vs_SoilMoisture_m3 = sm.vm_SoilMoisture[i_Layer]
-		sc.layers[i_Layer].vs_SoilWaterFlux = sm.vm_WaterFlux[i_Layer]
-	}
+	// for i_Layer in 0 ..< sm.numberOfSoilLayers {
+	// 	sc.layers[i_Layer].vs_SoilMoisture_m3 = sm.vm_SoilMoisture[i_Layer]
+	// 	sc.layers[i_Layer].vs_SoilWaterFlux = sm.vm_WaterFlux[i_Layer]
+	// }
 	sc.vs_SurfaceWaterStorage = sm.vm_SurfaceWaterStorage
 	sc.vs_FluxAtLowerBoundary = sm.vm_FluxAtLowerBoundary
 }
@@ -340,6 +351,7 @@ soil_moisture_step :: proc(
 // C++: void monica::soilmoisture::infiltration(SoilMoisture*, double)
 infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	sc := sm.soil_column
+	scl_0 := &sc.layers[0]
 
 	sm.vm_Infiltration = 0.0
 	sm.vm_Interception = 0.0
@@ -353,7 +365,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	sm.vm_SurfaceWaterStorage += vm_WaterToInfiltrate
 
 	sm.vm_SoilMoistureDeficit =
-		(sm.vm_SoilPoreVolume[0] - sm.vm_SoilMoisture[0]) / sm.vm_SoilPoreVolume[0]
+		(scl_0.vs_Saturation - scl_0.vs_SoilMoisture_m3) / scl_0.vs_Saturation
 	vm_ReducedHydraulicConductivity :=
 		sm.vm_SaturatedHydraulicConductivity[0] * sm.vm_HydraulicConductivityRedux
 
@@ -368,9 +380,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 
 		sm.vm_Infiltration = min(
 			sm.vm_Infiltration,
-			((sm.vm_SoilPoreVolume[0] - sm.vm_SoilMoisture[0]) *
-				1000.0 *
-				sc.layers[0].vs_LayerThickness),
+			((scl_0.vs_Saturation - scl_0.vs_SoilMoisture_m3) * 1000.0 * sm.layer_thickness_m),
 		)
 
 		sm.vm_Infiltration = max(0.0, sm.vm_Infiltration)
@@ -402,14 +412,14 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		sm.vm_SurfaceWaterStorage -= sm.vm_SurfaceRunOff
 	}
 
-	sm.vm_SoilMoisture[0] += (sm.vm_Infiltration / 1000.0 / sm.vm_LayerThickness[0])
+	scl_0.vs_SoilMoisture_m3 += (sm.vm_Infiltration / 1000.0 / sm.layer_thickness_m)
 
-	sm.vm_WaterFlux[0] = sm.vm_Infiltration
+	scl_0.vs_SoilWaterFlux = sm.vm_Infiltration
 
-	if sm.vm_SoilMoisture[0] > sm.vm_FieldCapacity[0] {
+	if scl_0.vs_SoilMoisture_m3 > scl_0.vs_FieldCapacity {
 		sm.vm_GravitationalWater[0] =
-			(sm.vm_SoilMoisture[0] - sm.vm_FieldCapacity[0]) * 1000.0 * sm.vm_LayerThickness[0]
-		vm_LambdaReduced := sm.vm_Lambda[0] * sm.frost_component.vm_LambdaRedux[0]
+			(scl_0.vs_SoilMoisture_m3 - scl_0.vs_FieldCapacity) * 1000.0 * sm.layer_thickness_m
+		vm_LambdaReduced := scl_0.vs_Lambda * sm.frost_component.vm_LambdaRedux[0]
 		vm_PercolationFactor := 1 + vm_LambdaReduced * sm.vm_GravitationalWater[0]
 		sm.vm_PercolationRate[0] =
 			(sm.vm_GravitationalWater[0] * sm.vm_GravitationalWater[0] * vm_LambdaReduced) /
@@ -420,9 +430,8 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		sm.vm_GravitationalWater[0] = sm.vm_GravitationalWater[0] - sm.vm_PercolationRate[0]
 		sm.vm_GravitationalWater[0] = max(0.0, sm.vm_GravitationalWater[0])
 
-		sm.vm_SoilMoisture[0] =
-			sm.vm_FieldCapacity[0] +
-			(sm.vm_GravitationalWater[0] / 1000.0 / sm.vm_LayerThickness[0])
+		scl_0.vs_SoilMoisture_m3 =
+			scl_0.vs_FieldCapacity + (sm.vm_GravitationalWater[0] / 1000.0 / sm.layer_thickness_m)
 
 		if sm.vm_GroundwaterTableLayer <= 1 {
 			sm.vm_PercolationRate[0] = 0.0
@@ -431,16 +440,16 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		if sm.vm_GroundwaterTableLayer == 0 {
 			sm.vm_PercolationRate[0] = 0.0
 
-			if sm.vm_SoilMoisture[0] > sm.vm_SoilPoreVolume[0] {
+			if scl_0.vs_SoilMoisture_m3 > scl_0.vs_Saturation {
 				sm.vm_SurfaceRunOff +=
-					(sm.vm_SoilMoisture[0] - sm.vm_SoilPoreVolume[0]) *
+					(scl_0.vs_SoilMoisture_m3 - scl_0.vs_Saturation) *
 					1000.0 *
-					sm.vm_LayerThickness[0]
-				sm.vm_SoilMoisture[0] = sm.vm_SoilPoreVolume[0]
+					sm.layer_thickness_m
+				scl_0.vs_SoilMoisture_m3 = scl_0.vs_Saturation
 				return
 			}
 		}
-	} else if sm.vm_SoilMoisture[0] <= sm.vm_FieldCapacity[0] {
+	} else if scl_0.vs_SoilMoisture_m3 <= scl_0.vs_FieldCapacity {
 		sm.vm_PercolationRate[0] = 0.0
 		sm.vm_GravitationalWater[0] = 0.0
 	}
@@ -454,7 +463,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		fmt.eprintln("water balance wrong!")
 	}
 
-	sm.vm_WaterFlux[1] = sm.vm_PercolationRate[0]
+	sc.layers[1].vs_SoilWaterFlux = sm.vm_PercolationRate[0]
 	sm.vm_SumSurfaceRunOff += sm.vm_SurfaceRunOff
 }
 
@@ -476,38 +485,37 @@ capillary_rise :: proc(sm: ^Soil_Moisture, allocator := context.allocator) {
 		uint(sm.vm_GroundwaterTableLayer) - uint(vc_RootingDepth),
 	)
 
-	if f64(vm_GroundwaterDistance) * sm.vm_LayerThickness[0] <= 2.70 {
-		for i_Layer in 0 ..< sm.numberOfSoilLayers {
-			sm.vm_CapillaryWater[i_Layer] =
-				sm.vm_FieldCapacity[i_Layer] - sm.vm_PermanentWiltingPoint[i_Layer]
-			sm.vm_AvailableWater[i_Layer] =
-				sm.vm_SoilMoisture[i_Layer] - sm.vm_PermanentWiltingPoint[i_Layer]
+	if f64(vm_GroundwaterDistance) * sm.layer_thickness_m <= 2.70 {
+		for i in 0 ..< sm.no_of_soil_layers {
+			scl_i := &sc.layers[i]
+			sm.vm_CapillaryWater[i] = scl_i.vs_FieldCapacity - scl_i.vs_PermanentWiltingPoint
+			sm.vm_AvailableWater[i] = scl_i.vs_SoilMoisture_m3 - scl_i.vs_PermanentWiltingPoint
 
-			if sm.vm_AvailableWater[i_Layer] < 0.0 {
-				sm.vm_AvailableWater[i_Layer] = 0.0
+			if sm.vm_AvailableWater[i] < 0.0 {
+				sm.vm_AvailableWater[i] = 0.0
 			}
 
-			sm.vm_CapillaryWater70[i_Layer] = 0.7 * sm.vm_CapillaryWater[i_Layer]
+			sm.vm_CapillaryWater70[i] = 0.7 * sm.vm_CapillaryWater[i]
 		}
 
-		vm_StartLayer := min(sm.vm_GroundwaterTableLayer, sm.numberOfSoilLayers - 1)
+		start_layer_idx := min(sm.vm_GroundwaterTableLayer, sm.no_of_soil_layers - 1)
 		cr := soil.read_capillary_rise_rates(allocator)
-		for i := vm_StartLayer; i >= 0; i -= 1 {
-			vs_SoilTexture := sc.layers[i].vs_SoilTexture
-			assert(len(vs_SoilTexture) > 0)
+		for i := start_layer_idx; i >= 0; i -= 1 {
+			scl_i := &sc.layers[i]
+			assert(len(scl_i.vs_SoilTexture) > 0)
 			vm_CapillaryRiseRate := min(
 				0.01,
 				soil.capillary_rise_rates_get_rate(
 					cr,
-					vs_SoilTexture,
+					scl_i.vs_SoilTexture,
 					int(vm_GroundwaterDistance),
 				),
 			)
 			if sm.vm_AvailableWater[i] < sm.vm_CapillaryWater70[i] {
 				vm_WaterAddedFromCapillaryRise := vm_CapillaryRiseRate
-				sm.vm_SoilMoisture[i] += vm_WaterAddedFromCapillaryRise / sm.vm_LayerThickness[i]
-				for j_Layer := vm_StartLayer; j_Layer >= i; j_Layer -= 1 {
-					sm.vm_WaterFlux[j_Layer] -= vm_WaterAddedFromCapillaryRise * 1000.0
+				scl_i.vs_SoilMoisture_m3 += vm_WaterAddedFromCapillaryRise / sm.layer_thickness_m
+				for j := start_layer_idx; j >= i; j -= 1 {
+					sc.layers[j].vs_SoilWaterFlux -= vm_WaterAddedFromCapillaryRise * 1000.0
 				}
 				break
 			}
@@ -516,136 +524,146 @@ capillary_rise :: proc(sm: ^Soil_Moisture, allocator := context.allocator) {
 }
 
 // C++: void monica::soilmoisture::percolationWithGroundwater(SoilMoisture*, size_t)
-percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscillGroundwaterLayer: int) {
+percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscill_groundwater_layer: int) {
 	sm.vm_GroundwaterAdded = 0.0
+	sc := sm.soil_column
 
-	for i in 0 ..< sm.numberOfMoistureLayers - 1 {
-		indexOfLayerBelow := i + 1
-		if sm.vm_GroundwaterTableLayer > indexOfLayerBelow {
+	for i in 0 ..< sm.no_of_soil_layers {
+		ib := i + 1
+
+		soil_moisture_ib := &sm.soil_moisture_below_m3_m3
+		water_flux_ib := &sm.water_flux_below
+		field_capacity_ib := &sm.field_capacity_below_m3_m3
+		lambda_ib := &sm.lambda_below
+		pore_volume_ib := &sm.pore_volume_below_m3_m3
+
+		if ib < sm.no_of_soil_layers {
+			scl_ib := &sc.layers[ib]
+			soil_moisture_ib = &scl_ib.vs_SoilMoisture_m3
+			water_flux_ib = &scl_ib.vs_SoilWaterFlux
+			field_capacity_ib = &scl_ib.vs_FieldCapacity
+			lambda_ib = &scl_ib.vs_Lambda
+			pore_volume_ib = &scl_ib.vs_Saturation
+		}
+
+		if sm.vm_GroundwaterTableLayer > ib {
 			// well above groundwater table
-			sm.vm_SoilMoisture[indexOfLayerBelow] +=
-				sm.vm_PercolationRate[i] / 1000.0 / sm.vm_LayerThickness[i]
-			sm.vm_WaterFlux[indexOfLayerBelow] = sm.vm_PercolationRate[i]
+			soil_moisture_ib^ += sm.vm_PercolationRate[i] / 1000.0 / sm.layer_thickness_m
+			water_flux_ib^ = sm.vm_PercolationRate[i]
 
-			if sm.vm_SoilMoisture[indexOfLayerBelow] > sm.vm_FieldCapacity[indexOfLayerBelow] {
-				sm.vm_GravitationalWater[indexOfLayerBelow] =
-					(sm.vm_SoilMoisture[indexOfLayerBelow] -
-						sm.vm_FieldCapacity[indexOfLayerBelow]) *
-					1000.0 *
-					sm.vm_LayerThickness[i + 1]
+			if soil_moisture_ib^ > field_capacity_ib^ {
+				sm.vm_GravitationalWater[ib] =
+					(soil_moisture_ib^ - field_capacity_ib^) * 1000.0 * sm.layer_thickness_m
 
-				vm_LambdaReduced :=
-					sm.vm_Lambda[indexOfLayerBelow] *
-					sm.frost_component.vm_LambdaRedux[indexOfLayerBelow]
-				vm_PercolationFactor :=
-					1 + vm_LambdaReduced * sm.vm_GravitationalWater[indexOfLayerBelow]
-				sm.vm_PercolationRate[indexOfLayerBelow] =
-					(sm.vm_GravitationalWater[indexOfLayerBelow] *
-						sm.vm_GravitationalWater[indexOfLayerBelow] *
+				vm_LambdaReduced := lambda_ib^ * sm.frost_component.vm_LambdaRedux[ib]
+				vm_PercolationFactor := 1 + vm_LambdaReduced * sm.vm_GravitationalWater[ib]
+				sm.vm_PercolationRate[ib] =
+					(sm.vm_GravitationalWater[ib] *
+						sm.vm_GravitationalWater[ib] *
 						vm_LambdaReduced) /
 					vm_PercolationFactor
 
-				sm.vm_GravitationalWater[indexOfLayerBelow] =
-					sm.vm_GravitationalWater[indexOfLayerBelow] -
-					sm.vm_PercolationRate[indexOfLayerBelow]
+				sm.vm_GravitationalWater[ib] =
+					sm.vm_GravitationalWater[ib] - sm.vm_PercolationRate[ib]
 
-				if sm.vm_GravitationalWater[indexOfLayerBelow] < 0 {
-					sm.vm_GravitationalWater[indexOfLayerBelow] = 0.0
+				if sm.vm_GravitationalWater[ib] < 0 {
+					sm.vm_GravitationalWater[ib] = 0.0
 				}
 
-				sm.vm_SoilMoisture[indexOfLayerBelow] =
-					sm.vm_FieldCapacity[indexOfLayerBelow] +
-					(sm.vm_GravitationalWater[indexOfLayerBelow] /
-							1000.0 /
-							sm.vm_LayerThickness[indexOfLayerBelow])
+				soil_moisture_ib^ =
+					field_capacity_ib^ +
+					(sm.vm_GravitationalWater[ib] / 1000.0 / sm.layer_thickness_m)
 
-				if sm.vm_SoilMoisture[indexOfLayerBelow] >
-				   sm.vm_SoilPoreVolume[indexOfLayerBelow] {
-					sm.vm_GravitationalWater[indexOfLayerBelow] =
-						(sm.vm_SoilMoisture[indexOfLayerBelow] -
-							sm.vm_SoilPoreVolume[indexOfLayerBelow]) *
-						1000.0 *
-						sm.vm_LayerThickness[indexOfLayerBelow]
-					sm.vm_SoilMoisture[indexOfLayerBelow] = sm.vm_SoilPoreVolume[indexOfLayerBelow]
-					sm.vm_PercolationRate[indexOfLayerBelow] +=
-						sm.vm_GravitationalWater[indexOfLayerBelow]
+				if soil_moisture_ib^ > pore_volume_ib^ {
+					sm.vm_GravitationalWater[ib] =
+						(soil_moisture_ib^ - pore_volume_ib^) * 1000.0 * sm.layer_thickness_m
+					soil_moisture_ib^ = pore_volume_ib^
+					sm.vm_PercolationRate[ib] += sm.vm_GravitationalWater[ib]
 				}
 			} else {
-				sm.vm_PercolationRate[indexOfLayerBelow] = 0.0
-				sm.vm_GravitationalWater[indexOfLayerBelow] = 0.0
+				sm.vm_PercolationRate[ib] = 0.0
+				sm.vm_GravitationalWater[ib] = 0.0
 			}
-		} else if sm.vm_GroundwaterTableLayer == indexOfLayerBelow {
+		} else if sm.vm_GroundwaterTableLayer == ib {
 			// when the layer directly above groundwater table is reached
-			if sm.vm_GroundwaterTableLayer >= oscillGroundwaterLayer {
-				sm.vm_SoilMoisture[indexOfLayerBelow] +=
-					sm.vm_PercolationRate[i] / 1000.0 / sm.vm_LayerThickness[i]
-				sm.vm_PercolationRate[indexOfLayerBelow] = sm.vm_GroundwaterDischarge
-				sm.vm_WaterFlux[indexOfLayerBelow] = sm.vm_PercolationRate[i]
+			if sm.vm_GroundwaterTableLayer >= oscill_groundwater_layer {
+				soil_moisture_ib^ += sm.vm_PercolationRate[i] / 1000.0 / sm.layer_thickness_m
+				sm.vm_PercolationRate[ib] = sm.vm_GroundwaterDischarge
+				water_flux_ib^ = sm.vm_PercolationRate[i]
 			} else {
-				sm.vm_SoilMoisture[indexOfLayerBelow] +=
+				soil_moisture_ib^ +=
 					(sm.vm_PercolationRate[i] - sm.vm_GroundwaterDischarge) /
 					1000.0 /
-					sm.vm_LayerThickness[i]
-				sm.vm_PercolationRate[indexOfLayerBelow] = sm.vm_GroundwaterDischarge
-				sm.vm_WaterFlux[indexOfLayerBelow] = sm.vm_GroundwaterDischarge
+					sm.layer_thickness_m
+				sm.vm_PercolationRate[ib] = sm.vm_GroundwaterDischarge
+				water_flux_ib^ = sm.vm_GroundwaterDischarge
 			}
 
-			if sm.vm_SoilMoisture[indexOfLayerBelow] >= sm.vm_SoilPoreVolume[indexOfLayerBelow] {
+			if soil_moisture_ib^ >= pore_volume_ib^ {
 				sm.vm_GroundwaterAdded =
-					(sm.vm_SoilMoisture[indexOfLayerBelow] -
-						sm.vm_SoilPoreVolume[indexOfLayerBelow]) *
-					1000.0 *
-					sm.vm_LayerThickness[indexOfLayerBelow]
+					(soil_moisture_ib^ - pore_volume_ib^) * 1000.0 * sm.layer_thickness_m
 
-				sm.vm_SoilMoisture[indexOfLayerBelow] = sm.vm_SoilPoreVolume[indexOfLayerBelow]
+				soil_moisture_ib^ = pore_volume_ib^
 
 				if sm.vm_GroundwaterAdded <= 0.0 {
 					sm.vm_GroundwaterAdded = 0.0
 				}
 			}
-		} else if sm.vm_GroundwaterTableLayer < indexOfLayerBelow {
+		} else if sm.vm_GroundwaterTableLayer < ib {
 			// when the groundwater table is reached
-			sm.vm_SoilMoisture[indexOfLayerBelow] = sm.vm_SoilPoreVolume[indexOfLayerBelow]
+			soil_moisture_ib^ = pore_volume_ib^
 
-			if sm.vm_GroundwaterTableLayer >= oscillGroundwaterLayer {
-				sm.vm_PercolationRate[indexOfLayerBelow] = sm.vm_PercolationRate[i]
-				sm.vm_WaterFlux[i] = sm.vm_PercolationRate[indexOfLayerBelow]
+			if sm.vm_GroundwaterTableLayer >= oscill_groundwater_layer {
+				sm.vm_PercolationRate[ib] = sm.vm_PercolationRate[i]
+				sc.layers[i].vs_SoilWaterFlux = sm.vm_PercolationRate[ib]
 			} else {
-				sm.vm_PercolationRate[indexOfLayerBelow] = sm.vm_GroundwaterDischarge
-				sm.vm_WaterFlux[i] = sm.vm_GroundwaterDischarge
+				sm.vm_PercolationRate[ib] = sm.vm_GroundwaterDischarge
+				sc.layers[i].vs_SoilWaterFlux = sm.vm_GroundwaterDischarge
 			}
 		}
 	}
 
-	sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.leaching_depth_layer_idx]
+	if sm.leaching_depth_layer_idx == sm.no_of_soil_layers {
+		sm.vm_FluxAtLowerBoundary = sm.water_flux_below
+	} else {
+		sm.vm_FluxAtLowerBoundary = sc.layers[sm.leaching_depth_layer_idx].vs_SoilWaterFlux
+	}
 }
 
 // C++: void monica::soilmoisture::groundwaterReplenishment(SoilMoisture*)
 groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
-	vm_StartLayer := sm.vm_GroundwaterTableLayer
-
-	if vm_StartLayer > sm.numberOfMoistureLayers - 2 {
-		vm_StartLayer = sm.numberOfMoistureLayers - 2
+	start_layer := sm.vm_GroundwaterTableLayer
+	if start_layer > sm.no_of_soil_layers - 1 {
+		start_layer = sm.no_of_soil_layers - 1
 	}
 
-	for i := vm_StartLayer; i >= 0; i -= 1 {
-		indexOfLayerBelow := i + 1
-		sm.vm_SoilMoisture[i] +=
-			sm.vm_GroundwaterAdded / 1000.0 / sm.vm_LayerThickness[indexOfLayerBelow]
+	sc := sm.soil_column
 
-		if i == vm_StartLayer {
+	for i := start_layer; i >= 0; i -= 1 {
+		ib := i + 1
+
+		soil_moisture_i := &sc.layers[i].vs_SoilMoisture_m3
+		pore_volume_i := &sc.layers[i].vs_Saturation
+
+		water_flux_ib := &sm.water_flux_below
+
+		if ib < sm.no_of_soil_layers {
+			water_flux_ib = &sc.layers[ib].vs_SoilWaterFlux
+		}
+
+		soil_moisture_i^ += sm.vm_GroundwaterAdded / 1000.0 / sm.layer_thickness_m
+
+		if i == start_layer {
 			sm.vm_PercolationRate[i] = sm.vm_GroundwaterDischarge
 		} else {
 			sm.vm_PercolationRate[i] -= sm.vm_GroundwaterAdded
-			sm.vm_WaterFlux[indexOfLayerBelow] = sm.vm_PercolationRate[i]
+			water_flux_ib^ = sm.vm_PercolationRate[i]
 		}
 
-		if sm.vm_SoilMoisture[i] > sm.vm_SoilPoreVolume[i] {
+		if soil_moisture_i^ > pore_volume_i^ {
 			sm.vm_GroundwaterAdded =
-				(sm.vm_SoilMoisture[i] - sm.vm_SoilPoreVolume[i]) *
-				1000.0 *
-				sm.vm_LayerThickness[indexOfLayerBelow]
-			sm.vm_SoilMoisture[i] = sm.vm_SoilPoreVolume[i]
+				(soil_moisture_i^ - pore_volume_i^) * 1000.0 * sm.layer_thickness_m
+			soil_moisture_i^ = pore_volume_i^
 			sm.vm_GroundwaterTableLayer -= 1 // Groundwater table rises
 
 			if i == 0 && sm.vm_GroundwaterTableLayer == 0 {
@@ -662,83 +680,97 @@ groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
 		if sm.vm_GroundwaterTableLayer - 1 < 0 {
 			sm.vm_FluxAtLowerBoundary = 0.0
 		} else {
-			sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.vm_GroundwaterTableLayer - 1]
+			if sm.vm_GroundwaterTableLayer - 1 == sm.no_of_soil_layers {
+				sm.vm_FluxAtLowerBoundary = sm.water_flux_below
+			} else {
+				sm.vm_FluxAtLowerBoundary =
+					sc.layers[sm.vm_GroundwaterTableLayer - 1].vs_SoilWaterFlux
+			}
 		}
 	} else {
-		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.leaching_depth_layer_idx]
+		if sm.leaching_depth_layer_idx == sm.no_of_soil_layers {
+			sm.vm_FluxAtLowerBoundary = sm.water_flux_below
+		} else {
+			sm.vm_FluxAtLowerBoundary = sc.layers[sm.leaching_depth_layer_idx].vs_SoilWaterFlux
+		}
 	}
 }
 
 // C++: void monica::soilmoisture::percolationWithoutGroundwater(SoilMoisture*)
 percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
 	max_percolation_rate := sm.mod_params.pm_MaxPercolationRate
-	for i in 0 ..< sm.numberOfMoistureLayers - 1 {
-		indexOfLayerBelow := i + 1
-		sm.vm_SoilMoisture[indexOfLayerBelow] +=
-			sm.vm_PercolationRate[i] / 1000.0 / sm.vm_LayerThickness[i]
+	sc := sm.soil_column
 
-		if sm.vm_SoilMoisture[indexOfLayerBelow] > sm.vm_FieldCapacity[indexOfLayerBelow] {
-			// too much water for this layer so some water is released to layers below
-			sm.vm_GravitationalWater[indexOfLayerBelow] =
-				(sm.vm_SoilMoisture[indexOfLayerBelow] - sm.vm_FieldCapacity[indexOfLayerBelow]) *
-				1000.0 *
-				sm.vm_LayerThickness[0]
-			vm_LambdaReduced :=
-				sm.vm_Lambda[indexOfLayerBelow] *
-				sm.frost_component.vm_LambdaRedux[indexOfLayerBelow]
-			vm_PercolationFactor :=
-				1.0 + (vm_LambdaReduced * sm.vm_GravitationalWater[indexOfLayerBelow])
-			sm.vm_PercolationRate[indexOfLayerBelow] =
-				(sm.vm_GravitationalWater[indexOfLayerBelow] *
-					sm.vm_GravitationalWater[indexOfLayerBelow] *
-					vm_LambdaReduced) /
-				vm_PercolationFactor
+	for i in 0 ..< sm.no_of_soil_layers {
+		ib := i + 1
 
-			if sm.vm_PercolationRate[indexOfLayerBelow] > max_percolation_rate {
-				sm.vm_PercolationRate[indexOfLayerBelow] = max_percolation_rate
-			}
+		soil_moisture_ib := &sm.soil_moisture_below_m3_m3
+		water_flux_ib := &sm.water_flux_below
+		field_capacity_ib := &sm.field_capacity_below_m3_m3
+		lambda_ib := &sm.lambda_below
 
-			sm.vm_GravitationalWater[indexOfLayerBelow] =
-				sm.vm_GravitationalWater[indexOfLayerBelow] -
-				sm.vm_PercolationRate[indexOfLayerBelow]
-
-			if sm.vm_GravitationalWater[indexOfLayerBelow] < 0.0 {
-				sm.vm_GravitationalWater[indexOfLayerBelow] = 0.0
-			}
-
-			sm.vm_SoilMoisture[indexOfLayerBelow] =
-				sm.vm_FieldCapacity[indexOfLayerBelow] +
-				(sm.vm_GravitationalWater[indexOfLayerBelow] /
-						1000.0 /
-						sm.vm_LayerThickness[indexOfLayerBelow])
-		} else {
-			// no water will be released in other layers
-			sm.vm_PercolationRate[indexOfLayerBelow] = 0.0
-			sm.vm_GravitationalWater[indexOfLayerBelow] = 0.0
+		if ib < sm.no_of_soil_layers {
+			scl_ib := &sc.layers[ib]
+			soil_moisture_ib = &scl_ib.vs_SoilMoisture_m3
+			water_flux_ib = &scl_ib.vs_SoilWaterFlux
+			field_capacity_ib = &scl_ib.vs_FieldCapacity
+			lambda_ib = &scl_ib.vs_Lambda
 		}
 
-		sm.vm_WaterFlux[indexOfLayerBelow] = sm.vm_PercolationRate[i]
-		sm.vm_GroundwaterAdded = sm.vm_PercolationRate[indexOfLayerBelow]
+		soil_moisture_ib^ += sm.vm_PercolationRate[i] / 1000.0 / sm.layer_thickness_m
+
+		if soil_moisture_ib^ > field_capacity_ib^ {
+			// too much water for this layer so some water is released to layers below
+			sm.vm_GravitationalWater[ib] =
+				(soil_moisture_ib^ - field_capacity_ib^) * 1000.0 * sm.layer_thickness_m
+			vm_LambdaReduced := lambda_ib^ * sm.frost_component.vm_LambdaRedux[ib]
+			vm_PercolationFactor := 1.0 + (vm_LambdaReduced * sm.vm_GravitationalWater[ib])
+			sm.vm_PercolationRate[ib] =
+				(sm.vm_GravitationalWater[ib] * sm.vm_GravitationalWater[ib] * vm_LambdaReduced) /
+				vm_PercolationFactor
+
+			if sm.vm_PercolationRate[ib] > max_percolation_rate {
+				sm.vm_PercolationRate[ib] = max_percolation_rate
+			}
+
+			sm.vm_GravitationalWater[ib] = sm.vm_GravitationalWater[ib] - sm.vm_PercolationRate[ib]
+
+			if sm.vm_GravitationalWater[ib] < 0.0 {
+				sm.vm_GravitationalWater[ib] = 0.0
+			}
+
+			soil_moisture_ib^ =
+				field_capacity_ib^ + (sm.vm_GravitationalWater[ib] / 1000.0 / sm.layer_thickness_m)
+		} else {
+			// no water will be released in other layers
+			sm.vm_PercolationRate[ib] = 0.0
+			sm.vm_GravitationalWater[ib] = 0.0
+		}
+
+		water_flux_ib^ = sm.vm_PercolationRate[i]
+		sm.vm_GroundwaterAdded = sm.vm_PercolationRate[ib]
 	}
 
-	if sm.leaching_depth_layer_idx > 0 &&
-	   sm.leaching_depth_layer_idx < sm.numberOfMoistureLayers - 1 {
-		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.leaching_depth_layer_idx]
+	if sm.leaching_depth_layer_idx > 0 && sm.leaching_depth_layer_idx < sm.no_of_soil_layers {
+		sm.vm_FluxAtLowerBoundary = sc.layers[sm.leaching_depth_layer_idx].vs_SoilWaterFlux
 	} else {
-		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.numberOfMoistureLayers - 2]
+		sm.vm_FluxAtLowerBoundary = sc.layers[sm.no_of_soil_layers - 1].vs_SoilWaterFlux
 	}
 }
 
 // C++: void monica::soilmoisture::backwaterReplenishment(SoilMoisture*)
 backwater_replenishment :: proc(sm: ^Soil_Moisture) {
-	vm_StartLayer := sm.numberOfMoistureLayers - 1
-	vm_BackwaterTable := sm.numberOfMoistureLayers - 1
+	start_layer_idx := sm.no_of_soil_layers
+	vm_BackwaterTable := sm.no_of_soil_layers
 	vm_BackwaterAdded := 0.0
 
+	sc := sm.soil_column
+
 	// find first layer from top where the water content exceeds pore volume
-	for i in 0 ..< sm.numberOfMoistureLayers - 1 {
-		if sm.vm_SoilMoisture[i] > sm.vm_SoilPoreVolume[i] {
-			vm_StartLayer = i
+	for i in 0 ..< sm.no_of_soil_layers {
+		scl_i := &sc.layers[i]
+		if scl_i.vs_SoilMoisture_m3 > scl_i.vs_Saturation {
+			start_layer_idx = i
 			vm_BackwaterTable = i
 		}
 	}
@@ -749,18 +781,25 @@ backwater_replenishment :: proc(sm: ^Soil_Moisture) {
 	}
 
 	// Backwater replenishment upwards
-	for i := vm_StartLayer; i >= 0; i -= 1 {
-		sm.vm_SoilMoisture[i] += vm_BackwaterAdded / 1000.0 / sm.vm_LayerThickness[i]
-		if i > 0 {
-			sm.vm_WaterFlux[i - 1] -= vm_BackwaterAdded
+	for i := start_layer_idx; i >= 0; i -= 1 {
+
+		soil_moisture_i := &sm.soil_moisture_below_m3_m3
+		pore_volume_i := &sm.pore_volume_below_m3_m3
+
+		if i < sm.no_of_soil_layers {
+			scl_i := &sc.layers[i]
+			soil_moisture_i = &scl_i.vs_SoilMoisture_m3
+			pore_volume_i = &scl_i.vs_Saturation
 		}
 
-		if sm.vm_SoilMoisture[i] > sm.vm_SoilPoreVolume[i] {
-			vm_BackwaterAdded =
-				(sm.vm_SoilMoisture[i] - sm.vm_SoilPoreVolume[i]) *
-				1000.0 *
-				sm.vm_LayerThickness[i]
-			sm.vm_SoilMoisture[i] = sm.vm_SoilPoreVolume[i]
+		soil_moisture_i^ += vm_BackwaterAdded / 1000.0 / sm.layer_thickness_m
+		if i > 0 {
+			sc.layers[i - 1].vs_SoilWaterFlux -= vm_BackwaterAdded
+		}
+
+		if soil_moisture_i^ > pore_volume_i^ {
+			vm_BackwaterAdded = (soil_moisture_i^ - pore_volume_i^) * 1000.0 * sm.layer_thickness_m
+			soil_moisture_i^ = pore_volume_i^
 			vm_BackwaterTable -= 1 // Backwater table rises
 
 			if i == 0 && vm_BackwaterTable == 0 {
@@ -795,9 +834,10 @@ dual_kc_precomputation :: proc(
 	Kcb := sm.crop_module.vc_KcbFactor
 
 	// --- Calculate Depletion first (FAO-56 §8.3) to inform memory logic ---
-	FC0 := sm.vm_FieldCapacity[0]
-	WP0 := sm.vm_PermanentWiltingPoint[0]
-	SWC0 := sm.vm_SoilMoisture[0]
+	scl_0 := &sm.soil_column.layers[0]
+	FC0 := scl_0.vs_FieldCapacity
+	WP0 := scl_0.vs_PermanentWiltingPoint
+	SWC0 := scl_0.vs_SoilMoisture_m3
 	Ze := 0.1 // evaporation depth [m], FAO-56 typical top layer
 	TEW := 1000.0 * (FC0 - 0.5 * WP0) * Ze
 
@@ -809,7 +849,7 @@ dual_kc_precomputation :: proc(
 	// match on real data and REW always falls through to the FC0-based
 	// fallback below. Reproduced as-is, not fixed.
 	REW := 0.0
-	ka5Texture := sm.soil_column.layers[0].vs_SoilTexture
+	ka5Texture := scl_0.vs_SoilTexture
 
 	switch {
 	case ka5Texture == "Ss":
@@ -1069,13 +1109,17 @@ evapotranspiration :: proc(
 				sm.vm_Ke = 0.0
 			}
 
-			for i_Layer in 0 ..< sm.numberOfSoilLayers {
+			sc := sm.soil_column
+
+			for i_Layer in 0 ..< sm.no_of_soil_layers {
 				vm_EReducer_1 = get_e_reducer_1(
 					sm,
 					i_Layer,
 					vc_PercentageSoilCoverage,
 					vm_PotentialEvapotranspiration,
 				)
+
+				scl_i := &sc.layers[i_Layer]
 
 				if f64(i_Layer) >= pm_MaximumEvaporationImpactDepth {
 					// layer is too deep for evaporation
@@ -1085,12 +1129,12 @@ evapotranspiration :: proc(
 						i_Layer + 1,
 						pm_MaximumEvaporationImpactDepth,
 						pm_EvaporationZeta,
-						sm.vm_LayerThickness[i_Layer],
+						sm.layer_thickness_m,
 					)
 				}
 
 				if i_Layer > 0 {
-					if sm.vm_SoilMoisture[i_Layer] < sm.vm_SoilMoisture[i_Layer - 1] {
+					if scl_i.vs_SoilMoisture_m3 < sc.layers[i_Layer - 1].vs_SoilMoisture_m3 {
 						vm_EReducer_3 = 0.1
 					} else {
 						vm_EReducer_3 = 1.0
@@ -1144,12 +1188,12 @@ evapotranspiration :: proc(
 
 				sm.vm_Evapotranspiration[i_Layer] =
 					sm.vm_Evaporation[i_Layer] + sm.vm_Transpiration[i_Layer]
-				sm.vm_SoilMoisture[i_Layer] -=
-					(sm.vm_Evapotranspiration[i_Layer] / 1000.0 / sm.vm_LayerThickness[i_Layer])
+				scl_i.vs_SoilMoisture_m3 -=
+					(sm.vm_Evapotranspiration[i_Layer] / 1000.0 / sm.layer_thickness_m)
 
 				// Generelle Begrenzung des Evaporationsentzuges
-				if sm.vm_SoilMoisture[i_Layer] < 0.01 {
-					sm.vm_SoilMoisture[i_Layer] = 0.01
+				if scl_i.vs_SoilMoisture_m3 < 0.01 {
+					scl_i.vs_SoilMoisture_m3 = 0.01
 				}
 
 				sm.vm_ActualTranspiration += sm.vm_Transpiration[i_Layer]
@@ -1427,7 +1471,7 @@ mean_water_content_to_depth :: proc(sm: ^Soil_Moisture, depth_m: f64) -> f64 {
 	sum := 0.0
 	count := 0
 
-	for i in 0 ..< sm.numberOfSoilLayers {
+	for i in 0 ..< sm.no_of_soil_layers {
 		count += 1
 		smm3 := sm.soil_column.layers[i].vs_SoilMoisture_m3
 		fc := sm.soil_column.layers[i].vs_FieldCapacity
@@ -1447,7 +1491,7 @@ mean_water_content :: proc(sm: ^Soil_Moisture, layer, number_of_layers: int) -> 
 	sum := 0.0
 	count := 0
 
-	if layer + number_of_layers > sm.numberOfSoilLayers {
+	if layer + number_of_layers > sm.no_of_soil_layers {
 		return -1
 	}
 
