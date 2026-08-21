@@ -595,7 +595,7 @@ of_kc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_recharge :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilMoisture.vm_FluxAtLowerBoundary, 3))
+	return jx.f(tl.round(model.soilColumn.vs_FluxAtLowerBoundary, 3))
 }
 
 @(private)

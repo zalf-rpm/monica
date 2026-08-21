@@ -153,7 +153,7 @@ g_alias_table := []Alias_Entry {
 	{"PotTraDef", {"currentCropModule.vc_PotentialTranspirationDeficit", 2, .NONE, "0;1"}},
 	{"Precip", {"climateData.#last.precip", 4, .NONE, "mm"}},
 	{"Pwp", {"soilColumn.layers.vs_PermanentWiltingPoint", 4, .NONE, "m3 m-3"}},
-	{"Recharge", {"soilMoisture.vm_FluxAtLowerBoundary", 3, .NONE, "mm"}},
+	{"Recharge", {"soilColumn.vs_FluxAtLowerBoundary", 3, .NONE, "mm"}},
 	{"RelDev", {"currentCropModule.vc_RelativeTotalDevelopment", 2, .NONE, "0;1"}},
 	{"Relhumid", {"climateData.#last.relhumid", 4, .NONE, ""}},
 	{"residueCutBiomass", {"currentCropModule.vc_residueCutBiomass", 1, .NONE, "kgDM ha-1"}},
