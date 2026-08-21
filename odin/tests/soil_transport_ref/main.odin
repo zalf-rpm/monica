@@ -7,19 +7,19 @@
 // Run odin/tests/cpp_ref/run_soil_transport.sh to build both and diff them.
 package soil_transport_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:bufio"
 import "core:fmt"
 import "core:io"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 main :: proc() {
 	args := os.args
@@ -100,7 +100,7 @@ main :: proc() {
 		cpp.simulationParameters.p_LayerThickness,
 		a,
 	)
-	sm.cropModule = nil // bare soil - see the file comment
+	sm.crop_module = nil // bare soil - see the file comment
 	st := core.make_soil_transport(
 		cpp.userSoilTransportParameters,
 		&sc,

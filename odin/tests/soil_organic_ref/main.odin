@@ -7,19 +7,19 @@
 // Run odin/tests/cpp_ref/run_soil_organic.sh to build both and diff them.
 package soil_organic_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:bufio"
 import "core:fmt"
 import "core:io"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 main :: proc() {
 	args := os.args
@@ -105,7 +105,7 @@ main :: proc() {
 		cpp.simulationParameters.p_LayerThickness,
 		a,
 	)
-	sm.cropModule = nil // bare soil - see the file comment
+	sm.crop_module = nil // bare soil - see the file comment
 	so := core.make_soil_organic(&sc, cpp.userSoilOrganicParameters)
 	so.cropModule = nil
 
@@ -159,7 +159,15 @@ main :: proc() {
 		// stepped today yet) - matching the real monicamodel::generalStep order
 		// and st->monica->soilMoisture->... reads (see soil_temperature.odin's
 		// package comment).
-		core.soil_temperature_step(&st, tmin, tmax, globrad, 0.0, sm.snowComponent.vm_SnowDepth, sm.frostComponent.vm_TemperatureUnderSnow)
+		core.soil_temperature_step(
+			&st,
+			tmin,
+			tmax,
+			globrad,
+			0.0,
+			sm.snow_component.vm_SnowDepth,
+			sm.frost_component.vm_TemperatureUnderSnow,
+		)
 		core.soil_moisture_step(
 			&sm,
 			vs_GroundwaterDepth,

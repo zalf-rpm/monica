@@ -9,14 +9,14 @@
 // makeWorkstep) - the others have no caller anywhere in this codebase.
 package run
 
-import "core:strings"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import core "../core"
 import mio "../io"
 import p "../params"
-import d "../../support/date"
-import clim "../../support/climate"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
+import "core:strings"
 
 // ---------------------------------------------------------------------------
 // Sowing (src/worksteps/sowing.{h,cpp})
@@ -56,7 +56,10 @@ sowing_merge :: proc(s: ^Sowing_Data, j: jx.Value, allocator := context.allocato
 				tl.append_error(
 					&res,
 					strings.concatenate(
-						{"Couldn't find 'species' or 'cultivar' key in JSON object 'cropParams':\n", jx.dump(jc, allocator)},
+						{
+							"Couldn't find 'species' or 'cultivar' key in JSON object 'cropParams':\n",
+							jx.dump(jc, allocator),
+						},
 						allocator,
 					),
 				)
@@ -72,7 +75,10 @@ sowing_merge :: proc(s: ^Sowing_Data, j: jx.Value, allocator := context.allocato
 		} else {
 			tl.append_error(
 				&res,
-				strings.concatenate({"Couldn't find 'cropParams' key in JSON object:\n", jx.dump(jc, allocator)}, allocator),
+				strings.concatenate(
+					{"Couldn't find 'cropParams' key in JSON object:\n", jx.dump(jc, allocator)},
+					allocator,
+				),
 			)
 			s.isValid = false
 		}
@@ -93,7 +99,13 @@ sowing_merge :: proc(s: ^Sowing_Data, j: jx.Value, allocator := context.allocato
 		} else {
 			tl.append_error(
 				&res,
-				strings.concatenate({"Couldn't find 'residueParams' key in JSON object:\n", jx.dump(jc, allocator)}, allocator),
+				strings.concatenate(
+					{
+						"Couldn't find 'residueParams' key in JSON object:\n",
+						jx.dump(jc, allocator),
+					},
+					allocator,
+				),
 			)
 			s.isValid = false
 		}
@@ -154,7 +166,7 @@ sowing_apply :: proc(
 
 		core.soil_transport_put_crop(&model.soilTransport, model.currentCropModule)
 		core.put_crop(&model.soilColumn, model.currentCropModule)
-		model.soilMoisture.cropModule = model.currentCropModule
+		model.soilMoisture.crop_module = model.currentCropModule
 		model.soilOrganic.cropModule = model.currentCropModule
 
 		if model.simPs.p_UseNMinMineralFertilisingMethod &&
@@ -185,7 +197,10 @@ sowing_apply :: proc(
 // C++: Workstep monica::makeSowingWorkstep(json11::Json)
 make_sowing_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
 	ws := new_workstep(allocator)
-	ws.data = Sowing_Data{plantDensity = -1, initialKcb = 0.15}
+	ws.data = Sowing_Data {
+		plantDensity = -1,
+		initialKcb   = 0.15,
+	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, sowing_merge(&ws.data.(Sowing_Data), j, allocator))
 	ws.errors = res
@@ -197,7 +212,11 @@ make_sowing_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Wo
 // ---------------------------------------------------------------------------
 
 // C++: Errors workstep::merge(TransplantData*, json11::Json)
-transplant_merge :: proc(t: ^Transplant_Data, j: jx.Value, allocator := context.allocator) -> tl.Errors {
+transplant_merge :: proc(
+	t: ^Transplant_Data,
+	j: jx.Value,
+	allocator := context.allocator,
+) -> tl.Errors {
 	// Mirrors Sowing's own merge (this is the only place that touches the
 	// common Workstep fields, via mergeCommon, done once by the make*Workstep
 	// factory - not repeated here).
@@ -258,7 +277,10 @@ transplant_apply :: proc(
 // C++: Workstep monica::makeTransplantWorkstep(json11::Json)
 make_transplant_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
 	ws := new_workstep(allocator)
-	ws.data = Transplant_Data{sowing = {plantDensity = -1, initialKcb = 0.15}, initialStage = 2}
+	ws.data = Transplant_Data {
+		sowing = {plantDensity = -1, initialKcb = 0.15},
+		initialStage = 2,
+	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, transplant_merge(&ws.data.(Transplant_Data), j, allocator))
 	ws.errors = res
@@ -272,7 +294,11 @@ make_transplant_workstep :: proc(j: jx.Value, allocator := context.allocator) ->
 // C++: bool isSoilTemperatureOk(const vector<double>&, int, double) -
 //        anonymous-namespace helper in automatic-sowing.cpp
 @(private)
-is_soil_temperature_ok :: proc(soilTemps: [dynamic]f64, windowDays: int, targetAvgSoilTemp: f64) -> bool {
+is_soil_temperature_ok :: proc(
+	soilTemps: [dynamic]f64,
+	windowDays: int,
+	targetAvgSoilTemp: f64,
+) -> bool {
 	if len(soilTemps) == 0 {
 		return false
 	}
@@ -286,7 +312,11 @@ is_soil_temperature_ok :: proc(soilTemps: [dynamic]f64, windowDays: int, targetA
 }
 
 // C++: Errors workstep::merge(AutomaticSowingData*, json11::Json)
-automatic_sowing_merge :: proc(as: ^Automatic_Sowing_Data, j: jx.Value, allocator := context.allocator) -> tl.Errors {
+automatic_sowing_merge :: proc(
+	as: ^Automatic_Sowing_Data,
+	j: jx.Value,
+	allocator := context.allocator,
+) -> tl.Errors {
 	res := sowing_merge(&as.sowing, j, allocator)
 
 	jx.set_iso_date_value(&as.earliestDate, j, "earliest-date")
@@ -306,7 +336,9 @@ automatic_sowing_merge :: proc(as: ^Automatic_Sowing_Data, j: jx.Value, allocato
 		jx.set_int_value(&as.daysInSoilTempWindow, avgSoilTemp, "days")
 		jx.set_double_value(&as.sowingIfAboveAvgSoilTemp, avgSoilTemp, "Tavg")
 		as.checkForSoilTemperature =
-			as.soilDepthForAveraging > 0 && as.daysInSoilTempWindow > 0 && as.sowingIfAboveAvgSoilTemp > 0
+			as.soilDepthForAveraging > 0 &&
+			as.daysInSoilTempWindow > 0 &&
+			as.sowingIfAboveAvgSoilTemp > 0
 	}
 
 	return res
@@ -393,7 +425,11 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 
 	// check soil temperature if requested
 	if as.checkForSoilTemperature {
-		if !is_soil_temperature_ok(as.getAvgSoilTemps(), as.daysInSoilTempWindow, as.sowingIfAboveAvgSoilTemp) {
+		if !is_soil_temperature_ok(
+			as.getAvgSoilTemps(),
+			as.daysInSoilTempWindow,
+			as.sowingIfAboveAvgSoilTemp,
+		) {
 			return false
 		}
 	}
@@ -511,7 +547,11 @@ harvest_merge :: proc(h: ^Harvest_Data, j: jx.Value, allocator := context.alloca
 	h.incorporateIntoLayerNo = max(1, h.incorporateIntoLayerNo)
 	jx.set_bool_value(&h.exported, j, "exported")
 	jx.set_bool_value(&h.optCarbMgmtData.optCarbonConservation, j, "opt-carbon-conservation")
-	jx.set_double_value(&h.optCarbMgmtData.cropImpactOnHumusBalance, j, "crop-impact-on-humus-balance")
+	jx.set_double_value(
+		&h.optCarbMgmtData.cropImpactOnHumusBalance,
+		j,
+		"crop-impact-on-humus-balance",
+	)
 	cu := jx.string_value(j, "crop-usage")
 	if cu == "green-manure" {
 		h.optCarbMgmtData.cropUsage = .Green_Manure
@@ -520,12 +560,19 @@ harvest_merge :: proc(h: ^Harvest_Data, j: jx.Value, allocator := context.alloca
 	}
 	jx.set_double_value(&h.optCarbMgmtData.residueHeq, j, "residue-heq")
 	jx.set_double_value(&h.optCarbMgmtData.organicFertilizerHeq, j, "organic-fertilizer-heq")
-	jx.set_double_value(&h.optCarbMgmtData.maxResidueRecoverFraction, j, "max-residue-recover-fraction")
+	jx.set_double_value(
+		&h.optCarbMgmtData.maxResidueRecoverFraction,
+		j,
+		"max-residue-recover-fraction",
+	)
 
 	for organName in ([]string{"leaf", "shoot", "fruit", "struct", "sugar"}) {
 		for k, v in jx.object_items(j) {
 			if tl.to_lower(k, allocator) == organName && jx.is_object(v) {
-				sv := core.Harvest_Spec_Value{exportPercentage = 100.0, incorporate = true}
+				sv := core.Harvest_Spec_Value {
+					exportPercentage = 100.0,
+					incorporate      = true,
+				}
 				jx.set_double_value(&sv.exportPercentage, v, "export")
 				if h.spec.organ2specVal == nil {
 					h.spec.organ2specVal = make(map[int]core.Harvest_Spec_Value, 0, allocator)
@@ -614,18 +661,25 @@ automatic_harvest_apply :: proc(
 }
 
 // C++: bool workstep::condition(AutomaticHarvestData*, MonicaModel*)
-automatic_harvest_condition :: proc(ah: ^Automatic_Harvest_Data, model: ^core.Monica_Model) -> bool {
+automatic_harvest_condition :: proc(
+	ah: ^Automatic_Harvest_Data,
+	model: ^core.Monica_Model,
+) -> bool {
 	conditionMet := false
 
 	cg := model.currentCropModule
 	// got a crop and not yet harvested
 	if cg != nil && !ah.cropHarvested {
 		conditionMet =
-			d.ge(model.currentStepDate, ah.absLatestDate) || // harvest after or at latest date
-			(ah.harvestTime == "maturity" &&
-				core.maturity_reached(cg) && // has maturity been reached
-				is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) && // check soil moisture
-				is_precipitation_ok(model.climateData, ah.max3dayPrecipSum, ah.maxCurrentDayPrecipSum)) // check precipitation
+			d.ge(model.currentStepDate, ah.absLatestDate) ||
+			(ah.harvestTime == "maturity" &&// harvest after or at latest date
+					core.maturity_reached(cg) &&
+					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&// has maturity been reached
+					is_precipitation_ok(// check soil moisture
+						model.climateData,
+						ah.max3dayPrecipSum,
+						ah.maxCurrentDayPrecipSum,
+					)) // check precipitation
 	}
 
 	return conditionMet
@@ -654,19 +708,25 @@ automatic_harvest_reinit :: proc(
 make_automatic_harvest_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
 	ws := new_workstep(allocator)
 	ws.data = Automatic_Harvest_Data {
-		harvestTime = "maturity",
-		maxPercentASW = 999,
-		max3dayPrecipSum = 9999,
+		harvestTime            = "maturity",
+		maxPercentASW          = 999,
+		max3dayPrecipSum       = 9999,
 		maxCurrentDayPrecipSum = 9999,
 	}
 	{
 		ahd := &ws.data.(Automatic_Harvest_Data)
 		ahd.harvest.exported = true
 		ahd.harvest.incorporateIntoLayerNo = 1
-		ahd.harvest.optCarbMgmtData = {maxResidueRecoverFraction = 1, cropUsage = .Biomass_Production}
+		ahd.harvest.optCarbMgmtData = {
+			maxResidueRecoverFraction = 1,
+			cropUsage                 = .Biomass_Production,
+		}
 	}
 	res := workstep_merge_common(ws, j)
-	tl.append_errors(&res, automatic_harvest_merge(&ws.data.(Automatic_Harvest_Data), j, allocator))
+	tl.append_errors(
+		&res,
+		automatic_harvest_merge(&ws.data.(Automatic_Harvest_Data), j, allocator),
+	)
 	ws.errors = res
 	return ws
 }
@@ -705,7 +765,10 @@ cutting_merge :: proc(c: ^Cutting_Data, j: jx.Value, allocator := context.alloca
 				val.value = val.value / 100.0
 				tl.append_error(
 					&errors,
-					strings.concatenate({"Unknown unit: ", p2, " in Cutting workstep: ", jx.dump(j, allocator)}, allocator),
+					strings.concatenate(
+						{"Unknown unit: ", p2, " in Cutting workstep: ", jx.dump(j, allocator)},
+						allocator,
+					),
 				)
 			}
 		}
@@ -741,7 +804,12 @@ cutting_merge :: proc(c: ^Cutting_Data, j: jx.Value, allocator := context.alloca
 		c.organId2exportFraction[oid] = f64(jx.int_value_d(v, 0)) / 100.0
 	}
 
-	jx.set_double_value(&c.cutMaxAssimilationRateFraction, j, "cut-max-assimilation-rate", .PERCENT)
+	jx.set_double_value(
+		&c.cutMaxAssimilationRateFraction,
+		j,
+		"cut-max-assimilation-rate",
+		.PERCENT,
+	)
 
 	return errors
 }
@@ -765,7 +833,9 @@ cutting_apply :: proc(c: ^Cutting_Data, ws: ^Workstep, model: ^core.Monica_Model
 // C++: Workstep monica::makeCuttingWorkstep(json11::Json)
 make_cutting_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
 	ws := new_workstep(allocator)
-	ws.data = Cutting_Data{cutMaxAssimilationRateFraction = 1.0}
+	ws.data = Cutting_Data {
+		cutMaxAssimilationRateFraction = 1.0,
+	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, cutting_merge(&ws.data.(Cutting_Data), j, allocator))
 	ws.errors = res
@@ -799,7 +869,10 @@ mineral_fertilization_apply :: proc(
 }
 
 // C++: Workstep monica::makeMineralFertilizationWorkstep(json11::Json)
-make_mineral_fertilization_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
+make_mineral_fertilization_workstep :: proc(
+	j: jx.Value,
+	allocator := context.allocator,
+) -> ^Workstep {
 	ws := new_workstep(allocator)
 	ws.data = Mineral_Fertilization_Data{}
 	res := workstep_merge_common(ws, j)
@@ -892,11 +965,19 @@ n_demand_fertilization_reinit :: proc(
 }
 
 // C++: Workstep monica::makeNDemandFertilizationWorkstep(json11::Json)
-make_n_demand_fertilization_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
+make_n_demand_fertilization_workstep :: proc(
+	j: jx.Value,
+	allocator := context.allocator,
+) -> ^Workstep {
 	ws := new_workstep(allocator)
-	ws.data = N_Demand_Fertilization_Data{stage = 1}
+	ws.data = N_Demand_Fertilization_Data {
+		stage = 1,
+	}
 	res := workstep_merge_common(ws, j)
-	tl.append_errors(&res, n_demand_fertilization_merge(&ws.data.(N_Demand_Fertilization_Data), ws, j))
+	tl.append_errors(
+		&res,
+		n_demand_fertilization_merge(&ws.data.(N_Demand_Fertilization_Data), ws, j),
+	)
 	ws.errors = res
 	return ws
 }
@@ -935,9 +1016,14 @@ organic_fertilization_apply :: proc(
 }
 
 // C++: Workstep monica::makeOrganicFertilizationWorkstep(json11::Json)
-make_organic_fertilization_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
+make_organic_fertilization_workstep :: proc(
+	j: jx.Value,
+	allocator := context.allocator,
+) -> ^Workstep {
 	ws := new_workstep(allocator)
-	ws.data = Organic_Fertilization_Data{incorporateIntoLayerNo = 1}
+	ws.data = Organic_Fertilization_Data {
+		incorporateIntoLayerNo = 1,
+	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, organic_fertilization_merge(&ws.data.(Organic_Fertilization_Data), j))
 	ws.errors = res
@@ -966,7 +1052,9 @@ tillage_apply :: proc(t: ^Tillage_Data, ws: ^Workstep, model: ^core.Monica_Model
 // C++: Workstep monica::makeTillageWorkstep(json11::Json)
 make_tillage_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
 	ws := new_workstep(allocator)
-	ws.data = Tillage_Data{depth = 0.3}
+	ws.data = Tillage_Data {
+		depth = 0.3,
+	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, tillage_merge(&ws.data.(Tillage_Data), j))
 	ws.errors = res
@@ -1007,7 +1095,9 @@ irrigation_apply :: proc(i: ^Irrigation_Data, ws: ^Workstep, model: ^core.Monica
 // C++: Workstep monica::makeIrrigationWorkstep(json11::Json)
 make_irrigation_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
 	ws := new_workstep(allocator)
-	ws.data = Irrigation_Data{params = p.Irrigation_Parameters{fw = 1.0}}
+	ws.data = Irrigation_Data {
+		params = p.Irrigation_Parameters{fw = 1.0},
+	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, irrigation_merge(&ws.data.(Irrigation_Data), j))
 	ws.errors = res
@@ -1052,12 +1142,18 @@ automatic_irrigation_merge :: proc(ai: ^Automatic_Irrigation_Data, j: jx.Value) 
 }
 
 // C++: bool workstep::apply(AutomaticIrrigationData*, MonicaModel*)
-automatic_irrigation_apply :: proc(ai: ^Automatic_Irrigation_Data, model: ^core.Monica_Model) -> bool {
+automatic_irrigation_apply :: proc(
+	ai: ^Automatic_Irrigation_Data,
+	model: ^core.Monica_Model,
+) -> bool {
 	if ai.done {
 		return true
 	}
 
-	irrigationTriggered, irrigationAmount := core.apply_irrigation_via_trigger(&model.soilColumn, &ai.params)
+	irrigationTriggered, irrigationAmount := core.apply_irrigation_via_trigger(
+		&model.soilColumn,
+		&ai.params,
+	)
 	if irrigationTriggered {
 		model.currentEvents["AutomaticIrrigation"] = true
 		model.soilOrganic.irrigationAmount += irrigationAmount
@@ -1068,7 +1164,10 @@ automatic_irrigation_apply :: proc(ai: ^Automatic_Irrigation_Data, model: ^core.
 }
 
 // C++: bool workstep::condition(AutomaticIrrigationData*, MonicaModel*)
-automatic_irrigation_condition :: proc(ai: ^Automatic_Irrigation_Data, model: ^core.Monica_Model) -> bool {
+automatic_irrigation_condition :: proc(
+	ai: ^Automatic_Irrigation_Data,
+	model: ^core.Monica_Model,
+) -> bool {
 	if ai.done {
 		return false
 	}
@@ -1135,9 +1234,19 @@ automatic_irrigation_reinit :: proc(
 	ws.date = d.Date{}
 
 	startAddedYear: bool
-	ai.absStartDate, startAddedYear = make_init_abs_date(ai.params.startDate, date, addYear, forceInitYear)
+	ai.absStartDate, startAddedYear = make_init_abs_date(
+		ai.params.startDate,
+		date,
+		addYear,
+		forceInitYear,
+	)
 	stopAddedYear: bool
-	ai.absEndDate, stopAddedYear = make_init_abs_date(ai.params.endDate, date, addYear, forceInitYear)
+	ai.absEndDate, stopAddedYear = make_init_abs_date(
+		ai.params.endDate,
+		date,
+		addYear,
+		forceInitYear,
+	)
 	_ = stopAddedYear
 	ai.done = false
 
@@ -1145,7 +1254,10 @@ automatic_irrigation_reinit :: proc(
 }
 
 // C++: Workstep monica::makeAutomaticIrrigationWorkstep(json11::Json)
-make_automatic_irrigation_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep {
+make_automatic_irrigation_workstep :: proc(
+	j: jx.Value,
+	allocator := context.allocator,
+) -> ^Workstep {
 	ws := new_workstep(allocator)
 	ws.data = Automatic_Irrigation_Data {
 		startStage = -1,
@@ -1183,7 +1295,11 @@ set_value_get_value :: proc(s: ^Set_Value_Data, model: ^core.Monica_Model) -> jx
 }
 
 // C++: Errors workstep::merge(SetValueData*, json11::Json)
-set_value_merge :: proc(s: ^Set_Value_Data, j: jx.Value, allocator := context.allocator) -> tl.Errors {
+set_value_merge :: proc(
+	s: ^Set_Value_Data,
+	j: jx.Value,
+	allocator := context.allocator,
+) -> tl.Errors {
 	res: tl.Errors
 
 	oids := mio.parse_output_ids([]jx.Value{jx.get(j, "var")}, allocator = allocator)
@@ -1214,12 +1330,18 @@ set_value_merge :: proc(s: ^Set_Value_Data, j: jx.Value, allocator := context.al
 				// was plainly meant to produce.
 				e := mio.build_primitive_calc_expression(jva[1:], allocator)
 				if e.set {
-					s.getValue = Set_Value_Get_Value{kind = .CALC_EXPR, calc = e}
+					s.getValue = Set_Value_Get_Value {
+						kind = .CALC_EXPR,
+						calc = e,
+					}
 				}
 			} else if jx.is_string(jva[0]) {
 				oids2 := mio.parse_output_ids([]jx.Value{s.value}, allocator = allocator)
 				if len(oids2) > 0 && mio.oid_has_getter(oids2[0]) {
-					s.getValue = Set_Value_Get_Value{kind = .OID_LOOKUP, sourceOid = oids2[0]}
+					s.getValue = Set_Value_Get_Value {
+						kind      = .OID_LOOKUP,
+						sourceOid = oids2[0],
+					}
 				}
 			} else {
 				// NOT in the C++: a literal per-layer value list,
@@ -1233,11 +1355,15 @@ set_value_merge :: proc(s: ^Set_Value_Data, j: jx.Value, allocator := context.al
 				// one, since only an oid returning a layer range could produce
 				// it. Additive and unambiguous: an oid spec array always leads
 				// with a string ("Mois"), a value array never does.
-				s.getValue = Set_Value_Get_Value{kind = .CONSTANT}
+				s.getValue = Set_Value_Get_Value {
+					kind = .CONSTANT,
+				}
 			}
 		}
 	} else {
-		s.getValue = Set_Value_Get_Value{kind = .CONSTANT}
+		s.getValue = Set_Value_Get_Value {
+			kind = .CONSTANT,
+		}
 	}
 
 	return res

@@ -4,18 +4,18 @@
 // Run odin/tests/cpp_ref/run_crop_module_yield.sh to build both and diff them.
 package crop_module_yield_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:slice"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0
 ATM_O3 :: 60.0
@@ -29,7 +29,12 @@ real_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {
 }
 
 real_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {
-	core.soil_organic_add_organic_matter(g_soil_organic, g_residue_params, layer2amount, nConcentration)
+	core.soil_organic_add_organic_matter(
+		g_soil_organic,
+		g_residue_params,
+		layer2amount,
+		nConcentration,
+	)
 }
 
 no_fire_event :: proc(event: string) {}
@@ -45,8 +50,16 @@ dump_yield_getters :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module, a
 		tr.dump(t, fmt.tprintf("%s.organIdsForPrimaryYield[%d]", path, i), id)
 	}
 
-	tr.dump(t, strings.concatenate({path, ".getPrimaryCropYield"}), core.get_primary_crop_yield(cm))
-	tr.dump(t, strings.concatenate({path, ".getSecondaryCropYield"}), core.get_secondary_crop_yield(cm))
+	tr.dump(
+		t,
+		strings.concatenate({path, ".getPrimaryCropYield"}),
+		core.get_primary_crop_yield(cm),
+	)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".getSecondaryCropYield"}),
+		core.get_secondary_crop_yield(cm),
+	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".getResidueBiomass(true,-1)"}),
@@ -109,7 +122,11 @@ dump_cutting_state :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module) {
 	tr.dump(t, strings.concatenate({path, ".vc_DevelopmentalStage"}), cm.vc_DevelopmentalStage)
 	tr.dump(t, strings.concatenate({path, ".vc_CuttingDelayDays"}), cm.vc_CuttingDelayDays)
 	tr.dump(t, strings.concatenate({path, ".vc_exportedCutBiomass"}), cm.vc_exportedCutBiomass)
-	tr.dump(t, strings.concatenate({path, ".vc_sumExportedCutBiomass"}), cm.vc_sumExportedCutBiomass)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".vc_sumExportedCutBiomass"}),
+		cm.vc_sumExportedCutBiomass,
+	)
 	tr.dump(t, strings.concatenate({path, ".vc_residueCutBiomass"}), cm.vc_residueCutBiomass)
 	tr.dump(t, strings.concatenate({path, ".vc_sumResidueCutBiomass"}), cm.vc_sumResidueCutBiomass)
 	tr.dump(
@@ -181,14 +198,20 @@ main :: proc() {
 	env := mrun.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
 	env_params := jx.get(env, "params")
 
-	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
 
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	model := core.make_monica_model(&cpp, a)
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	wheat_crop_params := p.make_crop_parameters()
 	_ = p.crop_parameters_merge_sj_cj(
@@ -221,7 +244,7 @@ main :: proc() {
 	model.currentCropModule = &cm
 	g_residue_params = &cm.residueParams.base
 
-	model.soilMoisture.cropModule = &cm
+	model.soilMoisture.crop_module = &cm
 	model.soilOrganic.cropModule = &cm
 	model.soilTransport.cropModule = &cm
 
@@ -231,7 +254,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -259,7 +287,15 @@ main :: proc() {
 		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0
 
-		core.soil_temperature_step(&model.soilTemperature, tmin, tmax, globrad, cm.vc_SoilCoverage, model.soilMoisture.snowComponent.vm_SnowDepth, model.soilMoisture.frostComponent.vm_TemperatureUnderSnow)
+		core.soil_temperature_step(
+			&model.soilTemperature,
+			tmin,
+			tmax,
+			globrad,
+			cm.vc_SoilCoverage,
+			model.soilMoisture.snow_component.vm_SnowDepth,
+			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
+		)
 		core.soil_moisture_step(
 			&model.soilMoisture,
 			vs_GroundwaterDepth,
@@ -309,7 +345,11 @@ main :: proc() {
 	tr.set_day(&t, 1)
 	{
 		organs := make(map[int]core.Cutting_Value, 0, a)
-		organs[1] = core.Cutting_Value{value = 0.3, unit = .Percentage, cut_or_left = .Cut}
+		organs[1] = core.Cutting_Value {
+			value       = 0.3,
+			unit        = .Percentage,
+			cut_or_left = .Cut,
+		}
 		exports := make(map[int]f64, 0, a)
 		exports[1] = 0.6
 		core.apply_cutting(&cm, organs, exports, 0.9, a)
@@ -320,7 +360,11 @@ main :: proc() {
 	tr.set_day(&t, 2)
 	{
 		organs := make(map[int]core.Cutting_Value, 0, a)
-		organs[2] = core.Cutting_Value{value = 200.0, unit = .Biomass, cut_or_left = .Left}
+		organs[2] = core.Cutting_Value {
+			value       = 200.0,
+			unit        = .Biomass,
+			cut_or_left = .Left,
+		}
 		exports := make(map[int]f64, 0, a)
 		exports[2] = 0.5
 		core.apply_cutting(&cm, organs, exports, 1.0, a)
@@ -331,7 +375,11 @@ main :: proc() {
 	tr.set_day(&t, 3)
 	{
 		organs := make(map[int]core.Cutting_Value, 0, a)
-		organs[1] = core.Cutting_Value{value = 1.0, unit = .LAI, cut_or_left = .Left}
+		organs[1] = core.Cutting_Value {
+			value       = 1.0,
+			unit        = .LAI,
+			cut_or_left = .Left,
+		}
 		exports := make(map[int]f64, 0, a)
 		exports[1] = 0.4
 		core.apply_cutting(&cm, organs, exports, 0.95, a)

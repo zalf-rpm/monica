@@ -32,64 +32,54 @@
 // already used for soil_temperature_step/soil_moisture_step/crop_module_step.
 package core
 
-import "core:slice"
-import libc "core:c/libc"
-import p "../params"
-import d "../../support/date"
 import clim "../../support/climate"
+import d "../../support/date"
+import p "../params"
 import "../soil"
+import libc "core:c/libc"
+import "core:slice"
 
 // C++: struct monica::MonicaModel
 Monica_Model :: struct {
-	sitePs:                 p.Site_Parameters,
-	envPs:                  p.Environment_Parameters,
-	cropPs:                 p.Crop_Module_Parameters,
-	simPs:                  p.Simulation_Parameters,
-	groundwaterInformation: p.Measured_Groundwater_Table_Information,
-
-	soilColumn:      Soil_Column,      // main soil data structure
-	soilTemperature: Soil_Temperature, // temperature code
-	soilMoisture:    Soil_Moisture,    // moisture code
-	soilOrganic:     Soil_Organic,     // organic code
-	soilTransport:   Soil_Transport,   // transport code
-	currentCropModule: ^Crop_Module,   // crop code for possibly planted crop; nil if none
+	sitePs:                         p.Site_Parameters,
+	envPs:                          p.Environment_Parameters,
+	cropPs:                         p.Crop_Module_Parameters,
+	simPs:                          p.Simulation_Parameters,
+	groundwaterInformation:         p.Measured_Groundwater_Table_Information,
+	soilColumn:                     Soil_Column, // main soil data structure
+	soilTemperature:                Soil_Temperature, // temperature code
+	soilMoisture:                   Soil_Moisture, // moisture code
+	soilOrganic:                    Soil_Organic, // organic code
+	soilTransport:                  Soil_Transport, // transport code
+	currentCropModule:              ^Crop_Module, // crop code for possibly planted crop; nil if none
 
 	// store applied fertiliser during one production process
-	sumFertiliser:    f64, // mineral N
-	sumOrgFertiliser: f64, // organic N
+	sumFertiliser:                  f64, // mineral N
+	sumOrgFertiliser:               f64, // organic N
 
 	// stores the daily sum of applied fertiliser
-	dailySumFertiliser:    f64, // mineral N
-	dailySumOrgFertiliser: f64, // organic N
-
-	dailySumOrganicFertilizerDM: f64,
-	sumOrganicFertilizerDM:      f64,
-
-	humusBalanceCarryOver: f64,
-
-	dailySumIrrigationWater: f64,
-
-	optCarbonExportedResidues: f64,
-	optCarbonReturnedResidues: f64,
-
-	currentStepDate:    d.Date,
-	climateData:        [dynamic]map[clim.ACD]f64,
-	currentEvents:      map[string]bool,
-	previousDaysEvents: map[string]bool,
-
-	clearCropUponNextDay: bool,
-
-	p_daysWithCrop:      int,
-	p_accuNStress:       f64,
-	p_accuWaterStress:   f64,
-	p_accuHeatStress:    f64,
-	p_accuOxygenStress:  f64,
-
+	dailySumFertiliser:             f64, // mineral N
+	dailySumOrgFertiliser:          f64, // organic N
+	dailySumOrganicFertilizerDM:    f64,
+	sumOrganicFertilizerDM:         f64,
+	humusBalanceCarryOver:          f64,
+	dailySumIrrigationWater:        f64,
+	optCarbonExportedResidues:      f64,
+	optCarbonReturnedResidues:      f64,
+	currentStepDate:                d.Date,
+	climateData:                    [dynamic]map[clim.ACD]f64,
+	currentEvents:                  map[string]bool,
+	previousDaysEvents:             map[string]bool,
+	clearCropUponNextDay:           bool,
+	p_daysWithCrop:                 int,
+	p_accuNStress:                  f64,
+	p_accuWaterStress:              f64,
+	p_accuHeatStress:               f64,
+	p_accuOxygenStress:             f64,
 	vw_AtmosphericCO2Concentration: f64,
 	vw_AtmosphericO3Concentration:  f64,
 	vs_GroundwaterDepth:            f64,
-
-	cultivationMethodCount: int,
+	cultivationMethodCount:         int,
 }
 
 // C++: kj::Own<MonicaModel> monica::makeMonicaModel(const CentralParameterProvider&)
@@ -194,7 +184,10 @@ monica_model_add_organic_matter_cb :: proc(layer2amount: map[int]f64, nconc: f64
 //        return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
 //          model->soilMoisture.get(), avgAirTemp); }
 monica_model_get_snow_depth_cb :: proc(avgAirTemp: f64) -> (f64, f64) {
-	return get_snow_depth_and_calc_temperature_under_snow(&g_current_model.soilMoisture, avgAirTemp)
+	return get_snow_depth_and_calc_temperature_under_snow(
+		&g_current_model.soilMoisture,
+		avgAirTemp,
+	)
 }
 
 // C++: void monica::monicamodel::addDailySumFertiliser(MonicaModel*, double)
@@ -234,8 +227,8 @@ monica_model_add_daily_sum_org_fertiliser :: proc(
 		soil.PO_AOM_TO_C * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow
 	SOM_Factor :=
 		(1 - (params.vo_PartAOM_to_AOM_Fast + params.vo_PartAOM_to_AOM_Slow)) *
-			soil.PO_AOM_TO_C /
-			model.soilColumn.layers[0].vs_Soil_CN_Ratio // TODO ask CN for correctness
+		soil.PO_AOM_TO_C /
+		model.soilColumn.layers[0].vs_Soil_CN_Ratio // TODO ask CN for correctness
 
 	conversion :=
 		AOM_fast_factor +
@@ -279,7 +272,10 @@ monica_model_apply_organic_fertiliser :: proc(
 		incorporateIntoLayerIndex,
 	)
 	monica_model_add_daily_sum_org_fertiliser(model, amountFM, params)
-	monica_model_add_daily_sum_organic_fertilizer_dm(model, amountFM * params.vo_AOM_DryMatterContent)
+	monica_model_add_daily_sum_organic_fertilizer_dm(
+		model,
+		amountFM * params.vo_AOM_DryMatterContent,
+	)
 }
 
 // C++: double monica::monicamodel::applyMineralFertiliserViaNMinMethod(
@@ -315,7 +311,7 @@ monica_model_daily_reset :: proc(model: ^Monica_Model, allocator := context.allo
 	if model.clearCropUponNextDay {
 		soil_transport_remove_crop(&model.soilTransport)
 		remove_crop(&model.soilColumn)
-		model.soilMoisture.cropModule = nil
+		model.soilMoisture.crop_module = nil
 		model.soilOrganic.cropModule = nil
 		model.currentCropModule = nil
 
@@ -482,19 +478,19 @@ Harvest_Spec :: struct {
 
 // C++: struct HarvestData::OptCarbonManagementData
 Harvest_Opt_Carbon_Management_Data :: struct {
-	optCarbonConservation:      bool,
-	cropImpactOnHumusBalance:   f64,
-	maxResidueRecoverFraction:  f64, // C++ in-class default: 1
-	cropUsage:                  Harvest_Crop_Usage, // C++ in-class default: biomassProduction
-	residueHeq:                 f64,
-	organicFertilizerHeq:       f64,
+	optCarbonConservation:     bool,
+	cropImpactOnHumusBalance:  f64,
+	maxResidueRecoverFraction: f64, // C++ in-class default: 1
+	cropUsage:                 Harvest_Crop_Usage, // C++ in-class default: biomassProduction
+	residueHeq:                f64,
+	organicFertilizerHeq:      f64,
 }
 
 // C++ in-class defaults for OptCarbonManagementData
 make_harvest_opt_carbon_management_data :: proc() -> Harvest_Opt_Carbon_Management_Data {
 	return Harvest_Opt_Carbon_Management_Data {
 		maxResidueRecoverFraction = 1,
-		cropUsage                 = .Biomass_Production,
+		cropUsage = .Biomass_Production,
 	}
 }
 
@@ -536,13 +532,16 @@ monica_model_harvest_current_crop :: proc(
 				intermediateHumusBalance :=
 					model.humusBalanceCarryOver +
 					cropContribToHumus +
-					appliedOrganicFertilizerDryMatter / 1000.0 * optCarbMgmtData.organicFertilizerHeq -
+					appliedOrganicFertilizerDryMatter /
+						1000.0 *
+						optCarbMgmtData.organicFertilizerHeq -
 					model.sitePs.vs_SoilSpecificHumusBalanceCorrection
 				potentialHumusFromResidues := residueBiomass / 1000.0 * optCarbMgmtData.residueHeq
 
 				fractionToBeLeftOnField := 0.0
 				if potentialHumusFromResidues > 0 {
-					fractionToBeLeftOnField = -intermediateHumusBalance / potentialHumusFromResidues
+					fractionToBeLeftOnField =
+						-intermediateHumusBalance / potentialHumusFromResidues
 					if fractionToBeLeftOnField > 1 {
 						fractionToBeLeftOnField = 1.0
 					} else if fractionToBeLeftOnField < 0 {
@@ -564,7 +563,8 @@ monica_model_harvest_current_crop :: proc(
 				maxExportedResidues := residueBiomass * optCarbMgmtData.maxResidueRecoverFraction
 				if model.optCarbonExportedResidues > maxExportedResidues {
 					model.optCarbonExportedResidues = maxExportedResidues
-					model.optCarbonReturnedResidues = residueBiomass - model.optCarbonExportedResidues
+					model.optCarbonReturnedResidues =
+						residueBiomass - model.optCarbonExportedResidues
 				}
 
 				soil_organic_add_organic_matter_amount(
@@ -579,7 +579,7 @@ monica_model_harvest_current_crop :: proc(
 				model.humusBalanceCarryOver =
 					intermediateHumusBalance +
 					model.optCarbonReturnedResidues / 1000.0 * optCarbMgmtData.residueHeq
-			} else { // old default behavior
+			} else { 	// old default behavior
 				residueBiomass := get_residue_biomass(cm, model.simPs.p_UseSecondaryYields, -1)
 				residueNConcentration := get_residues_n_concentration(cm, -1)
 				soil_organic_add_organic_matter_amount(
@@ -591,7 +591,7 @@ monica_model_harvest_current_crop :: proc(
 					allocator,
 				)
 			}
-		} else if len(spec.organ2specVal) != 0 { // harvest with a more detailed specification
+		} else if len(spec.organ2specVal) != 0 { 	// harvest with a more detailed specification
 			cropYield := 0.0
 			primaryCropYield := 0.0
 			sumOrganResidueBiomassAsOverlay := 0.0
@@ -624,7 +624,8 @@ monica_model_harvest_current_crop :: proc(
 				}
 			}
 			totalResidueBiomass := get_residue_biomass(cm, false, cropYield)
-			totalResidueBiomassToIncorporate := totalResidueBiomass - sumOrganResidueBiomassAsOverlay
+			totalResidueBiomassToIncorporate :=
+				totalResidueBiomass - sumOrganResidueBiomassAsOverlay
 			residuesNConcentration := get_residues_n_concentration(cm, primaryCropYield)
 			soil_organic_add_organic_matter_amount(
 				&model.soilOrganic,
@@ -653,14 +654,18 @@ monica_model_harvest_current_crop :: proc(
 }
 
 // C++: void monica::monicamodel::incorporateCurrentCrop(MonicaModel*)
-monica_model_incorporate_current_crop :: proc(model: ^Monica_Model, allocator := context.allocator) {
+monica_model_incorporate_current_crop :: proc(
+	model: ^Monica_Model,
+	allocator := context.allocator,
+) {
 	if model.currentCropModule != nil {
 		cm := model.currentCropModule
 
 		// prepare to add root and crop residues to soilorganic (AOMs)
 		total_biomass := cm.vc_TotalBiomass
 		totalNContent :=
-			get_aboveground_biomass_n_content(cm) + cm.vc_NConcentrationRoot * cm.vc_OrganBiomass[0]
+			get_aboveground_biomass_n_content(cm) +
+			cm.vc_NConcentrationRoot * cm.vc_OrganBiomass[0]
 		totalNConcentration := totalNContent / total_biomass
 
 		soil_organic_add_organic_matter_amount(
@@ -721,7 +726,11 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 	}
 
 	// test if simulated gw or measured values should be used
-	gw_available, gw_depth := p.get_groundwater_information(&model.groundwaterInformation, date, allocator)
+	gw_available, gw_depth := p.get_groundwater_information(
+		&model.groundwaterInformation,
+		date,
+		allocator,
+	)
 	if gw_available {
 		model.vs_GroundwaterDepth = max(0.0, gw_depth)
 	} else {
@@ -780,8 +789,8 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		tmax,
 		globrad,
 		soil_coverage,
-		model.soilMoisture.snowComponent.vm_SnowDepth,
-		model.soilMoisture.frostComponent.vm_TemperatureUnderSnow,
+		model.soilMoisture.snow_component.vm_SnowDepth,
+		model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
 	)
 
 	// first try to get ReferenceEvapotranspiration from climate data

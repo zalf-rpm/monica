@@ -8,18 +8,18 @@
 // Run odin/tests/cpp_ref/run_crop_module_biomass.sh to build both and diff them.
 package crop_module_biomass_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import d "../../support/date"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
@@ -141,7 +141,10 @@ day_step :: proc(
 
 	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
 
-	cm.vc_OxygenDeficit = core.fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.vc_DevelopmentalStage])
+	cm.vc_OxygenDeficit = core.fc_oxygen_deficiency(
+		cm,
+		pc_CriticalOxygenContent[cm.vc_DevelopmentalStage],
+	)
 
 	old_DevelopmentalStage := cm.vc_DevelopmentalStage
 
@@ -150,7 +153,14 @@ day_step :: proc(
 			cm.perennialCropDormancyPeriodEndDate = currentDate
 		} else {
 			cm.perennialCropDormancyPeriodEndDate = d.add(
-				d.make_date(1, 1, u16(d.year(currentDate)), false, false, d.DEFAULT_USE_LEAP_YEARS),
+				d.make_date(
+					1,
+					1,
+					u16(d.year(currentDate)),
+					false,
+					false,
+					d.DEFAULT_USE_LEAP_YEARS,
+				),
 				u64(speciesPs.dormancyEndDoy - 1),
 			)
 		}
@@ -191,7 +201,8 @@ day_step :: proc(
 	if cm.vc_TotalTemperatureSum == 0.0 {
 		cm.vc_RelativeTotalDevelopment = 0.0
 	} else {
-		cm.vc_RelativeTotalDevelopment = cm.vc_CurrentTotalTemperatureSum / cm.vc_TotalTemperatureSum
+		cm.vc_RelativeTotalDevelopment =
+			cm.vc_CurrentTotalTemperatureSum / cm.vc_TotalTemperatureSum
 	}
 
 	if cm.vc_DevelopmentalStage == 0 {
@@ -336,10 +347,13 @@ main :: proc() {
 		cpp.simulationParameters.p_LayerThickness,
 		a,
 	)
-	sm.cropModule = nil
+	sm.crop_module = nil
 	g_soil_moisture = &sm
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 		path := strings.concatenate({dir, "/", name}, a)
@@ -385,7 +399,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -417,7 +436,15 @@ main :: proc() {
 		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0 // climate-min.csv has no et0 column
 
-		core.soil_temperature_step(&st, tmin, tmax, globrad, 0.0, sm.snowComponent.vm_SnowDepth, sm.frostComponent.vm_TemperatureUnderSnow)
+		core.soil_temperature_step(
+			&st,
+			tmin,
+			tmax,
+			globrad,
+			0.0,
+			sm.snow_component.vm_SnowDepth,
+			sm.frost_component.vm_TemperatureUnderSnow,
+		)
 		core.soil_moisture_step(
 			&sm,
 			vs_GroundwaterDepth,
@@ -437,9 +464,21 @@ main :: proc() {
 
 		tr.set_day(&t, day)
 		dump_crop_module_biomass(&t, "cropModule", &cm)
-		tr.write_line_f64(&t, "cropModule.recording.lastOrganicMatterTotal", g_last_organic_matter_total)
-		tr.write_line_f64(&t, "cropModule.recording.lastOrganicMatterNConc", g_last_organic_matter_nconc)
-		tr.write_line_int(&t, "cropModule.recording.organicMatterCallCount", g_organic_matter_call_count)
+		tr.write_line_f64(
+			&t,
+			"cropModule.recording.lastOrganicMatterTotal",
+			g_last_organic_matter_total,
+		)
+		tr.write_line_f64(
+			&t,
+			"cropModule.recording.lastOrganicMatterNConc",
+			g_last_organic_matter_nconc,
+		)
+		tr.write_line_int(
+			&t,
+			"cropModule.recording.organicMatterCallCount",
+			g_organic_matter_call_count,
+		)
 		free_all(context.temp_allocator)
 	}
 
@@ -470,7 +509,7 @@ main :: proc() {
 			cpp.simulationParameters.p_LayerThickness,
 			a,
 		)
-		sm2.cropModule = nil
+		sm2.crop_module = nil
 		g_soil_moisture = &sm2
 
 		senescent_crop_params := wheat_crop_params
@@ -525,7 +564,15 @@ main :: proc() {
 			vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 			et0 := -1.0
 
-			core.soil_temperature_step(&st2, tmin, tmax, globrad, 0.0, sm2.snowComponent.vm_SnowDepth, sm2.frostComponent.vm_TemperatureUnderSnow)
+			core.soil_temperature_step(
+				&st2,
+				tmin,
+				tmax,
+				globrad,
+				0.0,
+				sm2.snow_component.vm_SnowDepth,
+				sm2.frost_component.vm_TemperatureUnderSnow,
+			)
 			core.soil_moisture_step(
 				&sm2,
 				vs_GroundwaterDepth,
@@ -545,9 +592,21 @@ main :: proc() {
 
 			tr.set_day(&t, day)
 			tr.dump(&t, "cropModuleB.vc_OrganDeadBiomass[0]", cm_b.vc_OrganDeadBiomass[0])
-			tr.write_line_f64(&t, "cropModuleB.recording.lastOrganicMatterTotal", g_last_organic_matter_total)
-			tr.write_line_f64(&t, "cropModuleB.recording.lastOrganicMatterNConc", g_last_organic_matter_nconc)
-			tr.write_line_int(&t, "cropModuleB.recording.organicMatterCallCount", g_organic_matter_call_count)
+			tr.write_line_f64(
+				&t,
+				"cropModuleB.recording.lastOrganicMatterTotal",
+				g_last_organic_matter_total,
+			)
+			tr.write_line_f64(
+				&t,
+				"cropModuleB.recording.lastOrganicMatterNConc",
+				g_last_organic_matter_nconc,
+			)
+			tr.write_line_int(
+				&t,
+				"cropModuleB.recording.organicMatterCallCount",
+				g_organic_matter_call_count,
+			)
 			free_all(context.temp_allocator)
 		}
 	}

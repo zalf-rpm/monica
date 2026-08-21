@@ -3,18 +3,18 @@
 // odin/tests/cpp_ref/run_set_value.sh.
 package set_value_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import run "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import run "../../monica/run"
-import d "../../support/date"
-import tr "../../monica/trace"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0
 ATM_O3 :: 60.0
@@ -32,7 +32,11 @@ load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 dump_state :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 	cm := model.currentCropModule
 	tr.dump(t, strings.concatenate({path, ".vc_DevelopmentalStage"}), cm.vc_DevelopmentalStage)
-	tr.dump(t, strings.concatenate({path, ".vc_CurrentTotalTemperatureSum"}), cm.vc_CurrentTotalTemperatureSum)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".vc_CurrentTotalTemperatureSum"}),
+		cm.vc_CurrentTotalTemperatureSum,
+	)
 	tr.dump(t, strings.concatenate({path, ".vc_AbovegroundBiomass"}), cm.vc_AbovegroundBiomass)
 	for i in 0 ..< 3 {
 		tr.dump(
@@ -97,14 +101,20 @@ main :: proc() {
 	env := run.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
 	env_params := jx.get(env, "params")
 
-	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
 
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	model := core.make_monica_model(&cpp, a)
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	species_json := load(monica_parameters_dir, "crops/wheat.json", a)
 	cultivar_json := load(monica_parameters_dir, "crops/wheat/winter-wheat.json", a)
@@ -132,7 +142,7 @@ main :: proc() {
 	)
 	model.currentCropModule = cm
 
-	model.soilMoisture.cropModule = cm
+	model.soilMoisture.crop_module = cm
 	model.soilOrganic.cropModule = cm
 	model.soilTransport.cropModule = cm
 
@@ -142,7 +152,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -172,15 +187,16 @@ main :: proc() {
 		// state through SoilTemperature's `monica` back-pointer; this port makes
 		// them explicit parameters instead (see monica_model.odin's
 		// monica_model_general_step for the production call this mirrors).
-		soil_coverage := model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0.0
+		soil_coverage :=
+			model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0.0
 		core.soil_temperature_step(
 			&model.soilTemperature,
 			tmin,
 			tmax,
 			globrad,
 			soil_coverage,
-			model.soilMoisture.snowComponent.vm_SnowDepth,
-			model.soilMoisture.frostComponent.vm_TemperatureUnderSnow,
+			model.soilMoisture.snow_component.vm_SnowDepth,
+			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
 		)
 		core.soil_moisture_step(
 			&model.soilMoisture,

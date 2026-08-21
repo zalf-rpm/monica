@@ -7,18 +7,18 @@
 // Run odin/tests/cpp_ref/run_crop_module_water_nitrogen.sh to build both and diff them.
 package crop_module_water_nitrogen_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import d "../../support/date"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
@@ -64,7 +64,11 @@ dump_crop_module_water_nitrogen :: proc(t: ^tr.Tracer, path: string, cm: ^core.C
 	tr.dump(t, jn(path, "vc_FixedN"), cm.vc_FixedN)
 	tr.dump(t, jn(path, "vc_SumTotalNUptake"), cm.vc_SumTotalNUptake)
 	tr.dump(t, jn(path, "vc_NConcentrationRoot"), cm.vc_NConcentrationRoot)
-	tr.dump(t, jn(path, "vc_NConcentrationAbovegroundBiomass"), cm.vc_NConcentrationAbovegroundBiomass)
+	tr.dump(
+		t,
+		jn(path, "vc_NConcentrationAbovegroundBiomass"),
+		cm.vc_NConcentrationAbovegroundBiomass,
+	)
 
 	tr.dump(t, jn(path, "vc_GrossPrimaryProduction"), cm.vc_GrossPrimaryProduction)
 	tr.dump(t, jn(path, "vc_NetPrimaryProduction"), cm.vc_NetPrimaryProduction)
@@ -98,7 +102,10 @@ day_step :: proc(
 
 	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
 
-	cm.vc_OxygenDeficit = core.fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.vc_DevelopmentalStage])
+	cm.vc_OxygenDeficit = core.fc_oxygen_deficiency(
+		cm,
+		pc_CriticalOxygenContent[cm.vc_DevelopmentalStage],
+	)
 
 	old_DevelopmentalStage := cm.vc_DevelopmentalStage
 
@@ -107,7 +114,14 @@ day_step :: proc(
 			cm.perennialCropDormancyPeriodEndDate = currentDate
 		} else {
 			cm.perennialCropDormancyPeriodEndDate = d.add(
-				d.make_date(1, 1, u16(d.year(currentDate)), false, false, d.DEFAULT_USE_LEAP_YEARS),
+				d.make_date(
+					1,
+					1,
+					u16(d.year(currentDate)),
+					false,
+					false,
+					d.DEFAULT_USE_LEAP_YEARS,
+				),
 				u64(speciesPs.dormancyEndDoy - 1),
 			)
 		}
@@ -148,7 +162,8 @@ day_step :: proc(
 	if cm.vc_TotalTemperatureSum == 0.0 {
 		cm.vc_RelativeTotalDevelopment = 0.0
 	} else {
-		cm.vc_RelativeTotalDevelopment = cm.vc_CurrentTotalTemperatureSum / cm.vc_TotalTemperatureSum
+		cm.vc_RelativeTotalDevelopment =
+			cm.vc_CurrentTotalTemperatureSum / cm.vc_TotalTemperatureSum
 	}
 
 	if cm.vc_DevelopmentalStage == 0 {
@@ -247,7 +262,9 @@ day_step :: proc(
 main :: proc() {
 	args := os.args
 	if len(args) < 4 {
-		fmt.eprintln("usage: crop_module_water_nitrogen_ref <pathToSimJson> <pathToClimateCsv> <numDays>")
+		fmt.eprintln(
+			"usage: crop_module_water_nitrogen_ref <pathToSimJson> <pathToClimateCsv> <numDays>",
+		)
 		os.exit(2)
 	}
 	path_to_sim_json := args[1]
@@ -324,10 +341,13 @@ main :: proc() {
 		cpp.simulationParameters.p_LayerThickness,
 		a,
 	)
-	sm.cropModule = nil
+	sm.crop_module = nil
 	g_soil_moisture = &sm
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 		path := strings.concatenate({dir, "/", name}, a)
@@ -373,7 +393,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -405,7 +430,15 @@ main :: proc() {
 		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0 // climate-min.csv has no et0 column
 
-		core.soil_temperature_step(&st, tmin, tmax, globrad, 0.0, sm.snowComponent.vm_SnowDepth, sm.frostComponent.vm_TemperatureUnderSnow)
+		core.soil_temperature_step(
+			&st,
+			tmin,
+			tmax,
+			globrad,
+			0.0,
+			sm.snow_component.vm_SnowDepth,
+			sm.frost_component.vm_TemperatureUnderSnow,
+		)
 		core.soil_moisture_step(
 			&sm,
 			vs_GroundwaterDepth,

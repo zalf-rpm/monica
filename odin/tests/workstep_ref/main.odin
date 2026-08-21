@@ -5,19 +5,19 @@
 // Run odin/tests/cpp_ref/run_workstep.sh to build both and diff them.
 package workstep_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import run "../../monica/run"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import run "../../monica/run"
-import d "../../support/date"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0
 ATM_O3 :: 60.0
@@ -42,8 +42,16 @@ dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) 
 	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sumFertiliser)
 	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.dailySumFertiliser)
 	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sumOrgFertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumIrrigationWater"}), model.dailySumIrrigationWater)
-	tr.dump(t, strings.concatenate({path, ".cultivationMethodCount"}), model.cultivationMethodCount)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".dailySumIrrigationWater"}),
+		model.dailySumIrrigationWater,
+	)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".cultivationMethodCount"}),
+		model.cultivationMethodCount,
+	)
 	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clearCropUponNextDay)
 	tr.dump(
 		t,
@@ -114,14 +122,20 @@ main :: proc() {
 	env := mrun.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
 	env_params := jx.get(env, "params")
 
-	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
 
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	model := core.make_monica_model(&cpp, a)
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	species_json := load(monica_parameters_dir, "crops/wheat.json", a)
 	cultivar_json := load(monica_parameters_dir, "crops/wheat/winter-wheat.json", a)
@@ -335,7 +349,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -379,8 +398,8 @@ main :: proc() {
 			tmax,
 			globrad,
 			model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0.0,
-			model.soilMoisture.snowComponent.vm_SnowDepth,
-			model.soilMoisture.frostComponent.vm_TemperatureUnderSnow,
+			model.soilMoisture.snow_component.vm_SnowDepth,
+			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
 		)
 		core.soil_moisture_step(
 			&model.soilMoisture,
@@ -437,10 +456,22 @@ main :: proc() {
 		// normally fires.
 		if day == 100 && model.currentCropModule != nil {
 			tr.set_day(&t, 9003)
-			tr.dump(&t, "cropModule.vc_LeafAreaIndex.beforeCut", model.currentCropModule.vc_LeafAreaIndex)
+			tr.dump(
+				&t,
+				"cropModule.vc_LeafAreaIndex.beforeCut",
+				model.currentCropModule.vc_LeafAreaIndex,
+			)
 			run.workstep_apply(ws_cutting, model)
-			tr.dump(&t, "cropModule.vc_LeafAreaIndex.afterCut", model.currentCropModule.vc_LeafAreaIndex)
-			tr.dump(&t, "cropModule.vc_exportedCutBiomass", model.currentCropModule.vc_exportedCutBiomass)
+			tr.dump(
+				&t,
+				"cropModule.vc_LeafAreaIndex.afterCut",
+				model.currentCropModule.vc_LeafAreaIndex,
+			)
+			tr.dump(
+				&t,
+				"cropModule.vc_exportedCutBiomass",
+				model.currentCropModule.vc_exportedCutBiomass,
+			)
 			tr.set_day(&t, day)
 		}
 

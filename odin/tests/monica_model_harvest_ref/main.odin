@@ -5,17 +5,17 @@
 // Run odin/tests/cpp_ref/run_monica_model_harvest.sh to build both and diff them.
 package monica_model_harvest_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0
 ATM_O3 :: 60.0
@@ -29,14 +29,27 @@ real_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {
 }
 
 real_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {
-	core.soil_organic_add_organic_matter(g_soil_organic, g_residue_params, layer2amount, nConcentration)
+	core.soil_organic_add_organic_matter(
+		g_soil_organic,
+		g_residue_params,
+		layer2amount,
+		nConcentration,
+	)
 }
 
 no_fire_event :: proc(event: string) {}
 
 dump_model_harvest :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
-	tr.dump(t, strings.concatenate({path, ".optCarbonExportedResidues"}), model.optCarbonExportedResidues)
-	tr.dump(t, strings.concatenate({path, ".optCarbonReturnedResidues"}), model.optCarbonReturnedResidues)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".optCarbonExportedResidues"}),
+		model.optCarbonExportedResidues,
+	)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".optCarbonReturnedResidues"}),
+		model.optCarbonReturnedResidues,
+	)
 	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humusBalanceCarryOver)
 	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clearCropUponNextDay)
 }
@@ -44,7 +57,11 @@ dump_model_harvest :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Mode
 dump_soil_organic_top3 :: proc(t: ^tr.Tracer, path: string, so: ^core.Soil_Organic) {
 	for i in 0 ..< 3 {
 		p2 := fmt.tprintf("%s[%d]", path, i)
-		tr.dump(&(t^), strings.concatenate({p2, ".vo_AOM_Pool.size"}), len(so.soilColumn.layers[i].vo_AOM_Pool))
+		tr.dump(
+			&(t^),
+			strings.concatenate({p2, ".vo_AOM_Pool.size"}),
+			len(so.soilColumn.layers[i].vo_AOM_Pool),
+		)
 	}
 }
 
@@ -61,7 +78,9 @@ load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 main :: proc() {
 	args := os.args
 	if len(args) < 4 {
-		fmt.eprintln("usage: monica_model_harvest_ref <pathToSimJson> <pathToClimateCsv> <numDays>")
+		fmt.eprintln(
+			"usage: monica_model_harvest_ref <pathToSimJson> <pathToClimateCsv> <numDays>",
+		)
 		os.exit(2)
 	}
 	path_to_sim_json := args[1]
@@ -110,14 +129,20 @@ main :: proc() {
 	env := mrun.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
 	env_params := jx.get(env, "params")
 
-	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
 
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	model := core.make_monica_model(&cpp, a)
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	wheat_crop_params := p.make_crop_parameters()
 	_ = p.crop_parameters_merge_sj_cj(
@@ -150,7 +175,7 @@ main :: proc() {
 	model.currentCropModule = &cm
 	g_residue_params = &cm.residueParams.base
 
-	model.soilMoisture.cropModule = &cm
+	model.soilMoisture.crop_module = &cm
 	model.soilOrganic.cropModule = &cm
 	model.soilTransport.cropModule = &cm
 
@@ -160,7 +185,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -188,7 +218,15 @@ main :: proc() {
 		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0
 
-		core.soil_temperature_step(&model.soilTemperature, tmin, tmax, globrad, cm.vc_SoilCoverage, model.soilMoisture.snowComponent.vm_SnowDepth, model.soilMoisture.frostComponent.vm_TemperatureUnderSnow)
+		core.soil_temperature_step(
+			&model.soilTemperature,
+			tmin,
+			tmax,
+			globrad,
+			cm.vc_SoilCoverage,
+			model.soilMoisture.snow_component.vm_SnowDepth,
+			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
+		)
 		core.soil_moisture_step(
 			&model.soilMoisture,
 			vs_GroundwaterDepth,
@@ -235,7 +273,10 @@ main :: proc() {
 	tr.set_day(&t, 0)
 	{
 		spec: core.Harvest_Spec
-		ocmd := core.Harvest_Opt_Carbon_Management_Data{maxResidueRecoverFraction = 1, cropUsage = .Biomass_Production}
+		ocmd := core.Harvest_Opt_Carbon_Management_Data {
+			maxResidueRecoverFraction = 1,
+			cropUsage                 = .Biomass_Production,
+		}
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
 	dump_model_harvest(&t, "model", model)
@@ -280,9 +321,18 @@ main :: proc() {
 	{
 		spec: core.Harvest_Spec
 		spec.organ2specVal = make(map[int]core.Harvest_Spec_Value, 0, a)
-		spec.organ2specVal[1] = core.Harvest_Spec_Value{exportPercentage = 70.0, incorporate = true}
-		spec.organ2specVal[3] = core.Harvest_Spec_Value{exportPercentage = 90.0, incorporate = false}
-		ocmd := core.Harvest_Opt_Carbon_Management_Data{maxResidueRecoverFraction = 1, cropUsage = .Biomass_Production}
+		spec.organ2specVal[1] = core.Harvest_Spec_Value {
+			exportPercentage = 70.0,
+			incorporate      = true,
+		}
+		spec.organ2specVal[3] = core.Harvest_Spec_Value {
+			exportPercentage = 90.0,
+			incorporate      = false,
+		}
+		ocmd := core.Harvest_Opt_Carbon_Management_Data {
+			maxResidueRecoverFraction = 1,
+			cropUsage                 = .Biomass_Production,
+		}
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
 	dump_model_harvest(&t, "model", model)
@@ -292,7 +342,10 @@ main :: proc() {
 	tr.set_day(&t, 4)
 	{
 		spec: core.Harvest_Spec
-		ocmd := core.Harvest_Opt_Carbon_Management_Data{maxResidueRecoverFraction = 1, cropUsage = .Biomass_Production}
+		ocmd := core.Harvest_Opt_Carbon_Management_Data {
+			maxResidueRecoverFraction = 1,
+			cropUsage                 = .Biomass_Production,
+		}
 		core.monica_model_harvest_current_crop(model, false, spec, ocmd, 0, a)
 	}
 	dump_model_harvest(&t, "model", model)

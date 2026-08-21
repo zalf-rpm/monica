@@ -39,6 +39,8 @@ import "../soil"
 import libc "core:c/libc"
 import "core:fmt"
 
+STOMATA_RESISTANCE :: 100 // FAO default value [s m-1]
+
 // C++: struct monica::SoilMoisture
 Soil_Moisture :: struct {
 	vm_EvaporatedFromSurface:          f64,
@@ -53,8 +55,7 @@ Soil_Moisture :: struct {
 	vm_ActualEvapotranspiration:       f64,
 	vm_ActualTranspiration:            f64,
 	vm_AvailableWater:                 [dynamic]f64,
-	vm_CapillaryRise:                  f64,
-	pm_CapillaryRiseRate:              [dynamic]f64,
+	// vm_CapillaryRise:                  f64,
 	vm_CapillaryWater:                 [dynamic]f64,
 	vm_CapillaryWater70:               [dynamic]f64,
 	vm_Evaporation:                    [dynamic]f64,
@@ -70,18 +71,18 @@ Soil_Moisture :: struct {
 	vm_HydraulicConductivityRedux:     f64,
 	vm_Infiltration:                   f64,
 	vm_Interception:                   f64,
-	vc_KcFactor:                       f64,
+	kc_factor:                         f64,
 	vm_Lambda:                         [dynamic]f64,
 	vm_LayerThickness:                 [dynamic]f64,
-	pm_LeachingDepthLayer:             int,
-	vc_NetPrecipitation:               f64,
+	leaching_depth_layer_idx:          int,
+	net_precipitation_mm:              f64,
 	vm_LastWettingWasRain:             bool,
 	vm_Ke:                             f64,
 	vm_irrigFwEvent:                   f64,
 	vm_irrigIsDripEvent:               bool,
 	vw_NetRadiation:                   f64,
 	vm_PermanentWiltingPoint:          [dynamic]f64,
-	vc_PercentageSoilCoverage:         f64,
+	soil_coverage_percent:             f64,
 	vm_PercolationRate:                [dynamic]f64,
 	vm_ReferenceEvapotranspiration:    f64,
 	vm_ResidualEvapotranspiration:     [dynamic]f64,
@@ -90,7 +91,6 @@ Soil_Moisture :: struct {
 	vm_SoilMoisture_crit:              f64,
 	vm_SoilMoistureDeficit:            f64,
 	vm_SoilPoreVolume:                 [dynamic]f64,
-	vc_StomataResistance:              f64,
 	vm_SurfaceRoughness:               f64,
 	vm_SurfaceRunOff:                  f64,
 	vm_SumSurfaceRunOff:               f64,
@@ -99,9 +99,9 @@ Soil_Moisture :: struct {
 	vm_Transpiration:                  [dynamic]f64,
 	vm_WaterFlux:                      [dynamic]f64,
 	vm_XSACriticalSoilMoisture:        f64,
-	snowComponent:                     Snow_Component,
-	frostComponent:                    Frost_Component,
-	cropModule:                        ^Crop_Module,
+	snow_component:                    Snow_Component,
+	frost_component:                   Frost_Component,
+	crop_module:                       ^Crop_Module,
 }
 
 // C++ in-class initialisers not covered by Odin's zero value: vc_KcFactor{0.6},
@@ -109,7 +109,7 @@ Soil_Moisture :: struct {
 @(private)
 make_default_soil_moisture :: proc() -> Soil_Moisture {
 	sm: Soil_Moisture
-	sm.vc_KcFactor = 0.6
+	sm.kc_factor = 0.6
 	sm.vm_irrigFwEvent = 1.0
 	sm.vm_ReferenceEvapotranspiration = 6.0
 	return sm
@@ -148,7 +148,6 @@ make_soil_moisture :: proc(
 	sm.numberOfSoilLayers = len(sc.layers)
 
 	resize(&sm.vm_AvailableWater, sm.numberOfMoistureLayers)
-	resize(&sm.pm_CapillaryRiseRate, sm.numberOfMoistureLayers)
 	resize(&sm.vm_CapillaryWater, sm.numberOfMoistureLayers)
 	resize(&sm.vm_CapillaryWater70, sm.numberOfMoistureLayers)
 	resize(&sm.vm_Evaporation, sm.numberOfMoistureLayers)
@@ -176,7 +175,7 @@ make_soil_moisture :: proc(
 	sm.vm_SurfaceRoughness = smPs.pm_SurfaceRoughness
 	sm.vm_GroundwaterDischarge = smPs.pm_GroundwaterDischarge
 
-	sm.pm_LeachingDepthLayer =
+	sm.leaching_depth_layer_idx =
 		int(libc.floor(0.5 + (sm.env_params.p_LeachingDepth / layer_thickness))) - 1
 
 	resize(&sm.vm_SaturatedHydraulicConductivity, sm.numberOfMoistureLayers)
@@ -184,9 +183,9 @@ make_soil_moisture :: proc(
 		sm.vm_SaturatedHydraulicConductivity[i] = smPs.pm_SaturatedHydraulicConductivity
 	}
 
-	initialize_snow_component(&sm.snowComponent, sc, smPs)
+	initialize_snow_component(&sm.snow_component, sc, smPs)
 	initialize_frost_component(
-		&sm.frostComponent,
+		&sm.frost_component,
 		sc,
 		smPs.pm_HydraulicConductivityRedux,
 		envPs.p_timeStep,
@@ -250,22 +249,22 @@ soil_moisture_step :: proc(
 	vc_DevelopmentalStage := 0
 
 	// C++: `sm->monica.currentCropModule.get()` - see the package comment.
-	if sm.cropModule != nil {
+	if sm.crop_module != nil {
 		vc_CropPlanted = true
-		sm.vc_PercentageSoilCoverage = sm.cropModule.vc_SoilCoverage
-		sm.vc_KcFactor = sm.cropModule.vc_KcFactor
-		vc_CropHeight = sm.cropModule.vc_CropHeight
-		vc_DevelopmentalStage = sm.cropModule.vc_DevelopmentalStage
+		sm.soil_coverage_percent = sm.crop_module.vc_SoilCoverage
+		sm.kc_factor = sm.crop_module.vc_KcFactor
+		vc_CropHeight = sm.crop_module.vc_CropHeight
+		vc_DevelopmentalStage = sm.crop_module.vc_DevelopmentalStage
 		if vc_DevelopmentalStage > 0 {
-			sm.vc_NetPrecipitation = sm.cropModule.vc_NetPrecipitation
+			sm.net_precipitation_mm = sm.crop_module.vc_NetPrecipitation
 		} else {
-			sm.vc_NetPrecipitation = vw_Precipitation
+			sm.net_precipitation_mm = vw_Precipitation
 		}
 	} else {
 		vc_CropPlanted = false
-		sm.vc_KcFactor = sm.mod_params.pm_KcFactor
-		sm.vc_NetPrecipitation = vw_Precipitation
-		sm.vc_PercentageSoilCoverage = 0.0
+		sm.kc_factor = sm.mod_params.pm_KcFactor
+		sm.net_precipitation_mm = vw_Precipitation
+		sm.soil_coverage_percent = 0.0
 	}
 	_ = vc_CropPlanted
 	_ = vc_CropHeight
@@ -288,11 +287,11 @@ soil_moisture_step :: proc(
 	sc.vm_GroundwaterTableLayer = sm.vm_GroundwaterTableLayer
 
 	// calculates snow layer water storage and release
-	calc_snow_layer(&sm.snowComponent, vw_MeanAirTemperature, sm.vc_NetPrecipitation)
-	vm_WaterToInfiltrate := sm.snowComponent.vm_WaterToInfiltrate
+	calc_snow_layer(&sm.snow_component, vw_MeanAirTemperature, sm.net_precipitation_mm)
+	vm_WaterToInfiltrate := sm.snow_component.vm_WaterToInfiltrate
 
 	// Calculates frost and thaw depth and switches lambda
-	calc_soil_frost(&sm.frostComponent, vw_MeanAirTemperature, sm.snowComponent.vm_SnowDepth)
+	calc_soil_frost(&sm.frost_component, vw_MeanAirTemperature, sm.snow_component.vm_SnowDepth)
 
 	// calculates infiltration of water from surface
 	infiltration(sm, vm_WaterToInfiltrate)
@@ -310,8 +309,8 @@ soil_moisture_step :: proc(
 
 	evapotranspiration(
 		sm,
-		sm.vc_PercentageSoilCoverage,
-		sm.vc_KcFactor,
+		sm.soil_coverage_percent,
+		sm.kc_factor,
 		sm.site_params.vs_HeightNN,
 		vw_MaxAirTemperature,
 		vw_MinAirTemperature,
@@ -345,7 +344,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	sm.vm_Infiltration = 0.0
 	sm.vm_Interception = 0.0
 	sm.vm_SurfaceRunOff = 0.0
-	sm.vm_CapillaryRise = 0.0
+	// sm.vm_CapillaryRise = 0.0
 	sm.vm_GroundwaterAdded = 0.0
 	sm.vm_ActualTranspiration = 0.0
 
@@ -386,7 +385,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	if sm.vm_SurfaceWaterStorage >
 	   (10.0 * sm.vm_SurfaceRoughness / (sm.site_params.vs_Slope + 0.001)) {
 		vm_RunOffFactor :=
-			0.02 + (sm.vm_SurfaceRoughness / 4.0) + (sm.vc_PercentageSoilCoverage / 15.0)
+			0.02 + (sm.vm_SurfaceRoughness / 4.0) + (sm.soil_coverage_percent / 15.0)
 		if sm.site_params.vs_Slope < 0.0 || sm.site_params.vs_Slope > 1.0 {
 			fmt.eprintln("Slope value out ouf boundary")
 		} else if sm.site_params.vs_Slope == 0.0 {
@@ -410,7 +409,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	if sm.vm_SoilMoisture[0] > sm.vm_FieldCapacity[0] {
 		sm.vm_GravitationalWater[0] =
 			(sm.vm_SoilMoisture[0] - sm.vm_FieldCapacity[0]) * 1000.0 * sm.vm_LayerThickness[0]
-		vm_LambdaReduced := sm.vm_Lambda[0] * sm.frostComponent.vm_LambdaRedux[0]
+		vm_LambdaReduced := sm.vm_Lambda[0] * sm.frost_component.vm_LambdaRedux[0]
 		vm_PercolationFactor := 1 + vm_LambdaReduced * sm.vm_GravitationalWater[0]
 		sm.vm_PercolationRate[0] =
 			(sm.vm_GravitationalWater[0] * sm.vm_GravitationalWater[0] * vm_LambdaReduced) /
@@ -463,7 +462,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 capillary_rise :: proc(sm: ^Soil_Moisture, allocator := context.allocator) {
 	sc := sm.soil_column
 
-	vc_RootingDepth := sm.cropModule != nil ? sm.cropModule.vc_RootingDepth : 0
+	vc_RootingDepth := sm.crop_module != nil ? sm.crop_module.vc_RootingDepth : 0
 
 	// NOTE(c++-quirk): C++ computes this as size_t arithmetic
 	// (max(size_t(1), vm_GroundwaterTableLayer - vc_RootingDepth)): if
@@ -537,7 +536,7 @@ percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscillGroundwaterLayer:
 
 				vm_LambdaReduced :=
 					sm.vm_Lambda[indexOfLayerBelow] *
-					sm.frostComponent.vm_LambdaRedux[indexOfLayerBelow]
+					sm.frost_component.vm_LambdaRedux[indexOfLayerBelow]
 				vm_PercolationFactor :=
 					1 + vm_LambdaReduced * sm.vm_GravitationalWater[indexOfLayerBelow]
 				sm.vm_PercolationRate[indexOfLayerBelow] =
@@ -618,7 +617,7 @@ percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscillGroundwaterLayer:
 		}
 	}
 
-	sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.pm_LeachingDepthLayer]
+	sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.leaching_depth_layer_idx]
 }
 
 // C++: void monica::soilmoisture::groundwaterReplenishment(SoilMoisture*)
@@ -659,14 +658,14 @@ groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
 		}
 	}
 
-	if sm.pm_LeachingDepthLayer > sm.vm_GroundwaterTableLayer - 1 {
+	if sm.leaching_depth_layer_idx > sm.vm_GroundwaterTableLayer - 1 {
 		if sm.vm_GroundwaterTableLayer - 1 < 0 {
 			sm.vm_FluxAtLowerBoundary = 0.0
 		} else {
 			sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.vm_GroundwaterTableLayer - 1]
 		}
 	} else {
-		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.pm_LeachingDepthLayer]
+		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.leaching_depth_layer_idx]
 	}
 }
 
@@ -686,7 +685,7 @@ percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
 				sm.vm_LayerThickness[0]
 			vm_LambdaReduced :=
 				sm.vm_Lambda[indexOfLayerBelow] *
-				sm.frostComponent.vm_LambdaRedux[indexOfLayerBelow]
+				sm.frost_component.vm_LambdaRedux[indexOfLayerBelow]
 			vm_PercolationFactor :=
 				1.0 + (vm_LambdaReduced * sm.vm_GravitationalWater[indexOfLayerBelow])
 			sm.vm_PercolationRate[indexOfLayerBelow] =
@@ -722,8 +721,9 @@ percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
 		sm.vm_GroundwaterAdded = sm.vm_PercolationRate[indexOfLayerBelow]
 	}
 
-	if sm.pm_LeachingDepthLayer > 0 && sm.pm_LeachingDepthLayer < sm.numberOfMoistureLayers - 1 {
-		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.pm_LeachingDepthLayer]
+	if sm.leaching_depth_layer_idx > 0 &&
+	   sm.leaching_depth_layer_idx < sm.numberOfMoistureLayers - 1 {
+		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.leaching_depth_layer_idx]
 	} else {
 		sm.vm_FluxAtLowerBoundary = sm.vm_WaterFlux[sm.numberOfMoistureLayers - 2]
 	}
@@ -792,7 +792,7 @@ dual_kc_precomputation :: proc(
 	ET0 := sm.vm_ReferenceEvapotranspiration
 
 	// --- Kcb: basal crop coefficient (interpolated in crop module) ---
-	Kcb := sm.cropModule.vc_KcbFactor
+	Kcb := sm.crop_module.vc_KcbFactor
 
 	// --- Calculate Depletion first (FAO-56 §8.3) to inform memory logic ---
 	FC0 := sm.vm_FieldCapacity[0]
@@ -893,7 +893,7 @@ dual_kc_precomputation :: proc(
 	// Drip irrigation shading adjustment (FAO-56 §8.3)
 	fw_adj := fw_today
 	if sm.vm_irrigIsDripEvent && !sm.vm_LastWettingWasRain && precip == 0.0 {
-		fw_adj = fw_today * (1.0 - (2.0 / 3.0) * sm.vc_PercentageSoilCoverage)
+		fw_adj = fw_today * (1.0 - (2.0 / 3.0) * sm.soil_coverage_percent)
 		fw_adj = max(0.0, min(fw_adj, 1.0))
 	}
 
@@ -914,12 +914,12 @@ dual_kc_precomputation :: proc(
 	eo_Tmin := 0.6108 * libc.exp((17.27 * tmin) / (tmin + 237.3))
 	RHmin := max(5.0, min(100.0, (eo_Tmin / eo_Tmax) * 100.0))
 	baseline := 1.2 // FAO-56 §6 default for most crops
-	h := max(0.01, sm.cropModule.vc_CropHeight) // native simulated height [m]
+	h := max(0.01, sm.crop_module.vc_CropHeight) // native simulated height [m]
 	Kc_max := baseline + (0.04 * (u2 - 2.0) - 0.004 * (RHmin - 45.0)) * libc.pow(h / 3.0, 0.3)
 	Kc_max = max(Kc_max, Kcb + 0.05)
 
 	// C. few: fraction of exposed and wetted soil (FAO-56 Eq. 74)
-	fc := max(0.0, min(sm.vc_PercentageSoilCoverage, 0.99))
+	fc := max(0.0, min(sm.soil_coverage_percent, 0.99))
 	few := min(1.0 - fc, fw_adj)
 	few = max(0.001, few) // guard against zero denominator
 
@@ -974,7 +974,7 @@ evapotranspiration :: proc(
 	sm.vm_EvaporatedFromSurface = 0.0
 	vm_EvaporationFromSurface := false
 
-	vm_SnowDepth := sm.snowComponent.vm_SnowDepth
+	vm_SnowDepth := sm.snow_component.vm_SnowDepth
 
 	// Berechnung der Bodenevaporation bis max. 4dm Tiefe
 	pm_EvaporationZeta = sm.mod_params.pm_EvaporationZeta
@@ -987,13 +987,13 @@ evapotranspiration :: proc(
 	if vc_DevelopmentalStage > 0 {
 		// C++: `monica.currentCropModule.get()` - see the package comment.
 		if vw_ReferenceEvapotranspiration < 0.0 {
-			sm.vm_ReferenceEvapotranspiration = sm.cropModule.vc_ReferenceEvapotranspiration
+			sm.vm_ReferenceEvapotranspiration = sm.crop_module.vc_ReferenceEvapotranspiration
 		} else {
 			sm.vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration
 		}
 
-		vm_PotentialEvapotranspiration = sm.cropModule.vc_RemainingEvapotranspiration
-		vc_EvaporatedFromIntercept = sm.cropModule.vc_EvaporatedFromIntercept
+		vm_PotentialEvapotranspiration = sm.crop_module.vc_RemainingEvapotranspiration
+		vc_EvaporatedFromIntercept = sm.crop_module.vc_EvaporatedFromIntercept
 	} else { 	// if no crop grows ETp is calculated from ET0 * kc
 		if vw_ReferenceEvapotranspiration < 0.0 {
 			sm.vm_ReferenceEvapotranspiration = reference_evapotranspiration(
@@ -1056,7 +1056,7 @@ evapotranspiration :: proc(
 			// sm.cropModule != nil. Otherwise the Single Kc loop runs unchanged.
 			// -----------------------------------------------------------------
 			E_pot_dualKc := 0.0
-			useDualKc := dual_kc_method && vc_DevelopmentalStage > 0 && sm.cropModule != nil
+			useDualKc := dual_kc_method && vc_DevelopmentalStage > 0 && sm.crop_module != nil
 			if useDualKc {
 				E_pot_dualKc = dual_kc_precomputation(
 					sm,
@@ -1122,7 +1122,7 @@ evapotranspiration :: proc(
 					}
 
 					// C++: `monica.currentCropModule.get()->vc_Transpiration` - see the package comment.
-					sm.vm_Transpiration[i_Layer] = sm.cropModule.vc_Transpiration[i_Layer]
+					sm.vm_Transpiration[i_Layer] = sm.crop_module.vc_Transpiration[i_Layer]
 
 					// Transpiration is capped in case potential ET after surface
 					// and interception evaporation has occurred on same day
@@ -1291,9 +1291,7 @@ reference_evapotranspiration :: proc(
 	vm_AerodynamicResistance := 208.0 / vm_WindSpeed_2m
 	_ = vm_AerodynamicResistance
 
-	sm.vc_StomataResistance = 100 // FAO default value [s m-1]
-
-	vm_SurfaceResistance := sm.vc_StomataResistance / 1.44
+	vm_SurfaceResistance := STOMATA_RESISTANCE / 1.44
 
 	vc_ClearSkySolarRadiation := (0.75 + 0.00002 * vs_HeightNN) * vc_ExtraterrestrialRadiation
 	vc_RelativeShortwaveRadiation :=
@@ -1473,7 +1471,7 @@ get_snow_depth_and_calc_temperature_under_snow :: proc(
 	snowDepth: f64,
 	temperatureUnderSnow: f64,
 ) {
-	snowDepth = sm.snowComponent.vm_SnowDepth
-	temperatureUnderSnow = calc_temperature_under_snow(&sm.frostComponent, avgAirTemp, snowDepth)
+	snowDepth = sm.snow_component.vm_SnowDepth
+	temperatureUnderSnow = calc_temperature_under_snow(&sm.frost_component, avgAirTemp, snowDepth)
 	return
 }
