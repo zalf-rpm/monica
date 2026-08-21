@@ -54,12 +54,10 @@ Soil_Moisture :: struct {
 	vm_ActualEvapotranspiration:       f64,
 	vm_ActualTranspiration:            f64,
 	vm_AvailableWater:                 [dynamic]f64,
-	// vm_CapillaryRise:                  f64,
 	vm_CapillaryWater:                 [dynamic]f64,
 	vm_CapillaryWater70:               [dynamic]f64,
 	vm_Evaporation:                    [dynamic]f64,
 	vm_Evapotranspiration:             [dynamic]f64,
-	// vm_FieldCapacity:                    [dynamic]f64,
 	field_capacity_below_m3_m3:        f64,
 	vm_FluxAtLowerBoundary:            f64,
 	vm_GravitationalWater:             [dynamic]f64,
@@ -72,9 +70,7 @@ Soil_Moisture :: struct {
 	vm_Infiltration:                   f64,
 	vm_Interception:                   f64,
 	kc_factor:                         f64,
-	// vm_Lambda:                           [dynamic]f64,
 	lambda_below:                      f64,
-	// vm_LayerThickness:                 [dynamic]f64,
 	layer_thickness_m:                 f64,
 	leaching_depth_layer_idx:          int,
 	net_precipitation_mm:              f64,
@@ -83,14 +79,11 @@ Soil_Moisture :: struct {
 	vm_irrigFwEvent:                   f64,
 	vm_irrigIsDripEvent:               bool,
 	vw_NetRadiation:                   f64,
-	// vm_PermanentWiltingPoint:            [dynamic]f64,
-	// permanent_wilting_point_below_m3_m3: f64,
 	soil_coverage_percent:             f64,
 	vm_PercolationRate:                [dynamic]f64,
 	vm_ReferenceEvapotranspiration:    f64,
 	vm_ResidualEvapotranspiration:     [dynamic]f64,
 	vm_SaturatedHydraulicConductivity: [dynamic]f64,
-	// vm_SoilMoisture:                     [dynamic]f64,
 	soil_moisture_below_m3_m3:         f64,
 	// C++-quirk-preserving snapshot (see get_e_reducer_1): soil_column.layers
 	// used to only be written back to at the end of the day, so getEReducer1's
@@ -99,10 +92,9 @@ Soil_Moisture :: struct {
 	// capillary_rise now mutate soil_column.layers directly (no separate
 	// scratch copy), this snapshot - taken once at the top of the day, before
 	// infiltration - reproduces that lag explicitly.
-	vm_SoilMoisture_DayStart:         [dynamic]f64,
+	vm_SoilMoisture_DayStart:          [dynamic]f64,
 	vm_SoilMoisture_crit:              f64,
 	vm_SoilMoistureDeficit:            f64,
-	// vm_SoilPoreVolume:                   [dynamic]f64,
 	pore_volume_below_m3_m3:           f64,
 	vm_SurfaceRoughness:               f64,
 	vm_SurfaceRunOff:                  f64,
@@ -110,7 +102,6 @@ Soil_Moisture :: struct {
 	vm_SurfaceWaterStorage:            f64,
 	vm_TotalWaterRemoval:              f64,
 	vm_Transpiration:                  [dynamic]f64,
-	// vm_WaterFlux:                        [dynamic]f64,
 	water_flux_below:                  f64,
 	vm_XSACriticalSoilMoisture:        f64,
 	snow_component:                    Snow_Component,
@@ -159,26 +150,13 @@ make_soil_moisture :: proc(
 	resize(&sm.vm_CapillaryWater70, no_of_mois_layers)
 	resize(&sm.vm_Evaporation, no_of_mois_layers)
 	resize(&sm.vm_Evapotranspiration, no_of_mois_layers)
-	// resize(&sm.vm_FieldCapacity, sm.numberOfMoistureLayers)
 	resize(&sm.vm_GravitationalWater, no_of_mois_layers)
 	resize(&sm.vm_HeatConductivity, no_of_mois_layers)
-	// resize(&sm.vm_Lambda, sm.numberOfMoistureLayers)
-	// resize(&sm.vm_LayerThickness, sm.numberOfMoistureLayers)
 	sm.layer_thickness_m = layer_thickness
-	// for i in 0 ..< len(sm.vm_LayerThickness) {
-	// 	sm.vm_LayerThickness[i] = 0.01
-	// }
-	// resize(&sm.vm_PermanentWiltingPoint, sm.numberOfMoistureLayers)
 	resize(&sm.vm_PercolationRate, no_of_mois_layers)
 	resize(&sm.vm_ResidualEvapotranspiration, no_of_mois_layers)
-	// resize(&sm.vm_SoilMoisture, sm.numberOfMoistureLayers)
-	// for i in 0 ..< len(sm.vm_SoilMoisture) {
-	// 	sm.vm_SoilMoisture[i] = 0.20
-	// }
 	resize(&sm.vm_SoilMoisture_DayStart, sm.no_of_soil_layers)
-	// resize(&sm.vm_SoilPoreVolume, sm.numberOfMoistureLayers)
 	resize(&sm.vm_Transpiration, no_of_mois_layers)
-	// resize(&sm.vm_WaterFlux, sm.numberOfMoistureLayers)
 
 	sm.vm_HydraulicConductivityRedux = smPs.pm_HydraulicConductivityRedux
 	sm.vm_SurfaceRoughness = smPs.pm_SurfaceRoughness
@@ -229,28 +207,6 @@ soil_moisture_step :: proc(
 ) {
 	sc := sm.soil_column
 
-	// for i in 0 ..< sm.numberOfSoilLayers {
-	// 	sm.vm_SoilMoisture[i] = sc.layers[i].vs_SoilMoisture_m3
-	// 	sm.vm_WaterFlux[i] = 0.0
-	// 	sm.vm_FieldCapacity[i] = sc.layers[i].vs_FieldCapacity
-	// 	sm.vm_SoilPoreVolume[i] = sc.layers[i].vs_Saturation
-	// 	sm.vm_PermanentWiltingPoint[i] = sc.layers[i].vs_PermanentWiltingPoint
-	// 	sm.vm_LayerThickness[i] = sc.layers[i].vs_LayerThickness
-	// 	sm.vm_Lambda[i] = sc.layers[i].vs_Lambda
-	// }
-
-	// sm.vm_SoilMoisture[sm.numberOfMoistureLayers - 1] =
-	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_SoilMoisture_m3
-	// sm.vm_WaterFlux[sm.numberOfMoistureLayers - 1] = 0.0
-	// sm.vm_FieldCapacity[sm.numberOfMoistureLayers - 1] =
-	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_FieldCapacity
-	// sm.vm_SoilPoreVolume[sm.numberOfMoistureLayers - 1] =
-	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_Saturation
-	// sm.vm_LayerThickness[sm.numberOfMoistureLayers - 1] =
-	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_LayerThickness
-	// sm.vm_Lambda[sm.numberOfMoistureLayers - 1] =
-	// 	sc.layers[sm.numberOfMoistureLayers - 2].vs_Lambda
-
 	for i in 0 ..< sm.no_of_soil_layers {
 		sc.layers[i].vs_SoilWaterFlux = 0.0
 		sm.vm_SoilMoisture_DayStart[i] = sc.layers[i].vs_SoilMoisture_m3
@@ -264,16 +220,12 @@ soil_moisture_step :: proc(
 
 	sm.vm_SurfaceWaterStorage = sc.vs_SurfaceWaterStorage
 
-	vc_CropPlanted := false
-	vc_CropHeight := 0.0
 	vc_DevelopmentalStage := 0
 
 	// C++: `sm->monica.currentCropModule.get()` - see the package comment.
 	if sm.crop_module != nil {
-		vc_CropPlanted = true
 		sm.soil_coverage_percent = sm.crop_module.vc_SoilCoverage
 		sm.kc_factor = sm.crop_module.vc_KcFactor
-		vc_CropHeight = sm.crop_module.vc_CropHeight
 		vc_DevelopmentalStage = sm.crop_module.vc_DevelopmentalStage
 		if vc_DevelopmentalStage > 0 {
 			sm.net_precipitation_mm = sm.crop_module.vc_NetPrecipitation
@@ -281,13 +233,10 @@ soil_moisture_step :: proc(
 			sm.net_precipitation_mm = vw_Precipitation
 		}
 	} else {
-		vc_CropPlanted = false
 		sm.kc_factor = sm.mod_params.pm_KcFactor
 		sm.net_precipitation_mm = vw_Precipitation
 		sm.soil_coverage_percent = 0.0
 	}
-	_ = vc_CropPlanted
-	_ = vc_CropHeight
 
 	// Recalculates current depth of groundwater table
 	sm.vm_GroundwaterTableLayer = sm.no_of_soil_layers + 2
@@ -350,10 +299,6 @@ soil_moisture_step :: proc(
 
 	capillary_rise(sm)
 
-	// for i_Layer in 0 ..< sm.numberOfSoilLayers {
-	// 	sc.layers[i_Layer].vs_SoilMoisture_m3 = sm.vm_SoilMoisture[i_Layer]
-	// 	sc.layers[i_Layer].vs_SoilWaterFlux = sm.vm_WaterFlux[i_Layer]
-	// }
 	sc.vs_SurfaceWaterStorage = sm.vm_SurfaceWaterStorage
 	sc.vs_FluxAtLowerBoundary = sm.vm_FluxAtLowerBoundary
 }
