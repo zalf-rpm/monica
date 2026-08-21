@@ -70,6 +70,7 @@ Soil_Moisture :: struct {
 	vm_HydraulicConductivityRedux:     f64,
 	vm_Infiltration:                   f64,
 	vm_Interception:                   f64,
+	vc_KcFactor:                       f64,
 	vm_Lambda:                         [dynamic]f64,
 	vm_LayerThickness:                 [dynamic]f64,
 	pm_LeachingDepthLayer:             int,
@@ -80,6 +81,7 @@ Soil_Moisture :: struct {
 	vm_irrigIsDripEvent:               bool,
 	vw_NetRadiation:                   f64,
 	vm_PermanentWiltingPoint:          [dynamic]f64,
+	vc_PercentageSoilCoverage:         f64,
 	vm_PercolationRate:                [dynamic]f64,
 	vm_ReferenceEvapotranspiration:    f64,
 	vm_ResidualEvapotranspiration:     [dynamic]f64,
@@ -107,7 +109,7 @@ Soil_Moisture :: struct {
 @(private)
 make_default_soil_moisture :: proc() -> Soil_Moisture {
 	sm: Soil_Moisture
-	// sm.vc_KcFactor = 0.6
+	sm.vc_KcFactor = 0.6
 	sm.vm_irrigFwEvent = 1.0
 	sm.vm_ReferenceEvapotranspiration = 6.0
 	return sm
@@ -194,16 +196,6 @@ make_soil_moisture :: proc(
 	return sm
 }
 
-kc_factor :: proc(sm: ^Soil_Moisture) -> f64 {
-	return sm.cropModule == nil ? sm.mod_params.pm_KcFactor : sm.cropModule.vc_KcFactor
-}
-
-net_precipitation :: proc(sm: ^Soil_Moisture, daily_precipitation: f64) -> f64 {
-	return(
-		sm.cropModule != nil && sm.cropModule.vc_DevelopmentalStage > 0 ? sm.cropModule.vc_NetPrecipitation : daily_precipitation \
-	)
-}
-
 // C++: void monica::soilmoisture::step(SoilMoisture*, double, double, double,
 //        double, double, double, double, double, int, double)
 //
@@ -260,6 +252,8 @@ soil_moisture_step :: proc(
 	// C++: `sm->monica.currentCropModule.get()` - see the package comment.
 	if sm.cropModule != nil {
 		vc_CropPlanted = true
+		sm.vc_PercentageSoilCoverage = sm.cropModule.vc_SoilCoverage
+		sm.vc_KcFactor = sm.cropModule.vc_KcFactor
 		vc_CropHeight = sm.cropModule.vc_CropHeight
 		vc_DevelopmentalStage = sm.cropModule.vc_DevelopmentalStage
 		if vc_DevelopmentalStage > 0 {
@@ -269,7 +263,9 @@ soil_moisture_step :: proc(
 		}
 	} else {
 		vc_CropPlanted = false
+		sm.vc_KcFactor = sm.mod_params.pm_KcFactor
 		sm.vc_NetPrecipitation = vw_Precipitation
+		sm.vc_PercentageSoilCoverage = 0.0
 	}
 	_ = vc_CropPlanted
 	_ = vc_CropHeight
@@ -314,6 +310,8 @@ soil_moisture_step :: proc(
 
 	evapotranspiration(
 		sm,
+		sm.vc_PercentageSoilCoverage,
+		sm.vc_KcFactor,
 		sm.site_params.vs_HeightNN,
 		vw_MaxAirTemperature,
 		vw_MinAirTemperature,
@@ -385,11 +383,10 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		sm.vm_SurfaceWaterStorage -= sm.vm_Infiltration
 	}
 
-	percentage_soil_coverage := sm.cropModule == nil ? 0.0 : sm.cropModule.vc_SoilCoverage
 	if sm.vm_SurfaceWaterStorage >
 	   (10.0 * sm.vm_SurfaceRoughness / (sm.site_params.vs_Slope + 0.001)) {
 		vm_RunOffFactor :=
-			0.02 + (sm.vm_SurfaceRoughness / 4.0) + (percentage_soil_coverage / 15.0)
+			0.02 + (sm.vm_SurfaceRoughness / 4.0) + (sm.vc_PercentageSoilCoverage / 15.0)
 		if sm.site_params.vs_Slope < 0.0 || sm.site_params.vs_Slope > 1.0 {
 			fmt.eprintln("Slope value out ouf boundary")
 		} else if sm.site_params.vs_Slope == 0.0 {
@@ -895,9 +892,8 @@ dual_kc_precomputation :: proc(
 
 	// Drip irrigation shading adjustment (FAO-56 §8.3)
 	fw_adj := fw_today
-	percentage_soil_coverage := sm.cropModule == nil ? 0.0 : sm.cropModule.vc_SoilCoverage
 	if sm.vm_irrigIsDripEvent && !sm.vm_LastWettingWasRain && precip == 0.0 {
-		fw_adj = fw_today * (1.0 - (2.0 / 3.0) * percentage_soil_coverage)
+		fw_adj = fw_today * (1.0 - (2.0 / 3.0) * sm.vc_PercentageSoilCoverage)
 		fw_adj = max(0.0, min(fw_adj, 1.0))
 	}
 
@@ -923,7 +919,7 @@ dual_kc_precomputation :: proc(
 	Kc_max = max(Kc_max, Kcb + 0.05)
 
 	// C. few: fraction of exposed and wetted soil (FAO-56 Eq. 74)
-	fc := max(0.0, min(percentage_soil_coverage, 0.99))
+	fc := max(0.0, min(sm.vc_PercentageSoilCoverage, 0.99))
 	few := min(1.0 - fc, fw_adj)
 	few = max(0.001, few) // guard against zero denominator
 
@@ -951,6 +947,8 @@ dual_kc_precomputation :: proc(
 // the package comment. Threaded through to dual_kc_precomputation.
 evapotranspiration :: proc(
 	sm: ^Soil_Moisture,
+	vc_PercentageSoilCoverage,
+	vc_KcFactor,
 	vs_HeightNN,
 	vw_MaxAirTemperature,
 	vw_MinAirTemperature,
@@ -965,7 +963,6 @@ evapotranspiration :: proc(
 	dual_kc_method: bool,
 	daily_sum_irrigation_water: f64,
 ) {
-	kc_factor_ := kc_factor(sm)
 	vm_EReducer_1 := 0.0
 	vm_EReducer_2 := 0.0
 	vm_EReducer_3 := 0.0
@@ -1016,7 +1013,7 @@ evapotranspiration :: proc(
 			sm.vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration
 		}
 
-		vm_PotentialEvapotranspiration = sm.vm_ReferenceEvapotranspiration * kc_factor_
+		vm_PotentialEvapotranspiration = sm.vm_ReferenceEvapotranspiration * vc_KcFactor
 	}
 
 	sm.vm_ActualEvaporation = 0.0
@@ -1032,7 +1029,7 @@ evapotranspiration :: proc(
 		if sm.vm_SurfaceWaterStorage > 0.0 {
 			vm_EvaporationFromSurface = true
 			// Water surface evaporates with Kc = 1.1.
-			vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (1.1 / kc_factor_)
+			vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (1.1 / vc_KcFactor)
 
 			// If a snow layer is present no water evaporates from surface water sources
 			if vm_SnowDepth > 0.0 {
@@ -1048,7 +1045,7 @@ evapotranspiration :: proc(
 					vm_PotentialEvapotranspiration = 0.0
 				}
 			}
-			vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (kc_factor_ / 1.1)
+			vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (vc_KcFactor / 1.1)
 		}
 
 		if vm_PotentialEvapotranspiration > 0 { 	// Evaporation from soil
@@ -1072,12 +1069,11 @@ evapotranspiration :: proc(
 				sm.vm_Ke = 0.0
 			}
 
-			percentage_soil_coverage := sm.cropModule == nil ? 0.0 : sm.cropModule.vc_SoilCoverage
 			for i_Layer in 0 ..< sm.numberOfSoilLayers {
 				vm_EReducer_1 = get_e_reducer_1(
 					sm,
 					i_Layer,
-					percentage_soil_coverage,
+					vc_PercentageSoilCoverage,
 					vm_PotentialEvapotranspiration,
 				)
 
@@ -1110,12 +1106,12 @@ evapotranspiration :: proc(
 						sm.vm_Evaporation[i_Layer] = vm_EReducer * E_pot_dualKc
 					} else {
 						// Single Kc: original (1 - beta) * EReducer * PET partitioning
-						if percentage_soil_coverage >= 0.0 && percentage_soil_coverage < 1.0 {
+						if vc_PercentageSoilCoverage >= 0.0 && vc_PercentageSoilCoverage < 1.0 {
 							sm.vm_Evaporation[i_Layer] =
-								((1.0 - percentage_soil_coverage) * vm_EReducer) *
+								((1.0 - vc_PercentageSoilCoverage) * vm_EReducer) *
 								vm_PotentialEvapotranspiration
 						} else {
-							if percentage_soil_coverage >= 1.0 {
+							if vc_PercentageSoilCoverage >= 1.0 {
 								sm.vm_Evaporation[i_Layer] = 0.0
 							}
 						}
@@ -1132,7 +1128,9 @@ evapotranspiration :: proc(
 					// and interception evaporation has occurred on same day
 					if vm_EvaporationFromSurface {
 						sm.vm_Transpiration[i_Layer] =
-							percentage_soil_coverage * vm_EReducer * vm_PotentialEvapotranspiration
+							vc_PercentageSoilCoverage *
+							vm_EReducer *
+							vm_PotentialEvapotranspiration
 					}
 				} else {
 					// no vegetation present - Single Kc / bare soil, always unchanged
