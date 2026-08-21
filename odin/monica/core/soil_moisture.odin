@@ -92,6 +92,14 @@ Soil_Moisture :: struct {
 	vm_SaturatedHydraulicConductivity: [dynamic]f64,
 	// vm_SoilMoisture:                     [dynamic]f64,
 	soil_moisture_below_m3_m3:         f64,
+	// C++-quirk-preserving snapshot (see get_e_reducer_1): soil_column.layers
+	// used to only be written back to at the end of the day, so getEReducer1's
+	// direct soil_column read saw the PREVIOUS day's moisture, not today's
+	// in-progress infiltration/percolation. Since infiltration/percolation/
+	// capillary_rise now mutate soil_column.layers directly (no separate
+	// scratch copy), this snapshot - taken once at the top of the day, before
+	// infiltration - reproduces that lag explicitly.
+	vm_SoilMoisture_DayStart:         [dynamic]f64,
 	vm_SoilMoisture_crit:              f64,
 	vm_SoilMoistureDeficit:            f64,
 	// vm_SoilPoreVolume:                   [dynamic]f64,
@@ -167,6 +175,7 @@ make_soil_moisture :: proc(
 	// for i in 0 ..< len(sm.vm_SoilMoisture) {
 	// 	sm.vm_SoilMoisture[i] = 0.20
 	// }
+	resize(&sm.vm_SoilMoisture_DayStart, sm.no_of_soil_layers)
 	// resize(&sm.vm_SoilPoreVolume, sm.numberOfMoistureLayers)
 	resize(&sm.vm_Transpiration, no_of_mois_layers)
 	// resize(&sm.vm_WaterFlux, sm.numberOfMoistureLayers)
@@ -244,6 +253,7 @@ soil_moisture_step :: proc(
 
 	for i in 0 ..< sm.no_of_soil_layers {
 		sc.layers[i].vs_SoilWaterFlux = 0.0
+		sm.vm_SoilMoisture_DayStart[i] = sc.layers[i].vs_SoilMoisture_m3
 	}
 
 	sm.soil_moisture_below_m3_m3 = sc.layers[sm.no_of_soil_layers - 1].vs_SoilMoisture_m3
@@ -1378,7 +1388,10 @@ get_e_reducer_1 :: proc(
 ) -> f64 {
 	vm_EReductionFactor: f64
 	vm_EvaporationReductionMethod := 1
-	vm_SoilMoisture_m3 := sm.soil_column.layers[i_Layer].vs_SoilMoisture_m3
+	// C++-quirk (see vm_SoilMoisture_DayStart's field comment): this reads
+	// today's moisture as of the START of the day, before infiltration/
+	// percolation/capillary_rise.
+	vm_SoilMoisture_m3 := sm.vm_SoilMoisture_DayStart[i_Layer]
 	vm_PWP := sm.soil_column.layers[i_Layer].vs_PermanentWiltingPoint
 	vm_FK := sm.soil_column.layers[i_Layer].vs_FieldCapacity
 	vm_RelativeEvaporableWater: f64
