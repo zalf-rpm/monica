@@ -107,7 +107,7 @@ main :: proc() {
 	)
 	sm.crop_module = nil // bare soil - see the file comment
 	so := core.make_soil_organic(&sc, cpp.userSoilOrganicParameters)
-	so.cropModule = nil
+	so.crop_module = nil
 
 	// --- climate ---
 	copts := clim.make_csv_via_header_options()

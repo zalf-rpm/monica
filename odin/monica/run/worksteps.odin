@@ -167,7 +167,7 @@ sowing_apply :: proc(
 		core.soil_transport_put_crop(&model.soilTransport, model.currentCropModule)
 		core.put_crop(&model.soilColumn, model.currentCropModule)
 		model.soilMoisture.crop_module = model.currentCropModule
-		model.soilOrganic.cropModule = model.currentCropModule
+		model.soilOrganic.crop_module = model.currentCropModule
 
 		if model.simPs.p_UseNMinMineralFertilisingMethod &&
 		   !model.currentCropModule.cropParams.cultivarParams.winterCrop {
@@ -673,10 +673,10 @@ automatic_harvest_condition :: proc(
 		conditionMet =
 			d.ge(model.currentStepDate, ah.absLatestDate) ||
 			(ah.harvestTime == "maturity" &&
-					core.maturity_reached(cg) &&// harvest after or at latest date
-					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&
-					is_precipitation_ok(// has maturity been reached
-						model.climateData,// check soil moisture
+					core.maturity_reached(cg) &&
+					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&// harvest after or at latest date
+					is_precipitation_ok(
+						model.climateData, // has maturity been reached// check soil moisture
 						ah.max3dayPrecipSum,
 						ah.maxCurrentDayPrecipSum,
 					)) // check precipitation

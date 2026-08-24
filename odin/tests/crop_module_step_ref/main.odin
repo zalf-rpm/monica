@@ -289,7 +289,7 @@ main :: proc() {
 	// widen phase 4's bare-soil coupling to this real, live crop - matches
 	// production soilcolumn::putCrop/soiltransport::putCrop wiring.
 	sm.crop_module = &cm
-	so.cropModule = &cm
+	so.crop_module = &cm
 	str.cropModule = &cm
 
 	copts := clim.make_csv_via_header_options()

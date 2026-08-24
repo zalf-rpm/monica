@@ -143,7 +143,7 @@ main :: proc() {
 	model.currentCropModule = cm
 
 	model.soilMoisture.crop_module = cm
-	model.soilOrganic.cropModule = cm
+	model.soilOrganic.crop_module = cm
 	model.soilTransport.cropModule = cm
 
 	copts := clim.make_csv_via_header_options()

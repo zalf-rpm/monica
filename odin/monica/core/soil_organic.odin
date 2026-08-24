@@ -71,7 +71,7 @@ Soil_Organic :: struct {
 	// incorporation. Automatically set to false if carbamid amount falls
 	// below 0.001.
 	incorporation:               bool,
-	cropModule:                  ^Crop_Module,
+	crop_module:                 ^Crop_Module,
 }
 
 // C++: kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn&,
@@ -1660,7 +1660,7 @@ soil_organic_fo_net_ecosystem_exchange :: proc(
 soil_organic_step :: proc(so: ^Soil_Organic, meanAirTemperature, precipitation, windSpeed: f64) {
 	// C++: `so->cropModule ? so->cropModule->vc_NetPrimaryProduction : 0` - real
 	// SoilOrganic struct field, no monica-back-pointer deviation needed here.
-	netPrimaryProduction := so.cropModule != nil ? so.cropModule.vc_NetPrimaryProduction : 0
+	netPrimaryProduction := so.crop_module != nil ? so.crop_module.vc_NetPrimaryProduction : 0
 
 	soil_organic_fo_urea(so)
 	soil_organic_fo_mit(so)
