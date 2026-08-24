@@ -771,45 +771,48 @@ dual_kc_precomputation :: proc(
 	// match on real data and REW always falls through to the FC0-based
 	// fallback below. Reproduced as-is, not fixed.
 	REW := 0.0
-	ka5Texture := scl_0.vs_SoilTexture
+	ka5_texture := scl_0.vs_SoilTexture
 
 	switch {
-	case ka5Texture == "Ss":
+	case ka5_texture == "Ss":
 		REW = 2.5
-	case ka5Texture == "Su2" || ka5Texture == "Sl2":
+	case ka5_texture == "Su2" || ka5_texture == "Sl2":
 		REW = 3.5
-	case ka5Texture == "Su3" || ka5Texture == "Sl3":
+	case ka5_texture == "Su3" || ka5_texture == "Sl3":
 		REW = 4.5
-	case ka5Texture == "Su4" || ka5Texture == "Sl4" || ka5Texture == "St2":
+	case ka5_texture == "Su4" || ka5_texture == "Sl4" || ka5_texture == "St2":
 		REW = 5.5
-	case ka5Texture == "St3" || ka5Texture == "Ls2" || ka5Texture == "Us2":
+	case ka5_texture == "St3" || ka5_texture == "Ls2" || ka5_texture == "Us2":
 		REW = 8.0
-	case ka5Texture == "Uu" ||
-	     ka5Texture == "Us3" ||
-	     ka5Texture == "Us4" ||
-	     ka5Texture == "Ul2" ||
-	     ka5Texture == "Ul3" ||
-	     ka5Texture == "Ul4":
+	case ka5_texture == "Uu" ||
+	     ka5_texture == "Us3" ||
+	     ka5_texture == "Us4" ||
+	     ka5_texture == "Ul2" ||
+	     ka5_texture == "Ul3" ||
+	     ka5_texture == "Ul4":
 		REW = 8.5
-	case ka5Texture == "Ls3" ||
-	     ka5Texture == "Ls4" ||
-	     ka5Texture == "Lu2" ||
-	     ka5Texture == "Lu3" ||
-	     ka5Texture == "Lu4":
+	case ka5_texture == "Ls3" ||
+	     ka5_texture == "Ls4" ||
+	     ka5_texture == "Lu2" ||
+	     ka5_texture == "Lu3" ||
+	     ka5_texture == "Lu4":
 		REW = 9.0
-	case ka5Texture == "Ut2" || ka5Texture == "Ut3":
+	case ka5_texture == "Ut2" || ka5_texture == "Ut3":
 		REW = 9.5
-	case ka5Texture == "Ut4" || ka5Texture == "Lt2" || ka5Texture == "Lt3" || ka5Texture == "Lts":
+	case ka5_texture == "Ut4" ||
+	     ka5_texture == "Lt2" ||
+	     ka5_texture == "Lt3" ||
+	     ka5_texture == "Lts":
 		REW = 10.5
-	case ka5Texture == "Ts2" ||
-	     ka5Texture == "Ts3" ||
-	     ka5Texture == "Ts4" ||
-	     ka5Texture == "Tu2" ||
-	     ka5Texture == "Tu3" ||
-	     ka5Texture == "Tu4" ||
-	     ka5Texture == "Tl":
+	case ka5_texture == "Ts2" ||
+	     ka5_texture == "Ts3" ||
+	     ka5_texture == "Ts4" ||
+	     ka5_texture == "Tu2" ||
+	     ka5_texture == "Tu3" ||
+	     ka5_texture == "Tu4" ||
+	     ka5_texture == "Tl":
 		REW = 11.5
-	case ka5Texture == "Tt":
+	case ka5_texture == "Tt":
 		REW = 12.0
 	}
 
