@@ -690,8 +690,7 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 		so.smb_co2_evolution_rate[i] =
 			vo_SMB_SlowCO2EvolutionRate[i] + vo_SMB_FastCO2EvolutionRate[i]
 
-		so.decomposer_respiration +=
-			so.smb_co2_evolution_rate[i] * sc.layers[i].vs_LayerThickness // [kg C m-3] -> [kg C m-2]
+		so.decomposer_respiration += so.smb_co2_evolution_rate[i] * sc.layers[i].vs_LayerThickness // [kg C m-3] -> [kg C m-2]
 	}
 }
 
