@@ -39,6 +39,7 @@ def run_producer(server={"server": None, "port": None}, shared_id=None):
         "debugout": "debug_out",
         "writenv": False,
         "shared_id": shared_id,
+        "env": None,
     }
     # read commandline args only if script is invoked directly from commandline
     if len(sys.argv) > 1 and __name__ == "__main__":
@@ -63,16 +64,20 @@ def run_producer(server={"server": None, "port": None}, shared_id=None):
     with open(config["crop.json"]) as _:
         crop_json = json.load(_)
 
-    env = monica_io.create_env_json_from_json_config(
-        {
-            "crop": crop_json,
-            "site": site_json,
-            "sim": sim_json,
-            "climate": "",  # climate_csv
-        }
-    )
-    env["csvViaHeaderOptions"] = sim_json["climate.csv-options"]
-    env["pathToClimateCSV"] = config["climate.csv"]
+    if config["env"] is not None:
+        with open(config["env"]) as _:
+            env = json.load(_)
+    else:
+        env = monica_io.create_env_json_from_json_config(
+            {
+                "crop": crop_json,
+                "site": site_json,
+                "sim": sim_json,
+                "climate": "",  # climate_csv
+            }
+        )
+        env["csvViaHeaderOptions"] = sim_json["climate.csv-options"]
+        env["pathToClimateCSV"] = config["climate.csv"]
 
     # add shared ID if env to be sent to routable monicas
     if config["shared_id"]:
