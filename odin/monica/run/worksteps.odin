@@ -1084,8 +1084,8 @@ irrigation_apply :: proc(i: ^Irrigation_Data, ws: ^Workstep, model: ^core.Monica
 	// today's ET calculation. LIMITATION: Auto-irrigation uses sim.json params
 	// or defaults (fw=1.0, isDrip=false).
 	if model.simPs.dualKcMethod {
-		model.soilMoisture.vm_irrigFwEvent = i.params.fw
-		model.soilMoisture.vm_irrigIsDripEvent = i.params.isDripIrrigation
+		model.soilMoisture.irrig_fw_event = i.params.fw
+		model.soilMoisture.irrig_is_drip_event = i.params.isDripIrrigation
 	}
 	model.currentEvents["Irrigation"] = true
 

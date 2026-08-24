@@ -148,7 +148,7 @@ test_build_primitive_calc_expression :: proc(t: ^testing.T) {
 	// path tier adds to an expression form the C++ could only feed from its
 	// registered ids.
 	e = mio.build_primitive_calc_expression(
-		[]jx.Value{jx.sl("soilMoisture.vm_ActualEvaporation"), jx.sl("*"), jx.f(2)},
+		[]jx.Value{jx.sl("soilMoisture.actual_evaporation"), jx.sl("*"), jx.f(2)},
 		ta,
 	)
 	testing.expect(t, e.set)

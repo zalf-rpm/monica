@@ -371,7 +371,7 @@ oid_split2 :: proc(name: string, allocator: jx.Allocator) -> (n0: string, n1: st
 // the array form ([name, layers, timeAgg]) are all taken - so metadata needs
 // somewhere to live:
 //
-//   { "path": "soilMoisture.vm_ActualEvaporation", "name": "ActEvap",
+//   { "path": "soilMoisture.actual_evaporation", "name": "ActEvap",
 //     "unit": "mm", "round": 3 }
 //   { "path": "soilColumn.layers.vs_SoilNH4", "unit": "kgN m-3", "round": 6,
 //     "layers": [1, 6, "AVG"], "agg": "SUM" }
@@ -585,7 +585,7 @@ of_irrig :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_runoff :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilMoisture.vm_SurfaceRunOff, 1))
+	return jx.f(tl.round(model.soilMoisture.surface_run_off, 1))
 }
 
 @(private)
@@ -652,8 +652,8 @@ of_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	potET := model.soilMoisture.vm_ReferenceEvapotranspiration * model.soilMoisture.kc_factor
-	actET := model.soilMoisture.vm_ActualEvapotranspiration
+	potET := model.soilMoisture.reference_evapotranspiration * model.soilMoisture.kc_factor
+	actET := model.soilMoisture.actual_evapotranspiration
 	if potET > 0 {
 		return jx.f(tl.round(actET / potET, 2))
 	}
@@ -836,7 +836,7 @@ build_primitive_calc_expression :: proc(
 
 	// A non-number operand is an output id spec - the same string/array forms
 	// parse_output_ids takes everywhere else, so it reaches the path tier too:
-	// ["=", "soilMoisture.vm_ActualEvaporation", "*", 2] works with no table
+	// ["=", "soilMoisture.actual_evaporation", "*", 2] works with no table
 	// entry for either side.
 	loid, roid: OId
 	lf, rf: bool
