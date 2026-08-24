@@ -74,7 +74,7 @@ Soil_Moisture :: struct {
 	ke:                           f64,
 	irrig_fw_event:               f64,
 	irrig_is_drip_event:          bool,
-	vw_NetRadiation:              f64,
+	net_radiation:                f64,
 	soil_coverage_percent:        f64,
 	percolation_rate:             [dynamic]f64,
 	reference_evapotranspiration: f64,
@@ -483,13 +483,10 @@ percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscill_groundwater_laye
 				vm_LambdaReduced := lambda_ib^ * sm.frost_component.vm_LambdaRedux[ib]
 				vm_PercolationFactor := 1 + vm_LambdaReduced * sm.gravitational_water[ib]
 				sm.percolation_rate[ib] =
-					(sm.gravitational_water[ib] *
-						sm.gravitational_water[ib] *
-						vm_LambdaReduced) /
+					(sm.gravitational_water[ib] * sm.gravitational_water[ib] * vm_LambdaReduced) /
 					vm_PercolationFactor
 
-				sm.gravitational_water[ib] =
-					sm.gravitational_water[ib] - sm.percolation_rate[ib]
+				sm.gravitational_water[ib] = sm.gravitational_water[ib] - sm.percolation_rate[ib]
 
 				if sm.gravitational_water[ib] < 0 {
 					sm.gravitational_water[ib] = 0.0
@@ -1272,11 +1269,11 @@ reference_evapotranspiration :: proc(
 				2.0) *
 		(1.35 * vc_RelativeShortwaveRadiation - 0.35) *
 		(0.34 - 0.14 * libc.sqrt(vm_VapourPressure))
-	sm.vw_NetRadiation = vc_ShortwaveRadiation - vc_LongwaveRadiation
+	sm.net_radiation = vc_ShortwaveRadiation - vc_LongwaveRadiation
 
 	// Calculation of the reference evapotranspiration - Penman-Monteith-Methode FAO
 	vm_ReferenceEvapotranspiration :=
-		((0.408 * vm_SaturatedVapourPressureSlope * sm.vw_NetRadiation) +
+		((0.408 * vm_SaturatedVapourPressureSlope * sm.net_radiation) +
 			(vm_PsycrometerConstant *
 					(900.0 / (vw_MeanAirTemperature + 273.0)) *
 					vm_WindSpeed_2m *
