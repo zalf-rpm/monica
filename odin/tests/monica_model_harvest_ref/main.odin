@@ -60,7 +60,7 @@ dump_soil_organic_top3 :: proc(t: ^tr.Tracer, path: string, so: ^core.Soil_Organ
 		tr.dump(
 			&(t^),
 			strings.concatenate({p2, ".vo_AOM_Pool.size"}),
-			len(so.soilColumn.layers[i].vo_AOM_Pool),
+			len(so.soil_column.layers[i].vo_AOM_Pool),
 		)
 	}
 }
