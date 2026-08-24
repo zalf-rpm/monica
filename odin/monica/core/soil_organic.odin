@@ -25,53 +25,53 @@ import libc "core:c/libc"
 
 // C++: struct monica::SoilOrganic
 Soil_Organic :: struct {
-	soil_column:                 ^Soil_Column,
-	mod_params:                  p.Soil_Organic_Module_Parameters,
-	added_organic_matter:        bool,
-	irrigation_amount:           f64,
-	vo_ActAmmoniaOxidationRate:  [dynamic]f64,
-	vo_ActNitrificationRate:     [dynamic]f64,
-	vo_ActDenitrificationRate:   [dynamic]f64,
-	vo_AOM_FastDeltaSum:         [dynamic]f64,
-	vo_AOM_FastInput:            [dynamic]f64,
-	vo_AOM_FastSum:              [dynamic]f64,
-	vo_AOM_SlowDeltaSum:         [dynamic]f64,
-	vo_AOM_SlowInput:            [dynamic]f64,
-	vo_AOM_SlowSum:              [dynamic]f64,
-	vo_CBalance:                 [dynamic]f64,
-	vo_DecomposerRespiration:    f64,
-	vo_ErrorMessage:             string,
-	vo_InertSoilOrganicC:        [dynamic]f64,
-	vo_InertSoilOrganicC_highCN: [dynamic]f64,
-	vo_N2O_Produced:             f64, // [kg-N2O-N/ha]
-	vo_N2O_Produced_Nit:         f64, // [kg-N2O-N/ha]
-	vo_N2O_Produced_Denit:       f64, // [kg-N2O-N/ha]
-	vo_NetEcosystemExchange:     f64,
-	vo_NetEcosystemProduction:   f64,
-	vo_NetNMineralisation:       f64,
-	vo_NetNMineralisationRate:   [dynamic]f64,
-	vo_Total_NH3_Volatilised:    f64,
-	vo_NH3_Volatilised:          f64,
-	vo_SMB_CO2EvolutionRate:     [dynamic]f64,
-	vo_SMB_FastDelta:            [dynamic]f64,
-	vo_SMB_SlowDelta:            [dynamic]f64,
-	vs_SoilMineralNContent:      [dynamic]f64,
-	vo_SoilOrganicC:             [dynamic]f64,
-	vo_SoilOrganicC_highCN:      [dynamic]f64,
-	vo_SOM_FastDelta:            [dynamic]f64,
-	vo_SOM_FastInput:            [dynamic]f64,
-	vo_SOM_SlowDelta:            [dynamic]f64,
-	vo_SumDenitrification:       f64, // kg-N/m2
-	vo_SumNetNMineralisation:    f64,
-	vo_SumN2O_Produced:          f64,
-	vo_SumNH3_Volatilised:       f64,
-	vo_TotalDenitrification:     f64,
+	soil_column:                  ^Soil_Column,
+	mod_params:                   p.Soil_Organic_Module_Parameters,
+	added_organic_matter:         bool,
+	irrigation_amount:            f64,
+	act_ammonia_oxidation_rate:   [dynamic]f64,
+	act_nitrification_rate:       [dynamic]f64,
+	act_denitrification_rate:     [dynamic]f64,
+	aom_fast_delta_sum:           [dynamic]f64,
+	aom_fast_input:               [dynamic]f64,
+	aom_fast_sum:                 [dynamic]f64,
+	aom_slow_delta_sum:           [dynamic]f64,
+	aom_slow_input:               [dynamic]f64,
+	aom_slow_sum:                 [dynamic]f64,
+	c_balance:                    [dynamic]f64,
+	decomposer_respiration:       f64,
+	error_message:                string,
+	inert_soil_organic_c:         [dynamic]f64,
+	inert_soil_organic_c_high_cn: [dynamic]f64,
+	n2o_produced:                 f64, // [kg-N2O-N/ha]
+	n2o_produced_nit:             f64, // [kg-N2O-N/ha]
+	n2o_produced_denit:           f64, // [kg-N2O-N/ha]
+	net_ecosystem_exchange:       f64,
+	net_ecosystem_production:     f64,
+	net_n_mineralisation:         f64,
+	net_n_mineralisation_rate:    [dynamic]f64,
+	total_nh3_volatilised:        f64,
+	nh3_volatilised:              f64,
+	smb_co2_evolution_rate:       [dynamic]f64,
+	smb_fast_delta:               [dynamic]f64,
+	smb_slow_delta:               [dynamic]f64,
+	vs_SoilMineralNContent:       [dynamic]f64,
+	soil_organic_c:               [dynamic]f64,
+	soil_organic_c_high_cn:       [dynamic]f64,
+	som_fast_delta:               [dynamic]f64,
+	som_fast_input:               [dynamic]f64,
+	som_slow_delta:               [dynamic]f64,
+	sum_denitrification:          f64, // kg-N/m2
+	sum_net_n_mineralisation:     f64,
+	sum_n2o_produced:             f64,
+	sum_nh3_volatilised:          f64,
+	total_denitrification:        f64,
 
 	// True if organic fertilizer has been added with a following
 	// incorporation. Automatically set to false if carbamid amount falls
 	// below 0.001.
-	incorporation:               bool,
-	crop_module:                 ^Crop_Module,
+	incorporation:                bool,
+	crop_module:                  ^Crop_Module,
 }
 
 // C++: kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn&,
@@ -90,27 +90,27 @@ make_soil_organic :: proc(
 
 	sc := so.soil_column
 	nools := sc.vs_NumberOfOrganicLayers
-	resize(&so.vo_ActAmmoniaOxidationRate, nools)
-	resize(&so.vo_ActNitrificationRate, nools)
-	resize(&so.vo_ActDenitrificationRate, nools)
-	resize(&so.vo_AOM_FastDeltaSum, nools)
-	resize(&so.vo_AOM_FastInput, nools)
-	resize(&so.vo_AOM_FastSum, nools)
-	resize(&so.vo_AOM_SlowDeltaSum, nools)
-	resize(&so.vo_AOM_SlowInput, nools)
-	resize(&so.vo_AOM_SlowSum, nools)
-	resize(&so.vo_CBalance, nools)
-	resize(&so.vo_InertSoilOrganicC, nools)
-	resize(&so.vo_InertSoilOrganicC_highCN, nools)
-	resize(&so.vo_NetNMineralisationRate, nools)
-	resize(&so.vo_SMB_CO2EvolutionRate, nools)
-	resize(&so.vo_SMB_FastDelta, nools)
-	resize(&so.vo_SMB_SlowDelta, nools)
-	resize(&so.vo_SoilOrganicC, nools)
-	resize(&so.vo_SoilOrganicC_highCN, nools)
-	resize(&so.vo_SOM_FastInput, nools)
-	resize(&so.vo_SOM_FastDelta, nools)
-	resize(&so.vo_SOM_SlowDelta, nools)
+	resize(&so.act_ammonia_oxidation_rate, nools)
+	resize(&so.act_nitrification_rate, nools)
+	resize(&so.act_denitrification_rate, nools)
+	resize(&so.aom_fast_delta_sum, nools)
+	resize(&so.aom_fast_input, nools)
+	resize(&so.aom_fast_sum, nools)
+	resize(&so.aom_slow_delta_sum, nools)
+	resize(&so.aom_slow_input, nools)
+	resize(&so.aom_slow_sum, nools)
+	resize(&so.c_balance, nools)
+	resize(&so.inert_soil_organic_c, nools)
+	resize(&so.inert_soil_organic_c_high_cn, nools)
+	resize(&so.net_n_mineralisation_rate, nools)
+	resize(&so.smb_co2_evolution_rate, nools)
+	resize(&so.smb_fast_delta, nools)
+	resize(&so.smb_slow_delta, nools)
+	resize(&so.soil_organic_c, nools)
+	resize(&so.soil_organic_c_high_cn, nools)
+	resize(&so.som_fast_input, nools)
+	resize(&so.som_fast_delta, nools)
+	resize(&so.som_slow_delta, nools)
 
 	po_PartSOM_to_SMB_Slow := so.mod_params.po_PartSOM_to_SMB_Slow
 	po_PartSOM_to_SMB_Fast := so.mod_params.po_PartSOM_to_SMB_Fast
@@ -124,11 +124,11 @@ make_soil_organic :: proc(
 		layer := &sc.layers[i]
 		layi := &sc.layers[i]
 
-		so.vo_SoilOrganicC[i] = soil_organic_carbon(layer) * soil_bulk_density(layer)
+		so.soil_organic_c[i] = soil_organic_carbon(layer) * soil_bulk_density(layer)
 
 		if layi.vs_Soil_CN_Ratio > 100 {
-			so.vo_InertSoilOrganicC_highCN[i] =
-				(so.vo_SoilOrganicC[i] * layer.vs_LayerThickness / 1000 * 10000.0) /
+			so.inert_soil_organic_c_high_cn[i] =
+				(so.soil_organic_c[i] * layer.vs_LayerThickness / 1000 * 10000.0) /
 				layi.vs_Soil_CN_Ratio *
 				(po_inert_CN_lower_limit - layi.vs_Soil_CN_Ratio) /
 				(po_inert_CN_lower_limit / po_inert_CN_upper_limit - 1) /
@@ -136,49 +136,49 @@ make_soil_organic :: proc(
 				1000.0 /
 				layer.vs_LayerThickness
 
-			so.vo_SoilOrganicC_highCN[i] =
-				so.vo_SoilOrganicC[i] - so.vo_InertSoilOrganicC_highCN[i]
+			so.soil_organic_c_high_cn[i] =
+				so.soil_organic_c[i] - so.inert_soil_organic_c_high_cn[i]
 
-			so.vo_InertSoilOrganicC[i] =
+			so.inert_soil_organic_c[i] =
 				(0.049 *
 					libc.pow(
-						so.vo_SoilOrganicC_highCN[i] * layer.vs_LayerThickness / 1000 * 10000.0,
+						so.soil_organic_c_high_cn[i] * layer.vs_LayerThickness / 1000 * 10000.0,
 						1.139,
 					)) /
 				10000.0 *
 				1000.0 /
 				layer.vs_LayerThickness
 
-			so.vo_InertSoilOrganicC[i] =
-				so.vo_InertSoilOrganicC[i] + so.vo_InertSoilOrganicC_highCN[i]
+			so.inert_soil_organic_c[i] =
+				so.inert_soil_organic_c[i] + so.inert_soil_organic_c_high_cn[i]
 		} else {
-			so.vo_InertSoilOrganicC[i] =
+			so.inert_soil_organic_c[i] =
 				(0.049 *
 					libc.pow(
-						so.vo_SoilOrganicC[i] * layer.vs_LayerThickness / 1000 * 10000.0,
+						so.soil_organic_c[i] * layer.vs_LayerThickness / 1000 * 10000.0,
 						1.139,
 					)) /
 				10000.0 *
 				1000.0 /
 				layer.vs_LayerThickness
 		}
-		so.vo_SoilOrganicC[i] -= so.vo_InertSoilOrganicC[i]
+		so.soil_organic_c[i] -= so.inert_soil_organic_c[i]
 
-		layer.vs_SMB_Slow = po_PartSOM_to_SMB_Slow * so.vo_SoilOrganicC[i]
-		layer.vs_SMB_Fast = po_PartSOM_to_SMB_Fast * so.vo_SoilOrganicC[i]
+		layer.vs_SMB_Slow = po_PartSOM_to_SMB_Slow * so.soil_organic_c[i]
+		layer.vs_SMB_Fast = po_PartSOM_to_SMB_Fast * so.soil_organic_c[i]
 
 		layer.vs_SOM_Slow =
-			so.vo_SoilOrganicC[i] /
+			so.soil_organic_c[i] /
 			(1.0 +
 					po_SOM_SlowDecCoeffStandard /
 						(po_SOM_FastDecCoeffStandard * po_PartSOM_Fast_to_SOM_Slow))
-		layer.vs_SOM_Fast = so.vo_SoilOrganicC[i] - layer.vs_SOM_Slow
-		so.vo_SoilOrganicC[i] -= layer.vs_SMB_Slow + layer.vs_SMB_Fast
+		layer.vs_SOM_Fast = so.soil_organic_c[i] - layer.vs_SOM_Slow
+		so.soil_organic_c[i] -= layer.vs_SMB_Slow + layer.vs_SMB_Fast
 
 		layer.vs_SoilOrganicCarbon =
-			(so.vo_SoilOrganicC[i] + so.vo_InertSoilOrganicC[i]) / soil_bulk_density(layer)
+			(so.soil_organic_c[i] + so.inert_soil_organic_c[i]) / soil_bulk_density(layer)
 
-		so.vo_ActDenitrificationRate[i] = 0.0
+		so.act_denitrification_rate[i] = 0.0
 	}
 
 	return so
@@ -208,7 +208,7 @@ soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) 
 	po_HydrolysisP2 := so.mod_params.po_HydrolysisP2
 	po_ActivationEnergy := so.mod_params.po_ActivationEnergy
 
-	so.vo_NH3_Volatilised = 0.0
+	so.nh3_volatilised = 0.0
 
 	for i in 0 ..< nools {
 		layer := &sc.layers[i]
@@ -317,7 +317,7 @@ soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) 
 			}
 
 			// kg N m-2 d-1
-			so.vo_NH3_Volatilised = vo_NH3_Volatilising * layer0.vs_LayerThickness
+			so.nh3_volatilised = vo_NH3_Volatilising * layer0.vs_LayerThickness
 		}
 	}
 
@@ -337,8 +337,8 @@ soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) 
 // the struct field names but are genuinely fresh function-local vectors, not
 // aliases to `so->vo_AOM_FastDeltaSum`/`so->vo_AOM_SlowDeltaSum` - those
 // struct fields are populated later, by foPoolUpdate. Reproduced as local
-// variables here too, never touching `so.vo_AOM_FastDeltaSum`/
-// `so.vo_AOM_SlowDeltaSum`.
+// variables here too, never touching `so.aom_fast_delta_sum`/
+// `so.aom_slow_delta_sum`.
 soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 	sc := so.soil_column
 	params := &so.mod_params
@@ -376,8 +376,8 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 	vo_AOM_SlowDeltaSum := make([dynamic]f64, nools, allocator)
 
 	// [kg m-3]
-	for i in 0 ..< len(so.vo_CBalance) {
-		so.vo_CBalance[i] = 0.0
+	for i in 0 ..< len(so.c_balance) {
+		so.c_balance[i] = 0.0
 	}
 
 	// N balance of each layer [kg N m-3]
@@ -389,8 +389,8 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 	vo_SMB_FastDecRate := make([dynamic]f64, nools, allocator)
 	vo_SMB_FastMaintRateCoeff := make([dynamic]f64, nools, allocator)
 	vo_SMB_FastMaintRate := make([dynamic]f64, nools, allocator)
-	for i in 0 ..< len(so.vo_SMB_FastDelta) {
-		so.vo_SMB_FastDelta[i] = 0.0
+	for i in 0 ..< len(so.smb_fast_delta) {
+		so.smb_fast_delta[i] = 0.0
 	}
 
 	vo_SMB_SlowCO2EvolutionRate := make([dynamic]f64, nools, allocator)
@@ -399,20 +399,20 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 	vo_SMB_SlowDecRate := make([dynamic]f64, nools, allocator)
 	vo_SMB_SlowMaintRateCoeff := make([dynamic]f64, nools, allocator)
 	vo_SMB_SlowMaintRate := make([dynamic]f64, nools, allocator)
-	for i in 0 ..< len(so.vo_SMB_SlowDelta) {
-		so.vo_SMB_SlowDelta[i] = 0.0
+	for i in 0 ..< len(so.smb_slow_delta) {
+		so.smb_slow_delta[i] = 0.0
 	}
 
 	vo_SOM_FastDecCoeff := make([dynamic]f64, nools, allocator)
 	vo_SOM_FastDecRate := make([dynamic]f64, nools, allocator)
-	for i in 0 ..< len(so.vo_SOM_FastDelta) {
-		so.vo_SOM_FastDelta[i] = 0.0
+	for i in 0 ..< len(so.som_fast_delta) {
+		so.som_fast_delta[i] = 0.0
 	}
 
 	vo_SOM_SlowDecCoeff := make([dynamic]f64, nools, allocator)
 	vo_SOM_SlowDecRate := make([dynamic]f64, nools, allocator)
-	for i in 0 ..< len(so.vo_SOM_SlowDelta) {
-		so.vo_SOM_SlowDelta[i] = 0.0
+	for i in 0 ..< len(so.som_slow_delta) {
+		so.som_slow_delta[i] = 0.0
 	}
 
 	// Calculation of decay rate coefficients
@@ -493,7 +493,7 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 			AOMfast_to_SMBfast[i] += props.vo_AOM_FastDecRate_to_SMB_Fast
 		}
 
-		so.vo_SMB_SlowDelta[i] =
+		so.smb_slow_delta[i] =
 			(po_SOM_SlowUtilizationEfficiency * vo_SOM_SlowDecRate[i]) +
 			(po_SOM_FastUtilizationEfficiency *
 					(1.0 - po_PartSOM_Fast_to_SOM_Slow) *
@@ -501,7 +501,7 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 			(po_AOM_SlowUtilizationEfficiency * AOMslow_to_SMBslow[i]) -
 			vo_SMB_SlowDecRate[i]
 
-		so.vo_SMB_FastDelta[i] =
+		so.smb_fast_delta[i] =
 			(po_SMB_UtilizationEfficiency *
 				(1.0 - po_PartSMB_Slow_to_SOM_Fast) *
 				(vo_SMB_SlowDeathRate[i] + vo_SMB_FastDeathRate[i])) +
@@ -510,21 +510,21 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 			vo_SMB_FastDecRate[i]
 
 		// Eq.6-9 in the DAISY manual
-		so.vo_SOM_SlowDelta[i] =
+		so.som_slow_delta[i] =
 			po_PartSOM_Fast_to_SOM_Slow * vo_SOM_FastDecRate[i] - vo_SOM_SlowDecRate[i]
 
-		if (layi.vs_SOM_Slow + so.vo_SOM_SlowDelta[i]) < 0.0 {
-			so.vo_SOM_SlowDelta[i] = layi.vs_SOM_Slow
+		if (layi.vs_SOM_Slow + so.som_slow_delta[i]) < 0.0 {
+			so.som_slow_delta[i] = layi.vs_SOM_Slow
 		}
 
 		// Eq.6-10 in the DAISY manual
-		so.vo_SOM_FastDelta[i] =
+		so.som_fast_delta[i] =
 			po_PartSMB_Slow_to_SOM_Fast * vo_SMB_SlowDeathRate[i] +
 			po_PartSMB_Fast_to_SOM_Fast * vo_SMB_FastDeathRate[i] -
 			vo_SOM_FastDecRate[i]
 
-		if (layi.vs_SOM_Fast + so.vo_SOM_FastDelta[i]) < 0.0 {
-			so.vo_SOM_FastDelta[i] = layi.vs_SOM_Fast
+		if (layi.vs_SOM_Fast + so.som_fast_delta[i]) < 0.0 {
+			so.som_fast_delta[i] = layi.vs_SOM_Fast
 		}
 
 		vo_AOM_SlowDeltaSum[i] = 0.0
@@ -544,10 +544,10 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 		CN_Ratio_SOM_Fast := CN_Ratio_SOM_Slow
 
 		vo_NBalance[i] =
-			-(so.vo_SMB_SlowDelta[i] / po_CN_Ratio_SMB) -
-			(so.vo_SMB_FastDelta[i] / po_CN_Ratio_SMB) -
-			(so.vo_SOM_SlowDelta[i] / CN_Ratio_SOM_Slow) -
-			(so.vo_SOM_FastDelta[i] / CN_Ratio_SOM_Fast)
+			-(so.smb_slow_delta[i] / po_CN_Ratio_SMB) -
+			(so.smb_fast_delta[i] / po_CN_Ratio_SMB) -
+			(so.som_slow_delta[i] / CN_Ratio_SOM_Slow) -
+			(so.som_fast_delta[i] / CN_Ratio_SOM_Fast)
 
 		for &props in layi.vo_AOM_Pool {
 			if libc.fabs(props.vo_CN_Ratio_AOM_Fast) >= 1.0e-7 {
@@ -560,7 +560,7 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 	}
 
 	// Check for Nmin availablity in case of immobilisation
-	so.vo_NetNMineralisation = 0.0
+	so.net_n_mineralisation = 0.0
 
 	for i in 0 ..< nools {
 		layi := &sc.layers[i]
@@ -596,15 +596,15 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 				}
 
 				if vo_CN_Ratio_SOM_Slow >= (po_CN_Ratio_SMB / po_SOM_SlowUtilizationEfficiency) {
-					so.vo_SOM_SlowDelta[i] = 0.0
+					so.som_slow_delta[i] = 0.0
 				}
 
 				if vo_CN_Ratio_SOM_Fast >= (po_CN_Ratio_SMB / po_SOM_FastUtilizationEfficiency) {
-					so.vo_SOM_FastDelta[i] = 0.0
+					so.som_fast_delta[i] = 0.0
 				}
 
 				// Recalculation of SMB pool changes
-				so.vo_SMB_SlowDelta[i] =
+				so.smb_slow_delta[i] =
 					(po_SOM_SlowUtilizationEfficiency * vo_SOM_SlowDecRate[i]) +
 					(po_SOM_FastUtilizationEfficiency *
 							(1.0 - po_PartSOM_Fast_to_SOM_Slow) *
@@ -612,11 +612,11 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 					(po_AOM_SlowUtilizationEfficiency * AOMslow_to_SMBslow[i]) -
 					vo_SMB_SlowDecRate[i]
 
-				if (layi.vs_SMB_Slow + so.vo_SMB_SlowDelta[i]) < 0.0 {
-					so.vo_SMB_SlowDelta[i] = layi.vs_SMB_Slow
+				if (layi.vs_SMB_Slow + so.smb_slow_delta[i]) < 0.0 {
+					so.smb_slow_delta[i] = layi.vs_SMB_Slow
 				}
 
-				so.vo_SMB_FastDelta[i] =
+				so.smb_fast_delta[i] =
 					(po_SMB_UtilizationEfficiency *
 						(1.0 - po_PartSMB_Slow_to_SOM_Fast) *
 						(vo_SMB_SlowDeathRate[i] + vo_SMB_FastDeathRate[i])) +
@@ -624,16 +624,16 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 					(po_AOM_SlowUtilizationEfficiency * AOMslow_to_SMBfast[i]) -
 					vo_SMB_FastDecRate[i]
 
-				if (layi.vs_SMB_Fast + so.vo_SMB_FastDelta[i]) < 0.0 {
-					so.vo_SMB_FastDelta[i] = layi.vs_SMB_Fast
+				if (layi.vs_SMB_Fast + so.smb_fast_delta[i]) < 0.0 {
+					so.smb_fast_delta[i] = layi.vs_SMB_Fast
 				}
 
 				// Recalculation of N balance under conditions of immobilisation
 				vo_NBalance[i] =
-					-(so.vo_SMB_SlowDelta[i] / po_CN_Ratio_SMB) -
-					(so.vo_SMB_FastDelta[i] / po_CN_Ratio_SMB) -
-					(so.vo_SOM_SlowDelta[i] / vo_CN_Ratio_SOM_Slow) -
-					(so.vo_SOM_FastDelta[i] / vo_CN_Ratio_SOM_Fast)
+					-(so.smb_slow_delta[i] / po_CN_Ratio_SMB) -
+					(so.smb_fast_delta[i] / po_CN_Ratio_SMB) -
+					(so.som_slow_delta[i] / vo_CN_Ratio_SOM_Slow) -
+					(so.som_fast_delta[i] / vo_CN_Ratio_SOM_Fast)
 
 				for &props in layi.vo_AOM_Pool {
 					if libc.fabs(props.vo_CN_Ratio_AOM_Fast) >= 1.0e-7 {
@@ -662,12 +662,12 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 		}
 
 		lay0 := &sc.layers[0]
-		so.vo_NetNMineralisationRate[i] = libc.fabs(vo_NBalance[i]) * lay0.vs_LayerThickness // [kg m-3] --> [kg m-2]
-		so.vo_NetNMineralisation += libc.fabs(vo_NBalance[i]) * lay0.vs_LayerThickness // [kg m-3] --> [kg m-2]
-		so.vo_SumNetNMineralisation += libc.fabs(vo_NBalance[i]) * lay0.vs_LayerThickness // [kg m-3] --> [kg m-2]
+		so.net_n_mineralisation_rate[i] = libc.fabs(vo_NBalance[i]) * lay0.vs_LayerThickness // [kg m-3] --> [kg m-2]
+		so.net_n_mineralisation += libc.fabs(vo_NBalance[i]) * lay0.vs_LayerThickness // [kg m-3] --> [kg m-2]
+		so.sum_net_n_mineralisation += libc.fabs(vo_NBalance[i]) * lay0.vs_LayerThickness // [kg m-3] --> [kg m-2]
 	}
 
-	so.vo_DecomposerRespiration = 0.0
+	so.decomposer_respiration = 0.0
 
 	// Calculation of CO2 evolution
 	for i in 0 ..< nools {
@@ -687,11 +687,11 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 			((1.0 - po_AOM_FastUtilizationEfficiency) * AOMfast_to_SMBfast[i]) +
 			vo_SMB_FastMaintRate[i]
 
-		so.vo_SMB_CO2EvolutionRate[i] =
+		so.smb_co2_evolution_rate[i] =
 			vo_SMB_SlowCO2EvolutionRate[i] + vo_SMB_FastCO2EvolutionRate[i]
 
-		so.vo_DecomposerRespiration +=
-			so.vo_SMB_CO2EvolutionRate[i] * sc.layers[i].vs_LayerThickness // [kg C m-3] -> [kg C m-2]
+		so.decomposer_respiration +=
+			so.smb_co2_evolution_rate[i] * sc.layers[i].vs_LayerThickness // [kg C m-3] -> [kg C m-2]
 	}
 }
 
@@ -707,7 +707,7 @@ soil_organic_fo_clay_on_decompostion_kaiteew :: proc(
 			(1.0 - d_LimitClayEffect) / (1.0 + libc.exp(-3.14 + d_SoilClayContent * 16)) +
 			d_LimitClayEffect
 	} else {
-		so.vo_ErrorMessage = "irregular clay content"
+		so.error_message = "irregular clay content"
 	}
 
 	return clayOnDecomposition
@@ -725,7 +725,7 @@ soil_organic_fo_clay_on_decompostion :: proc(
 	} else if d_SoilClayContent > d_LimitClayEffect && d_SoilClayContent <= 1.0 {
 		fo_ClayOnDecompostion = 1.0 - 2.0 * d_LimitClayEffect
 	} else {
-		so.vo_ErrorMessage = "irregular clay content"
+		so.error_message = "irregular clay content"
 	}
 
 	return fo_ClayOnDecompostion
@@ -749,7 +749,7 @@ soil_organic_fo_temp_on_decompostion_kaiteew :: proc(
 	} else if soilTemperature <= 0.0 && soilTemperature > -50.0 {
 		tempOnDecomposition = 0.0
 	} else {
-		so.vo_ErrorMessage = "irregular soil temperature"
+		so.error_message = "irregular soil temperature"
 	}
 
 	return tempOnDecomposition
@@ -768,7 +768,7 @@ soil_organic_fo_temp_on_decompostion :: proc(so: ^Soil_Organic, d_SoilTemperatur
 			0.47 - (0.027 * d_SoilTemperature) + (0.00193 * d_SoilTemperature * d_SoilTemperature),
 		)
 	} else {
-		so.vo_ErrorMessage = "irregular soil temperature"
+		so.error_message = "irregular soil temperature"
 	}
 
 	return fo_TempOnDecompostion
@@ -786,7 +786,7 @@ soil_organic_fo_moist_on_decompostion_kaiteew :: proc(
 			-18 * libc.pow(d_SoilMoisture_m3 / d_Saturation - d_MoistureDecOptimal, 2),
 		)
 	} else {
-		so.vo_ErrorMessage = "irregular soil water content"
+		so.error_message = "irregular soil water content"
 	}
 
 	return moistOnDecomposition
@@ -807,7 +807,7 @@ soil_organic_fo_moist_on_decompostion :: proc(so: ^Soil_Organic, d_SoilMoisture_
 	} else if d_SoilMoisture_pF > 6.5 {
 		fo_MoistOnDecompostion = 0.0
 	} else {
-		so.vo_ErrorMessage = "irregular soil water content"
+		so.error_message = "irregular soil water content"
 	}
 
 	return fo_MoistOnDecompostion
@@ -828,7 +828,7 @@ soil_organic_fo_moist_on_hydrolysis :: proc(so: ^Soil_Organic, d_SoilMoisture_pF
 	} else if d_SoilMoisture_pF > 4.6 {
 		fo_MoistOnHydrolysis = 0.0
 	} else {
-		so.vo_ErrorMessage = "irregular soil water content"
+		so.error_message = "irregular soil water content"
 	}
 
 	return fo_MoistOnHydrolysis
@@ -847,7 +847,7 @@ soil_organic_fo_temp_on_nitrification :: proc(so: ^Soil_Organic, soilTemp: f64) 
 	} else if soilTemp > 20.0 && soilTemp <= 70.0 {
 		result = libc.exp(0.47 - (0.027 * soilTemp) + (0.00193 * soilTemp * soilTemp))
 	} else {
-		so.vo_ErrorMessage = "irregular soil temperature"
+		so.error_message = "irregular soil temperature"
 	}
 
 	return result
@@ -868,7 +868,7 @@ soil_organic_fo_moist_on_nitrification :: proc(so: ^Soil_Organic, d_SoilMoisture
 	} else if d_SoilMoisture_pF > 5.0 {
 		fo_MoistOnNitrification = 0.0
 	} else {
-		so.vo_ErrorMessage = "irregular soil water content"
+		so.error_message = "irregular soil water content"
 	}
 
 	return fo_MoistOnNitrification
@@ -898,7 +898,7 @@ soil_organic_fo_moist_on_denitrification :: proc(
 				((d_SoilMoisture_m3 / d_Saturation) - po_Denit3) /
 				(1.0 - po_Denit3)
 	} else {
-		so.vo_ErrorMessage = "irregular soil water content"
+		so.error_message = "irregular soil water content"
 	}
 
 	return fo_MoistOnDenitrification
@@ -1010,7 +1010,7 @@ soil_organic_fo_volatilisation :: proc(
 	}
 
 	// NH3 volatilised from top layer NH4 pool. See Urea section
-	so.vo_Total_NH3_Volatilised = vo_N_ActVolatilised + so.vo_NH3_Volatilised // [kg N m-2]
+	so.total_nh3_volatilised = vo_N_ActVolatilised + so.nh3_volatilised // [kg N m-2]
 
 	for &props in AOM_Pool {
 		if props.vo_DaysAfterApplication > 0 && !vo_AOM_Addition {
@@ -1053,7 +1053,7 @@ soil_organic_fo_nitrification :: proc(so: ^Soil_Organic) {
 			soil_organic_fo_temp_on_nitrification(so, layi.vs_SoilTemperature) *
 			soil_organic_fo_moist_on_nitrification(so, soil_moisture_pf(layi))
 
-		so.vo_ActAmmoniaOxidationRate[i] = vo_AmmoniaOxidationRateCoeff[i] * NH4i
+		so.act_ammonia_oxidation_rate[i] = vo_AmmoniaOxidationRateCoeff[i] * NH4i
 
 		vo_NitriteOxidationRateCoeff[i] =
 			po_NitriteOxidationRateCoeffStandard *
@@ -1061,21 +1061,21 @@ soil_organic_fo_nitrification :: proc(so: ^Soil_Organic) {
 			soil_organic_fo_moist_on_nitrification(so, soil_moisture_pf(layi)) *
 			soil_organic_fo_nh3_on_nitrite_oxidation(so, NH4i, layi.vs_SoilpH)
 
-		so.vo_ActNitrificationRate[i] = vo_NitriteOxidationRateCoeff[i] * layi.vs_SoilNO2
+		so.act_nitrification_rate[i] = vo_NitriteOxidationRateCoeff[i] * layi.vs_SoilNO2
 
 		// Update NH4, NO2 and NO3 content with nitrification balance
 		// Stange, F., C. Nendel (2014): N.N., in preparation
-		if NH4i > so.vo_ActAmmoniaOxidationRate[i] {
-			layi.vs_SoilNH4 -= so.vo_ActAmmoniaOxidationRate[i]
-			layi.vs_SoilNO2 += so.vo_ActAmmoniaOxidationRate[i]
+		if NH4i > so.act_ammonia_oxidation_rate[i] {
+			layi.vs_SoilNH4 -= so.act_ammonia_oxidation_rate[i]
+			layi.vs_SoilNO2 += so.act_ammonia_oxidation_rate[i]
 		} else {
 			layi.vs_SoilNO2 += NH4i
 			layi.vs_SoilNH4 = 0.0
 		}
 
-		if layi.vs_SoilNO2 > so.vo_ActNitrificationRate[i] {
-			layi.vs_SoilNO2 -= so.vo_ActNitrificationRate[i]
-			layi.vs_SoilNO3 += so.vo_ActNitrificationRate[i]
+		if layi.vs_SoilNO2 > so.act_nitrification_rate[i] {
+			layi.vs_SoilNO2 -= so.act_nitrification_rate[i]
+			layi.vs_SoilNO3 += so.act_nitrification_rate[i]
 		} else {
 			layi.vs_SoilNO3 += layi.vs_SoilNO2
 			layi.vs_SoilNO2 = 0.0
@@ -1099,7 +1099,7 @@ soil_organic_fo_stics_nitrification :: proc(so: ^Soil_Organic) {
 		kgN_per_m3_to_mgN_per_kg := 1000.0 * 1000.0 / sbdi
 		mgN_per_kg_to_kgN_per_m3 := 1 / kgN_per_m3_to_mgN_per_kg
 
-		so.vo_ActNitrificationRate[i] = stics_vnit(
+		so.act_nitrification_rate[i] = stics_vnit(
 				sticsParams,
 				NH4i * kgN_per_m3_to_mgN_per_kg, // kg-NH4-N/m3-soil -> mg-NH4-N/kg-soil
 				layi.vs_SoilpH,
@@ -1110,9 +1110,9 @@ soil_organic_fo_stics_nitrification :: proc(so: ^Soil_Organic) {
 				layi.vs_Saturation,
 			) * mgN_per_kg_to_kgN_per_m3 // mg-N -> kg-N
 
-		if NH4i > so.vo_ActNitrificationRate[i] {
-			layi.vs_SoilNH4 -= so.vo_ActNitrificationRate[i]
-			layi.vs_SoilNO3 += so.vo_ActNitrificationRate[i]
+		if NH4i > so.act_nitrification_rate[i] {
+			layi.vs_SoilNH4 -= so.act_nitrification_rate[i]
+			layi.vs_SoilNO3 += so.act_nitrification_rate[i]
 		} else {
 			layi.vs_SoilNO3 += NH4i
 			layi.vs_SoilNH4 = 0.0
@@ -1129,7 +1129,7 @@ soil_organic_fo_denitrification :: proc(so: ^Soil_Organic) {
 	vo_PotDenitrificationRate := make([dynamic]f64, nools, context.temp_allocator)
 	po_SpecAnaerobDenitrification := params.po_SpecAnaerobDenitrification
 	po_TransportRateCoeff := params.po_TransportRateCoeff
-	so.vo_TotalDenitrification = 0.0
+	so.total_denitrification = 0.0
 
 	for i in 0 ..< nools {
 		layi := &sc.layers[i]
@@ -1138,10 +1138,10 @@ soil_organic_fo_denitrification :: proc(so: ^Soil_Organic) {
 		// Temperature function is the same as in Nitrification subroutine
 		vo_PotDenitrificationRate[i] =
 			po_SpecAnaerobDenitrification *
-			so.vo_SMB_CO2EvolutionRate[i] *
+			so.smb_co2_evolution_rate[i] *
 			soil_organic_fo_temp_on_nitrification(so, layi.vs_SoilTemperature)
 
-		so.vo_ActDenitrificationRate[i] = min(
+		so.act_denitrification_rate[i] = min(
 			vo_PotDenitrificationRate[i] *
 			soil_organic_fo_moist_on_denitrification(
 				so,
@@ -1152,17 +1152,17 @@ soil_organic_fo_denitrification :: proc(so: ^Soil_Organic) {
 		)
 
 		// update NO3 content of soil layer with denitrification balance [kg N m-3]
-		if NO3i > so.vo_ActDenitrificationRate[i] {
-			layi.vs_SoilNO3 -= so.vo_ActDenitrificationRate[i]
+		if NO3i > so.act_denitrification_rate[i] {
+			layi.vs_SoilNO3 -= so.act_denitrification_rate[i]
 		} else {
-			so.vo_ActDenitrificationRate[i] = NO3i
+			so.act_denitrification_rate[i] = NO3i
 			layi.vs_SoilNO3 = 0.0
 		}
 
-		so.vo_TotalDenitrification += so.vo_ActDenitrificationRate[i] * layi.vs_LayerThickness // [kg m-3] --> [kg m-2]
+		so.total_denitrification += so.act_denitrification_rate[i] * layi.vs_LayerThickness // [kg m-3] --> [kg m-2]
 	}
 
-	so.vo_SumDenitrification += so.vo_TotalDenitrification // [kg N m-2]
+	so.sum_denitrification += so.total_denitrification // [kg N m-2]
 }
 
 // C++: void monica::soilorganic::foSticsDenitrification(SoilOrganic*)
@@ -1171,7 +1171,7 @@ soil_organic_fo_stics_denitrification :: proc(so: ^Soil_Organic) {
 	sticsParams := &so.mod_params.sticsParams
 
 	nools := sc.vs_NumberOfOrganicLayers
-	so.vo_TotalDenitrification = 0.0
+	so.total_denitrification = 0.0
 
 	for i in 0 ..< nools {
 		layi := &sc.layers[i]
@@ -1183,7 +1183,7 @@ soil_organic_fo_stics_denitrification :: proc(so: ^Soil_Organic) {
 		kgN_per_m3_to_mgN_per_kg := 1000.0 * 1000.0 / sbdi
 		mgN_per_kg_to_kgN_per_m3 := 1 / kgN_per_m3_to_mgN_per_kg
 
-		so.vo_ActDenitrificationRate[i] = stics_vdenit(
+		so.act_denitrification_rate[i] = stics_vdenit(
 				sticsParams,
 				soil_organic_carbon(layi) * 100.0, // kg-C/kg-soil = % [0-1] -> % [0-100]
 				NO3i * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
@@ -1193,16 +1193,16 @@ soil_organic_fo_stics_denitrification :: proc(so: ^Soil_Organic) {
 			) * mgN_per_kg_to_kgN_per_m3 // mg-N -> kg-N
 
 		// update NO3 content of soil layer with denitrification balance [kg N m-3]
-		if NO3i > so.vo_ActDenitrificationRate[i] {
-			layi.vs_SoilNO3 -= so.vo_ActDenitrificationRate[i]
+		if NO3i > so.act_denitrification_rate[i] {
+			layi.vs_SoilNO3 -= so.act_denitrification_rate[i]
 		} else {
-			so.vo_ActDenitrificationRate[i] = NO3i
+			so.act_denitrification_rate[i] = NO3i
 			layi.vs_SoilNO3 = 0.0
 		}
-		so.vo_TotalDenitrification += so.vo_ActDenitrificationRate[i] * lti // [kg m-3] --> [kg m-2]
+		so.total_denitrification += so.act_denitrification_rate[i] * lti // [kg m-3] --> [kg m-2]
 	}
 
-	so.vo_SumDenitrification += so.vo_TotalDenitrification // [kg N m-2]
+	so.sum_denitrification += so.total_denitrification // [kg N m-2]
 }
 
 // C++: double monica::soilorganic::foN2OProduction(SoilOrganic*)
@@ -1267,8 +1267,8 @@ soil_organic_fo_stics_n2o_production :: proc(so: ^Soil_Organic) -> (f64, f64) {
 			layi.vs_SoilNO3 * kgN_per_m3_to_mgN_per_kg, // kg-NO3-N/m3-soil -> mg-NO3-N/kg-soil
 			smi / layi.vs_Saturation, // soil water-filled pore space []
 			layi.vs_SoilpH,
-			so.vo_ActNitrificationRate[i] * kgN_per_m3_to_mgN_per_kg, // nitrification rate [mg-N/kg-soil/day]
-			so.vo_ActDenitrificationRate[i] * kgN_per_m3_to_mgN_per_kg, // denitrification rate [mg-N/kg-soil/day]
+			so.act_nitrification_rate[i] * kgN_per_m3_to_mgN_per_kg, // nitrification rate [mg-N/kg-soil/day]
+			so.act_denitrification_rate[i] * kgN_per_m3_to_mgN_per_kg, // denitrification rate [mg-N/kg-soil/day]
 		)
 
 		sumN2OProducedNit += N2Onit * stics2monicaUnits
@@ -1286,46 +1286,46 @@ soil_organic_fo_pool_update :: proc(so: ^Soil_Organic) {
 	for i in 0 ..< nools {
 		layi := &sc.layers[i]
 
-		so.vo_AOM_SlowDeltaSum[i] = 0.0
-		so.vo_AOM_FastDeltaSum[i] = 0.0
-		so.vo_AOM_SlowSum[i] = 0.0
-		so.vo_AOM_FastSum[i] = 0.0
+		so.aom_slow_delta_sum[i] = 0.0
+		so.aom_fast_delta_sum[i] = 0.0
+		so.aom_slow_sum[i] = 0.0
+		so.aom_fast_sum[i] = 0.0
 
 		for &pool in layi.vo_AOM_Pool {
 			pool.vo_AOM_Slow += pool.vo_AOM_SlowDelta
 			pool.vo_AOM_Fast += pool.vo_AOM_FastDelta
 
-			so.vo_AOM_SlowDeltaSum[i] += pool.vo_AOM_SlowDelta
-			so.vo_AOM_FastDeltaSum[i] += pool.vo_AOM_FastDelta
+			so.aom_slow_delta_sum[i] += pool.vo_AOM_SlowDelta
+			so.aom_fast_delta_sum[i] += pool.vo_AOM_FastDelta
 
-			so.vo_AOM_SlowSum[i] += pool.vo_AOM_Slow
-			so.vo_AOM_FastSum[i] += pool.vo_AOM_Fast
+			so.aom_slow_sum[i] += pool.vo_AOM_Slow
+			so.aom_fast_sum[i] += pool.vo_AOM_Fast
 		}
 
-		layi.vs_SOM_Slow += so.vo_SOM_SlowDelta[i]
-		layi.vs_SOM_Fast += so.vo_SOM_FastDelta[i]
-		layi.vs_SMB_Slow += so.vo_SMB_SlowDelta[i]
-		layi.vs_SMB_Fast += so.vo_SMB_FastDelta[i]
+		layi.vs_SOM_Slow += so.som_slow_delta[i]
+		layi.vs_SOM_Fast += so.som_fast_delta[i]
+		layi.vs_SMB_Slow += so.smb_slow_delta[i]
+		layi.vs_SMB_Fast += so.smb_fast_delta[i]
 
-		so.vo_CBalance[i] =
-			so.vo_AOM_SlowInput[i] +
-			so.vo_AOM_FastInput[i] +
-			so.vo_AOM_SlowDeltaSum[i] +
-			so.vo_AOM_FastDeltaSum[i] +
-			so.vo_SMB_SlowDelta[i] +
-			so.vo_SMB_FastDelta[i] +
-			so.vo_SOM_SlowDelta[i] +
-			so.vo_SOM_FastDelta[i] +
-			so.vo_SOM_FastInput[i]
+		so.c_balance[i] =
+			so.aom_slow_input[i] +
+			so.aom_fast_input[i] +
+			so.aom_slow_delta_sum[i] +
+			so.aom_fast_delta_sum[i] +
+			so.smb_slow_delta[i] +
+			so.smb_fast_delta[i] +
+			so.som_slow_delta[i] +
+			so.som_fast_delta[i] +
+			so.som_fast_input[i]
 
 		// ([kg C kg-1] * [kg m-3]) - [kg C m-3]
-		so.vo_SoilOrganicC[i] =
-			(soil_organic_carbon(layi) * soil_bulk_density(layi)) - so.vo_InertSoilOrganicC[i]
-		so.vo_SoilOrganicC[i] += so.vo_CBalance[i]
+		so.soil_organic_c[i] =
+			(soil_organic_carbon(layi) * soil_bulk_density(layi)) - so.inert_soil_organic_c[i]
+		so.soil_organic_c[i] += so.c_balance[i]
 
 		// [kg C m-3] / [kg m-3] --> [kg C kg-1]
 		layi.vs_SoilOrganicCarbon =
-			(so.vo_SoilOrganicC[i] + so.vo_InertSoilOrganicC[i]) / soil_bulk_density(layi)
+			(so.soil_organic_c[i] + so.inert_soil_organic_c[i]) / soil_bulk_density(layi)
 	}
 }
 
@@ -1543,9 +1543,9 @@ soil_organic_add_organic_matter :: proc(
 		intoLayer.vs_SoilNO3 += soil_NO3_input
 		intoLayer.vs_SOM_Fast += SOM_FastInput
 
-		so.vo_AOM_SlowInput[intoLayerIndex] += AOM_slow_input
-		so.vo_AOM_FastInput[intoLayerIndex] += AOM_fast_input
-		so.vo_SOM_FastInput[intoLayerIndex] += SOM_FastInput
+		so.aom_slow_input[intoLayerIndex] += AOM_slow_input
+		so.aom_fast_input[intoLayerIndex] += AOM_fast_input
+		so.som_fast_input[intoLayerIndex] += SOM_FastInput
 	}
 
 	so.added_organic_matter = true
@@ -1587,52 +1587,52 @@ soil_organic_get_organic_n :: proc(so: ^Soil_Organic, i: int) -> f64 {
 
 // C++: double monica::soilorganic::getSoilOrganicC(const SoilOrganic*, int)
 soil_organic_get_soil_organic_c :: proc(so: ^Soil_Organic, iLayer: int) -> f64 {
-	return so.vo_SoilOrganicC[iLayer] / soil_bulk_density(&so.soil_column.layers[iLayer])
+	return so.soil_organic_c[iLayer] / soil_bulk_density(&so.soil_column.layers[iLayer])
 }
 
 // C++: double monica::soilorganic::getNetNMineralisationRate(const SoilOrganic*, int)
 soil_organic_get_net_n_mineralisation_rate :: proc(so: ^Soil_Organic, iLayer: int) -> f64 {
-	return so.vo_NetNMineralisationRate[iLayer] * 10000.0
+	return so.net_n_mineralisation_rate[iLayer] * 10000.0
 }
 
 // C++: double monica::soilorganic::getNH3_Volatilised(const SoilOrganic*)
 soil_organic_get_nh3_volatilised :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_Total_NH3_Volatilised * 10000.0
+	return so.total_nh3_volatilised * 10000.0
 }
 
 // C++: double monica::soilorganic::getSumNH3_Volatilised(const SoilOrganic*)
 soil_organic_get_sum_nh3_volatilised :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_SumNH3_Volatilised * 10000.0
+	return so.sum_nh3_volatilised * 10000.0
 }
 
 // C++: double monica::soilorganic::getSumN2O_Produced(const SoilOrganic*)
 soil_organic_get_sum_n2o_produced :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_SumN2O_Produced
+	return so.sum_n2o_produced
 }
 
 // C++: double monica::soilorganic::getNetNMineralisation(const SoilOrganic*)
 soil_organic_get_net_n_mineralisation :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_NetNMineralisation * 10000.0
+	return so.net_n_mineralisation * 10000.0
 }
 
 // C++: double monica::soilorganic::getSumNetNMineralisation(const SoilOrganic*)
 soil_organic_get_sum_net_n_mineralisation :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_SumNetNMineralisation * 10000.0
+	return so.sum_net_n_mineralisation * 10000.0
 }
 
 // C++: double monica::soilorganic::getSumDenitrification(const SoilOrganic*)
 soil_organic_get_sum_denitrification :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_SumDenitrification * 10000.0
+	return so.sum_denitrification * 10000.0
 }
 
 // C++: double monica::soilorganic::getDenitrification(const SoilOrganic*)
 soil_organic_get_denitrification :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_TotalDenitrification * 10000.0
+	return so.total_denitrification * 10000.0
 }
 
 // C++: double monica::soilorganic::getDecomposerRespiration(const SoilOrganic*)
 soil_organic_get_decomposer_respiration :: proc(so: ^Soil_Organic) -> f64 {
-	return so.vo_DecomposerRespiration * 10000.0
+	return so.decomposer_respiration * 10000.0
 }
 
 // C++: double monica::soilorganic::foNetEcosystemProduction(SoilOrganic*, double, double)
@@ -1684,33 +1684,33 @@ soil_organic_step :: proc(so: ^Soil_Organic, meanAirTemperature, precipitation, 
 	} else {
 		n2o_nit, n2o_denit = soil_organic_fo_n2o_production(so), 0.0
 	}
-	so.vo_N2O_Produced_Nit = n2o_nit
-	so.vo_N2O_Produced_Denit = n2o_denit
-	so.vo_N2O_Produced = so.vo_N2O_Produced_Nit + so.vo_N2O_Produced_Denit
+	so.n2o_produced_nit = n2o_nit
+	so.n2o_produced_denit = n2o_denit
+	so.n2o_produced = so.n2o_produced_nit + so.n2o_produced_denit
 
 	soil_organic_fo_pool_update(so)
 
-	so.vo_NetEcosystemProduction = soil_organic_fo_net_ecosystem_production(
+	so.net_ecosystem_production = soil_organic_fo_net_ecosystem_production(
 		so,
 		netPrimaryProduction,
-		so.vo_DecomposerRespiration,
+		so.decomposer_respiration,
 	)
-	so.vo_NetEcosystemExchange = soil_organic_fo_net_ecosystem_exchange(
+	so.net_ecosystem_exchange = soil_organic_fo_net_ecosystem_exchange(
 		so,
 		netPrimaryProduction,
-		so.vo_DecomposerRespiration,
+		so.decomposer_respiration,
 	)
 
-	so.vo_SumNH3_Volatilised += so.vo_NH3_Volatilised
-	so.vo_SumN2O_Produced += so.vo_N2O_Produced
+	so.sum_nh3_volatilised += so.nh3_volatilised
+	so.sum_n2o_produced += so.n2o_produced
 
 	so.irrigation_amount = 0.0
 
 	nools := so.soil_column.vs_NumberOfOrganicLayers
 	for i in 0 ..< nools {
-		so.vo_AOM_SlowInput[i] = 0.0
-		so.vo_AOM_FastInput[i] = 0.0
-		so.vo_SOM_FastInput[i] = 0.0
+		so.aom_slow_input[i] = 0.0
+		so.aom_fast_input[i] = 0.0
+		so.som_fast_input[i] = 0.0
 	}
 	so.added_organic_matter = false
 }
