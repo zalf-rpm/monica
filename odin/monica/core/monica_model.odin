@@ -334,7 +334,7 @@ monica_model_apply_irrigation :: proc(
 	// if the production process has still some defined manual irrigation dates
 	if !model.simPs.p_UseAutomaticIrrigation {
 		apply_irrigation(&model.soilColumn, amount, nitrateConcentration)
-		model.soilOrganic.irrigationAmount += amount
+		model.soilOrganic.irrigation_amount += amount
 		monica_model_add_daily_sum_irrigation_water(model, amount)
 	}
 }
@@ -912,7 +912,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 			&model.simPs.p_AutoIrrigationParams,
 		)
 		if irrigationTriggered {
-			model.soilOrganic.irrigationAmount += irrigationAmount
+			model.soilOrganic.irrigation_amount += irrigationAmount
 			monica_model_add_daily_sum_irrigation_water(model, irrigationAmount)
 		}
 	}

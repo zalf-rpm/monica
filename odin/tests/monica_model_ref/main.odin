@@ -5,17 +5,17 @@
 // Run odin/tests/cpp_ref/run_monica_model.sh to build both and diff them.
 package monica_model_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:slice"
 import "core:strings"
-import core "../../monica/core"
-import p "../../monica/params"
-import d "../../support/date"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 dump_model :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sumFertiliser)
@@ -27,11 +27,23 @@ dump_model :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 		strings.concatenate({path, ".dailySumOrganicFertilizerDM"}),
 		model.dailySumOrganicFertilizerDM,
 	)
-	tr.dump(t, strings.concatenate({path, ".sumOrganicFertilizerDM"}), model.sumOrganicFertilizerDM)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".sumOrganicFertilizerDM"}),
+		model.sumOrganicFertilizerDM,
+	)
 	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humusBalanceCarryOver)
-	tr.dump(t, strings.concatenate({path, ".dailySumIrrigationWater"}), model.dailySumIrrigationWater)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".dailySumIrrigationWater"}),
+		model.dailySumIrrigationWater,
+	)
 	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clearCropUponNextDay)
-	tr.dump(t, strings.concatenate({path, ".cultivationMethodCount"}), model.cultivationMethodCount)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".cultivationMethodCount"}),
+		model.cultivationMethodCount,
+	)
 }
 
 dump_soil_column_top3 :: proc(t: ^tr.Tracer, path: string, sc: ^core.Soil_Column) {
@@ -111,7 +123,10 @@ main :: proc() {
 	env := mrun.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
 	env_params := jx.get(env, "params")
 
-	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
 
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
@@ -128,7 +143,11 @@ main :: proc() {
 
 	// scenario 1: applyMineralFertiliser
 	tr.set_day(&t, 1)
-	mfp := p.Mineral_Fertilizer_Parameters{vo_NO3 = 50.0, vo_NH4 = 30.0, vo_Carbamid = 20.0}
+	mfp := p.Mineral_Fertilizer_Parameters {
+		vo_NO3      = 50.0,
+		vo_NH4      = 30.0,
+		vo_Carbamid = 20.0,
+	}
 	core.monica_model_apply_mineral_fertiliser(model, mfp, 40.0)
 	dump_model(&t, "model", model)
 	dump_soil_column_top3(&t, "sc", &model.soilColumn)
@@ -152,7 +171,8 @@ main :: proc() {
 
 	// scenario 3: applyMineralFertiliserViaNMinMethod, soil too wet -> delayed
 	tr.set_day(&t, 3)
-	model.soilColumn.layers[0].vs_SoilMoisture_m3 = model.soilColumn.layers[0].vs_FieldCapacity + 0.01
+	model.soilColumn.layers[0].vs_SoilMoisture_m3 =
+		model.soilColumn.layers[0].vs_FieldCapacity + 0.01
 	fertAmount1 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
@@ -169,7 +189,8 @@ main :: proc() {
 
 	// scenario 4: applyMineralFertiliserViaNMinMethod, soil dry -> immediate + top-dressing split
 	tr.set_day(&t, 4)
-	model.soilColumn.layers[0].vs_SoilMoisture_m3 = model.soilColumn.layers[0].vs_FieldCapacity - 0.05
+	model.soilColumn.layers[0].vs_SoilMoisture_m3 =
+		model.soilColumn.layers[0].vs_FieldCapacity - 0.05
 	fertAmount2 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
@@ -200,11 +221,14 @@ main :: proc() {
 	dump_model(&t, "model", model)
 	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soilColumn.vs_SurfaceWaterStorage)
 	tr.dump(&t, "sc.layers[0].vs_SoilNO3", model.soilColumn.layers[0].vs_SoilNO3)
-	tr.dump(&t, "so.irrigationAmount", model.soilOrganic.irrigationAmount)
+	tr.dump(&t, "so.irrigationAmount", model.soilOrganic.irrigation_amount)
 
 	// scenario 7: applyIrrigationViaTrigger - needs a live cropModule
 	tr.set_day(&t, 7)
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 	wheat_crop_params := p.make_crop_parameters()
 	_ = p.crop_parameters_merge_sj_cj(
 		&wheat_crop_params,
@@ -238,9 +262,9 @@ main :: proc() {
 			cm.cropParams.cultivarParams.pc_HeatSumIrrigationEnd) /
 		2.0
 	aip := p.Automatic_Irrigation_Parameters {
-		base                   = p.Irrigation_Parameters{nitrateConcentration = 3.0, fw = 1.0},
-		amount                 = 15.0,
-		threshold              = 0.99,
+		base = p.Irrigation_Parameters{nitrateConcentration = 3.0, fw = 1.0},
+		amount = 15.0,
+		threshold = 0.99,
 		criticalMoistureDepthM = 0.3,
 	}
 	triggered, triggeredAmount := core.apply_irrigation_via_trigger(&model.soilColumn, &aip)

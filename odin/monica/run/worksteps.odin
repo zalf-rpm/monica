@@ -672,11 +672,11 @@ automatic_harvest_condition :: proc(
 	if cg != nil && !ah.cropHarvested {
 		conditionMet =
 			d.ge(model.currentStepDate, ah.absLatestDate) ||
-			(ah.harvestTime == "maturity" &&// harvest after or at latest date
-					core.maturity_reached(cg) &&
-					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&// has maturity been reached
-					is_precipitation_ok(// check soil moisture
-						model.climateData,
+			(ah.harvestTime == "maturity" &&
+					core.maturity_reached(cg) &&// harvest after or at latest date
+					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&
+					is_precipitation_ok(// has maturity been reached
+						model.climateData,// check soil moisture
 						ah.max3dayPrecipSum,
 						ah.maxCurrentDayPrecipSum,
 					)) // check precipitation
@@ -1156,7 +1156,7 @@ automatic_irrigation_apply :: proc(
 	)
 	if irrigationTriggered {
 		model.currentEvents["AutomaticIrrigation"] = true
-		model.soilOrganic.irrigationAmount += irrigationAmount
+		model.soilOrganic.irrigation_amount += irrigationAmount
 		core.monica_model_add_daily_sum_irrigation_water(model, irrigationAmount)
 	}
 
