@@ -487,7 +487,7 @@ struct DLL_API SiteParameters : public Tools::Json11Serializable {
   Soil::SoilPMs vs_SoilParameters;
   Tools::J11Array initSoilProfileSpec;
   std::string pwpFcSatFunction{"Wessolek2009"};
-  std::map<std::string, std::function<Tools::Errors(Soil::SoilParameters*)>> calculateAndSetPwpFcSatFunctions;
+  std::map<std::string, std::function<Tools::Errors(Soil::SoilParameters*, int)>> calculateAndSetPwpFcSatFunctions;
   //MeasuredGroundwaterTableInformation groundwaterInformation;
 };
 
@@ -1099,4 +1099,3 @@ struct Intercropping {
   bool isAsync() const { return ioContext != nullptr; }
 };
 } // namespace monica
-
