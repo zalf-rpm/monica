@@ -1184,6 +1184,7 @@ double CropModule::fc_OxygenDeficiency(double d_CriticalOxygenContent) {
     double vc_MaxOxygenDeficit = avgAirFilledPoreVolume / d_CriticalOxygenContent;
     vc_OxygenDeficit =
         1.0 - double(vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) * (1.0 - vc_MaxOxygenDeficit);
+    vc_OxygenDeficit = std::max(0.0, vc_OxygenDeficit);
   } else {
      vc_TimeUnderAnoxia = 0;
      vc_OxygenDeficit = 1.0;
