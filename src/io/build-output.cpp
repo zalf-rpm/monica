@@ -592,7 +592,7 @@ BOTRes& monica::buildOutputTable() {
               return monica.cropGrowth() ? round(monica.cropGrowth()->get_ActNUptake(), 2) : 0.0;
             });
 
-      build({id++, "RootWaUptak", "KgN ha-1", "RootWatUptakefromLayer"},
+      build({id++, "RootWaUptak", "mm", "RootWatUptakefromLayer"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
                 return monica.cropGrowth() ? monica.cropGrowth()->get_Transpiration(i) : 0.0;
