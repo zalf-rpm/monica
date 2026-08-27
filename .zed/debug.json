@@ -33,4 +33,14 @@
     "pid": 25788,
     "stopOnEntry": false,
   },
+  {
+    "label": "Debug run-consumer.py",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/installer/Hohenfinow2/python/run-consumer.py",
+    "python": "$ZED_WORKTREE_ROOT/installer/Hohenfinow2/python/.pixi/envs/default/bin/python",
+    "cwd": "$ZED_WORKTREE_ROOT/installer/Hohenfinow2/python",
+    "args": [],
+    "justMyCode": false,
+  },
 ]
