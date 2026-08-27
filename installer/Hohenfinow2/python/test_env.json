@@ -1,0 +1,1418 @@
+{
+  "type": "Env",
+  "debugMode": false,
+  "params": {
+    "type": "CentralParameterProvider",
+    "userCropParameters": {
+      "CanopyReflectionCoefficient": 0.08,
+      "GrowthRespirationParameter1": 0.1,
+      "GrowthRespirationParameter2": 38,
+      "GrowthRespirationRedux": 0.7,
+      "MaintenanceRespirationParameter1": 0.08,
+      "MaintenanceRespirationParameter2": 44,
+      "MaxCropNDemand": 6,
+      "MinimumAvailableN": 7.5e-5,
+      "MinimumNConcentrationRoot": 0.005,
+      "ReferenceAlbedo": 0.23,
+      "ReferenceLeafAreaIndex": 1.44,
+      "ReferenceMaxAssimilationRate": 30,
+      "SaturationBeta": 2.5,
+      "StomataConductanceAlpha": 40,
+      "Tortuosity": 0.002,
+      "__TimeUnderAnoxiaThreshold": 100,
+      "type": "UserCropParameters"
+    },
+    "userEnvironmentParameters": {
+      "Albedo": 0.2,
+      "rcp": "rcp85",
+      "AtmosphericCO2": 0,
+      "0 means MONICA will calculate CO2 automatically, else use this value for whole simulation, unless more exact data are available": "",
+      "AtmosphericCO2s": {},
+      "year -> CO2-value pairs for yearly CO2 values": "",
+      "LeachingDepth": 1.6,
+      "MaxGroundwaterDepth": 18,
+      "MinGroundwaterDepth": 20,
+      "MinGroundwaterDepthMonth": 3,
+      "WindSpeedHeight": 2,
+      "timeStep": 1,
+      "type": "UserEnvironmentParameters"
+    },
+    "userSoilMoistureParameters": {
+      "CorrectionRain": 1,
+      "CorrectionSnow": 1.14,
+      "CriticalMoistureDepth": 0.3,
+      "EvaporationZeta": 40,
+      "GroundwaterDischarge": 3,
+      "HydraulicConductivityRedux": 0.1,
+      "KcFactor": 0.75,
+      "MaxPercolationRate": 10,
+      "MaximumEvaporationImpactDepth": 5,
+      "MoistureInitValue": 0,
+      "NewSnowDensityMin": 0.1,
+      "RefreezeParameter1": 1.5,
+      "RefreezeParameter2": 0.36,
+      "RefreezeTemperature": -1.7,
+      "SaturatedHydraulicConductivity": 8640,
+      "SnowAccumulationTresholdTemperature": 1.8,
+      "SnowMaxAdditionalDensity": 0.25,
+      "SnowMeltTemperature": 0.31,
+      "SnowPacking": 0.01,
+      "SnowRetentionCapacityMax": 0.17,
+      "SnowRetentionCapacityMin": 0.05,
+      "SurfaceRoughness": 0.02,
+      "TemperatureLimitForLiquidWater": -3,
+      "XSACriticalSoilMoisture": 0.1,
+      "type": "UserSoilMoistureParameters"
+    },
+    "userSoilTemperatureParameters": {
+      "BaseTemperature": 9.5,
+      "InitialSurfaceTemperature": 10,
+      "DensityAir": [1.25, "kg/m3"],
+      "SpecificHeatCapacityAir": [1005, "J/(kg*K)", "at 300 K"],
+      "DensityHumus": [1300, "kg/m3"],
+      "SpecificHeatCapacityHumus": [1920, "J/(kg*K)"],
+      "DensityWater": [1000, "kg/m3"],
+      "SpecificHeatCapacityWater": [4192, "J/(kg*K)"],
+      "QuartzRawDensity": [2650, "kg/m3"],
+      "SpecificHeatCapacityQuartz": [750, "J/(kg*K)"],
+      "NTau": 0.65,
+      "SoilAlbedo": 0.7,
+      "SoilMoisture": 0.25,
+      "type": "SoilTemperatureModuleParameters"
+    },
+    "userSoilTransportParameters": {
+      "AD": 0.002,
+      "DiffusionCoefficientStandard": 0.000214,
+      "DispersionLength": 0.049,
+      "NDeposition": 0,
+      "type": "UserSoilTransportParameters"
+    },
+    "userSoilOrganicParameters": {
+      "QTenFactor": [2.95, ""],
+      "TempDecOptimal": [38.2, "C"],
+      "MoistureDecOptimal": [0.45, "%"],
+      "AOM_FastMaxC_to_N": [1000, ""],
+      "AOM_FastUtilizationEfficiency": [0.1, ""],
+      "AOM_SlowUtilizationEfficiency": [0.4, ""],
+      "ActivationEnergy": [41000, ""],
+      "AmmoniaOxidationRateCoeffStandard": [0.1, "d-1"],
+      "AtmosphericResistance": [0.0025, "s m-1"],
+      "CN_Ratio_SMB": [6.7, ""],
+      "Denit1": [0.2, ""],
+      "Denit2": [0.8, ""],
+      "Denit3": [0.9, ""],
+      "HydrolysisKM": [0.00334, ""],
+      "HydrolysisP1": [4.259e-12, ""],
+      "HydrolysisP2": [1.408e-12, ""],
+      "ImmobilisationRateCoeffNH4": [0.5, "d-1"],
+      "ImmobilisationRateCoeffNO3": [0.5, "d-1"],
+      "Inhibitor_NH3": [1, "kg N m-3"],
+      "LimitClayEffect": [0.25, "kg kg-1"],
+      "MaxMineralisationDepth": 0.4,
+      "N2OProductionRate": [0.015, "d-1"],
+      "NitriteOxidationRateCoeffStandard": [0.2, "d-1"],
+      "PartSMB_Fast_to_SOM_Fast": [0.6, ""],
+      "PartSMB_Slow_to_SOM_Fast": [0.6, ""],
+      "PartSOM_Fast_to_SOM_Slow": [0.3, ""],
+      "PartSOM_to_SMB_Fast": [0.0002, ""],
+      "PartSOM_to_SMB_Slow": [0.015, ""],
+      "SMB_FastDeathRateStandard": [0.01, "d-1"],
+      "SMB_FastMaintRateStandard": [0.01, "d-1"],
+      "SMB_SlowDeathRateStandard": [0.001, "d-1"],
+      "SMB_SlowMaintRateStandard": [0.001, "d-1"],
+      "SMB_UtilizationEfficiency": [0, "d-1"],
+      "SOM_FastDecCoeffStandard": [0.00014, "d-1"],
+      "SOM_FastUtilizationEfficiency": [0.5, ""],
+      "SOM_SlowDecCoeffStandard": [4.3e-5, "d-1"],
+      "SOM_SlowUtilizationEfficiency": [0.4, ""],
+      "SpecAnaerobDenitrification": [0.1, "g gas-N g CO2-C-1"],
+      "TransportRateCoeff": [0.1, "d-1"],
+      "type": "UserSoilOrganicParameters",
+      "stics": {
+        "use_n2o": false,
+        "use_nit": false,
+        "use_denit": false,
+        "code_vnit": [
+          1,
+          "",
+          "Nitrification rate dependence on NH4: 1 = the nitrification rate is proportional to NH4 concentration ; 2 = the nitrification rate depends on NH4 concentration according to a Michaelis-Menten function (saturation)"
+        ],
+        "code_tnit": [
+          2,
+          "",
+          "Temperature function for nitrification: 1 = piecewise linear function ; 2 = gaussian function"
+        ],
+        "code_rationit": [
+          2,
+          "",
+          "Nitrification N20 ratio: 1 = constant ratio (parameter) ; 2 = variable ratio according to soil water filled pore space (WFPS)"
+        ],
+        "code_hourly_wfps_nit": [
+          2,
+          "",
+          "Hourly WFPS calculation for nitrification: 1 = calculation of the hourly evolution of soil WFPS for days with rainfall ; 2 = option disabled"
+        ],
+        "code_pdenit": [
+          1,
+          "",
+          "Denitrification potential: 1 = constant potential (parameter) ; 2 = potential estimated from soil organic C content"
+        ],
+        "code_ratiodenit": [
+          2,
+          "",
+          "Denitrification N20 ratio: 1 = constant ratio (parameter) ; 2 = variable ratio according to pH, soil WFPS, NO3 concentration"
+        ],
+        "code_hourly_wfps_denit": [
+          2,
+          "",
+          "Hourly WFPS calculation for denitrification: 1 = calculation of the hourly evolution of soil WFPS for days with rainfall ; 2 = option disabled"
+        ],
+        "hminn": [
+          0.3,
+          "",
+          "fraction of the soil water content at field capacity below which the nitrification is zero",
+          "param_gen.xml"
+        ],
+        "hoptn": [
+          0.9,
+          "",
+          "fraction of the soil water content at field capacity above which nitrification is optimal",
+          "param_gen.xml"
+        ],
+        "pHminnit": [
+          4.0,
+          "",
+          "pH below which nitrification is zero",
+          "param_gen.xml"
+        ],
+        "pHmaxnit": [
+          7.2,
+          "",
+          "pH above which nitrification is optimal",
+          "param_gen.xml"
+        ],
+        "nh4_min": [
+          1.0,
+          "mg NH4-N/kg soil",
+          "minimum soil ammonium content (fixed ammonium, not available for nitrification)",
+          "param_gen.xml"
+        ],
+        "pHminden": [
+          5.6,
+          "",
+          "pH below which denitrification only produces N2O (for a soil WFPS of ~80%)",
+          "param_gen.xml"
+        ],
+        "pHmaxden": [
+          9.2,
+          "",
+          "pH above which denitrification only produces N2 (for a soil WFPS of ~80%)",
+          "param_gen.xml"
+        ],
+        "wfpsc": [
+          0.62,
+          "",
+          "soil WFPS threshold beyond which denitrification is active, and more generally beyond which anaerobic conditions become significant",
+          "param_gen.xml"
+        ],
+        "tdenitopt_gauss": [
+          47,
+          "\u00b0C",
+          "optimum temperature for denitrification",
+          "param_gen.xml"
+        ],
+        "scale_tdenitopt": [
+          25,
+          "\u00b0C",
+          "parameter controlling the range of temperature favourable to denitrification",
+          "param_gen.xml"
+        ],
+        "Kd": [
+          148,
+          "mg NO3-N/L",
+          "half saturation constant for the function relating the NO3 concentration to the denitrification rate. Multiplying by gravimetric soil water content yields mg NO3-N/kg soil",
+          "param_gen.xml"
+        ],
+        "k_desat": [
+          3.0,
+          "1/day",
+          "constant controlling the rate of desaturation of a soil layer (Hourly WFPS option enabled). A value of 3.0 allows 95% of the water to be drained in one day and thus to reach a soil water content very close to field capacity",
+          "param_gen.xml"
+        ],
+        "fnx": [
+          0.8,
+          "1/day",
+          "potential nitrification rate expressed as the fraction of available ammonium nitrified in one day (linear option for nitrification rate)",
+          "param_gen.xml"
+        ],
+        "vnitmax": [
+          27.3,
+          "mg NH4-N/kg soil/day",
+          "nitrification potential (Michaelis-Menten option for nitrification rate)",
+          "param_gen.xml"
+        ],
+        "Kamm": [
+          24,
+          "mg NH4-N/L",
+          "half saturation constant for the function relating NH4 concentration to nitrification rate (Michaelis-Menten option for nitrification rate). Multiplying by gravimetric soil water content yields mg NH4-N/kg soil",
+          "param_gen.xml"
+        ],
+        "tnitmin": [
+          5.0,
+          "\u00b0C",
+          "temperature below which nitrification is zero (option piecewise linear function)",
+          "param_gen.xml"
+        ],
+        "tnitopt": [
+          30.0,
+          "\u00b0C",
+          "temperature above which nitrification is optimal (option piecewise linear function)",
+          "param_gen.xml"
+        ],
+        "tnitop2": [
+          35.0,
+          "\u00b0C",
+          "temperature above which nitrification begins to decrease after the optimum (option piecewise linear function)",
+          "param_gen.xml"
+        ],
+        "tnitmax": [
+          58.0,
+          "\u00b0C",
+          "temperature above which nitrification is zero (option piecewise linear function)",
+          "param_gen.xml"
+        ],
+        "tnitopt_gauss": [
+          32.5,
+          "\u00b0C",
+          "optimum temperature for nitrification (if gaussian function option enabled)",
+          "param_gen.xml"
+        ],
+        "scale_tnitopt": [
+          16.0,
+          "\u00b0C",
+          "parameter controlling the range of temperature favourable to nitrification (if gaussian function option enabled)",
+          "param_gen.xml"
+        ],
+        "rationit": [
+          0.0016,
+          "",
+          "proportion of nitrified nitrogen emitted as N2O (if constant ratio option enabled)",
+          "param_gen.xml"
+        ],
+        "cmin_pdenit": [
+          1.0,
+          "% [0-100]",
+          "organic carbon content below which the denitrification potential is minimal (option calculation of the denitrification potential enabled)",
+          "param_gen.xml"
+        ],
+        "cmax_pdenit": [
+          6.0,
+          "% [0-100]",
+          "organic carbon content above which the denitrification potential is maximum (option calculation of the denitrification potential enabled)",
+          "param_gen.xml"
+        ],
+        "min_pdenit": [
+          1.0,
+          "mg N/Kg soil/day",
+          "minimum value of denitrification potential (option calculation of denitrification potential enabled)",
+          "param_gen.xml"
+        ],
+        "max_pdenit": [
+          20.0,
+          "mg N/kg soil/day",
+          "maximum value of denitrification potential (option calculation of denitrification potential enabled)",
+          "param_gen.xml"
+        ],
+        "ratiodenit": [
+          0.2,
+          "",
+          "proportion of denitrified nitrogen emitted as N2O (if constant ratio option enabled)",
+          "param_gen.xml"
+        ],
+        "profdenit": [
+          20,
+          "cm",
+          "maximum soil depth affected by denitrification",
+          "sols.xml"
+        ],
+        "vpotdenit": [
+          2.0,
+          "kg N/ha/day",
+          "denitrification potential (constant potential option) over soil thickness defined by profdenit",
+          "sols.xml"
+        ]
+      }
+    },
+    "simulationParameters": {
+      "crop.json": "crop.json",
+      "site.json": "site.json",
+      "climate.csv": "climate-iso.csv",
+      "climate.csv-options": {
+        "no-of-climate-file-header-lines": 2,
+        "lineNoOfHeaderLine": 1,
+        "csv-separator": ";",
+        "header-to-acd-names": {},
+        "latitude": 52.80939865112305
+      },
+      "debug?": false,
+      "path-to-output": "./",
+      "include-file-base-path": "/home/berg/GitHub/amei_exercises/maricopa_wheat_face/params/",
+      "_include-file-base-path": "params/",
+      "output": {
+        "write-file?": false,
+        "file-name": "out.csv",
+        "csv-options": {
+          "include-header-row": true,
+          "include-units-row": false,
+          "csv-separator": ","
+        },
+        "obj-outputs?": true,
+        "events": [
+          "Stage-2",
+          ["Year", "DOY|S2_10_DOY"],
+          "Stage-4",
+          ["Year", "DOY|S4_61_DOY"],
+          "Stage-5",
+          ["Year", "DOY|S5_71_DOY"],
+          "Stage-6",
+          ["Year", "DOY|S6_91_DOY"],
+          "daily",
+          ["Date", "Crop", "Yield"]
+        ]
+      },
+      "UseSecondaryYields": false,
+      "NitrogenResponseOn": false,
+      "WaterDeficitResponseOn": false,
+      "EmergenceMoistureControlOn": false,
+      "EmergenceFloodingControlOn": false,
+      "UseAutomaticIrrigation": false,
+      "AutoIrrigationParams": {
+        "irrigationParameters": {
+          "nitrateConcentration": [0, "mg dm-3"],
+          "sulfateConcentration": [0, "mg dm-3"]
+        },
+        "amount": [0, "mm"],
+        "threshold": 0.9
+      },
+      "UseNMinMineralFertilisingMethod": false,
+      "NMinUserParams": { "min": 40, "max": 120, "delayInDays": 10 },
+      "NMinFertiliserPartition": {
+        "Carbamid": 0,
+        "NH4": 0.5,
+        "NO3": 0.5,
+        "id": "AN",
+        "name": "Ammonium Nitrate",
+        "type": "MineralFertiliserParameters"
+      },
+      "JulianDayAutomaticFertilising": 89
+    },
+    "siteParameters": {
+      "Latitude": 33.0628,
+      "Slope": 0.0,
+      "HeightNN": 361.0,
+      "NDeposition": 30,
+      "NumberOfLayers": 42,
+      "LayerThickness": [0.05, "m"],
+      "SoilProfileParameters": [
+        {
+          "CN": 10,
+          "Clay": 0.34000000000000002,
+          "FieldCapacity": 0.39000000000000001,
+          "PermanentWiltingPoint": 0.20200000762939452,
+          "PoreVolume": 0.5,
+          "Sand": 0.34999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.31,
+          "SoilBulkDensity": 1310,
+          "SoilOrganicCarbon": 0.40999999642372131,
+          "Thickness": 0.05000000074505806,
+          "pH": 8.5
+        },
+        {
+          "CN": 10,
+          "Clay": 0.34000000000000002,
+          "FieldCapacity": 0.39000000000000001,
+          "PermanentWiltingPoint": 0.20100000381469726,
+          "PoreVolume": 0.5,
+          "Sand": 0.34999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.31,
+          "SoilBulkDensity": 1270,
+          "SoilOrganicCarbon": 0.34999999403953552,
+          "Thickness": 0.10000000149011612,
+          "pH": 8.5
+        },
+        {
+          "CN": 10,
+          "Clay": 0.34000000000000002,
+          "FieldCapacity": 0.39000000000000001,
+          "PermanentWiltingPoint": 0.19899999618530273,
+          "PoreVolume": 0.5,
+          "Sand": 0.34999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.31,
+          "SoilBulkDensity": 1270,
+          "SoilOrganicCarbon": 0.27000001072883606,
+          "Thickness": 0.15000000596046448,
+          "pH": 8.5
+        },
+        {
+          "CN": 10,
+          "Clay": 0.34000000000000002,
+          "FieldCapacity": 0.39000000000000001,
+          "PermanentWiltingPoint": 0.19799999237060548,
+          "PoreVolume": 0.5,
+          "Sand": 0.34999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.31,
+          "SoilBulkDensity": 1300,
+          "SoilOrganicCarbon": 0.23999999463558197,
+          "Thickness": 0.20000000298023224,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.34000000000000002,
+          "FieldCapacity": 0.32000000000000001,
+          "PermanentWiltingPoint": 0.19799999237060548,
+          "PoreVolume": 0.45,
+          "Sand": 0.34999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.31,
+          "SoilBulkDensity": 1470,
+          "SoilOrganicCarbon": 0.15999999642372131,
+          "Thickness": 0.10000000149011612,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.34000000000000002,
+          "FieldCapacity": 0.29999999999999999,
+          "PermanentWiltingPoint": 0.19799999237060548,
+          "PoreVolume": 0.45,
+          "Sand": 0.34999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.31,
+          "SoilBulkDensity": 1470,
+          "SoilOrganicCarbon": 0.15999999642372131,
+          "Thickness": 0.10000000149011612,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.29999999999999999,
+          "FieldCapacity": 0.28999999999999998,
+          "PermanentWiltingPoint": 0.18600000381469728,
+          "PoreVolume": 0.4,
+          "Sand": 0.45000000000000001,
+          "Sceleton": 0,
+          "Silt": 0.25,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0.30000001192092896,
+          "Thickness": 0.20000000298023224,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.25,
+          "FieldCapacity": 0.27000000000000002,
+          "PermanentWiltingPoint": 0.15899999618530272,
+          "PoreVolume": 0.34700000762939454,
+          "Sand": 0.55000000000000004,
+          "Sceleton": 0,
+          "Silt": 0.20000000000000001,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0.10000000149011612,
+          "Thickness": 0.20000000298023224,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.25,
+          "FieldCapacity": 0.25,
+          "PermanentWiltingPoint": 0.15899999618530272,
+          "PoreVolume": 0.34700000762939454,
+          "Sand": 0.55000000000000004,
+          "Sceleton": 0,
+          "Silt": 0.20000000000000001,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0.10000000149011612,
+          "Thickness": 0.10000000149011612,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.25,
+          "FieldCapacity": 0.25,
+          "PermanentWiltingPoint": 0.15899999618530272,
+          "PoreVolume": 0.34700000762939454,
+          "Sand": 0.55000000000000004,
+          "Sceleton": 0,
+          "Silt": 0.20000000000000001,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0.10000000149011612,
+          "Thickness": 0.10000000149011612,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.20000000000000001,
+          "FieldCapacity": 0.25,
+          "PermanentWiltingPoint": 0.13600000381469726,
+          "PoreVolume": 0.33599998474121096,
+          "Sand": 0.59999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.20000000000000001,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0,
+          "Thickness": 0.20000000298023224,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.20000000000000001,
+          "FieldCapacity": 0.25,
+          "PermanentWiltingPoint": 0.13600000381469726,
+          "PoreVolume": 0.33599998474121096,
+          "Sand": 0.59999999999999998,
+          "Sceleton": 0,
+          "Silt": 0.20000000000000001,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0,
+          "Thickness": 0.20000000298023224,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.17999999999999999,
+          "FieldCapacity": 0.25,
+          "PermanentWiltingPoint": 0.12800000190734864,
+          "PoreVolume": 0.33099998474121095,
+          "Sand": 0.65000000000000002,
+          "Sceleton": 0,
+          "Silt": 0.17000000000000001,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0,
+          "Thickness": 0.20000000298023224,
+          "pH": 8.6000003814697266
+        },
+        {
+          "CN": 10,
+          "Clay": 0.17999999999999999,
+          "FieldCapacity": 0.25,
+          "PermanentWiltingPoint": 0.12800000190734864,
+          "PoreVolume": 0.33099998474121095,
+          "Sand": 0.65000000000000002,
+          "Sceleton": 0,
+          "Silt": 0.17000000000000001,
+          "SoilBulkDensity": 1570,
+          "SoilOrganicCarbon": 0,
+          "Thickness": 0.20000000298023224,
+          "pH": 8.6000003814697266
+        }
+      ]
+    }
+  },
+  "cropRotation": [
+    {
+      "worksteps": [
+        {
+          "type": "MineralFertilization",
+          "date": "1992-12-16",
+          "amount": [54, "kg"],
+          "partition": {
+            "Carbamid": 100.0,
+            "NH4": 0.0,
+            "NO3": 0.0,
+            "name": "Monoammonium phosphate"
+          }
+        },
+        {
+          "date": "1992-12-26",
+          "type": "Sowing",
+          "crop": {
+            "cropParams": {
+              "species": {
+                "SpeciesName": "wheat",
+                "AbovegroundOrgan": [false, true, true, true],
+                "AssimilateReallocation": 0.3,
+                "BaseTemperature": [0, 1, 1, 1, 9, 9],
+                "CarboxylationPathway": 1,
+                "CriticalOxygenContent": [0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
+                "CuttingDelayDays": 0,
+                "DefaultRadiationUseEfficiency": 0.5,
+                "DevelopmentAccelerationByNitrogenStress": 1,
+                "DroughtImpactOnFertilityFactor": 0,
+                "FieldConditionModifier": 1,
+                "InitialKcFactor": 0.4,
+                "InitialOrganBiomass": [53, 53, 0, 0],
+                "InitialRootingDepth": 0.1,
+                "LimitingTemperatureHeatStress": 40,
+                "LuxuryNCoeff": 1.3,
+                "MaxCropDiameter": 0.005,
+                "MaxNUptakeParam": 3.145,
+                "MinimumNConcentration": 0.005,
+                "MinimumTemperatureForAssimilation": 0,
+                "OptimumTemperatureForAssimilation": 27,
+                "MaximumTemperatureForAssimilation": 35,
+                "MinimumTemperatureRootGrowth": 0,
+                "NConcentrationAbovegroundBiomass": 0.06,
+                "NConcentrationB0": 2,
+                "NConcentrationPN": 1.6,
+                "NConcentrationRoot": 0.02,
+                "OrganGrowthRespiration": [0.306, 0.315, 0.338, 0.291],
+                "OrganMaintenanceRespiration": [0.01, 0.03, 0.015, 0.01],
+                "PartBiologicalNFixation": 0,
+                "PlantDensity": 220,
+                "RootDistributionParam": 0.002787,
+                "RootFormFactor": 3,
+                "RootGrowthLag": -30,
+                "RootPenetrationRate": 0.0011,
+                "SamplingDepth": 0.9,
+                "SpecificRootLength": 300,
+                "StageAfterCut": 0,
+                "StageAtMaxDiameter": 2,
+                "StageAtMaxHeight": 3,
+                "StageMaxRootNConcentration": [
+                  0.02, 0.02, 0.012, 0.01, 0.01, 0.01
+                ],
+                "StorageOrgan": [false, false, false, true],
+                "TargetN30": 120,
+                "TargetNSamplingDepth": 230,
+                "type": "SpeciesParameters"
+              },
+              "cultivar": {
+                "AssimilatePartitioningCoeff": [
+                  [0.5, 0.5, 0, 0],
+                  [0.2, 0.2, 0.6, 0],
+                  [0.13, 0.2, 0.67, 0],
+                  [0, 0, 0.03, 0.97],
+                  [0, 0, 0, 1],
+                  [0, 0, 0, 0.8]
+                ],
+                "BaseDaylength": [[0, 0, 7, 7, 0, 0], "h"],
+                "BeginSensitivePhaseHeatStress": [780, "\u00b0C d"],
+                "CriticalTemperatureHeatStress": [31, "\u00b0C"],
+                "CropHeightP1": 6,
+                "CropHeightP2": 0.5,
+                "CropSpecificMaxRootingDepth": 1.2999999523162842,
+                "CultivarName": "spring wheat",
+                "DaylengthRequirement": [[0, 20, 20, 20, 0, 0], "h"],
+                "Description": "",
+                "DroughtStressThreshold": [1, 0.9, 1, 1, 0.9, 0.8],
+                "EndSensitivePhaseHeatStress": [900, "\u00b0C d"],
+                "FrostDehardening": 0,
+                "FrostHardening": 0,
+                "HeatSumIrrigationEnd": 1676,
+                "HeatSumIrrigationStart": 461,
+                "LT50cultivar": 0,
+                "LatestHarvestDoy": -1,
+                "LowTemperatureExposure": 0,
+                "MaxAssimilationRate": 52,
+                "MaxCropHeight": [0.8299999833106995, "m"],
+                "OptimumTemperature": [[30, 30, 30, 30, 30, 30], "\u00b0C"],
+                "OrganIdsForCutting": [],
+                "OrganIdsForPrimaryYield": [
+                  {
+                    "organId": 4,
+                    "type": "YieldComponent",
+                    "yieldDryMatter": 0.86,
+                    "yieldPercentage": 0.85
+                  }
+                ],
+                "OrganIdsForSecondaryYield": [
+                  {
+                    "organId": 2,
+                    "type": "YieldComponent",
+                    "yieldDryMatter": 0.86,
+                    "yieldPercentage": 0.85
+                  },
+                  {
+                    "organId": 3,
+                    "type": "YieldComponent",
+                    "yieldDryMatter": 0.86,
+                    "yieldPercentage": 0.9
+                  }
+                ],
+                "OrganSenescenceRate": [
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0],
+                  [0, 0.05, 0, 0],
+                  [0, 0.05, 0, 0]
+                ],
+                "Perennial": false,
+                "ResidueNRatio": 0.5,
+                "RespiratoryStress": 0,
+                "SpecificLeafArea": [
+                  [0.002, 0.0018, 0.0017, 0.0016, 0.0015, 0.0015],
+                  "ha kg-1"
+                ],
+                "StageKcFactor": [[0.6, 0.7, 1.1, 1.1, 0.8, 0.25], "1;0"],
+                "StageTemperatureSum": [
+                  [80, 284, 280, 180, 435, 25],
+                  "\u00b0C d"
+                ],
+                "VernalisationRequirement": [0, 0, 0, 0, 0, 0],
+                "type": "CultivarParameters"
+              }
+            },
+            "residueParams": {
+              "AOM_DryMatterContent": [
+                1,
+                "kg DM kg FM-1",
+                "Dry matter content of added organic matter"
+              ],
+              "AOM_FastDecCoeffStandard": [
+                0.012,
+                "d-1",
+                "Decomposition rate coefficient of fast AOM at standard conditions"
+              ],
+              "AOM_NH4Content": [
+                0.0002,
+                "kg N kg DM-1",
+                "Ammonium content in added organic matter"
+              ],
+              "AOM_NO3Content": [
+                0.0001,
+                "kg N kg DM-1",
+                "Nitrate content in added organic matter"
+              ],
+              "AOM_SlowDecCoeffStandard": [
+                0.0012,
+                "d-1",
+                "Decomposition rate coefficient of slow AOM at standard conditions"
+              ],
+              "CN_Ratio_AOM_Fast": [
+                0,
+                "80",
+                "C to N ratio of the rapidly decomposing AOM pool"
+              ],
+              "CN_Ratio_AOM_Slow": [
+                80,
+                "",
+                "C to N ratio of the slowly decomposing AOM pool"
+              ],
+              "NConcentration": [
+                0.005,
+                "kg N kg DM-1",
+                "Nitrogen content in added organic matter"
+              ],
+              "CorgContent": [
+                0.46,
+                "kg C kg DM-1",
+                "Carbon content in added organic matter"
+              ],
+              "PartAOM_Slow_to_SMB_Fast": [
+                0.5,
+                "kg kg-1",
+                "Part of AOM slow consumed by fast soil microbial biomass"
+              ],
+              "PartAOM_Slow_to_SMB_Slow": [
+                0.5,
+                "kg kg-1",
+                "Part of AOM slow consumed by slow soil microbial biomass"
+              ],
+              "PartAOM_to_AOM_Fast": [
+                0.12,
+                "kg kg-1",
+                "Part of AOM that is assigned to the rapidly decomposing pool"
+              ],
+              "PartAOM_to_AOM_Slow": [
+                0.88,
+                "kg kg-1",
+                "Part of AOM that is assigned to the slowly decomposing pool"
+              ],
+              "residueType": "",
+              "species": "wheat",
+              "type": "CropResidueParameters"
+            }
+          }
+        },
+        {
+          "date": "1993-03-25",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [15, "mm"],
+          "parameters": {
+            "nitrateConcentration": [480.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-05",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [27, "mm"],
+          "parameters": {
+            "nitrateConcentration": [266.6666666666667, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-06",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [4, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1800.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-12",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [18, "mm"],
+          "parameters": {
+            "nitrateConcentration": [400.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-17",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [16, "mm"],
+          "parameters": {
+            "nitrateConcentration": [450.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-18",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [6, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1200.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-21",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [18, "mm"],
+          "parameters": {
+            "nitrateConcentration": [400.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-26",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [24, "mm"],
+          "parameters": {
+            "nitrateConcentration": [300.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-27",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [6, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1200.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-30",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [21, "mm"],
+          "parameters": {
+            "nitrateConcentration": [342.85714285714283, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-05",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [20, "mm"],
+          "parameters": {
+            "nitrateConcentration": [360.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-10",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [20, "mm"],
+          "parameters": {
+            "nitrateConcentration": [360.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-11",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [4, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1800.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-14",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [20, "mm"],
+          "parameters": {
+            "nitrateConcentration": [360.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        { "type": "Harvest", "date": "1993-05-24" }
+      ]
+    }
+  ],
+  "cropRotation_": [
+    {
+      "worksteps": [
+        {
+          "type": "MineralFertilization",
+          "date": "1992-12-16",
+          "amount": [54, "kg"],
+          "partition": {
+            "Carbamid": 100.0,
+            "NH4": 0.0,
+            "NO3": 0.0,
+            "name": "Monoammonium phosphate"
+          }
+        },
+        {
+          "date": "1992-12-26",
+          "type": "Sowing",
+          "crop": {
+            "cropParams": {
+              "species": {
+                "SpeciesName": "wheat",
+                "AbovegroundOrgan": [false, true, true, true],
+                "AssimilateReallocation": 0.3,
+                "BaseTemperature": [0, 1, 1, 1, 9, 9],
+                "CarboxylationPathway": 1,
+                "CriticalOxygenContent": [0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
+                "CuttingDelayDays": 0,
+                "DefaultRadiationUseEfficiency": 0.5,
+                "DevelopmentAccelerationByNitrogenStress": 1,
+                "DroughtImpactOnFertilityFactor": 0,
+                "FieldConditionModifier": 1,
+                "InitialKcFactor": 0.4,
+                "InitialOrganBiomass": [53, 53, 0, 0],
+                "InitialRootingDepth": 0.1,
+                "LimitingTemperatureHeatStress": 40,
+                "LuxuryNCoeff": 1.3,
+                "MaxCropDiameter": 0.005,
+                "MaxNUptakeParam": 3.145,
+                "MinimumNConcentration": 0.005,
+                "MinimumTemperatureForAssimilation": 0,
+                "OptimumTemperatureForAssimilation": 27,
+                "MaximumTemperatureForAssimilation": 35,
+                "MinimumTemperatureRootGrowth": 0,
+                "NConcentrationAbovegroundBiomass": 0.06,
+                "NConcentrationB0": 2,
+                "NConcentrationPN": 1.6,
+                "NConcentrationRoot": 0.02,
+                "OrganGrowthRespiration": [0.306, 0.315, 0.338, 0.291],
+                "OrganMaintenanceRespiration": [0.01, 0.03, 0.015, 0.01],
+                "PartBiologicalNFixation": 0,
+                "PlantDensity": 220,
+                "RootDistributionParam": 0.002787,
+                "RootFormFactor": 3,
+                "RootGrowthLag": -30,
+                "RootPenetrationRate": 0.0011,
+                "SamplingDepth": 0.9,
+                "SpecificRootLength": 300,
+                "StageAfterCut": 0,
+                "StageAtMaxDiameter": 2,
+                "StageAtMaxHeight": 3,
+                "StageMaxRootNConcentration": [
+                  0.02, 0.02, 0.012, 0.01, 0.01, 0.01
+                ],
+                "StorageOrgan": [false, false, false, true],
+                "TargetN30": 120,
+                "TargetNSamplingDepth": 230,
+                "type": "SpeciesParameters"
+              },
+              "cultivar": {
+                "AssimilatePartitioningCoeff": [
+                  [0.5, 0.5, 0, 0],
+                  [0.2, 0.2, 0.6, 0],
+                  [0.13, 0.2, 0.67, 0],
+                  [0, 0, 0.03, 0.97],
+                  [0, 0, 0, 1],
+                  [0, 0, 0, 0.8]
+                ],
+                "BaseDaylength": [[0, 0, 7, 7, 0, 0], "h"],
+                "BeginSensitivePhaseHeatStress": [780, "\u00b0C d"],
+                "CriticalTemperatureHeatStress": [31, "\u00b0C"],
+                "CropHeightP1": 6,
+                "CropHeightP2": 0.5,
+                "CropSpecificMaxRootingDepth": 1.2999999523162842,
+                "CultivarName": "spring wheat",
+                "DaylengthRequirement": [[0, 20, 20, 20, 0, 0], "h"],
+                "Description": "",
+                "DroughtStressThreshold": [1, 0.9, 1, 1, 0.9, 0.8],
+                "EndSensitivePhaseHeatStress": [900, "\u00b0C d"],
+                "FrostDehardening": 0,
+                "FrostHardening": 0,
+                "HeatSumIrrigationEnd": 1676,
+                "HeatSumIrrigationStart": 461,
+                "LT50cultivar": 0,
+                "LatestHarvestDoy": -1,
+                "LowTemperatureExposure": 0,
+                "MaxAssimilationRate": 52,
+                "MaxCropHeight": [0.8299999833106995, "m"],
+                "OptimumTemperature": [[30, 30, 30, 30, 30, 30], "\u00b0C"],
+                "OrganIdsForCutting": [],
+                "OrganIdsForPrimaryYield": [
+                  {
+                    "organId": 4,
+                    "type": "YieldComponent",
+                    "yieldDryMatter": 0.86,
+                    "yieldPercentage": 0.85
+                  }
+                ],
+                "OrganIdsForSecondaryYield": [
+                  {
+                    "organId": 2,
+                    "type": "YieldComponent",
+                    "yieldDryMatter": 0.86,
+                    "yieldPercentage": 0.85
+                  },
+                  {
+                    "organId": 3,
+                    "type": "YieldComponent",
+                    "yieldDryMatter": 0.86,
+                    "yieldPercentage": 0.9
+                  }
+                ],
+                "OrganSenescenceRate": [
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0],
+                  [0, 0.05, 0, 0],
+                  [0, 0.05, 0, 0]
+                ],
+                "Perennial": false,
+                "ResidueNRatio": 0.5,
+                "RespiratoryStress": 0,
+                "SpecificLeafArea": [
+                  [0.002, 0.0018, 0.0017, 0.0016, 0.0015, 0.0015],
+                  "ha kg-1"
+                ],
+                "StageKcFactor": [[0.6, 0.7, 1.1, 1.1, 0.8, 0.25], "1;0"],
+                "StageTemperatureSum": [
+                  [80, 284, 280, 180, 435, 25],
+                  "\u00b0C d"
+                ],
+                "VernalisationRequirement": [0, 0, 0, 0, 0, 0],
+                "type": "CultivarParameters"
+              }
+            },
+            "residueParams": {
+              "AOM_DryMatterContent": [
+                1,
+                "kg DM kg FM-1",
+                "Dry matter content of added organic matter"
+              ],
+              "AOM_FastDecCoeffStandard": [
+                0.012,
+                "d-1",
+                "Decomposition rate coefficient of fast AOM at standard conditions"
+              ],
+              "AOM_NH4Content": [
+                0.0002,
+                "kg N kg DM-1",
+                "Ammonium content in added organic matter"
+              ],
+              "AOM_NO3Content": [
+                0.0001,
+                "kg N kg DM-1",
+                "Nitrate content in added organic matter"
+              ],
+              "AOM_SlowDecCoeffStandard": [
+                0.0012,
+                "d-1",
+                "Decomposition rate coefficient of slow AOM at standard conditions"
+              ],
+              "CN_Ratio_AOM_Fast": [
+                0,
+                "80",
+                "C to N ratio of the rapidly decomposing AOM pool"
+              ],
+              "CN_Ratio_AOM_Slow": [
+                80,
+                "",
+                "C to N ratio of the slowly decomposing AOM pool"
+              ],
+              "NConcentration": [
+                0.005,
+                "kg N kg DM-1",
+                "Nitrogen content in added organic matter"
+              ],
+              "CorgContent": [
+                0.46,
+                "kg C kg DM-1",
+                "Carbon content in added organic matter"
+              ],
+              "PartAOM_Slow_to_SMB_Fast": [
+                0.5,
+                "kg kg-1",
+                "Part of AOM slow consumed by fast soil microbial biomass"
+              ],
+              "PartAOM_Slow_to_SMB_Slow": [
+                0.5,
+                "kg kg-1",
+                "Part of AOM slow consumed by slow soil microbial biomass"
+              ],
+              "PartAOM_to_AOM_Fast": [
+                0.12,
+                "kg kg-1",
+                "Part of AOM that is assigned to the rapidly decomposing pool"
+              ],
+              "PartAOM_to_AOM_Slow": [
+                0.88,
+                "kg kg-1",
+                "Part of AOM that is assigned to the slowly decomposing pool"
+              ],
+              "residueType": "",
+              "species": "wheat",
+              "type": "CropResidueParameters"
+            }
+          }
+        },
+        {
+          "date": "1992-12-26",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [317, "mm"],
+          "parameters": {
+            "nitrateConcentration": [22.71293375394322, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-01-30",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [30, "mm"],
+          "parameters": {
+            "nitrateConcentration": [240.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-01-31",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [7, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1028.5714285714287, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-03-18",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [17, "mm"],
+          "parameters": {
+            "nitrateConcentration": [423.52941176470586, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-03-25",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [15, "mm"],
+          "parameters": {
+            "nitrateConcentration": [480.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-05",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [27, "mm"],
+          "parameters": {
+            "nitrateConcentration": [266.6666666666667, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-06",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [4, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1800.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-12",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [18, "mm"],
+          "parameters": {
+            "nitrateConcentration": [400.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-17",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [16, "mm"],
+          "parameters": {
+            "nitrateConcentration": [450.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-18",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [6, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1200.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-21",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [18, "mm"],
+          "parameters": {
+            "nitrateConcentration": [400.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-26",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [24, "mm"],
+          "parameters": {
+            "nitrateConcentration": [300.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-27",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [6, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1200.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-04-30",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [21, "mm"],
+          "parameters": {
+            "nitrateConcentration": [342.85714285714283, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-05",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [20, "mm"],
+          "parameters": {
+            "nitrateConcentration": [360.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-10",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [20, "mm"],
+          "parameters": {
+            "nitrateConcentration": [360.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-11",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [4, "mm"],
+          "parameters": {
+            "nitrateConcentration": [1800.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        {
+          "date": "1993-05-14",
+          "type": "Irrigation",
+          "atLayer": 4,
+          "amount": [20, "mm"],
+          "parameters": {
+            "nitrateConcentration": [360.0, "mg dm-3"],
+            "sulfateConcentration": [0.0, "mg dm-3"]
+          }
+        },
+        { "type": "Harvest", "date": "1993-05-24" }
+      ]
+    }
+  ],
+  "cropRotations": null,
+  "events": [
+    "Stage-2",
+    ["Year", "DOY|S2_10_DOY"],
+    "Stage-4",
+    ["Year", "DOY|S4_61_DOY"],
+    "Stage-5",
+    ["Year", "DOY|S5_71_DOY"],
+    "Stage-6",
+    ["Year", "DOY|S6_91_DOY"],
+    "daily",
+    [
+      "Date",
+      "Crop",
+      "Stage",
+      "TraDef",
+      "NDef",
+      "RootNDef",
+      "HeatRed",
+      "OxRed",
+      "TimeUnderAnoxia",
+      "Yield",
+      "RootDep",
+      "Irrig",
+      "Precip",
+      "Tavg",
+      "Globrad",
+      ["Mois", [1, 14]]
+    ]
+  ],
+  "outputs": { "obj-outputs?": true },
+  "pathToClimateCSV": "/home/berg/GitHub/monica_odin/installer/Hohenfinow2/python/AZMA1993_901_timeseries.csv",
+  "csvViaHeaderOptions": {
+    "no-of-climate-file-header-lines": 1,
+    "lineNoOfHeaderLine": 1,
+    "csv-separator": ",",
+    "header-to-acd-names": {},
+    "latitude": 52.80939865112305
+  },
+  "customId": "901..Yecora Rojo........1......1"
+}

@@ -50,7 +50,7 @@ def run_consumer(
                 else:
                     config[k] = v
 
-    print("consumer config:", config)
+    print("consumer config:", config, flush=True)
 
     context = zmq.Context()
     if config["shared_id"]:
@@ -65,7 +65,7 @@ def run_consumer(
 
     def process_message(msg):
 
-        if not hasattr(process_message, "wnof_count"):
+        if not hasattr(process_message, "received_env_count"):
             process_message.received_env_count = 0
 
         leave = False
@@ -117,7 +117,7 @@ def run_consumer(
                             writer.writerow(row)
 
                         # print(output_ids)
-                        for row in monica_io.write_output(
+                        for row in monica_io.write_output_obj(
                             output_ids, results, round_ids={"Mois": 6}
                         ):
                             writer.writerow(row)
@@ -132,7 +132,8 @@ def run_consumer(
         try:
             msg = socket.recv_json()
             leave = process_message(msg)
-        except:
+            print("leaving: ", leave)
+        except Exception:
             print(sys.exc_info())
             continue
 
