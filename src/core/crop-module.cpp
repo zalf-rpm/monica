@@ -990,15 +990,10 @@ double monica::cropmodule::fcOxygenDeficiency(CropModule *cm, double criticalOxy
   double avgAirFilledPoreVolume = (sumSaturation - sumSoilMoisture) / sumLayers;
   if (avgAirFilledPoreVolume < criticalOxygenContent) { // MP: conditions changed for
                                                         // stage-dependent waterlogging
-    avgAirFilledPoreVolume =
-        std::max(0.0, avgAirFilledPoreVolume); // to quarantee for positive values
-    cm->vc_TimeUnderAnoxia =
-        std::max(cm->vc_TimeUnderAnoxia + int(cm->vc_TimeStep), timeUnderAnoxiaThresholdAtStage);
-    double maxOxygenDeficit = avgAirFilledPoreVolume / criticalOxygenContent;
-    cm->vc_OxygenDeficit =
-        1.0 - double(cm->vc_TimeUnderAnoxia / double(timeUnderAnoxiaThresholdAtStage)) *
-                  (1.0 - maxOxygenDeficit);
-    cm->vc_OxygenDeficit = std::max(0.0, cm->vc_OxygenDeficit);
+    cm->vc_TimeUnderAnoxia += int(cm->vc_TimeStep);
+    if (cm->vc_TimeUnderAnoxia >= timeUnderAnoxiaThresholdAtStage) {
+      cm->vc_OxygenDeficit = std::max(0.0, avgAirFilledPoreVolume) / criticalOxygenContent;
+    }
   } else {
     cm->vc_TimeUnderAnoxia = 0;
     cm->vc_OxygenDeficit = 1.0;
