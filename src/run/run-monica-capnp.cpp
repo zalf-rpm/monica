@@ -90,6 +90,10 @@ kj::Promise<void> RunMonica::run(RunContext context) {
     auto errors = env.merge(envJson);
 
     if (!soilLayers.empty()) {
+      if (auto it = std::find(errors.errors.begin(), errors.errors.end(), "Soil profile is empty!");
+        it != errors.errors.end()) {
+        errors.errors.erase(it);
+      }
       errors.append(env.params.siteParameters.merge(J11Object{{"SoilProfileParameters", soilLayers}}));
     }
 
