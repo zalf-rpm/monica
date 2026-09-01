@@ -1,3 +1,6 @@
 [submodule "mas_cpp_misc"]
 	path = mas_cpp_misc
 	url = https://github.com/zalf-rpm/mas_cpp_misc.git
+[submodule "odin/support/capnp"]
+	path = odin/support/capnp
+	url = https://github.com/zalf-rpm/mas_capnp_odin_shim.git
