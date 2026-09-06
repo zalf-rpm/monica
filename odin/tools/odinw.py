@@ -83,6 +83,7 @@ STAMP = ODIN_DIR / "installed.txt"
 BUILD_DIR = ROOT / "build"
 MSVC_DIR = ROOT / "msvc"                           # portable-msvc output
 DOWNLOADS_DIR = ROOT / "downloads"                 # portable-msvc scratch/cache
+SHIM_DIR = ROOT / "support" / "capnp" / "shim_dynamic"  # Cap'n Proto C++ shim (submodule)
 
 IS_WINDOWS = sys.platform == "win32"
 ODIN_EXE = DIST_DIR / ("odin.exe" if IS_WINDOWS else "odin")
@@ -90,7 +91,13 @@ ODIN_EXE = DIST_DIR / ("odin.exe" if IS_WINDOWS else "odin")
 TARGETS = {
     "monica-run": "cmd/monica-run",
     "monica-zmq-server": "cmd/monica-zmq-server",
+    "monica-capnp-server": "cmd/monica-capnp-server",
 }
+
+# Targets that link the Cap'n Proto dynamic-API shim
+# (support/capnp/shim_dynamic). Unlike libzmq, which conda-forge supplies, this
+# one is built from the submodule's own CMake project - see cmd_build.
+CAPNP_TARGETS = {"monica-capnp-server"}
 
 
 def die(msg: str) -> "NoReturn":  # type: ignore[name-defined]
@@ -387,6 +394,27 @@ def run_odin(args: list[str], cwd: Path) -> int:
     return subprocess.call(cmd, cwd=str(cwd), env=odin_env())
 
 
+def _capnp_shim_artifacts() -> dict:
+    """Where shim_dynamic's CMake build puts what the Odin side links against.
+
+    Mirrors support/capnp/odin/capnp_dynamic/capnp_dynamic.odin's own foreign
+    import paths - and its reason for two build directories: the combined static
+    lib must be a Release (/MT) build, because Odin's linking does not pull in
+    MSVC's debug static CRT the way a CMake/MSVC Debug build does.
+    """
+    if IS_WINDOWS:
+        return {
+            "dll_lib": SHIM_DIR / "build" / "mas_capnp_dynamic_shim.lib",
+            "dll": SHIM_DIR / "build" / "mas_capnp_dynamic_shim.dll",
+            "static": SHIM_DIR / "build-static" / "mas_capnp_dynamic_shim_combined.lib",
+        }
+    return {
+        "dll_lib": SHIM_DIR / "build" / "libmas_capnp_dynamic_shim.so",
+        "dll": SHIM_DIR / "build" / "libmas_capnp_dynamic_shim.so",
+        "static": SHIM_DIR / "build-static" / "libmas_capnp_dynamic_shim_combined.a",
+    }
+
+
 def cmd_build(ns: argparse.Namespace) -> int:
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     ext = ".exe" if IS_WINDOWS else ""
@@ -394,6 +422,21 @@ def cmd_build(ns: argparse.Namespace) -> int:
     for name in wanted:
         if name not in TARGETS:
             die(f"unknown target {name!r}; known: {', '.join(TARGETS)}")
+
+    # Cap'n Proto targets need the shim built first - it is a CMake/vcpkg project
+    # (support/capnp/shim_dynamic), not something Odin can produce. `capnp-shim`
+    # builds it; check here so the failure names the fix instead of surfacing as
+    # an unresolved-externals link error.
+    art = _capnp_shim_artifacts()
+    static_capnp = ns.capnp_link == "static"
+    if any(n in CAPNP_TARGETS for n in wanted):
+        needed = art["static"] if static_capnp else art["dll_lib"]
+        if not needed.exists():
+            die(
+                f"{needed} not found - the Cap'n Proto shim has not been built.\n"
+                f"  Run: pixi run capnp-shim{' -- --static' if static_capnp else ''}"
+            )
+
     for name in wanted:
         args = [
             "build", TARGETS[name],
@@ -405,12 +448,92 @@ def cmd_build(ns: argparse.Namespace) -> int:
         # opt-in so any numeric drift it might introduce is a deliberate choice.
         if ns.release:
             args.append("-o:speed")
+        if name in CAPNP_TARGETS and static_capnp:
+            args.append("-define:MAS_CAPNP_DYN_STATIC_LINK=true")
         args += ns.odin_args
         if (rc := run_odin(args, ROOT)) != 0:
             return rc
+        # The DLL variant resolves the shim at load time, so it has to sit next
+        # to the exe. The static variant is self-contained - that is the whole
+        # point of it (single-binary deployment).
+        if name in CAPNP_TARGETS and not static_capnp:
+            shutil.copy2(art["dll"], BUILD_DIR / art["dll"].name)
+            print(f"==> copied {art['dll'].name} next to the binaries")
+
     print(f"==> binaries in {BUILD_DIR}")
     return 0
 
+
+def _vcpkg_toolchain() -> Path:
+    """vcpkg supplies Cap'n Proto for the shim. Located the same way the rest of
+    this script locates things: an explicit env var first, never a guess."""
+    root = os.environ.get("VCPKG_ROOT")
+    if not root:
+        die(
+            "VCPKG_ROOT is not set - the Cap'n Proto shim needs vcpkg's capnproto.\n"
+            "  Set VCPKG_ROOT to your vcpkg checkout (the one with scripts/buildsystems/)."
+        )
+    tc = Path(root) / "scripts" / "buildsystems" / "vcpkg.cmake"
+    if not tc.exists():
+        die(f"{tc} not found - VCPKG_ROOT={root!r} does not look like a vcpkg checkout")
+    return tc
+
+
+def cmd_capnp_shim(ns: argparse.Namespace) -> int:
+    """Build support/capnp/shim_dynamic - the C++ side of the Cap'n Proto bindings.
+
+    Deliberately NOT part of `build`: it needs CMake, a C++ compiler and a vcpkg
+    checkout, none of which the Odin build otherwise requires, and it changes far
+    less often than the Odin code. support/capnp/shim_dynamic/vcbuild.bat does the
+    same thing with hardcoded paths; this is the portable version, and the one CI
+    should call to produce the static variant for single-binary releases.
+    """
+    if not SHIM_DIR.exists():
+        die(
+            f"{SHIM_DIR} not found - the Cap'n Proto shim is a git submodule.\n"
+            "  Run: git submodule update --init --recursive"
+        )
+    if shutil.which("cmake") is None:
+        die("cmake not found on PATH")
+
+    toolchain = _vcpkg_toolchain()
+    env = odin_env()
+    variants = ["static"] if ns.static else ["dll"]
+    if ns.all:
+        variants = ["dll", "static"]
+
+    for variant in variants:
+        # Release for the static variant, matching capnp_dynamic.odin's foreign
+        # import path and its reason: a Debug (/MTd) combined lib fails to link
+        # into an Odin exe with unresolved _CrtDbgReport.
+        build_dir = SHIM_DIR / ("build-static" if variant == "static" else "build")
+        config = "Release" if variant == "static" else "Debug"
+        configure = [
+            "cmake", "-S", str(SHIM_DIR), "-B", str(build_dir),
+            f"-DCMAKE_TOOLCHAIN_FILE={toolchain}",
+            f"-DCMAKE_BUILD_TYPE={config}",
+        ]
+        if shutil.which("ninja"):
+            configure += ["-G", "Ninja"]
+        if IS_WINDOWS:
+            configure.append("-DVCPKG_TARGET_TRIPLET=x64-windows-static")
+
+        print(f"==> {' '.join(configure)}")
+        if (rc := subprocess.call(configure, env=env)) != 0:
+            return rc
+
+        build = ["cmake", "--build", str(build_dir), "--config", config]
+        if variant == "static":
+            build += ["--target", "mas_capnp_dynamic_shim_combined"]
+        print(f"==> {' '.join(build)}")
+        if (rc := subprocess.call(build, env=env)) != 0:
+            return rc
+
+    art = _capnp_shim_artifacts()
+    for variant in variants:
+        produced = art["static"] if variant == "static" else art["dll"]
+        print(f"==> {variant}: {produced}{'' if produced.exists() else '  (MISSING)'}")
+    return 0
 
 def cmd_test(ns: argparse.Namespace) -> int:
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
@@ -506,7 +629,31 @@ def main() -> int:
     p = sub.add_parser("build", help="build the CLI binaries")
     p.add_argument("targets", nargs="*", help=f"default: {' '.join(TARGETS)}")
     p.add_argument("--release", action="store_true", help="build with -o:speed")
+    p.add_argument(
+        "--capnp-link",
+        choices=("dll", "static"),
+        default="dll",
+        help=(
+            "how monica-capnp-server links the Cap'n Proto shim: 'dll' (default,"
+            " what you want while developing - the .dll is copied next to the exe)"
+            " or 'static', for a single self-contained binary. Both need"
+            " `capnp-shim` to have built the matching variant."
+        ),
+    )
     p.set_defaults(fn=cmd_build)
+
+
+    p = sub.add_parser(
+        "capnp-shim",
+        help="build the Cap'n Proto C++ shim (support/capnp/shim_dynamic)",
+    )
+    p.add_argument(
+        "--static",
+        action="store_true",
+        help="build the combined static lib (Release) instead of the DLL (Debug)",
+    )
+    p.add_argument("--all", action="store_true", help="build both variants")
+    p.set_defaults(fn=cmd_capnp_shim)
 
     p = sub.add_parser("test", help="run the odin/tests unit suite")
     p.set_defaults(fn=cmd_test)

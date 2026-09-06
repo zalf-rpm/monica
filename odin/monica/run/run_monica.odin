@@ -697,6 +697,11 @@ find_next_cultivation_method :: proc(
 // for the full list of what's dropped.
 run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	out: mio.Output
+	// C++: out.customId = env.customId; (runMonicaIC, run-monica.cpp) - was missing
+	// here, which only showed up once the Cap'n Proto server started relying on it:
+	// unlike run/serve_zmq.odin, run-monica-capnp.cpp does NOT re-assign customId
+	// after the call.
+	out.customId = env.customId
 
 	// prefer multiple crop rotations, but use a single rotation if there
 	if len(env.cropRotations) == 0 && len(env.cropRotation) > 0 {

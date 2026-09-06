@@ -15,8 +15,9 @@
 # the system install because odin/msvc only exists if it was fetched on
 # purpose; `pixi run check-msvc` reports which one a build would pick.
 #
-#   pixi run build     # monica-run + monica-zmq-server into odin/build/
-#   pixi run test      # the odin/tests unit suite
+#   pixi run capnp-shim   # the Cap'n Proto C++ shim (once; needs cmake + $VCPKG_ROOT)
+#   pixi run build        # monica-run + monica-zmq-server + monica-capnp-server
+#   pixi run test         # the odin/tests unit suite
 #   pixi run odin -- version
 
 [workspace]
@@ -48,9 +49,12 @@ clang = "*"
 
 [tasks]
 bootstrap = { cmd = "python tools/odinw.py bootstrap", description = "Download the pinned Odin compiler into .odin/" }
-build = { cmd = "python tools/odinw.py build", depends-on = ["bootstrap"], description = "Build monica-run and monica-zmq-server into build/" }
+build = { cmd = "python tools/odinw.py build", depends-on = ["bootstrap"], description = "Build monica-run, monica-zmq-server and monica-capnp-server into build/" }
 build-release = { cmd = "python tools/odinw.py build --release", depends-on = ["bootstrap"], description = "Build with -o:speed (re-validate numerics against the C++ baseline)" }
 test = { cmd = "python tools/odinw.py test", depends-on = ["bootstrap"], description = "Run the odin/tests unit suite from the repo root" }
+capnp-shim = { cmd = "python tools/odinw.py capnp-shim", description = "Build the Cap'n Proto C++ shim DLL (needs cmake + $VCPKG_ROOT)" }
+capnp-shim-static = { cmd = "python tools/odinw.py capnp-shim --static", description = "Build the Cap'n Proto shim as one combined static lib (for single-binary releases)" }
+build-standalone = { cmd = "python tools/odinw.py build monica-capnp-server --capnp-link static", depends-on = ["bootstrap"], description = "Build monica-capnp-server as a self-contained exe (needs capnp-shim-static first)" }
 odin = { cmd = "python tools/odinw.py exec", depends-on = ["bootstrap"], description = "Run the pinned odin, e.g. pixi run odin -- version" }
 
 [target.win-64.tasks]

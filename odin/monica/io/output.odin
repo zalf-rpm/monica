@@ -208,6 +208,17 @@ Output :: struct {
 	warnings: [dynamic]string,
 }
 
+// C++: Output monica::makeOutput(std::string error)
+//
+// The makeOutput(json11::Json) overload alongside it in src/io/output.cpp is
+// not ported - nothing calls it here (it needs output::merge, itself unported).
+make_output :: proc(error: string, allocator := context.allocator) -> Output {
+	output: Output
+	output.errors = make([dynamic]string, allocator)
+	append(&output.errors, error)
+	return output
+}
+
 // C++: json11::Json oid::to_json(const OId*)
 oid_to_json :: proc(oid: ^OId, allocator := context.allocator) -> jx.Value {
 	return jx.obj(
