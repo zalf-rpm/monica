@@ -83,6 +83,24 @@ are `Float32` — otherwise the two runs would differ in the last bits for no
 interesting reason. The script also asserts the capabilities were actually called
 (`range`/`header`/`dataT` and `data`), so it cannot pass by silently skipping them.
 
+## `malformed_client.py` — envs the server cannot run
+
+    $PY malformed_client.py $SCHEMAS localhost:6789
+
+Odin has no exceptions, so the C++'s `try/catch` around `runMonica` cannot be
+ported: anything that panics inside the model aborts the whole process, and a
+server is reachable by any client. The concrete case was an env with **no soil
+profile** — every soil module indexes the soil column unconditionally, so an
+empty one is an out-of-bounds access (undefined behaviour in the C++, a
+process-aborting bounds check in Odin). `run_monica.odin` now refuses such a run
+up front and reports it through `Output.errors`.
+
+This sends an empty object, a `customId`-only env, an env with the soil profile
+removed, and a non-JSON `rest`, requires each to come back as a normal result
+carrying an error, and then runs the real fixture to prove the server is still
+alive. `monica-run` prints the same error and exits 1 rather than writing an
+unexplained empty CSV.
+
 ## Multiple requests
 
 Worth doing explicitly after any change to allocator handling: send three runs

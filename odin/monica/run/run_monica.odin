@@ -703,6 +703,30 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	// after the call.
 	out.customId = env.customId
 
+	// NOTE(deviation): no C++ counterpart - runMonicaIC has no such guard.
+	//
+	// Every soil module indexes the soil column unconditionally (the first to do
+	// so is soilTemperature, whose layer lookup reaches for the layer below the
+	// last one). With an empty profile that is an out-of-bounds access: undefined
+	// behaviour in the C++, and in Odin a bounds-check panic that aborts the
+	// process outright. For monica-run that is merely a bad error message, but a
+	// server dies on the spot - so any client able to send an env without a soil
+	// profile can take monica-zmq-server or monica-capnp-server down. Odin has no
+	// exceptions, so the C++'s try/catch around runMonica cannot be ported;
+	// refusing the run up front is the equivalent, and it turns the crash into an
+	// ordinary entry in Output.errors that every caller already reports.
+	//
+	// Deliberately checked here rather than in each server: monica-run reaches the
+	// same code path, and this is the one place all three entry points share.
+	if len(env.params.siteParameters.vs_SoilParameters) == 0 {
+		out.errors = make([dynamic]string, allocator)
+		append(
+			&out.errors,
+			"Error: no soil layers - MONICA cannot run without a soil profile (SiteParameters.SoilProfileParameters)!",
+		)
+		return out
+	}
+
 	// prefer multiple crop rotations, but use a single rotation if there
 	if len(env.cropRotations) == 0 && len(env.cropRotation) > 0 {
 		append(

@@ -247,8 +247,19 @@ handle_env_message :: proc(
 		out = run_monica(&env, allocator)
 		out.customId = custom_id
 	}
-	out.errors = eda.errs.errors
-	out.warnings = eda.errs.warnings
+	// C++: out.errors = eda.errors; - appended rather than assigned, because
+	// run_monica can now put an error there itself (the empty-soil-profile guard;
+	// see its comment in run_monica.odin) and assigning would drop it, leaving the
+	// client with an empty result and no reason. The C++ can assign safely only
+	// because runMonica there never sets Output.errors at all.
+	if out.errors == nil {
+		out.errors = make([dynamic]string, allocator)
+	}
+	if out.warnings == nil {
+		out.warnings = make([dynamic]string, allocator)
+	}
+	append(&out.errors, ..eda.errs.errors[:])
+	append(&out.warnings, ..eda.errs.warnings[:])
 
 	return out
 }

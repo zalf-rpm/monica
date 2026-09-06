@@ -227,6 +227,17 @@ main :: proc() {
 
 	out := run.run_monica(&env, a)
 
+	// NOTE(deviation): the C++ main ignores runMonica's Output.errors, because
+	// there runMonica never sets any. run_monica.odin's empty-soil-profile guard
+	// does (see its comment), and silently writing an empty CSV instead of saying
+	// why would be worse than the crash it replaces.
+	if len(out.errors) > 0 {
+		for e in out.errors {
+			fmt.eprintfln("%s", e)
+		}
+		os.exit(1)
+	}
+
 	if pathToOutputFile == "" && jx.bool_value_of(jx.get_path(sim_v, "output", "write-file?")) {
 		pathToOutputDir = tl.fix_system_separator(jx.string_value(jx.get(sim_v, "output"), "path-to-output"), a)
 		pathToOutputFile = tl.fix_system_separator(
