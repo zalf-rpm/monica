@@ -54,9 +54,10 @@ import "../run"
 // Disk locations of the raw .capnp files the shim parses at runtime. There is no
 // codegen step, so these are needed by the running binary, not just at build time.
 Schema_Paths :: struct {
-	root:   string, // zalfmas_capnp_schemas/ - import root for "/common/common.capnp" etc
-	model:  string, // model/model.capnp   - declares EnvInstance
-	common: string, // common/common.capnp - declares StructuredText
+	root:        string, // zalfmas_capnp_schemas/ - import root for "/common/common.capnp" etc
+	model:       string, // model/model.capnp             - declares EnvInstance
+	common:      string, // common/common.capnp           - declares StructuredText
+	persistence: string, // persistence/persistence.capnp - declares Restorer
 }
 
 make_schema_paths :: proc(root: string, allocator := context.allocator) -> Schema_Paths {
@@ -64,6 +65,7 @@ make_schema_paths :: proc(root: string, allocator := context.allocator) -> Schem
 		root = root,
 		model = fmt.aprintf("%s/model/model.capnp", root, allocator = allocator),
 		common = fmt.aprintf("%s/common/common.capnp", root, allocator = allocator),
+		persistence = fmt.aprintf("%s/persistence/persistence.capnp", root, allocator = allocator),
 	}
 }
 

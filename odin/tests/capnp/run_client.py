@@ -9,7 +9,7 @@ Uses plain capnp.load() on the raw .capnp files the Odin server itself parses at
 runtime, rather than the generated mas.schema.* stubs, so both sides are provably
 talking about the same schema text.
 
-  python run_client.py <zalfmas_capnp_schemas-dir> <host:port> [out.json]
+  python run_client.py <zalfmas_capnp_schemas-dir> <host:port or monicaSR> [out.json]
 """
 
 import json
@@ -20,17 +20,15 @@ import asyncio
 import capnp
 from zalfmas_common.model import monica_io
 
+from _target import open_monica
+
 SCHEMA_ROOT = sys.argv[1]
-HOST, _, PORT = sys.argv[2].rpartition(":")
+TARGET = sys.argv[2]
 OUT_PATH = sys.argv[3] if len(sys.argv) > 3 else None
 
 FIXTURE = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "installer", "Hohenfinow2")
 )
-
-capnp.remove_import_hook()
-common = capnp.load(f"{SCHEMA_ROOT}/common/common.capnp", imports=[SCHEMA_ROOT])
-model = capnp.load(f"{SCHEMA_ROOT}/model/model.capnp", imports=[SCHEMA_ROOT])
 
 
 def build_env():
@@ -55,9 +53,8 @@ async def main():
     env = build_env()
 
     async with capnp.kj_loop():
-        stream = await capnp.AsyncIoStream.create_connection(host=HOST, port=int(PORT))
-        client = capnp.TwoPartyClient(stream)
-        monica = client.bootstrap().cast_as(model.EnvInstance)
+        s, monica = await open_monica(TARGET, SCHEMA_ROOT)
+        common = s.common
 
         info = await monica.info()
         print(f"info: id={info.id!r} name={info.name!r} description={info.description!r}")

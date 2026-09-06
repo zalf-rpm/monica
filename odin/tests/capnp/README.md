@@ -26,7 +26,19 @@ prompt that needs admin rights):
 
     pixi run capnp-shim          # once: the C++ shim (needs cmake + $VCPKG_ROOT)
     pixi run build monica-capnp-server
-    odin/build/monica-capnp-server.exe --port 6789 --output_srs
+    odin/build/monica-capnp-server.exe --port 6789 --srt monica-test-token --output_srs
+    # prints: monicaSR=capnp://localhost:6789/monica-test-token
+
+The bootstrap capability is a **Restorer**, as in the C++, so reaching MONICA
+means connect → `restore(token)` → cast. `--srt` pins the token so the tests know
+it up front instead of having to scrape the server's stdout.
+
+Every client below takes either spelling of the target and does the right thing
+(see `_target.py`):
+
+    capnp://localhost:6789/monica-test-token   restore first (the default server)
+    localhost:6789                             bootstrap is MONICA itself
+                                               (server started --serve-as-bootstrap)
 
 ## `spike_client.py` — the plumbing check
 
@@ -100,6 +112,23 @@ removed, and a non-JSON `rest`, requires each to come back as a normal result
 carrying an error, and then runs the real fixture to prove the server is still
 alive. `monica-run` prints the same error and exits 1 rather than writing an
 unexplained empty CSV.
+
+## `sturdyref_client.py` — an existing ZALF client, unmodified
+
+    $PY sturdyref_client.py capnp://localhost:6789/monica-test-token
+
+The odd one out, deliberately. Every other client here loads the raw `.capnp`
+files so both sides provably share the same schema text; this one uses the
+**installed `mas.schema.*` stubs and `zalfmas_common`'s own `ConnectionManager`**,
+none of which this repo controls. It hands the `monicaSR=` line straight to
+`conman.connect(sr, cast_as=model_capnp.EnvInstance)` — so if it passes, a real
+MONICA client reaches this server without changes. It also checks that an unknown
+token yields a null capability that only fails when called, which is what the C++
+Restorer does (`KJ_IF_MAYBE(cap, maybeCap)` leaves the result unset).
+
+**Do not mix the two styles in one process.** Loading a schema through both
+`capnp.load()` and the generated bundle crashes pycapnp hard (`0xC0000409`,
+no traceback) — which is why this client does not import `_target`.
 
 ## Multiple requests
 

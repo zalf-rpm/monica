@@ -1,27 +1,24 @@
 """Stage 0 spike client: drives cmd/monica-capnp-server over real RPC.
 
-Deliberately uses plain capnp.load() on the same raw .capnp files the Odin
-server reads at runtime, rather than the generated mas.schema.* stubs, so both
-sides are provably talking about the same schema text.
+Takes either a plain host:port (--serve-as-bootstrap) or a full sturdy ref; see
+_target.py, which also explains the raw-schema loading.
+
+  python spike_client.py <zalfmas_capnp_schemas-dir> <host:port or monicaSR>
 """
 import asyncio
 import sys
 
 import capnp
+from _target import open_monica
 
 ROOT = sys.argv[1]
-HOST, _, PORT = (sys.argv[2] if len(sys.argv) > 2 else "localhost:6789").rpartition(":")
-
-capnp.remove_import_hook()
-common = capnp.load(f"{ROOT}/common/common.capnp", imports=[ROOT])
-model = capnp.load(f"{ROOT}/model/model.capnp", imports=[ROOT])
+TARGET = sys.argv[2] if len(sys.argv) > 2 else "localhost:6789"
 
 
 async def main():
     async with capnp.kj_loop():
-        stream = await capnp.AsyncIoStream.create_connection(host=HOST, port=int(PORT))
-        client = capnp.TwoPartyClient(stream)
-        env_instance = client.bootstrap().cast_as(model.EnvInstance)
+        s, env_instance = await open_monica(TARGET, ROOT)
+        common = s.common
 
         print("== info() ==")
         info = await env_instance.info()

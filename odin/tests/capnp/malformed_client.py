@@ -10,7 +10,7 @@ check in Odin). run_monica.odin now refuses such a run up front.
 Each case must come back as a normal result carrying errors, and the server must
 still answer afterwards - checked by running a real fixture last.
 
-  python malformed_client.py <zalfmas_capnp_schemas-dir> <host:port>
+  python malformed_client.py <zalfmas_capnp_schemas-dir> <host:port or monicaSR>
 """
 
 import asyncio
@@ -21,16 +21,18 @@ import sys
 import capnp
 from zalfmas_common.model import monica_io
 
+from _target import open_monica, schemas
+
 SCHEMA_ROOT = sys.argv[1]
-HOST, _, PORT = sys.argv[2].rpartition(":")
+TARGET = sys.argv[2]
 
 FIXTURE = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "installer", "Hohenfinow2")
 )
 
-capnp.remove_import_hook()
-common = capnp.load(f"{SCHEMA_ROOT}/common/common.capnp", imports=[SCHEMA_ROOT])
-model = capnp.load(f"{SCHEMA_ROOT}/model/model.capnp", imports=[SCHEMA_ROOT])
+_schemas = schemas(SCHEMA_ROOT)
+common = _schemas.common
+model = _schemas.model
 
 
 def good_env():
@@ -74,9 +76,7 @@ async def run_rest(monica, text, type_="json"):
 async def main():
     failures = []
     async with capnp.kj_loop():
-        stream = await capnp.AsyncIoStream.create_connection(host=HOST, port=int(PORT))
-        client = capnp.TwoPartyClient(stream)
-        monica = client.bootstrap().cast_as(model.EnvInstance)
+        _, monica = await open_monica(TARGET, SCHEMA_ROOT)
 
         for name, text in CASES:
             try:

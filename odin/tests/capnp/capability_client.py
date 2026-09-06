@@ -21,7 +21,7 @@ capnp's TimeSeries.dataT is List(List(Float32)) and Layer.size/f32Value are
 Float32, so an un-rounded baseline would differ in the last bits for no
 interesting reason.
 
-  python capability_client.py <zalfmas_capnp_schemas-dir> <host:port>
+  python capability_client.py <zalfmas_capnp_schemas-dir> <host:port or monicaSR>
 """
 
 import asyncio
@@ -33,18 +33,20 @@ import sys
 import capnp
 from zalfmas_common.model import monica_io
 
+from _target import open_monica, schemas
+
 SCHEMA_ROOT = sys.argv[1]
-HOST, _, PORT = sys.argv[2].rpartition(":")
+TARGET = sys.argv[2]
 
 FIXTURE = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "installer", "Hohenfinow2")
 )
 
-capnp.remove_import_hook()
-common = capnp.load(f"{SCHEMA_ROOT}/common/common.capnp", imports=[SCHEMA_ROOT])
-climate = capnp.load(f"{SCHEMA_ROOT}/climate/climate.capnp", imports=[SCHEMA_ROOT])
-soil = capnp.load(f"{SCHEMA_ROOT}/soil/soil.capnp", imports=[SCHEMA_ROOT])
-model = capnp.load(f"{SCHEMA_ROOT}/model/model.capnp", imports=[SCHEMA_ROOT])
+_schemas = schemas(SCHEMA_ROOT)
+common = _schemas.common
+climate = _schemas.climate
+soil = _schemas.soil
+model = _schemas.model
 
 
 def f32(x):
@@ -204,9 +206,7 @@ async def main():
     del cap_env["params"]["siteParameters"]["SoilProfileParameters"]
 
     async with capnp.kj_loop():
-        stream = await capnp.AsyncIoStream.create_connection(host=HOST, port=int(PORT))
-        client = capnp.TwoPartyClient(stream)
-        monica = client.bootstrap().cast_as(model.EnvInstance)
+        _, monica = await open_monica(TARGET, SCHEMA_ROOT)
 
         print("== baseline (inline CSV + inline soil profile) ==")
         baseline = await run_once(monica, baseline_env)

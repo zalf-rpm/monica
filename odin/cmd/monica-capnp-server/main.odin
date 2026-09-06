@@ -3,22 +3,21 @@
 // run/run-monica-capnp.{h,cpp}); read that file's header first, it explains why
 // this goes through Cap'n Proto's dynamic API rather than generated code.
 //
-// MVP SCOPE: DIRECT BOOTSTRAP. The C++ builds on kj::MainBuilder and
-// mas_cpp_misc/common/restorable-service-main.{h,cpp}, whose startRestorerSetup
-// serves a *Restorer* as the connection's bootstrap capability; clients then
-// reach MONICA through capnp://<vatId>@<host>:<port>/<token> -> restore(token).
-// That Restorer is a large piece of infrastructure of its own (vat ids, ed25519
-// sealing, a storage-service container, registrar heartbeats), so this serves
-// RunMonica *itself* as the bootstrap instead - the same thing the C++ does when
-// startRestorerSetup is passed serviceAsBootstrap = true, just unconditionally.
-// So: `capnp://host:port` works, sturdy refs do not (yet).
+// BOOTSTRAP. Like the C++ (RestorableServiceMain::startRestorerSetup), the
+// connection's bootstrap capability is a *Restorer*, and clients reach MONICA
+// through capnp://<host>:<port>/<token> -> restore(token). See
+// monica/capnp/restorer.odin for which parts of the C++ Restorer that covers and
+// which it deliberately leaves out (vat ids, sealing, storage, registrar).
+// --serve-as-bootstrap serves RunMonica directly instead, which is the C++'s own
+// startRestorerSetup(serviceAsBootstrap = true) - handy for a client that just
+// wants `capnp://host:port` with no token.
 //
-// Consequently these RestorableServiceMain options are accepted-and-ignored
-// rather than silently dropped, since they only mean something with a Restorer:
-// --restorer_container_sr, --service_container_sr, --registrar_sr, --reg_name,
-// --reg_category, --local_host, --sr_host, --sr_port, --check_IP, --check_port,
-// --startup_info_writer_sr, --startup_info_id, --init_from_storage, and
-// monica-capnp-server-main.cpp's own -t/--srt.
+// These RestorableServiceMain options are still accepted-and-ignored rather than
+// silently dropped, since they only mean something for the parts of the Restorer
+// that are not ported: --restorer_container_sr, --service_container_sr,
+// --registrar_sr, --reg_name, --reg_category, --local_host, --sr_host,
+// --sr_port, --check_IP, --check_port, --startup_info_writer_sr,
+// --startup_info_id, --init_from_storage.
 //
 // NOTE(c++-quirk): -h is --host, NOT help - RestorableServiceMain binds it that
 // way and kj::MainBuilder spells help --help. Reproduced.
@@ -59,16 +58,24 @@ print_help :: proc() {
 	fmt.println("      --description [TEXT] ... description of service")
 	fmt.printfln(" -h | --host [HOST] (default: %s) ... host/IP to bind to (NOT help)", DEF_HOST)
 	fmt.printfln(" -p | --port [PORT] (default: %s) ... port to bind to, 0 picks a free one", DEF_PORT)
-	fmt.println("      --output_srs ... print the address clients should connect to, to stdout")
+	fmt.println(" -t | --srt [TOKEN] ... use a fixed sturdy ref token instead of a fresh UUID4")
+	fmt.println(
+		"      --serve-as-bootstrap ... serve MONICA itself as the bootstrap capability, so a client",
+	)
+	fmt.println(
+		"                               can connect to capnp://HOST:PORT with no token (default: a",
+	)
+	fmt.println("                               Restorer is the bootstrap, as in the C++ server)")
+	fmt.println("      --output_srs ... print the sturdy ref clients should connect to, to stdout")
 	fmt.printfln(
 		"      --schemas [DIR] (default: $%s, else <exe-dir>/%s) ... zalfmas_capnp_schemas directory",
 		SCHEMA_DIR_ENV,
 		SCHEMA_DIR_REL,
 	)
 	fmt.println()
-	fmt.println("Restorer-only options, accepted but ignored by this build (see the file header):")
+	fmt.println("Options accepted but ignored, for the Restorer parts that are not ported:")
 	fmt.println(
-		"      -t | --srt, --restorer_container_sr, --service_container_sr, --registrar_sr, --reg_name,",
+		"      --restorer_container_sr, --service_container_sr, --registrar_sr, --reg_name,",
 	)
 	fmt.println(
 		"      --reg_category, --local_host, --sr_host, --sr_port, --check_IP, --check_port,",
@@ -80,8 +87,6 @@ print_help :: proc() {
 // compatibility with the C++ - see the file header.
 @(private)
 IGNORED_WITH_ARG :: []string {
-	"-t",
-	"--srt",
 	"--restorer_container_sr",
 	"--service_container_sr",
 	"--registrar_sr",
@@ -107,6 +112,8 @@ main :: proc() {
 	host := DEF_HOST
 	port := DEF_PORT
 	outputSturdyRefs := false
+	srt := "" // C++: MonicaCapnpServerMain::srt, the -t/--srt fixed token
+	serviceAsBootstrap := false
 
 	schema_root := os.get_env(SCHEMA_DIR_ENV, context.allocator)
 
@@ -145,8 +152,13 @@ main :: proc() {
 		case (arg == "-p" || arg == "--port") && has_value:
 			i += 1
 			port = args[i]
+		case (arg == "-t" || arg == "--srt") && has_value:
+			i += 1
+			srt = args[i]
 		case arg == "--output_srs":
 			outputSturdyRefs = true
+		case arg == "--serve-as-bootstrap":
+			serviceAsBootstrap = true
 		case arg == "--schemas" && has_value:
 			i += 1
 			schema_root = args[i]
@@ -204,20 +216,56 @@ main :: proc() {
 		os.exit(1)
 	}
 
-	// C++: startRestorerSetup(runMonicaClient) - here the service itself is the
-	// bootstrap, see the file header.
+	// C++: startRestorerSetup(runMonicaClient) - the Restorer becomes the
+	// connection's bootstrap capability and MONICA is reached by restoring a
+	// token, unless --serve-as-bootstrap asks for the C++'s serviceAsBootstrap
+	// behaviour instead.
+	restorer: ^mcapnp.Restorer
+	bootstrap := client
+	if !serviceAsBootstrap {
+		restorer = mcapnp.make_restorer(schema, host)
+		bootstrap, host_err, host_ok = capnp_dyn.host(
+			schema.persistence,
+			schema.root,
+			"Restorer",
+			mcapnp.restorer_handle_call,
+			restorer,
+		)
+		if !host_ok {
+			fmt.eprintfln("%s: could not host Restorer: %s", APP_NAME, host_err)
+			os.exit(1)
+		}
+	}
+
 	address := strings.concatenate({host, ":", port})
-	server, listen_err, listen_ok := capnp_dyn.listen(address, client)
+	server, listen_err, listen_ok := capnp_dyn.listen(address, bootstrap)
 	if !listen_ok {
 		fmt.eprintfln("%s: could not listen on %s: %s", APP_NAME, address, listen_err)
 		os.exit(1)
 	}
 
-	// C++: if (outputSturdyRefs && monicaSR.size() > 0) cout << "monicaSR=" << ...
-	// Without a Restorer there is no token to put in the ref, so this is the plain
-	// bootstrap address a client connects to.
-	if outputSturdyRefs {
-		fmt.printfln("monicaSR=capnp://%s:%d", host, capnp_dyn.server_port(server))
+	// C++: auto monicaSR = restorer->saveStr(runMonicaClient, srt, nullptr, false)
+	//        .wait(...).sturdyRef;
+	//      if (outputSturdyRefs && monicaSR.size() > 0) cout << "monicaSR=" << ...
+	//
+	// The port has to be known first (--port 0 asks the OS to pick one), which is
+	// what the C++'s Restorer::setPort does after the bind resolves.
+	monicaSR := ""
+	if restorer != nil {
+		mcapnp.restorer_set_port(restorer, capnp_dyn.server_port(server))
+		sr_err: string
+		sr_ok: bool
+		_, monicaSR, sr_err, sr_ok = mcapnp.restorer_save_str(restorer, client, srt)
+		if !sr_ok {
+			fmt.eprintfln("%s: could not register the MONICA sturdy ref: %s", APP_NAME, sr_err)
+			os.exit(1)
+		}
+	} else {
+		// No Restorer, so no token: the bootstrap address IS the reference.
+		monicaSR = fmt.aprintf("capnp://%s:%d", host, capnp_dyn.server_port(server))
+	}
+	if outputSturdyRefs && len(monicaSR) > 0 {
+		fmt.printfln("monicaSR=%s", monicaSR)
 	}
 
 	// C++: kj::NEVER_DONE.wait(ioContext.waitScope) - the shim runs the event loop
