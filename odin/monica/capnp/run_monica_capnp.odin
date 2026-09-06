@@ -584,6 +584,153 @@ run_monica_env :: proc(
 	return out
 }
 
+// The whole of RunMonica::run - reading `rest`, gathering the time series and
+// soil profile, and running the model - but driven with BLOCKING sub-calls
+// instead of the promise chain run_monica_run sets up.
+//
+// For monica-capnp-fbp-component's inline MONICA. The async machinery exists
+// because a hosted method may not block on a capability belonging to the
+// connection dispatching it; here nothing is being dispatched - the component is
+// an ordinary client, on its own thread, and the capabilities belong to some
+// channel's connection, whose event loop runs elsewhere. So the plain blocking
+// path applies, and it is much easier to follow.
+//
+// `env` is a model.capnp Env struct as read off an FBP IP, i.e. the same shape
+// run_monica_run finds under its "env" parameter.
+run_monica_env_blocking :: proc(
+	rm: ^Run_Monica,
+	env: []capnp_dyn.Field,
+	allocator := context.allocator,
+) -> mio.Output {
+	// C++: auto rest = envR.getRest();
+	rest_value, has_rest := capnp_dyn.field_get(env, "rest")
+	if !has_rest {
+		return mio.make_output("Error: env has no 'rest' field!", allocator)
+	}
+	rest_ap, rest_is_ap := rest_value.(capnp_dyn.Any_Pointer)
+	if !rest_is_ap {
+		return mio.make_output("Error: 'rest' field is not an AnyPointer!", allocator)
+	}
+	rest, as_err, as_ok := capnp_dyn.any_pointer_as_struct(
+		rest_ap,
+		rm.schema.common,
+		rm.schema.root,
+		"StructuredText",
+	)
+	if !as_ok {
+		return mio.make_output(
+			fmt.aprintf("Error: 'rest' is not a StructuredText: %s", as_err, allocator = allocator),
+			allocator,
+		)
+	}
+	if !structured_text_is_json(rest) {
+		return mio.make_output("Error: 'rest' field is not valid JSON!", allocator)
+	}
+	value := ""
+	if v, got := capnp_dyn.field_get(rest, "value"); got {
+		value, _ = v.(string)
+	}
+	pr := jx.parse_json_string(value, allocator)
+	if !tl.success(pr.errs) {
+		return mio.make_output(pr.errs.errors[0], allocator)
+	}
+
+	// C++: if (envR.hasTimeSeries()) proms.add(dataAccessorFromTimeSeries(...))
+	da: clim.Data_Accessor
+	if ts, has_ts := capability_field(env, "timeSeries"); has_ts {
+		da = data_accessor_from_time_series(ts, allocator)
+	}
+
+	// C++: if (envR.hasSoilProfile()) proms.add(fromCapnpSoilProfile(...))
+	soil_layers: jx.Value
+	if profile, has_profile := capability_field(env, "soilProfile"); has_profile {
+		if data, _, ok := capnp_dyn.call(profile, "data", nil); ok {
+			soil_layers = soil_layers_from_capnp_profile_data(data, allocator)
+		} else {
+			// C++: KJ_LOG(ERROR, "Error while trying to get soil profile data.") and
+			// carry on with an empty J11Array.
+			fmt.eprintfln("monica: could not read the soil profile capability")
+		}
+	}
+
+	return run_monica_env(rm, pr.result, da, soil_layers, allocator)
+}
+
+// C++: dataAccessorFromTimeSeries - range/header/dataT, then fromCapnpData.
+//
+// The C++ sends all three requests before waiting on any of them; these are
+// sequential, so three round trips instead of one. Worth revisiting if a remote
+// climate service ever makes that matter - the shim's call_async would allow it.
+@(private)
+data_accessor_from_time_series :: proc(
+	ts: capnp_dyn.Capability,
+	allocator := context.allocator,
+) -> clim.Data_Accessor {
+	// Each failure below is logged and yields an empty DataAccessor, matching the
+	// C++'s per-promise errbacks.
+	range_fields, range_err, range_ok := capnp_dyn.call(ts, "range", nil)
+	if !range_ok {
+		fmt.eprintfln("monica: error while trying to get range data: %s", range_err)
+		return {}
+	}
+	header_res, header_err, header_ok := capnp_dyn.call(ts, "header", nil)
+	if !header_ok {
+		fmt.eprintfln("monica: error while trying to get header data: %s", header_err)
+		return {}
+	}
+	data_res, data_err, data_ok := capnp_dyn.call(ts, "dataT", nil)
+	if !data_ok {
+		fmt.eprintfln("monica: error while trying to get transposed time series data: %s", data_err)
+		return {}
+	}
+
+	sd, has_sd := capnp_dyn.field_get(range_fields, "startDate")
+	ed, has_ed := capnp_dyn.field_get(range_fields, "endDate")
+	sd_fields, sd_ok := sd.([]capnp_dyn.Field)
+	ed_fields, ed_ok := ed.([]capnp_dyn.Field)
+	if !has_sd || !has_ed || !sd_ok || !ed_ok {
+		return {}
+	}
+
+	header: []capnp_dyn.Value
+	if v, got := capnp_dyn.field_get(header_res, "header"); got {
+		header, _ = v.([]capnp_dyn.Value)
+	}
+	dataT: []capnp_dyn.Value
+	if v, got := capnp_dyn.field_get(data_res, "data"); got {
+		dataT, _ = v.([]capnp_dyn.Value)
+	}
+
+	return from_capnp_data(
+		date_from_capnp(sd_fields),
+		date_from_capnp(ed_fields),
+		header,
+		dataT,
+		allocator,
+	)
+}
+
+// C++: envR.hasTimeSeries() / hasSoilProfile() - an absent capability field
+// reads back as a null handle rather than being missing.
+@(private)
+capability_field :: proc(
+	fields: []capnp_dyn.Field,
+	name: string,
+) -> (
+	cap: capnp_dyn.Capability,
+	ok: bool,
+) {
+	v, has := capnp_dyn.field_get(fields, name)
+	if !has {
+		return nil, false
+	}
+	c, is_cap := v.(capnp_dyn.Capability)
+	if !is_cap || c == nil {
+		return nil, false
+	}
+	return c, true
+}
+
 // C++: (inline, run-monica.cpp) the pathToClimateCSV -> pathsToClimateCSV
 // extraction that used to live in Env::merge. Same helper as run/serve_zmq.odin's
 // own private copy, which is not visible from this package.

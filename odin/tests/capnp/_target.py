@@ -36,6 +36,7 @@ class Schemas:
         self.persistence = capnp.load(f"{root}/persistence/persistence.capnp", imports=[root])
         self.climate = capnp.load(f"{root}/climate/climate.capnp", imports=[root])
         self.soil = capnp.load(f"{root}/soil/soil.capnp", imports=[root])
+        self.fbp = capnp.load(f"{root}/fbp/fbp.capnp", imports=[root])
 
 
 def schemas(root):

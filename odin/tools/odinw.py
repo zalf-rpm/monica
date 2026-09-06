@@ -92,12 +92,13 @@ TARGETS = {
     "monica-run": "cmd/monica-run",
     "monica-zmq-server": "cmd/monica-zmq-server",
     "monica-capnp-server": "cmd/monica-capnp-server",
+    "monica-capnp-fbp-component": "cmd/monica-capnp-fbp-component",
 }
 
 # Targets that link the Cap'n Proto dynamic-API shim
 # (support/capnp/shim_dynamic). Unlike libzmq, which conda-forge supplies, this
 # one is built from the submodule's own CMake project - see cmd_build.
-CAPNP_TARGETS = {"monica-capnp-server"}
+CAPNP_TARGETS = {"monica-capnp-server", "monica-capnp-fbp-component"}
 
 
 def die(msg: str) -> "NoReturn":  # type: ignore[name-defined]

@@ -130,6 +130,40 @@ Restorer does (`KJ_IF_MAYBE(cap, maybeCap)` leaves the result unset).
 `capnp.load()` and the generated bundle crashes pycapnp hard (`0xC0000409`,
 no traceback) — which is why this client does not import `_target`.
 
+## `fbp_harness.py` — monica-capnp-fbp-component
+
+Stands in for an FBP runtime: hosts the channel endpoints the component connects
+to, each as the bootstrap of its own loopback port (so the sturdy refs need no
+token), then checks what came back.
+
+    # inline MONICA (no monica_sr configured)
+    $PY fbp_harness.py $SCHEMAS 6900 6901 &
+    odin/build/monica-capnp-fbp-component.exe \
+        --env_in_sr capnp://localhost:6900 --result_out_sr capnp://localhost:6901
+
+    # remote MONICA, result into an attribute instead of the IP content
+    odin/build/monica-capnp-server.exe --port 6910 --srt fbp-token --output_srs &
+    $PY fbp_harness.py $SCHEMAS 6911 6912 --conf-port 6913 \
+        --monica-sr capnp://localhost:6910/fbp-token --to-attr monica_result &
+    odin/build/monica-capnp-fbp-component.exe \
+        --env_in_sr capnp://localhost:6911 --result_out_sr capnp://localhost:6912 \
+        --config_in_sr capnp://localhost:6913
+
+The `env` reader serves an openBracket IP, two Env IPs and a closeBracket IP,
+then `done`. Expected: brackets forwarded through with their attributes intact,
+one result IP per Env IP carrying the originating IP's attribute and a full
+five-section run with the right `customId`, and the out port closed at the end.
+Both MONICA paths are covered — inline (the component runs the model itself) and
+remote (it calls an EnvInstance over a sturdy ref).
+
+Two pycapnp things this took to get right, worth knowing before writing another
+harness: a `create_server` callback must stay awaited for the life of the
+connection (`await TwoPartyServer(...).on_disconnect()`), or the peer just sees
+"Peer disconnected"; and server methods that receive a struct with a **union**
+must be defined as `<name>_context(self, context)`, because the plain
+`<name>(self, _context, **kwargs)` form eagerly reads every field and throws on
+the inactive union members (`Channel.Msg` is exactly that shape).
+
 ## Multiple requests
 
 Worth doing explicitly after any change to allocator handling: send three runs
