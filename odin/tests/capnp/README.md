@@ -65,6 +65,32 @@ the comparison renders each JSON value at the precision the CSV printed; it also
 flattens layer-range outputs, where one output id (`SOC`) spans several CSV
 columns (`SOC_1`, `SOC_2`, `SOC_3`).
 
+## `capability_client.py` — the env.timeSeries / env.soilProfile paths
+
+    $PY capability_client.py $SCHEMAS localhost:6789
+
+The other two scripts let the server read the climate CSV itself. This one hosts
+a `climate.capnp` TimeSeries and a `soil.capnp` Profile **in the client** and
+passes them as call parameters, so the server has to call back into capabilities
+belonging to the very connection it is dispatching on — the case that forces the
+async handler (see `monica/capnp/run_monica_capnp.odin`'s header).
+
+It runs the same fixture twice against the same server: once with the data inline
+(`climateCSV` + `SoilProfileParameters`), once with neither, forcing the RPC path.
+Both must come back byte-identical. Every value is first rounded through float32,
+because `TimeSeries.dataT` is `List(List(Float32))` and `Layer.size`/`f32Value`
+are `Float32` — otherwise the two runs would differ in the last bits for no
+interesting reason. The script also asserts the capabilities were actually called
+(`range`/`header`/`dataT` and `data`), so it cannot pass by silently skipping them.
+
+## Multiple requests
+
+Worth doing explicitly after any change to allocator handling: send three runs
+over one connection and check all three come back. Until the module-level
+parameter caches were moved onto `tools.process_cache_allocator`, request 2 took
+the server down — the caches were built from request 1's arena and read after it
+was destroyed. `monica-zmq-server` had the identical bug on its second message.
+
 ## Static (single-binary) variant
 
 Same tests, against a binary with no DLL next to it:

@@ -395,6 +395,11 @@ serve_zmq_monica_full :: proc(
 			break
 		} else if msg_t == "Env" {
 			shared_id := jx.string_value_of(jx.get(msg.json, "sharedId"))
+			// Each message is an independent run, and msg_arena (destroyed at the
+			// end of this iteration) is what the previous one's cached values live
+			// in - so drop them before they become dangling. Without this the
+			// server died on its SECOND message; see reset_caches' own comment.
+			reset_caches()
 			out := handle_env_message(msg.json, path_to_soil_dir, started_server_in_debug_mode, msg_allocator)
 
 			reply_socket := distinct_send_socket ? send_socket : socket

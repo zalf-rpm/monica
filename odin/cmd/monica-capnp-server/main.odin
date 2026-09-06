@@ -188,7 +188,11 @@ main :: proc() {
 	}
 
 	// C++: MonicaEnvInstance::Client runMonicaClient = kj::mv(ownedRunMonica);
-	client, host_err, host_ok := capnp_dyn.host(
+	//
+	// host_async, not host: run() has to call back into the timeSeries/soilProfile
+	// capabilities it is handed, which the shim only permits from a deferred
+	// handler - see monica/capnp/run_monica_capnp.odin's header.
+	client, host_err, host_ok := capnp_dyn.host_async(
 		schema.model,
 		schema.root,
 		"EnvInstance",

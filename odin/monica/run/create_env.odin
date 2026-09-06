@@ -287,9 +287,21 @@ supported_patterns :: proc() -> map[string]Pattern_Proc {
 
 // Resets the module-level state between independent runs. No C++ counterpart -
 // there the caches are function-local statics that live for the process.
+//
+// Assigns nil rather than clear()ing: the cached values (and the maps' own
+// backing storage) were allocated with whatever allocator the previous run
+// passed in. For monica-run that is the one process-wide arena and either would
+// do, but a server hands each request its own arena and destroys it afterwards,
+// so clear() would leave both maps pointing at freed memory for the next
+// request to write into. Nothing leaks - the arena owned it and is already gone.
+//
+// The other module-level caches (soil tables, the output table, the legacy
+// alias map) are NOT reset here: they hold no per-run data, so they are built
+// from tools.process_cache_allocator instead and simply live for the process,
+// exactly like their C++ statics.
 reset_caches :: proc() {
-	clear(&ref_cache)
-	clear(&ref_cache_valid)
+	ref_cache = nil
+	ref_cache_valid = nil
 }
 
 // ---------------------------------------------------------------------------

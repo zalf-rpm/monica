@@ -121,11 +121,15 @@ read_principal_soil_characteristic_data :: proc(
 	allocator := context.allocator,
 ) -> tl.EResult(Rpscd_Res) {
 	if !g_soil_characteristic_data_initialized {
-		path := strings.concatenate({path_to_soil_dir, "SoilCharacteristicData.json"}, allocator)
-		r := jx.read_and_parse_json_file(path, allocator)
+		// Process-lifetime, like the C++ function-local static this stands in for -
+		// NOT `allocator`, which for a server is one request's arena. See
+		// tools.process_cache_allocator.
+		cache_allocator := tl.process_cache_allocator()
+		path := strings.concatenate({path_to_soil_dir, "SoilCharacteristicData.json"}, cache_allocator)
+		r := jx.read_and_parse_json_file(path, cache_allocator)
 		if tl.success(r.errs) {
 			if g_soil_characteristic_data == nil {
-				g_soil_characteristic_data = make(map[string]map[int]Rpscd_Res, allocator)
+				g_soil_characteristic_data = make(map[string]map[int]Rpscd_Res, cache_allocator)
 			}
 			for item in jx.array_items(jx.get(r.result, "list")) {
 				ac := jx.double_value(item, "airCapacity")
@@ -136,9 +140,9 @@ read_principal_soil_characteristic_data :: proc(
 					fc  = fc,
 					pwp = fc - nfc,
 				}
-				key := strings.to_upper(jx.string_value(item, "soilType"), allocator)
+				key := strings.to_upper(jx.string_value(item, "soilType"), cache_allocator)
 				if key not_in g_soil_characteristic_data {
-					g_soil_characteristic_data[key] = make(map[int]Rpscd_Res, allocator)
+					g_soil_characteristic_data[key] = make(map[int]Rpscd_Res, cache_allocator)
 				}
 				inner := g_soil_characteristic_data[key]
 				inner[int(jx.double_value(item, "soilRawDensity") / 100.0)] = res
@@ -196,14 +200,16 @@ read_soil_characteristic_modifier :: proc(
 	allocator := context.allocator,
 ) -> tl.EResult(Rpscd_Res) {
 	if !g_soil_characteristic_modifier_initialized {
+		// Process-lifetime - see read_principal_soil_characteristic_data above.
+		cache_allocator := tl.process_cache_allocator()
 		path := strings.concatenate(
 			{path_to_soil_dir, "SoilCharacteristicModifier.json"},
-			allocator,
+			cache_allocator,
 		)
-		r := jx.read_and_parse_json_file(path, allocator)
+		r := jx.read_and_parse_json_file(path, cache_allocator)
 		if tl.success(r.errs) {
 			if g_soil_characteristic_modifier == nil {
-				g_soil_characteristic_modifier = make(map[string]map[int]Rpscd_Res, allocator)
+				g_soil_characteristic_modifier = make(map[string]map[int]Rpscd_Res, cache_allocator)
 			}
 			for item in jx.array_items(jx.get(r.result, "list")) {
 				ac := jx.double_value(item, "airCapacity")
@@ -214,9 +220,9 @@ read_soil_characteristic_modifier :: proc(
 					fc  = fc,
 					pwp = fc - nfc,
 				}
-				key := strings.to_upper(jx.string_value(item, "soilType"), allocator)
+				key := strings.to_upper(jx.string_value(item, "soilType"), cache_allocator)
 				if key not_in g_soil_characteristic_modifier {
-					g_soil_characteristic_modifier[key] = make(map[int]Rpscd_Res, allocator)
+					g_soil_characteristic_modifier[key] = make(map[int]Rpscd_Res, cache_allocator)
 				}
 				inner := g_soil_characteristic_modifier[key]
 				inner[int(jx.double_value(item, "organicMatter") * 10)] = res

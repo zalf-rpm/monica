@@ -950,12 +950,18 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 		}
 	}
 
-	g_output_table.ofs = make(map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value, allocator)
+	// Built once and read for the rest of the process (C++: a function-local
+	// static BOTRes), so NOT from `allocator` - in a server that is one request's
+	// arena, and reading the table back on the next request would be a use after
+	// free. See tools.process_cache_allocator. Everything stored is a procedure
+	// pointer or a string literal, so none of it depends on the caller's data.
+	cache_allocator := tl.process_cache_allocator()
+	g_output_table.ofs = make(map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value, cache_allocator)
 	g_output_table.setfs = make(
 		map[int]proc(_: ^core.Monica_Model, _: OId, _: jx.Value),
-		allocator,
+		cache_allocator,
 	)
-	g_output_table.name2metadata = make(map[string]OutputMetadata, allocator)
+	g_output_table.name2metadata = make(map[string]OutputMetadata, cache_allocator)
 
 	build(
 		0,

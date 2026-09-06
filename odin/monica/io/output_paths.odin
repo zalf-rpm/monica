@@ -234,7 +234,11 @@ g_legacy_aliases_built: bool
 
 legacy_aliases :: proc(allocator := context.allocator) -> ^map[string]Alias {
 	if !g_legacy_aliases_built {
-		g_legacy_aliases = make(map[string]Alias, len(g_alias_table), allocator)
+		// Built once and read for the rest of the process, so NOT from `allocator`
+		// (one request's arena, in a server) - see tools.process_cache_allocator.
+		// Its contents are all static-table literals, so nothing here depends on
+		// the caller's data.
+		g_legacy_aliases = make(map[string]Alias, len(g_alias_table), tl.process_cache_allocator())
 		for e in g_alias_table {
 			g_legacy_aliases[e.name] = e.alias
 		}
