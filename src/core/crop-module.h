@@ -180,6 +180,7 @@ public:
       double vc_AssimilationRateReference;
       double vc_RadiationUseEfficiency;
       double vc_RadiationUseEfficiencyReference;
+      double vc_KTkc;
   };
   /**
    * @brief Rubisco-controlled rate of CO2 assimilation (=carboxylation-limited FvCB assimilation rate)
@@ -208,12 +209,12 @@ public:
     double globalRad;
     double extraRad;
   };
-  std::pair<double, double> fc_CropGrossPhotosynthesis_h(double inst_diff_rad,
-                                                         double inst_dir_rad,
-                                                         double solarElevation_rad,
-                                                         double leafTemperature,
-                                                         double vw_AtmosphericCO2Concentration,
-                                                         double vw_AtmosphericO3Concentration);
+  std::tuple<double, double, double> fc_CropGrossPhotosynthesis_h(double inst_diff_rad,
+                                                                  double inst_dir_rad,
+                                                                  double solarElevation_rad,
+                                                                  double leafTemperature,
+                                                                  double vw_AtmosphericCO2Concentration,
+                                                                  double vw_AtmosphericO3Concentration);
 
   void fc_HeatStressImpact(double vw_MeanAirTemperature,
                            double vw_MaxAirTemperature);
@@ -260,8 +261,7 @@ public:
   void CropModule::fc_CropInterception(double vw_GrossPrecipitation);
 
   void fc_CropWaterUptake_h(size_t vm_GroundwaterTable,
-                            double vc_ReferenceEvapotranspiration_h,
-                            double vc_OxygenDeficit_h);
+                            double vc_ReferenceEvapotranspiration_h); //, double vc_OxygenDeficit_h);
 
 
 
@@ -705,6 +705,7 @@ private:
   std::vector<std::vector<double>> pc_OrganSenescenceRate;  //! old DEAD
   double vc_OvercastDayRadiation{0.0};          //! old DRO
   double vc_OxygenDeficit{0.0};          //! old LURED
+  double vc_OxygenDeficit_h{0.0};                                           // FS: hourly
   double pc_PartBiologicalNFixation{};
   bool pc_Perennial{false};
   double vc_PhotoperiodicDaylength{0.0};        //! old DLP

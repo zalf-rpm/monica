@@ -792,6 +792,19 @@ void CropModule::step(double vw_MeanAirTemperature,
 
   if (vc_CuttingDelayDays > 0) vc_CuttingDelayDays--;
 
+  /* @ToDo FS: add or cherry-pick
+  // [TRANSPLANT SHOCK] Daily stress recovery calculation.
+  // The daily transplant efficiency factors in transplant shock, increasing linearly
+  // from a baseline of 0.2 (80% initial stress) to 1.0 (no stress) over the post-transplant delay duration.
+  vc_TransplantEfficiency = 1.0;
+  if (vc_DaysSinceTransplant >= 0 && vc_DaysSinceTransplant < vc_TransplantShockDuration) {
+    vc_TransplantEfficiency = 0.2 + 0.8 * (double(vc_DaysSinceTransplant) / vc_TransplantShockDuration);
+    vc_DaysSinceTransplant++;
+  } else if (vc_DaysSinceTransplant >= vc_TransplantShockDuration) {
+    vc_DaysSinceTransplant = -1; // Recovery period has successfully concluded
+  }
+  */
+
   //  cout << "Cropstep: " << vw_MinAirTemperature << "\t" << vw_MaxAirTemperature << "\t" << vw_MeanAirTemperature << endl;
   fc_Radiation(vs_JulianDay, vw_GlobalRadiation, vw_SunshineHours);
 
@@ -999,6 +1012,9 @@ void CropModule::step(double vw_MeanAirTemperature,
       vc_Assimilates = 0.0;
       vc_GrossAssimilates = 0.0;
       vc_MaintenanceRespirationAS = 0.0;
+      vector<double> hourly_KTkc_day;
+      // vector<double> hourly_GP_day;
+      vector<double> hourly_TranspirationDeficit_day;
 
       for (int h = 0; h < 24; ++h) {  // hourly overclocked loop
         bool is_daytime = ((h >= sunriseH) && (h < sunsetH)) ? true : false;
@@ -1054,12 +1070,15 @@ void CropModule::step(double vw_MeanAirTemperature,
 
         // gross photosynthesis
         auto [vc_GrossCO2Assimilation_h,
-              vc_GrossCO2AssimilationReference_h] = fc_CropGrossPhotosynthesis_h(inst_diff_rad,
-                                                                                 inst_dir_rad,
-                                                                                 hp_in.solarEl,
-                                                                                 hp_in.leafT,
-                                                                                 vw_AtmosphericCO2Concentration,
-                                                                                 vw_AtmosphericO3Concentration);
+              vc_GrossCO2AssimilationReference_h,
+              KTkc] = fc_CropGrossPhotosynthesis_h(inst_diff_rad,
+                                                   inst_dir_rad,
+                                                   hp_in.solarEl,
+                                                   hp_in.leafT,
+                                                   vw_AtmosphericCO2Concentration,
+                                                   vw_AtmosphericO3Concentration);
+        hourly_KTkc_day.push_back(KTkc);
+        // hourly_GP_day.push_back(vc_GrossCO2Assimilation_h);
 
         // @ToDo FS: test this
         if (cropPs.__enable_hourly_outputs__) {
@@ -1086,15 +1105,27 @@ void CropModule::step(double vw_MeanAirTemperature,
         // Converting photosynthesis rate from [kg CO2 ha leaf-1 d-1] to [kg CH2O ha-1  d-1]
         double vc_Assimilates_h = vc_GrossCO2Assimilation_h * 30.0 / 44.0;
 
+#pragma region apply photo reduction factors // apply factors that reduce (gross) photosynthesis
+        // gross photosynthesis * pc_FieldConditionModifier * vc_CropFrostRedux * (vc_OxygenDeficit or vc_TranspirationDeficit)
+
+        /* @ToDo FS: Also add new [TRANSPLANT SHOCK] or cherry-pick when merging
+        // [TRANSPLANT SHOCK] Photosynthesis Limitation.
+        // Reduces the daily gross CO2 assimilation rate according to the shock recovery efficiency factor.
+        if (vc_TransplantEfficiency < 1.0) {
+          vc_GrossCO2Assimilation *= vc_TransplantEfficiency; // FS: this is a daily factor, updated at the start of CropModule::step(...)
+        }
+        */
+
         // reduction value for assimilate amount to simulate field conditions;
         vc_Assimilates_h *= pc_FieldConditionModifier;  // FS: keep daily field condition modifier for now
 
         // reduction value for assimilate amount to simulate frost damage;
-        vc_Assimilates_h *= vc_CropFrostRedux;          // FS: 
+        double vc_CropFrostRedux_h = vc_CropFrostRedux; // @ToDo FS: keep daily factor for now?
+        vc_Assimilates_h *= vc_CropFrostRedux_h;
 
-        double vc_OxygenDeficit_h = vc_OxygenDeficit;
+        vc_OxygenDeficit_h = vc_OxygenDeficit;   // @ToDo FS: keep daily factor for now?
         //MP: added reduction value for assimilate amount to simulate waterlogging;
-        vc_Assimilates_h *= vc_OxygenDeficit_h;           // FS: 
+        vc_Assimilates_h *= vc_OxygenDeficit_h;
 
         // vc_OxygenDeficit separates drought stress (ETa/Etp) from saturation stress.
         // old VSWELL
@@ -1109,14 +1140,17 @@ void CropModule::step(double vw_MeanAirTemperature,
         if (vc_TranspirationDeficit_h < vc_DroughtStressThreshold_h) {//MP: Access point for drought optimisation
             vc_Assimilates_h *= vc_TranspirationDeficit_h;  // vc_DroughtStressThreshold; // MP:changed to exclude division
         }
-
+#pragma endregion apply photo reduction factors
 
         double vc_GrossAssimilates_h = vc_Assimilates_h;
 
         // ####################################################################################
         // hourly maintenance respiration (simplified; inspired by AGROSIM / daily MONICA code)
         // ####################################################################################
-        // FS: In theory, there should be no need for weighting day and night durations if each hour is calculated seperately (using hour-specific temperatures).
+        // FS: In theory, there should be no need for weighting day and night durations if each hour is calculated separately (using hour-specific temperatures).
+        //     Using hour-specific temperatures for all hourly overclocked processes should be more consistent here, unless the averaged day and night temperatures
+        //     approximate leaf temperature more accurately (they probably do not) or when the dampened minima and maxima resulting from averaging make more sense 
+        //     physiologically (maybe for frostkill and heat stress?)
         // @ToDo FS: test if this makes a difference
         double vc_MaintenanceRespirationSum_h = 0.0;  // this is a sum over plant organs (not over time!)
         // AGOSIM night and day maintenance and growth respiration
@@ -1132,22 +1166,14 @@ void CropModule::step(double vw_MeanAirTemperature,
         vc_Assimilates_h -= vc_MaintenanceRespiration_h; // [kg CH2O ha-1]
 
 
-        // accumulation of daily values
-        vc_GrossCO2Assimilation += vc_GrossCO2Assimilation_h;
-        vc_GrossPhotosynthesis += vc_GrossPhotosynthesis_h;
-        vc_GrossPhotosynthesisReference_mol += vc_GrossPhotosynthesisReference_mol_h;
-        vc_Assimilates += vc_Assimilates_h;
-        vc_GrossAssimilates += vc_GrossAssimilates_h;
-        vc_MaintenanceRespirationAS += vc_MaintenanceRespirationAS_h;
-
-
         // @ToDo FS: Check again in which order the calculations make the most sense:
         //           - some stress factors are taken from the day before, others calculated for each hour;
-        //           - Which ones should be applied before respiration?
+        //           - Which ones should be applied before respiration, which ones after?
+        //               - for vc_ReferenceEvapotranspiration_h this should not matter since it takes vc_GrossPhotosynthesisReference_mol_h as input
         //           - Also, some stress factors interact with each other ...
 
-        fc_DroughtImpactOnFertility_h();      // = f(vc_TranspirationDeficit_h)
 
+#pragma region further hourly calculations
         // calculate reference evapotranspiration if not provided directly via climate files
         double vc_ReferenceEvapotranspiration_h;
         double vw_ReferenceEvapotranspiration_h = -1.0; 
@@ -1165,13 +1191,39 @@ void CropModule::step(double vw_MeanAirTemperature,
           vc_ReferenceEvapotranspiration_h = vw_ReferenceEvapotranspiration_h;
         }
 
-        fc_CropWaterUptake_h(soilColumn.vm_GroundwaterTableLayer, vc_ReferenceEvapotranspiration_h, vc_OxygenDeficit_h);    // this should calculate vc_TranspirationDeficit_h
-        // FS: not sure yet if the water balance works corrctly -> check interaction with daily interception
+        fc_CropWaterUptake_h(soilColumn.vm_GroundwaterTableLayer, vc_ReferenceEvapotranspiration_h);  //, vc_OxygenDeficit_h);
+                                                                                                      // FS: This should calculate vc_TranspirationDeficit_h, which affects
+                                                                                                      //     CropModule::fc_CropDevelopmentalStage(...) and CropModule::fc_DroughtImpactOnFertility()
+        // @ToDo FS: not sure yet if the water balance works corrctly -> check interaction with daily interception
+      
+        // FS: do not change too much at once
+        // fc_DroughtImpactOnFertility_h();      // = f(vc_TranspirationDeficit_h)
+
+        // prepare aggregation back to daily time step
+        hourly_TranspirationDeficit_day.push_back(vc_TranspirationDeficit_h);
+
+#pragma endregion further hourly calculations
+
+        // accumulation of daily values (aggregation back to daily time step, sum)
+        vc_GrossCO2Assimilation += vc_GrossCO2Assimilation_h;
+        vc_GrossPhotosynthesis += vc_GrossPhotosynthesis_h;
+        vc_GrossPhotosynthesisReference_mol += vc_GrossPhotosynthesisReference_mol_h;
+        vc_Assimilates += vc_Assimilates_h;
+        vc_GrossAssimilates += vc_GrossAssimilates_h;
+        vc_MaintenanceRespirationAS += vc_MaintenanceRespirationAS_h;
       }
+
+      // aggregation back to daily time step, mean
+      vc_TranspirationDeficit = accumulate(hourly_TranspirationDeficit_day.begin(), hourly_TranspirationDeficit_day.end(), 0.) / hourly_TranspirationDeficit_day.size();
+      // @ ToDo FS: Is mean good enough, or is a weighted mean (e.g. with hourly photosynthesis) required?
+
+      vc_KTkc = get<0>(vc_KTkc_vc_KTko(vw_MeanAirTemperature));                                             // FS: reaction speed factor with the (daily) mean temperature (=default daily MONICA)
+      // vc_KTkc = accumulate(hourly_KTkc_day.begin(), hourly_KTkc_day.end(), 0.) / hourly_KTkc_day.size(); //     vs. mean of the (hourly) reaction speed factors
+      // vc_KTkc = ... f(hourly_KTkc_day, hourly_GP_day) ...                                                //     vs. some sort of weighted mean (not sure what is best here, but don't change too much at once for now)
 
   #pragma region growth respiration
       // AGROSIM night and day temperatures from hourly photosynthesis
-      double vc_PhotoTemperature, vc_NightTemperature, vc_NormalisedDayLength;
+      double vc_PhotoTemperature, vc_NightTemperature;
       if (cropPs.__enable_hourly_respiration__) {
         vc_PhotoTemperature = vc_PhotoTemperature_;
         vc_NightTemperature = vc_NightTemperature_;
@@ -1248,17 +1300,23 @@ void CropModule::step(double vw_MeanAirTemperature,
       }
   #pragma endregion growth respiration
 
-      // fc_HeatStressImpact(vw_MaxAirTemperature,
-      //                     vw_MinAirTemperature);
+      // @ToDo FS: These factors might not be needed hourly?
+
+      /* FS: moved outside the if hourly/else block
+      // fc_HeatStressImpact_h(vw_MeanAirTemperature_h);    // FS: ... or leaf or canopy temperature? So far, it uses PhotoTemperature
+      // // fc_HeatStressImpact_h(vw_MaxAirTemperature, vw_MinAirTemperature);
 
       // if (_frostKillOn) {
-      //   fc_FrostKill(vw_MaxAirTemperature,
-      //               vw_MinAirTemperature);
+      //   fc_FrostKill_h(vw_MeanAirTemperature_h);         // FS: ... or leaf or canopy temperature?  So far, it calculates vc_CrownTemperature = vc_NightTemperature * 0.8 internally
+      //   // fc_FrostKill_h(vw_MaxAirTemperature, vw_MinAirTemperature);
       // }
 
-      // fc_CropNitrogen();
+      // fc_DroughtImpactOnFertility();
 
-      // fc_CropDryMatter(vw_MeanAirTemperature);
+      // fc_CropNitrogen_h();
+
+      // fc_CropDryMatter_h(vw_MeanAirTemperature_h);
+      */
 
 #pragma endregion hourly overclocked
     } else {
@@ -1269,6 +1327,7 @@ void CropModule::step(double vw_MeanAirTemperature,
                             vw_AtmosphericO3Concentration,
                             currentDate);
 
+      /* FS: moved outside the if hourly/else block
       // fc_HeatStressImpact(vw_MaxAirTemperature,
       //                     vw_MinAirTemperature);
 
@@ -1282,6 +1341,7 @@ void CropModule::step(double vw_MeanAirTemperature,
       // fc_CropNitrogen();
 
       // fc_CropDryMatter(vw_MeanAirTemperature);
+      */
 
       // calculate reference evapotranspiration if not provided directly via climate files
       if (vw_ReferenceEvapotranspiration < 0) {
@@ -1299,23 +1359,39 @@ void CropModule::step(double vw_MeanAirTemperature,
       fc_CropWaterUptake(soilColumn.vm_GroundwaterTableLayer,
                         vw_GrossPrecipitation,
                         vc_CurrentTotalTemperatureSum,
-                        vc_TotalTemperatureSum);
+                        vc_TotalTemperatureSum);  // FS: This calculates vc_TranspirationDeficit, which affects
+                                                  //     CropModule::fc_CropDevelopmentalStage(...) and CropModule::fc_DroughtImpactOnFertility()
     }
 
+    // @ToDo FS: Do I understand this correctly?
+    //           Daily stressors (pc_FieldConditionModifier, vc_OxygenDeficit, vc_TranspirationDeficit) are applied directly
+    //           in the photosynthesis code (e.g. in CropModule::fc_CropPhotosynthesis(...) for the daily version):
+    //           - pc_FieldConditionModifier is taken form a parameter file, so keep it daily?
+    //           - vc_OxygenDeficit is calculated at the start of CropModule::step(...), and applied within the photosynthesis
+    //           - vc_TranspirationDeficit is calculated after CropModule::fc_CropPhotosynthesis(...) via CropModule::fc_CropWaterUptake(...),
+    //             so it applies the drought stress based on the previous time step? -> hourly version fc_CropWaterUptake_h(...) placed inside
+    //             the hourly loop and calculated averaged transpiration deficit for the day afterwards for use with other (daily) stress factors
 
     fc_HeatStressImpact(vw_MaxAirTemperature,
-                        vw_MinAirTemperature);
+                        vw_MinAirTemperature);  // FS: This calculates vc_CropHeatRedux, which affects CropModule::fc_CropDryMatter(...)
 
     if (_frostKillOn) {
       fc_FrostKill(vw_MaxAirTemperature,
-                   vw_MinAirTemperature);
+                   vw_MinAirTemperature); // FS: This calculates vc_CropFrostRedux, getting more severe based on number of days below -3°?
     }
 
-    fc_DroughtImpactOnFertility();
+    fc_DroughtImpactOnFertility();  // FS: This calculates vc_DroughtImpactOnFertility, which affects CropModule::fc_CropDryMatter(...)
+                                    //     vc_DroughtImpactOnFertility is f(vc_TranspirationDeficit, vc_OxygenDeficit)
+                                    //     with vc_DroughtImpactOnFertility = 1.0 (ignored) if vc_OxygenDeficit is active (vc_OxygenDeficit < 1.0)
 
-    fc_CropNitrogen();
+    fc_CropNitrogen();  // FS: This calculates vc_CropNRedux, which affects CropModule::fc_CropDevelopmentalStage(...) and CropModule::fc_CropDryMatter(...)
 
-    fc_CropDryMatter(vw_MeanAirTemperature);
+    fc_CropDryMatter(vw_MeanAirTemperature);  // FS: this depends on vc_CropHeatRedux, vc_DroughtImpactOnFertility and vc_CropNRedux
+                                              //     CropModule::fc_CropDryMatter(...) uses the vc_KTkc CropModule attr, so when moving to hourly photosynthesis:
+                                              //     - either make sure that vc_KTkc has been updated with a valid value
+                                              //       (e.g. using get<0>(...) on CropModule::vc_KTkc_vc_KTko(vw_MeanAirTemperature) or by actually averaging hourly KTkc values)
+                                              //     - or create an hourly method CropModule::fc_CropDryMatter_h(...) which calculates vc_KTkc_h internally
+                                              //       (e.g. using get<0>(...) on CropModule::vc_KTkc_vc_KTko(vw_MeanAirTemperature_h))
 
 
     fc_CropNUptake(soilColumn.vm_GroundwaterTableLayer,
@@ -1577,6 +1653,9 @@ double WangEngelTemperatureResponse(double t, double tmin, double topt, double t
  * @param soilMoisture_m3
  * @param fieldCapacity
  * @param permanentWiltingPoint
+ * 
+ * @param vc_CropNRedux
+ * @param vc_TranspirationDeficit
  *
  * @author Claas Nendel
  * @author Michael Berg-Mohnicke (refactoring)
@@ -2112,7 +2191,7 @@ CropModule::A_rubisco_results CropModule::A_rubisco(double vw_MeanAirTemperature
   vc_AssimilationRateReference = max(0.1, vc_AssimilationRateReference);
   */
 
-  return A_rubisco_results{vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference};
+  return A_rubisco_results{vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference, KTkc};
 };
 
   /*FS: maybe add a stomatal conductance coupled approach later?
@@ -3182,15 +3261,12 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       vc_Assimilates_h *= pc_FieldConditionModifier;  // FS: keep daily field condition modifier for now
 
       // reduction value for assimilate amount to simulate frost damage;
-      vc_Assimilates_h *= vc_CropFrostRedux;          // FS: 
+      double vc_CropFrostRedux_h = vc_CropFrostRedux; // @ToDo FS: keep daily factor for now?
+      vc_Assimilates_h *= vc_CropFrostRedux_h;
 
-
-      double vc_OxygenDeficit_h = vc_OxygenDeficit; // @ToDo FS: Check if it makes sense to assume this!
-
-
+      vc_OxygenDeficit_h = vc_OxygenDeficit;   // @ToDo FS: keep daily factor for now?
       //MP: added reduction value for assimilate amount to simulate waterlogging;
-      vc_Assimilates_h *= vc_OxygenDeficit_h;           // FS: 
-
+      vc_Assimilates_h *= vc_OxygenDeficit_h;
 
       // FS: is there a way to calculate the hourly TranspirationDeficit?
 
@@ -3214,7 +3290,7 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
       // ####################################################################################
       // hourly maintenance respiration (simplified; inspired by AGROSIM / daily MONICA code)
       // ####################################################################################
-      // FS: In theory, there should be no need for weighting day and night durations if each hour is calculated seperately (using hour-specific temperatures).
+      // FS: In theory, there should be no need for weighting day and night durations if each hour is calculated separately (using hour-specific temperatures).
       // @ToDo FS: test if this makes a difference
       double vc_MaintenanceRespirationSum_h = 0.0;  // this is a sum over plant organs (not over time!)
       // AGOSIM night and day maintenance and growth respiration
@@ -3393,12 +3469,12 @@ void CropModule::fc_CropPhotosynthesis(double vw_MeanAirTemperature,
 
 
 
-std::pair<double, double> CropModule::fc_CropGrossPhotosynthesis_h(double inst_diff_rad,
-                                                                   double inst_dir_rad,
-                                                                   double solarElevation_rad,
-                                                                   double leafTemperature,
-                                                                   double vw_AtmosphericCO2Concentration,
-                                                                   double vw_AtmosphericO3Concentration) {
+std::tuple<double, double, double> CropModule::fc_CropGrossPhotosynthesis_h(double inst_diff_rad,
+                                                                            double inst_dir_rad,
+                                                                            double solarElevation_rad,
+                                                                            double leafTemperature,
+                                                                            double vw_AtmosphericCO2Concentration,
+                                                                            double vw_AtmosphericO3Concentration) {
   const bool kgpha = true;
 
   // empirical extinction coefficient fo diffuse radiation, crop-dependent (and maybe even development stage dependent in some cases)
@@ -3408,8 +3484,14 @@ std::pair<double, double> CropModule::fc_CropGrossPhotosynthesis_h(double inst_d
 
   double hourlyGrossPhoto = 0.;
   double hourlyGrossPhotoRef = 0.;
+  double KTkc;
   if ((inst_diff_rad <= 0) && (inst_dir_rad <= 0)) {
     ; // no need to calculate anything
+
+    // ... apart from maybe the factor for chemical reaction speeds related to CO2
+    KTkc = (pc_CarboxylationPathway == 1) ? get<0>(vc_KTkc_vc_KTko(leafTemperature)) : vc_KTkc; // FS: Is this intended to stay 0.0 for C4 crops? What are the implications regarding CropModule::fc_CropDryMatter(...)
+    // if needed, maybe calculate explicitly? KTkc = get<0>(vc_KTkc_vc_KTko(leafTemperature));
+
   } else {
     double vc_AssimilationRate_hourly, vc_AssimilationRateReference_hourly, vc_RadiationUseEfficiency_hourly, vc_RadiationUseEfficiencyReference_hourly;
     if (pc_CarboxylationPathway == 1) {
@@ -3424,6 +3506,7 @@ std::pair<double, double> CropModule::fc_CropGrossPhotosynthesis_h(double inst_d
       vc_AssimilationRateReference_hourly = A_rub_res.vc_AssimilationRateReference;             // A_mRef
       vc_RadiationUseEfficiency_hourly = A_rub_res.vc_RadiationUseEfficiency;                   // espilon
       vc_RadiationUseEfficiencyReference_hourly = A_rub_res.vc_RadiationUseEfficiencyReference; // epsilonRef
+      KTkc = A_rub_res.vc_KTkc;
     } else {
       double t_response = WangEngelTemperatureResponse(leafTemperature,
                                       pc_MinimumTemperatureForAssimilation,
@@ -3434,6 +3517,8 @@ std::pair<double, double> CropModule::fc_CropGrossPhotosynthesis_h(double inst_d
       vc_AssimilationRateReference_hourly = cropPs.pc_ReferenceMaxAssimilationRate * t_response;// A_mRef
       vc_RadiationUseEfficiency_hourly = pc_DefaultRadiationUseEfficiency;                      // epsilon
       vc_RadiationUseEfficiencyReference_hourly = pc_DefaultRadiationUseEfficiency;             // epsilonRef
+      KTkc = vc_KTkc; // FS: Is this intended to stay 0.0 for C4 crops? What are the implications regarding CropModule::fc_CropDryMatter(...)
+      // if needed, maybe calculate explicitly? KTkc = get<0>(vc_KTkc_vc_KTko(leafTemperature));
     }
 
     if (vc_CuttingDelayDays > 0) {
@@ -3453,7 +3538,7 @@ std::pair<double, double> CropModule::fc_CropGrossPhotosynthesis_h(double inst_d
     hourlyGrossPhoto = hPhoto::Spitters_canop_photo_3p(solarElevation_rad, vc_LeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRate_hourly, vc_RadiationUseEfficiency_hourly, kdf, 0.2, kgpha, style);
     hourlyGrossPhotoRef = hPhoto::Spitters_canop_photo_3p(solarElevation_rad, cropPs.pc_ReferenceLeafAreaIndex, inst_dir_rad, inst_diff_rad, vc_AssimilationRateReference_hourly, vc_RadiationUseEfficiencyReference_hourly, kdfRef, 0.2, kgpha, style);
   }
-  make_pair(hourlyGrossPhoto, hourlyGrossPhotoRef);
+  return {hourlyGrossPhoto, hourlyGrossPhotoRef, KTkc};
 }
 
 
@@ -3634,7 +3719,7 @@ void CropModule::fc_DroughtImpactOnFertility_h() {
                                             (pc_DroughtImpactOnFertilityFactor *
                                               pc_DroughtStressThreshold[vc_DevelopmentalStage]);
 
-    if (vc_OxygenDeficit < 1.0) {
+    if (vc_OxygenDeficit_h < 1.0) {
       vc_DroughtImpactOnFertility_h = 1.0;
     } else {
       vc_DroughtImpactOnFertility_h =
@@ -4682,6 +4767,15 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable,
       vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
     }
 
+    /* @ToDo FS: add or cherry-pick this
+    // [TRANSPLANT SHOCK] Water Uptake Limitation.
+    // Limits the total active root water uptake effectivity proportional to the shock recovery efficiency factor.
+    if (vc_TransplantEfficiency < 1.0) {
+      vc_TotalRootEffectivity *= vc_TransplantEfficiency;
+      vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
+    }
+    */
+  
     // std::cout << setprecision(11) << "vc_TotalRootEffectivity: " << vc_TotalRootEffectivity << std::endl;
     // std::cout << setprecision(11) << "vc_OxygenDeficit: " << vc_OxygenDeficit << std::endl;
 
@@ -4793,7 +4887,7 @@ void CropModule::fc_CropInterception(double vw_GrossPrecipitation) {
 }
 
 /**
- * @brief  Water uptake by the crop
+ * @brief  hourly water uptake by the crop
  *
  *  In this function the potential transpiration calcuated from potential
  *  evapotranspiration by soil cover fraction is reduced by water availability
@@ -4804,12 +4898,10 @@ void CropModule::fc_CropInterception(double vw_GrossPrecipitation) {
  * @param vs_LayerThickness
  * @param vc_GroundwaterTable
  * @param vc_ReferenceEvapotranspiration_h
- *
- * @author Claas Nendel
+ * @param vc_OxygenDeficit_h
  */
 void CropModule::fc_CropWaterUptake_h(size_t vc_GroundwaterTable,
-                                      double vc_ReferenceEvapotranspiration_h,
-                                      double vc_OxygenDeficit_h) {
+                                      double vc_ReferenceEvapotranspiration_h) {  //, double vc_OxygenDeficit_h) {
   size_t nols = soilColumn.vs_NumberOfLayers();
   double layerThickness = soilColumn.vs_LayerThickness();
   vc_PotentialTranspirationDeficit_h = 0.0;         // [mm]
@@ -4823,6 +4915,11 @@ void CropModule::fc_CropWaterUptake_h(size_t vc_GroundwaterTable,
   vc_ActualTranspirationDeficit_h = 0.0;            // [mm]
   vc_RemainingEvapotranspiration_h = 0.0;
 
+  // ################
+  // # Interception #
+  // ################
+  // FS: moved to CropModule::fc_CropInterception(double vw_GrossPrecipitation)
+
   // #################
   // # Transpiration #
   // #################
@@ -4833,7 +4930,7 @@ void CropModule::fc_CropWaterUptake_h(size_t vc_GroundwaterTable,
     vc_PotentialEvapotranspiration_h = 1.5;
   }
 
-  // FS: altered attrs here: vc_InterceptionStorage, vc_RemainingEvapotranspiration, vc_EvaporatedFromIntercept
+  // FS: altered CropModule attrs here: vc_InterceptionStorage, vc_RemainingEvapotranspiration, vc_EvaporatedFromIntercept
 
   double vc_RemainingEvapotranspiration_h = vc_PotentialEvapotranspiration_h; // [mm]
 
@@ -4852,7 +4949,7 @@ void CropModule::fc_CropWaterUptake_h(size_t vc_GroundwaterTable,
     vc_EvaporatedFromIntercept_h = 0.0;
   }
 
-  // FS: altered attrs here: vc_PotentialTranspiration, vc_TranspirationRedux, vc_RootEffectivity, vc_PotentialTranspirationDeficit
+  // FS: altered CropModule attrs here: vc_PotentialTranspiration, vc_TranspirationRedux, vc_RootEffectivity, vc_PotentialTranspirationDeficit
 
   // if the plant has matured, no transpiration occurs!
   if (vc_DevelopmentalStage < vc_FinalDevelopmentalStage) {
@@ -4907,6 +5004,15 @@ void CropModule::fc_CropWaterUptake_h(size_t vc_GroundwaterTable,
       vc_TotalRootEffectivity += vc_RootEffectivity[i_Layer] * vc_RootDensity[i_Layer]; //[m m-3]
       vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
     }
+
+    /* @ToDo FS: add or cherry-pick this
+    // [TRANSPLANT SHOCK] Water Uptake Limitation.
+    // Limits the total active root water uptake effectivity proportional to the shock recovery efficiency factor.
+    if (vc_TransplantEfficiency < 1.0) {
+      vc_TotalRootEffectivity *= vc_TransplantEfficiency;
+      vc_RemainingTotalRootEffectivity = vc_TotalRootEffectivity;
+    }
+    */
 
     // std::cout << setprecision(11) << "vc_TotalRootEffectivity: " << vc_TotalRootEffectivity << std::endl;
     // std::cout << setprecision(11) << "vc_OxygenDeficit: " << vc_OxygenDeficit << std::endl;
@@ -4974,7 +5080,7 @@ void CropModule::fc_CropWaterUptake_h(size_t vc_GroundwaterTable,
       }
     }
 
-    // FS: vc_TranspirationDeficit affects drought impact on fertility and potentially other methodes as well
+    // FS: vc_TranspirationDeficit affects drought impact on fertility and potentially other CropModule methods as well
 
     if (vc_PotentialTranspiration_h > 0) { vc_TranspirationDeficit_h = vc_ActualTranspiration_h / vc_PotentialTranspiration_h; }
     else { vc_TranspirationDeficit_h = 1.0; }
