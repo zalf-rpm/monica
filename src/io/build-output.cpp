@@ -592,7 +592,7 @@ BOTRes& monica::buildOutputTable() {
               return monica.cropGrowth() ? round(monica.cropGrowth()->get_ActNUptake(), 2) : 0.0;
             });
 
-      build({id++, "RootWaUptak", "KgN ha-1", "RootWatUptakefromLayer"},
+      build({id++, "RootWaUptak", "mm", "RootWatUptakefromLayer"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
                 return monica.cropGrowth() ? monica.cropGrowth()->get_Transpiration(i) : 0.0;
@@ -809,6 +809,16 @@ BOTRes& monica::buildOutputTable() {
       build({id++, "Kc", "", "plant coefficient to calculate with ET0 the plants water use (ET0 * Kc)"},
             [](const MonicaModel& monica, OId oid) {
               return round(monica.soilMoisture().get_KcFactor(), 3);
+            });
+
+      build({id++, "Kcb", "", "Basal crop coefficient (FAO-56 Dual Kc)"},
+            [](const MonicaModel& monica, OId oid) {
+              return monica.cropGrowth() ? round(monica.cropGrowth()->get_KcbFactor(), 3) : 0.0;
+            });
+
+      build({id++, "Ke", "", "Soil evaporation coefficient (FAO-56 Dual Kc)"},
+            [](const MonicaModel& monica, OId oid) {
+              return round(monica.soilMoisture().get_KeFactor(), 3);
             });
 
       build({id++, "AtmCO2", "ppm", "Atmospheric CO2 concentration"},

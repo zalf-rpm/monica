@@ -24,8 +24,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "frost-component.h"
 #include "snow-component.h"
 
-namespace monica 
-{
+namespace monica {
 class MonicaModel;
 class SoilColumn;
 class CropModule;
@@ -42,27 +41,27 @@ class CropModule;
   *
   * <img src="../images/boden_wasser_schema.png">
   */
-class SoilMoisture
-{
+class SoilMoisture {
 public:
   SoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& smPs);
 
-  SoilMoisture(MonicaModel& monica, mas::schema::model::monica::SoilMoistureModuleState::Reader reader, CropModule* cropModule = nullptr);
+  SoilMoisture(MonicaModel& monica, mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
+               CropModule* cropModule = nullptr);
   void deserialize(mas::schema::model::monica::SoilMoistureModuleState::Reader reader);
   void serialize(mas::schema::model::monica::SoilMoistureModuleState::Builder builder) const;
 
-void step(double vs_DepthGroundwaterTable,
-  // Wetter Variablen
-  double vw_Precipitation,
-  double vw_MaxAirTemperature,
-  double vw_MinAirTemperature,
-  double vw_RelativeHumidity,
-  double vw_MeanAirTemperature,
-  double vw_WindSpeed,
-  double vw_WindSpeedHeight,
-  double vw_NetRadiation,
-  int vs_JulianDay,
-  double vw_ReferenceEvapotranspiration);
+  void step(double vs_DepthGroundwaterTable,
+            // Wetter Variablen
+            double vw_Precipitation,
+            double vw_MaxAirTemperature,
+            double vw_MinAirTemperature,
+            double vw_RelativeHumidity,
+            double vw_MeanAirTemperature,
+            double vw_WindSpeed,
+            double vw_WindSpeedHeight,
+            double vw_NetRadiation,
+            int vs_JulianDay,
+            double vw_ReferenceEvapotranspiration);
 
   //void fm_SoilMoistureUpdate();
   double get_SnowDepth() const;
@@ -119,7 +118,7 @@ void step(double vs_DepthGroundwaterTable,
   void fm_Infiltration(double vm_WaterToInfiltrate);
 
   double get_DeprivationFactor(int layerNo, double deprivationDepth,
-                                double zeta, double vs_LayerThickness);
+                               double zeta, double vs_LayerThickness);
 
   void fm_CapillaryRise();
 
@@ -132,30 +131,30 @@ void step(double vs_DepthGroundwaterTable,
   void fm_BackwaterReplenishment();
 
   void fm_Evapotranspiration(double vc_PercentageSoilCoverage,
-                              double vc_KcFactor,
-                              double vs_HeightNN,
-                              double vw_MaxAirTemperature,
-                              double vw_MinAirTemperature,
-                              double vw_RelativeHumidity,
-                              double vw_MeanAirTemperature,
-                              double vw_WindSpeed,
-                              double vw_WindSpeedHeight,
-                              double vw_NetRadiation,
-                              int vc_DevelopmentalStage,
-                              int vs_JulianDay,
-                              double vs_Latitude,
-                double vw_ReferenceEvapotranspiration);
+                             double vc_KcFactor,
+                             double vs_HeightNN,
+                             double vw_MaxAirTemperature,
+                             double vw_MinAirTemperature,
+                             double vw_RelativeHumidity,
+                             double vw_MeanAirTemperature,
+                             double vw_WindSpeed,
+                             double vw_WindSpeedHeight,
+                             double vw_NetRadiation,
+                             int vc_DevelopmentalStage,
+                             int vs_JulianDay,
+                             double vs_Latitude,
+                             double vw_ReferenceEvapotranspiration);
 
   double ReferenceEvapotranspiration(double vs_HeightNN,
-                                      double vw_MaxAirTemperature,
-                                      double vw_MinAirTemperature,
-                                      double vw_RelativeHumidity,
-                                      double vw_MeanAirTemperature,
-                                      double vw_WindSpeed,
-                                      double vw_WindSpeedHeight,
-                                      double vw_NetRadiation,
-                                      int vs_JulianDay,
-                                      double vs_Latitude);
+                                     double vw_MaxAirTemperature,
+                                     double vw_MinAirTemperature,
+                                     double vw_RelativeHumidity,
+                                     double vw_MeanAirTemperature,
+                                     double vw_WindSpeed,
+                                     double vw_WindSpeedHeight,
+                                     double vw_NetRadiation,
+                                     int vs_JulianDay,
+                                     double vs_Latitude);
 
   double meanWaterContent(double depth_m) const;
   double meanWaterContent(int layer, int number_of_layers) const;
@@ -166,8 +165,15 @@ void step(double vs_DepthGroundwaterTable,
   double get_SumSurfaceRunOff() const { return vm_SumSurfaceRunOff; }
 
   double get_KcFactor() const;
+  double get_KeFactor() const { return vm_Ke; }
+
+  //! FAO-56 Dual Kc: allow Irrigation workstep to push event-level physical params into this module
+  void set_irrigFwEvent(double fw) { vm_irrigFwEvent = fw; }
+  void set_irrigIsDripEvent(bool isDrip) { vm_irrigIsDripEvent = isDrip; }
 
   double vm_EvaporatedFromSurface{0.0}; //!< Amount of water evaporated from surface [mm]
+
+  double dual_kc_precomputation(double windSpeed, double tmin, double tmax);
 
 private:
   SoilColumn& soilColumn;
@@ -184,7 +190,8 @@ private:
   double vm_ActualTranspiration{0.0}; //!< Sum of transpiration of all layers [mm]
   std::vector<double> vm_AvailableWater; //!< Soil available water in [mm]
   double vm_CapillaryRise{0.0}; //!< Capillary rise [mm]
-  std::vector<double> pm_CapillaryRiseRate; //!< Capillary rise rate from database in dependence of groundwater distance and texture [m d-1]
+  std::vector<double> pm_CapillaryRiseRate;
+  //!< Capillary rise rate from database in dependence of groundwater distance and texture [m d-1]
   std::vector<double> vm_CapillaryWater; //!< soil capillary water in [mm]
   std::vector<double> vm_CapillaryWater70; //!< 70% of soil capillary water in [mm]
   std::vector<double> vm_Evaporation; //!< Evaporation of layer [mm]
@@ -202,7 +209,8 @@ private:
   std::vector<double> vm_HeatConductivity; //!< Heat conductivity of layer [J m-1 d-1]
   double vm_HydraulicConductivityRedux{0.0}; //!< Reduction factor for hydraulic conductivity [0.1 - 9.9]
   double vm_Infiltration{0.0}; //!< Amount of water that infiltrates into top soil layer [mm]
-  double vm_Interception{0.0}; //!< [mm], water that is intercepted by the crop and evaporates from it's surface; not accountable for soil water budget
+  double vm_Interception{0.0};
+  //!< [mm], water that is intercepted by the crop and evaporates from it's surface; not accountable for soil water budget
   double vc_KcFactor{0.6};
   std::vector<double> vm_Lambda; //!< Empirical soil water conductivity parameter []
   double vs_Latitude{0.0};
@@ -212,11 +220,18 @@ private:
   int pm_LeachingDepthLayer{0};
   double pm_MaxPercolationRate{0.0}; //!< [mm d-1]
   double vc_NetPrecipitation{0.0}; //!< Precipitation amount that is not intercepted by vegetation [mm]
+  bool vm_LastWettingWasRain{false}; //!< True if the most recent surface wetting was rain (for FAO-56 Dual Kc)
+  double vm_Ke{0.0}; //!< Soil evaporation coefficient (FAO-56 Dual Kc)
+  // FAO-56 Dual Kc: event-level irrigation physical parameters (written by Irrigation::apply).
+  // These replace the old global simPs.fw / simPs.isDripIrrigation.
+  double vm_irrigFwEvent{1.0}; //!< fw from the most recent Irrigation workstep [0-1]
+  bool vm_irrigIsDripEvent{false}; //!< true if most recent Irrigation event was drip
   double vw_NetRadiation{0.0}; //!< [MJ m-2]
   std::vector<double> vm_PermanentWiltingPoint; //!< Soil water content at permanent wilting point [m3 m-3]
   double vc_PercentageSoilCoverage{0.0}; //!< [m2 m-2]
   std::vector<double> vm_PercolationRate; //!< Percolation rate per layer [mm d-1]
-  double vm_ReferenceEvapotranspiration{6.0}; //!< Evapotranspiration of a 12mm cut grass crop at sufficient water supply [mm]
+  double vm_ReferenceEvapotranspiration{6.0};
+  //!< Evapotranspiration of a 12mm cut grass crop at sufficient water supply [mm]
   std::vector<double> vm_ResidualEvapotranspiration; //!< Residual evapotranspiration in [mm]
   std::vector<double> vm_SaturatedHydraulicConductivity; //!< Saturated hydraulic conductivity [mm d-1]
 
@@ -238,8 +253,7 @@ private:
   kj::Own<SnowComponent> snowComponent;
   kj::Own<FrostComponent> frostComponent;
   CropModule* cropModule{nullptr};
-}; 
-
+};
 } // namespace monica
 
 

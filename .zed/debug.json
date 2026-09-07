@@ -1,0 +1,29 @@
+[
+  {
+    "label": "Debug monica-run",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/_cmake_debug_ninja/monica-run.exe",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "build": "CMake Build",
+  },
+  {
+    "label": "Debug monica-zmq-server",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/_cmake_debug_ninja/monica-zmq-server.exe",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "build": "CMake Build",
+  },
+  {
+    "label": "Debug monica-capnp-server",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/_cmake_debug_ninja/monica-capnp-server.exe",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "build": "CMake Build",
+  },
+]
