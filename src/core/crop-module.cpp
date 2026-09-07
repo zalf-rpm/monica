@@ -1158,8 +1158,7 @@ void CropModule::step(double vw_MeanAirTemperature,
                                                                               vw_AtmosphericCO2Concentration,
                                                                               hourlyExtrarad.at(h-3), hourlyExtrarad.at(sunsetH-3),
                                                                               hourlyGlobrad.at(h), hourlyGlobrad.at(sunsetH-3),
-                                                                              vc_GrossPhotosynthesisReference_mol_h, is_daytime,
-                                                                              true);
+                                                                              vc_GrossPhotosynthesisReference_mol_h, is_daytime);
         } else {
           // use reference evapotranspiration from climate file
           vc_ReferenceEvapotranspiration_h = vw_ReferenceEvapotranspiration_h;
@@ -4359,11 +4358,6 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
  * Guidelines for computing crop water requirements. FAO Irrigation and
  * Drainage Paper 56, FAO, Roma
  *
- * @ToDo FS: Some papers apparently report systematic overestimation for this hourly equation when compared to the daily one.
- *           Check if this also happens here, and if so, which equation is more realistic when compared to real world data 
- *           (daily or hourly). Potentially also check the performance of other more recent hourly equations (e.g. the ASCE 
- *           Standardized Reference Evapotranspiration Equation) in comparison.
- * 
  * @param vs_HeightNN Height above sea level
  * @param vw_DewAirTemperature Air dewpoint temperature for the hour (used for vapour pressure calculation if relative humidity is not available (vw_RelativeHumidity <= 0.0))
  * @param vw_RelativeHumidity_h Relative humidity [0...1]
@@ -4377,8 +4371,6 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
  * @param vc_GlobalRadiation_3h_b4_sunseth Global radiation for time period roughly 2-3 hours before sunset (hourlyGlobrad.at(sunsetH-3)
  * @param vc_GrossPhotosynthesisReference_mol_h under well watered conditions [mol m-2 s-1]
  * @param is_daytime [true/false]
- * @param calc_soilHeatflux [true/false] Default is true.
- *                          (For daily calculations however, the soil heat flux is often neglected - so for comparisons, it might be useful to be able to switch it off.)
  * @return Reference evapotranspiration for the hour
  */
 double CropModule::fc_ReferenceEvapotranspiration_h(double vw_DewAirTemperature, double vw_RelativeHumidity_h,
@@ -4387,8 +4379,7 @@ double CropModule::fc_ReferenceEvapotranspiration_h(double vw_DewAirTemperature,
                                                     double vw_AtmosphericCO2Concentration,
                                                     double vc_ExtraterrestrialRadiation_h, double vc_ExtraterrestrialRadiation_3h_b4_sunseth,
                                                     double vc_GlobalRadiation_h, double vc_GlobalRadiation_3h_b4_sunseth,
-                                                    double vc_GrossPhotosynthesisReference_mol_h, bool is_daytime,
-                                                    bool calc_soilHeatflux) {
+                                                    double vc_GrossPhotosynthesisReference_mol_h, bool is_daytime) {
   double vc_AtmosphericPressure;            //[kPA]
   double vc_PsycrometerConstant;            //[kPA °C-1]
   double vc_SaturatedVapourPressure_h;      //[kPA]
@@ -4443,20 +4434,12 @@ double CropModule::fc_ReferenceEvapotranspiration_h(double vw_DewAirTemperature,
   // 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
 
   // Calculation of the aerodynamic resistance
-  vc_AerodynamicResistance = 208.0 / vc_WindSpeed_2m;   // FS: 208.0 is the param assumed by FAO-56 for the reference crop!
+  vc_AerodynamicResistance = 208.0 / vc_WindSpeed_2m;
 
   if (vc_GrossPhotosynthesisReference_mol_h <= 0.0) {
-    vc_StomataResistance = 999999.9; // [s m-1]         // FS: Does this lead to unrealistic base resistance at night for the hourly version?
+    vc_StomataResistance = 999999.9; // [s m-1]
   } else {
 
-    // crop stomata resistance according to Yu et al. 2001 (FS: which Yu et al. 2001 publication?
-    //                                                          - this one https://doi.org/10.1023/A:1012435717205 ? is this related to eq. 1c (which is for gs_CO2 however)?
-    //                                                          - probably not this one: https://doi.org/10.1078/0176-1617-00177)
-    // FS: - this should be for H2O diffusion in order to make sense (ET context and higher resistance to H2O with higher atm. CO2,
-    //       resulting in lower water loss through crop ET), but check again in the actual paper!
-    //     - also, Cs is assumed to be equal to Ca (vw_AtmosphericCO2Concentration) here, which is a rough simplification
-    // @ToDo FS: Check what needs to happen here when moving towards a stomatal conductance coupling approach (also for CO2, not just for H2O)!
-    //           Remember that this here is all about the reference crop stomata resistance (not the actual crop stomata resistance)!
     if (pc_CarboxylationPathway == 1) {
       vc_StomataResistance = // [s m-1]
           (vw_AtmosphericCO2Concentration * (1.0 + vc_SaturationDeficit / pc_SaturationBeta)) /
@@ -4468,22 +4451,9 @@ double CropModule::fc_ReferenceEvapotranspiration_h(double vw_DewAirTemperature,
     }
   }
 
-  vc_SurfaceResistance_h = vc_StomataResistance / 1.44; // FS: FAO-56 assumes 70 [s m-1] surface resistance for the reference crop, which is 100 / 1.44 [s m-1], so the
-                                                        //     single well-illuminated leaf bulk stomatal resistance 100 [s m-1] divided by the active (sunlit) leaf area index
-                                                        //     1.44 comes from the definition of the FAO-56 grass, which has an active (sunlit) leaf area index of 0.5*24*0.12
-                                                        //     (details see eq.5 and Box 5 in Chapter 2 - FAO Penman-Monteith equation -> (Bulk) surface resistance (rs),
-                                                        //     available at https://www.fao.org/4/x0490e/x0490e06.htm#(bulk)%20surface%20resistance%20(rs))
+  vc_SurfaceResistance_h = vc_StomataResistance / 1.44;
 
   // vc_SurfaceResistance_h = vc_StomataResistance / (vc_CropHeight * vc_LeafAreaIndex);
-
-  // vc_SurfaceResistance_h = is_daytime ? 50 : 200;    // FS: Regarding the use of a fixed surface resistance value for hourly time steps, it seems to be better to differentiate
-                                                        //     between daytime (50 [s m-1]) and nighttime (200 [s m-1]) resistances according to Allen et al. 2006
-                                                        //     (https://doi.org/10.1016/j.agwat.2005.03.007). However, due to the vc_GrossPhotosynthesisReference_mol_h dependency 
-                                                        //     implemented in the calculation of vc_StomataResistance, different day and nighttime dynamics should already be
-                                                        //     present in the hourly MONICA-style approach here.
-  // vc_SurfaceResistance_h = is_daytime ? vc_SurfaceResistance_h : 200;  // FS: Should vc_SurfaceResistance_h at night really approach 999999.9 / 1.44, or rather stop at 200.0?
-                                                                          //     In the original daily version, vc_StomataResistance of 999999.9 was only reached in case of no 
-                                                                          //     photosynthesis for the whole day (incl. day- & nighttime)!
 
   // vw_NetRadiation_h = vc_GlobalRadiation_h * (1.0 - pc_ReferenceAlbedo); // [MJ m-2]
 
@@ -4512,12 +4482,12 @@ double CropModule::fc_ReferenceEvapotranspiration_h(double vw_DewAirTemperature,
                                                     (1.35 * vc_RelativeShortwaveRadiation_h - 0.35) *
                                                     (0.34 - 0.14 * sqrt(vc_VapourPressure_h)));
 
-  double soilHeatflux = calc_soilHeatflux ? ((is_daytime) ? 0.1 * vw_NetRadiation_h : 0.5 * vw_NetRadiation_h) : 0.0;  // (eq.45 and eq.46)
+  double soilHeatflux = (is_daytime) ? 0.1 * vw_NetRadiation_h : 0.5 * vw_NetRadiation_h;  // (eq.45 and eq.46)
 
   // Calculation of reference evapotranspiration
   // Penman-Monteith-Method FAO (eq.53)
   vc_ReferenceEvapotranspiration_h = ((0.408 * vc_SaturatedVapourPressureSlope * (vw_NetRadiation_h-soilHeatflux)) +
-                                      (vc_PsycrometerConstant * (37.0 / (vw_MeanAirTemperature_h + 273.0)) *   // 900.0 / 24.0 = 37.5, but FAO-56 hourly uses 37.0
+                                      (vc_PsycrometerConstant * (37. / (vw_MeanAirTemperature_h + 273.0)) *   // 900.0 / 24.0 = 37.5, but FAO-56 hourly uses 37.0
                                        vc_WindSpeed_2m * vc_SaturationDeficit)) / (vc_SaturatedVapourPressureSlope +
                                                                                     vc_PsycrometerConstant * (1.0 +
                                                                                                               (vc_SurfaceResistance_h /

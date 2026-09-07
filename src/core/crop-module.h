@@ -245,8 +245,8 @@ public:
                                           double vw_AtmosphericCO2Concentration,
                                           double vc_ExtraterrestrialRadiation_h, double vc_ExtraterrestrialRadiation_3h_b4_sunseth,
                                           double vc_GlobalRadiation_h, double vc_GlobalRadiation_3h_b4_sunseth,
-                                          double vc_GrossPhotosynthesisReference_mol_h, bool is_daytime,
-                                          bool calc_soilHeatflux=true);
+                                          double vc_GrossPhotosynthesisReference_mol_h,
+                                          bool is_daytime);
 
 
 
