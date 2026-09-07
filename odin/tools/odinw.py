@@ -480,14 +480,70 @@ def _vcpkg_toolchain() -> Path:
     return tc
 
 
+def _cached_cxx_compiler(build_dir: Path) -> str | None:
+    """CMAKE_CXX_COMPILER as recorded in an existing CMakeCache.txt, if any."""
+    cache = build_dir / "CMakeCache.txt"
+    if not cache.is_file():
+        return None
+    for line in cache.read_text(errors="replace").splitlines():
+        if line.startswith("CMAKE_CXX_COMPILER:"):
+            return line.split("=", 1)[1].strip() if "=" in line else None
+    return None
+
+
+def _same_path(a: str | None, b: str | None) -> bool:
+    if not a or not b:
+        return False
+    try:
+        pa, pb = Path(a).resolve(), Path(b).resolve()
+    except OSError:
+        return False
+    return (str(pa).lower() == str(pb).lower()) if IS_WINDOWS else (pa == pb)
+
+
+def _drop_stale_build_dir(build_dir: Path, env: dict) -> None:
+    """Wipe build_dir if it was configured with a DIFFERENT compiler than the one
+    this environment resolves to.
+
+    CMake records an absolute compiler path in CMakeCache.txt and reuses it
+    forever, while the INCLUDE/LIB this script sets come from whichever toolchain
+    `windows_msvc_env` picked THIS time. Configure a directory with one and build
+    it with the other and you get, e.g., system MSVC 14.44 compiling portable
+    14.51's headers, which the STL rejects outright:
+
+        yvals_core.h(921): error C2338: static_assert failed: 'error STL1001:
+        Unexpected compiler version, expected MSVC Compiler 19.50 or newer.'
+
+    That is the shape of it whenever the two entry points disagree - this script
+    versus the shim's own vcbuild.bat, or a machine that gained/lost
+    `pixi run setup-msvc`. Reconfiguring from scratch is the only fix (the cache
+    entry is not meant to be edited), so do it automatically rather than leaving
+    a confusing compiler error.
+    """
+    cached = _cached_cxx_compiler(build_dir)
+    if cached is None:
+        return
+    current = shutil.which("cl" if IS_WINDOWS else "c++", path=env.get("PATH", ""))
+    if current is None or _same_path(cached, current):
+        return
+    print(f"==> {build_dir.name} was configured with a different compiler, reconfiguring", flush=True)
+    print(f"      cached:  {cached}", flush=True)
+    print(f"      current: {current}", flush=True)
+    shutil.rmtree(build_dir, ignore_errors=True)
+
+
 def cmd_capnp_shim(ns: argparse.Namespace) -> int:
     """Build support/capnp/shim_dynamic - the C++ side of the Cap'n Proto bindings.
 
     Deliberately NOT part of `build`: it needs CMake, a C++ compiler and a vcpkg
     checkout, none of which the Odin build otherwise requires, and it changes far
-    less often than the Odin code. support/capnp/shim_dynamic/vcbuild.bat does the
-    same thing with hardcoded paths; this is the portable version, and the one CI
-    should call to produce the static variant for single-binary releases.
+    less often than the Odin code.
+
+    This is the supported entry point for building the shim from this repo, and
+    the one CI should call to produce the static variant for single-binary
+    releases. The shim submodule also carries its own vcbuild.bat, for using that
+    repo standalone; the two share build directories, which is why
+    _drop_stale_build_dir exists.
     """
     if not SHIM_DIR.exists():
         die(
@@ -509,6 +565,7 @@ def cmd_capnp_shim(ns: argparse.Namespace) -> int:
         # into an Odin exe with unresolved _CrtDbgReport.
         build_dir = SHIM_DIR / ("build-static" if variant == "static" else "build")
         config = "Release" if variant == "static" else "Debug"
+        _drop_stale_build_dir(build_dir, env)
         configure = [
             "cmake", "-S", str(SHIM_DIR), "-B", str(build_dir),
             f"-DCMAKE_TOOLCHAIN_FILE={toolchain}",
