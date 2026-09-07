@@ -144,6 +144,56 @@ public:
 
   void addAndDistributeRootBiomassInSoil(double rootBiomass);
 
+/**
+ * @brief intercellular oxygen partial pressure
+ * 
+ * @param vw_MeanAirTemperature
+ * @return Oi
+ */
+  double CropModule::Oi_empirical(double vw_MeanAirTemperature) const;
+
+  /**
+ * @brief intercellular CO2 partial pressure
+ * 
+ * approach to derive intercellular CO2 concentration Ci from Ca seems to be simplified (no stomatal conductance coupling model).
+ * 
+ * @param vw_MeanAirTemperature
+ * @param vw_AtmosphericCO2Concentration
+ * @return Ci
+ */
+  double CropModule::Ci_empirical(double vw_MeanAirTemperature, double vw_AtmosphericCO2Concentration) const;
+
+  /**
+   * @brief helper function to calculate vc_KTkc, vc_KTko, term1 and term2
+   * 
+   * @param vw_MeanAirTemperature 
+   * @return std::tuple<double, double, double, double> consisting of:
+   *  vc_KTkc  Factor needed to account for temperature-dependency of Michaelis-Menten constant for CO2 (photosynthesis method). and also used in CropModule::fc_CropDryMatter method.
+   *  vc_KTko  Factor to account for temperature-dependency of Michaelis-Menten constant for O2.
+   *  term1
+   *  term2
+   */
+  std::tuple<double, double, double, double> CropModule::vc_KTkc_vc_KTko(double vw_MeanAirTemperature) const;
+  struct A_rubisco_results {
+      double vc_AssimilationRate;
+      double vc_AssimilationRateReference;
+      double vc_RadiationUseEfficiency;
+      double vc_RadiationUseEfficiencyReference;
+  };
+  /**
+   * @brief Rubisco-controlled rate of CO2 assimilation (=carboxylation-limited FvCB assimilation rate)
+   * 
+   * kept very close to the original MONICA daily photosyntheisis code for now
+   * 
+   * @param vw_MeanAirTemperature                Temperature used for temperature-dependency of FvCB RuBisCO limitation. For daily photosynthesis, daily mean air temperature is used for now.
+   *                                             For hourly photosynthesis, hourly mean air temperature is used for now (no canopy temperature implemented yet).
+   * @param Cc                                   Chloroplast CO2 partial pressure (=CO2 partial pressure at the carboxylating sites of Rubisco).
+   * @param O                                    Oxygen partial pressure.
+   * @param _cropPhotosynthesisResults           Default Voc::CPData monica::CropModule::_cropPhotosynthesisResults to be altered by the function. Seems to be a helper struct used for debugging?
+   * @return A_rubisco_results (vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference)
+   */
+  A_rubisco_results CropModule::A_rubisco(double vw_MeanAirTemperature, double Cc, double O, Voc::CPData &_cropPhotosynthesisResults) const;
+
   void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                              double vw_MaxAirTemperature,
                              double vw_MinAirTemperature,
@@ -757,12 +807,21 @@ private:
   bool __enable_vernalisation_factor_fix__{false};
 
   Tools::Date _perennialCropDormancyPeriodEndDate;
+
+  // FS: variables to be filled based on disaggregated data within photosynthesis method
+  //     used here to make these variables available within the AGROSIM respiration algorithms and within the CropModule::fc_HeatStressImpact and CropModule::fc_FrostKill methods (outside the photosynthesis method)
+  double vc_PhotoTemperature_{0.0};
+  double vc_NightTemperature_{0.0};
+  double vc_PhotoperiodicDaylength_{0.0};
 };
 
 //#define TEST_HOURLY_OUTPUT
 #ifdef TEST_HOURLY_OUTPUT
 std::ostream& tout(bool closeFile = false);
 #endif
+
+std::ostream& tout(bool closeFile = false); // FS: hourly output data
+
 } // namespace monica
 
 

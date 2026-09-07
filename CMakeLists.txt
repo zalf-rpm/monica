@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 project(Monica)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 message(STATUS "-> Monica")
 
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
@@ -162,6 +164,8 @@ add_library(monica_lib
         src/core/O3-impact.cpp
         src/core/photosynthesis-FvCB.h
         src/core/photosynthesis-FvCB.cpp
+        src/core/photosynthesis-hourly.h
+        src/core/photosynthesis-hourly.cpp
         src/core/soilcolumn.h
         src/core/soilcolumn.cpp
         src/core/soilmoisture.h

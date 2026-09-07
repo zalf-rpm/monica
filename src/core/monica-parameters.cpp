@@ -510,6 +510,7 @@ Errors CultivarParameters::merge(json11::Json j) {
   set_bool_value(pc_Perennial, j, "Perennial");
   set_double_value(pc_MaxAssimilationRate, j, "MaxAssimilationRate");
   set_double_value(pc_LightExtinctionCoefficient, j, "LightExtinctionCoefficient");
+  set_double_value(pc_EmpiricalExtinctionCoeffDiffuse, j, "EmpiricalExtinctionCoeffDiffuse");
   set_double_value(pc_MaxCropHeight, j, "MaxCropHeight");
   set_double_value(pc_ResidueNRatio, j, "ResidueNRatio");
   set_double_value(pc_LT50cultivar, j, "LT50cultivar");
@@ -575,6 +576,7 @@ json11::Json CultivarParameters::to_json() const {
     {"Perennial", pc_Perennial},
     {"MaxAssimilationRate", pc_MaxAssimilationRate},
     {"LightExtinctionCoefficient", pc_LightExtinctionCoefficient},
+    {"EmpiricalExtinctionCoeffDiffuse", pc_EmpiricalExtinctionCoeffDiffuse},
     {"MaxCropHeight", J11Array{pc_MaxCropHeight, "m"}},
     {"ResidueNRatio", pc_ResidueNRatio},
     {"LT50cultivar", pc_LT50cultivar},
@@ -1630,6 +1632,14 @@ Errors CropModuleParameters::merge(json11::Json j) {
   set_bool_value(__enable_Phenology_WangEngelTemperatureResponse__, j,
                  "__enable_Phenology_WangEngelTemperatureResponse__");
   set_bool_value(__enable_hourly_FvCB_photosynthesis__, j, "__enable_hourly_FvCB_photosynthesis__");
+  set_bool_value(__enable_hourly_photosynthesis__, j, "__enable_hourly_photosynthesis__");
+  set_bool_value(__enable_hourly_respiration__, j, "__enable_hourly_respiration__");
+  set_bool_value(__enable_hourly_outputs__, j, "__enable_hourly_outputs__");
+  if (!j["__hourly_in_data__"].is_null()) {
+    __hourly_in_data__ = j["__hourly_in_data__"].object_items();
+  }
+  set_double_value(__longitude__, j, "__longitude__");
+  set_double_value(__UTC_offset__, j, "__UTC_offset__");
   set_bool_value(__enable_T_response_leaf_expansion__, j, "__enable_T_response_leaf_expansion__");
   set_bool_value(__disable_daily_root_biomass_to_soil__, j, "__disable_daily_root_biomass_to_soil__");
   set_bool_value(__enable_vernalisation_factor_fix__, j, "__enable_vernalisation_factor_fix__");
@@ -1672,6 +1682,12 @@ json11::Json CropModuleParameters::to_json() const {
     {"__enable_Phenology_WangEngelTemperatureResponse__", __enable_Phenology_WangEngelTemperatureResponse__},
     {"__enable_Photosynthesis_WangEngelTemperatureResponse__", __enable_Photosynthesis_WangEngelTemperatureResponse__},
     {"__enable_hourly_FvCB_photosynthesis__", __enable_hourly_FvCB_photosynthesis__},
+    {"__enable_hourly_photosynthesis__", __enable_hourly_photosynthesis__},
+    {"__enable_hourly_respiration__", __enable_hourly_respiration__},
+    {"__enable_hourly_outputs__", __enable_hourly_outputs__},
+    {"__hourly_in_data__", __hourly_in_data__},
+    {"__longitude__", __longitude__},
+    {"__UTC_offset__", __UTC_offset__},
     {"__enable_T_response_leaf_expansion__", __enable_T_response_leaf_expansion__},
     {"__disable_daily_root_biomass_to_soil__", __disable_daily_root_biomass_to_soil__},
     {"__enable_vernalisation_factor_fix__", __enable_vernalisation_factor_fix__}

@@ -192,11 +192,13 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   std::string pc_Description;
   bool pc_Perennial{false};
   //std::string pc_PermanentCultivarId;
-  double pc_MaxAssimilationRate{0.0};
-  double pc_LightExtinctionCoefficient{0.8};
-  double pc_MaxCropHeight{0.0};
-  double pc_ResidueNRatio{0.0};
-  double pc_LT50cultivar{0.0};
+  double pc_MaxAssimilationRate{ 0.0 };
+  double pc_LightExtinctionCoefficient{ 0.8 };
+  double pc_EmpiricalExtinctionCoeffDiffuse{ -1.0 };  //FS: The default value -1.0 does not make sense and should cause an error in the model if no crop-specific value is provided in the json (this parameter has to be specified by the user in the file, no default allowed).
+  // double pc_EmpiricalExtinctionCoeffDiffuse{ 0.0 }; //param for hourly SUCROS87-style photosynthesis model //FS: maybe as growth stage dependent vector<double> pc_EmpiricalExtinctionCoeffDiffuse{ 0., 0., 0., 0., 0., 0., 0. } in the future
+  double pc_MaxCropHeight{ 0.0 };
+  double pc_ResidueNRatio{ 0.0 };
+  double pc_LT50cultivar{ 0.0 };
 
   double pc_CropHeightP1{0.0};
   double pc_CropHeightP2{0.0};
@@ -745,12 +747,20 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool pc_AdjustRootDepthForSoilProps{true};
   std::vector<int> pc_TimeUnderAnoxiaThreshold{4, 4, 4, 4, 4, 4, 4};
 
-  bool __enable_Phenology_WangEngelTemperatureResponse__{false};
-  bool __enable_Photosynthesis_WangEngelTemperatureResponse__{false};
-  bool __enable_hourly_FvCB_photosynthesis__{false};
-  bool __enable_T_response_leaf_expansion__{false};
-  bool __disable_daily_root_biomass_to_soil__{false};
-  bool __enable_vernalisation_factor_fix__{false};
+  bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
+  bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
+  bool __enable_hourly_FvCB_photosynthesis__{ false };
+  
+  bool __enable_hourly_photosynthesis__{ false }; //FS: should be false by default
+  bool __enable_hourly_respiration__{ false };    //FS: should be false by default
+  bool __enable_hourly_outputs__{ false };        //FS: should be false by default
+  json11::Json::object __hourly_in_data__;        //FS: quick & dirty option to read in hourly irradiance and temperature data dictionary style
+  double __longitude__{ 0.0 };                    //FS: longitude required for hourly solar position calculations using real world time (required e.g. for consistency if real world hourly data is read in)
+  double __UTC_offset__{ 0.0 };                   //FS: UTC offset required for hourly solar position calculations using real world time (required e.g. for consistency if real world hourly data is read in)
+  
+  bool __enable_T_response_leaf_expansion__{ false };
+  bool __disable_daily_root_biomass_to_soil__{ false };
+  bool __enable_vernalisation_factor_fix__{ false };
   bool __enable_PASW_root_penetration__{false};
 
   bool isIntercropping{false};
