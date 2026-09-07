@@ -1707,7 +1707,7 @@ ostream &monica::tout(bool closeFile) { // @ToDO FS: test this
 }
 
 
-
+#ifdef TEST_HOURLY_OUTPUT
 #include <fstream>
 ostream &monica::tout(bool closeFile)
 {
