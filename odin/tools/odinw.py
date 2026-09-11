@@ -466,8 +466,27 @@ def cmd_build(ns: argparse.Namespace) -> int:
             # variable reference (empty, since nothing sets $ORIGIN) before
             # ever reaching ld. Matching Odin's own escaping here is what
             # actually survives that.
+            #
+            # --sysroot=/ : without it, this link uses conda's own bundled
+            # sysroot_linux-64 (pulled in by the `clang` dependency - see
+            # pixi.toml), which only declares glibc symbol versions up to
+            # 2.28. cmd_capnp_shim builds the shim with cmake's own default
+            # (system) compiler - pixi's conda clang has no matching C++
+            # standard library headers installed, only the runtime .so - so
+            # on any host with a newer glibc (2.32+, i.e. most current
+            # distros) the resulting .so references symbol versions conda's
+            # sysroot has no version node for, and the link fails with
+            # "undefined reference to `pthread_create@GLIBC_2.34`" and
+            # similar. --sysroot=/ makes this one link step (just these two
+            # capnp targets) resolve against the actual host's glibc instead
+            # - the same one the shim was already built against - trading
+            # the reproducible-across-hosts baseline the plain Odin/C
+            # binaries get for a binary that actually links. The two capnp
+            # binaries inherit whatever glibc compatibility the shim itself
+            # already has (forwards-compatible: fine to run on this host or
+            # newer, not on an older one).
             shim_dir = art["dll_lib"].parent.resolve()
-            args.append(f"-extra-linker-flags:-L{shim_dir} -Wl,-rpath,\\$ORIGIN")
+            args.append(f"-extra-linker-flags:-L{shim_dir} -Wl,-rpath,\\$ORIGIN --sysroot=/")
         args += ns.odin_args
         if (rc := run_odin(args, ROOT)) != 0:
             return rc
@@ -610,6 +629,30 @@ def cmd_capnp_shim(ns: argparse.Namespace) -> int:
         print(f"==> {variant}: {produced}{'' if produced.exists() else '  (MISSING)'}")
     return 0
 
+
+# Directories a from-scratch rebuild should never need to inspect. Not
+# .odin/ (the bootstrapped Odin compiler itself - large download, never the
+# source of a stale-artifact problem) and not odin/msvc or downloads/ (the
+# fetched Windows toolchain, gated behind its own license-acceptance step -
+# see cmd_setup_msvc - so cleaning it should be that same deliberate choice,
+# not a side effect of a generic clean).
+CLEAN_DIRS = [
+    BUILD_DIR,
+    SHIM_DIR / "build",
+    SHIM_DIR / "build-static",
+]
+
+
+def cmd_clean(ns: argparse.Namespace) -> int:
+    for d in CLEAN_DIRS:
+        if d.exists():
+            print(f"==> removing {d}")
+            shutil.rmtree(d, ignore_errors=True)
+        else:
+            print(f"==> {d} already absent")
+    return 0
+
+
 def cmd_test(ns: argparse.Namespace) -> int:
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     # cwd MUST be the repo root - see this file's module docstring.
@@ -729,6 +772,12 @@ def main() -> int:
     )
     p.add_argument("--all", action="store_true", help="build both variants")
     p.set_defaults(fn=cmd_capnp_shim)
+
+    p = sub.add_parser(
+        "clean",
+        help="remove build/ and the Cap'n Proto shim's CMake build dirs",
+    )
+    p.set_defaults(fn=cmd_clean)
 
     p = sub.add_parser("test", help="run the odin/tests unit suite")
     p.set_defaults(fn=cmd_test)
