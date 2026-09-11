@@ -341,3 +341,45 @@ Not renamed this round: `soilColumn`, `modParams`, `siteParams`, `envParams`, `c
 | `volumeMatrixOld` | `volume_matrix_old` |
 
 Not renamed: `params`, `solution` (already lowercase). Full camelCase->snake_case pass, unlike the vX_-prefix structs above.
+
+## `monica::MonicaModel` -> `core.Monica_Model` (odin/monica/core/monica_model.odin)
+
+| C++ (`monica-model.h`) | Odin |
+| --- | --- |
+| `clearCropUponNextDay` | `clear_crop_upon_next_day` |
+| `climateData` | `climate_data` |
+| `cropPs` | `crop_ps` |
+| `cultivationMethodCount` | `cultivation_method_count` |
+| `currentCropModule` | `current_crop_module` |
+| `currentEvents` | `current_events` |
+| `currentStepDate` | `current_step_date` |
+| `dailySumFertiliser` | `daily_sum_fertiliser` |
+| `dailySumIrrigationWater` | `daily_sum_irrigation_water` |
+| `dailySumOrganicFertilizerDM` | `daily_sum_organic_fertilizer_dm` |
+| `dailySumOrgFertiliser` | `daily_sum_org_fertiliser` |
+| `envPs` | `env_ps` |
+| `groundwaterInformation` | `groundwater_information` |
+| `humusBalanceCarryOver` | `humus_balance_carry_over` |
+| `optCarbonExportedResidues` | `opt_carbon_exported_residues` |
+| `optCarbonReturnedResidues` | `opt_carbon_returned_residues` |
+| `p_accuHeatStress` | `p_accu_heat_stress` |
+| `p_accuNStress` | `p_accu_n_stress` |
+| `p_accuOxygenStress` | `p_accu_oxygen_stress` |
+| `p_accuWaterStress` | `p_accu_water_stress` |
+| `p_daysWithCrop` | `p_days_with_crop` |
+| `previousDaysEvents` | `previous_days_events` |
+| `simPs` | `sim_ps` |
+| `sitePs` | `site_ps` |
+| `soilColumn` | `soil_column` |
+| `soilMoisture` | `soil_moisture` |
+| `soilOrganic` | `soil_organic` |
+| `soilTemperature` | `soil_temperature` |
+| `soilTransport` | `soil_transport` |
+| `sumFertiliser` | `sum_fertiliser` |
+| `sumOrganicFertilizerDM` | `sum_organic_fertilizer_dm` |
+| `sumOrgFertiliser` | `sum_org_fertiliser` |
+| `vs_GroundwaterDepth` | `vs_groundwater_depth` |
+| `vw_AtmosphericCO2Concentration` | `vw_atmospheric_co2_concentration` |
+| `vw_AtmosphericO3Concentration` | `vw_atmospheric_o3_concentration` |
+
+Full camelCase->snake_case pass, no prefix stripped (p_/vw_/vs_ prefixes kept, rest snake_cased).

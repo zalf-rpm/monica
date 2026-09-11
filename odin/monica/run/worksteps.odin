@@ -130,51 +130,51 @@ sowing_apply :: proc(
 ) -> bool {
 	workstep_apply_common(ws, model)
 
-	model.p_daysWithCrop = 0
-	model.p_accuNStress = 0.0
-	model.p_accuWaterStress = 0.0
-	model.p_accuHeatStress = 0.0
-	model.p_accuOxygenStress = 0.0
+	model.p_days_with_crop = 0
+	model.p_accu_n_stress = 0.0
+	model.p_accu_water_stress = 0.0
+	model.p_accu_heat_stress = 0.0
+	model.p_accu_oxygen_stress = 0.0
 
 	if s.isValid {
-		model.cultivationMethodCount += 1
+		model.cultivation_method_count += 1
 
-		model.currentCropModule = nil
+		model.current_crop_module = nil
 		cm := new(core.Crop_Module, allocator)
 		cm^ = core.make_crop_module(
-			&model.soilColumn,
+			&model.soil_column,
 			&s.cropParams,
 			&s.residueParams,
-			&model.sitePs,
-			&model.cropPs,
-			&model.simPs,
+			&model.site_ps,
+			&model.crop_ps,
+			&model.sim_ps,
 			core.monica_model_fire_event_cb,
 			core.monica_model_add_organic_matter_cb,
 			core.monica_model_get_snow_depth_cb,
 			nil,
 			allocator,
 		)
-		model.currentCropModule = cm
+		model.current_crop_module = cm
 
 		if s.separatePerennialCropParams != nil {
-			model.currentCropModule.perennial_crop_params = new(p.Crop_Parameters, allocator)
-			model.currentCropModule.perennial_crop_params^ = core.clone_crop_parameters(
+			model.current_crop_module.perennial_crop_params = new(p.Crop_Parameters, allocator)
+			model.current_crop_module.perennial_crop_params^ = core.clone_crop_parameters(
 				s.separatePerennialCropParams^,
 				allocator,
 			)
 		}
 
-		core.soil_transport_put_crop(&model.soilTransport, model.currentCropModule)
-		core.put_crop(&model.soilColumn, model.currentCropModule)
-		model.soilMoisture.crop_module = model.currentCropModule
-		model.soilOrganic.crop_module = model.currentCropModule
+		core.soil_transport_put_crop(&model.soil_transport, model.current_crop_module)
+		core.put_crop(&model.soil_column, model.current_crop_module)
+		model.soil_moisture.crop_module = model.current_crop_module
+		model.soil_organic.crop_module = model.current_crop_module
 
-		if model.simPs.p_UseNMinMineralFertilisingMethod &&
-		   !model.currentCropModule.crop_params.cultivarParams.winterCrop {
-			core.clear_top_dressing_params(&model.soilColumn)
+		if model.sim_ps.p_UseNMinMineralFertilisingMethod &&
+		   !model.current_crop_module.crop_params.cultivarParams.winterCrop {
+			core.clear_top_dressing_params(&model.soil_column)
 			fert_amount := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 				model,
-				model.simPs.p_NMinFertiliserPartition,
+				model.sim_ps.p_NMinFertiliserPartition,
 				p.NMin_Crop_Parameters {
 					samplingDepth = s.cropParams.speciesParams.pc_SamplingDepth,
 					nTarget = s.cropParams.speciesParams.pc_TargetNSamplingDepth,
@@ -186,10 +186,10 @@ sowing_apply :: proc(
 	}
 
 	// FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
-	if model.simPs.dualKcMethod && model.currentCropModule != nil {
-		model.currentCropModule.kcb_ini = s.initialKcb
+	if model.sim_ps.dualKcMethod && model.current_crop_module != nil {
+		model.current_crop_module.kcb_ini = s.initialKcb
 	}
-	model.currentEvents["Sowing"] = true
+	model.current_events["Sowing"] = true
 
 	return true
 }
@@ -250,7 +250,7 @@ transplant_apply :: proc(
 ) -> bool {
 	sowing_apply(&t.sowing, ws, model, allocator)
 
-	cropModule := model.currentCropModule
+	cropModule := model.current_crop_module
 	if cropModule == nil {
 		return false
 	}
@@ -266,10 +266,10 @@ transplant_apply :: proc(
 		t.postTransplantDelay,
 	)
 
-	if model.simPs.dualKcMethod {
+	if model.sim_ps.dualKcMethod {
 		cropModule.kcb_ini = t.initialKcb
 	}
-	model.currentEvents["Transplant"] = true
+	model.current_events["Transplant"] = true
 
 	return true
 }
@@ -351,11 +351,11 @@ automatic_sowing_apply :: proc(
 	model: ^core.Monica_Model,
 	allocator := context.allocator,
 ) -> bool {
-	currentDate := model.currentStepDate
+	currentDate := model.current_step_date
 	as.sowingDate = currentDate
 
 	sowing_apply(&as.sowing, ws, model, allocator)
-	model.currentEvents["AutomaticSowing"] = true
+	model.current_events["AutomaticSowing"] = true
 	as.cropSeeded = true
 	as.inSowingRange = false
 
@@ -381,9 +381,9 @@ automatic_sowing_avg_soil_temp_fn :: proc(model: ^core.Monica_Model) -> f64 {
 	as := g_current_automatic_sowing
 	avgSoilTemp := 0.0
 	i := 0
-	size := core.get_layer_number_for_depth(&model.soilColumn, as.soilDepthForAveraging) + 1
+	size := core.get_layer_number_for_depth(&model.soil_column, as.soilDepthForAveraging) + 1
 	for ; i < size; i += 1 {
-		avgSoilTemp += model.soilTemperature.soil_column.layers[i].soil_temperature
+		avgSoilTemp += model.soil_temperature.soil_column.layers[i].soil_temperature
 	}
 	return avgSoilTemp / f64(i)
 }
@@ -411,7 +411,7 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 		return false
 	}
 
-	currentDate := model.currentStepDate
+	currentDate := model.current_step_date
 
 	if !as.inSowingRange && d.lt(currentDate, as.absEarliestDate) {
 		return false
@@ -434,7 +434,7 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 		}
 	}
 
-	cd := model.climateData
+	cd := model.climate_data
 	currentCd := cd[len(cd) - 1]
 
 	avg :: proc(cd: [dynamic]map[clim.ACD]f64, acd: clim.ACD, daysInTempWindow: int) -> f64 {
@@ -594,7 +594,7 @@ harvest_apply :: proc(
 ) -> bool {
 	workstep_apply_common(ws, model)
 
-	if model.currentCropModule != nil {
+	if model.current_crop_module != nil {
 		core.monica_model_harvest_current_crop(
 			model,
 			h.exported,
@@ -603,7 +603,7 @@ harvest_apply :: proc(
 			h.incorporateIntoLayerNo - 1,
 			allocator,
 		)
-		model.currentEvents["Harvest"] = true
+		model.current_events["Harvest"] = true
 	}
 
 	return true
@@ -654,7 +654,7 @@ automatic_harvest_apply :: proc(
 ) -> bool {
 	harvest_apply(&ah.harvest, ws, model, allocator)
 
-	model.currentEvents["AutomaticHarvest"] = true
+	model.current_events["AutomaticHarvest"] = true
 	ah.cropHarvested = true
 
 	return true
@@ -667,16 +667,16 @@ automatic_harvest_condition :: proc(
 ) -> bool {
 	conditionMet := false
 
-	cg := model.currentCropModule
+	cg := model.current_crop_module
 	// got a crop and not yet harvested
 	if cg != nil && !ah.cropHarvested {
 		conditionMet =
-			d.ge(model.currentStepDate, ah.absLatestDate) ||
+			d.ge(model.current_step_date, ah.absLatestDate) ||
 			(ah.harvestTime == "maturity" &&
 					core.maturity_reached(cg) &&
 					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&// harvest after or at latest date
 					is_precipitation_ok(
-						model.climateData, // has maturity been reached// check soil moisture
+						model.climate_data, // has maturity been reached// check soil moisture
 						ah.max3dayPrecipSum,
 						ah.maxCurrentDayPrecipSum,
 					)) // check precipitation
@@ -818,14 +818,14 @@ cutting_merge :: proc(c: ^Cutting_Data, j: jx.Value, allocator := context.alloca
 cutting_apply :: proc(c: ^Cutting_Data, ws: ^Workstep, model: ^core.Monica_Model) -> bool {
 	workstep_apply_common(ws, model)
 
-	assert(model.currentCropModule != nil)
+	assert(model.current_crop_module != nil)
 	core.apply_cutting(
-		model.currentCropModule,
+		model.current_crop_module,
 		c.organId2cuttingSpec,
 		c.organId2exportFraction,
 		c.cutMaxAssimilationRateFraction,
 	)
-	model.currentEvents["Cutting"] = true
+	model.current_events["Cutting"] = true
 
 	return true
 }
@@ -864,7 +864,7 @@ mineral_fertilization_apply :: proc(
 ) -> bool {
 	workstep_apply_common(ws, model)
 	core.monica_model_apply_mineral_fertiliser(model, mf.partition, mf.amount)
-	model.currentEvents["MineralFertilization"] = true
+	model.current_events["MineralFertilization"] = true
 	return true
 }
 
@@ -914,18 +914,18 @@ n_demand_fertilization_apply :: proc(
 ) -> bool {
 	workstep_apply_common(ws, model)
 
-	rd := model.currentCropModule.rooting_depth_m
+	rd := model.current_crop_module.rooting_depth_m
 	appliedAmount := core.apply_mineral_fertiliser_via_n_demand(
-		&model.soilColumn,
+		&model.soil_column,
 		nd.partition,
 		rd < nd.depth ? rd : nd.depth,
 		nd.Ndemand,
 	)
-	model.dailySumFertiliser += appliedAmount
+	model.daily_sum_fertiliser += appliedAmount
 	nd.appliedFertilizer = true
 	// record date of application until next reinit
-	ws.date = model.currentStepDate
-	model.currentEvents["NDemandFertilization"] = true
+	ws.date = model.current_step_date
+	model.current_events["NDemandFertilization"] = true
 
 	return true
 }
@@ -938,7 +938,7 @@ n_demand_fertilization_condition :: proc(
 ) -> bool {
 	conditionMet := false
 
-	cg := model.currentCropModule
+	cg := model.current_crop_module
 	if cg != nil && !nd.appliedFertilizer {
 		currStage := cg.developmental_stage + 1
 		conditionMet = d.is_valid(ws.date) || currStage == nd.stage // reached the requested stage
@@ -1011,7 +1011,7 @@ organic_fertilization_apply :: proc(
 		of.incorporation,
 		of.incorporateIntoLayerNo - 1,
 	)
-	model.currentEvents["OrganicFertilization"] = true
+	model.current_events["OrganicFertilization"] = true
 	return true
 }
 
@@ -1045,7 +1045,7 @@ tillage_merge :: proc(t: ^Tillage_Data, j: jx.Value) -> tl.Errors {
 tillage_apply :: proc(t: ^Tillage_Data, ws: ^Workstep, model: ^core.Monica_Model) -> bool {
 	workstep_apply_common(ws, model)
 	core.monica_model_apply_tillage(model, t.depth)
-	model.currentEvents["Tillage"] = true
+	model.current_events["Tillage"] = true
 	return true
 }
 
@@ -1083,11 +1083,11 @@ irrigation_apply :: proc(i: ^Irrigation_Data, ws: ^Workstep, model: ^core.Monica
 	// FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for
 	// today's ET calculation. LIMITATION: Auto-irrigation uses sim.json params
 	// or defaults (fw=1.0, isDrip=false).
-	if model.simPs.dualKcMethod {
-		model.soilMoisture.irrig_fw_event = i.params.fw
-		model.soilMoisture.irrig_is_drip_event = i.params.isDripIrrigation
+	if model.sim_ps.dualKcMethod {
+		model.soil_moisture.irrig_fw_event = i.params.fw
+		model.soil_moisture.irrig_is_drip_event = i.params.isDripIrrigation
 	}
-	model.currentEvents["Irrigation"] = true
+	model.current_events["Irrigation"] = true
 
 	return true
 }
@@ -1151,12 +1151,12 @@ automatic_irrigation_apply :: proc(
 	}
 
 	irrigationTriggered, irrigationAmount := core.apply_irrigation_via_trigger(
-		&model.soilColumn,
+		&model.soil_column,
 		&ai.params,
 	)
 	if irrigationTriggered {
-		model.currentEvents["AutomaticIrrigation"] = true
-		model.soilOrganic.irrigation_amount += irrigationAmount
+		model.current_events["AutomaticIrrigation"] = true
+		model.soil_organic.irrigation_amount += irrigationAmount
 		core.monica_model_add_daily_sum_irrigation_water(model, irrigationAmount)
 	}
 
@@ -1174,7 +1174,7 @@ automatic_irrigation_condition :: proc(
 
 	// meet the correct date range
 	dateConditionMet := true
-	date := model.currentStepDate
+	date := model.current_step_date
 	if d.is_valid(ai.absStartDate) && d.is_valid(ai.absEndDate) {
 		dateConditionMet = d.ge(date, ai.absStartDate) && d.le(date, ai.absEndDate)
 		if d.gt(date, ai.absEndDate) {
@@ -1194,7 +1194,7 @@ automatic_irrigation_condition :: proc(
 
 	// meet the correct crop stage
 	cropConditionMet := dateConditionMet
-	cg := model.currentCropModule
+	cg := model.current_crop_module
 	if cg != nil && ai.irrigateCrop {
 		ai.cropPlanted = true
 		stage := cg.developmental_stage
@@ -1392,7 +1392,7 @@ set_value_apply :: proc(s: ^Set_Value_Data, ws: ^Workstep, model: ^core.Monica_M
 		mio.oid_set_value(model, s.oid, v)
 	}
 
-	model.currentEvents["SetValue"] = true
+	model.current_events["SetValue"] = true
 
 	return true
 }

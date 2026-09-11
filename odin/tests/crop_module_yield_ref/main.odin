@@ -225,28 +225,28 @@ main :: proc() {
 		load(monica_parameters_dir, "crop-residues/wheat.json", a),
 	)
 
-	g_soil_moisture = &model.soilMoisture
-	g_soil_organic = &model.soilOrganic
+	g_soil_moisture = &model.soil_moisture
+	g_soil_organic = &model.soil_organic
 
 	cm := core.make_crop_module(
-		&model.soilColumn,
+		&model.soil_column,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&model.sitePs,
-		&model.cropPs,
-		&model.simPs,
+		&model.site_ps,
+		&model.crop_ps,
+		&model.sim_ps,
 		no_fire_event,
 		real_add_organic_matter,
 		real_get_snow_depth,
 		nil,
 		a,
 	)
-	model.currentCropModule = &cm
+	model.current_crop_module = &cm
 	g_residue_params = &cm.residue_params.base
 
-	model.soilMoisture.crop_module = &cm
-	model.soilOrganic.crop_module = &cm
-	model.soilTransport.cropModule = &cm
+	model.soil_moisture.crop_module = &cm
+	model.soil_organic.crop_module = &cm
+	model.soil_transport.cropModule = &cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -288,16 +288,16 @@ main :: proc() {
 		et0 := -1.0
 
 		core.soil_temperature_step(
-			&model.soilTemperature,
+			&model.soil_temperature,
 			tmin,
 			tmax,
 			globrad,
 			cm.soil_coverage,
-			model.soilMoisture.snow_component.snow_depth,
-			model.soilMoisture.frost_component.temperature_under_snow,
+			model.soil_moisture.snow_component.snow_depth,
+			model.soil_moisture.frost_component.temperature_under_snow,
 		)
 		core.soil_moisture_step(
-			&model.soilMoisture,
+			&model.soil_moisture,
 			vs_GroundwaterDepth,
 			precip,
 			tmax,
@@ -305,11 +305,11 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			model.envPs.p_WindSpeedHeight,
+			model.env_ps.p_WindSpeedHeight,
 			globrad,
 			julday,
 			et0,
-			model.simPs.dualKcMethod,
+			model.sim_ps.dualKcMethod,
 		)
 		core.crop_module_step(
 			&cm,
@@ -321,15 +321,15 @@ main :: proc() {
 			current_date,
 			(relhumid / 100.0),
 			wind,
-			model.envPs.p_WindSpeedHeight,
+			model.env_ps.p_WindSpeedHeight,
 			ATM_CO2,
 			ATM_O3,
 			precip,
 			-1.0,
 			a,
 		)
-		core.soil_organic_step(&model.soilOrganic, tavg, precip, wind)
-		core.soil_transport_step(&model.soilTransport)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
+		core.soil_transport_step(&model.soil_transport)
 		free_all(context.temp_allocator)
 	}
 

@@ -43,15 +43,15 @@ dump_model_harvest :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Mode
 	tr.dump(
 		t,
 		strings.concatenate({path, ".optCarbonExportedResidues"}),
-		model.optCarbonExportedResidues,
+		model.opt_carbon_exported_residues,
 	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".optCarbonReturnedResidues"}),
-		model.optCarbonReturnedResidues,
+		model.opt_carbon_returned_residues,
 	)
-	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humusBalanceCarryOver)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clearCropUponNextDay)
+	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humus_balance_carry_over)
+	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
 }
 
 dump_soil_organic_top3 :: proc(t: ^tr.Tracer, path: string, so: ^core.Soil_Organic) {
@@ -156,28 +156,28 @@ main :: proc() {
 		load(monica_parameters_dir, "crop-residues/wheat.json", a),
 	)
 
-	g_soil_moisture = &model.soilMoisture
-	g_soil_organic = &model.soilOrganic
+	g_soil_moisture = &model.soil_moisture
+	g_soil_organic = &model.soil_organic
 
 	cm := core.make_crop_module(
-		&model.soilColumn,
+		&model.soil_column,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&model.sitePs,
-		&model.cropPs,
-		&model.simPs,
+		&model.site_ps,
+		&model.crop_ps,
+		&model.sim_ps,
 		no_fire_event,
 		real_add_organic_matter,
 		real_get_snow_depth,
 		nil,
 		a,
 	)
-	model.currentCropModule = &cm
+	model.current_crop_module = &cm
 	g_residue_params = &cm.residue_params.base
 
-	model.soilMoisture.crop_module = &cm
-	model.soilOrganic.crop_module = &cm
-	model.soilTransport.cropModule = &cm
+	model.soil_moisture.crop_module = &cm
+	model.soil_organic.crop_module = &cm
+	model.soil_transport.cropModule = &cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -219,16 +219,16 @@ main :: proc() {
 		et0 := -1.0
 
 		core.soil_temperature_step(
-			&model.soilTemperature,
+			&model.soil_temperature,
 			tmin,
 			tmax,
 			globrad,
 			cm.soil_coverage,
-			model.soilMoisture.snow_component.snow_depth,
-			model.soilMoisture.frost_component.temperature_under_snow,
+			model.soil_moisture.snow_component.snow_depth,
+			model.soil_moisture.frost_component.temperature_under_snow,
 		)
 		core.soil_moisture_step(
-			&model.soilMoisture,
+			&model.soil_moisture,
 			vs_GroundwaterDepth,
 			precip,
 			tmax,
@@ -236,11 +236,11 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			model.envPs.p_WindSpeedHeight,
+			model.env_ps.p_WindSpeedHeight,
 			globrad,
 			julday,
 			et0,
-			model.simPs.dualKcMethod,
+			model.sim_ps.dualKcMethod,
 		)
 		core.crop_module_step(
 			&cm,
@@ -252,22 +252,22 @@ main :: proc() {
 			current_date,
 			(relhumid / 100.0),
 			wind,
-			model.envPs.p_WindSpeedHeight,
+			model.env_ps.p_WindSpeedHeight,
 			ATM_CO2,
 			ATM_O3,
 			precip,
 			-1.0,
 			a,
 		)
-		core.soil_organic_step(&model.soilOrganic, tavg, precip, wind)
-		core.soil_transport_step(&model.soilTransport)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
+		core.soil_transport_step(&model.soil_transport)
 		free_all(context.temp_allocator)
 	}
 
 	t := tr.make_tracer(os.to_stream(os.stdout), a)
 	defer tr.destroy_tracer(&t)
 
-	model.sumOrganicFertilizerDM = 500.0
+	model.sum_organic_fertilizer_dm = 500.0
 
 	// scenario 0: harvestCurrentCrop, exported=true, empty spec, old default behavior
 	tr.set_day(&t, 0)
@@ -280,7 +280,7 @@ main :: proc() {
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
 	dump_model_harvest(&t, "model", model)
-	dump_soil_organic_top3(&t, "so", &model.soilOrganic)
+	dump_soil_organic_top3(&t, "so", &model.soil_organic)
 
 	// scenario 1: harvestCurrentCrop, exported=true, empty spec, optCarbonConservation
 	tr.set_day(&t, 1)
@@ -297,7 +297,7 @@ main :: proc() {
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 1, a)
 	}
 	dump_model_harvest(&t, "model", model)
-	dump_soil_organic_top3(&t, "so", &model.soilOrganic)
+	dump_soil_organic_top3(&t, "so", &model.soil_organic)
 
 	// scenario 2: same as 1 but cropUsage=greenManure
 	tr.set_day(&t, 2)
@@ -314,7 +314,7 @@ main :: proc() {
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
 	dump_model_harvest(&t, "model", model)
-	dump_soil_organic_top3(&t, "so", &model.soilOrganic)
+	dump_soil_organic_top3(&t, "so", &model.soil_organic)
 
 	// scenario 3: detailed spec covering organs 1 (leaf) and 3 (fruit)
 	tr.set_day(&t, 3)
@@ -336,7 +336,7 @@ main :: proc() {
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
 	dump_model_harvest(&t, "model", model)
-	dump_soil_organic_top3(&t, "so", &model.soilOrganic)
+	dump_soil_organic_top3(&t, "so", &model.soil_organic)
 
 	// scenario 4: exported=false, empty spec - the "total plant" else-branch
 	tr.set_day(&t, 4)
@@ -349,11 +349,11 @@ main :: proc() {
 		core.monica_model_harvest_current_crop(model, false, spec, ocmd, 0, a)
 	}
 	dump_model_harvest(&t, "model", model)
-	dump_soil_organic_top3(&t, "so", &model.soilOrganic)
+	dump_soil_organic_top3(&t, "so", &model.soil_organic)
 
 	// scenario 5: incorporateCurrentCrop
 	tr.set_day(&t, 5)
 	core.monica_model_incorporate_current_crop(model, a)
 	dump_model_harvest(&t, "model", model)
-	dump_soil_organic_top3(&t, "so", &model.soilOrganic)
+	dump_soil_organic_top3(&t, "so", &model.soil_organic)
 }

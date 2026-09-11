@@ -484,46 +484,46 @@ parse_output_ids :: proc(
 
 @(private)
 of_cm_count :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.i(model.cultivationMethodCount)
+	return jx.i(model.cultivation_method_count)
 }
 
 @(private)
 of_date :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.s(d.to_iso_date_string(model.currentStepDate))
+	return jx.s(d.to_iso_date_string(model.current_step_date))
 }
 
 @(private)
 of_year :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.i(d.year(model.currentStepDate))
+	return jx.i(d.year(model.current_step_date))
 }
 
 @(private)
 of_crop :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	if model.currentCropModule != nil {
-		return jx.s(p.crop_name(&model.currentCropModule.crop_params, context.allocator))
+	if model.current_crop_module != nil {
+		return jx.s(p.crop_name(&model.current_crop_module.crop_params, context.allocator))
 	}
 	return jx.s("")
 }
 
 @(private)
 of_stage :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	if model.currentCropModule != nil {
-		return jx.i(model.currentCropModule.developmental_stage + 1)
+	if model.current_crop_module != nil {
+		return jx.i(model.current_crop_module.developmental_stage + 1)
 	}
 	return jx.i(0)
 }
 
 @(private)
 of_stage_set :: proc(model: ^core.Monica_Model, oid: OId, value: jx.Value) {
-	if jx.is_number(value) && model.currentCropModule != nil {
-		core.set_stage(model.currentCropModule, max(0, jx.int_value_of(value) - 1))
+	if jx.is_number(value) && model.current_crop_module != nil {
+		core.set_stage(model.current_crop_module, max(0, jx.int_value_of(value) - 1))
 	}
 }
 
 @(private)
 of_ab_biom :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	if model.currentCropModule != nil {
-		return jx.f(tl.round(model.currentCropModule.aboveground_biomass, 1))
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(model.current_crop_module.aboveground_biomass, 1))
 	}
 	return jx.f(0.0)
 }
@@ -532,33 +532,33 @@ of_ab_biom :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 of_org_biom :: proc(model: ^core.Monica_Model, oid_in: OId) -> jx.Value {
 	oid := oid_in
 	if oid_is_organ(&oid) &&
-	   model.currentCropModule != nil &&
-	   p.species_parameters_number_of_organs(&model.currentCropModule.crop_params.speciesParams) >
+	   model.current_crop_module != nil &&
+	   p.species_parameters_number_of_organs(&model.current_crop_module.crop_params.speciesParams) >
 		   int(oid.organ) {
-		return jx.f(tl.round(model.currentCropModule.organ_biomass[int(oid.organ)], 1))
+		return jx.f(tl.round(model.current_crop_module.organ_biomass[int(oid.organ)], 1))
 	}
 	return jx.f(0.0)
 }
 
 @(private)
 of_yield :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	if model.currentCropModule != nil {
-		return jx.f(tl.round(core.get_primary_crop_yield(model.currentCropModule), 1))
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_primary_crop_yield(model.current_crop_module), 1))
 	}
 	return jx.f(0.0)
 }
 
 @(private)
 of_lai :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	if model.currentCropModule != nil {
-		return jx.f(tl.round(model.currentCropModule.leaf_area_index, 4))
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(model.current_crop_module.leaf_area_index, 4))
 	}
 	return jx.f(0.0)
 }
 
 @(private)
 mois_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
-	return model.soilColumn.layers[i].soil_moisture_m3
+	return model.soil_column.layers[i].soil_moisture_m3
 }
 
 @(private)
@@ -569,7 +569,7 @@ of_mois :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 mois_set_value :: proc(model: ^core.Monica_Model, i: int, value: jx.Value) {
 	if jx.is_number(value) {
-		model.soilColumn.layers[i].soil_moisture_m3 = jx.number_value(value)
+		model.soil_column.layers[i].soil_moisture_m3 = jx.number_value(value)
 	}
 }
 
@@ -580,32 +580,32 @@ of_mois_set :: proc(model: ^core.Monica_Model, oid: OId, value: jx.Value) {
 
 @(private)
 of_irrig :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.dailySumIrrigationWater, 3))
+	return jx.f(tl.round(model.daily_sum_irrigation_water, 3))
 }
 
 @(private)
 of_runoff :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilMoisture.surface_run_off, 1))
+	return jx.f(tl.round(model.soil_moisture.surface_run_off, 1))
 }
 
 @(private)
 of_kc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilMoisture.kc_factor, 3))
+	return jx.f(tl.round(model.soil_moisture.kc_factor, 3))
 }
 
 @(private)
 of_recharge :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilColumn.vs_FluxAtLowerBoundary, 3))
+	return jx.f(tl.round(model.soil_column.vs_FluxAtLowerBoundary, 3))
 }
 
 @(private)
 of_nleach :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilTransport.leaching_at_boundary, 3))
+	return jx.f(tl.round(model.soil_transport.leaching_at_boundary, 3))
 }
 
 @(private)
 soc_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
-	return core.soil_organic_carbon(&model.soilColumn.layers[i])
+	return core.soil_organic_carbon(&model.soil_column.layers[i])
 }
 
 @(private)
@@ -615,7 +615,7 @@ of_soc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_tavg :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	cd := model.climateData[len(model.climateData) - 1]
+	cd := model.climate_data[len(model.climate_data) - 1]
 	if v, ok := cd[.tavg]; ok {
 		return jx.f(tl.round(v, 4))
 	}
@@ -624,7 +624,7 @@ of_tavg :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_precip :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	cd := model.climateData[len(model.climateData) - 1]
+	cd := model.climate_data[len(model.climate_data) - 1]
 	if v, ok := cd[.precip]; ok {
 		return jx.f(tl.round(v, 4))
 	}
@@ -633,7 +633,7 @@ of_precip :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_globrad :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	cd := model.climateData[len(model.climateData) - 1]
+	cd := model.climate_data[len(model.climate_data) - 1]
 	if v, ok := cd[.globrad]; ok {
 		return jx.f(tl.round(v, 4))
 	}
@@ -642,7 +642,7 @@ of_globrad :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 n_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
-	return core.soil_nmin(&model.soilColumn.layers[i])
+	return core.soil_nmin(&model.soil_column.layers[i])
 }
 
 @(private)
@@ -652,8 +652,8 @@ of_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	potET := model.soilMoisture.reference_evapotranspiration * model.soilMoisture.kc_factor
-	actET := model.soilMoisture.actual_evapotranspiration
+	potET := model.soil_moisture.reference_evapotranspiration * model.soil_moisture.kc_factor
+	actET := model.soil_moisture.actual_evapotranspiration
 	if potET > 0 {
 		return jx.f(tl.round(actET / potET, 2))
 	}

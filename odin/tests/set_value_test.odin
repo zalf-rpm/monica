@@ -148,7 +148,7 @@ test_build_primitive_calc_expression :: proc(t: ^testing.T) {
 	// path tier adds to an expression form the C++ could only feed from its
 	// registered ids.
 	e = mio.build_primitive_calc_expression(
-		[]jx.Value{jx.sl("soilMoisture.actual_evaporation"), jx.sl("*"), jx.f(2)},
+		[]jx.Value{jx.sl("soil_moisture.actual_evaporation"), jx.sl("*"), jx.f(2)},
 		ta,
 	)
 	testing.expect(t, e.set)
@@ -196,12 +196,12 @@ test_build_primitive_calc_expression :: proc(t: ^testing.T) {
 	testing.expect(t, mio.oid_has_setter(pwp))
 
 	// so is a raw path that is in no table at all
-	raw := oid_named(t, "soilColumn.layers.soil_no3", ta)
+	raw := oid_named(t, "soil_column.layers.soil_no3", ta)
 	testing.expect(t, raw.plan != nil)
 	testing.expect(t, mio.oid_has_setter(raw))
 
 	// a #len path reads but must not write
-	length := oid_named(t, "soilColumn.layers.#len", ta)
+	length := oid_named(t, "soil_column.layers.#len", ta)
 	testing.expect(t, length.plan != nil)
 	testing.expect(t, mio.oid_has_getter(length))
 	testing.expect(t, !mio.oid_has_setter(length))

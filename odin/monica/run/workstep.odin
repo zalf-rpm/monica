@@ -353,9 +353,9 @@ organ_name_from_id :: proc(organId: int) -> string {
 
 // C++: bool workstep::isSoilMoistureOk(MonicaModel*, double, double)
 is_soil_moisture_ok :: proc(model: ^core.Monica_Model, minPercentASW, maxPercentASW: f64) -> bool {
-	pwp := model.soilColumn.layers[0].permanent_wilting_point
-	sm := max(0.0, model.soilColumn.layers[0].soil_moisture_m3 - pwp)
-	asw := model.soilColumn.layers[0].field_capacity - pwp
+	pwp := model.soil_column.layers[0].permanent_wilting_point
+	sm := max(0.0, model.soil_column.layers[0].soil_moisture_m3 - pwp)
+	asw := model.soil_column.layers[0].field_capacity - pwp
 	currentPercentASW := sm / asw * 100.0
 	return minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW
 }
@@ -402,7 +402,7 @@ workstep_merge_common :: proc(ws: ^Workstep, j: jx.Value) -> tl.Errors {
 
 // C++: bool workstep::applyCommon(Workstep*, MonicaModel*)
 workstep_apply_common :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> bool {
-	model.currentEvents["Workstep"] = true
+	model.current_events["Workstep"] = true
 	return true
 }
 
@@ -412,8 +412,8 @@ workstep_condition_common :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> b
 		return false
 	}
 
-	_, curr_ok := model.currentEvents[ws.afterEvent]
-	_, prev_ok := model.previousDaysEvents[ws.afterEvent]
+	_, curr_ok := model.current_events[ws.afterEvent]
+	_, prev_ok := model.previous_days_events[ws.afterEvent]
 
 	if ws.daysAfterEventCountActivated {
 		ws.daysAfterEventCount += 1

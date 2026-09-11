@@ -31,24 +31,24 @@ dump_cm_basic :: proc(t: ^tr.Tracer, path: string, cm: ^run.Cultivation_Method) 
 }
 
 dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
-	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sumFertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.dailySumFertiliser)
-	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sumOrgFertiliser)
+	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sum_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.daily_sum_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sum_org_fertiliser)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".dailySumIrrigationWater"}),
-		model.dailySumIrrigationWater,
+		model.daily_sum_irrigation_water,
 	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".cultivationMethodCount"}),
-		model.cultivationMethodCount,
+		model.cultivation_method_count,
 	)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clearCropUponNextDay)
+	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".currentCropModule"}),
-		model.currentCropModule != nil ? "<ptr:set>" : "<ptr:nil>",
+		model.current_crop_module != nil ? "<ptr:set>" : "<ptr:nil>",
 	)
 }
 
@@ -305,7 +305,7 @@ main :: proc() {
 		relhumid := clim.data_accessor_data_for_timestep(&da, .relhumid, day)
 		current_date := clim.data_accessor_date_for_step(&da, day)
 		julday := clim.data_accessor_julian_day_for_step(&da, day)
-		model.currentStepDate = current_date
+		model.current_step_date = current_date
 
 		daily_map := make(map[clim.ACD]f64, 0, a)
 		daily_map[.tmin] = tmin
@@ -315,22 +315,22 @@ main :: proc() {
 		daily_map[.globrad] = globrad
 		daily_map[.precip] = precip
 		daily_map[.relhumid] = relhumid
-		append(&model.climateData, daily_map)
+		append(&model.climate_data, daily_map)
 
 		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0
 
 		core.soil_temperature_step(
-			&model.soilTemperature,
+			&model.soil_temperature,
 			tmin,
 			tmax,
 			globrad,
-			model.currentCropModule != nil ? model.currentCropModule.soil_coverage : 0.0,
-			model.soilMoisture.snow_component.snow_depth,
-			model.soilMoisture.frost_component.temperature_under_snow,
+			model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0,
+			model.soil_moisture.snow_component.snow_depth,
+			model.soil_moisture.frost_component.temperature_under_snow,
 		)
 		core.soil_moisture_step(
-			&model.soilMoisture,
+			&model.soil_moisture,
 			vs_GroundwaterDepth,
 			precip,
 			tmax,
@@ -338,19 +338,19 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			model.envPs.p_WindSpeedHeight,
+			model.env_ps.p_WindSpeedHeight,
 			globrad,
 			julday,
 			et0,
-			model.simPs.dualKcMethod,
+			model.sim_ps.dualKcMethod,
 		)
 
 		run.cultivation_method_apply_at_date(&cm, current_date, model, a)
 		run.cultivation_method_apply(&cm, model, true)
 
-		if model.currentCropModule != nil {
+		if model.current_crop_module != nil {
 			core.crop_module_step(
-				model.currentCropModule,
+				model.current_crop_module,
 				tavg,
 				tmax,
 				tmin,
@@ -359,7 +359,7 @@ main :: proc() {
 				current_date,
 				(relhumid / 100.0),
 				wind,
-				model.envPs.p_WindSpeedHeight,
+				model.env_ps.p_WindSpeedHeight,
 				ATM_CO2,
 				ATM_O3,
 				precip,
@@ -370,7 +370,7 @@ main :: proc() {
 
 		run.cultivation_method_apply(&cm, model, false)
 		if !harvested {
-			if _, ok := model.currentEvents["AutomaticHarvest"]; ok {
+			if _, ok := model.current_events["AutomaticHarvest"]; ok {
 				harvested = true
 				tr.set_day(&t, 1000 + day)
 				dump_model_bits(&t, "model", model)
@@ -378,8 +378,8 @@ main :: proc() {
 			}
 		}
 
-		core.soil_organic_step(&model.soilOrganic, tavg, precip, wind)
-		core.soil_transport_step(&model.soilTransport)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
+		core.soil_transport_step(&model.soil_transport)
 
 		if day % 60 == 0 || day == n - 1 {
 			tr.set_day(&t, day)

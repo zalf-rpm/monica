@@ -28,58 +28,58 @@ dump_cm_basic :: proc(t: ^tr.Tracer, path: string, cm: ^run.Cultivation_Method) 
 }
 
 dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
-	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sumFertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.dailySumFertiliser)
-	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sumOrgFertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumIrrigationWater"}), model.dailySumIrrigationWater)
-	tr.dump(t, strings.concatenate({path, ".cultivationMethodCount"}), model.cultivationMethodCount)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clearCropUponNextDay)
+	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sum_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.daily_sum_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sum_org_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".dailySumIrrigationWater"}), model.daily_sum_irrigation_water)
+	tr.dump(t, strings.concatenate({path, ".cultivationMethodCount"}), model.cultivation_method_count)
+	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".currentCropModule"}),
-		model.currentCropModule != nil ? "<ptr:set>" : "<ptr:nil>",
+		model.current_crop_module != nil ? "<ptr:set>" : "<ptr:nil>",
 	)
-	tr.dump(t, strings.concatenate({path, ".vs_GroundwaterDepth"}), model.vs_GroundwaterDepth)
+	tr.dump(t, strings.concatenate({path, ".vs_GroundwaterDepth"}), model.vs_groundwater_depth)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".vw_AtmosphericCO2Concentration"}),
-		model.vw_AtmosphericCO2Concentration,
+		model.vw_atmospheric_co2_concentration,
 	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".vw_AtmosphericO3Concentration"}),
-		model.vw_AtmosphericO3Concentration,
+		model.vw_atmospheric_o3_concentration,
 	)
-	tr.dump(t, strings.concatenate({path, ".p_daysWithCrop"}), model.p_daysWithCrop)
-	tr.dump(t, strings.concatenate({path, ".p_accuNStress"}), model.p_accuNStress)
-	tr.dump(t, strings.concatenate({path, ".p_accuWaterStress"}), model.p_accuWaterStress)
-	tr.dump(t, strings.concatenate({path, ".p_accuHeatStress"}), model.p_accuHeatStress)
-	tr.dump(t, strings.concatenate({path, ".p_accuOxygenStress"}), model.p_accuOxygenStress)
+	tr.dump(t, strings.concatenate({path, ".p_daysWithCrop"}), model.p_days_with_crop)
+	tr.dump(t, strings.concatenate({path, ".p_accuNStress"}), model.p_accu_n_stress)
+	tr.dump(t, strings.concatenate({path, ".p_accuWaterStress"}), model.p_accu_water_stress)
+	tr.dump(t, strings.concatenate({path, ".p_accuHeatStress"}), model.p_accu_heat_stress)
+	tr.dump(t, strings.concatenate({path, ".p_accuOxygenStress"}), model.p_accu_oxygen_stress)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".soilColumn->layers[0].vs_SoilTemperature"}),
-		model.soilColumn.layers[0].soil_temperature,
+		model.soil_column.layers[0].soil_temperature,
 	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".soilColumn->layers[0].vs_SoilMoisture_m3"}),
-		model.soilColumn.layers[0].soil_moisture_m3,
+		model.soil_column.layers[0].soil_moisture_m3,
 	)
-	if model.currentCropModule != nil {
+	if model.current_crop_module != nil {
 		tr.dump(
 			t,
 			strings.concatenate({path, ".cropModule.vc_LeafAreaIndex"}),
-			model.currentCropModule.leaf_area_index,
+			model.current_crop_module.leaf_area_index,
 		)
 		tr.dump(
 			t,
 			strings.concatenate({path, ".cropModule.vc_DevelopmentalStage"}),
-			model.currentCropModule.developmental_stage,
+			model.current_crop_module.developmental_stage,
 		)
 		tr.dump(
 			t,
 			strings.concatenate({path, ".cropModule.vc_TotalBiomass"}),
-			model.currentCropModule.total_biomass,
+			model.current_crop_module.total_biomass,
 		)
 	}
 }
@@ -297,7 +297,7 @@ main :: proc() {
 		precip := clim.data_accessor_data_for_timestep(&da, .precip, day)
 		relhumid := clim.data_accessor_data_for_timestep(&da, .relhumid, day)
 		current_date := clim.data_accessor_date_for_step(&da, day)
-		model.currentStepDate = current_date
+		model.current_step_date = current_date
 
 		daily_map := make(map[clim.ACD]f64, 0, a)
 		daily_map[.tmin] = tmin
@@ -307,7 +307,7 @@ main :: proc() {
 		daily_map[.globrad] = globrad
 		daily_map[.precip] = precip
 		daily_map[.relhumid] = relhumid
-		append(&model.climateData, daily_map)
+		append(&model.climate_data, daily_map)
 
 		run.cultivation_method_apply_at_date(&cm, current_date, model, a)
 		run.cultivation_method_apply(&cm, model, true)
@@ -316,7 +316,7 @@ main :: proc() {
 
 		run.cultivation_method_apply(&cm, model, false)
 		if !harvested {
-			if _, ok := model.currentEvents["AutomaticHarvest"]; ok {
+			if _, ok := model.current_events["AutomaticHarvest"]; ok {
 				harvested = true
 				tr.set_day(&t, 1000 + day)
 				dump_model_bits(&t, "model", model)

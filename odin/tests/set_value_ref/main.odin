@@ -30,7 +30,7 @@ load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 }
 
 dump_state :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
-	cm := model.currentCropModule
+	cm := model.current_crop_module
 	tr.dump(t, strings.concatenate({path, ".vc_DevelopmentalStage"}), cm.developmental_stage)
 	tr.dump(
 		t,
@@ -42,10 +42,10 @@ dump_state :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 		tr.dump(
 			t,
 			fmt.tprintf("%s.soilColumn.vs_SoilMoisture_m3[%d]", path, i),
-			model.soilColumn.layers[i].soil_moisture_m3,
+			model.soil_column.layers[i].soil_moisture_m3,
 		)
 	}
-	_, hasSetValue := model.currentEvents["SetValue"]
+	_, hasSetValue := model.current_events["SetValue"]
 	tr.dump(t, strings.concatenate({path, ".currentEvents.hasSetValue"}), hasSetValue)
 }
 
@@ -128,23 +128,23 @@ main :: proc() {
 
 	cm := new(core.Crop_Module, a)
 	cm^ = core.make_crop_module(
-		&model.soilColumn,
+		&model.soil_column,
 		&wheatCropParams,
 		&wheatResidueParams,
-		&model.sitePs,
-		&model.cropPs,
-		&model.simPs,
+		&model.site_ps,
+		&model.crop_ps,
+		&model.sim_ps,
 		core.monica_model_fire_event_cb,
 		core.monica_model_add_organic_matter_cb,
 		core.monica_model_get_snow_depth_cb,
 		nil,
 		a,
 	)
-	model.currentCropModule = cm
+	model.current_crop_module = cm
 
-	model.soilMoisture.crop_module = cm
-	model.soilOrganic.crop_module = cm
-	model.soilTransport.cropModule = cm
+	model.soil_moisture.crop_module = cm
+	model.soil_organic.crop_module = cm
+	model.soil_transport.cropModule = cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -188,18 +188,18 @@ main :: proc() {
 		// them explicit parameters instead (see monica_model.odin's
 		// monica_model_general_step for the production call this mirrors).
 		soil_coverage :=
-			model.currentCropModule != nil ? model.currentCropModule.soil_coverage : 0.0
+			model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0
 		core.soil_temperature_step(
-			&model.soilTemperature,
+			&model.soil_temperature,
 			tmin,
 			tmax,
 			globrad,
 			soil_coverage,
-			model.soilMoisture.snow_component.snow_depth,
-			model.soilMoisture.frost_component.temperature_under_snow,
+			model.soil_moisture.snow_component.snow_depth,
+			model.soil_moisture.frost_component.temperature_under_snow,
 		)
 		core.soil_moisture_step(
-			&model.soilMoisture,
+			&model.soil_moisture,
 			vs_GroundwaterDepth,
 			precip,
 			tmax,
@@ -207,11 +207,11 @@ main :: proc() {
 			relhumid / 100.0,
 			tavg,
 			wind,
-			model.envPs.p_WindSpeedHeight,
+			model.env_ps.p_WindSpeedHeight,
 			globrad,
 			clim.data_accessor_julian_day_for_step(&da, day),
 			et0,
-			model.simPs.dualKcMethod,
+			model.sim_ps.dualKcMethod,
 		)
 		core.crop_module_step(
 			cm,
@@ -223,14 +223,14 @@ main :: proc() {
 			current_date,
 			relhumid / 100.0,
 			wind,
-			model.envPs.p_WindSpeedHeight,
+			model.env_ps.p_WindSpeedHeight,
 			ATM_CO2,
 			ATM_O3,
 			precip,
 			-1.0,
 		)
-		core.soil_organic_step(&model.soilOrganic, tavg, precip, wind)
-		core.soil_transport_step(&model.soilTransport)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
+		core.soil_transport_step(&model.soil_transport)
 	}
 
 	t := tr.make_tracer(os.to_stream(os.stdout), a)

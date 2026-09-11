@@ -280,7 +280,7 @@ spec_create_expression_func :: proc(j: jx.Value) -> Spec_Expr {
 spec_expr_eval :: proc(e: Spec_Expr, model: ^core.Monica_Model) -> bool {
 	switch e.kind {
 	case .DATE:
-		cd := model.currentStepDate
+		cd := model.current_step_date
 		// apply min() for day, to allow matching of the last day for each month
 		// by choosing 31st
 		day := d.day(cd)
@@ -298,7 +298,7 @@ spec_expr_eval :: proc(e: Spec_Expr, model: ^core.Monica_Model) -> bool {
 		date := d.make_date(day, month, u16(year), false, true)
 		return d.eq(date, cd)
 	case .EVENT:
-		_, ok := model.currentEvents[e.eventName]
+		_, ok := model.current_events[e.eventName]
 		return ok
 	case .NONE:
 	}
@@ -740,8 +740,8 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	}
 
 	model := core.make_monica_model(&env.params, allocator)
-	model.simPs.startDate = clim.data_accessor_start_date(&env.climateData)
-	model.simPs.endDate = clim.data_accessor_end_date(&env.climateData)
+	model.sim_ps.startDate = clim.data_accessor_start_date(&env.climateData)
+	model.sim_ps.endDate = clim.data_accessor_end_date(&env.climateData)
 
 	currentDate := clim.data_accessor_start_date(&env.climateData)
 
@@ -767,7 +767,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 		env_use_legacy_output_fns(env),
 		allocator,
 	)
-	model.currentEvents["run-started"] = true
+	model.current_events["run-started"] = true
 
 	nods := clim.data_accessor_no_of_steps_possible(&env.climateData)
 	for stepNo in 0 ..< nods {
@@ -784,15 +784,15 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 		core.monica_model_daily_reset(model, allocator)
 
-		model.currentStepDate = currentDate
+		model.current_step_date = currentDate
 		append(
-			&model.climateData,
+			&model.climate_data,
 			clim.data_accessor_all_data_for_step(&env.climateData, stepNo, env.params.siteParameters.vs_Latitude, allocator),
 		)
 
 		// test if monica's crop has been dying in the previous step; if yes, it
 		// will be incorporated into soil
-		if model.currentCropModule != nil && model.currentCropModule.dying_out {
+		if model.current_crop_module != nil && model.current_crop_module.dying_out {
 			core.monica_model_incorporate_current_crop(model, allocator)
 		}
 

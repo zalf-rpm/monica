@@ -18,31 +18,31 @@ import "core:slice"
 import "core:strings"
 
 dump_model :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
-	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sumFertiliser)
-	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sumOrgFertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.dailySumFertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumOrgFertiliser"}), model.dailySumOrgFertiliser)
+	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sum_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sum_org_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.daily_sum_fertiliser)
+	tr.dump(t, strings.concatenate({path, ".dailySumOrgFertiliser"}), model.daily_sum_org_fertiliser)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".dailySumOrganicFertilizerDM"}),
-		model.dailySumOrganicFertilizerDM,
+		model.daily_sum_organic_fertilizer_dm,
 	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".sumOrganicFertilizerDM"}),
-		model.sumOrganicFertilizerDM,
+		model.sum_organic_fertilizer_dm,
 	)
-	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humusBalanceCarryOver)
+	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humus_balance_carry_over)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".dailySumIrrigationWater"}),
-		model.dailySumIrrigationWater,
+		model.daily_sum_irrigation_water,
 	)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clearCropUponNextDay)
+	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".cultivationMethodCount"}),
-		model.cultivationMethodCount,
+		model.cultivation_method_count,
 	)
 }
 
@@ -139,7 +139,7 @@ main :: proc() {
 	// scenario 0: right after construction
 	tr.set_day(&t, 0)
 	dump_model(&t, "model", model)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 1: applyMineralFertiliser
 	tr.set_day(&t, 1)
@@ -150,7 +150,7 @@ main :: proc() {
 	}
 	core.monica_model_apply_mineral_fertiliser(model, mfp, 40.0)
 	dump_model(&t, "model", model)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 2: applyOrganicFertiliser
 	tr.set_day(&t, 2)
@@ -167,12 +167,12 @@ main :: proc() {
 	}
 	core.monica_model_apply_organic_fertiliser(model, &omp, 1000.0, true, 0)
 	dump_model(&t, "model", model)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 3: applyMineralFertiliserViaNMinMethod, soil too wet -> delayed
 	tr.set_day(&t, 3)
-	model.soilColumn.layers[0].soil_moisture_m3 =
-		model.soilColumn.layers[0].field_capacity + 0.01
+	model.soil_column.layers[0].soil_moisture_m3 =
+		model.soil_column.layers[0].field_capacity + 0.01
 	fertAmount1 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
@@ -180,17 +180,17 @@ main :: proc() {
 	)
 	tr.dump(&t, "fertAmount1", fertAmount1)
 	dump_model(&t, "model", model)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
-	drained := core.apply_possible_delayed_fertilizer(&model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
+	drained := core.apply_possible_delayed_fertilizer(&model.soil_column)
 	core.monica_model_add_daily_sum_fertiliser(model, drained)
 	tr.dump(&t, "drained", drained)
 	dump_model(&t, "model", model)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 4: applyMineralFertiliserViaNMinMethod, soil dry -> immediate + top-dressing split
 	tr.set_day(&t, 4)
-	model.soilColumn.layers[0].soil_moisture_m3 =
-		model.soilColumn.layers[0].field_capacity - 0.05
+	model.soil_column.layers[0].soil_moisture_m3 =
+		model.soil_column.layers[0].field_capacity - 0.05
 	fertAmount2 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
@@ -198,30 +198,30 @@ main :: proc() {
 	)
 	tr.dump(&t, "fertAmount2", fertAmount2)
 	dump_model(&t, "model", model)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 	for i in 0 ..< 3 {
 		tr.set_day(&t, 4)
-		topDressed := core.apply_possible_top_dressing(&model.soilColumn)
+		topDressed := core.apply_possible_top_dressing(&model.soil_column)
 		tr.dump(&t, fmt.tprintf("topDressed[%d]", i), topDressed)
 	}
 	dump_model(&t, "model", model)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
-	core.clear_top_dressing_params(&model.soilColumn)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
+	core.clear_top_dressing_params(&model.soil_column)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 5: applyMineralFertiliserViaNDemand
 	tr.set_day(&t, 5)
-	demandFert := core.apply_mineral_fertiliser_via_n_demand(&model.soilColumn, mfp, 0.25, 60.0)
+	demandFert := core.apply_mineral_fertiliser_via_n_demand(&model.soil_column, mfp, 0.25, 60.0)
 	tr.dump(&t, "demandFert", demandFert)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 6: applyIrrigation
 	tr.set_day(&t, 6)
 	core.monica_model_apply_irrigation(model, 20.0, 5.0)
 	dump_model(&t, "model", model)
-	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soilColumn.vs_SurfaceWaterStorage)
-	tr.dump(&t, "sc.layers[0].vs_SoilNO3", model.soilColumn.layers[0].soil_no3)
-	tr.dump(&t, "so.irrigationAmount", model.soilOrganic.irrigation_amount)
+	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.vs_SurfaceWaterStorage)
+	tr.dump(&t, "sc.layers[0].vs_SoilNO3", model.soil_column.layers[0].soil_no3)
+	tr.dump(&t, "so.irrigationAmount", model.soil_organic.irrigation_amount)
 
 	// scenario 7: applyIrrigationViaTrigger - needs a live cropModule
 	tr.set_day(&t, 7)
@@ -244,19 +244,19 @@ main :: proc() {
 	no_add_organic_matter :: proc(_: map[int]f64, _: f64) {}
 	no_snow :: proc(_: f64) -> (f64, f64) {return 0, 0}
 	cm := core.make_crop_module(
-		&model.soilColumn,
+		&model.soil_column,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&model.sitePs,
-		&model.cropPs,
-		&model.simPs,
+		&model.site_ps,
+		&model.crop_ps,
+		&model.sim_ps,
 		no_fire_event,
 		no_add_organic_matter,
 		no_snow,
 		nil,
 		a,
 	)
-	core.put_crop(&model.soilColumn, &cm)
+	core.put_crop(&model.soil_column, &cm)
 	cm.current_total_temperature_sum =
 		(cm.crop_params.cultivarParams.pc_HeatSumIrrigationStart +
 			cm.crop_params.cultivarParams.pc_HeatSumIrrigationEnd) /
@@ -267,27 +267,27 @@ main :: proc() {
 		threshold = 0.99,
 		criticalMoistureDepthM = 0.3,
 	}
-	triggered, triggeredAmount := core.apply_irrigation_via_trigger(&model.soilColumn, &aip)
+	triggered, triggeredAmount := core.apply_irrigation_via_trigger(&model.soil_column, &aip)
 	tr.dump(&t, "triggered", triggered)
 	tr.dump(&t, "triggeredAmount", triggeredAmount)
-	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soilColumn.vs_SurfaceWaterStorage)
-	core.remove_crop(&model.soilColumn)
+	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.vs_SurfaceWaterStorage)
+	core.remove_crop(&model.soil_column)
 
 	// scenario 8: applyTillage
 	tr.set_day(&t, 8)
 	for i in 0 ..< 3 {
-		model.soilColumn.layers[i].soil_no3 = 0.001 * f64(i + 1)
-		model.soilColumn.layers[i].soil_temperature = 5.0 + f64(i)
-		model.soilColumn.layers[i].soil_moisture_m3 = 0.2 + 0.01 * f64(i)
+		model.soil_column.layers[i].soil_no3 = 0.001 * f64(i + 1)
+		model.soil_column.layers[i].soil_temperature = 5.0 + f64(i)
+		model.soil_column.layers[i].soil_moisture_m3 = 0.2 + 0.01 * f64(i)
 	}
 	core.monica_model_apply_tillage(model, 0.25)
-	dump_soil_column_top3(&t, "sc", &model.soilColumn)
+	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 9: deleteAOMPool
 	tr.set_day(&t, 9)
-	poolCountBefore := len(model.soilColumn.layers[0].vo_AOM_Pool)
-	core.delete_aom_pool(&model.soilColumn)
-	poolCountAfter := len(model.soilColumn.layers[0].vo_AOM_Pool)
+	poolCountBefore := len(model.soil_column.layers[0].vo_AOM_Pool)
+	core.delete_aom_pool(&model.soil_column)
+	poolCountAfter := len(model.soil_column.layers[0].vo_AOM_Pool)
 	tr.dump(&t, "poolCountBefore", poolCountBefore)
 	tr.dump(&t, "poolCountAfter", poolCountAfter)
 
@@ -299,12 +299,12 @@ main :: proc() {
 	dump_model(&t, "model", model)
 	core.monica_model_reset_fertiliser_counter(model)
 	dump_model(&t, "model", model)
-	model.currentEvents["Sowing"] = true
-	model.currentEvents["Irrigation"] = true
+	model.current_events["Sowing"] = true
+	model.current_events["Irrigation"] = true
 	core.monica_model_clear_events(model, a)
 	{
 		keys := make([dynamic]string, 0, a)
-		for k in model.previousDaysEvents {
+		for k in model.previous_days_events {
 			append(&keys, k)
 		}
 		slice.sort(keys[:])
@@ -316,7 +316,7 @@ main :: proc() {
 		tr.dump(&t, "previousDaysEvents", strings.to_string(joined))
 
 		keys2 := make([dynamic]string, 0, a)
-		for k in model.currentEvents {
+		for k in model.current_events {
 			append(&keys2, k)
 		}
 		slice.sort(keys2[:])
@@ -327,7 +327,7 @@ main :: proc() {
 		}
 		tr.dump(&t, "currentEvents", strings.to_string(joined2))
 	}
-	model.clearCropUponNextDay = false
+	model.clear_crop_upon_next_day = false
 	core.monica_model_daily_reset(model, a)
 	dump_model(&t, "model", model)
 
