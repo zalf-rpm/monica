@@ -14,27 +14,27 @@ import p "../params"
 
 // C++: struct monica::SoilTransport
 Soil_Transport :: struct {
-	soilColumn:    ^Soil_Column,
-	modParams:     p.Soil_Transport_Module_Parameters,
-	siteParams:    ^p.Site_Parameters,
-	envParams:     ^p.Environment_Parameters,
-	cropModParams: ^p.Crop_Module_Parameters,
+	soilColumn:             ^Soil_Column,
+	modParams:              p.Soil_Transport_Module_Parameters,
+	siteParams:             ^p.Site_Parameters,
+	envParams:              ^p.Environment_Parameters,
+	cropModParams:          ^p.Crop_Module_Parameters,
 
-	vq_Convection:          [dynamic]f64,
-	vq_DiffusionCoeff:      [dynamic]f64,
-	vq_Dispersion:          [dynamic]f64,
-	vq_DispersionCoeff:     [dynamic]f64,
-	vq_LeachingAtBoundary:  f64,
+	convection:             [dynamic]f64,
+	diffusion_coeff:        [dynamic]f64,
+	dispersion:             [dynamic]f64,
+	dispersion_coeff:       [dynamic]f64,
+	leaching_at_boundary:   f64,
 	vc_NUptakeFromLayer:    [dynamic]f64,
-	vq_PoreWaterVelocity:   [dynamic]f64,
+	pore_water_velocity:    [dynamic]f64,
 	vs_SoilMineralNContent: [dynamic]f64, // never resized - dead field in the C++ too (only touched by dropped (de)serialize)
-	vq_SoilNO3:             [dynamic]f64,
-	vq_SoilNO3_aq:          [dynamic]f64,
-	vq_TimeStep:            f64,
-	vq_TotalDispersion:     [dynamic]f64,
-	vq_PercolationRate:     [dynamic]f64,
+	soil_no3:               [dynamic]f64,
+	soil_no3_aq:            [dynamic]f64,
+	time_step:              f64,
+	total_dispersion:       [dynamic]f64,
+	percolation_rate:       [dynamic]f64,
 
-	cropModule: ^Crop_Module,
+	cropModule:             ^Crop_Module,
 }
 
 // C++: kj::Own<SoilTransport> monica::makeSoilTransport(
@@ -56,22 +56,22 @@ make_soil_transport :: proc(
 	st.modParams = mod_params
 	st.envParams = env_params
 	st.cropModParams = crop_mod_params
-	st.vq_TimeStep = 1.0 // C++ in-class initialiser: double vq_TimeStep{1.0}
+	st.time_step = 1.0 // C++ in-class initialiser: double time_step{1.0}
 
 	scSize := len(soil_column.layers)
-	resize(&st.vq_Convection, scSize)
-	resize(&st.vq_DiffusionCoeff, scSize)
-	resize(&st.vq_Dispersion, scSize)
-	resize(&st.vq_DispersionCoeff, scSize)
+	resize(&st.convection, scSize)
+	resize(&st.diffusion_coeff, scSize)
+	resize(&st.dispersion, scSize)
+	resize(&st.dispersion_coeff, scSize)
 	for i in 0 ..< scSize {
-		st.vq_DispersionCoeff[i] = 1.0
+		st.dispersion_coeff[i] = 1.0
 	}
 	resize(&st.vc_NUptakeFromLayer, scSize)
-	resize(&st.vq_PoreWaterVelocity, scSize)
-	resize(&st.vq_SoilNO3, scSize)
-	resize(&st.vq_SoilNO3_aq, scSize)
-	resize(&st.vq_TotalDispersion, scSize)
-	resize(&st.vq_PercolationRate, scSize)
+	resize(&st.pore_water_velocity, scSize)
+	resize(&st.soil_no3, scSize)
+	resize(&st.soil_no3_aq, scSize)
+	resize(&st.total_dispersion, scSize)
+	resize(&st.percolation_rate, scSize)
 
 	return st
 }
@@ -82,16 +82,16 @@ soil_transport_step :: proc(st: ^Soil_Transport) {
 	nols := len(st.soilColumn.layers)
 
 	for i in 0 ..< nols {
-		st.vq_SoilNO3[i] = st.soilColumn.layers[i].soil_no3
+		st.soil_no3[i] = st.soilColumn.layers[i].soil_no3
 
 		st.vc_NUptakeFromLayer[i] = st.cropModule != nil ? st.cropModule.n_uptake_from_layer[i] : 0
 		if i == nols-1 {
-			st.vq_PercolationRate[i] = st.soilColumn.vs_FluxAtLowerBoundary // [mm]
+			st.percolation_rate[i] = st.soilColumn.vs_FluxAtLowerBoundary // [mm]
 		} else {
-			st.vq_PercolationRate[i] = st.soilColumn.layers[i+1].soil_water_flux // [mm]
+			st.percolation_rate[i] = st.soilColumn.layers[i+1].soil_water_flux // [mm]
 		}
 		// Variable time step in case of high water fluxes to ensure stable numerics
-		pri := st.vq_PercolationRate[i]
+		pri := st.percolation_rate[i]
 		timeStepFactorCurrentLayer := minTimeStepFactor
 		if -5.0 <= pri && pri <= 5.0 && minTimeStepFactor > 1.0 {
 			timeStepFactorCurrentLayer = 1.0
@@ -110,30 +110,30 @@ soil_transport_step :: proc(st: ^Soil_Transport) {
 	n_uptake(st)
 
 	// Nitrate transport is called according to the set time step
-	st.vq_LeachingAtBoundary = 0.0
+	st.leaching_at_boundary = 0.0
 	for i_TimeStep := 0; f64(i_TimeStep) < (1.0 / minTimeStepFactor); i_TimeStep += 1 {
 		n_transport(st, st.envParams.p_LeachingDepth, minTimeStepFactor)
 	}
 
 	for i in 0 ..< nols {
-		st.vq_SoilNO3[i] = st.vq_SoilNO3_aq[i] * st.soilColumn.layers[i].soil_moisture_m3
+		st.soil_no3[i] = st.soil_no3_aq[i] * st.soilColumn.layers[i].soil_moisture_m3
 
-		if st.vq_SoilNO3[i] < 0.0 {
-			st.vq_SoilNO3[i] = 0.0
+		if st.soil_no3[i] < 0.0 {
+			st.soil_no3[i] = 0.0
 		}
 
-		st.soilColumn.layers[i].soil_no3 = st.vq_SoilNO3[i]
+		st.soilColumn.layers[i].soil_no3 = st.soil_no3[i]
 	}
 }
 
 // C++: void monica::soiltransport::nDeposition(SoilTransport*)
 //
 // Kersebaum 1989. Daily N deposition, transformed from an annual value, added
-// to the ammonium... (really nitrate: vq_SoilNO3) pool of the top soil layer.
+// to the ammonium... (really nitrate: soil_no3) pool of the top soil layer.
 n_deposition :: proc(st: ^Soil_Transport) {
 	dailyNDeposition := st.siteParams.vq_NDeposition / 365.0
 
-	st.vq_SoilNO3[0] += dailyNDeposition / (10000.0 * st.soilColumn.layers[0].layer_thickness)
+	st.soil_no3[0] += dailyNDeposition / (10000.0 * st.soilColumn.layers[0].layer_thickness)
 }
 
 // C++: void monica::soiltransport::nUptake(SoilTransport*)
@@ -147,8 +147,8 @@ n_uptake :: proc(st: ^Soil_Transport) {
 		smi := st.soilColumn.layers[i].soil_moisture_m3
 
 		// Lower boundary for N exploitation per layer
-		if st.vc_NUptakeFromLayer[i] > ((st.vq_SoilNO3[i] * lti) - st.cropModParams.pc_MinimumAvailableN) {
-			st.vc_NUptakeFromLayer[i] = ((st.vq_SoilNO3[i] * lti) - st.cropModParams.pc_MinimumAvailableN)
+		if st.vc_NUptakeFromLayer[i] > ((st.soil_no3[i] * lti) - st.cropModParams.pc_MinimumAvailableN) {
+			st.vc_NUptakeFromLayer[i] = ((st.soil_no3[i] * lti) - st.cropModParams.pc_MinimumAvailableN)
 		} // Crop N uptake from layer i [kg N m-2]
 
 		if st.vc_NUptakeFromLayer[i] < 0 {
@@ -158,12 +158,12 @@ n_uptake :: proc(st: ^Soil_Transport) {
 		cropNUptake += st.vc_NUptakeFromLayer[i]
 
 		// Subtracting crop N uptake
-		st.vq_SoilNO3[i] -= st.vc_NUptakeFromLayer[i] / lti
+		st.soil_no3[i] -= st.vc_NUptakeFromLayer[i] / lti
 
 		// Calculation of solute NO3 concentration on the basis of the soil
 		// moisture content before movement of current time step
 		// (kg m soil-3 --> kg m solute-3)
-		st.vq_SoilNO3_aq[i] = st.vq_SoilNO3[i] / smi
+		st.soil_no3_aq[i] = st.soil_no3[i] / smi
 	}
 
 	st.soilColumn.vq_CropNUptake = cropNUptake // [kg m-2]
@@ -192,149 +192,149 @@ n_transport :: proc(st: ^Soil_Transport, leachingDepth, timeStepFactor: f64) {
 	for i in 0 ..< nols {
 		wf0 := st.soilColumn.layers[0].soil_water_flux
 		lt := st.soilColumn.layers[i].layer_thickness
-		NO3 := st.vq_SoilNO3_aq[i]
+		NO3 := st.soil_no3_aq[i]
 
 		if i == 0 {
-			pr := st.vq_PercolationRate[i] / 1000.0 * timeStepFactor // [mm t-1 --> m t-1]
-			NO3_u := st.vq_SoilNO3_aq[i+1]
+			pr := st.percolation_rate[i] / 1000.0 * timeStepFactor // [mm t-1 --> m t-1]
+			NO3_u := st.soil_no3_aq[i+1]
 
 			if pr >= 0.0 && wf0 >= 0.0 {
-				st.vq_Convection[i] = (NO3 * pr) / lt // old KONV = Konvektion Diss S. 23
+				st.convection[i] = (NO3 * pr) / lt // old KONV = Konvektion Diss S. 23
 			} else if pr >= 0 && wf0 < 0 {
-				st.vq_Convection[i] = (NO3 * pr) / lt
+				st.convection[i] = (NO3 * pr) / lt
 			} else if pr < 0 && wf0 < 0 {
-				st.vq_Convection[i] = (NO3_u * pr) / lt
+				st.convection[i] = (NO3_u * pr) / lt
 			} else if pr < 0 && wf0 >= 0 {
-				st.vq_Convection[i] = (NO3_u * pr) / lt
+				st.convection[i] = (NO3_u * pr) / lt
 			}
 		} else if i < nols-1 {
 			// layer > 0 && < bottom
-			pr_o := st.vq_PercolationRate[i-1] / 1000.0 * timeStepFactor
-			pr := st.vq_PercolationRate[i] / 1000.0 * timeStepFactor
-			NO3_u := st.vq_SoilNO3_aq[i+1]
+			pr_o := st.percolation_rate[i-1] / 1000.0 * timeStepFactor
+			pr := st.percolation_rate[i] / 1000.0 * timeStepFactor
+			NO3_u := st.soil_no3_aq[i+1]
 
 			if pr >= 0.0 && pr_o >= 0.0 {
-				NO3_o := st.vq_SoilNO3_aq[i-1]
-				st.vq_Convection[i] = ((NO3 * pr) - (NO3_o * pr_o)) / lt
+				NO3_o := st.soil_no3_aq[i-1]
+				st.convection[i] = ((NO3 * pr) - (NO3_o * pr_o)) / lt
 			} else if pr >= 0 && pr_o < 0 {
-				st.vq_Convection[i] = ((NO3 * pr) - (NO3 * pr_o)) / lt
+				st.convection[i] = ((NO3 * pr) - (NO3 * pr_o)) / lt
 			} else if pr < 0 && pr_o < 0 {
-				st.vq_Convection[i] = ((NO3_u * pr) - (NO3 * pr_o)) / lt
+				st.convection[i] = ((NO3_u * pr) - (NO3 * pr_o)) / lt
 			} else if pr < 0 && pr_o >= 0 {
-				NO3_o := st.vq_SoilNO3_aq[i-1]
-				st.vq_Convection[i] = ((NO3_u * pr) - (NO3_o * pr_o)) / lt
+				NO3_o := st.soil_no3_aq[i-1]
+				st.convection[i] = ((NO3_u * pr) - (NO3_o * pr_o)) / lt
 			}
 		} else {
 			// bottom layer
-			pr_o := st.vq_PercolationRate[i-1] / 1000.0 * timeStepFactor
+			pr_o := st.percolation_rate[i-1] / 1000.0 * timeStepFactor
 			pr := st.soilColumn.vs_FluxAtLowerBoundary / 1000.0 * timeStepFactor
 
 			if pr >= 0.0 && pr_o >= 0.0 {
-				NO3_o := st.vq_SoilNO3_aq[i-1]
-				st.vq_Convection[i] = ((NO3 * pr) - (NO3_o * pr_o)) / lt
+				NO3_o := st.soil_no3_aq[i-1]
+				st.convection[i] = ((NO3 * pr) - (NO3_o * pr_o)) / lt
 			} else if pr >= 0 && pr_o < 0 {
-				st.vq_Convection[i] = ((NO3 * pr) - (NO3 * pr_o)) / lt
+				st.convection[i] = ((NO3 * pr) - (NO3 * pr_o)) / lt
 			} else if pr < 0 && pr_o < 0 {
-				st.vq_Convection[i] = (-(NO3 * pr_o)) / lt
+				st.convection[i] = (-(NO3 * pr_o)) / lt
 			} else if pr < 0 && pr_o >= 0 {
-				NO3_o := st.vq_SoilNO3_aq[i-1]
-				st.vq_Convection[i] = (-(NO3_o * pr_o)) / lt
+				NO3_o := st.soil_no3_aq[i-1]
+				st.convection[i] = (-(NO3_o * pr_o)) / lt
 			}
 		}
 	}
 
 	// Calculation of dispersion depending on pore water velocity
 	for i in 0 ..< nols {
-		pri := st.vq_PercolationRate[i] / 1000.0 * timeStepFactor
+		pri := st.percolation_rate[i] / 1000.0 * timeStepFactor
 		pr0 := st.soilColumn.layers[0].soil_water_flux / 1000.0 * timeStepFactor
 		lti := st.soilColumn.layers[i].layer_thickness
-		NO3i := st.vq_SoilNO3_aq[i]
+		NO3i := st.soil_no3_aq[i]
 		fci := st.soilColumn.layers[i].field_capacity
 		smi := st.soilColumn.layers[i].soil_moisture_m3
 
 		if i == nols-1 {
-			st.vq_PoreWaterVelocity[i] = libc.fabs(pri / fci) // [m t-1]
+			st.pore_water_velocity[i] = libc.fabs(pri / fci) // [m t-1]
 			soilMoistureGradient[i] = smi // [m3 m-3]
 		} else {
 			fcip1 := st.soilColumn.layers[i+1].field_capacity
 			smip1 := st.soilColumn.layers[i+1].soil_moisture_m3
-			st.vq_PoreWaterVelocity[i] = libc.fabs(pri / ((fci + fcip1) * 0.5)) // [m t-1]
+			st.pore_water_velocity[i] = libc.fabs(pri / ((fci + fcip1) * 0.5)) // [m t-1]
 			soilMoistureGradient[i] = (smi + smip1) * 0.5 // [m3 m-3]
 		}
 
-		st.vq_DiffusionCoeff[i] =
+		st.diffusion_coeff[i] =
 			diffusionCoeffStandard *
 			(AD * libc.exp(soilMoistureGradient[i]*2.0*5.0) / soilMoistureGradient[i]) *
 			timeStepFactor // [m2 t-1] * [t t-1]
 
 		// Dispersion coefficient, old DB
 		if i == 0 {
-			st.vq_DispersionCoeff[i] =
-				soilMoistureGradient[i]*(st.vq_DiffusionCoeff[i]+dispersionLength*st.vq_PoreWaterVelocity[i]) -
+			st.dispersion_coeff[i] =
+				soilMoistureGradient[i]*(st.diffusion_coeff[i]+dispersionLength*st.pore_water_velocity[i]) -
 				(0.5 * lti * libc.fabs(pri)) +
 				((0.5 * st.envParams.p_timeStep * timeStepFactor * libc.fabs((pri+pr0)/2.0)) *
-						st.vq_PoreWaterVelocity[i])
+						st.pore_water_velocity[i])
 		} else {
-			pr_o := st.vq_PercolationRate[i-1] / 1000.0 * timeStepFactor // [m t-1]
+			pr_o := st.percolation_rate[i-1] / 1000.0 * timeStepFactor // [m t-1]
 
-			st.vq_DispersionCoeff[i] =
-				soilMoistureGradient[i]*(st.vq_DiffusionCoeff[i]+dispersionLength*st.vq_PoreWaterVelocity[i]) -
+			st.dispersion_coeff[i] =
+				soilMoistureGradient[i]*(st.diffusion_coeff[i]+dispersionLength*st.pore_water_velocity[i]) -
 				(0.5 * lti * libc.fabs(pri)) +
 				((0.5 * st.envParams.p_timeStep * timeStepFactor * libc.fabs((pri+pr_o)/2.0)) *
-						st.vq_PoreWaterVelocity[i])
+						st.pore_water_velocity[i])
 		}
 
 		// old DISP = Gesamt-Dispersion (D in Diss S. 23)
 		if i == 0 {
-			NO3_u := st.vq_SoilNO3_aq[i+1]
-			st.vq_Dispersion[i] = -st.vq_DispersionCoeff[i] * (NO3i - NO3_u) / (lti * lti)
+			NO3_u := st.soil_no3_aq[i+1]
+			st.dispersion[i] = -st.dispersion_coeff[i] * (NO3i - NO3_u) / (lti * lti)
 		} else if i < nols-1 {
-			NO3_o := st.vq_SoilNO3_aq[i-1]
-			NO3_u := st.vq_SoilNO3_aq[i+1]
-			st.vq_Dispersion[i] =
-				(st.vq_DispersionCoeff[i-1] * (NO3_o - NO3i) / (lti * lti)) -
-				(st.vq_DispersionCoeff[i] * (NO3i - NO3_u) / (lti * lti))
+			NO3_o := st.soil_no3_aq[i-1]
+			NO3_u := st.soil_no3_aq[i+1]
+			st.dispersion[i] =
+				(st.dispersion_coeff[i-1] * (NO3_o - NO3i) / (lti * lti)) -
+				(st.dispersion_coeff[i] * (NO3i - NO3_u) / (lti * lti))
 		} else {
-			NO3_o := st.vq_SoilNO3_aq[i-1]
-			st.vq_Dispersion[i] = st.vq_DispersionCoeff[i-1] * (NO3_o - NO3i) / (lti * lti)
+			NO3_o := st.soil_no3_aq[i-1]
+			st.dispersion[i] = st.dispersion_coeff[i-1] * (NO3_o - NO3i) / (lti * lti)
 		}
 	}
 
-	if st.vq_PercolationRate[leachingDepthLayerIndex] > 0.0 {
+	if st.percolation_rate[leachingDepthLayerIndex] > 0.0 {
 		// leaching depth layer index = chosen leaching depth
 		lt := st.soilColumn.layers[leachingDepthLayerIndex].layer_thickness
-		NO3 := st.vq_SoilNO3_aq[leachingDepthLayerIndex]
+		NO3 := st.soil_no3_aq[leachingDepthLayerIndex]
 
 		if leachingDepthLayerIndex < nols-1 {
-			pr_u := st.vq_PercolationRate[leachingDepthLayerIndex+1] / 1000.0 * timeStepFactor // [m t-1]
-			NO3_u := st.vq_SoilNO3_aq[leachingDepthLayerIndex+1] // [kg m-3]
-			// vq_LeachingAtBoundary: Summe fuer Auswaschung (Diff + Konv), old OUTSUM
-			st.vq_LeachingAtBoundary +=
+			pr_u := st.percolation_rate[leachingDepthLayerIndex+1] / 1000.0 * timeStepFactor // [m t-1]
+			NO3_u := st.soil_no3_aq[leachingDepthLayerIndex+1] // [kg m-3]
+			// leaching_at_boundary: Summe fuer Auswaschung (Diff + Konv), old OUTSUM
+			st.leaching_at_boundary +=
 				((pr_u * NO3) / lt * 10000.0 * lt) +
-				((st.vq_DispersionCoeff[leachingDepthLayerIndex] * (NO3 - NO3_u)) / (lt * lt) * 10000.0 * lt) // [kg ha-1]
+				((st.dispersion_coeff[leachingDepthLayerIndex] * (NO3 - NO3_u)) / (lt * lt) * 10000.0 * lt) // [kg ha-1]
 		} else {
 			pr_u := st.soilColumn.vs_FluxAtLowerBoundary / 1000.0 * timeStepFactor // [m t-1]
-			st.vq_LeachingAtBoundary += pr_u * NO3 / lt * 10000.0 * lt // [kg ha-1]
+			st.leaching_at_boundary += pr_u * NO3 / lt * 10000.0 * lt // [kg ha-1]
 		}
 	} else {
-		pr_u := st.vq_PercolationRate[leachingDepthLayerIndex] / 1000.0 * timeStepFactor
+		pr_u := st.percolation_rate[leachingDepthLayerIndex] / 1000.0 * timeStepFactor
 		lt := st.soilColumn.layers[leachingDepthLayerIndex].layer_thickness
-		NO3 := st.vq_SoilNO3_aq[leachingDepthLayerIndex]
+		NO3 := st.soil_no3_aq[leachingDepthLayerIndex]
 
 		if leachingDepthLayerIndex < nols-1 {
-			NO3_u := st.vq_SoilNO3_aq[leachingDepthLayerIndex+1]
-			st.vq_LeachingAtBoundary +=
+			NO3_u := st.soil_no3_aq[leachingDepthLayerIndex+1]
+			st.leaching_at_boundary +=
 				((pr_u * NO3_u) / (lt * 10000.0 * lt)) +
-				st.vq_DispersionCoeff[leachingDepthLayerIndex] * (NO3 - NO3_u) / ((lt * lt) * 10000.0 * lt) // [kg ha-1]
+				st.dispersion_coeff[leachingDepthLayerIndex] * (NO3 - NO3_u) / ((lt * lt) * 10000.0 * lt) // [kg ha-1]
 		}
 	}
 
-	st.vq_LeachingAtBoundary = max(0.0, st.vq_LeachingAtBoundary)
+	st.leaching_at_boundary = max(0.0, st.leaching_at_boundary)
 
 	// Update of NO3 concentration, including transformation back into [kg NO3-N m soil-3]
 	for i in 0 ..< nols {
 		smi := st.soilColumn.layers[i].soil_moisture_m3
-		st.vq_SoilNO3_aq[i] += (st.vq_Dispersion[i] - st.vq_Convection[i]) / smi
+		st.soil_no3_aq[i] += (st.dispersion[i] - st.convection[i]) / smi
 	}
 }
 

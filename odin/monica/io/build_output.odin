@@ -600,7 +600,7 @@ of_recharge :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_nleach :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soilTransport.vq_LeachingAtBoundary, 3))
+	return jx.f(tl.round(model.soilTransport.leaching_at_boundary, 3))
 }
 
 @(private)

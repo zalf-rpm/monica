@@ -296,3 +296,21 @@ Not renamed this round: `soilColumn`, `pt_TimeStep`, `pm_HydraulicConductivityRe
 | `vm_WaterToInfiltrate` | `water_to_infiltrate` |
 
 Not renamed this round: `soilColumn` (no `vm_` prefix). Note Soil_Column has its own, separate `vm_SnowDepth` mirror field (`sc.soilColumn.vm_SnowDepth = sc.snow_depth`) - out of scope this round, unrelated to Snow_Component's own field of the same C++ name.
+
+## `monica::SoilTransport` -> `core.Soil_Transport` (odin/monica/core/soil_transport.odin)
+
+| C++ (`soiltransport.h`) | Odin |
+| --- | --- |
+| `vq_Convection` | `convection` |
+| `vq_DiffusionCoeff` | `diffusion_coeff` |
+| `vq_Dispersion` | `dispersion` |
+| `vq_DispersionCoeff` | `dispersion_coeff` |
+| `vq_LeachingAtBoundary` | `leaching_at_boundary` |
+| `vq_PercolationRate` | `percolation_rate` |
+| `vq_PoreWaterVelocity` | `pore_water_velocity` |
+| `vq_SoilNO3` | `soil_no3` |
+| `vq_SoilNO3_aq` | `soil_no3_aq` |
+| `vq_TimeStep` | `time_step` |
+| `vq_TotalDispersion` | `total_dispersion` |
+
+Not renamed this round: `soilColumn`, `modParams`, `siteParams`, `envParams`, `cropModParams`, `cropModule` (camelCase, no `vq_` prefix); `vc_NUptakeFromLayer` (mirrors Crop_Module, already renamed there) and `vs_SoilMineralNContent` (dead field) are also out of scope this round.
