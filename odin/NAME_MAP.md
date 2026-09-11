@@ -314,3 +314,30 @@ Not renamed this round: `soilColumn` (no `vm_` prefix). Note Soil_Column has its
 | `vq_TotalDispersion` | `total_dispersion` |
 
 Not renamed this round: `soilColumn`, `modParams`, `siteParams`, `envParams`, `cropModParams`, `cropModule` (camelCase, no `vq_` prefix); `vc_NUptakeFromLayer` (mirrors Crop_Module, already renamed there) and `vs_SoilMineralNContent` (dead field) are also out of scope this round.
+
+## `monica::SoilTemperature` -> `core.Soil_Temperature` (odin/monica/core/soil_temperature.odin)
+
+| C++ (`soiltemperature.h`) | Odin |
+| --- | --- |
+| `B` | `b` |
+| `dampingFactor` | `damping_factor` |
+| `heatCapacity` | `heat_capacity` |
+| `heatConductivity` | `heat_conductivity` |
+| `heatConductivityMean` | `heat_conductivity_mean` |
+| `heatFlow` | `heat_flow` |
+| `matrixDiagonal` | `matrix_diagonal` |
+| `matrixLowerTriangle` | `matrix_lower_triangle` |
+| `matrixPrimaryDiagonal` | `matrix_primary_diagonal` |
+| `matrixSecondaryDiagonal` | `matrix_secondary_diagonal` |
+| `noOfSoilLayers` | `no_of_soil_layers` |
+| `noOfTempLayers` | `no_of_temp_layers` |
+| `soilColumn` | `soil_column` |
+| `soilColumnBottomLayer` | `soil_column_bottom_layer` |
+| `soilColumnGroundLayer` | `soil_column_ground_layer` |
+| `soilSurfaceTemperature` | `soil_surface_temperature` |
+| `soilTemperature` | `soil_temperature` |
+| `V` | `v` |
+| `volumeMatrix` | `volume_matrix` |
+| `volumeMatrixOld` | `volume_matrix_old` |
+
+Not renamed: `params`, `solution` (already lowercase). Full camelCase->snake_case pass, unlike the vX_-prefix structs above.

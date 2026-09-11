@@ -168,7 +168,7 @@ g_alias_table := []Alias_Entry {
 	{"Sat", {"soilColumn.layers.saturation", 4, .NONE, "m3 m-3"}},
 	{"SnowD", {"soilMoisture.snow_component.snow_depth", 1, .NONE, "mm"}},
 	{"SoilpH", {"soilColumn.layers.0.soil_ph", 1, .NONE, ""}},
-	{"STemp", {"soilTemperature.soilColumn.layers.soil_temperature", 1, .NONE, "�C"}},
+	{"STemp", {"soilTemperature.soil_column.layers.soil_temperature", 1, .NONE, "°C"}},
 	{"StomRes", {"currentCropModule.stomata_resistance", 2, .NONE, "s m-1"}},
 	{"Stone", {"soilColumn.layers.soil_stone_content", 2, .NONE, "kg kg-1"}},
 	{
@@ -181,7 +181,7 @@ g_alias_table := []Alias_Entry {
 	{"sumResidueCutBiomass", {"currentCropModule.sum_residue_cut_biomass", 1, .NONE, "kgDM ha-1"}},
 	{"Sunhours", {"climateData.#last.sunhours", 4, .NONE, ""}},
 	{"Surface", {"soilColumn.vs_SurfaceWaterStorage", 1, .NONE, "mm"}},
-	{"SurfTemp", {"soilTemperature.soilSurfaceTemperature", 1, .NONE, "�C"}},
+	{"SurfTemp", {"soilTemperature.soil_surface_temperature", 1, .NONE, "�C"}},
 	{"Target", {"currentCropModule.target_n_concentration", 3, .NONE, "kgN ha-1"}},
 	{"Tavg", {"climateData.#last.tavg", 4, .NONE, ""}},
 	{"TempSum", {"currentCropModule.current_total_temperature_sum", 1, .NONE, "�Cd"}},
