@@ -610,9 +610,9 @@ apply_irrigation_via_trigger :: proc(
 		return false, 0
 	}
 
-	s := sc.cropModule.cropParams.cultivarParams.pc_HeatSumIrrigationStart
-	e := sc.cropModule.cropParams.cultivarParams.pc_HeatSumIrrigationEnd
-	cts := sc.cropModule.vc_CurrentTotalTemperatureSum
+	s := sc.cropModule.crop_params.cultivarParams.pc_HeatSumIrrigationStart
+	e := sc.cropModule.crop_params.cultivarParams.pc_HeatSumIrrigationEnd
+	cts := sc.cropModule.current_total_temperature_sum
 	if cts < s || cts > e || aips.threshold < 0.0 {
 		return false, 0
 	}

@@ -84,7 +84,7 @@ soil_transport_step :: proc(st: ^Soil_Transport) {
 	for i in 0 ..< nols {
 		st.vq_SoilNO3[i] = st.soilColumn.layers[i].vs_SoilNO3
 
-		st.vc_NUptakeFromLayer[i] = st.cropModule != nil ? st.cropModule.vc_NUptakeFromLayer[i] : 0
+		st.vc_NUptakeFromLayer[i] = st.cropModule != nil ? st.cropModule.n_uptake_from_layer[i] : 0
 		if i == nols-1 {
 			st.vq_PercolationRate[i] = st.soilColumn.vs_FluxAtLowerBoundary // [mm]
 		} else {

@@ -113,26 +113,26 @@ dump_yield_getters :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module, a
 }
 
 dump_cutting_state :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module) {
-	tr.dump(t, strings.concatenate({path, ".vc_AbovegroundBiomass"}), cm.vc_AbovegroundBiomass)
-	tr.dump(t, strings.concatenate({path, ".vc_TotalBiomassNContent"}), cm.vc_TotalBiomassNContent)
-	tr.dump(t, strings.concatenate({path, ".vc_OrganBiomass"}), cm.vc_OrganBiomass)
-	tr.dump(t, strings.concatenate({path, ".vc_OrganDeadBiomass"}), cm.vc_OrganDeadBiomass)
-	tr.dump(t, strings.concatenate({path, ".vc_OrganGreenBiomass"}), cm.vc_OrganGreenBiomass)
-	tr.dump(t, strings.concatenate({path, ".vc_LeafAreaIndex"}), cm.vc_LeafAreaIndex)
-	tr.dump(t, strings.concatenate({path, ".vc_DevelopmentalStage"}), cm.vc_DevelopmentalStage)
-	tr.dump(t, strings.concatenate({path, ".vc_CuttingDelayDays"}), cm.vc_CuttingDelayDays)
-	tr.dump(t, strings.concatenate({path, ".vc_exportedCutBiomass"}), cm.vc_exportedCutBiomass)
+	tr.dump(t, strings.concatenate({path, ".vc_AbovegroundBiomass"}), cm.aboveground_biomass)
+	tr.dump(t, strings.concatenate({path, ".vc_TotalBiomassNContent"}), cm.total_biomass_n_content)
+	tr.dump(t, strings.concatenate({path, ".vc_OrganBiomass"}), cm.organ_biomass)
+	tr.dump(t, strings.concatenate({path, ".vc_OrganDeadBiomass"}), cm.organ_dead_biomass)
+	tr.dump(t, strings.concatenate({path, ".vc_OrganGreenBiomass"}), cm.organ_green_biomass)
+	tr.dump(t, strings.concatenate({path, ".vc_LeafAreaIndex"}), cm.leaf_area_index)
+	tr.dump(t, strings.concatenate({path, ".vc_DevelopmentalStage"}), cm.developmental_stage)
+	tr.dump(t, strings.concatenate({path, ".vc_CuttingDelayDays"}), cm.cutting_delay_days)
+	tr.dump(t, strings.concatenate({path, ".vc_exportedCutBiomass"}), cm.exported_cut_biomass)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".vc_sumExportedCutBiomass"}),
-		cm.vc_sumExportedCutBiomass,
+		cm.sum_exported_cut_biomass,
 	)
-	tr.dump(t, strings.concatenate({path, ".vc_residueCutBiomass"}), cm.vc_residueCutBiomass)
-	tr.dump(t, strings.concatenate({path, ".vc_sumResidueCutBiomass"}), cm.vc_sumResidueCutBiomass)
+	tr.dump(t, strings.concatenate({path, ".vc_residueCutBiomass"}), cm.residue_cut_biomass)
+	tr.dump(t, strings.concatenate({path, ".vc_sumResidueCutBiomass"}), cm.sum_residue_cut_biomass)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".cropParams.cultivarParams.pc_MaxAssimilationRate"}),
-		cm.cropParams.cultivarParams.pc_MaxAssimilationRate,
+		cm.crop_params.cultivarParams.pc_MaxAssimilationRate,
 	)
 }
 
@@ -242,7 +242,7 @@ main :: proc() {
 		a,
 	)
 	model.currentCropModule = &cm
-	g_residue_params = &cm.residueParams.base
+	g_residue_params = &cm.residue_params.base
 
 	model.soilMoisture.crop_module = &cm
 	model.soilOrganic.crop_module = &cm
@@ -292,7 +292,7 @@ main :: proc() {
 			tmin,
 			tmax,
 			globrad,
-			cm.vc_SoilCoverage,
+			cm.soil_coverage,
 			model.soilMoisture.snow_component.vm_SnowDepth,
 			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
 		)

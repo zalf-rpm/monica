@@ -39,39 +39,39 @@ jn :: proc(path, name: string) -> string {
 }
 
 dump_crop_module_water_nitrogen :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module) {
-	tr.dump(t, jn(path, "vc_ReferenceEvapotranspiration"), cm.vc_ReferenceEvapotranspiration)
-	tr.dump(t, jn(path, "vc_StomataResistance"), cm.vc_StomataResistance)
+	tr.dump(t, jn(path, "vc_ReferenceEvapotranspiration"), cm.reference_evapotranspiration)
+	tr.dump(t, jn(path, "vc_StomataResistance"), cm.stomata_resistance)
 
-	tr.dump(t, jn(path, "vc_NetPrecipitation"), cm.vc_NetPrecipitation)
-	tr.dump(t, jn(path, "vc_InterceptionStorage"), cm.vc_InterceptionStorage)
-	tr.dump(t, jn(path, "vc_EvaporatedFromIntercept"), cm.vc_EvaporatedFromIntercept)
-	tr.dump(t, jn(path, "vc_PotentialTranspiration"), cm.vc_PotentialTranspiration)
-	tr.dump(t, jn(path, "vc_RemainingEvapotranspiration"), cm.vc_RemainingEvapotranspiration)
-	tr.dump(t, jn(path, "vc_ActualTranspiration"), cm.vc_ActualTranspiration)
-	tr.dump(t, jn(path, "vc_ActualTranspirationDeficit"), cm.vc_ActualTranspirationDeficit)
-	tr.dump(t, jn(path, "vc_PotentialTranspirationDeficit"), cm.vc_PotentialTranspirationDeficit)
-	tr.dump(t, jn(path, "vc_TranspirationReduced"), cm.vc_TranspirationReduced)
-	tr.dump(t, jn(path, "vc_TranspirationDeficit"), cm.vc_TranspirationDeficit)
-	tr.dump(t, jn(path, "vc_Transpiration"), cm.vc_Transpiration)
-	tr.dump(t, jn(path, "vc_TranspirationRedux"), cm.vc_TranspirationRedux)
-	tr.dump(t, jn(path, "vc_RootEffectivity"), cm.vc_RootEffectivity)
+	tr.dump(t, jn(path, "vc_NetPrecipitation"), cm.net_precipitation)
+	tr.dump(t, jn(path, "vc_InterceptionStorage"), cm.interception_storage)
+	tr.dump(t, jn(path, "vc_EvaporatedFromIntercept"), cm.evaporated_from_intercept)
+	tr.dump(t, jn(path, "vc_PotentialTranspiration"), cm.potential_transpiration)
+	tr.dump(t, jn(path, "vc_RemainingEvapotranspiration"), cm.remaining_evapotranspiration)
+	tr.dump(t, jn(path, "vc_ActualTranspiration"), cm.actual_transpiration)
+	tr.dump(t, jn(path, "vc_ActualTranspirationDeficit"), cm.actual_transpiration_deficit)
+	tr.dump(t, jn(path, "vc_PotentialTranspirationDeficit"), cm.potential_transpiration_deficit)
+	tr.dump(t, jn(path, "vc_TranspirationReduced"), cm.transpiration_reduced)
+	tr.dump(t, jn(path, "vc_TranspirationDeficit"), cm.transpiration_deficit)
+	tr.dump(t, jn(path, "vc_Transpiration"), cm.transpiration)
+	tr.dump(t, jn(path, "vc_TranspirationRedux"), cm.transpiration_redux)
+	tr.dump(t, jn(path, "vc_RootEffectivity"), cm.root_effectivity)
 	tr.dump(t, jn(path, "getEffectiveRootingDepth"), core.get_effective_rooting_depth(cm))
 
-	tr.dump(t, jn(path, "vs_SoilMineralNContent"), cm.vs_SoilMineralNContent)
-	tr.dump(t, jn(path, "vc_NUptakeFromLayer"), cm.vc_NUptakeFromLayer)
-	tr.dump(t, jn(path, "vc_TotalNUptake"), cm.vc_TotalNUptake)
-	tr.dump(t, jn(path, "vc_TotalNInput"), cm.vc_TotalNInput)
-	tr.dump(t, jn(path, "vc_FixedN"), cm.vc_FixedN)
-	tr.dump(t, jn(path, "vc_SumTotalNUptake"), cm.vc_SumTotalNUptake)
-	tr.dump(t, jn(path, "vc_NConcentrationRoot"), cm.vc_NConcentrationRoot)
+	tr.dump(t, jn(path, "vs_SoilMineralNContent"), cm.vs_soil_mineral_n_content)
+	tr.dump(t, jn(path, "vc_NUptakeFromLayer"), cm.n_uptake_from_layer)
+	tr.dump(t, jn(path, "vc_TotalNUptake"), cm.total_n_uptake)
+	tr.dump(t, jn(path, "vc_TotalNInput"), cm.total_n_input)
+	tr.dump(t, jn(path, "vc_FixedN"), cm.fixed_n)
+	tr.dump(t, jn(path, "vc_SumTotalNUptake"), cm.sum_total_n_uptake)
+	tr.dump(t, jn(path, "vc_NConcentrationRoot"), cm.n_concentration_root)
 	tr.dump(
 		t,
 		jn(path, "vc_NConcentrationAbovegroundBiomass"),
-		cm.vc_NConcentrationAbovegroundBiomass,
+		cm.n_concentration_aboveground_biomass,
 	)
 
-	tr.dump(t, jn(path, "vc_GrossPrimaryProduction"), cm.vc_GrossPrimaryProduction)
-	tr.dump(t, jn(path, "vc_NetPrimaryProduction"), cm.vc_NetPrimaryProduction)
+	tr.dump(t, jn(path, "vc_GrossPrimaryProduction"), cm.gross_primary_production)
+	tr.dump(t, jn(path, "vc_NetPrimaryProduction"), cm.net_primary_production)
 }
 
 // checkpoint 5's day_step, extended with the checkpoint-6 functions in
@@ -86,34 +86,34 @@ day_step :: proc(
 	relativeHumidity, windSpeed, windSpeedHeight, grossPrecipitation: f64,
 	allocator := context.allocator,
 ) {
-	pc_BaseDaylength := cm.cropParams.cultivarParams.pc_BaseDaylength
-	pc_CriticalOxygenContent := cm.cropParams.speciesParams.pc_CriticalOxygenContent
-	pc_DaylengthRequirement := cm.cropParams.cultivarParams.pc_DaylengthRequirement
-	pc_MaxCropHeight := cm.cropParams.cultivarParams.pc_MaxCropHeight
-	pc_Perennial := cm.cropParams.cultivarParams.pc_Perennial
-	pc_SpecificLeafArea := cm.cropParams.cultivarParams.pc_SpecificLeafArea
-	pc_StageKcFactor := cm.cropParams.cultivarParams.pc_StageKcFactor
-	pc_StageTemperatureSum := cm.cropParams.cultivarParams.pc_StageTemperatureSum
-	pc_VernalisationRequirement := cm.cropParams.cultivarParams.pc_VernalisationRequirement
-	speciesPs := &cm.cropParams.speciesParams
-	soilColumn := cm.soilColumn
+	pc_BaseDaylength := cm.crop_params.cultivarParams.pc_BaseDaylength
+	pc_CriticalOxygenContent := cm.crop_params.speciesParams.pc_CriticalOxygenContent
+	pc_DaylengthRequirement := cm.crop_params.cultivarParams.pc_DaylengthRequirement
+	pc_MaxCropHeight := cm.crop_params.cultivarParams.pc_MaxCropHeight
+	pc_Perennial := cm.crop_params.cultivarParams.pc_Perennial
+	pc_SpecificLeafArea := cm.crop_params.cultivarParams.pc_SpecificLeafArea
+	pc_StageKcFactor := cm.crop_params.cultivarParams.pc_StageKcFactor
+	pc_StageTemperatureSum := cm.crop_params.cultivarParams.pc_StageTemperatureSum
+	pc_VernalisationRequirement := cm.crop_params.cultivarParams.pc_VernalisationRequirement
+	speciesPs := &cm.crop_params.speciesParams
+	soilColumn := cm.soil_column
 
 	vs_JulianDay := int(d.julian_day(currentDate))
 
 	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
 
-	cm.vc_OxygenDeficit = core.fc_oxygen_deficiency(
+	cm.oxygen_deficit = core.fc_oxygen_deficiency(
 		cm,
-		pc_CriticalOxygenContent[cm.vc_DevelopmentalStage],
+		pc_CriticalOxygenContent[cm.developmental_stage],
 	)
 
-	old_DevelopmentalStage := cm.vc_DevelopmentalStage
+	old_DevelopmentalStage := cm.developmental_stage
 
-	if !d.is_valid(cm.perennialCropDormancyPeriodEndDate) {
+	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
 		if speciesPs.dormancyEndDoy == 0 {
-			cm.perennialCropDormancyPeriodEndDate = currentDate
+			cm.perennial_crop_dormancy_period_end_date = currentDate
 		} else {
-			cm.perennialCropDormancyPeriodEndDate = d.add(
+			cm.perennial_crop_dormancy_period_end_date = d.add(
 				d.make_date(
 					1,
 					1,
@@ -126,59 +126,59 @@ day_step :: proc(
 			)
 		}
 	}
-	if !pc_Perennial || d.ge(currentDate, cm.perennialCropDormancyPeriodEndDate) {
+	if !pc_Perennial || d.ge(currentDate, cm.perennial_crop_dormancy_period_end_date) {
 		core.fc_crop_developmental_stage(
 			cm,
 			meanAirTemperature,
-			cm.soilColumn.layers[0].vs_SoilMoisture_m3,
-			cm.soilColumn.layers[0].vs_FieldCapacity,
-			cm.soilColumn.layers[0].vs_PermanentWiltingPoint,
+			cm.soil_column.layers[0].vs_SoilMoisture_m3,
+			cm.soil_column.layers[0].vs_FieldCapacity,
+			cm.soil_column.layers[0].vs_PermanentWiltingPoint,
 			currentDate,
 		)
 	}
 
-	if core.is_anthesis_day(cm, old_DevelopmentalStage, cm.vc_DevelopmentalStage) {
-		cm.vc_AnthesisDay = vs_JulianDay
-	} else if core.is_maturity_day(cm, old_DevelopmentalStage, cm.vc_DevelopmentalStage) {
-		cm.vc_MaturityDay = vs_JulianDay
-		cm.vc_MaturityReached = true
+	if core.is_anthesis_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
+		cm.anthesis_day = vs_JulianDay
+	} else if core.is_maturity_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
+		cm.maturity_day = vs_JulianDay
+		cm.maturity_reached = true
 	}
 
-	cm.vc_DaylengthFactor = core.fc_daylength_factor(
+	cm.daylength_factor = core.fc_daylength_factor(
 		cm,
-		pc_DaylengthRequirement[cm.vc_DevelopmentalStage],
-		cm.vc_EffectiveDayLength,
-		cm.vc_PhotoperiodicDaylength,
-		pc_BaseDaylength[cm.vc_DevelopmentalStage],
+		pc_DaylengthRequirement[cm.developmental_stage],
+		cm.effective_day_length,
+		cm.photoperiodic_daylength,
+		pc_BaseDaylength[cm.developmental_stage],
 	)
 
-	cm.vc_VernalisationFactor, cm.vc_VernalisationDays = core.fc_vernalisation_factor(
+	cm.vernalisation_factor, cm.vernalisation_days = core.fc_vernalisation_factor(
 		cm,
 		meanAirTemperature,
-		pc_VernalisationRequirement[cm.vc_DevelopmentalStage],
-		cm.vc_VernalisationDays,
+		pc_VernalisationRequirement[cm.developmental_stage],
+		cm.vernalisation_days,
 	)
 
-	if cm.vc_TotalTemperatureSum == 0.0 {
-		cm.vc_RelativeTotalDevelopment = 0.0
+	if cm.total_temperature_sum == 0.0 {
+		cm.relative_total_development = 0.0
 	} else {
-		cm.vc_RelativeTotalDevelopment =
-			cm.vc_CurrentTotalTemperatureSum / cm.vc_TotalTemperatureSum
+		cm.relative_total_development =
+			cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
-	if cm.vc_DevelopmentalStage == 0 {
-		cm.vc_KcFactor = cm.siteParams.bareSoilKcFactor
+	if cm.developmental_stage == 0 {
+		cm.kc_factor = cm.site_params.bareSoilKcFactor
 	} else {
-		cm.vc_KcFactor = core.fc_kc_factor(
+		cm.kc_factor = core.fc_kc_factor(
 			cm,
-			pc_StageTemperatureSum[cm.vc_DevelopmentalStage],
-			cm.vc_CurrentTemperatureSum[cm.vc_DevelopmentalStage],
-			pc_StageKcFactor[cm.vc_DevelopmentalStage],
-			pc_StageKcFactor[cm.vc_DevelopmentalStage - 1],
+			pc_StageTemperatureSum[cm.developmental_stage],
+			cm.current_temperature_sum[cm.developmental_stage],
+			pc_StageKcFactor[cm.developmental_stage],
+			pc_StageKcFactor[cm.developmental_stage - 1],
 		)
 	}
 
-	if cm.vc_DevelopmentalStage > 0 {
+	if cm.developmental_stage > 0 {
 		maxCropHeight := pc_MaxCropHeight
 
 		core.fc_crop_size(cm, maxCropHeight)
@@ -186,16 +186,16 @@ day_step :: proc(
 		core.fc_crop_green_area(
 			cm,
 			meanAirTemperature,
-			cm.vc_OrganGrowthIncrement[core.Organ_Leaf],
-			cm.vc_OrganSenescenceIncrement[core.Organ_Leaf],
-			pc_SpecificLeafArea[cm.vc_DevelopmentalStage - 1],
-			pc_SpecificLeafArea[cm.vc_DevelopmentalStage],
+			cm.organ_growth_increment[core.Organ_Leaf],
+			cm.organ_senescence_increment[core.Organ_Leaf],
+			pc_SpecificLeafArea[cm.developmental_stage - 1],
+			pc_SpecificLeafArea[cm.developmental_stage],
 			pc_SpecificLeafArea[1],
-			pc_StageTemperatureSum[cm.vc_DevelopmentalStage],
-			cm.vc_CurrentTemperatureSum[cm.vc_DevelopmentalStage],
+			pc_StageTemperatureSum[cm.developmental_stage],
+			cm.current_temperature_sum[cm.developmental_stage],
 		)
 
-		cm.vc_SoilCoverage = core.fc_soil_coverage(cm)
+		cm.soil_coverage = core.fc_soil_coverage(cm)
 
 		core.fc_crop_photosynthesis(
 			cm,
@@ -223,7 +223,7 @@ day_step :: proc(
 		// branch (referenceEvapotranspiration < 0)
 		referenceEvapotranspiration := -1.0
 		if referenceEvapotranspiration < 0 {
-			cm.vc_ReferenceEvapotranspiration = core.fc_reference_evapotranspiration(
+			cm.reference_evapotranspiration = core.fc_reference_evapotranspiration(
 				cm,
 				maxAirTemperature,
 				minAirTemperature,
@@ -234,29 +234,29 @@ day_step :: proc(
 				ATM_CO2,
 			)
 		} else {
-			cm.vc_ReferenceEvapotranspiration = referenceEvapotranspiration
+			cm.reference_evapotranspiration = referenceEvapotranspiration
 		}
 
 		core.fc_crop_water_uptake(
 			cm,
 			soilColumn.vm_GroundwaterTableLayer,
 			grossPrecipitation,
-			cm.vc_CurrentTotalTemperatureSum,
-			cm.vc_TotalTemperatureSum,
+			cm.current_total_temperature_sum,
+			cm.total_temperature_sum,
 		)
 
 		core.fc_crop_n_uptake(
 			cm,
 			soilColumn.vm_GroundwaterTableLayer,
-			cm.vc_CurrentTotalTemperatureSum,
-			cm.vc_TotalTemperatureSum,
+			cm.current_total_temperature_sum,
+			cm.total_temperature_sum,
 		)
 
-		cm.vc_GrossPrimaryProduction = core.fc_gross_primary_production(cm)
-		cm.vc_NetPrimaryProduction = core.fc_net_primary_production(cm, cm.vc_TotalRespired)
+		cm.gross_primary_production = core.fc_gross_primary_production(cm)
+		cm.net_primary_production = core.fc_net_primary_production(cm, cm.total_respired)
 	}
 
-	cm.noOfCropSteps += 1
+	cm.no_of_crop_steps += 1
 }
 
 main :: proc() {

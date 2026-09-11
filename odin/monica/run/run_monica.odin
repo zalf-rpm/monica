@@ -792,7 +792,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 		// test if monica's crop has been dying in the previous step; if yes, it
 		// will be incorporated into soil
-		if model.currentCropModule != nil && model.currentCropModule.dyingOut {
+		if model.currentCropModule != nil && model.currentCropModule.dying_out {
 			core.monica_model_incorporate_current_crop(model, allocator)
 		}
 

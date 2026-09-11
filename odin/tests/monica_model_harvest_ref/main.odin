@@ -173,7 +173,7 @@ main :: proc() {
 		a,
 	)
 	model.currentCropModule = &cm
-	g_residue_params = &cm.residueParams.base
+	g_residue_params = &cm.residue_params.base
 
 	model.soilMoisture.crop_module = &cm
 	model.soilOrganic.crop_module = &cm
@@ -223,7 +223,7 @@ main :: proc() {
 			tmin,
 			tmax,
 			globrad,
-			cm.vc_SoilCoverage,
+			cm.soil_coverage,
 			model.soilMoisture.snow_component.vm_SnowDepth,
 			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
 		)

@@ -91,9 +91,16 @@ C++ is `namespace::camelCase`; Odin is `package` + `snake_case`. Map mechanicall
 | `Tools::readFile` | `tools.read_file` |
 | `Tools::Date` | `date.Date` |
 | `monica::makeSoilColumn` | `core.make_soil_column` |
-| struct field `vs_SoilMoisture_m3` | field `vs_SoilMoisture_m3` (**unchanged**) |
+| struct field `vs_SoilMoisture_m3` | field `vs_soil_moisture_m3` |
 
-Struct **field** names keep their exact C++ spelling — they are what the trace diff matches on.
+**Superseded:** struct fields used to keep their exact C++ spelling unchanged, specifically so the
+trace diff and the output-path aliases (§9) could match on name alone. As of the `Crop_Module`
+cleanup, fields are snake_cased like everything else instead — see `odin/NAME_MAP.md` for the
+C++-name -> Odin-name lookup this displaces, one table per renamed struct. The trace diff needs no
+extra plumbing for this: every `_ref` test's `tr.dump(t, "struct.OldCppName", cm.new_odin_name)` call
+already hardcodes the C++-matching label as a string literal, independent of the Odin identifier
+actually being read (see `trace.odin`'s "the walk" section) — so only the output alias paths (§9)
+and any new `_ref` fixture need the mapping table, not the trace mechanism itself.
 
 **Correction to an earlier plan (superseded by what phase 3-4 actually built):** `src/core/`
 becomes **one** Odin package, `core` — per C++ *directory*, not per C++ *namespace* — not a separate
@@ -238,9 +245,13 @@ array bound. See `../plan-reflective-outputs.md`.
 The same table is the *write* side: the SetValue workstep sets any field a path reaches, through
 `oid_set_value`. Do not add a `setf` for something a path can already reach.
 
-Two consequences for the rules above. Field names keep mattering for a new reason - §2's "struct
-field names keep their exact C++ spelling" is now what makes 125 generated alias rows resolve, and
-`odin/tests/output_paths_test.odin` fails if one drifts. And a path leaf reached through a nil
+Two consequences for the rules above. Field names keep mattering for a new reason - path *segments*
+are what make the 125 generated alias rows resolve, and `odin/tests/output_paths_test.odin` fails if
+one drifts. Since §2's "unchanged" rule was superseded, a renamed struct's alias rows in
+`output_paths.odin` must be updated by hand to the new field names (see `odin/NAME_MAP.md`) -
+`gen_output_aliases.py` regenerates paths straight from the C++ source and does not know about any
+rename, so re-running it on a renamed struct reintroduces the old C++ names and needs the same
+manual fix-up again. And a path leaf reached through a nil
 pointer or an unset `Maybe` yields *missing*, which the output layer turns into `0.0` - that is
 the C++ `... ? ... : 0.0` ternary, not a violation of §5; §5 still governs everything that reads
 a `Maybe` in model code.

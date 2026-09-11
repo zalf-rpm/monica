@@ -500,7 +500,7 @@ of_year :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 of_crop :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.currentCropModule != nil {
-		return jx.s(p.crop_name(&model.currentCropModule.cropParams, context.allocator))
+		return jx.s(p.crop_name(&model.currentCropModule.crop_params, context.allocator))
 	}
 	return jx.s("")
 }
@@ -508,7 +508,7 @@ of_crop :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 of_stage :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.currentCropModule != nil {
-		return jx.i(model.currentCropModule.vc_DevelopmentalStage + 1)
+		return jx.i(model.currentCropModule.developmental_stage + 1)
 	}
 	return jx.i(0)
 }
@@ -523,7 +523,7 @@ of_stage_set :: proc(model: ^core.Monica_Model, oid: OId, value: jx.Value) {
 @(private)
 of_ab_biom :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.currentCropModule != nil {
-		return jx.f(tl.round(model.currentCropModule.vc_AbovegroundBiomass, 1))
+		return jx.f(tl.round(model.currentCropModule.aboveground_biomass, 1))
 	}
 	return jx.f(0.0)
 }
@@ -533,9 +533,9 @@ of_org_biom :: proc(model: ^core.Monica_Model, oid_in: OId) -> jx.Value {
 	oid := oid_in
 	if oid_is_organ(&oid) &&
 	   model.currentCropModule != nil &&
-	   p.species_parameters_number_of_organs(&model.currentCropModule.cropParams.speciesParams) >
+	   p.species_parameters_number_of_organs(&model.currentCropModule.crop_params.speciesParams) >
 		   int(oid.organ) {
-		return jx.f(tl.round(model.currentCropModule.vc_OrganBiomass[int(oid.organ)], 1))
+		return jx.f(tl.round(model.currentCropModule.organ_biomass[int(oid.organ)], 1))
 	}
 	return jx.f(0.0)
 }
@@ -551,7 +551,7 @@ of_yield :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 of_lai :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.currentCropModule != nil {
-		return jx.f(tl.round(model.currentCropModule.vc_LeafAreaIndex, 4))
+		return jx.f(tl.round(model.currentCropModule.leaf_area_index, 4))
 	}
 	return jx.f(0.0)
 }

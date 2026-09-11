@@ -31,13 +31,13 @@ load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 
 dump_state :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 	cm := model.currentCropModule
-	tr.dump(t, strings.concatenate({path, ".vc_DevelopmentalStage"}), cm.vc_DevelopmentalStage)
+	tr.dump(t, strings.concatenate({path, ".vc_DevelopmentalStage"}), cm.developmental_stage)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".vc_CurrentTotalTemperatureSum"}),
-		cm.vc_CurrentTotalTemperatureSum,
+		cm.current_total_temperature_sum,
 	)
-	tr.dump(t, strings.concatenate({path, ".vc_AbovegroundBiomass"}), cm.vc_AbovegroundBiomass)
+	tr.dump(t, strings.concatenate({path, ".vc_AbovegroundBiomass"}), cm.aboveground_biomass)
 	for i in 0 ..< 3 {
 		tr.dump(
 			t,
@@ -188,7 +188,7 @@ main :: proc() {
 		// them explicit parameters instead (see monica_model.odin's
 		// monica_model_general_step for the production call this mirrors).
 		soil_coverage :=
-			model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0.0
+			model.currentCropModule != nil ? model.currentCropModule.soil_coverage : 0.0
 		core.soil_temperature_step(
 			&model.soilTemperature,
 			tmin,

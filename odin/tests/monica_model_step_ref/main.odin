@@ -69,17 +69,17 @@ dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) 
 		tr.dump(
 			t,
 			strings.concatenate({path, ".cropModule.vc_LeafAreaIndex"}),
-			model.currentCropModule.vc_LeafAreaIndex,
+			model.currentCropModule.leaf_area_index,
 		)
 		tr.dump(
 			t,
 			strings.concatenate({path, ".cropModule.vc_DevelopmentalStage"}),
-			model.currentCropModule.vc_DevelopmentalStage,
+			model.currentCropModule.developmental_stage,
 		)
 		tr.dump(
 			t,
 			strings.concatenate({path, ".cropModule.vc_TotalBiomass"}),
-			model.currentCropModule.vc_TotalBiomass,
+			model.currentCropModule.total_biomass,
 		)
 	}
 }

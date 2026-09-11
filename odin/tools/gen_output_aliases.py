@@ -22,9 +22,54 @@ import re
 import sys
 
 CPP = os.path.join(os.path.dirname(__file__), "..", "..", "src", "io", "build-output.cpp")
+NAME_MAP = os.path.join(os.path.dirname(__file__), "..", "NAME_MAP.md")
 
 ORGAN = {"OId::ROOT": "0", "OId::LEAF": "1", "OId::SHOOT": "2",
          "OId::FRUIT": "3", "OId::STRUCT": "4", "OId::SUGAR": "5"}
+
+# Which path-root segment (as it appears in a build-output.cpp expression,
+# post `monica.` stripping) is which renamed struct's table in NAME_MAP.md.
+# Add an entry here whenever another struct gets the same C++-name ->
+# snake_case treatment Crop_Module got, so its fields keep resolving once
+# renamed - see CONVENTIONS.md §9 for why this file would otherwise silently
+# reintroduce the old C++ names on every regeneration.
+PATH_ROOT_STRUCT = {
+    "currentCropModule": "Crop_Module",
+}
+
+
+def load_name_map(path=NAME_MAP):
+    """Parse odin/NAME_MAP.md into {Odin_Struct_Name: {cpp_field: odin_field}}.
+
+    Each struct gets its own "## ... -> `pkg.Struct_Name` (...)" heading
+    followed by a "| `cpp` | `odin` |" table; this reads every such table
+    regardless of how many structs the file grows to cover.
+    """
+    if not os.path.exists(path):
+        return {}
+    tables, current = {}, None
+    heading = re.compile(r"^##\s.*->\s*`[\w.]+\.(\w+)`")
+    row = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`\s*\|")
+    for line in open(path, encoding="utf-8"):
+        m = heading.match(line)
+        if m:
+            current = m.group(1)
+            tables[current] = {}
+            continue
+        m = row.match(line)
+        if m and current:
+            tables[current][m.group(1)] = m.group(2)
+    return tables
+
+
+def renamed_segment(root, seg, name_map):
+    """The current Odin name for `seg`, a direct field of the struct that
+    `root` (a path's first segment) points at - or `seg` unchanged if that
+    struct was never renamed, or has no entry for this particular field."""
+    struct = PATH_ROOT_STRUCT.get(root)
+    if struct is None:
+        return seg
+    return name_map.get(struct, {}).get(seg, seg)
 
 LAM = r"\[\]\(const MonicaModel &monica, OId oid\) \{ "
 
@@ -84,6 +129,9 @@ def entries(src):
         i = k
 
 
+_NAME_MAP = load_name_map()
+
+
 def to_path(expr, open_dim):
     """A C++ member expression -> an Odin path, or None if it is not a pure
     field path (a call, an index expression or arithmetic anywhere makes it
@@ -106,7 +154,10 @@ def to_path(expr, open_dim):
     e = re.sub(r"\.at\((\d+)\)", r".\1", e)
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*", e):
         return None
-    return e
+    segs = e.split(".")
+    if len(segs) > 1:
+        segs[1] = renamed_segment(segs[0], segs[1], _NAME_MAP)
+    return ".".join(segs)
 
 
 def classify(of):
@@ -151,7 +202,10 @@ def main():
     # Strip // comments first: build-output.cpp has a fully commented-out
     # build() call (Act_ET2) that would otherwise be extracted as a real id.
     src = "\n".join(re.sub(r"//.*$", "", ln) for ln in raw.split("\n"))
-    src = src[src.index("BOTRes &monica::buildOutputTable()"):]
+    m = re.search(r"BOTRes\s*&\s*monica::buildOutputTable\(\)", src)
+    if not m:
+        sys.exit("gen_output_aliases: can't find buildOutputTable() in %s" % args.cpp)
+    src = src[m.start():]
 
     rows, skipped, total = {}, [], 0
     for meta, of in entries(src):

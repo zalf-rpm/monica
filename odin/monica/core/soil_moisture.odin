@@ -203,11 +203,11 @@ soil_moisture_step :: proc(
 	dev_stage := 0
 	// C++: `sm->monica.currentCropModule.get()` - see the package comment.
 	if sm.crop_module != nil {
-		sm.soil_coverage_percent = sm.crop_module.vc_SoilCoverage
-		sm.kc_factor = sm.crop_module.vc_KcFactor
-		dev_stage = sm.crop_module.vc_DevelopmentalStage
+		sm.soil_coverage_percent = sm.crop_module.soil_coverage
+		sm.kc_factor = sm.crop_module.kc_factor
+		dev_stage = sm.crop_module.developmental_stage
 		if dev_stage > 0 {
-			sm.net_precipitation_mm = sm.crop_module.vc_NetPrecipitation
+			sm.net_precipitation_mm = sm.crop_module.net_precipitation
 		} else {
 			sm.net_precipitation_mm = precipitation_mm
 		}
@@ -395,7 +395,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 capillary_rise :: proc(sm: ^Soil_Moisture, allocator := context.allocator) {
 	sc := sm.soil_column
 
-	vc_RootingDepth := sm.crop_module != nil ? sm.crop_module.vc_RootingDepth : 0
+	vc_RootingDepth := sm.crop_module != nil ? sm.crop_module.rooting_depth : 0
 
 	// NOTE(c++-quirk): C++ computes this as size_t arithmetic
 	// (max(size_t(1), groundwater_table_layer - vc_RootingDepth)): if
@@ -753,7 +753,7 @@ dual_kc_precomputation :: proc(
 	ET0 := sm.reference_evapotranspiration
 
 	// --- Kcb: basal crop coefficient (interpolated in crop module) ---
-	Kcb := sm.crop_module.vc_KcbFactor
+	Kcb := sm.crop_module.kcb_factor
 
 	// --- Calculate Depletion first (FAO-56 §8.3) to inform memory logic ---
 	scl_0 := &sm.soil_column.layers[0]
@@ -879,7 +879,7 @@ dual_kc_precomputation :: proc(
 	eo_Tmin := 0.6108 * libc.exp((17.27 * tmin) / (tmin + 237.3))
 	RHmin := max(5.0, min(100.0, (eo_Tmin / eo_Tmax) * 100.0))
 	baseline := 1.2 // FAO-56 §6 default for most crops
-	h := max(0.01, sm.crop_module.vc_CropHeight) // native simulated height [m]
+	h := max(0.01, sm.crop_module.crop_height) // native simulated height [m]
 	Kc_max := baseline + (0.04 * (u2 - 2.0) - 0.004 * (RHmin - 45.0)) * libc.pow(h / 3.0, 0.3)
 	Kc_max = max(Kc_max, Kcb + 0.05)
 
@@ -952,13 +952,13 @@ evapotranspiration :: proc(
 	if developmental_stage > 0 {
 		// C++: `monica.currentCropModule.get()` - see the package comment.
 		if reference_evapotranspiration_mm < 0.0 {
-			sm.reference_evapotranspiration = sm.crop_module.vc_ReferenceEvapotranspiration
+			sm.reference_evapotranspiration = sm.crop_module.reference_evapotranspiration
 		} else {
 			sm.reference_evapotranspiration = reference_evapotranspiration_mm
 		}
 
-		vm_PotentialEvapotranspiration = sm.crop_module.vc_RemainingEvapotranspiration
-		vc_EvaporatedFromIntercept = sm.crop_module.vc_EvaporatedFromIntercept
+		vm_PotentialEvapotranspiration = sm.crop_module.remaining_evapotranspiration
+		vc_EvaporatedFromIntercept = sm.crop_module.evaporated_from_intercept
 	} else { 	// if no crop grows ETp is calculated from ET0 * kc
 		if reference_evapotranspiration_mm < 0.0 {
 			sm.reference_evapotranspiration = reference_evapotranspiration(
@@ -1090,7 +1090,7 @@ evapotranspiration :: proc(
 					}
 
 					// C++: `monica.currentCropModule.get()->vc_Transpiration` - see the package comment.
-					sm.transpiration[i_Layer] = sm.crop_module.vc_Transpiration[i_Layer]
+					sm.transpiration[i_Layer] = sm.crop_module.transpiration[i_Layer]
 
 					// Transpiration is capped in case potential ET after surface
 					// and interception evaporation has occurred on same day

@@ -50,105 +50,105 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	P :: "cropModule"
 
 	// --- phenology (checkpoint 3) ---
-	tr.dump(t, P + ".vc_DevelopmentalStage", cm.vc_DevelopmentalStage)
-	tr.dump(t, P + ".vc_CurrentTemperatureSum", cm.vc_CurrentTemperatureSum)
-	tr.dump(t, P + ".vc_CurrentTotalTemperatureSum", cm.vc_CurrentTotalTemperatureSum)
-	tr.dump(t, P + ".vc_ErrorStatus", cm.vc_ErrorStatus)
-	tr.dump(t, P + ".vc_AnthesisDay", cm.vc_AnthesisDay)
-	tr.dump(t, P + ".vc_MaturityDay", cm.vc_MaturityDay)
-	tr.dump(t, P + ".vc_MaturityReached", cm.vc_MaturityReached)
-	tr.dump(t, P + ".vc_DaylengthFactor", cm.vc_DaylengthFactor)
-	tr.dump(t, P + ".vc_VernalisationFactor", cm.vc_VernalisationFactor)
-	tr.dump(t, P + ".vc_VernalisationDays", cm.vc_VernalisationDays)
-	tr.dump(t, P + ".vc_RelativeTotalDevelopment", cm.vc_RelativeTotalDevelopment)
-	tr.dump(t, P + ".vc_KcFactor", cm.vc_KcFactor)
-	tr.dump(t, P + ".vc_KcbFactor", cm.vc_KcbFactor)
-	tr.dump(t, P + ".vc_CropHeight", cm.vc_CropHeight)
-	tr.dump(t, P + ".vc_CropDiameter", cm.vc_CropDiameter)
-	tr.dump(t, P + ".vc_LeafAreaIndex", cm.vc_LeafAreaIndex)
-	tr.dump(t, P + ".vc_GreenAreaIndex", cm.vc_GreenAreaIndex)
-	tr.dump(t, P + ".vc_SoilCoverage", cm.vc_SoilCoverage)
+	tr.dump(t, P + ".vc_DevelopmentalStage", cm.developmental_stage)
+	tr.dump(t, P + ".vc_CurrentTemperatureSum", cm.current_temperature_sum)
+	tr.dump(t, P + ".vc_CurrentTotalTemperatureSum", cm.current_total_temperature_sum)
+	tr.dump(t, P + ".vc_ErrorStatus", cm.error_status)
+	tr.dump(t, P + ".vc_AnthesisDay", cm.anthesis_day)
+	tr.dump(t, P + ".vc_MaturityDay", cm.maturity_day)
+	tr.dump(t, P + ".vc_MaturityReached", cm.maturity_reached)
+	tr.dump(t, P + ".vc_DaylengthFactor", cm.daylength_factor)
+	tr.dump(t, P + ".vc_VernalisationFactor", cm.vernalisation_factor)
+	tr.dump(t, P + ".vc_VernalisationDays", cm.vernalisation_days)
+	tr.dump(t, P + ".vc_RelativeTotalDevelopment", cm.relative_total_development)
+	tr.dump(t, P + ".vc_KcFactor", cm.kc_factor)
+	tr.dump(t, P + ".vc_KcbFactor", cm.kcb_factor)
+	tr.dump(t, P + ".vc_CropHeight", cm.crop_height)
+	tr.dump(t, P + ".vc_CropDiameter", cm.crop_diameter)
+	tr.dump(t, P + ".vc_LeafAreaIndex", cm.leaf_area_index)
+	tr.dump(t, P + ".vc_GreenAreaIndex", cm.green_area_index)
+	tr.dump(t, P + ".vc_SoilCoverage", cm.soil_coverage)
 
 	// --- stress (checkpoint 5) ---
-	tr.dump(t, P + ".vc_CropHeatRedux", cm.vc_CropHeatRedux)
-	tr.dump(t, P + ".vc_TotalCropHeatImpact", cm.vc_TotalCropHeatImpact)
-	tr.dump(t, P + ".vc_LT50", cm.vc_LT50)
-	tr.dump(t, P + ".vc_LT50M", cm.vc_LT50M)
-	tr.dump(t, P + ".vc_CropFrostRedux", cm.vc_CropFrostRedux)
-	tr.dump(t, P + ".vc_DroughtImpactOnFertility", cm.vc_DroughtImpactOnFertility)
+	tr.dump(t, P + ".vc_CropHeatRedux", cm.crop_heat_redux)
+	tr.dump(t, P + ".vc_TotalCropHeatImpact", cm.total_crop_heat_impact)
+	tr.dump(t, P + ".vc_LT50", cm.lt50)
+	tr.dump(t, P + ".vc_LT50M", cm.lt50_m)
+	tr.dump(t, P + ".vc_CropFrostRedux", cm.crop_frost_redux)
+	tr.dump(t, P + ".vc_DroughtImpactOnFertility", cm.drought_impact_on_fertility)
 
 	// --- nitrogen / biomass (checkpoints 5-6) ---
-	tr.dump(t, P + ".vc_CriticalNConcentration", cm.vc_CriticalNConcentration)
-	tr.dump(t, P + ".vc_TargetNConcentration", cm.vc_TargetNConcentration)
-	tr.dump(t, P + ".rootNRedux", cm.rootNRedux)
-	tr.dump(t, P + ".vc_CropNRedux", cm.vc_CropNRedux)
-	tr.dump(t, P + ".vc_AbovegroundBiomass", cm.vc_AbovegroundBiomass)
-	tr.dump(t, P + ".vc_BelowgroundBiomass", cm.vc_BelowgroundBiomass)
-	tr.dump(t, P + ".vc_TotalBiomass", cm.vc_TotalBiomass)
-	tr.dump(t, P + ".vc_OrganBiomass", cm.vc_OrganBiomass)
-	tr.dump(t, P + ".vc_OrganGreenBiomass", cm.vc_OrganGreenBiomass)
-	tr.dump(t, P + ".vc_RootBiomass", cm.vc_RootBiomass)
-	tr.dump(t, P + ".vc_TotalBiomassNContent", cm.vc_TotalBiomassNContent)
-	tr.dump(t, P + ".vc_CropNDemand", cm.vc_CropNDemand)
-	tr.dump(t, P + ".vc_MaxRootingDepth", cm.vc_MaxRootingDepth)
-	tr.dump(t, P + ".vc_RootingDepth_m", cm.vc_RootingDepth_m)
-	tr.dump(t, P + ".vc_RootingDepth", cm.vc_RootingDepth)
-	tr.dump(t, P + ".vc_RootingZone", cm.vc_RootingZone)
-	tr.dump(t, P + ".vc_TotalRootLength", cm.vc_TotalRootLength)
+	tr.dump(t, P + ".vc_CriticalNConcentration", cm.critical_n_concentration)
+	tr.dump(t, P + ".vc_TargetNConcentration", cm.target_n_concentration)
+	tr.dump(t, P + ".rootNRedux", cm.root_n_redux)
+	tr.dump(t, P + ".vc_CropNRedux", cm.crop_n_redux)
+	tr.dump(t, P + ".vc_AbovegroundBiomass", cm.aboveground_biomass)
+	tr.dump(t, P + ".vc_BelowgroundBiomass", cm.belowground_biomass)
+	tr.dump(t, P + ".vc_TotalBiomass", cm.total_biomass)
+	tr.dump(t, P + ".vc_OrganBiomass", cm.organ_biomass)
+	tr.dump(t, P + ".vc_OrganGreenBiomass", cm.organ_green_biomass)
+	tr.dump(t, P + ".vc_RootBiomass", cm.root_biomass)
+	tr.dump(t, P + ".vc_TotalBiomassNContent", cm.total_biomass_n_content)
+	tr.dump(t, P + ".vc_CropNDemand", cm.crop_n_demand)
+	tr.dump(t, P + ".vc_MaxRootingDepth", cm.max_rooting_depth)
+	tr.dump(t, P + ".vc_RootingDepth_m", cm.rooting_depth_m)
+	tr.dump(t, P + ".vc_RootingDepth", cm.rooting_depth)
+	tr.dump(t, P + ".vc_RootingZone", cm.rooting_zone)
+	tr.dump(t, P + ".vc_TotalRootLength", cm.total_root_length)
 
 	// --- water (checkpoint 6) ---
-	tr.dump(t, P + ".vc_ReferenceEvapotranspiration", cm.vc_ReferenceEvapotranspiration)
-	tr.dump(t, P + ".vc_OxygenDeficit", cm.vc_OxygenDeficit)
-	tr.dump(t, P + ".vc_RootEffectivity", cm.vc_RootEffectivity)
-	tr.dump(t, P + ".vc_RootDensity", cm.vc_RootDensity)
+	tr.dump(t, P + ".vc_ReferenceEvapotranspiration", cm.reference_evapotranspiration)
+	tr.dump(t, P + ".vc_OxygenDeficit", cm.oxygen_deficit)
+	tr.dump(t, P + ".vc_RootEffectivity", cm.root_effectivity)
+	tr.dump(t, P + ".vc_RootDensity", cm.root_density)
 	tr.dump(
 		t,
 		"cropModule.soilColumn->layers[0].vs_SoilMoisture_m3",
-		cm.soilColumn.layers[0].vs_SoilMoisture_m3,
+		cm.soil_column.layers[0].vs_SoilMoisture_m3,
 	)
 	tr.dump(
 		t,
 		"cropModule.soilColumn->layers[0].vs_FieldCapacity",
-		cm.soilColumn.layers[0].vs_FieldCapacity,
+		cm.soil_column.layers[0].vs_FieldCapacity,
 	)
 	tr.dump(
 		t,
 		"cropModule.soilColumn->layers[0].vs_PermanentWiltingPoint",
-		cm.soilColumn.layers[0].vs_PermanentWiltingPoint,
+		cm.soil_column.layers[0].vs_PermanentWiltingPoint,
 	)
 	tr.dump(
 		t,
 		"cropModule.soilColumn->vm_GroundwaterTableLayer",
-		cm.soilColumn.vm_GroundwaterTableLayer,
+		cm.soil_column.vm_GroundwaterTableLayer,
 	)
-	tr.dump(t, P + ".vc_ActualTranspiration", cm.vc_ActualTranspiration)
-	tr.dump(t, P + ".vc_TranspirationDeficit", cm.vc_TranspirationDeficit)
-	tr.dump(t, P + ".vc_PotentialTranspiration", cm.vc_PotentialTranspiration)
-	tr.dump(t, P + ".vc_Transpiration", cm.vc_Transpiration)
-	tr.dump(t, P + ".vc_NetPrecipitation", cm.vc_NetPrecipitation)
-	tr.dump(t, P + ".vc_InterceptionStorage", cm.vc_InterceptionStorage)
+	tr.dump(t, P + ".vc_ActualTranspiration", cm.actual_transpiration)
+	tr.dump(t, P + ".vc_TranspirationDeficit", cm.transpiration_deficit)
+	tr.dump(t, P + ".vc_PotentialTranspiration", cm.potential_transpiration)
+	tr.dump(t, P + ".vc_Transpiration", cm.transpiration)
+	tr.dump(t, P + ".vc_NetPrecipitation", cm.net_precipitation)
+	tr.dump(t, P + ".vc_InterceptionStorage", cm.interception_storage)
 
 	// --- nitrogen uptake (checkpoint 6) ---
-	tr.dump(t, P + ".vc_TotalNUptake", cm.vc_TotalNUptake)
-	tr.dump(t, P + ".vc_TotalNInput", cm.vc_TotalNInput)
-	tr.dump(t, P + ".vc_FixedN", cm.vc_FixedN)
-	tr.dump(t, P + ".vc_SumTotalNUptake", cm.vc_SumTotalNUptake)
-	tr.dump(t, P + ".vc_NUptakeFromLayer", cm.vc_NUptakeFromLayer)
+	tr.dump(t, P + ".vc_TotalNUptake", cm.total_n_uptake)
+	tr.dump(t, P + ".vc_TotalNInput", cm.total_n_input)
+	tr.dump(t, P + ".vc_FixedN", cm.fixed_n)
+	tr.dump(t, P + ".vc_SumTotalNUptake", cm.sum_total_n_uptake)
+	tr.dump(t, P + ".vc_NUptakeFromLayer", cm.n_uptake_from_layer)
 
 	// --- photosynthesis (checkpoint 4) ---
-	tr.dump(t, P + ".vc_AssimilationRate", cm.vc_AssimilationRate)
-	tr.dump(t, P + ".vc_GrossPhotosynthesis", cm.vc_GrossPhotosynthesis)
-	tr.dump(t, P + ".vc_Assimilates", cm.vc_Assimilates)
-	tr.dump(t, P + ".vc_TotalRespired", cm.vc_TotalRespired)
+	tr.dump(t, P + ".vc_AssimilationRate", cm.assimilation_rate)
+	tr.dump(t, P + ".vc_GrossPhotosynthesis", cm.gross_photosynthesis)
+	tr.dump(t, P + ".vc_Assimilates", cm.assimilates)
+	tr.dump(t, P + ".vc_TotalRespired", cm.total_respired)
 
 	// --- production (checkpoints 4/6) ---
-	tr.dump(t, P + ".vc_GrossPrimaryProduction", cm.vc_GrossPrimaryProduction)
-	tr.dump(t, P + ".vc_NetPrimaryProduction", cm.vc_NetPrimaryProduction)
+	tr.dump(t, P + ".vc_GrossPrimaryProduction", cm.gross_primary_production)
+	tr.dump(t, P + ".vc_NetPrimaryProduction", cm.net_primary_production)
 
 	// --- transplant / cutting bookkeeping (checkpoint 7) ---
-	tr.dump(t, P + ".vc_TransplantEfficiency", cm.vc_TransplantEfficiency)
-	tr.dump(t, P + ".vc_DaysSinceTransplant", cm.vc_DaysSinceTransplant)
-	tr.dump(t, P + ".noOfCropSteps", cm.noOfCropSteps)
+	tr.dump(t, P + ".vc_TransplantEfficiency", cm.transplant_efficiency)
+	tr.dump(t, P + ".vc_DaysSinceTransplant", cm.days_since_transplant)
+	tr.dump(t, P + ".noOfCropSteps", cm.no_of_crop_steps)
 }
 
 main :: proc() {
@@ -284,7 +284,7 @@ main :: proc() {
 		nil,
 		a,
 	)
-	g_residue_params = &cm.residueParams.base
+	g_residue_params = &cm.residue_params.base
 
 	// widen phase 4's bare-soil coupling to this real, live crop - matches
 	// production soilcolumn::putCrop/soiltransport::putCrop wiring.
@@ -347,7 +347,7 @@ main :: proc() {
 			tmin,
 			tmax,
 			globrad,
-			cm.vc_SoilCoverage,
+			cm.soil_coverage,
 			sm.snow_component.vm_SnowDepth,
 			sm.frost_component.vm_TemperatureUnderSnow,
 		)

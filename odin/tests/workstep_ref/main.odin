@@ -397,7 +397,7 @@ main :: proc() {
 			tmin,
 			tmax,
 			globrad,
-			model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0.0,
+			model.currentCropModule != nil ? model.currentCropModule.soil_coverage : 0.0,
 			model.soilMoisture.snow_component.vm_SnowDepth,
 			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
 		)
@@ -459,18 +459,18 @@ main :: proc() {
 			tr.dump(
 				&t,
 				"cropModule.vc_LeafAreaIndex.beforeCut",
-				model.currentCropModule.vc_LeafAreaIndex,
+				model.currentCropModule.leaf_area_index,
 			)
 			run.workstep_apply(ws_cutting, model)
 			tr.dump(
 				&t,
 				"cropModule.vc_LeafAreaIndex.afterCut",
-				model.currentCropModule.vc_LeafAreaIndex,
+				model.currentCropModule.leaf_area_index,
 			)
 			tr.dump(
 				&t,
 				"cropModule.vc_exportedCutBiomass",
-				model.currentCropModule.vc_exportedCutBiomass,
+				model.currentCropModule.exported_cut_biomass,
 			)
 			tr.set_day(&t, day)
 		}

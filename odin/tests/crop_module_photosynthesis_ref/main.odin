@@ -34,42 +34,42 @@ jn :: proc(path, name: string) -> string {
 }
 
 dump_crop_module_photosynthesis :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module) {
-	tr.dump(t, jn(path, "vc_AssimilationRate"), cm.vc_AssimilationRate)
-	tr.dump(t, jn(path, "vc_KTkc"), cm.vc_KTkc)
-	tr.dump(t, jn(path, "vc_KTko"), cm.vc_KTko)
+	tr.dump(t, jn(path, "vc_AssimilationRate"), cm.assimilation_rate)
+	tr.dump(t, jn(path, "vc_KTkc"), cm.k_tkc)
+	tr.dump(t, jn(path, "vc_KTko"), cm.k_tko)
 	// cropPhotosynthesisResults' kc/ko/oi/ci/comp/vcMax/jMax/jj/jj1000/jv
 	// fields (and, downstream, jjvEmissions) are not dumped - see the comment
 	// in crop_module_photosynthesis_ref_main.cpp's dump_crop_module_photosynthesis.
-	tr.dump(t, jn(path, "vc_GrossPhotosynthesis"), cm.vc_GrossPhotosynthesis)
-	tr.dump(t, jn(path, "vc_GrossPhotosynthesis_mol"), cm.vc_GrossPhotosynthesis_mol)
-	tr.dump(t, jn(path, "vc_GrossPhotosynthesisReference_mol"), cm.vc_GrossPhotosynthesisReference_mol)
-	tr.dump(t, jn(path, "vc_Assimilates"), cm.vc_Assimilates)
-	tr.dump(t, jn(path, "vc_GrossAssimilates"), cm.vc_GrossAssimilates)
-	tr.dump(t, jn(path, "vc_MaintenanceRespirationAS"), cm.vc_MaintenanceRespirationAS)
-	tr.dump(t, jn(path, "vc_GrowthRespirationAS"), cm.vc_GrowthRespirationAS)
-	tr.dump(t, jn(path, "vc_TotalRespired"), cm.vc_TotalRespired)
-	tr.dump(t, jn(path, "vc_NetMaintenanceRespiration"), cm.vc_NetMaintenanceRespiration)
-	tr.dump(t, jn(path, "fractionOfInterceptedRadiation1"), cm.fractionOfInterceptedRadiation1)
+	tr.dump(t, jn(path, "vc_GrossPhotosynthesis"), cm.gross_photosynthesis)
+	tr.dump(t, jn(path, "vc_GrossPhotosynthesis_mol"), cm.gross_photosynthesis_mol)
+	tr.dump(t, jn(path, "vc_GrossPhotosynthesisReference_mol"), cm.gross_photosynthesis_reference_mol)
+	tr.dump(t, jn(path, "vc_Assimilates"), cm.assimilates)
+	tr.dump(t, jn(path, "vc_GrossAssimilates"), cm.gross_assimilates)
+	tr.dump(t, jn(path, "vc_MaintenanceRespirationAS"), cm.maintenance_respiration_as)
+	tr.dump(t, jn(path, "vc_GrowthRespirationAS"), cm.growth_respiration_as)
+	tr.dump(t, jn(path, "vc_TotalRespired"), cm.total_respired)
+	tr.dump(t, jn(path, "vc_NetMaintenanceRespiration"), cm.net_maintenance_respiration)
+	tr.dump(t, jn(path, "fractionOfInterceptedRadiation1"), cm.fraction_of_intercepted_radiation1)
 
-	tr.dump(t, jn(path, "vc_GrossPrimaryProduction"), cm.vc_GrossPrimaryProduction)
-	tr.dump(t, jn(path, "vc_NetPrimaryProduction"), cm.vc_NetPrimaryProduction)
-	tr.dump(t, jn(path, "vc_Respiration"), cm.vc_Respiration)
+	tr.dump(t, jn(path, "vc_GrossPrimaryProduction"), cm.gross_primary_production)
+	tr.dump(t, jn(path, "vc_NetPrimaryProduction"), cm.net_primary_production)
+	tr.dump(t, jn(path, "vc_Respiration"), cm.respiration)
 
-	tr.dump(t, jn(path, "vc_O3_shortTermDamage"), cm.vc_O3_shortTermDamage)
-	tr.dump(t, jn(path, "vc_O3_longTermDamage"), cm.vc_O3_longTermDamage)
-	tr.dump(t, jn(path, "vc_O3_senescence"), cm.vc_O3_senescence)
-	tr.dump(t, jn(path, "vc_O3_sumUptake"), cm.vc_O3_sumUptake)
-	tr.dump(t, jn(path, "vc_O3_WStomatalClosure"), cm.vc_O3_WStomatalClosure)
+	tr.dump(t, jn(path, "vc_O3_shortTermDamage"), cm.o3_short_term_damage)
+	tr.dump(t, jn(path, "vc_O3_longTermDamage"), cm.o3_long_term_damage)
+	tr.dump(t, jn(path, "vc_O3_senescence"), cm.o3_senescence)
+	tr.dump(t, jn(path, "vc_O3_sumUptake"), cm.o3_sum_uptake)
+	tr.dump(t, jn(path, "vc_O3_WStomatalClosure"), cm.o3_w_stomatal_closure)
 
-	tr.dump(t, jn(path, "guentherEmissions.isoprene_emission"), cm.guentherEmissions.isoprene_emission)
+	tr.dump(t, jn(path, "guentherEmissions.isoprene_emission"), cm.guenther_emissions.isoprene_emission)
 	tr.dump(
 		t,
 		jn(path, "guentherEmissions.monoterpene_emission"),
-		cm.guentherEmissions.monoterpene_emission,
+		cm.guenther_emissions.monoterpene_emission,
 	)
 
-	tr.dump(t, jn(path, "vc_sunlitLeafAreaIndex"), cm.vc_sunlitLeafAreaIndex)
-	tr.dump(t, jn(path, "vc_shadedLeafAreaIndex"), cm.vc_shadedLeafAreaIndex)
+	tr.dump(t, jn(path, "vc_sunlitLeafAreaIndex"), cm.sunlit_leaf_area_index)
+	tr.dump(t, jn(path, "vc_shadedLeafAreaIndex"), cm.shaded_leaf_area_index)
 }
 
 // checkpoint 3's phenology_day_step extended with fc_crop_photosynthesis/
@@ -82,87 +82,87 @@ day_step :: proc(
 	currentDate: d.Date,
 	julianDayOverride: int = -1,
 ) {
-	pc_BaseDaylength := cm.cropParams.cultivarParams.pc_BaseDaylength
-	pc_CriticalOxygenContent := cm.cropParams.speciesParams.pc_CriticalOxygenContent
-	pc_DaylengthRequirement := cm.cropParams.cultivarParams.pc_DaylengthRequirement
-	pc_MaxCropHeight := cm.cropParams.cultivarParams.pc_MaxCropHeight
-	pc_Perennial := cm.cropParams.cultivarParams.pc_Perennial
-	pc_SpecificLeafArea := cm.cropParams.cultivarParams.pc_SpecificLeafArea
-	pc_StageKcFactor := cm.cropParams.cultivarParams.pc_StageKcFactor
-	pc_StageTemperatureSum := cm.cropParams.cultivarParams.pc_StageTemperatureSum
-	pc_VernalisationRequirement := cm.cropParams.cultivarParams.pc_VernalisationRequirement
-	speciesPs := &cm.cropParams.speciesParams
+	pc_BaseDaylength := cm.crop_params.cultivarParams.pc_BaseDaylength
+	pc_CriticalOxygenContent := cm.crop_params.speciesParams.pc_CriticalOxygenContent
+	pc_DaylengthRequirement := cm.crop_params.cultivarParams.pc_DaylengthRequirement
+	pc_MaxCropHeight := cm.crop_params.cultivarParams.pc_MaxCropHeight
+	pc_Perennial := cm.crop_params.cultivarParams.pc_Perennial
+	pc_SpecificLeafArea := cm.crop_params.cultivarParams.pc_SpecificLeafArea
+	pc_StageKcFactor := cm.crop_params.cultivarParams.pc_StageKcFactor
+	pc_StageTemperatureSum := cm.crop_params.cultivarParams.pc_StageTemperatureSum
+	pc_VernalisationRequirement := cm.crop_params.cultivarParams.pc_VernalisationRequirement
+	speciesPs := &cm.crop_params.speciesParams
 
 	vs_JulianDay := julianDayOverride >= 0 ? julianDayOverride : int(d.julian_day(currentDate))
 
 	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
 
-	cm.vc_OxygenDeficit = core.fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.vc_DevelopmentalStage])
+	cm.oxygen_deficit = core.fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.developmental_stage])
 
-	old_DevelopmentalStage := cm.vc_DevelopmentalStage
+	old_DevelopmentalStage := cm.developmental_stage
 
-	if !d.is_valid(cm.perennialCropDormancyPeriodEndDate) {
+	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
 		if speciesPs.dormancyEndDoy == 0 {
-			cm.perennialCropDormancyPeriodEndDate = currentDate
+			cm.perennial_crop_dormancy_period_end_date = currentDate
 		} else {
-			cm.perennialCropDormancyPeriodEndDate = d.add(
+			cm.perennial_crop_dormancy_period_end_date = d.add(
 				d.make_date(1, 1, u16(d.year(currentDate)), false, false, d.DEFAULT_USE_LEAP_YEARS),
 				u64(speciesPs.dormancyEndDoy - 1),
 			)
 		}
 	}
-	if !pc_Perennial || d.ge(currentDate, cm.perennialCropDormancyPeriodEndDate) {
+	if !pc_Perennial || d.ge(currentDate, cm.perennial_crop_dormancy_period_end_date) {
 		core.fc_crop_developmental_stage(
 			cm,
 			meanAirTemperature,
-			cm.soilColumn.layers[0].vs_SoilMoisture_m3,
-			cm.soilColumn.layers[0].vs_FieldCapacity,
-			cm.soilColumn.layers[0].vs_PermanentWiltingPoint,
+			cm.soil_column.layers[0].vs_SoilMoisture_m3,
+			cm.soil_column.layers[0].vs_FieldCapacity,
+			cm.soil_column.layers[0].vs_PermanentWiltingPoint,
 			currentDate,
 		)
 	}
 
-	if core.is_anthesis_day(cm, old_DevelopmentalStage, cm.vc_DevelopmentalStage) {
-		cm.vc_AnthesisDay = vs_JulianDay
-	} else if core.is_maturity_day(cm, old_DevelopmentalStage, cm.vc_DevelopmentalStage) {
-		cm.vc_MaturityDay = vs_JulianDay
-		cm.vc_MaturityReached = true
+	if core.is_anthesis_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
+		cm.anthesis_day = vs_JulianDay
+	} else if core.is_maturity_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
+		cm.maturity_day = vs_JulianDay
+		cm.maturity_reached = true
 	}
 
-	cm.vc_DaylengthFactor = core.fc_daylength_factor(
+	cm.daylength_factor = core.fc_daylength_factor(
 		cm,
-		pc_DaylengthRequirement[cm.vc_DevelopmentalStage],
-		cm.vc_EffectiveDayLength,
-		cm.vc_PhotoperiodicDaylength,
-		pc_BaseDaylength[cm.vc_DevelopmentalStage],
+		pc_DaylengthRequirement[cm.developmental_stage],
+		cm.effective_day_length,
+		cm.photoperiodic_daylength,
+		pc_BaseDaylength[cm.developmental_stage],
 	)
 
-	cm.vc_VernalisationFactor, cm.vc_VernalisationDays = core.fc_vernalisation_factor(
+	cm.vernalisation_factor, cm.vernalisation_days = core.fc_vernalisation_factor(
 		cm,
 		meanAirTemperature,
-		pc_VernalisationRequirement[cm.vc_DevelopmentalStage],
-		cm.vc_VernalisationDays,
+		pc_VernalisationRequirement[cm.developmental_stage],
+		cm.vernalisation_days,
 	)
 
-	if cm.vc_TotalTemperatureSum == 0.0 {
-		cm.vc_RelativeTotalDevelopment = 0.0
+	if cm.total_temperature_sum == 0.0 {
+		cm.relative_total_development = 0.0
 	} else {
-		cm.vc_RelativeTotalDevelopment = cm.vc_CurrentTotalTemperatureSum / cm.vc_TotalTemperatureSum
+		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
-	if cm.vc_DevelopmentalStage == 0 {
-		cm.vc_KcFactor = cm.siteParams.bareSoilKcFactor
+	if cm.developmental_stage == 0 {
+		cm.kc_factor = cm.site_params.bareSoilKcFactor
 	} else {
-		cm.vc_KcFactor = core.fc_kc_factor(
+		cm.kc_factor = core.fc_kc_factor(
 			cm,
-			pc_StageTemperatureSum[cm.vc_DevelopmentalStage],
-			cm.vc_CurrentTemperatureSum[cm.vc_DevelopmentalStage],
-			pc_StageKcFactor[cm.vc_DevelopmentalStage],
-			pc_StageKcFactor[cm.vc_DevelopmentalStage - 1],
+			pc_StageTemperatureSum[cm.developmental_stage],
+			cm.current_temperature_sum[cm.developmental_stage],
+			pc_StageKcFactor[cm.developmental_stage],
+			pc_StageKcFactor[cm.developmental_stage - 1],
 		)
 	}
 
-	if cm.vc_DevelopmentalStage > 0 {
+	if cm.developmental_stage > 0 {
 		maxCropHeight := pc_MaxCropHeight
 
 		core.fc_crop_size(cm, maxCropHeight)
@@ -170,16 +170,16 @@ day_step :: proc(
 		core.fc_crop_green_area(
 			cm,
 			meanAirTemperature,
-			cm.vc_OrganGrowthIncrement[core.Organ_Leaf],
-			cm.vc_OrganSenescenceIncrement[core.Organ_Leaf],
-			pc_SpecificLeafArea[cm.vc_DevelopmentalStage - 1],
-			pc_SpecificLeafArea[cm.vc_DevelopmentalStage],
+			cm.organ_growth_increment[core.Organ_Leaf],
+			cm.organ_senescence_increment[core.Organ_Leaf],
+			pc_SpecificLeafArea[cm.developmental_stage - 1],
+			pc_SpecificLeafArea[cm.developmental_stage],
 			pc_SpecificLeafArea[1],
-			pc_StageTemperatureSum[cm.vc_DevelopmentalStage],
-			cm.vc_CurrentTemperatureSum[cm.vc_DevelopmentalStage],
+			pc_StageTemperatureSum[cm.developmental_stage],
+			cm.current_temperature_sum[cm.developmental_stage],
 		)
 
-		cm.vc_SoilCoverage = core.fc_soil_coverage(cm)
+		cm.soil_coverage = core.fc_soil_coverage(cm)
 
 		core.fc_crop_photosynthesis(
 			cm,
@@ -191,11 +191,11 @@ day_step :: proc(
 			currentDate,
 		)
 
-		cm.vc_GrossPrimaryProduction = core.fc_gross_primary_production(cm)
-		cm.vc_NetPrimaryProduction = core.fc_net_primary_production(cm, cm.vc_TotalRespired)
+		cm.gross_primary_production = core.fc_gross_primary_production(cm)
+		cm.net_primary_production = core.fc_net_primary_production(cm, cm.total_respired)
 	}
 
-	cm.noOfCropSteps += 1
+	cm.no_of_crop_steps += 1
 }
 
 main :: proc() {
@@ -363,7 +363,7 @@ main :: proc() {
 			a,
 		)
 		core.set_stage(&cm, 1)
-		cm.vc_RootingDepth = 3 // root distribution is checkpoint 6, not yet ported
+		cm.rooting_depth = 3 // root distribution is checkpoint 6, not yet ported
 
 		n := min(15, clim.data_accessor_no_of_steps_possible(&da))
 
@@ -398,7 +398,7 @@ main :: proc() {
 			a,
 		)
 		core.set_stage(&cm, 1)
-		cm.pc_CO2Method = 2
+		cm.pc_co2_method = 2
 
 		n := min(20, clim.data_accessor_no_of_steps_possible(&da))
 

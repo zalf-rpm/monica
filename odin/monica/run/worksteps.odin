@@ -157,8 +157,8 @@ sowing_apply :: proc(
 		model.currentCropModule = cm
 
 		if s.separatePerennialCropParams != nil {
-			model.currentCropModule.perennialCropParams = new(p.Crop_Parameters, allocator)
-			model.currentCropModule.perennialCropParams^ = core.clone_crop_parameters(
+			model.currentCropModule.perennial_crop_params = new(p.Crop_Parameters, allocator)
+			model.currentCropModule.perennial_crop_params^ = core.clone_crop_parameters(
 				s.separatePerennialCropParams^,
 				allocator,
 			)
@@ -170,7 +170,7 @@ sowing_apply :: proc(
 		model.soilOrganic.crop_module = model.currentCropModule
 
 		if model.simPs.p_UseNMinMineralFertilisingMethod &&
-		   !model.currentCropModule.cropParams.cultivarParams.winterCrop {
+		   !model.currentCropModule.crop_params.cultivarParams.winterCrop {
 			core.clear_top_dressing_params(&model.soilColumn)
 			fert_amount := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 				model,
@@ -187,7 +187,7 @@ sowing_apply :: proc(
 
 	// FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
 	if model.simPs.dualKcMethod && model.currentCropModule != nil {
-		model.currentCropModule.vc_Kcb_ini = s.initialKcb
+		model.currentCropModule.kcb_ini = s.initialKcb
 	}
 	model.currentEvents["Sowing"] = true
 
@@ -267,7 +267,7 @@ transplant_apply :: proc(
 	)
 
 	if model.simPs.dualKcMethod {
-		cropModule.vc_Kcb_ini = t.initialKcb
+		cropModule.kcb_ini = t.initialKcb
 	}
 	model.currentEvents["Transplant"] = true
 
@@ -914,7 +914,7 @@ n_demand_fertilization_apply :: proc(
 ) -> bool {
 	workstep_apply_common(ws, model)
 
-	rd := model.currentCropModule.vc_RootingDepth_m
+	rd := model.currentCropModule.rooting_depth_m
 	appliedAmount := core.apply_mineral_fertiliser_via_n_demand(
 		&model.soilColumn,
 		nd.partition,
@@ -940,7 +940,7 @@ n_demand_fertilization_condition :: proc(
 
 	cg := model.currentCropModule
 	if cg != nil && !nd.appliedFertilizer {
-		currStage := cg.vc_DevelopmentalStage + 1
+		currStage := cg.developmental_stage + 1
 		conditionMet = d.is_valid(ws.date) || currStage == nd.stage // reached the requested stage
 	}
 
@@ -1197,7 +1197,7 @@ automatic_irrigation_condition :: proc(
 	cg := model.currentCropModule
 	if cg != nil && ai.irrigateCrop {
 		ai.cropPlanted = true
-		stage := cg.vc_DevelopmentalStage
+		stage := cg.developmental_stage
 		if ai.startStage > -1 && ai.endStage > -1 {
 			cropConditionMet = stage >= ai.startStage && stage <= ai.endStage
 			if stage > ai.endStage {

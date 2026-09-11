@@ -174,7 +174,7 @@ monica_model_fire_event_cb :: proc(event: string) {
 monica_model_add_organic_matter_cb :: proc(layer2amount: map[int]f64, nconc: f64) {
 	soil_organic_add_organic_matter(
 		&g_current_model.soilOrganic,
-		&g_current_model.currentCropModule.residueParams.base,
+		&g_current_model.currentCropModule.residue_params.base,
 		layer2amount,
 		nconc,
 	)
@@ -520,7 +520,7 @@ monica_model_harvest_current_crop :: proc(
 		// prepare to add root and crop residues to soilorganic (AOMs)
 		// dead root biomass has already been added daily, so just living root
 		// biomass is left
-		rootBiomass := cm.vc_OrganGreenBiomass[0]
+		rootBiomass := cm.organ_green_biomass[0]
 		add_and_distribute_root_biomass_in_soil(cm, rootBiomass, allocator)
 
 		if exported && len(spec.organ2specVal) == 0 {
@@ -569,7 +569,7 @@ monica_model_harvest_current_crop :: proc(
 
 				soil_organic_add_organic_matter_amount(
 					&model.soilOrganic,
-					&cm.residueParams.base,
+					&cm.residue_params.base,
 					model.optCarbonReturnedResidues,
 					get_residues_n_concentration(cm, -1),
 					incorporateIntoLayerIndex,
@@ -584,7 +584,7 @@ monica_model_harvest_current_crop :: proc(
 				residueNConcentration := get_residues_n_concentration(cm, -1)
 				soil_organic_add_organic_matter_amount(
 					&model.soilOrganic,
-					&cm.residueParams.base,
+					&cm.residue_params.base,
 					residueBiomass,
 					residueNConcentration,
 					incorporateIntoLayerIndex,
@@ -611,7 +611,7 @@ monica_model_harvest_current_crop :: proc(
 				if organId == 0 {
 					continue
 				}
-				organBiomass := cm.vc_OrganBiomass[organId]
+				organBiomass := cm.organ_biomass[organId]
 				organYield := organBiomass * specVal.exportPercentage / 100.0
 				cropYield += organYield
 				if organIdsForPrimaryYield[organId + 1] {
@@ -629,7 +629,7 @@ monica_model_harvest_current_crop :: proc(
 			residuesNConcentration := get_residues_n_concentration(cm, primaryCropYield)
 			soil_organic_add_organic_matter_amount(
 				&model.soilOrganic,
-				&cm.residueParams.base,
+				&cm.residue_params.base,
 				totalResidueBiomassToIncorporate,
 				residuesNConcentration,
 				incorporateIntoLayerIndex,
@@ -637,11 +637,11 @@ monica_model_harvest_current_crop :: proc(
 			)
 		} else {
 			// prepare to add the total plant to soilorganic (AOMs)
-			abovegroundBiomass := cm.vc_AbovegroundBiomass
-			abovegroundBiomassNConcentration := cm.vc_NConcentrationAbovegroundBiomass
+			abovegroundBiomass := cm.aboveground_biomass
+			abovegroundBiomassNConcentration := cm.n_concentration_aboveground_biomass
 			soil_organic_add_organic_matter_amount(
 				&model.soilOrganic,
-				&cm.residueParams.base,
+				&cm.residue_params.base,
 				abovegroundBiomass,
 				abovegroundBiomassNConcentration,
 				incorporateIntoLayerIndex,
@@ -662,15 +662,15 @@ monica_model_incorporate_current_crop :: proc(
 		cm := model.currentCropModule
 
 		// prepare to add root and crop residues to soilorganic (AOMs)
-		total_biomass := cm.vc_TotalBiomass
+		total_biomass := cm.total_biomass
 		totalNContent :=
 			get_aboveground_biomass_n_content(cm) +
-			cm.vc_NConcentrationRoot * cm.vc_OrganBiomass[0]
+			cm.n_concentration_root * cm.organ_biomass[0]
 		totalNConcentration := totalNContent / total_biomass
 
 		soil_organic_add_organic_matter_amount(
 			&model.soilOrganic,
-			&cm.residueParams.base,
+			&cm.residue_params.base,
 			total_biomass,
 			totalNConcentration,
 			0,
@@ -766,10 +766,10 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	if model.currentCropModule != nil &&
 	   model.simPs.p_UseNMinMineralFertilisingMethod &&
-	   model.currentCropModule.cropParams.cultivarParams.winterCrop &&
+	   model.currentCropModule.crop_params.cultivarParams.winterCrop &&
 	   int(julday) == model.simPs.p_JulianDayAutomaticFertilising {
 		clear_top_dressing_params(&model.soilColumn)
-		sps := model.currentCropModule.cropParams.speciesParams
+		sps := model.currentCropModule.crop_params.speciesParams
 		fertilizerAmount := monica_model_apply_mineral_fertiliser_via_n_min_method(
 			model,
 			model.simPs.p_NMinFertiliserPartition,
@@ -782,7 +782,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		monica_model_add_daily_sum_fertiliser(model, fertilizerAmount)
 	}
 
-	soil_coverage := model.currentCropModule != nil ? model.currentCropModule.vc_SoilCoverage : 0.0
+	soil_coverage := model.currentCropModule != nil ? model.currentCropModule.soil_coverage : 0.0
 	soil_temperature_step(
 		&model.soilTemperature,
 		tmin,
@@ -917,8 +917,8 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		}
 	}
 
-	model.p_accuNStress += model.currentCropModule.vc_CropNRedux
-	model.p_accuWaterStress += model.currentCropModule.vc_TranspirationDeficit
-	model.p_accuHeatStress += model.currentCropModule.vc_CropHeatRedux
-	model.p_accuOxygenStress += model.currentCropModule.vc_OxygenDeficit
+	model.p_accuNStress += model.currentCropModule.crop_n_redux
+	model.p_accuWaterStress += model.currentCropModule.transpiration_deficit
+	model.p_accuHeatStress += model.currentCropModule.crop_heat_redux
+	model.p_accuOxygenStress += model.currentCropModule.oxygen_deficit
 }
