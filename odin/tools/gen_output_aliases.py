@@ -33,6 +33,13 @@ ORGAN = {"OId::ROOT": "0", "OId::LEAF": "1", "OId::SHOOT": "2",
 # snake_case treatment Crop_Module got, so its fields keep resolving once
 # renamed - see CONVENTIONS.md §9 for why this file would otherwise silently
 # reintroduce the old C++ names on every regeneration.
+#
+# Only rewrites the segment immediately after the root (to_path()'s segs[1]):
+# a renamed field one level deeper - e.g. Aom_Properties's fields, reached as
+# "soilColumn.layers.vo_AOM_Pool.0.vo_AOM_Fast" - isn't caught, since that
+# would need this script to track each intermediate segment's type rather
+# than just string-substitute. Those need the same manual output_paths.odin
+# fix-up as before if this generator is ever rerun.
 PATH_ROOT_STRUCT = {
     "currentCropModule": "Crop_Module",
 }

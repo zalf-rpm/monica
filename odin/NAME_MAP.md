@@ -192,3 +192,28 @@ fixture), not for any running code.
 Fields not listed here (e.g. `intercropping`, `rad24`, `full240`) were
 already lowercase/snake-shaped and needed no change.
 
+## `monica::AOM_Properties` -> `core.Aom_Properties` (odin/monica/core/soil_column.odin)
+
+| C++ (`soilcolumn.h`) | Odin |
+| --- | --- |
+| `vo_AOM_DryMatterContent` | `aom_dry_matter_content` |
+| `vo_AOM_Fast` | `aom_fast` |
+| `vo_AOM_FastDecCoeff` | `aom_fast_dec_coeff` |
+| `vo_AOM_FastDecCoeffStandard` | `aom_fast_dec_coeff_standard` |
+| `vo_AOM_FastDecRate_to_SMB_Fast` | `aom_fast_dec_rate_to_smb_fast` |
+| `vo_AOM_FastDecRate_to_SMB_Slow` | `aom_fast_dec_rate_to_smb_slow` |
+| `vo_AOM_FastDelta` | `aom_fast_delta` |
+| `vo_AOM_NH4Content` | `aom_nh4_content` |
+| `vo_AOM_Slow` | `aom_slow` |
+| `vo_AOM_SlowDecCoeff` | `aom_slow_dec_coeff` |
+| `vo_AOM_SlowDecCoeffStandard` | `aom_slow_dec_coeff_standard` |
+| `vo_AOM_SlowDecRate_to_SMB_Fast` | `aom_slow_dec_rate_to_smb_fast` |
+| `vo_AOM_SlowDecRate_to_SMB_Slow` | `aom_slow_dec_rate_to_smb_slow` |
+| `vo_AOM_SlowDelta` | `aom_slow_delta` |
+| `vo_CN_Ratio_AOM_Fast` | `cn_ratio_aom_fast` |
+| `vo_CN_Ratio_AOM_Slow` | `cn_ratio_aom_slow` |
+| `vo_DaysAfterApplication` | `days_after_application` |
+| `vo_PartAOM_Slow_to_SMB_Fast` | `part_aom_slow_to_smb_fast` |
+| `vo_PartAOM_Slow_to_SMB_Slow` | `part_aom_slow_to_smb_slow` |
+
+Not renamed this round: `incorporation`, `noVolatilization` (plain camelCase, no `vo_` prefix).

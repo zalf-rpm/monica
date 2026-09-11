@@ -446,8 +446,8 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 		vo_SMB_FastDecRate[i] = vo_SMB_FastDeathRate[i] + vo_SMB_FastMaintRate[i]
 
 		for &AOM_Pool in layi.vo_AOM_Pool {
-			AOM_Pool.vo_AOM_SlowDecCoeff = AOM_Pool.vo_AOM_SlowDecCoeffStandard * tod * mod_
-			AOM_Pool.vo_AOM_FastDecCoeff = AOM_Pool.vo_AOM_FastDecCoeffStandard * tod * mod_
+			AOM_Pool.aom_slow_dec_coeff = AOM_Pool.aom_slow_dec_coeff_standard * tod * mod_
+			AOM_Pool.aom_fast_dec_coeff = AOM_Pool.aom_fast_dec_coeff_standard * tod * mod_
 		}
 	}
 
@@ -457,13 +457,13 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 
 		for &props in layi.vo_AOM_Pool {
 			// Eq.6-5 and 6-6 in the DAISY manual
-			props.vo_AOM_SlowDelta = -(props.vo_AOM_SlowDecCoeff * props.vo_AOM_Slow)
-			if -props.vo_AOM_SlowDelta > props.vo_AOM_Slow {
-				props.vo_AOM_SlowDelta = -props.vo_AOM_Slow
+			props.aom_slow_delta = -(props.aom_slow_dec_coeff * props.aom_slow)
+			if -props.aom_slow_delta > props.aom_slow {
+				props.aom_slow_delta = -props.aom_slow
 			}
-			props.vo_AOM_FastDelta = -(props.vo_AOM_FastDecCoeff * props.vo_AOM_Fast)
-			if -props.vo_AOM_FastDelta > props.vo_AOM_Fast {
-				props.vo_AOM_FastDelta = -props.vo_AOM_Fast
+			props.aom_fast_delta = -(props.aom_fast_dec_coeff * props.aom_fast)
+			if -props.aom_fast_delta > props.aom_fast {
+				props.aom_fast_delta = -props.aom_fast
 			}
 		}
 
@@ -471,16 +471,16 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 		vo_AOM_SlowDecRateSum[i] = 0.0
 
 		for &props in layi.vo_AOM_Pool {
-			props.vo_AOM_SlowDecRate_to_SMB_Slow =
-				props.vo_PartAOM_Slow_to_SMB_Slow * props.vo_AOM_SlowDecCoeff * props.vo_AOM_Slow
-			props.vo_AOM_SlowDecRate_to_SMB_Fast =
-				props.vo_PartAOM_Slow_to_SMB_Fast * props.vo_AOM_SlowDecCoeff * props.vo_AOM_Slow
+			props.aom_slow_dec_rate_to_smb_slow =
+				props.part_aom_slow_to_smb_slow * props.aom_slow_dec_coeff * props.aom_slow
+			props.aom_slow_dec_rate_to_smb_fast =
+				props.part_aom_slow_to_smb_fast * props.aom_slow_dec_coeff * props.aom_slow
 
 			vo_AOM_SlowDecRateSum[i] +=
-				props.vo_AOM_SlowDecRate_to_SMB_Slow + props.vo_AOM_SlowDecRate_to_SMB_Fast
+				props.aom_slow_dec_rate_to_smb_slow + props.aom_slow_dec_rate_to_smb_fast
 
-			AOMslow_to_SMBfast[i] += props.vo_AOM_SlowDecRate_to_SMB_Fast
-			AOMslow_to_SMBslow[i] += props.vo_AOM_SlowDecRate_to_SMB_Slow
+			AOMslow_to_SMBfast[i] += props.aom_slow_dec_rate_to_smb_fast
+			AOMslow_to_SMBslow[i] += props.aom_slow_dec_rate_to_smb_slow
 		}
 
 		// Eq.6-8 in the DAISY manual
@@ -488,9 +488,9 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 		AOMfast_to_SMBfast[i] = 0.0
 
 		for &props in layi.vo_AOM_Pool {
-			props.vo_AOM_FastDecRate_to_SMB_Fast = props.vo_AOM_FastDecCoeff * props.vo_AOM_Fast
-			vo_AOM_FastDecRateSum[i] += props.vo_AOM_FastDecRate_to_SMB_Fast
-			AOMfast_to_SMBfast[i] += props.vo_AOM_FastDecRate_to_SMB_Fast
+			props.aom_fast_dec_rate_to_smb_fast = props.aom_fast_dec_coeff * props.aom_fast
+			vo_AOM_FastDecRateSum[i] += props.aom_fast_dec_rate_to_smb_fast
+			AOMfast_to_SMBfast[i] += props.aom_fast_dec_rate_to_smb_fast
 		}
 
 		so.smb_slow_delta[i] =
@@ -531,8 +531,8 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 		vo_AOM_FastDeltaSum[i] = 0.0
 
 		for &props in layi.vo_AOM_Pool {
-			vo_AOM_SlowDeltaSum[i] += props.vo_AOM_SlowDelta
-			vo_AOM_FastDeltaSum[i] += props.vo_AOM_FastDelta
+			vo_AOM_SlowDeltaSum[i] += props.aom_slow_delta
+			vo_AOM_FastDeltaSum[i] += props.aom_fast_delta
 		}
 	}
 
@@ -550,11 +550,11 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 			(so.som_fast_delta[i] / CN_Ratio_SOM_Fast)
 
 		for &props in layi.vo_AOM_Pool {
-			if libc.fabs(props.vo_CN_Ratio_AOM_Fast) >= 1.0e-7 {
-				vo_NBalance[i] -= props.vo_AOM_FastDelta / props.vo_CN_Ratio_AOM_Fast
+			if libc.fabs(props.cn_ratio_aom_fast) >= 1.0e-7 {
+				vo_NBalance[i] -= props.aom_fast_delta / props.cn_ratio_aom_fast
 			}
-			if libc.fabs(props.vo_CN_Ratio_AOM_Slow) >= 1.0e-7 {
-				vo_NBalance[i] -= props.vo_AOM_SlowDelta / props.vo_CN_Ratio_AOM_Slow
+			if libc.fabs(props.cn_ratio_aom_slow) >= 1.0e-7 {
+				vo_NBalance[i] -= props.aom_slow_delta / props.cn_ratio_aom_slow
 			}
 		}
 	}
@@ -576,23 +576,23 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 				vo_AOM_FastDeltaSum[i] = 0.0
 
 				for &props in layi.vo_AOM_Pool {
-					if props.vo_CN_Ratio_AOM_Slow >=
+					if props.cn_ratio_aom_slow >=
 					   (po_CN_Ratio_SMB / po_AOM_SlowUtilizationEfficiency) {
-						props.vo_AOM_SlowDelta = 0.0
+						props.aom_slow_delta = 0.0
 						// correction of the fluxes across pools
-						AOMslow_to_SMBfast[i] -= props.vo_AOM_SlowDecRate_to_SMB_Fast
-						AOMslow_to_SMBslow[i] -= props.vo_AOM_SlowDecRate_to_SMB_Slow
+						AOMslow_to_SMBfast[i] -= props.aom_slow_dec_rate_to_smb_fast
+						AOMslow_to_SMBslow[i] -= props.aom_slow_dec_rate_to_smb_slow
 					}
 
-					if props.vo_CN_Ratio_AOM_Fast >=
+					if props.cn_ratio_aom_fast >=
 					   (po_CN_Ratio_SMB / po_AOM_FastUtilizationEfficiency) {
-						props.vo_AOM_FastDelta = 0.0
+						props.aom_fast_delta = 0.0
 						// correction of the fluxes across pools
-						AOMfast_to_SMBfast[i] -= props.vo_AOM_FastDecRate_to_SMB_Fast
+						AOMfast_to_SMBfast[i] -= props.aom_fast_dec_rate_to_smb_fast
 					}
 
-					vo_AOM_SlowDeltaSum[i] += props.vo_AOM_SlowDelta
-					vo_AOM_FastDeltaSum[i] += props.vo_AOM_FastDelta
+					vo_AOM_SlowDeltaSum[i] += props.aom_slow_delta
+					vo_AOM_FastDeltaSum[i] += props.aom_fast_delta
 				}
 
 				if vo_CN_Ratio_SOM_Slow >= (po_CN_Ratio_SMB / po_SOM_SlowUtilizationEfficiency) {
@@ -636,11 +636,11 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 					(so.som_fast_delta[i] / vo_CN_Ratio_SOM_Fast)
 
 				for &props in layi.vo_AOM_Pool {
-					if libc.fabs(props.vo_CN_Ratio_AOM_Fast) >= 1.0e-7 {
-						vo_NBalance[i] -= (props.vo_AOM_FastDelta / props.vo_CN_Ratio_AOM_Fast)
+					if libc.fabs(props.cn_ratio_aom_fast) >= 1.0e-7 {
+						vo_NBalance[i] -= (props.aom_fast_delta / props.cn_ratio_aom_fast)
 					}
-					if libc.fabs(props.vo_CN_Ratio_AOM_Slow) >= 1.0e-7 {
-						vo_NBalance[i] -= (props.vo_AOM_SlowDelta / props.vo_CN_Ratio_AOM_Slow)
+					if libc.fabs(props.cn_ratio_aom_slow) >= 1.0e-7 {
+						vo_NBalance[i] -= (props.aom_slow_delta / props.cn_ratio_aom_slow)
 					}
 				}
 
@@ -950,21 +950,21 @@ soil_organic_fo_volatilisation :: proc(
 
 	AOM_Pool := lay0.vo_AOM_Pool
 	for props in AOM_Pool {
-		vo_DaysAfterApplicationSum += props.vo_DaysAfterApplication
+		vo_DaysAfterApplicationSum += props.days_after_application
 	}
 
 	if vo_DaysAfterApplicationSum > 0 || vo_AOM_Addition {
 		vo_N_PotVolatilisedSum = 0.0
 
 		for props in AOM_Pool {
-			vo_AOM_TAN_Content := props.vo_AOM_NH4Content * 1000.0 * props.vo_AOM_DryMatterContent
+			vo_AOM_TAN_Content := props.aom_nh4_content * 1000.0 * props.aom_dry_matter_content
 
 			vo_MaxVolatilisation :=
 				0.0495 *
 				libc.pow(1.1020, vo_SoilWet) *
 				libc.pow(1.0223, vw_MeanAirTemperature) *
 				libc.pow(1.0417, vw_WindSpeed) *
-				libc.pow(1.1080, props.vo_AOM_DryMatterContent) *
+				libc.pow(1.1080, props.aom_dry_matter_content) *
 				libc.pow(0.8280, vo_AOM_TAN_Content) *
 				libc.pow(f64(11.300), props.incorporation ? 1.0 : 0.0)
 
@@ -973,7 +973,7 @@ soil_organic_fo_volatilisation :: proc(
 				libc.pow(1.1020, vo_SoilWet) *
 				libc.pow(0.9600, vw_MeanAirTemperature) *
 				libc.pow(0.9500, vw_WindSpeed) *
-				libc.pow(1.1750, props.vo_AOM_DryMatterContent) *
+				libc.pow(1.1750, props.aom_dry_matter_content) *
 				libc.pow(1.1060, vo_AOM_TAN_Content) *
 				libc.pow(f64(1.0000), props.incorporation ? 1.0 : 0.0) *
 				(18869.3 * libc.exp(-lay0.vs_SoilpH / 0.63321) + 0.70165)
@@ -982,14 +982,14 @@ soil_organic_fo_volatilisation :: proc(
 				vo_MaxVolatilisation *
 				(vo_VolatilisationHalfLife /
 						libc.pow(
-							f64(props.vo_DaysAfterApplication) + vo_VolatilisationHalfLife,
+							f64(props.days_after_application) + vo_VolatilisationHalfLife,
 							f64(2.0),
 						))
 
 			vo_N_PotVolatilised :=
 				vo_VolatilisationRate *
 				vo_AOM_TAN_Content *
-				(props.vo_AOM_Slow + props.vo_AOM_Fast) /
+				(props.aom_slow + props.aom_fast) /
 				10000.0 /
 				1000.0
 
@@ -1012,8 +1012,8 @@ soil_organic_fo_volatilisation :: proc(
 	so.total_nh3_volatilised = vo_N_ActVolatilised + so.nh3_volatilised // [kg N m-2]
 
 	for &props in AOM_Pool {
-		if props.vo_DaysAfterApplication > 0 && !vo_AOM_Addition {
-			props.vo_DaysAfterApplication += 1
+		if props.days_after_application > 0 && !vo_AOM_Addition {
+			props.days_after_application += 1
 		}
 	}
 }
@@ -1291,14 +1291,14 @@ soil_organic_fo_pool_update :: proc(so: ^Soil_Organic) {
 		so.aom_fast_sum[i] = 0.0
 
 		for &pool in layi.vo_AOM_Pool {
-			pool.vo_AOM_Slow += pool.vo_AOM_SlowDelta
-			pool.vo_AOM_Fast += pool.vo_AOM_FastDelta
+			pool.aom_slow += pool.aom_slow_delta
+			pool.aom_fast += pool.aom_fast_delta
 
-			so.aom_slow_delta_sum[i] += pool.vo_AOM_SlowDelta
-			so.aom_fast_delta_sum[i] += pool.vo_AOM_FastDelta
+			so.aom_slow_delta_sum[i] += pool.aom_slow_delta
+			so.aom_fast_delta_sum[i] += pool.aom_fast_delta
 
-			so.aom_slow_sum[i] += pool.vo_AOM_Slow
-			so.aom_fast_sum[i] += pool.vo_AOM_Fast
+			so.aom_slow_sum[i] += pool.aom_slow
+			so.aom_fast_sum[i] += pool.aom_fast
 		}
 
 		layi.vs_SOM_Slow += so.som_slow_delta[i]
@@ -1398,15 +1398,15 @@ soil_organic_add_organic_matter :: proc(
 		rounded_CN_Ratio_AOM_Slow: int,
 	) -> bool {
 		return(
-			tl.round_shifted_int(props.vo_AOM_SlowDecCoeffStandard, 4) ==
+			tl.round_shifted_int(props.aom_slow_dec_coeff_standard, 4) ==
 				rounded_AOM_SlowDecCoeffStandard &&
-			tl.round_shifted_int(props.vo_AOM_FastDecCoeffStandard, 4) ==
+			tl.round_shifted_int(props.aom_fast_dec_coeff_standard, 4) ==
 				rounded_AOM_FastDecCoeffStandard &&
-			tl.round_shifted_int(props.vo_PartAOM_Slow_to_SMB_Slow, 4) ==
+			tl.round_shifted_int(props.part_aom_slow_to_smb_slow, 4) ==
 				rounded_PartAOM_Slow_to_SMB_Slow &&
-			tl.round_shifted_int(props.vo_PartAOM_Slow_to_SMB_Fast, 4) ==
+			tl.round_shifted_int(props.part_aom_slow_to_smb_fast, 4) ==
 				rounded_PartAOM_Slow_to_SMB_Fast &&
-			tl.round_shifted_int(props.vo_CN_Ratio_AOM_Slow, 4) == rounded_CN_Ratio_AOM_Slow \
+			tl.round_shifted_int(props.cn_ratio_aom_slow, 4) == rounded_CN_Ratio_AOM_Slow \
 		)
 	}
 
@@ -1479,13 +1479,13 @@ soil_organic_add_organic_matter :: proc(
 
 		if poolSetIndex < 0 {
 			pool: Aom_Properties
-			pool.vo_AOM_SlowDecCoeffStandard = params.vo_AOM_SlowDecCoeffStandard
-			pool.vo_AOM_FastDecCoeffStandard = params.vo_AOM_FastDecCoeffStandard
-			pool.vo_CN_Ratio_AOM_Slow = params.vo_CN_Ratio_AOM_Slow
-			pool.vo_CN_Ratio_AOM_Fast =
+			pool.aom_slow_dec_coeff_standard = params.vo_AOM_SlowDecCoeffStandard
+			pool.aom_fast_dec_coeff_standard = params.vo_AOM_FastDecCoeffStandard
+			pool.cn_ratio_aom_slow = params.vo_CN_Ratio_AOM_Slow
+			pool.cn_ratio_aom_fast =
 				areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast
-			pool.vo_PartAOM_Slow_to_SMB_Slow = params.vo_PartAOM_Slow_to_SMB_Slow
-			pool.vo_PartAOM_Slow_to_SMB_Fast = params.vo_PartAOM_Slow_to_SMB_Fast
+			pool.part_aom_slow_to_smb_slow = params.vo_PartAOM_Slow_to_SMB_Slow
+			pool.part_aom_slow_to_smb_fast = params.vo_PartAOM_Slow_to_SMB_Fast
 			pool.incorporation = so.incorporation
 			pool.noVolatilization = areCropResidueParams
 
@@ -1494,13 +1494,13 @@ soil_organic_add_organic_matter :: proc(
 
 				if i == intoLayerIndex {
 					cpool := &intoLayer.vo_AOM_Pool[len(intoLayer.vo_AOM_Pool) - 1]
-					cpool.vo_DaysAfterApplication = 1
-					cpool.vo_AOM_DryMatterContent = params.vo_AOM_DryMatterContent
-					cpool.vo_AOM_NH4Content = params.vo_AOM_NH4Content
-					cpool.vo_AOM_Slow = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount
-					AOM_slow_input = cpool.vo_AOM_Slow
-					cpool.vo_AOM_Fast = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount
-					AOM_fast_input = cpool.vo_AOM_Fast
+					cpool.days_after_application = 1
+					cpool.aom_dry_matter_content = params.vo_AOM_DryMatterContent
+					cpool.aom_nh4_content = params.vo_AOM_NH4Content
+					cpool.aom_slow = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount
+					AOM_slow_input = cpool.aom_slow
+					cpool.aom_fast = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount
+					AOM_fast_input = cpool.aom_fast
 				}
 			}
 
@@ -1508,16 +1508,16 @@ soil_organic_add_organic_matter :: proc(
 		} else {
 			cpool := &intoLayer.vo_AOM_Pool[poolSetIndex]
 			AOM_slow_input = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount
-			cpool.vo_AOM_Slow += AOM_slow_input
+			cpool.aom_slow += AOM_slow_input
 			added_CN_ratio_AOM_fast :=
 				areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast
-			pool_fast_N := cpool.vo_AOM_Fast / cpool.vo_CN_Ratio_AOM_Fast
+			pool_fast_N := cpool.aom_fast / cpool.cn_ratio_aom_fast
 			added_fast_N :=
 				params.vo_PartAOM_to_AOM_Fast * added_Corg_amount / added_CN_ratio_AOM_fast
 			AOM_fast_input = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount
-			cpool.vo_AOM_Fast += AOM_fast_input
-			new_CN_ratio_AOM_fast := cpool.vo_AOM_Fast / (pool_fast_N + added_fast_N)
-			cpool.vo_CN_Ratio_AOM_Fast = new_CN_ratio_AOM_fast
+			cpool.aom_fast += AOM_fast_input
+			new_CN_ratio_AOM_fast := cpool.aom_fast / (pool_fast_N + added_fast_N)
+			cpool.cn_ratio_aom_fast = new_CN_ratio_AOM_fast
 		}
 
 		soil_NH4_input :=
@@ -1577,8 +1577,8 @@ soil_organic_get_organic_n :: proc(so: ^Soil_Organic, i: int) -> f64 {
 	orgN += so.soil_column.layers[i].vs_SOM_Slow / cn
 
 	for aomp in so.soil_column.layers[i].vo_AOM_Pool {
-		orgN += aomp.vo_AOM_Fast / aomp.vo_CN_Ratio_AOM_Fast
-		orgN += aomp.vo_AOM_Slow / aomp.vo_CN_Ratio_AOM_Slow
+		orgN += aomp.aom_fast / aomp.cn_ratio_aom_fast
+		orgN += aomp.aom_slow / aomp.cn_ratio_aom_slow
 	}
 
 	return orgN

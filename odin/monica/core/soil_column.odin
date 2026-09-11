@@ -21,36 +21,36 @@ import libc "core:c/libc"
 
 // C++: struct monica::AOM_Properties
 Aom_Properties :: struct {
-	vo_AOM_Slow:                    f64, // C in slowly decomposing AOM pool [kgC m-3]
-	vo_AOM_Fast:                    f64, // C in rapidly decomposing AOM pool [kgC m-3]
-	vo_AOM_SlowDecRate_to_SMB_Slow: f64,
-	vo_AOM_SlowDecRate_to_SMB_Fast: f64,
-	vo_AOM_FastDecRate_to_SMB_Slow: f64,
-	vo_AOM_FastDecRate_to_SMB_Fast: f64,
-	vo_AOM_SlowDecCoeff:            f64,
-	vo_AOM_FastDecCoeff:            f64,
-	vo_AOM_SlowDecCoeffStandard:    f64,
-	vo_AOM_FastDecCoeffStandard:    f64,
-	vo_PartAOM_Slow_to_SMB_Slow:    f64,
-	vo_PartAOM_Slow_to_SMB_Fast:    f64,
-	vo_CN_Ratio_AOM_Slow:           f64,
-	vo_CN_Ratio_AOM_Fast:           f64,
-	vo_DaysAfterApplication:        int,
-	vo_AOM_DryMatterContent:        f64,
-	vo_AOM_NH4Content:              f64,
-	vo_AOM_SlowDelta:               f64,
-	vo_AOM_FastDelta:               f64,
-	incorporation:                  bool,
-	noVolatilization:               bool,
+	aom_slow:                      f64, // C in slowly decomposing AOM pool [kgC m-3]
+	aom_fast:                      f64, // C in rapidly decomposing AOM pool [kgC m-3]
+	aom_slow_dec_rate_to_smb_slow: f64,
+	aom_slow_dec_rate_to_smb_fast: f64,
+	aom_fast_dec_rate_to_smb_slow: f64,
+	aom_fast_dec_rate_to_smb_fast: f64,
+	aom_slow_dec_coeff:            f64,
+	aom_fast_dec_coeff:            f64,
+	aom_slow_dec_coeff_standard:   f64,
+	aom_fast_dec_coeff_standard:   f64,
+	part_aom_slow_to_smb_slow:     f64,
+	part_aom_slow_to_smb_fast:     f64,
+	cn_ratio_aom_slow:             f64,
+	cn_ratio_aom_fast:             f64,
+	days_after_application:        int,
+	aom_dry_matter_content:        f64,
+	aom_nh4_content:               f64,
+	aom_slow_delta:                f64,
+	aom_fast_delta:                f64,
+	incorporation:                 bool,
+	noVolatilization:              bool,
 }
 
 // C++ in-class initialisers
 make_aom_properties :: proc() -> Aom_Properties {
 	return Aom_Properties {
-		vo_AOM_SlowDecCoeffStandard = 1.0,
-		vo_AOM_FastDecCoeffStandard = 1.0,
-		vo_CN_Ratio_AOM_Slow = 1.0,
-		vo_CN_Ratio_AOM_Fast = 1.0,
+		aom_slow_dec_coeff_standard = 1.0,
+		aom_fast_dec_coeff_standard = 1.0,
+		cn_ratio_aom_slow = 1.0,
+		cn_ratio_aom_fast = 1.0,
 		noVolatilization = true,
 	}
 }
@@ -400,8 +400,8 @@ delete_aom_pool :: proc(sc: ^Soil_Column) {
 		vo_SumAOM_Fast := 0.0
 
 		for i_Layer := 0; i_Layer < sc.vs_NumberOfOrganicLayers; i_Layer += 1 {
-			vo_SumAOM_Slow += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].vo_AOM_Slow
-			vo_SumAOM_Fast += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].vo_AOM_Fast
+			vo_SumAOM_Slow += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].aom_slow
+			vo_SumAOM_Fast += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].aom_fast
 		}
 
 		if (vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001 {
@@ -751,10 +751,10 @@ apply_tillage :: proc(sc: ^Soil_Column, depth: f64) {
 	}
 
 	// NOTE(c++-quirk): the C++ "merge aom pool" block (computes per-pool-index
-	// mean vo_AOM_Slow/vo_AOM_Fast across the affected layers, then tries to
+	// mean aom_slow/aom_fast across the affected layers, then tries to
 	// write the means back) uses `for (auto aomp : layer.vo_AOM_Pool)` for the
 	// write-back loop - a by-value range-for copy, not `auto &aomp`. Every
-	// `aomp.vo_AOM_Slow = ...` mutates only that loop-local copy, never
+	// `aomp.aom_slow = ...` mutates only that loop-local copy, never
 	// `layer.vo_AOM_Pool[pool_index]` itself, so the entire block is a provable
 	// no-op: it computes averages and then discards them without touching any
 	// SoilColumn state (no debug output either - that block's cout lines are
