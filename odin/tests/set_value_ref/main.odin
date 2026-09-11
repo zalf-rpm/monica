@@ -196,7 +196,7 @@ main :: proc() {
 			globrad,
 			soil_coverage,
 			model.soilMoisture.snow_component.vm_SnowDepth,
-			model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
+			model.soilMoisture.frost_component.temperature_under_snow,
 		)
 		core.soil_moisture_step(
 			&model.soilMoisture,

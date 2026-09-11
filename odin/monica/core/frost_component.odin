@@ -7,16 +7,16 @@ import libc "core:c/libc"
 
 // C++: struct monica::FrostComponent
 Frost_Component :: struct {
-	soilColumn:                   ^Soil_Column,
-	vm_FrostDepth:                f64,
-	vm_accumulatedFrostDepth:     f64,
-	vm_NegativeDegreeDays:        f64, // negative degree-days under snow
-	vm_ThawDepth:                 f64,
-	vm_FrostDays:                 int,
-	vm_LambdaRedux:               [dynamic]f64, // reduction factor for Lambda []
-	vm_TemperatureUnderSnow:      f64,
-	vm_HydraulicConductivityRedux: f64,
-	pt_TimeStep:                  f64,
+	soilColumn:                    ^Soil_Column,
+	frost_depth:                   f64,
+	accumulated_frost_depth:       f64,
+	negative_degree_days:          f64, // negative degree-days under snow
+	thaw_depth:                    f64,
+	frost_days:                    int,
+	lambda_redux:                  [dynamic]f64, // reduction factor for Lambda []
+	temperature_under_snow:        f64,
+	hydraulic_conductivity_redux:  f64,
+	pt_TimeStep:                   f64,
 	pm_HydraulicConductivityRedux: f64,
 }
 
@@ -29,17 +29,17 @@ initialize_frost_component :: proc(
 	allocator := context.allocator,
 ) {
 	fc.soilColumn = soil_column
-	fc.vm_FrostDepth = 0.0
-	fc.vm_accumulatedFrostDepth = 0.0
-	fc.vm_NegativeDegreeDays = 0.0
-	fc.vm_ThawDepth = 0.0
-	fc.vm_FrostDays = 0
-	resize(&fc.vm_LambdaRedux, number_of_layers(soil_column) + 1)
-	for i in 0 ..< len(fc.vm_LambdaRedux) {
-		fc.vm_LambdaRedux[i] = 1.0
+	fc.frost_depth = 0.0
+	fc.accumulated_frost_depth = 0.0
+	fc.negative_degree_days = 0.0
+	fc.thaw_depth = 0.0
+	fc.frost_days = 0
+	resize(&fc.lambda_redux, number_of_layers(soil_column) + 1)
+	for i in 0 ..< len(fc.lambda_redux) {
+		fc.lambda_redux[i] = 1.0
 	}
-	fc.vm_TemperatureUnderSnow = 0.0
-	fc.vm_HydraulicConductivityRedux = pm_hydraulic_conductivity_redux
+	fc.temperature_under_snow = 0.0
+	fc.hydraulic_conductivity_redux = pm_hydraulic_conductivity_redux
 	fc.pt_TimeStep = p_time_step
 	fc.pm_HydraulicConductivityRedux = pm_hydraulic_conductivity_redux
 }
@@ -57,19 +57,19 @@ calc_soil_frost :: proc(fc: ^Frost_Component, mean_air_temperature, snow_depth: 
 		mean_field_capacity,
 	)
 
-	fc.vm_TemperatureUnderSnow = calc_temperature_under_snow(fc, mean_air_temperature, snow_depth)
+	fc.temperature_under_snow = calc_temperature_under_snow(fc, mean_air_temperature, snow_depth)
 
-	fc.vm_FrostDepth = calc_frost_depth(
+	fc.frost_depth = calc_frost_depth(
 		fc,
 		mean_field_capacity,
 		heat_conductivity_frozen,
-		fc.vm_TemperatureUnderSnow,
+		fc.temperature_under_snow,
 	)
-	fc.vm_accumulatedFrostDepth += fc.vm_FrostDepth
+	fc.accumulated_frost_depth += fc.frost_depth
 
-	fc.vm_ThawDepth = calc_thaw_depth(
+	fc.thaw_depth = calc_thaw_depth(
 		fc,
-		fc.vm_TemperatureUnderSnow,
+		fc.temperature_under_snow,
 		heat_conductivity_unfrozen,
 		mean_field_capacity,
 	)
@@ -165,7 +165,7 @@ calc_thaw_depth :: proc(
 		thaw_helper1 = temperature_under_snow
 	}
 
-	if fc.vm_FrostDepth == 0.0 {
+	if fc.frost_depth == 0.0 {
 		thaw_helper2 = 0.0
 	} else {
 		thaw_helper2 = libc.sqrt(
@@ -180,7 +180,7 @@ calc_thaw_depth :: proc(
 		thaw_helper3 = thaw_helper2
 	}
 
-	thaw_helper4 = fc.vm_ThawDepth + thaw_helper3
+	thaw_helper4 = fc.thaw_depth + thaw_helper3
 
 	if thaw_helper4 < 0.0 {
 		thaw_depth = 0.0
@@ -200,23 +200,23 @@ calc_frost_depth :: proc(
 
 	latent_heat := 1000.0 * (mean_field_capacity * 100.0) / 100.0 * 0.335
 
-	if fc.vm_FrostDepth > 0.0 {
-		fc.vm_FrostDays += 1
+	if fc.frost_depth > 0.0 {
+		fc.frost_days += 1
 	}
 
-	latent_heat_transfer := 0.3 * f64(fc.vm_FrostDays) / latent_heat
+	latent_heat_transfer := 0.3 * f64(fc.frost_days) / latent_heat
 
 	if temperature_under_snow < 0.0 {
-		fc.vm_NegativeDegreeDays -= temperature_under_snow
+		fc.negative_degree_days -= temperature_under_snow
 	}
 
-	if fc.vm_NegativeDegreeDays < 0.01 {
+	if fc.negative_degree_days < 0.01 {
 		frost_depth = 0.0
 	} else {
 		frost_depth =
 			libc.sqrt(
 				((latent_heat_transfer / 2.0) * (latent_heat_transfer / 2.0)) +
-				(2.0 * heat_conductivity_frozen * fc.vm_NegativeDegreeDays / latent_heat),
+				(2.0 * heat_conductivity_frozen * fc.negative_degree_days / latent_heat),
 			) -
 			(latent_heat_transfer / 2.0)
 	}
@@ -232,11 +232,11 @@ calc_temperature_under_snow :: proc(
 	temperature_under_snow := 0.0
 	if snow_depth / 100.0 < 0.01 {
 		temperature_under_snow = mean_air_temperature
-	} else if fc.vm_FrostDepth < 0.01 {
+	} else if fc.frost_depth < 0.01 {
 		temperature_under_snow = mean_air_temperature
 	} else {
 		temperature_under_snow =
-			mean_air_temperature / (1.0 + (10.0 * snow_depth / 100.0) / fc.vm_FrostDepth)
+			mean_air_temperature / (1.0 + (10.0 * snow_depth / 100.0) / fc.frost_depth)
 	}
 	return temperature_under_snow
 }
@@ -247,47 +247,47 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 	vs_number_of_layers := number_of_layers(sc)
 
 	for i_layer in 0 ..< vs_number_of_layers {
-		if f64(i_layer) < libc.floor((fc.vm_FrostDepth/sc.layers[i_layer].layer_thickness)+0.5) {
+		if f64(i_layer) < libc.floor((fc.frost_depth/sc.layers[i_layer].layer_thickness)+0.5) {
 			// soil layer is frozen
 			sc.layers[i_layer].soil_frozen = true
-			fc.vm_LambdaRedux[i_layer] = 0.0
+			fc.lambda_redux[i_layer] = 0.0
 
 			if i_layer == 0 {
-				fc.vm_HydraulicConductivityRedux = 0.0
+				fc.hydraulic_conductivity_redux = 0.0
 			}
 		}
 
-		if f64(i_layer) < libc.floor((fc.vm_ThawDepth/sc.layers[i_layer].layer_thickness)+0.5) {
+		if f64(i_layer) < libc.floor((fc.thaw_depth/sc.layers[i_layer].layer_thickness)+0.5) {
 			// soil layer is thawing
-			if fc.vm_ThawDepth < (f64(i_layer + 1) * sc.layers[i_layer].layer_thickness) &&
-			   (fc.vm_ThawDepth < fc.vm_FrostDepth) {
+			if fc.thaw_depth < (f64(i_layer + 1) * sc.layers[i_layer].layer_thickness) &&
+			   (fc.thaw_depth < fc.frost_depth) {
 				// soil layer is thawing but there is more frost than thaw
 				sc.layers[i_layer].soil_frozen = true
-				fc.vm_LambdaRedux[i_layer] = 0.0
+				fc.lambda_redux[i_layer] = 0.0
 				if i_layer == 0 {
-					fc.vm_HydraulicConductivityRedux = 0.0
+					fc.hydraulic_conductivity_redux = 0.0
 				}
 			} else {
 				// soil is thawing
 				sc.layers[i_layer].soil_frozen = false
-				fc.vm_LambdaRedux[i_layer] = 1.0
+				fc.lambda_redux[i_layer] = 1.0
 				if i_layer == 0 {
-					fc.vm_HydraulicConductivityRedux = 0.1
+					fc.hydraulic_conductivity_redux = 0.1
 				}
 			}
 		}
 
 		// no more frost, because all layers are thawing
-		if fc.vm_ThawDepth >= fc.vm_FrostDepth {
-			fc.vm_ThawDepth = 0.0
-			fc.vm_FrostDepth = 0.0
-			fc.vm_NegativeDegreeDays = 0.0
-			fc.vm_FrostDays = 0
+		if fc.thaw_depth >= fc.frost_depth {
+			fc.thaw_depth = 0.0
+			fc.frost_depth = 0.0
+			fc.negative_degree_days = 0.0
+			fc.frost_days = 0
 
-			fc.vm_HydraulicConductivityRedux = fc.pm_HydraulicConductivityRedux
+			fc.hydraulic_conductivity_redux = fc.pm_HydraulicConductivityRedux
 			for j_layer in 0 ..< vs_number_of_layers {
 				sc.layers[j_layer].soil_frozen = false
-				fc.vm_LambdaRedux[j_layer] = 1.0
+				fc.lambda_redux[j_layer] = 1.0
 			}
 		}
 	}

@@ -254,3 +254,18 @@ Not renamed this round: `incorporation`, `noVolatilization` (plain camelCase, no
 | `vs_SOM_Slow` | `som_slow` |
 
 Not renamed this round: `vo_AOM_Pool` (`vo_` prefix, not `vs_`).
+
+## `monica::FrostComponent` -> `core.Frost_Component` (odin/monica/core/frost_component.odin)
+
+| C++ (`frost-component.h`) | Odin |
+| --- | --- |
+| `vm_accumulatedFrostDepth` | `accumulated_frost_depth` |
+| `vm_FrostDays` | `frost_days` |
+| `vm_FrostDepth` | `frost_depth` |
+| `vm_HydraulicConductivityRedux` | `hydraulic_conductivity_redux` |
+| `vm_LambdaRedux` | `lambda_redux` |
+| `vm_NegativeDegreeDays` | `negative_degree_days` |
+| `vm_TemperatureUnderSnow` | `temperature_under_snow` |
+| `vm_ThawDepth` | `thaw_depth` |
+
+Not renamed this round: `soilColumn`, `pt_TimeStep`, `pm_HydraulicConductivityRedux` (no `vm_` prefix).

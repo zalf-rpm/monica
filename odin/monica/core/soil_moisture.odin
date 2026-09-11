@@ -343,7 +343,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	if scl_0.soil_moisture_m3 > scl_0.field_capacity {
 		sm.gravitational_water[0] =
 			(scl_0.soil_moisture_m3 - scl_0.field_capacity) * 1000.0 * sm.layer_thickness_m
-		vm_LambdaReduced := scl_0.lambda * sm.frost_component.vm_LambdaRedux[0]
+		vm_LambdaReduced := scl_0.lambda * sm.frost_component.lambda_redux[0]
 		vm_PercolationFactor := 1 + vm_LambdaReduced * sm.gravitational_water[0]
 		sm.percolation_rate[0] =
 			(sm.gravitational_water[0] * sm.gravitational_water[0] * vm_LambdaReduced) /
@@ -480,7 +480,7 @@ percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscill_groundwater_laye
 				sm.gravitational_water[ib] =
 					(soil_moisture_ib^ - field_capacity_ib^) * 1000.0 * sm.layer_thickness_m
 
-				vm_LambdaReduced := lambda_ib^ * sm.frost_component.vm_LambdaRedux[ib]
+				vm_LambdaReduced := lambda_ib^ * sm.frost_component.lambda_redux[ib]
 				vm_PercolationFactor := 1 + vm_LambdaReduced * sm.gravitational_water[ib]
 				sm.percolation_rate[ib] =
 					(sm.gravitational_water[ib] * sm.gravitational_water[ib] * vm_LambdaReduced) /
@@ -645,7 +645,7 @@ percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
 			// too much water for this layer so some water is released to layers below
 			sm.gravitational_water[ib] =
 				(soil_moisture_ib^ - field_capacity_ib^) * 1000.0 * sm.layer_thickness_m
-			vm_LambdaReduced := lambda_ib^ * sm.frost_component.vm_LambdaRedux[ib]
+			vm_LambdaReduced := lambda_ib^ * sm.frost_component.lambda_redux[ib]
 			vm_PercolationFactor := 1.0 + (vm_LambdaReduced * sm.gravitational_water[ib])
 			sm.percolation_rate[ib] =
 				(sm.gravitational_water[ib] * sm.gravitational_water[ib] * vm_LambdaReduced) /

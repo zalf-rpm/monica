@@ -790,7 +790,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		globrad,
 		soil_coverage,
 		model.soilMoisture.snow_component.vm_SnowDepth,
-		model.soilMoisture.frost_component.vm_TemperatureUnderSnow,
+		model.soilMoisture.frost_component.temperature_under_snow,
 	)
 
 	// first try to get ReferenceEvapotranspiration from climate data
