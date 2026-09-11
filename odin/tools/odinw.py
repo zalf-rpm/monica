@@ -451,6 +451,23 @@ def cmd_build(ns: argparse.Namespace) -> int:
             args.append("-o:speed")
         if name in CAPNP_TARGETS and static_capnp:
             args.append("-define:MAS_CAPNP_DYN_STATIC_LINK=true")
+        if name in CAPNP_TARGETS and not static_capnp and not IS_WINDOWS:
+            # capnp_dynamic.odin's non-Windows dynamic branch imports the shim
+            # as "system:mas_capnp_dynamic_shim" (Odin has no relative-path
+            # .so import like Windows' relative .lib one), so the linker needs
+            # an explicit -L to find libmas_capnp_dynamic_shim.so in
+            # shim_dynamic/build/ - it's a project-local CMake artifact, not
+            # something on the system/conda library path the way libzmq is.
+            # -rpath,$ORIGIN makes the resulting binary find that same .so
+            # next to itself at runtime, matching the copy done below.
+            # Odin's own default rpath flag (visible via -print-linker-flags)
+            # spells this \$ORIGIN, not $ORIGIN - it shells out to invoke the
+            # linker, and an unescaped $ORIGIN gets consumed as a shell
+            # variable reference (empty, since nothing sets $ORIGIN) before
+            # ever reaching ld. Matching Odin's own escaping here is what
+            # actually survives that.
+            shim_dir = art["dll_lib"].parent.resolve()
+            args.append(f"-extra-linker-flags:-L{shim_dir} -Wl,-rpath,\\$ORIGIN")
         args += ns.odin_args
         if (rc := run_odin(args, ROOT)) != 0:
             return rc
