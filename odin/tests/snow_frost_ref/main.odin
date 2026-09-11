@@ -140,7 +140,7 @@ main :: proc() {
 		precip := clim.data_accessor_data_for_timestep(&da, .precip, day)
 
 		core.calc_snow_layer(&snow, tavg, precip)
-		core.calc_soil_frost(&frost, tavg, snow.vm_SnowDepth)
+		core.calc_soil_frost(&frost, tavg, snow.snow_depth)
 
 		tr.set_day(&t, day)
 		tr.dump(&t, "snowComponent", snow)

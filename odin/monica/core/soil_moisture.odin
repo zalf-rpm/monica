@@ -239,10 +239,10 @@ soil_moisture_step :: proc(
 	calc_snow_layer(&sm.snow_component, avg_air_temp_deg_C, sm.net_precipitation_mm)
 
 	// Calculates frost and thaw depth and switches lambda
-	calc_soil_frost(&sm.frost_component, avg_air_temp_deg_C, sm.snow_component.vm_SnowDepth)
+	calc_soil_frost(&sm.frost_component, avg_air_temp_deg_C, sm.snow_component.snow_depth)
 
 	// calculates infiltration of water from surface
-	infiltration(sm, sm.snow_component.vm_WaterToInfiltrate)
+	infiltration(sm, sm.snow_component.water_to_infiltrate)
 
 	if 0.0 < groundwater_depth_m && groundwater_depth_m <= 10.0 {
 		percolation_with_groundwater(sm, oscillGroundWaterLayer)
@@ -939,7 +939,7 @@ evapotranspiration :: proc(
 	sm.evaporated_from_surface = 0.0
 	vm_EvaporationFromSurface := false
 
-	vm_SnowDepth := sm.snow_component.vm_SnowDepth
+	vm_SnowDepth := sm.snow_component.snow_depth
 
 	// Berechnung der Bodenevaporation bis max. 4dm Tiefe
 	pm_EvaporationZeta = sm.mod_params.pm_EvaporationZeta
@@ -1440,7 +1440,7 @@ get_snow_depth_and_calc_temperature_under_snow :: proc(
 	snowDepth: f64,
 	temperatureUnderSnow: f64,
 ) {
-	snowDepth = sm.snow_component.vm_SnowDepth
+	snowDepth = sm.snow_component.snow_depth
 	temperatureUnderSnow = calc_temperature_under_snow(&sm.frost_component, avgAirTemp, snowDepth)
 	return
 }

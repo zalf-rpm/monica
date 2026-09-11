@@ -789,7 +789,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		tmax,
 		globrad,
 		soil_coverage,
-		model.soilMoisture.snow_component.vm_SnowDepth,
+		model.soilMoisture.snow_component.snow_depth,
 		model.soilMoisture.frost_component.temperature_under_snow,
 	)
 

@@ -269,3 +269,30 @@ Not renamed this round: `vo_AOM_Pool` (`vo_` prefix, not `vs_`).
 | `vm_ThawDepth` | `thaw_depth` |
 
 Not renamed this round: `soilColumn`, `pt_TimeStep`, `pm_HydraulicConductivityRedux` (no `vm_` prefix).
+
+## `monica::SnowComponent` -> `core.Snow_Component` (odin/monica/core/snow_component.odin)
+
+| C++ (`snow-component.h`) | Odin |
+| --- | --- |
+| `vm_AccumulatedSnowDepth` | `accumulated_snow_depth` |
+| `vm_CorrectionRain` | `correction_rain` |
+| `vm_CorrectionSnow` | `correction_snow` |
+| `vm_FrozenWaterInSnow` | `frozen_water_in_snow` |
+| `vm_LiquidWaterInSnow` | `liquid_water_in_snow` |
+| `vm_maxSnowDepth` | `max_snow_depth` |
+| `vm_NewSnowDensityMin` | `new_snow_density_min` |
+| `vm_RefreezeP1` | `refreeze_p1` |
+| `vm_RefreezeP2` | `refreeze_p2` |
+| `vm_RefreezeTemperature` | `refreeze_temperature` |
+| `vm_SnowAccumulationThresholdTemperature` | `snow_accumulation_threshold_temperature` |
+| `vm_SnowDensity` | `snow_density` |
+| `vm_SnowDepth` | `snow_depth` |
+| `vm_SnowMaxAdditionalDensity` | `snow_max_additional_density` |
+| `vm_SnowmeltTemperature` | `snowmelt_temperature` |
+| `vm_SnowPacking` | `snow_packing` |
+| `vm_SnowRetentionCapacityMax` | `snow_retention_capacity_max` |
+| `vm_SnowRetentionCapacityMin` | `snow_retention_capacity_min` |
+| `vm_TemperatureLimitForLiquidWater` | `temperature_limit_for_liquid_water` |
+| `vm_WaterToInfiltrate` | `water_to_infiltrate` |
+
+Not renamed this round: `soilColumn` (no `vm_` prefix). Note Soil_Column has its own, separate `vm_SnowDepth` mirror field (`sc.soilColumn.vm_SnowDepth = sc.snow_depth`) - out of scope this round, unrelated to Snow_Component's own field of the same C++ name.

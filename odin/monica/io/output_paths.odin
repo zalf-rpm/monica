@@ -166,7 +166,7 @@ g_alias_table := []Alias_Entry {
 	{"RunOff", {"soilMoisture.surface_run_off", 1, .NONE, "mm"}},
 	{"Sand", {"soilColumn.layers.soil_sand_content", 2, .NONE, "kg kg-1"}},
 	{"Sat", {"soilColumn.layers.saturation", 4, .NONE, "m3 m-3"}},
-	{"SnowD", {"soilMoisture.snow_component.vm_SnowDepth", 1, .NONE, "mm"}},
+	{"SnowD", {"soilMoisture.snow_component.snow_depth", 1, .NONE, "mm"}},
 	{"SoilpH", {"soilColumn.layers.0.soil_ph", 1, .NONE, ""}},
 	{"STemp", {"soilTemperature.soilColumn.layers.soil_temperature", 1, .NONE, "�C"}},
 	{"StomRes", {"currentCropModule.stomata_resistance", 2, .NONE, "s m-1"}},

@@ -442,7 +442,7 @@ main :: proc() {
 			tmax,
 			globrad,
 			0.0,
-			sm.snow_component.vm_SnowDepth,
+			sm.snow_component.snow_depth,
 			sm.frost_component.temperature_under_snow,
 		)
 		core.soil_moisture_step(
@@ -570,7 +570,7 @@ main :: proc() {
 				tmax,
 				globrad,
 				0.0,
-				sm2.snow_component.vm_SnowDepth,
+				sm2.snow_component.snow_depth,
 				sm2.frost_component.temperature_under_snow,
 			)
 			core.soil_moisture_step(

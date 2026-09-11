@@ -195,7 +195,7 @@ main :: proc() {
 			tmax,
 			globrad,
 			soil_coverage,
-			model.soilMoisture.snow_component.vm_SnowDepth,
+			model.soilMoisture.snow_component.snow_depth,
 			model.soilMoisture.frost_component.temperature_under_snow,
 		)
 		core.soil_moisture_step(
