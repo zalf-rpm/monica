@@ -510,7 +510,7 @@ main :: proc() {
 	tr.set_day(&t, 9002)
 	dump_model_bits(&t, "model", model)
 	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soilColumn.vs_SurfaceWaterStorage)
-	tr.dump(&t, "sc.layers0.vs_SoilNO3", model.soilColumn.layers[0].vs_SoilNO3)
+	tr.dump(&t, "sc.layers0.vs_SoilNO3", model.soilColumn.layers[0].soil_no3)
 
 	// Harvest - dump then apply on whatever crop module is currently present
 	// (the fixture's own crop, possibly already automatic-harvested above -

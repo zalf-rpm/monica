@@ -115,9 +115,9 @@ day_step :: proc(
 		core.fc_crop_developmental_stage(
 			cm,
 			meanAirTemperature,
-			cm.soil_column.layers[0].vs_SoilMoisture_m3,
-			cm.soil_column.layers[0].vs_FieldCapacity,
-			cm.soil_column.layers[0].vs_PermanentWiltingPoint,
+			cm.soil_column.layers[0].soil_moisture_m3,
+			cm.soil_column.layers[0].field_capacity,
+			cm.soil_column.layers[0].permanent_wilting_point,
 			currentDate,
 		)
 	}

@@ -119,9 +119,9 @@ phenology_day_step :: proc(
 		core.fc_crop_developmental_stage(
 			cm,
 			meanAirTemperature,
-			cm.soil_column.layers[0].vs_SoilMoisture_m3,
-			cm.soil_column.layers[0].vs_FieldCapacity,
-			cm.soil_column.layers[0].vs_PermanentWiltingPoint,
+			cm.soil_column.layers[0].soil_moisture_m3,
+			cm.soil_column.layers[0].field_capacity,
+			cm.soil_column.layers[0].permanent_wilting_point,
 			currentDate,
 		)
 	}
@@ -420,7 +420,7 @@ main :: proc() {
 
 		for day_data, day in days {
 			// rises above pc_BaseTemperature[0]=0 partway through
-			cm.soil_column.layers[0].vs_SoilTemperature = -3.0 + f64(day)
+			cm.soil_column.layers[0].soil_temperature = -3.0 + f64(day)
 
 			current_date := d.make_date(u8(day_data.julianDay), 1, 2000, false, false, true)
 			phenology_day_step(

@@ -196,7 +196,7 @@ test_build_primitive_calc_expression :: proc(t: ^testing.T) {
 	testing.expect(t, mio.oid_has_setter(pwp))
 
 	// so is a raw path that is in no table at all
-	raw := oid_named(t, "soilColumn.layers.vs_SoilNO3", ta)
+	raw := oid_named(t, "soilColumn.layers.soil_no3", ta)
 	testing.expect(t, raw.plan != nil)
 	testing.expect(t, mio.oid_has_setter(raw))
 

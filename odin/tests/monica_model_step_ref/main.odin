@@ -58,12 +58,12 @@ dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) 
 	tr.dump(
 		t,
 		strings.concatenate({path, ".soilColumn->layers[0].vs_SoilTemperature"}),
-		model.soilColumn.layers[0].vs_SoilTemperature,
+		model.soilColumn.layers[0].soil_temperature,
 	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".soilColumn->layers[0].vs_SoilMoisture_m3"}),
-		model.soilColumn.layers[0].vs_SoilMoisture_m3,
+		model.soilColumn.layers[0].soil_moisture_m3,
 	)
 	if model.currentCropModule != nil {
 		tr.dump(

@@ -228,7 +228,7 @@ monica_model_add_daily_sum_org_fertiliser :: proc(
 	SOM_Factor :=
 		(1 - (params.vo_PartAOM_to_AOM_Fast + params.vo_PartAOM_to_AOM_Slow)) *
 		soil.PO_AOM_TO_C /
-		model.soilColumn.layers[0].vs_Soil_CN_Ratio // TODO ask CN for correctness
+		model.soilColumn.layers[0].soil_cn_ratio // TODO ask CN for correctness
 
 	conversion :=
 		AOM_fast_factor +

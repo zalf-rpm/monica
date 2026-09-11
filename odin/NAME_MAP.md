@@ -217,3 +217,40 @@ already lowercase/snake-shaped and needed no change.
 | `vo_PartAOM_Slow_to_SMB_Slow` | `part_aom_slow_to_smb_slow` |
 
 Not renamed this round: `incorporation`, `noVolatilization` (plain camelCase, no `vo_` prefix).
+
+## `monica::SoilLayer` -> `core.Soil_Layer` (odin/monica/core/soil_column.odin)
+
+| C++ (`soilcolumn.h`) | Odin |
+| --- | --- |
+| `vs_FieldCapacity` | `field_capacity` |
+| `vs_Lambda` | `lambda` |
+| `vs_LayerThickness` | `layer_thickness` |
+| `vs_PermanentWiltingPoint` | `permanent_wilting_point` |
+| `vs_Saturation` | `saturation` |
+| `vs_SMB_Fast` | `smb_fast` |
+| `vs_SMB_Slow` | `smb_slow` |
+| `vs_Soil_CN_Ratio` | `soil_cn_ratio` |
+| `vs_SoilAmmonium` | `soil_ammonium` |
+| `vs_SoilBulkDensity` | `soil_bulk_density` |
+| `vs_SoilCarbamid` | `soil_carbamid` |
+| `vs_SoilClayContent` | `soil_clay_content` |
+| `vs_SoilFrozen` | `soil_frozen` |
+| `vs_SoilMoisture_m3` | `soil_moisture_m3` |
+| `vs_SoilMoisturePercentFC` | `soil_moisture_percent_fc` |
+| `vs_SoilNH4` | `soil_nh4` |
+| `vs_SoilNitrate` | `soil_nitrate` |
+| `vs_SoilNO2` | `soil_no2` |
+| `vs_SoilNO3` | `soil_no3` |
+| `vs_SoilOrganicCarbon` | `soil_organic_carbon` |
+| `vs_SoilOrganicMatter` | `soil_organic_matter` |
+| `vs_SoilpH` | `soil_ph` |
+| `vs_SoilRawDensity` | `soil_raw_density` |
+| `vs_SoilSandContent` | `soil_sand_content` |
+| `vs_SoilStoneContent` | `soil_stone_content` |
+| `vs_SoilTemperature` | `soil_temperature` |
+| `vs_SoilTexture` | `soil_texture` |
+| `vs_SoilWaterFlux` | `soil_water_flux` |
+| `vs_SOM_Fast` | `som_fast` |
+| `vs_SOM_Slow` | `som_slow` |
+
+Not renamed this round: `vo_AOM_Pool` (`vo_` prefix, not `vs_`).

@@ -58,97 +58,97 @@ make_aom_properties :: proc() -> Aom_Properties {
 // C++: struct monica::SoilLayer (formerly composed via `Soil::SoilParameters
 // sps;`, flattened directly - see the C++ comment at soilcolumn.h:139)
 Soil_Layer :: struct {
-	vs_LayerThickness:        f64, // [m]
-	vs_SoilWaterFlux:         f64, // water flux at the upper boundary [l m-2]
+	layer_thickness:          f64, // [m]
+	soil_water_flux:          f64, // water flux at the upper boundary [l m-2]
 	vo_AOM_Pool:              [dynamic]Aom_Properties,
-	vs_SOM_Slow:              f64, // [kg C m-3]
-	vs_SOM_Fast:              f64, // [kg C m-3]
-	vs_SMB_Slow:              f64, // [kg C m-3]
-	vs_SMB_Fast:              f64, // [kg C m-3]
-	vs_SoilCarbamid:          f64, // [kg Carbamide-N m-3]
-	vs_SoilNH4:               f64, // [kg NH4-N m-3]
-	vs_SoilNO2:               f64, // [kg NO2-N m-3]
-	vs_SoilNO3:               f64, // [kg NO3-N m-3]
-	vs_SoilFrozen:            bool,
-	vs_SoilSandContent:       f64,
-	vs_SoilClayContent:       f64,
-	vs_SoilpH:                f64,
-	vs_SoilStoneContent:      f64,
-	vs_Lambda:                f64,
-	vs_FieldCapacity:         f64,
-	vs_Saturation:            f64,
-	vs_PermanentWiltingPoint: f64,
-	vs_SoilTexture:           string,
-	vs_SoilAmmonium:          f64,
-	vs_SoilNitrate:           f64,
-	vs_Soil_CN_Ratio:         f64,
-	vs_SoilMoisturePercentFC: f64,
+	som_slow:                 f64, // [kg C m-3]
+	som_fast:                 f64, // [kg C m-3]
+	smb_slow:                 f64, // [kg C m-3]
+	smb_fast:                 f64, // [kg C m-3]
+	soil_carbamid:            f64, // [kg Carbamide-N m-3]
+	soil_nh4:                 f64, // [kg NH4-N m-3]
+	soil_no2:                 f64, // [kg NO2-N m-3]
+	soil_no3:                 f64, // [kg NO3-N m-3]
+	soil_frozen:              bool,
+	soil_sand_content:        f64,
+	soil_clay_content:        f64,
+	soil_ph:                  f64,
+	soil_stone_content:       f64,
+	lambda:                   f64,
+	field_capacity:           f64,
+	saturation:               f64,
+	permanent_wilting_point:  f64,
+	soil_texture:             string,
+	soil_ammonium:            f64,
+	soil_nitrate:             f64,
+	soil_cn_ratio:            f64,
+	soil_moisture_percent_fc: f64,
 	// Raw/override values; -1 means "unset" and the resolved value has to be
 	// computed via the corresponding soil_xyz() proc below.
-	vs_SoilRawDensity:        f64,
-	vs_SoilBulkDensity:       f64,
-	vs_SoilOrganicCarbon:     f64,
-	vs_SoilOrganicMatter:     f64,
-	vs_SoilMoisture_m3:       f64, // [m3 m-3]
-	vs_SoilTemperature:       f64, // [degC]
+	soil_raw_density:         f64,
+	soil_bulk_density:        f64,
+	soil_organic_carbon:      f64,
+	soil_organic_matter:      f64,
+	soil_moisture_m3:         f64, // [m3 m-3]
+	soil_temperature:         f64, // [degC]
 }
 
 // C++ in-class initialisers
 make_default_soil_layer :: proc(allocator := context.allocator) -> Soil_Layer {
 	return Soil_Layer {
-		vs_LayerThickness = 0.1,
-		vs_SoilNH4 = 0.0001,
-		vs_SoilNO2 = 0.001,
-		vs_SoilNO3 = 0.0001,
-		vs_SoilSandContent = -1.0,
-		vs_SoilClayContent = -1.0,
-		vs_SoilpH = 6.9,
-		vs_Lambda = -1.0,
-		vs_FieldCapacity = -1.0,
-		vs_Saturation = -1.0,
-		vs_PermanentWiltingPoint = -1.0,
-		vs_SoilAmmonium = 0.0005,
-		vs_SoilNitrate = 0.005,
-		vs_Soil_CN_Ratio = 10.0,
-		vs_SoilMoisturePercentFC = 100.0,
-		vs_SoilRawDensity = -1.0,
-		vs_SoilBulkDensity = -1.0,
-		vs_SoilOrganicCarbon = -1.0,
-		vs_SoilOrganicMatter = -1.0,
-		vs_SoilMoisture_m3 = 0.25,
+		layer_thickness = 0.1,
+		soil_nh4 = 0.0001,
+		soil_no2 = 0.001,
+		soil_no3 = 0.0001,
+		soil_sand_content = -1.0,
+		soil_clay_content = -1.0,
+		soil_ph = 6.9,
+		lambda = -1.0,
+		field_capacity = -1.0,
+		saturation = -1.0,
+		permanent_wilting_point = -1.0,
+		soil_ammonium = 0.0005,
+		soil_nitrate = 0.005,
+		soil_cn_ratio = 10.0,
+		soil_moisture_percent_fc = 100.0,
+		soil_raw_density = -1.0,
+		soil_bulk_density = -1.0,
+		soil_organic_carbon = -1.0,
+		soil_organic_matter = -1.0,
+		soil_moisture_m3 = 0.25,
 	}
 }
 
-// C++: SoilLayer monica::makeSoilLayer(double vs_LayerThickness, const
+// C++: SoilLayer monica::makeSoilLayer(double layer_thickness, const
 //        SoilParameters& sps)
 //
-// NOTE: vs_SoilNO2 is NOT set from sps here (SoilParameters has no matching
+// NOTE: soil_no2 is NOT set from sps here (SoilParameters has no matching
 // field) - it keeps make_default_soil_layer's 0.001 in-class default, exactly
 // like the C++ (which default-constructs `SoilLayer sl;` and never touches
-// sl.vs_SoilNO2 in this function body).
+// sl.soil_no2 in this function body).
 make_soil_layer :: proc(vs_layer_thickness: f64, sps: ^soil.Soil_Parameters) -> Soil_Layer {
 	sl := make_default_soil_layer()
-	sl.vs_LayerThickness = vs_layer_thickness
-	sl.vs_SoilNH4 = sps.vs_SoilAmmonium
-	sl.vs_SoilNO3 = sps.vs_SoilNitrate
-	sl.vs_SoilSandContent = sps.vs_SoilSandContent
-	sl.vs_SoilClayContent = sps.vs_SoilClayContent
-	sl.vs_SoilpH = sps.vs_SoilpH
-	sl.vs_SoilStoneContent = sps.vs_SoilStoneContent
-	sl.vs_Lambda = sps.vs_Lambda
-	sl.vs_FieldCapacity = sps.vs_FieldCapacity
-	sl.vs_Saturation = sps.vs_Saturation
-	sl.vs_PermanentWiltingPoint = sps.vs_PermanentWiltingPoint
-	sl.vs_SoilTexture = sps.vs_SoilTexture
-	sl.vs_SoilAmmonium = sps.vs_SoilAmmonium
-	sl.vs_SoilNitrate = sps.vs_SoilNitrate
-	sl.vs_Soil_CN_Ratio = sps.vs_Soil_CN_Ratio
-	sl.vs_SoilMoisturePercentFC = sps.vs_SoilMoisturePercentFC
-	sl.vs_SoilRawDensity = sps._vs_SoilRawDensity
-	sl.vs_SoilBulkDensity = sps._vs_SoilBulkDensity
-	sl.vs_SoilOrganicCarbon = sps._vs_SoilOrganicCarbon
-	sl.vs_SoilOrganicMatter = sps._vs_SoilOrganicMatter
-	sl.vs_SoilMoisture_m3 = sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0
+	sl.layer_thickness = vs_layer_thickness
+	sl.soil_nh4 = sps.vs_SoilAmmonium
+	sl.soil_no3 = sps.vs_SoilNitrate
+	sl.soil_sand_content = sps.vs_SoilSandContent
+	sl.soil_clay_content = sps.vs_SoilClayContent
+	sl.soil_ph = sps.vs_SoilpH
+	sl.soil_stone_content = sps.vs_SoilStoneContent
+	sl.lambda = sps.vs_Lambda
+	sl.field_capacity = sps.vs_FieldCapacity
+	sl.saturation = sps.vs_Saturation
+	sl.permanent_wilting_point = sps.vs_PermanentWiltingPoint
+	sl.soil_texture = sps.vs_SoilTexture
+	sl.soil_ammonium = sps.vs_SoilAmmonium
+	sl.soil_nitrate = sps.vs_SoilNitrate
+	sl.soil_cn_ratio = sps.vs_Soil_CN_Ratio
+	sl.soil_moisture_percent_fc = sps.vs_SoilMoisturePercentFC
+	sl.soil_raw_density = sps._vs_SoilRawDensity
+	sl.soil_bulk_density = sps._vs_SoilBulkDensity
+	sl.soil_organic_carbon = sps._vs_SoilOrganicCarbon
+	sl.soil_organic_matter = sps._vs_SoilOrganicMatter
+	sl.soil_moisture_m3 = sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0
 	return sl
 }
 
@@ -158,15 +158,15 @@ make_soil_layer :: proc(vs_layer_thickness: f64, sps: ^soil.Soil_Parameters) -> 
 // matric head in cm water column (Van Genuchten / Vereecken 1989).
 soil_moisture_pf :: proc(sl: ^Soil_Layer) -> f64 {
 	ps := soil.calc_van_genuchten_vereecken_params(
-		sl.vs_PermanentWiltingPoint,
-		sl.vs_Saturation,
-		sl.vs_SoilSandContent,
-		sl.vs_SoilClayContent,
+		sl.permanent_wilting_point,
+		sl.saturation,
+		sl.soil_sand_content,
+		sl.soil_clay_content,
 		soil_bulk_density(sl),
 		soil_organic_carbon(sl),
 	)
 
-	sm := sl.vs_SoilMoisture_m3
+	sm := sl.soil_moisture_m3
 	matric_head: f64
 	if sm <= ps.thetaR {
 		matric_head = 5.0e7
@@ -186,54 +186,54 @@ soil_moisture_pf :: proc(sl: ^Soil_Layer) -> f64 {
 	}
 	pf := libc.log10(matric_head)
 
-	// set to a "small" number when vs_SoilMoisture_m3 is close to vs_Saturation
+	// set to a "small" number when soil_moisture_m3 is close to saturation
 	// (matric_head < 1 -> log10(matric_head) < 0)
 	return pf < 0.0 ? 5.0e-7 : pf
 }
 
 // C++: double soillayer::soilNmin(const SoilLayer*) - soil mineral N content [kg m-3]
 soil_nmin :: proc(sl: ^Soil_Layer) -> f64 {
-	return sl.vs_SoilNO3 + sl.vs_SoilNO2 + sl.vs_SoilNH4
+	return sl.soil_no3 + sl.soil_no2 + sl.soil_nh4
 }
 
 // C++: double soillayer::soilSiltContent(const SoilLayer*) - (Schluff)
 soil_silt_content :: proc(sl: ^Soil_Layer) -> f64 {
-	return 1.0 - sl.vs_SoilSandContent - sl.vs_SoilClayContent
+	return 1.0 - sl.soil_sand_content - sl.soil_clay_content
 }
 
 // C++: double soillayer::soilRawDensity(const SoilLayer*)
 soil_raw_density :: proc(sl: ^Soil_Layer) -> f64 {
-	if sl.vs_SoilRawDensity < 0 {
+	if sl.soil_raw_density < 0 {
 		return(
-			((sl.vs_SoilBulkDensity / 1000.0) - (0.009 * 100.0 * sl.vs_SoilClayContent)) *
+			((sl.soil_bulk_density / 1000.0) - (0.009 * 100.0 * sl.soil_clay_content)) *
 			1000.0 \
 		)
 	}
-	return sl.vs_SoilRawDensity
+	return sl.soil_raw_density
 }
 
 // C++: double soillayer::soilBulkDensity(const SoilLayer*)
 soil_bulk_density :: proc(sl: ^Soil_Layer) -> f64 {
-	if sl.vs_SoilBulkDensity < 0 {
-		return ((sl.vs_SoilRawDensity / 1000.0) + (0.009 * 100.0 * sl.vs_SoilClayContent)) * 1000.0
+	if sl.soil_bulk_density < 0 {
+		return ((sl.soil_raw_density / 1000.0) + (0.009 * 100.0 * sl.soil_clay_content)) * 1000.0
 	}
-	return sl.vs_SoilBulkDensity
+	return sl.soil_bulk_density
 }
 
 // C++: double soillayer::soilOrganicCarbon(const SoilLayer*)
 soil_organic_carbon :: proc(sl: ^Soil_Layer) -> f64 {
-	if sl.vs_SoilOrganicCarbon < 0 {
-		return sl.vs_SoilOrganicMatter * soil.PO_SOM_TO_C
+	if sl.soil_organic_carbon < 0 {
+		return sl.soil_organic_matter * soil.PO_SOM_TO_C
 	}
-	return sl.vs_SoilOrganicCarbon
+	return sl.soil_organic_carbon
 }
 
 // C++: double soillayer::soilOrganicMatter(const SoilLayer*)
 soil_organic_matter :: proc(sl: ^Soil_Layer) -> f64 {
-	if sl.vs_SoilOrganicMatter < 0 {
-		return sl.vs_SoilOrganicCarbon / soil.PO_SOM_TO_C
+	if sl.soil_organic_matter < 0 {
+		return sl.soil_organic_carbon / soil.PO_SOM_TO_C
 	}
-	return sl.vs_SoilOrganicMatter
+	return sl.soil_organic_matter
 }
 
 // C++: struct monica::SoilColumn::DelayedNMinApplicationParams
@@ -308,7 +308,7 @@ calculate_number_of_organic_layers :: proc(sc: ^Soil_Column) -> int {
 	count := 0
 	for i := 0; i < len(sc.layers); i += 1 {
 		count += 1
-		lsum += sc.layers[i].vs_LayerThickness
+		lsum += sc.layers[i].layer_thickness
 		if lsum >= sc.ps_MaxMineralisationDepth {
 			break
 		}
@@ -331,7 +331,7 @@ number_of_organic_layers :: proc(sc: ^Soil_Column) -> int {
 // By definition all layers have the same size, so only the first layer's
 // thickness is returned.
 soil_column_layer_thickness :: proc(sc: ^Soil_Column) -> f64 {
-	return sc.layers[0].vs_LayerThickness
+	return sc.layers[0].layer_thickness
 }
 
 // C++: inline double monica::soilcolumn::dailyCropNUptake(const SoilColumn*)
@@ -346,7 +346,7 @@ daily_crop_n_uptake :: proc(sc: ^Soil_Column) -> f64 {
 get_layer_number_for_depth :: proc(sc: ^Soil_Column, depth: f64) -> int {
 	layer := 0
 	accu_depth := 0.0
-	lt := sc.layers[0].vs_LayerThickness
+	lt := sc.layers[0].layer_thickness
 	for i := 0; i < len(sc.layers); i += 1 {
 		accu_depth += lt
 		if depth <= accu_depth {
@@ -363,7 +363,7 @@ get_layer_number_for_depth :: proc(sc: ^Soil_Column, depth: f64) -> int {
 sum_soil_temperature :: proc(sc: ^Soil_Column, layers: int) -> f64 {
 	accu := 0.0
 	for i := 0; i < layers; i += 1 {
-		accu += sc.layers[i].vs_SoilTemperature
+		accu += sc.layers[i].soil_temperature
 	}
 	return accu
 }
@@ -422,10 +422,10 @@ apply_mineral_fertiliser :: proc(
 	amount: f64,
 ) {
 	// [kg N ha-1 -> kg m-3]
-	kgHaTokgm3 := 10000.0 * sc.layers[0].vs_LayerThickness
-	sc.layers[0].vs_SoilNO3 += amount * fp.vo_NO3 / kgHaTokgm3
-	sc.layers[0].vs_SoilNH4 += amount * fp.vo_NH4 / kgHaTokgm3
-	sc.layers[0].vs_SoilCarbamid += amount * fp.vo_Carbamid / kgHaTokgm3
+	kgHaTokgm3 := 10000.0 * sc.layers[0].layer_thickness
+	sc.layers[0].soil_no3 += amount * fp.vo_NO3 / kgHaTokgm3
+	sc.layers[0].soil_nh4 += amount * fp.vo_NH4 / kgHaTokgm3
+	sc.layers[0].soil_carbamid += amount * fp.vo_Carbamid / kgHaTokgm3
 }
 
 // C++: double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(...)
@@ -451,7 +451,7 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 	fertiliserMinApplication: f64,
 	topDressingDelay: int,
 ) -> f64 {
-	if sc.layers[0].vs_SoilMoisture_m3 > sc.layers[0].vs_FieldCapacity {
+	if sc.layers[0].soil_moisture_m3 > sc.layers[0].field_capacity {
 		append(
 			&sc._delayedNMinApplications,
 			Delayed_N_Min_Application_Params {
@@ -478,27 +478,27 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 	vf_SoilNO3Sum := 0.0
 	vf_SoilNH4Sum := 0.0
 	for i_Layer := 0; i_Layer < layerSamplingDepth; i_Layer += 1 {
-		vf_SoilNO3Sum += sc.layers[i_Layer].vs_SoilNO3
-		vf_SoilNH4Sum += sc.layers[i_Layer].vs_SoilNH4
+		vf_SoilNO3Sum += sc.layers[i_Layer].soil_no3
+		vf_SoilNH4Sum += sc.layers[i_Layer].soil_nh4
 	}
 
 	vf_SoilNO3Sum30 := 0.0
 	vf_SoilNH4Sum30 := 0.0
 	for i_Layer := 0; i_Layer < vf_Layer30cm; i_Layer += 1 {
-		vf_SoilNO3Sum30 += sc.layers[i_Layer].vs_SoilNO3
-		vf_SoilNH4Sum30 += sc.layers[i_Layer].vs_SoilNH4
+		vf_SoilNO3Sum30 += sc.layers[i_Layer].soil_no3
+		vf_SoilNH4Sum30 += sc.layers[i_Layer].soil_nh4
 	}
 
 	// Converts [kg N ha-1] to [kg N m-3]
-	vf_CropNTargetValue := cropNTargetValue / 10000.0 / sc.layers[0].vs_LayerThickness
-	vf_CropNTargetValue30 := cropNTargetValue30 / 10000.0 / sc.layers[0].vs_LayerThickness
+	vf_CropNTargetValue := cropNTargetValue / 10000.0 / sc.layers[0].layer_thickness
+	vf_CropNTargetValue30 := cropNTargetValue30 / 10000.0 / sc.layers[0].layer_thickness
 
 	vf_FertiliserDemandVol := vf_CropNTargetValue - (vf_SoilNO3Sum + vf_SoilNH4Sum)
 	vf_FertiliserDemandVol30 := vf_CropNTargetValue30 - (vf_SoilNO3Sum30 + vf_SoilNH4Sum30)
 
 	// Converts fertiliser demand back from [kg N m-3] to [kg N ha-1]
-	vf_FertiliserDemand := vf_FertiliserDemandVol * 10000.0 * sc.layers[0].vs_LayerThickness
-	vf_FertiliserDemand30 := vf_FertiliserDemandVol30 * 10000.0 * sc.layers[0].vs_LayerThickness
+	vf_FertiliserDemand := vf_FertiliserDemandVol * 10000.0 * sc.layers[0].layer_thickness
+	vf_FertiliserDemand30 := vf_FertiliserDemandVol30 * 10000.0 * sc.layers[0].layer_thickness
 
 	vf_FertiliserRecommendation := max(vf_FertiliserDemand, vf_FertiliserDemand30)
 
@@ -529,11 +529,11 @@ apply_mineral_fertiliser_via_n_demand :: proc(
 	depthCm := 0
 	i := 0
 	for &layer in sc.layers {
-		layerSize := layer.vs_LayerThickness
+		layerSize := layer.layer_thickness
 		depthCm += int(layerSize * 100.0)
 
 		// convert [kg N m-3] to [kg N ha-1]
-		sumSoilNkgHa += (sc.layers[i].vs_SoilNO3 + sc.layers[i].vs_SoilNH4) * 10000.0 * layerSize
+		sumSoilNkgHa += (sc.layers[i].soil_no3 + sc.layers[i].soil_nh4) * 10000.0 * layerSize
 
 		if depthCm >= int(demandDepth * 100) {
 			break
@@ -622,10 +622,10 @@ apply_irrigation_via_trigger :: proc(
 	layerDepthM := 0.0
 	for i := 0; i < len(sc.layers) && layerDepthM < aips.criticalMoistureDepthM; i += 1 {
 		li := &sc.layers[i]
-		smi := li.vs_SoilMoisture_m3
-		fci := li.vs_FieldCapacity
-		pwpi := li.vs_PermanentWiltingPoint
-		lti := li.vs_LayerThickness
+		smi := li.soil_moisture_m3
+		fci := li.field_capacity
+		pwpi := li.permanent_wilting_point
+		lti := li.layer_thickness
 
 		actPAW += (smi - pwpi) * lti * 1000.0 // [mm]
 		maxPAW += (fci - pwpi) * lti * 1000.0 // [mm]
@@ -645,23 +645,23 @@ apply_irrigation_via_trigger :: proc(
 			layerDepthM = 0.0
 			for i := 0; i < len(sc.layers) && layerDepthM < aips.criticalMoistureDepthM; i += 1 {
 				li := &sc.layers[i]
-				smi := li.vs_SoilMoisture_m3
-				fci := li.vs_FieldCapacity
-				pwpi := li.vs_PermanentWiltingPoint
-				lti := li.vs_LayerThickness
+				smi := li.soil_moisture_m3
+				fci := li.field_capacity
+				pwpi := li.permanent_wilting_point
+				lti := li.layer_thickness
 
 				percentNFCi := (fci - pwpi) * aips.percentNFC / 100.0
 				pawi := smi - pwpi
 				addedIrrigationWaterAtLayer := max(0.0, percentNFCi - pawi)
 				addedIrrigationWater += addedIrrigationWaterAtLayer
-				li.vs_SoilMoisture_m3 = percentNFCi + pwpi
+				li.soil_moisture_m3 = percentNFCi + pwpi
 				// [kg m-3] = [mg dm-3] * [dm3 m-2] / [m]
 				nitrateAddedViaIrrigation :=
 					aips.nitrateConcentration *
 					addedIrrigationWaterAtLayer /
-					li.vs_LayerThickness /
+					li.layer_thickness /
 					1000000.0
-				li.vs_SoilNO3 += nitrateAddedViaIrrigation
+				li.soil_no3 += nitrateAddedViaIrrigation
 
 				layerDepthM += lti
 			}
@@ -680,10 +680,10 @@ apply_irrigation :: proc(sc: ^Soil_Column, amount: f64, nitrateConcentration: f6
 	// Adding irrigation water amount to surface water storage
 	sc.vs_SurfaceWaterStorage += amount // [mm]
 	nitrateAddedViaIrrigation :=
-		nitrateConcentration * amount / sc.layers[0].vs_LayerThickness / 1000000.0 // -> //[kg m-3]// [mg dm-3]//[dm3 m-2]// [m]
+		nitrateConcentration * amount / sc.layers[0].layer_thickness / 1000000.0 // -> //[kg m-3]// [mg dm-3]//[dm3 m-2]// [m]
 
 	// adding N from irrigation water to top soil nitrate pool
-	sc.layers[0].vs_SoilNO3 += nitrateAddedViaIrrigation
+	sc.layers[0].soil_no3 += nitrateAddedViaIrrigation
 }
 
 // C++: void monica::soilcolumn::applyTillage(SoilColumn*, double)
@@ -710,16 +710,16 @@ apply_tillage :: proc(sc: ^Soil_Column, depth: f64) {
 
 	for i := 0; i < layer_index; i += 1 {
 		vs_soc += soil_organic_carbon(&sc.layers[i])
-		soil_temperature += sc.layers[i].vs_SoilTemperature
-		soil_moisture += sc.layers[i].vs_SoilMoisture_m3
-		som_slow += sc.layers[i].vs_SOM_Slow
-		som_fast += sc.layers[i].vs_SOM_Fast
-		smb_slow += sc.layers[i].vs_SMB_Slow
-		smb_fast += sc.layers[i].vs_SMB_Fast
-		carbamid += sc.layers[i].vs_SoilCarbamid
-		nh4 += sc.layers[i].vs_SoilNH4
-		no2 += sc.layers[i].vs_SoilNO2
-		no3 += sc.layers[i].vs_SoilNO3
+		soil_temperature += sc.layers[i].soil_temperature
+		soil_moisture += sc.layers[i].soil_moisture_m3
+		som_slow += sc.layers[i].som_slow
+		som_fast += sc.layers[i].som_fast
+		smb_slow += sc.layers[i].smb_slow
+		smb_fast += sc.layers[i].smb_fast
+		carbamid += sc.layers[i].soil_carbamid
+		nh4 += sc.layers[i].soil_nh4
+		no2 += sc.layers[i].soil_no2
+		no3 += sc.layers[i].soil_no3
 	}
 
 	li := f64(layer_index)
@@ -737,17 +737,17 @@ apply_tillage :: proc(sc: ^Soil_Column, depth: f64) {
 	no3 /= li
 
 	for i := 0; i < layer_index; i += 1 {
-		sc.layers[i].vs_SoilOrganicCarbon = vs_soc
-		sc.layers[i].vs_SoilTemperature = soil_temperature
-		sc.layers[i].vs_SoilMoisture_m3 = soil_moisture
-		sc.layers[i].vs_SOM_Slow = som_slow
-		sc.layers[i].vs_SOM_Fast = som_fast
-		sc.layers[i].vs_SMB_Slow = smb_slow
-		sc.layers[i].vs_SMB_Fast = smb_fast
-		sc.layers[i].vs_SoilCarbamid = carbamid
-		sc.layers[i].vs_SoilNH4 = nh4
-		sc.layers[i].vs_SoilNO2 = no2
-		sc.layers[i].vs_SoilNO3 = no3
+		sc.layers[i].soil_organic_carbon = vs_soc
+		sc.layers[i].soil_temperature = soil_temperature
+		sc.layers[i].soil_moisture_m3 = soil_moisture
+		sc.layers[i].som_slow = som_slow
+		sc.layers[i].som_fast = som_fast
+		sc.layers[i].smb_slow = smb_slow
+		sc.layers[i].smb_fast = smb_fast
+		sc.layers[i].soil_carbamid = carbamid
+		sc.layers[i].soil_nh4 = nh4
+		sc.layers[i].soil_no2 = no2
+		sc.layers[i].soil_no3 = no3
 	}
 
 	// NOTE(c++-quirk): the C++ "merge aom pool" block (computes per-pool-index

@@ -353,9 +353,9 @@ organ_name_from_id :: proc(organId: int) -> string {
 
 // C++: bool workstep::isSoilMoistureOk(MonicaModel*, double, double)
 is_soil_moisture_ok :: proc(model: ^core.Monica_Model, minPercentASW, maxPercentASW: f64) -> bool {
-	pwp := model.soilColumn.layers[0].vs_PermanentWiltingPoint
-	sm := max(0.0, model.soilColumn.layers[0].vs_SoilMoisture_m3 - pwp)
-	asw := model.soilColumn.layers[0].vs_FieldCapacity - pwp
+	pwp := model.soilColumn.layers[0].permanent_wilting_point
+	sm := max(0.0, model.soilColumn.layers[0].soil_moisture_m3 - pwp)
+	asw := model.soilColumn.layers[0].field_capacity - pwp
 	currentPercentASW := sm / asw * 100.0
 	return minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW
 }

@@ -42,7 +42,7 @@ dump_state :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 		tr.dump(
 			t,
 			fmt.tprintf("%s.soilColumn.vs_SoilMoisture_m3[%d]", path, i),
-			model.soilColumn.layers[i].vs_SoilMoisture_m3,
+			model.soilColumn.layers[i].soil_moisture_m3,
 		)
 	}
 	_, hasSetValue := model.currentEvents["SetValue"]

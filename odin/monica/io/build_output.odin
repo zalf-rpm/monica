@@ -558,7 +558,7 @@ of_lai :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 mois_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
-	return model.soilColumn.layers[i].vs_SoilMoisture_m3
+	return model.soilColumn.layers[i].soil_moisture_m3
 }
 
 @(private)
@@ -569,7 +569,7 @@ of_mois :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 mois_set_value :: proc(model: ^core.Monica_Model, i: int, value: jx.Value) {
 	if jx.is_number(value) {
-		model.soilColumn.layers[i].vs_SoilMoisture_m3 = jx.number_value(value)
+		model.soilColumn.layers[i].soil_moisture_m3 = jx.number_value(value)
 	}
 }
 

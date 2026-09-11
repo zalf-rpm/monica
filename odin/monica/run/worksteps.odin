@@ -383,7 +383,7 @@ automatic_sowing_avg_soil_temp_fn :: proc(model: ^core.Monica_Model) -> f64 {
 	i := 0
 	size := core.get_layer_number_for_depth(&model.soilColumn, as.soilDepthForAveraging) + 1
 	for ; i < size; i += 1 {
-		avgSoilTemp += model.soilTemperature.soilColumn.layers[i].vs_SoilTemperature
+		avgSoilTemp += model.soilTemperature.soilColumn.layers[i].soil_temperature
 	}
 	return avgSoilTemp / f64(i)
 }

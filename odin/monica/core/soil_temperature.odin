@@ -119,18 +119,18 @@ make_soil_temperature :: proc(
 
 	ground_layer := st.noOfTempLayers - 2
 	bottom_layer := st.noOfTempLayers - 1
-	soil_temperature_layer_at(&st, ground_layer).vs_LayerThickness =
-		2.0 * soil_temperature_layer_at(&st, ground_layer - 1).vs_LayerThickness
-	soil_temperature_layer_at(&st, bottom_layer).vs_LayerThickness = 1.0
+	soil_temperature_layer_at(&st, ground_layer).layer_thickness =
+		2.0 * soil_temperature_layer_at(&st, ground_layer - 1).layer_thickness
+	soil_temperature_layer_at(&st, bottom_layer).layer_thickness = 1.0
 	st.soilTemperature[ground_layer] = (st.soilTemperature[ground_layer - 1] + base_temp) * 0.5
 	st.soilTemperature[bottom_layer] = base_temp
 
-	st.V[0] = soil_temperature_layer_at(&st, 0).vs_LayerThickness
-	st.B[0] = 2.0 / soil_temperature_layer_at(&st, 0).vs_LayerThickness
+	st.V[0] = soil_temperature_layer_at(&st, 0).layer_thickness
+	st.B[0] = 2.0 / soil_temperature_layer_at(&st, 0).layer_thickness
 	ntau := st.params.pt_NTau
 	for i in 1 ..< st.noOfTempLayers {
-		lti_1 := soil_temperature_layer_at(&st, i - 1).vs_LayerThickness
-		lti := soil_temperature_layer_at(&st, i).vs_LayerThickness
+		lti_1 := soil_temperature_layer_at(&st, i - 1).layer_thickness
+		lti := soil_temperature_layer_at(&st, i).layer_thickness
 		st.B[i] = 2.0 / (lti + lti_1)
 		st.V[i] = lti * ntau
 	}
@@ -158,7 +158,7 @@ make_soil_temperature :: proc(
 			100.0 *
 			4.184
 
-		sati := soil_temperature_layer_at(&st, i).vs_Saturation
+		sati := soil_temperature_layer_at(&st, i).saturation
 		somi := soil_organic_matter(soil_temperature_layer_at(&st, i)) / da * sbdi
 		st.heatCapacity[i] =
 			(smi * dw * cw) + ((sati - smi) * da * ca) + (somi * dh * ch) +
@@ -173,8 +173,8 @@ make_soil_temperature :: proc(
 
 	st.heatConductivityMean[0] = st.heatConductivity[0]
 	for i in 1 ..< st.noOfTempLayers {
-		lti_1 := soil_temperature_layer_at(&st, i - 1).vs_LayerThickness
-		lti := soil_temperature_layer_at(&st, i).vs_LayerThickness
+		lti_1 := soil_temperature_layer_at(&st, i - 1).layer_thickness
+		lti := soil_temperature_layer_at(&st, i).layer_thickness
 		hci_1 := st.heatConductivity[i - 1]
 		hci := st.heatConductivity[i]
 		st.heatConductivityMean[i] = ((lti_1 * hci_1) + (lti * hci)) / (lti + lti_1)
@@ -230,7 +230,7 @@ soil_temperature_step :: proc(
 		st.solution[i] =
 			(st.volumeMatrixOld[i] +
 					(st.volumeMatrix[i] - st.volumeMatrixOld[i]) /
-						soil_temperature_layer_at(st, i).vs_LayerThickness) *
+						soil_temperature_layer_at(st, i).layer_thickness) *
 				st.soilTemperature[i] +
 			st.heatFlow[i]
 	}
@@ -260,7 +260,7 @@ soil_temperature_step :: proc(
 
 	for i in 0 ..< st.noOfSoilLayers {
 		st.volumeMatrixOld[i] = st.volumeMatrix[i]
-		soil_temperature_layer_at(st, i).vs_SoilTemperature = st.soilTemperature[i]
+		soil_temperature_layer_at(st, i).soil_temperature = st.soilTemperature[i]
 	}
 
 	st.volumeMatrixOld[ground_layer] = st.volumeMatrix[ground_layer]

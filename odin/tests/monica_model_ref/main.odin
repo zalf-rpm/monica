@@ -53,12 +53,12 @@ dump_soil_column_top3 :: proc(t: ^tr.Tracer, path: string, sc: ^core.Soil_Column
 	for i in 0 ..< 3 {
 		p2 := fmt.tprintf("%s[%d]", path, i)
 		li := &sc.layers[i]
-		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilNO3"}), li.vs_SoilNO3)
-		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilNH4"}), li.vs_SoilNH4)
-		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilCarbamid"}), li.vs_SoilCarbamid)
-		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilTemperature"}), li.vs_SoilTemperature)
-		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilMoisture_m3"}), li.vs_SoilMoisture_m3)
-		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilOrganicCarbon"}), li.vs_SoilOrganicCarbon)
+		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilNO3"}), li.soil_no3)
+		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilNH4"}), li.soil_nh4)
+		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilCarbamid"}), li.soil_carbamid)
+		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilTemperature"}), li.soil_temperature)
+		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilMoisture_m3"}), li.soil_moisture_m3)
+		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilOrganicCarbon"}), li.soil_organic_carbon)
 		tr.dump(&(t^), strings.concatenate({p2, ".vo_AOM_Pool.size"}), len(li.vo_AOM_Pool))
 	}
 }
@@ -171,8 +171,8 @@ main :: proc() {
 
 	// scenario 3: applyMineralFertiliserViaNMinMethod, soil too wet -> delayed
 	tr.set_day(&t, 3)
-	model.soilColumn.layers[0].vs_SoilMoisture_m3 =
-		model.soilColumn.layers[0].vs_FieldCapacity + 0.01
+	model.soilColumn.layers[0].soil_moisture_m3 =
+		model.soilColumn.layers[0].field_capacity + 0.01
 	fertAmount1 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
@@ -189,8 +189,8 @@ main :: proc() {
 
 	// scenario 4: applyMineralFertiliserViaNMinMethod, soil dry -> immediate + top-dressing split
 	tr.set_day(&t, 4)
-	model.soilColumn.layers[0].vs_SoilMoisture_m3 =
-		model.soilColumn.layers[0].vs_FieldCapacity - 0.05
+	model.soilColumn.layers[0].soil_moisture_m3 =
+		model.soilColumn.layers[0].field_capacity - 0.05
 	fertAmount2 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
@@ -220,7 +220,7 @@ main :: proc() {
 	core.monica_model_apply_irrigation(model, 20.0, 5.0)
 	dump_model(&t, "model", model)
 	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soilColumn.vs_SurfaceWaterStorage)
-	tr.dump(&t, "sc.layers[0].vs_SoilNO3", model.soilColumn.layers[0].vs_SoilNO3)
+	tr.dump(&t, "sc.layers[0].vs_SoilNO3", model.soilColumn.layers[0].soil_no3)
 	tr.dump(&t, "so.irrigationAmount", model.soilOrganic.irrigation_amount)
 
 	// scenario 7: applyIrrigationViaTrigger - needs a live cropModule
@@ -276,9 +276,9 @@ main :: proc() {
 	// scenario 8: applyTillage
 	tr.set_day(&t, 8)
 	for i in 0 ..< 3 {
-		model.soilColumn.layers[i].vs_SoilNO3 = 0.001 * f64(i + 1)
-		model.soilColumn.layers[i].vs_SoilTemperature = 5.0 + f64(i)
-		model.soilColumn.layers[i].vs_SoilMoisture_m3 = 0.2 + 0.01 * f64(i)
+		model.soilColumn.layers[i].soil_no3 = 0.001 * f64(i + 1)
+		model.soilColumn.layers[i].soil_temperature = 5.0 + f64(i)
+		model.soilColumn.layers[i].soil_moisture_m3 = 0.2 + 0.01 * f64(i)
 	}
 	core.monica_model_apply_tillage(model, 0.25)
 	dump_soil_column_top3(&t, "sc", &model.soilColumn)

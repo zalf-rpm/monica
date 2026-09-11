@@ -104,17 +104,17 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(
 		t,
 		"cropModule.soilColumn->layers[0].vs_SoilMoisture_m3",
-		cm.soil_column.layers[0].vs_SoilMoisture_m3,
+		cm.soil_column.layers[0].soil_moisture_m3,
 	)
 	tr.dump(
 		t,
 		"cropModule.soilColumn->layers[0].vs_FieldCapacity",
-		cm.soil_column.layers[0].vs_FieldCapacity,
+		cm.soil_column.layers[0].field_capacity,
 	)
 	tr.dump(
 		t,
 		"cropModule.soilColumn->layers[0].vs_PermanentWiltingPoint",
-		cm.soil_column.layers[0].vs_PermanentWiltingPoint,
+		cm.soil_column.layers[0].permanent_wilting_point,
 	)
 	tr.dump(
 		t,

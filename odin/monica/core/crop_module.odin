@@ -515,7 +515,7 @@ make_crop_module :: proc(
 	cropSpecificMaxRootingDepth := cm.crop_params.cultivarParams.pc_CropSpecificMaxRootingDepth
 	if cm.crop_mod_params.pc_AdjustRootDepthForSoilProps {
 		R_P_max := cropSpecificMaxRootingDepth
-		f_S := cm.soil_column.layers[0].vs_SoilSandContent // [kg kg-1]
+		f_S := cm.soil_column.layers[0].soil_sand_content // [kg kg-1]
 		R_S := (f_S - 0.5) * -0.6
 
 		rho_B := soil_bulk_density(&cm.soil_column.layers[0]) // [kg m-3]
@@ -822,8 +822,8 @@ fc_oxygen_deficiency :: proc(cm: ^Crop_Module, criticalOxygenContent: f64) -> f6
 	// MP: changed to consider at least first 30 cm and then rooting depth
 	nols := min(max(3, cm.rooting_depth), len(soil_column.layers))
 	for i := 0; i < nols; i += 1 {
-		sumSaturation += soil_column.layers[i].vs_Saturation
-		sumSoilMoisture += soil_column.layers[i].vs_SoilMoisture_m3
+		sumSaturation += soil_column.layers[i].saturation
+		sumSoilMoisture += soil_column.layers[i].soil_moisture_m3
 		sumLayers += 1
 	}
 	avgAirFilledPoreVolume := (sumSaturation - sumSoilMoisture) / f64(sumLayers)
@@ -906,7 +906,7 @@ fc_crop_developmental_stage :: proc(
 				}
 			}
 		} else { 	// pc_Perennial == false
-			vc_SoilTemperature := soil_column.layers[0].vs_SoilTemperature // MP: Bodentemperatur der ersten 10cm
+			vc_SoilTemperature := soil_column.layers[0].soil_temperature // MP: Bodentemperatur der ersten 10cm
 			if vc_SoilTemperature > pc_BaseTemperature[cm.developmental_stage] {
 				emergenceCondition := true
 				// Germination only if soil water content in top layer exceeds
@@ -1712,9 +1712,9 @@ fc_crop_photosynthesis :: proc(
 				WP := 0.0
 				SWC := 0.0
 				for i := 0; i < root_depth; i += 1 {
-					FC += soil_column.layers[i].vs_FieldCapacity
-					WP += soil_column.layers[i].vs_PermanentWiltingPoint
-					SWC += soil_column.layers[i].vs_SoilMoisture_m3
+					FC += soil_column.layers[i].field_capacity
+					WP += soil_column.layers[i].permanent_wilting_point
+					SWC += soil_column.layers[i].soil_moisture_m3
 				}
 
 				// weighted average gs and conversion from unit ground area
@@ -2164,7 +2164,7 @@ fc_frost_kill :: proc(cm: ^Crop_Module, maxAirTemp, minAirTemp: f64) {
 	if cm.developmental_stage <= 1 {
 		crownTemperature =
 			(3.0 * soil_column.vt_SoilSurfaceTemperature +
-				2.0 * soil_column.layers[0].vs_SoilTemperature) /
+				2.0 * soil_column.layers[0].soil_temperature) /
 			5.0
 	} else if snowDepth > 0.0 {
 		crownTemperature = tempUnderSnow
@@ -2307,7 +2307,7 @@ calc_root_density_factor_and_sum :: proc(
 	f64,
 ) {
 	nols := len(cm.soil_column.layers)
-	layerThickness := cm.soil_column.layers[0].vs_LayerThickness
+	layerThickness := cm.soil_column.layers[0].layer_thickness
 
 	// Calculating a root density distribution factor []
 	vc_RootDensityFactor := make([dynamic]f64, nols, allocator)
@@ -2422,7 +2422,7 @@ fc_crop_dry_matter :: proc(
 	vs_MaxEffectiveRootingDepth := cm.site_params.vs_MaxEffectiveRootingDepth
 
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].vs_LayerThickness
+	layerThickness := soil_column.layers[0].layer_thickness
 
 	vc_MaxRootNConcentration := 0.0 // old WGM
 	vc_RootNIncrement := 0.0 // old WUMM
@@ -2659,11 +2659,11 @@ fc_crop_dry_matter :: proc(
 	if cropPs.__enable_PASW_root_penetration__ {
 		// In case of drought stress the root will grow deeper
 		vc_AvailableWater :=
-			soil_column.layers[layerIndexBelowRootingDepth].vs_FieldCapacity -
-			soil_column.layers[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint
+			soil_column.layers[layerIndexBelowRootingDepth].field_capacity -
+			soil_column.layers[layerIndexBelowRootingDepth].permanent_wilting_point
 		vc_AvailableWaterPercentage =
-			(soil_column.layers[layerIndexBelowRootingDepth].vs_SoilMoisture_m3 -
-				soil_column.layers[layerIndexBelowRootingDepth].vs_PermanentWiltingPoint) /
+			(soil_column.layers[layerIndexBelowRootingDepth].soil_moisture_m3 -
+				soil_column.layers[layerIndexBelowRootingDepth].permanent_wilting_point) /
 			vc_AvailableWater
 		if vc_AvailableWaterPercentage < 0.0 {
 			vc_AvailableWaterPercentage = 0.0
@@ -2705,12 +2705,12 @@ fc_crop_dry_matter :: proc(
 
 	// Determining root penetration rate according to soil clay content [m degC-1 d-1]
 	vc_RootPenetrationRate := 0.0
-	if soil_column.layers[layerIndexBelowRootingDepth].vs_SoilClayContent <= 0.02 {
+	if soil_column.layers[layerIndexBelowRootingDepth].soil_clay_content <= 0.02 {
 		vc_RootPenetrationRate = 0.5 * pc_RootPenetrationRate
-	} else if soil_column.layers[layerIndexBelowRootingDepth].vs_SoilClayContent <= 0.08 {
+	} else if soil_column.layers[layerIndexBelowRootingDepth].soil_clay_content <= 0.08 {
 		vc_RootPenetrationRate =
 			((1.0 / 3.0) +
-				(0.5 / 0.06 * soil_column.layers[layerIndexBelowRootingDepth].vs_SoilClayContent)) *
+				(0.5 / 0.06 * soil_column.layers[layerIndexBelowRootingDepth].soil_clay_content)) *
 			pc_RootPenetrationRate
 	} else {
 		vc_RootPenetrationRate = pc_RootPenetrationRate
@@ -2936,7 +2936,7 @@ fc_crop_water_uptake :: proc(
 	vs_MaxEffectiveRootingDepth := cm.site_params.vs_MaxEffectiveRootingDepth
 
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].vs_LayerThickness
+	layerThickness := soil_column.layers[0].layer_thickness
 	cm.potential_transpiration_deficit = 0.0 // [mm]
 	cm.potential_transpiration = 0.0 // old TRAMAX [mm]
 	vc_PotentialEvapotranspiration := 0.0 // [mm]
@@ -3010,11 +3010,11 @@ fc_crop_water_uptake :: proc(
 
 		for i_Layer := 0; i_Layer < cm.rooting_zone; i_Layer += 1 {
 			vc_AvailableWater :=
-				soil_column.layers[i_Layer].vs_FieldCapacity -
-				soil_column.layers[i_Layer].vs_PermanentWiltingPoint
+				soil_column.layers[i_Layer].field_capacity -
+				soil_column.layers[i_Layer].permanent_wilting_point
 			vc_AvailableWaterPercentage :=
-				(soil_column.layers[i_Layer].vs_SoilMoisture_m3 -
-					soil_column.layers[i_Layer].vs_PermanentWiltingPoint) /
+				(soil_column.layers[i_Layer].soil_moisture_m3 -
+					soil_column.layers[i_Layer].permanent_wilting_point) /
 				vc_AvailableWater
 			if vc_AvailableWaterPercentage < 0.0 {
 				vc_AvailableWaterPercentage = 0.0
@@ -3099,12 +3099,12 @@ fc_crop_water_uptake :: proc(
 				vc_RemainingTotalRootEffectivity = 0.00001
 			}
 			if ((cm.transpiration[i_Layer] / 1000.0) / layerThickness) >
-			   (soil_column.layers[i_Layer].vs_SoilMoisture_m3 -
-					   soil_column.layers[i_Layer].vs_PermanentWiltingPoint) {
+			   (soil_column.layers[i_Layer].soil_moisture_m3 -
+					   soil_column.layers[i_Layer].permanent_wilting_point) {
 				cm.potential_transpiration_deficit =
 					(((cm.transpiration[i_Layer] / 1000.0) / layerThickness) -
-						(soil_column.layers[i_Layer].vs_SoilMoisture_m3 -
-								soil_column.layers[i_Layer].vs_PermanentWiltingPoint)) *
+						(soil_column.layers[i_Layer].soil_moisture_m3 -
+								soil_column.layers[i_Layer].permanent_wilting_point)) *
 					layerThickness *
 					1000.0 // [mm]
 				if cm.potential_transpiration_deficit < 0.0 {
@@ -3186,7 +3186,7 @@ fc_crop_n_uptake :: proc(
 	pc_Tortuosity := cm.crop_mod_params.pc_Tortuosity
 
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].vs_LayerThickness
+	layerThickness := soil_column.layers[0].layer_thickness
 
 	vc_ConvectiveNUptake := 0.0 // old TRNSUM
 	vc_DiffusiveNUptake := 0.0 // old SUMDIFF
@@ -3212,33 +3212,33 @@ fc_crop_n_uptake :: proc(
 	// if the plant has matured, no N uptake occurs!
 	if cm.developmental_stage < cm.final_developmental_stage {
 		for i_Layer := 0; i_Layer < min(cm.rooting_zone, vc_GroundwaterTable); i_Layer += 1 {
-			cm.vs_soil_mineral_n_content[i_Layer] = soil_column.layers[i_Layer].vs_SoilNO3 // [kg m-3]
+			cm.vs_soil_mineral_n_content[i_Layer] = soil_column.layers[i_Layer].soil_no3 // [kg m-3]
 
 			// Convective N uptake per layer
 			// ([mm -> m]) * ([kg m-3] / old WG [m3 m-3]) -> [kg m-2]
 			vc_ConvectiveNUptakeFromLayer[i_Layer] =
 				(cm.transpiration[i_Layer] / 1000.0) *
 				(cm.vs_soil_mineral_n_content[i_Layer] /
-						soil_column.layers[i_Layer].vs_SoilMoisture_m3) *
+						soil_column.layers[i_Layer].soil_moisture_m3) *
 				cm.time_step
 
 			vc_ConvectiveNUptake += vc_ConvectiveNUptakeFromLayer[i_Layer] // [kg m-2]
 
 			vc_DiffusionCoeff[i_Layer] =
 				0.000214 *
-				(pc_Tortuosity * libc.exp(soil_column.layers[i_Layer].vs_SoilMoisture_m3 * 10)) /
-				soil_column.layers[i_Layer].vs_SoilMoisture_m3 // [m2 d-1]
+				(pc_Tortuosity * libc.exp(soil_column.layers[i_Layer].soil_moisture_m3 * 10)) /
+				soil_column.layers[i_Layer].soil_moisture_m3 // [m2 d-1]
 
 			// ([m2 d-1] * [m3 m-3] * [m] * ([kg m-3])=[m3 m-3])=[m m-3] -> [kg m-2]
 			vc_DiffusiveNUptakeFromLayer[i_Layer] =
 				(vc_DiffusionCoeff[i_Layer] *
-					soil_column.layers[i_Layer].vs_SoilMoisture_m3 *
+					soil_column.layers[i_Layer].soil_moisture_m3 *
 					2.0 *
 					PI *
 					cm.root_diameter[i_Layer] *
 					(cm.vs_soil_mineral_n_content[i_Layer] /
 								1000.0 /
-								soil_column.layers[i_Layer].vs_SoilMoisture_m3 -
+								soil_column.layers[i_Layer].soil_moisture_m3 -
 							0.000014) *
 					libc.sqrt(PI * cm.root_density[i_Layer])) *
 				cm.root_density[i_Layer] *
@@ -3474,7 +3474,7 @@ force_transplant_state :: proc(
 
 	// Settle rooting zone and layers based on standard species parameters
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].vs_LayerThickness
+	layerThickness := soil_column.layers[0].layer_thickness
 	cm.rooting_depth_m = pc_InitialRootingDepth
 	cm.rooting_depth = min(int(libc.round(cm.rooting_depth_m / layerThickness)), nols)
 	cm.rooting_zone = min(int(libc.round(1.3 * cm.rooting_depth_m / layerThickness)), nols)
@@ -3590,9 +3590,9 @@ crop_module_step :: proc(
 		fc_crop_developmental_stage(
 			cm,
 			meanAirTemperature,
-			soil_column.layers[0].vs_SoilMoisture_m3,
-			soil_column.layers[0].vs_FieldCapacity,
-			soil_column.layers[0].vs_PermanentWiltingPoint,
+			soil_column.layers[0].soil_moisture_m3,
+			soil_column.layers[0].field_capacity,
+			soil_column.layers[0].permanent_wilting_point,
 			currentDate,
 			allocator,
 		)

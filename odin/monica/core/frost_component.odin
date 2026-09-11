@@ -94,7 +94,7 @@ get_mean_field_capacity :: proc(fc: ^Frost_Component) -> f64 {
 	vs_number_of_layers := number_of_layers(sc)
 	mean_field_capacity_accu := 0.0
 	for i_layer in 0 ..< vs_number_of_layers {
-		mean_field_capacity_accu += sc.layers[i_layer].vs_FieldCapacity
+		mean_field_capacity_accu += sc.layers[i_layer].field_capacity
 	}
 	return mean_field_capacity_accu / f64(vs_number_of_layers)
 }
@@ -247,9 +247,9 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 	vs_number_of_layers := number_of_layers(sc)
 
 	for i_layer in 0 ..< vs_number_of_layers {
-		if f64(i_layer) < libc.floor((fc.vm_FrostDepth/sc.layers[i_layer].vs_LayerThickness)+0.5) {
+		if f64(i_layer) < libc.floor((fc.vm_FrostDepth/sc.layers[i_layer].layer_thickness)+0.5) {
 			// soil layer is frozen
-			sc.layers[i_layer].vs_SoilFrozen = true
+			sc.layers[i_layer].soil_frozen = true
 			fc.vm_LambdaRedux[i_layer] = 0.0
 
 			if i_layer == 0 {
@@ -257,19 +257,19 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 			}
 		}
 
-		if f64(i_layer) < libc.floor((fc.vm_ThawDepth/sc.layers[i_layer].vs_LayerThickness)+0.5) {
+		if f64(i_layer) < libc.floor((fc.vm_ThawDepth/sc.layers[i_layer].layer_thickness)+0.5) {
 			// soil layer is thawing
-			if fc.vm_ThawDepth < (f64(i_layer + 1) * sc.layers[i_layer].vs_LayerThickness) &&
+			if fc.vm_ThawDepth < (f64(i_layer + 1) * sc.layers[i_layer].layer_thickness) &&
 			   (fc.vm_ThawDepth < fc.vm_FrostDepth) {
 				// soil layer is thawing but there is more frost than thaw
-				sc.layers[i_layer].vs_SoilFrozen = true
+				sc.layers[i_layer].soil_frozen = true
 				fc.vm_LambdaRedux[i_layer] = 0.0
 				if i_layer == 0 {
 					fc.vm_HydraulicConductivityRedux = 0.0
 				}
 			} else {
 				// soil is thawing
-				sc.layers[i_layer].vs_SoilFrozen = false
+				sc.layers[i_layer].soil_frozen = false
 				fc.vm_LambdaRedux[i_layer] = 1.0
 				if i_layer == 0 {
 					fc.vm_HydraulicConductivityRedux = 0.1
@@ -286,7 +286,7 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 
 			fc.vm_HydraulicConductivityRedux = fc.pm_HydraulicConductivityRedux
 			for j_layer in 0 ..< vs_number_of_layers {
-				sc.layers[j_layer].vs_SoilFrozen = false
+				sc.layers[j_layer].soil_frozen = false
 				fc.vm_LambdaRedux[j_layer] = 1.0
 			}
 		}
