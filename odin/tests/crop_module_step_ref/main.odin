@@ -290,7 +290,7 @@ main :: proc() {
 	// production soilcolumn::putCrop/soiltransport::putCrop wiring.
 	sm.crop_module = &cm
 	so.crop_module = &cm
-	str.cropModule = &cm
+	str.crop_module = &cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(

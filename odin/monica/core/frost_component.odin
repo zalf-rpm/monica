@@ -7,7 +7,7 @@ import libc "core:c/libc"
 
 // C++: struct monica::FrostComponent
 Frost_Component :: struct {
-	soilColumn:                    ^Soil_Column,
+	soil_column:                   ^Soil_Column,
 	frost_depth:                   f64,
 	accumulated_frost_depth:       f64,
 	negative_degree_days:          f64, // negative degree-days under snow
@@ -28,7 +28,7 @@ initialize_frost_component :: proc(
 	pm_hydraulic_conductivity_redux, p_time_step: f64,
 	allocator := context.allocator,
 ) {
-	fc.soilColumn = soil_column
+	fc.soil_column = soil_column
 	fc.frost_depth = 0.0
 	fc.accumulated_frost_depth = 0.0
 	fc.negative_degree_days = 0.0
@@ -79,7 +79,7 @@ calc_soil_frost :: proc(fc: ^Frost_Component, mean_air_temperature, snow_depth: 
 
 // C++: double monica::frostcomponent::getMeanBulkDensity(const FrostComponent*)
 get_mean_bulk_density :: proc(fc: ^Frost_Component) -> f64 {
-	sc := fc.soilColumn
+	sc := fc.soil_column
 	vs_number_of_layers := number_of_layers(sc)
 	bulk_density_accu := 0.0
 	for i_layer in 0 ..< vs_number_of_layers {
@@ -90,7 +90,7 @@ get_mean_bulk_density :: proc(fc: ^Frost_Component) -> f64 {
 
 // C++: double monica::frostcomponent::getMeanFieldCapacity(const FrostComponent*)
 get_mean_field_capacity :: proc(fc: ^Frost_Component) -> f64 {
-	sc := fc.soilColumn
+	sc := fc.soil_column
 	vs_number_of_layers := number_of_layers(sc)
 	mean_field_capacity_accu := 0.0
 	for i_layer in 0 ..< vs_number_of_layers {
@@ -102,11 +102,11 @@ get_mean_field_capacity :: proc(fc: ^Frost_Component) -> f64 {
 // C++: double monica::frostcomponent::calcSii(double)
 calc_sii :: proc(mean_field_capacity: f64) -> f64 {
 	pt_F1 := 13.05 // Hansson et al. 2004
-	pt_F2 := 1.06  // Hansson et al. 2004
+	pt_F2 := 1.06 // Hansson et al. 2004
 
 	sii :=
 		(mean_field_capacity +
-				(1.0 + (pt_F1 * libc.pow(mean_field_capacity, pt_F2)) * mean_field_capacity)) *
+			(1.0 + (pt_F1 * libc.pow(mean_field_capacity, pt_F2)) * mean_field_capacity)) *
 		100.0
 	return sii
 }
@@ -138,7 +138,10 @@ calc_heat_conductivity_unfrozen :: proc(
 		((3.0 * mean_bulk_density - 1.7) * 0.001) /
 		(1.0 +
 				(11.5 - 5.0 * mean_bulk_density) *
-					libc.exp((-50.0) * libc.pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5))) *
+					libc.exp(
+						(-50.0) *
+						libc.pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5),
+					)) *
 		fc.pt_TimeStep *
 		4.184 *
 		100.0
@@ -169,7 +172,9 @@ calc_thaw_depth :: proc(
 		thaw_helper2 = 0.0
 	} else {
 		thaw_helper2 = libc.sqrt(
-			2.0 * heat_conductivity_unfrozen * thaw_helper1 /
+			2.0 *
+			heat_conductivity_unfrozen *
+			thaw_helper1 /
 			(1000.0 * 79.0 * (mean_field_capacity * 100.0) / 100.0),
 		)
 	}
@@ -243,11 +248,11 @@ calc_temperature_under_snow :: proc(
 
 // C++: void monica::frostcomponent::updateLambdaRedux(FrostComponent*)
 update_lambda_redux :: proc(fc: ^Frost_Component) {
-	sc := fc.soilColumn
+	sc := fc.soil_column
 	vs_number_of_layers := number_of_layers(sc)
 
 	for i_layer in 0 ..< vs_number_of_layers {
-		if f64(i_layer) < libc.floor((fc.frost_depth/sc.layers[i_layer].layer_thickness)+0.5) {
+		if f64(i_layer) < libc.floor((fc.frost_depth / sc.layers[i_layer].layer_thickness) + 0.5) {
 			// soil layer is frozen
 			sc.layers[i_layer].soil_frozen = true
 			fc.lambda_redux[i_layer] = 0.0
@@ -257,7 +262,7 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 			}
 		}
 
-		if f64(i_layer) < libc.floor((fc.thaw_depth/sc.layers[i_layer].layer_thickness)+0.5) {
+		if f64(i_layer) < libc.floor((fc.thaw_depth / sc.layers[i_layer].layer_thickness) + 0.5) {
 			// soil layer is thawing
 			if fc.thaw_depth < (f64(i_layer + 1) * sc.layers[i_layer].layer_thickness) &&
 			   (fc.thaw_depth < fc.frost_depth) {

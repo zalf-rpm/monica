@@ -72,7 +72,7 @@ Crop_Module :: struct {
 	soil_column:                             ^Soil_Column,
 	site_params:                             ^p.Site_Parameters,
 	sim_params:                              ^p.Simulation_Parameters,
-	crop_mod_params:                         ^p.Crop_Module_Parameters,
+	mod_params:                              ^p.Crop_Module_Parameters,
 	crop_params:                             p.Crop_Parameters,
 	residue_params:                          p.Crop_Residue_Parameters,
 	// C++: kj::Own<CropParameters> perennial_crop_params - nil unless a
@@ -417,7 +417,7 @@ make_crop_module :: proc(
 	cm := make_crop_module_defaults()
 	cm.intercropping = intercropping
 	cm.soil_column = soil_column
-	cm.crop_mod_params = cropModuleParams
+	cm.mod_params = cropModuleParams
 	cm.crop_params = clone_crop_parameters(crop_params^, allocator)
 	cm.site_params = site_params
 	cm.sim_params = sim_params
@@ -471,8 +471,7 @@ make_crop_module :: proc(
 		cm.organ_biomass[i_Organ] = cm.crop_params.speciesParams.pc_InitialOrganBiomass[i_Organ] // [kg ha-1]
 
 		if ago[i_Organ] {
-			cm.aboveground_biomass +=
-				cm.crop_params.speciesParams.pc_InitialOrganBiomass[i_Organ] // [kg ha-1]
+			cm.aboveground_biomass += cm.crop_params.speciesParams.pc_InitialOrganBiomass[i_Organ] // [kg ha-1]
 		}
 
 		cm.total_biomass += cm.crop_params.speciesParams.pc_InitialOrganBiomass[i_Organ] // [kg ha-1]
@@ -513,7 +512,7 @@ make_crop_module :: proc(
 
 	// Initialising the initial maximum rooting depth
 	cropSpecificMaxRootingDepth := cm.crop_params.cultivarParams.pc_CropSpecificMaxRootingDepth
-	if cm.crop_mod_params.pc_AdjustRootDepthForSoilProps {
+	if cm.mod_params.pc_AdjustRootDepthForSoilProps {
 		R_P_max := cropSpecificMaxRootingDepth
 		f_S := cm.soil_column.layers[0].soil_sand_content // [kg kg-1]
 		R_S := (f_S - 0.5) * -0.6
@@ -687,8 +686,7 @@ fc_radiation :: proc(cm: ^Crop_Module, julianDay, globalRadiation, sunshineHours
 		pc_SolarConstant *
 		(1.0 + 0.033 * libc.cos(2.0 * PI * julianDay / 365.0))
 
-	arg_SolarAngle :=
-		-libc.tan(vs_Latitude * PI / 180.0) * libc.tan(cm.declination * PI / 180.0)
+	arg_SolarAngle := -libc.tan(vs_Latitude * PI / 180.0) * libc.tan(cm.declination * PI / 180.0)
 	arg_SolarAngle = tl.bound(-1.0, arg_SolarAngle, 1.0)
 	vc_SunsetSolarAngle := libc.acos(arg_SolarAngle)
 	cm.extraterrestrial_radiation =
@@ -755,7 +753,7 @@ fc_vernalisation_factor :: proc(
 	// the crop module level
 	enable_vernalisation_factor_fix, ok := cm.crop_params.__enable_vernalisation_factor_fix__.?
 	if !ok {
-		enable_vernalisation_factor_fix = cm.crop_mod_params.__enable_vernalisation_factor_fix__
+		enable_vernalisation_factor_fix = cm.mod_params.__enable_vernalisation_factor_fix__
 	}
 	vc_EffectiveVernalisation: f64
 
@@ -808,7 +806,7 @@ fc_vernalisation_factor :: proc(
 
 // C++: double monica::cropmodule::fcOxygenDeficiency(CropModule*, double criticalOxygenContent)
 fc_oxygen_deficiency :: proc(cm: ^Crop_Module, criticalOxygenContent: f64) -> f64 {
-	timeUnderAnoxiaThreshold := cm.crop_mod_params.pc_TimeUnderAnoxiaThreshold
+	timeUnderAnoxiaThreshold := cm.mod_params.pc_TimeUnderAnoxiaThreshold
 	soil_column := cm.soil_column
 	timeUnderAnoxiaThresholdAtStage := cm.time_under_anoxia_threshold_default
 	if cm.developmental_stage < len(timeUnderAnoxiaThreshold) {
@@ -869,7 +867,7 @@ fc_crop_developmental_stage :: proc(
 	currentDate: d.Date,
 	allocator := context.allocator,
 ) {
-	cropPs := cm.crop_mod_params
+	cropPs := cm.mod_params
 	cultivarPs := &cm.crop_params.cultivarParams
 	speciesPs := &cm.crop_params.speciesParams
 	soil_column := cm.soil_column
@@ -1137,7 +1135,7 @@ fc_crop_green_area :: proc(
 	d_SpecificLeafAreaStart, d_SpecificLeafAreaEnd, d_SpecificLeafAreaEarly: f64,
 	d_StageTemperatureSum, d_CurrentTemperatureSum: f64,
 ) {
-	cropPs := cm.crop_mod_params
+	cropPs := cm.mod_params
 	speciesPs := &cm.crop_params.speciesParams
 	cultivarPs := &cm.crop_params.cultivarParams
 	pc_PlantDensity := cm.crop_params.speciesParams.pc_PlantDensity
@@ -1302,7 +1300,7 @@ fc_crop_photosynthesis :: proc(
 	currentDate: d.Date,
 	allocator := context.allocator,
 ) {
-	cropPs := cm.crop_mod_params
+	cropPs := cm.mod_params
 	soil_column := cm.soil_column
 	speciesPs := &cm.crop_params.speciesParams
 	cultivarPs := &cm.crop_params.cultivarParams
@@ -1312,7 +1310,7 @@ fc_crop_photosynthesis :: proc(
 		cm.crop_params.speciesParams.pc_DefaultRadiationUseEfficiency
 	pc_DroughtStressThresholdArr := cm.crop_params.cultivarParams.pc_DroughtStressThreshold
 	pc_FieldConditionModifier := cm.crop_params.speciesParams.pc_FieldConditionModifier
-	pc_GrowthRespirationParameter_2 := cm.crop_mod_params.pc_GrowthRespirationParameter2
+	pc_GrowthRespirationParameter_2 := cm.mod_params.pc_GrowthRespirationParameter2
 	pc_MaxAssimilationRate := cm.crop_params.cultivarParams.pc_MaxAssimilationRate
 	pc_MinimumTemperatureForAssimilation :=
 		cm.crop_params.speciesParams.pc_MinimumTemperatureForAssimilation
@@ -1870,8 +1868,7 @@ fc_crop_photosynthesis :: proc(
 	cm.gross_photosynthesis = vc_GrossCO2Assimilation * 30.0 / 44.0
 
 	// Calculation of photosynthesis rate from [kg CO2 ha-1 d-1] to [mol m-2 s-1]
-	cm.gross_photosynthesis_mol =
-		vc_GrossCO2Assimilation * 22414.0 / (10.0 * 3600.0 * 24.0 * 44.0)
+	cm.gross_photosynthesis_mol = vc_GrossCO2Assimilation * 22414.0 / (10.0 * 3600.0 * 24.0 * 44.0)
 	cm.gross_photosynthesis_reference_mol =
 		vc_GrossCO2AssimilationReference * 22414.0 / (10.0 * 3600.0 * 24.0 * 44.0)
 
@@ -1926,8 +1923,7 @@ fc_crop_photosynthesis :: proc(
 		) *
 		vc_NormalisedDayLength // @todo: [g m-2] --> [kg ha-1]
 
-	cm.maintenance_respiration_as =
-		vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration // [kg CH2O ha-1]
+	cm.maintenance_respiration_as = vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration // [kg CH2O ha-1]
 
 	cm.assimilates -= vc_PhotoMaintenanceRespiration + vc_DarkMaintenanceRespiration // [kg CH2O ha-1]
 
@@ -2218,7 +2214,8 @@ fc_frost_kill :: proc(cm: ^Crop_Module, maxAirTemp, minAirTemp: f64) {
 // C++: void monica::cropmodule::fcDroughtImpactOnFertility(CropModule*)
 fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module) {
 	assimPartCoeff := cm.crop_params.cultivarParams.pc_AssimilatePartitioningCoeff
-	droughtImpactOnFertilityFactor := cm.crop_params.speciesParams.pc_DroughtImpactOnFertilityFactor
+	droughtImpactOnFertilityFactor :=
+		cm.crop_params.speciesParams.pc_DroughtImpactOnFertilityFactor
 	droughtStressThreshold := cm.crop_params.cultivarParams.pc_DroughtStressThreshold
 	devStage := cm.developmental_stage
 
@@ -2397,7 +2394,7 @@ fc_crop_dry_matter :: proc(
 	vw_MeanAirTemperature: f64,
 	allocator := context.allocator,
 ) {
-	cropPs := cm.crop_mod_params
+	cropPs := cm.mod_params
 	soil_column := cm.soil_column
 	speciesPs := &cm.crop_params.speciesParams
 	pc_AbovegroundOrgan := cm.crop_params.speciesParams.pc_AbovegroundOrgan
@@ -2560,14 +2557,11 @@ fc_crop_dry_matter :: proc(
 
 		cm.organ_biomass[i_Organ] += cm.organ_growth_increment[i_Organ] * cm.time_step // [kg CH2O ha-1]
 		if i_Organ == cm.storage_organ {
-			cm.organ_dead_biomass[i_Organ] +=
-				cm.organ_senescence_increment[i_Organ] * cm.time_step
+			cm.organ_dead_biomass[i_Organ] += cm.organ_senescence_increment[i_Organ] * cm.time_step
 		} else {
 			// root, shoot, leaf
 			reallocationRate :=
-				pc_AssimilateReallocation *
-				cm.organ_senescence_increment[i_Organ] *
-				cm.time_step
+				pc_AssimilateReallocation * cm.organ_senescence_increment[i_Organ] * cm.time_step
 			cm.organ_biomass[cm.storage_organ] += reallocationRate
 			dailyDeadBiomassIncrement := cm.organ_senescence_increment[i_Organ] - reallocationRate
 
@@ -2669,8 +2663,7 @@ fc_crop_dry_matter :: proc(
 			vc_AvailableWaterPercentage = 0.0
 		}
 	} else {
-		if cm.transpiration_deficit <
-			   (0.95 * pc_DroughtStressThreshold[cm.developmental_stage]) &&
+		if cm.transpiration_deficit < (0.95 * pc_DroughtStressThreshold[cm.developmental_stage]) &&
 		   pc_CropSpecificMaxRootingDepth >= 0.8 &&
 		   cm.rooting_depth_m > 0.95 * cm.max_rooting_depth &&
 		   cm.developmental_stage < cm.no_of_dev_stages - 1 { 	// only if crop-specific max rooting depth is deeper than 80cm
@@ -2784,8 +2777,7 @@ fc_crop_dry_matter :: proc(
 	cm.max_n_uptake =
 		pc_MaxNUptakeParam - (cm.current_total_temperature_sum / cm.total_temperature_sum) // [kg m root-1]
 
-	if (cm.crop_n_demand / 10000.0) >
-	   (cm.total_root_length * cm.max_n_uptake * cm.time_step) {
+	if (cm.crop_n_demand / 10000.0) > (cm.total_root_length * cm.max_n_uptake * cm.time_step) {
 		cm.crop_n_demand = cm.total_root_length * cm.max_n_uptake * cm.time_step // [kg m-2]
 	} else {
 		cm.crop_n_demand = cm.crop_n_demand / 10000.0 // [kg ha-1 -> kg m-2]
@@ -2817,7 +2809,7 @@ fc_reference_evapotranspiration :: proc(
 	vw_MaxAirTemperature, vw_MinAirTemperature, vw_RelativeHumidity, vw_MeanAirTemperature: f64,
 	vw_WindSpeed, vw_WindSpeedHeight, vw_AtmosphericCO2Concentration: f64,
 ) -> f64 {
-	cropPs := cm.crop_mod_params
+	cropPs := cm.mod_params
 	pc_CarboxylationPathway := cm.crop_params.speciesParams.pc_CarboxylationPathway
 	vs_HeightNN := cm.site_params.vs_HeightNN
 
@@ -2880,8 +2872,7 @@ fc_reference_evapotranspiration :: proc(
 
 	vc_SurfaceResistance := cm.stomata_resistance / 1.44
 
-	vc_ClearSkyShortwaveRadiation :=
-		(0.75 + 0.00002 * vs_HeightNN) * cm.extraterrestrial_radiation
+	vc_ClearSkyShortwaveRadiation := (0.75 + 0.00002 * vs_HeightNN) * cm.extraterrestrial_radiation
 
 	vc_RelativeShortwaveRadiation :=
 		vc_ClearSkyShortwaveRadiation > 0 ? cm.global_radiation / vc_ClearSkyShortwaveRadiation : 0.0
@@ -3137,8 +3128,7 @@ fc_crop_water_uptake :: proc(
 					}
 				}
 			}
-			cm.transpiration[i_Layer] =
-				cm.transpiration[i_Layer] - cm.actual_transpiration_deficit
+			cm.transpiration[i_Layer] = cm.transpiration[i_Layer] - cm.actual_transpiration_deficit
 			if cm.transpiration[i_Layer] < 0.0 {
 				cm.transpiration[i_Layer] = 0.0
 			}
@@ -3178,12 +3168,12 @@ fc_crop_n_uptake :: proc(
 	_vc_CurrentTotalTemperatureSum: f64,
 	_vc_TotalTemperatureSum: f64,
 ) {
-	cropPs := cm.crop_mod_params
+	cropPs := cm.mod_params
 	soil_column := cm.soil_column
 	pc_PartBiologicalNFixation := cm.crop_params.speciesParams.pc_PartBiologicalNFixation
 	pc_ResidueNRatio := cm.crop_params.cultivarParams.pc_ResidueNRatio
 	pc_StageMaxRootNConcentration := cm.crop_params.speciesParams.pc_StageMaxRootNConcentration
-	pc_Tortuosity := cm.crop_mod_params.pc_Tortuosity
+	pc_Tortuosity := cm.mod_params.pc_Tortuosity
 
 	nols := len(soil_column.layers)
 	layerThickness := soil_column.layers[0].layer_thickness
@@ -3279,7 +3269,8 @@ fc_crop_n_uptake :: proc(
 				vc_DiffusiveNUptake_1 += vc_DiffusiveNUptakeFromLayer[i_Layer]
 
 				if cm.n_uptake_from_layer[i_Layer] >
-				   ((cm.vs_soil_mineral_n_content[i_Layer] * layerThickness) - pc_MinimumAvailableN) {
+				   ((cm.vs_soil_mineral_n_content[i_Layer] * layerThickness) -
+						   pc_MinimumAvailableN) {
 					cm.n_uptake_from_layer[i_Layer] =
 						(cm.vs_soil_mineral_n_content[i_Layer] * layerThickness) -
 						pc_MinimumAvailableN
@@ -3502,7 +3493,7 @@ force_transplant_state :: proc(
 // no-op so step()'s call sites and control flow stay literal.
 @(private)
 crop_module_ic_send_rcv :: proc(cm: ^Crop_Module, outmsg: string) {
-	if cm.crop_mod_params.isIntercropping {
+	if cm.mod_params.isIntercropping {
 		// intercropping RPC exchange - dropped feature, not ported.
 	}
 }
@@ -3550,8 +3541,7 @@ crop_module_step :: proc(
 	// from a baseline of 0.2 (80% initial stress) to 1.0 (no stress) over
 	// the post-transplant delay duration.
 	cm.transplant_efficiency = 1.0
-	if cm.days_since_transplant >= 0 &&
-	   cm.days_since_transplant < cm.transplant_shock_duration {
+	if cm.days_since_transplant >= 0 && cm.days_since_transplant < cm.transplant_shock_duration {
 		cm.transplant_efficiency =
 			0.2 + 0.8 * (f64(cm.days_since_transplant) / f64(cm.transplant_shock_duration))
 		cm.days_since_transplant += 1
@@ -3561,10 +3551,7 @@ crop_module_step :: proc(
 
 	fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
 
-	cm.oxygen_deficit = fc_oxygen_deficiency(
-		cm,
-		pc_CriticalOxygenContent[cm.developmental_stage],
-	)
+	cm.oxygen_deficit = fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.developmental_stage])
 
 	old_DevelopmentalStage := cm.developmental_stage
 
@@ -3651,8 +3638,7 @@ crop_module_step :: proc(
 	if cm.total_temperature_sum == 0.0 {
 		cm.relative_total_development = 0.0
 	} else {
-		cm.relative_total_development =
-			cm.current_total_temperature_sum / cm.total_temperature_sum
+		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
 	if cm.developmental_stage == 0 {
@@ -3742,7 +3728,7 @@ crop_module_step :: proc(
 
 	if cm.developmental_stage > 0 {
 		maxCropHeight :=
-			cm.crop_mod_params.isIntercropping && cm.intercropping_other_crop_height > cm.crop_height ? pc_MaxCropHeight * cm.crop_mod_params.pc_intercropping_phRedux : pc_MaxCropHeight
+			cm.mod_params.isIntercropping && cm.intercropping_other_crop_height > cm.crop_height ? pc_MaxCropHeight * cm.mod_params.pc_intercropping_phRedux : pc_MaxCropHeight
 
 		fc_crop_size(cm, maxCropHeight)
 

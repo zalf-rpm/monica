@@ -7,12 +7,12 @@
 // explicit-parameter deviation soil_temperature.odin needed.
 package core
 
-import libc "core:c/libc"
 import p "../params"
+import libc "core:c/libc"
 
 // C++: struct monica::SnowComponent
 Snow_Component :: struct {
-	soilColumn:                              ^Soil_Column,
+	soil_column:                             ^Soil_Column,
 	snow_density:                            f64, // [kg dm-3]
 	snow_depth:                              f64, // [mm]
 	frozen_water_in_snow:                    f64, // [mm]
@@ -42,7 +42,7 @@ initialize_snow_component :: proc(
 	soil_column: ^Soil_Column,
 	smps: ^p.Soil_Moisture_Module_Parameters,
 ) {
-	sc.soilColumn = soil_column
+	sc.soil_column = soil_column
 	sc.snow_density = 0.0
 	sc.snow_depth = 0.0
 	sc.frozen_water_in_snow = 0.0
@@ -157,8 +157,7 @@ calc_net_precipitation :: proc(
 			(sc.snow_accumulation_threshold_temperature - sc.temperature_limit_for_liquid_water)
 	}
 
-	net_precipitation_water^ =
-		liquid_water_precipitation * sc.correction_rain * net_precipitation_
+	net_precipitation_water^ = liquid_water_precipitation * sc.correction_rain * net_precipitation_
 	net_precipitation_snow^ =
 		(1.0 - liquid_water_precipitation) * sc.correction_snow * net_precipitation_
 
@@ -214,7 +213,8 @@ calc_new_snow_density :: proc(
 		if snow_density_factor < 0.0 {
 			snow_density_factor = 0.0
 		}
-		new_snow_density = sc.new_snow_density_min + sc.snow_max_additional_density * snow_density_factor
+		new_snow_density =
+			sc.new_snow_density_min + sc.snow_max_additional_density * snow_density_factor
 	}
 	return new_snow_density
 }
@@ -231,7 +231,7 @@ calc_average_snow_density :: proc(
 	} else {
 		snow_density =
 			(((1.0 + sc.snow_packing) * sc.snow_density * sc.snow_depth) +
-					(new_snow_density * net_precipitation_snow)) /
+				(new_snow_density * net_precipitation_snow)) /
 			(sc.snow_depth + net_precipitation_snow)
 		if snow_density > (sc.new_snow_density_min + sc.snow_max_additional_density) {
 			snow_density = sc.new_snow_density_min + sc.snow_max_additional_density
@@ -301,8 +301,8 @@ calc_snow_depth :: proc(sc: ^Snow_Component, snow_water_equivalent: f64) {
 		sc.liquid_water_in_snow = 0.0
 	}
 
-	if sc.soilColumn != nil {
-		sc.soilColumn.vm_SnowDepth = sc.snow_depth
+	if sc.soil_column != nil {
+		sc.soil_column.vm_SnowDepth = sc.snow_depth
 	}
 	sc.accumulated_snow_depth += sc.snow_depth
 }

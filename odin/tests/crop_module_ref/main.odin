@@ -41,7 +41,7 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.soilColumn", cm.soil_column)
 	tr.dump(t, "cropModule.siteParams", cm.site_params)
 	tr.dump(t, "cropModule.simParams", cm.sim_params)
-	tr.dump(t, "cropModule.cropModParams", cm.crop_mod_params)
+	tr.dump(t, "cropModule.cropModParams", cm.mod_params)
 
 	tr.dump(t, "cropModule.vc_AbovegroundBiomass", cm.aboveground_biomass)
 	tr.dump(t, "cropModule.vc_AbovegroundBiomassOld", cm.aboveground_biomass_old)

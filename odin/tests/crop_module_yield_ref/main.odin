@@ -232,7 +232,7 @@ main :: proc() {
 		&model.soil_column,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&model.site_ps,
+		&model.site_params,
 		&model.crop_ps,
 		&model.sim_ps,
 		no_fire_event,
@@ -246,7 +246,7 @@ main :: proc() {
 
 	model.soil_moisture.crop_module = &cm
 	model.soil_organic.crop_module = &cm
-	model.soil_transport.cropModule = &cm
+	model.soil_transport.crop_module = &cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -305,7 +305,7 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			model.env_ps.p_WindSpeedHeight,
+			model.env_params.p_WindSpeedHeight,
 			globrad,
 			julday,
 			et0,
@@ -321,7 +321,7 @@ main :: proc() {
 			current_date,
 			(relhumid / 100.0),
 			wind,
-			model.env_ps.p_WindSpeedHeight,
+			model.env_params.p_WindSpeedHeight,
 			ATM_CO2,
 			ATM_O3,
 			precip,

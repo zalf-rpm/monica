@@ -108,7 +108,7 @@ main :: proc() {
 		&cpp.userEnvironmentParameters,
 		&cpp.userCropParameters,
 	)
-	st.cropModule = nil
+	st.crop_module = nil
 
 	// --- climate ---
 	copts := clim.make_csv_via_header_options()

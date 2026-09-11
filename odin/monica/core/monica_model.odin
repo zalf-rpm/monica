@@ -41,8 +41,8 @@ import "core:slice"
 
 // C++: struct monica::MonicaModel
 Monica_Model :: struct {
-	site_ps:                          p.Site_Parameters,
-	env_ps:                           p.Environment_Parameters,
+	site_params:                      p.Site_Parameters,
+	env_params:                           p.Environment_Parameters,
 	crop_ps:                          p.Crop_Module_Parameters,
 	sim_ps:                           p.Simulation_Parameters,
 	groundwater_information:          p.Measured_Groundwater_Table_Information,
@@ -95,8 +95,8 @@ make_monica_model :: proc(
 ) -> ^Monica_Model {
 	model := new(Monica_Model, allocator)
 
-	model.site_ps = cpp.siteParameters
-	model.env_ps = cpp.userEnvironmentParameters
+	model.site_params = cpp.siteParameters
+	model.env_params = cpp.userEnvironmentParameters
 	model.crop_ps = cpp.userCropParameters
 	model.sim_ps = cpp.simulationParameters
 	model.groundwater_information = cpp.groundwaterInformation
@@ -104,19 +104,19 @@ make_monica_model :: proc(
 	model.soil_column = make_soil_column(
 		model.sim_ps.p_LayerThickness,
 		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		model.site_ps.vs_SoilParameters[:],
+		model.site_params.vs_SoilParameters[:],
 		allocator,
 	)
 	model.soil_temperature = make_soil_temperature(
 		&model.soil_column,
 		cpp.userSoilTemperatureParameters,
-		model.env_ps.p_timeStep,
+		model.env_params.p_timeStep,
 	)
 	model.soil_moisture = make_soil_moisture(
 		&model.soil_column,
-		&model.site_ps,
+		&model.site_params,
 		cpp.userSoilMoistureParameters,
-		&model.env_ps,
+		&model.env_params,
 		&model.crop_ps,
 		model.sim_ps.p_LayerThickness,
 		allocator,
@@ -125,8 +125,8 @@ make_monica_model :: proc(
 	model.soil_transport = make_soil_transport(
 		cpp.userSoilTransportParameters,
 		&model.soil_column,
-		&model.site_ps,
-		&model.env_ps,
+		&model.site_params,
+		&model.env_params,
 		&model.crop_ps,
 	)
 
@@ -535,7 +535,7 @@ monica_model_harvest_current_crop :: proc(
 					appliedOrganicFertilizerDryMatter /
 						1000.0 *
 						optCarbMgmtData.organicFertilizerHeq -
-					model.site_ps.vs_SoilSpecificHumusBalanceCorrection
+					model.site_params.vs_SoilSpecificHumusBalanceCorrection
 				potentialHumusFromResidues := residueBiomass / 1000.0 * optCarbMgmtData.residueHeq
 
 				fractionToBeLeftOnField := 0.0
@@ -557,7 +557,8 @@ monica_model_harvest_current_crop :: proc(
 
 				// calculate theoretical residue removal
 				model.opt_carbon_returned_residues = residueBiomass * fractionToBeLeftOnField
-				model.opt_carbon_exported_residues = residueBiomass - model.opt_carbon_returned_residues
+				model.opt_carbon_exported_residues =
+					residueBiomass - model.opt_carbon_returned_residues
 
 				// adjust it if technically unfeasible
 				maxExportedResidues := residueBiomass * optCarbMgmtData.maxResidueRecoverFraction
@@ -664,8 +665,7 @@ monica_model_incorporate_current_crop :: proc(
 		// prepare to add root and crop residues to soilorganic (AOMs)
 		total_biomass := cm.total_biomass
 		totalNContent :=
-			get_aboveground_biomass_n_content(cm) +
-			cm.n_concentration_root * cm.organ_biomass[0]
+			get_aboveground_biomass_n_content(cm) + cm.n_concentration_root * cm.organ_biomass[0]
 		totalNConcentration := totalNContent / total_biomass
 
 		soil_organic_add_organic_matter_amount(
@@ -735,9 +735,9 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		model.vs_groundwater_depth = max(0.0, gw_depth)
 	} else {
 		model.vs_groundwater_depth = groundwater_depth_for_date(
-			model.env_ps.p_MaxGroundwaterDepth,
-			model.env_ps.p_MinGroundwaterDepth,
-			model.env_ps.p_MinGroundwaterDepthMonth,
+			model.env_params.p_MaxGroundwaterDepth,
+			model.env_params.p_MinGroundwaterDepth,
+			model.env_params.p_MinGroundwaterDepthMonth,
 			f64(julday),
 			leapYear,
 		)
@@ -746,15 +746,15 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 	// first try to get CO2 concentration from climate data
 	if co2v, ok := dailyClimate[.co2]; ok {
 		model.vw_atmospheric_co2_concentration = co2v
-	} else if co2s, ok2 := model.env_ps.p_AtmosphericCO2s[d.year(date)]; ok2 {
+	} else if co2s, ok2 := model.env_params.p_AtmosphericCO2s[d.year(date)]; ok2 {
 		// try to get yearly values from UserEnvironmentParameters
 		model.vw_atmospheric_co2_concentration = co2s
 		// potentially use MONICA algorithm to calculate CO2 concentration
-	} else if int(model.env_ps.p_AtmosphericCO2) <= 0 {
-		model.vw_atmospheric_co2_concentration = co2_for_date_from_date(date, model.env_ps.rcp)
+	} else if int(model.env_params.p_AtmosphericCO2) <= 0 {
+		model.vw_atmospheric_co2_concentration = co2_for_date_from_date(date, model.env_params.rcp)
 		// if everything fails value in UserEnvironmentParameters for the whole simulation
 	} else {
-		model.vw_atmospheric_co2_concentration = model.env_ps.p_AtmosphericCO2
+		model.vw_atmospheric_co2_concentration = model.env_params.p_AtmosphericCO2
 	}
 
 	delete_aom_pool(&model.soil_column)
@@ -782,7 +782,8 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		monica_model_add_daily_sum_fertiliser(model, fertilizerAmount)
 	}
 
-	soil_coverage := model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0
+	soil_coverage :=
+		model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0
 	soil_temperature_step(
 		&model.soil_temperature,
 		tmin,
@@ -808,7 +809,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		(relhumid / 100.0),
 		tavg,
 		wind,
-		model.env_ps.p_WindSpeedHeight,
+		model.env_params.p_WindSpeedHeight,
 		globrad,
 		int(julday),
 		et0,
@@ -849,12 +850,12 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 	// first try to get CO2 concentration from climate data
 	if o3v, ok := dailyClimate[.o3]; ok {
 		model.vw_atmospheric_o3_concentration = o3v
-	} else if o3s, ok2 := model.env_ps.p_AtmosphericO3s[d.year(date)]; ok2 {
+	} else if o3s, ok2 := model.env_params.p_AtmosphericO3s[d.year(date)]; ok2 {
 		// try to get yearly values from UserEnvironmentParameters
 		model.vw_atmospheric_o3_concentration = o3s
 		// if everything fails value in UserEnvironmentParameters for the whole simulation
 	} else {
-		model.vw_atmospheric_o3_concentration = model.env_ps.p_AtmosphericO3
+		model.vw_atmospheric_o3_concentration = model.env_params.p_AtmosphericO3
 	}
 
 	// test if data for sunhours are available; if not, value is set to -1.0
@@ -882,7 +883,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		et0 = v
 	}
 
-	vw_WindSpeedHeight := model.env_ps.p_WindSpeedHeight
+	vw_WindSpeedHeight := model.env_params.p_WindSpeedHeight
 
 	crop_module_step(
 		model.current_crop_module,

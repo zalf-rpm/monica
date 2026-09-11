@@ -145,7 +145,7 @@ sowing_apply :: proc(
 			&model.soil_column,
 			&s.cropParams,
 			&s.residueParams,
-			&model.site_ps,
+			&model.site_params,
 			&model.crop_ps,
 			&model.sim_ps,
 			core.monica_model_fire_event_cb,
@@ -674,8 +674,8 @@ automatic_harvest_condition :: proc(
 			d.ge(model.current_step_date, ah.absLatestDate) ||
 			(ah.harvestTime == "maturity" &&
 					core.maturity_reached(cg) &&
-					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&// harvest after or at latest date
-					is_precipitation_ok(
+					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&
+					is_precipitation_ok(// harvest after or at latest date
 						model.climate_data, // has maturity been reached// check soil moisture
 						ah.max3dayPrecipSum,
 						ah.maxCurrentDayPrecipSum,

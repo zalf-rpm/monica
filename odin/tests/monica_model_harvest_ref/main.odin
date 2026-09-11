@@ -50,8 +50,16 @@ dump_model_harvest :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Mode
 		strings.concatenate({path, ".optCarbonReturnedResidues"}),
 		model.opt_carbon_returned_residues,
 	)
-	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humus_balance_carry_over)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".humusBalanceCarryOver"}),
+		model.humus_balance_carry_over,
+	)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".clearCropUponNextDay"}),
+		model.clear_crop_upon_next_day,
+	)
 }
 
 dump_soil_organic_top3 :: proc(t: ^tr.Tracer, path: string, so: ^core.Soil_Organic) {
@@ -163,7 +171,7 @@ main :: proc() {
 		&model.soil_column,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&model.site_ps,
+		&model.site_params,
 		&model.crop_ps,
 		&model.sim_ps,
 		no_fire_event,
@@ -177,7 +185,7 @@ main :: proc() {
 
 	model.soil_moisture.crop_module = &cm
 	model.soil_organic.crop_module = &cm
-	model.soil_transport.cropModule = &cm
+	model.soil_transport.crop_module = &cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -236,7 +244,7 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			model.env_ps.p_WindSpeedHeight,
+			model.env_params.p_WindSpeedHeight,
 			globrad,
 			julday,
 			et0,
@@ -252,7 +260,7 @@ main :: proc() {
 			current_date,
 			(relhumid / 100.0),
 			wind,
-			model.env_ps.p_WindSpeedHeight,
+			model.env_params.p_WindSpeedHeight,
 			ATM_CO2,
 			ATM_O3,
 			precip,

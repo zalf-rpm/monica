@@ -21,7 +21,11 @@ dump_model :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sum_fertiliser)
 	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sum_org_fertiliser)
 	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.daily_sum_fertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumOrgFertiliser"}), model.daily_sum_org_fertiliser)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".dailySumOrgFertiliser"}),
+		model.daily_sum_org_fertiliser,
+	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".dailySumOrganicFertilizerDM"}),
@@ -32,13 +36,21 @@ dump_model :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 		strings.concatenate({path, ".sumOrganicFertilizerDM"}),
 		model.sum_organic_fertilizer_dm,
 	)
-	tr.dump(t, strings.concatenate({path, ".humusBalanceCarryOver"}), model.humus_balance_carry_over)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".humusBalanceCarryOver"}),
+		model.humus_balance_carry_over,
+	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".dailySumIrrigationWater"}),
 		model.daily_sum_irrigation_water,
 	)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".clearCropUponNextDay"}),
+		model.clear_crop_upon_next_day,
+	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".cultivationMethodCount"}),
@@ -247,7 +259,7 @@ main :: proc() {
 		&model.soil_column,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&model.site_ps,
+		&model.site_params,
 		&model.crop_ps,
 		&model.sim_ps,
 		no_fire_event,

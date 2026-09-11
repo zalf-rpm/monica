@@ -131,7 +131,7 @@ main :: proc() {
 		&model.soil_column,
 		&wheatCropParams,
 		&wheatResidueParams,
-		&model.site_ps,
+		&model.site_params,
 		&model.crop_ps,
 		&model.sim_ps,
 		core.monica_model_fire_event_cb,
@@ -144,7 +144,7 @@ main :: proc() {
 
 	model.soil_moisture.crop_module = cm
 	model.soil_organic.crop_module = cm
-	model.soil_transport.cropModule = cm
+	model.soil_transport.crop_module = cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -207,7 +207,7 @@ main :: proc() {
 			relhumid / 100.0,
 			tavg,
 			wind,
-			model.env_ps.p_WindSpeedHeight,
+			model.env_params.p_WindSpeedHeight,
 			globrad,
 			clim.data_accessor_julian_day_for_step(&da, day),
 			et0,
@@ -223,7 +223,7 @@ main :: proc() {
 			current_date,
 			relhumid / 100.0,
 			wind,
-			model.env_ps.p_WindSpeedHeight,
+			model.env_params.p_WindSpeedHeight,
 			ATM_CO2,
 			ATM_O3,
 			precip,
