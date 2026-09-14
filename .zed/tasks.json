@@ -27,4 +27,19 @@
       "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/../monica-parameters",
     },
   },
+  {
+    "label": "[Linux] CMake Configure + Build",
+    "command": "cmake -S . -B build -G Ninja -DCMAKE_MAKE_PROGRAM='/home/berg/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja' -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE='../vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_BUILD_TYPE=Debug; cmake --build build --parallel",
+    "cwd": "$ZED_WORKTREE_ROOT",
+  },
+  {
+    "label": "[Linux] CMake Clean + Build",
+    "command": "cmake --build build --target clean; cmake --build build --parallel",
+    "cwd": "$ZED_WORKTREE_ROOT",
+  },
+  {
+    "label": "[Linux] CMake Build",
+    "command": "cmake --build build --parallel",
+    "cwd": "$ZED_WORKTREE_ROOT",
+  },
 ]
