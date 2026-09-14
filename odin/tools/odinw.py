@@ -467,26 +467,13 @@ def cmd_build(ns: argparse.Namespace) -> int:
             # ever reaching ld. Matching Odin's own escaping here is what
             # actually survives that.
             #
-            # --sysroot=/ : without it, this link uses conda's own bundled
-            # sysroot_linux-64 (pulled in by the `clang` dependency - see
-            # pixi.toml), which only declares glibc symbol versions up to
-            # 2.28. cmd_capnp_shim builds the shim with cmake's own default
-            # (system) compiler - pixi's conda clang has no matching C++
-            # standard library headers installed, only the runtime .so - so
-            # on any host with a newer glibc (2.32+, i.e. most current
-            # distros) the resulting .so references symbol versions conda's
-            # sysroot has no version node for, and the link fails with
-            # "undefined reference to `pthread_create@GLIBC_2.34`" and
-            # similar. --sysroot=/ makes this one link step (just these two
-            # capnp targets) resolve against the actual host's glibc instead
-            # - the same one the shim was already built against - trading
-            # the reproducible-across-hosts baseline the plain Odin/C
-            # binaries get for a binary that actually links. The two capnp
-            # binaries inherit whatever glibc compatibility the shim itself
-            # already has (forwards-compatible: fine to run on this host or
-            # newer, not on an older one).
+            # No --sysroot override needed here (there used to be one): as
+            # of _capnp_shim_toolchain, cmd_capnp_shim builds the shim with
+            # the same conda clang+sysroot Odin already links with, instead
+            # of cmake's default (system) compiler - so both sides agree on
+            # the same, deliberately old and portable glibc baseline.
             shim_dir = art["dll_lib"].parent.resolve()
-            args.append(f"-extra-linker-flags:-L{shim_dir} -Wl,-rpath,\\$ORIGIN --sysroot=/")
+            args.append(f"-extra-linker-flags:-L{shim_dir} -Wl,-rpath,\\$ORIGIN")
         args += ns.odin_args
         if (rc := run_odin(args, ROOT)) != 0:
             return rc
@@ -537,7 +524,85 @@ def _same_path(a: str | None, b: str | None) -> bool:
     return (str(pa).lower() == str(pb).lower()) if IS_WINDOWS else (pa == pb)
 
 
-def _drop_stale_build_dir(build_dir: Path, env: dict) -> None:
+def _capnp_shim_toolchain(env: dict) -> tuple[str, str] | None:
+    """The (CXX compiler, extra CXX flags) cmd_capnp_shim pins the shim's
+    CMake configure to on non-Windows - or None if pixi's conda clang isn't
+    on PATH (e.g. running outside `pixi run capnp-shim`), in which case
+    CMake's own default (system) compiler detection is used instead, same as
+    before this existed.
+
+    Why pin it at all: CMake's default detection finds whatever `c++` is on
+    PATH - the system compiler (e.g. Ubuntu 24.04's GCC 13). Odin's own
+    build links through pixi's conda `clang` package (see pixi.toml), whose
+    bundled sysroot_linux-64 only declares glibc symbol versions up to 2.28
+    (a deliberately old, portable baseline). A shim .so linked with the
+    system's newer glibc (2.34+ on a current Ubuntu) then fails Odin's link
+    with "undefined reference to `pthread_create@GLIBC_2.34`" and similar -
+    a toolchain mismatch, not a stale-cache problem, since the specific
+    GLIBC_x.y a symbol reference resolves to is recorded at the FINAL link
+    step (this shim's own .so), not baked into individual .o/.a files - so
+    pointing that final link at the same clang+sysroot Odin itself links
+    with is sufficient, regardless of what compiler vcpkg's own
+    capnproto/kj static libs were originally built with.
+
+    Why all the manual flags instead of just -DCMAKE_CXX_COMPILER=clang++:
+    conda's `clang` package ships the runtime (libstdc++.so) but not the
+    C++ standard library HEADERS - pixi.toml additionally depends on
+    libstdcxx-devel_linux-64 for those, installed under
+    lib/gcc/<triple>/<ver>/include/c++. Clang's own GCC-installation
+    auto-detection is, as of clang 22, known-buggy for exactly this split
+    (confirmed empirically, and clang says so itself - the warning reads
+    "future releases of the clang compiler will prefer GCC installations
+    containing libstdc++ include directories" - implying current releases
+    do not): with both the older GCC version directory bundled by the
+    `clang` package itself (headers-less) and the newer one from
+    libstdcxx-devel_linux-64 (has the headers) present, it silently PICKS
+    THE HEADERS-LESS ONE, so plain `--gcc-toolchain=<prefix>` still fails
+    with 'vector' file not found. Passing -isystem directly, for whichever
+    installed GCC version dir actually HAS an include/c++ subdirectory,
+    sidesteps that detection entirely. And `clang++-<ver>` (the C++ driver
+    that auto-links libstdc++ - plain `x86_64-conda-linux-gnu-clang`
+    compiles C++ syntax fine but does NOT auto-add -lstdc++/exception
+    runtime support) has no matching .cfg of its own, so -L/-rpath for
+    libstdc++.so and --sysroot are also passed explicitly rather than
+    relying on any auto-loaded config file.
+    """
+    if IS_WINDOWS:
+        return None
+    cc = shutil.which("x86_64-conda-linux-gnu-clang", path=env.get("PATH", ""))
+    if cc is None:
+        return None
+    bindir = Path(cc).parent
+    prefix = bindir.parent
+    cxx_candidates = sorted(bindir.glob("clang++-*"))
+    if not cxx_candidates:
+        return None
+    cxx = str(cxx_candidates[-1])
+
+    gcc_base = prefix / "lib" / "gcc" / "x86_64-conda-linux-gnu"
+    cxx_header_dir = None
+    for d in sorted(gcc_base.iterdir()) if gcc_base.is_dir() else []:
+        if (d / "include" / "c++").is_dir():
+            cxx_header_dir = d / "include" / "c++"  # last (newest) match wins
+    if cxx_header_dir is None:
+        return None
+
+    sysroot = prefix / "x86_64-conda-linux-gnu" / "sysroot"
+    libdir = prefix / "lib"
+    flags = " ".join(
+        [
+            f"--sysroot={sysroot}",
+            f"-isystem{cxx_header_dir}",
+            f"-isystem{cxx_header_dir / 'x86_64-conda-linux-gnu'}",
+            f"-isystem{cxx_header_dir / 'backward'}",
+            f"-L{libdir}",
+            f"-Wl,-rpath,{libdir}",
+        ]
+    )
+    return cxx, flags
+
+
+def _drop_stale_build_dir(build_dir: Path, env: dict, target_cxx: str | None) -> None:
     """Wipe build_dir if it was configured with a DIFFERENT compiler than the one
     this environment resolves to.
 
@@ -552,14 +617,22 @@ def _drop_stale_build_dir(build_dir: Path, env: dict) -> None:
 
     That is the shape of it whenever the two entry points disagree - this script
     versus the shim's own vcbuild.bat, or a machine that gained/lost
-    `pixi run setup-msvc`. Reconfiguring from scratch is the only fix (the cache
-    entry is not meant to be edited), so do it automatically rather than leaving
-    a confusing compiler error.
+    `pixi run setup-msvc`; or, on non-Windows, a build_dir configured before
+    this script started pinning CMAKE_CXX_COMPILER to pixi's own clang++ (see
+    _capnp_shim_toolchain) rather than leaving it to CMake's default
+    detection. Reconfiguring from scratch is the only fix (the cache entry is
+    not meant to be edited), so do it automatically rather than leaving a
+    confusing compiler error.
+
+    `target_cxx` is what the *upcoming* configure will pass as
+    CMAKE_CXX_COMPILER - None means "whatever CMake defaults to", in which
+    case this falls back to comparing against `c++`/`cl` on PATH, same as
+    before.
     """
     cached = _cached_cxx_compiler(build_dir)
     if cached is None:
         return
-    current = shutil.which("cl" if IS_WINDOWS else "c++", path=env.get("PATH", ""))
+    current = target_cxx or shutil.which("cl" if IS_WINDOWS else "c++", path=env.get("PATH", ""))
     if current is None or _same_path(cached, current):
         return
     print(f"==> {build_dir.name} was configured with a different compiler, reconfiguring", flush=True)
@@ -591,6 +664,16 @@ def cmd_capnp_shim(ns: argparse.Namespace) -> int:
 
     toolchain = _vcpkg_toolchain()
     env = odin_env()
+    shim_toolchain = _capnp_shim_toolchain(env)
+    if not IS_WINDOWS and shim_toolchain is None:
+        die(
+            "x86_64-conda-linux-gnu-clang (or a clang++-<ver> next to it) not "
+            "found on PATH - are you running this via `pixi run capnp-shim`? "
+            "The shim must be built with the same clang+sysroot Odin links "
+            "with (see _capnp_shim_toolchain), or the final link against it "
+            "fails with undefined GLIBC_2.3x references."
+        )
+    target_cxx = shim_toolchain[0] if shim_toolchain else None
     variants = ["static"] if ns.static else ["dll"]
     if ns.all:
         variants = ["dll", "static"]
@@ -601,12 +684,18 @@ def cmd_capnp_shim(ns: argparse.Namespace) -> int:
         # into an Odin exe with unresolved _CrtDbgReport.
         build_dir = SHIM_DIR / ("build-static" if variant == "static" else "build")
         config = "Release" if variant == "static" else "Debug"
-        _drop_stale_build_dir(build_dir, env)
+        _drop_stale_build_dir(build_dir, env, target_cxx)
         configure = [
             "cmake", "-S", str(SHIM_DIR), "-B", str(build_dir),
             f"-DCMAKE_TOOLCHAIN_FILE={toolchain}",
             f"-DCMAKE_BUILD_TYPE={config}",
         ]
+        if shim_toolchain is not None:
+            cxx, flags = shim_toolchain
+            configure += [
+                f"-DCMAKE_CXX_COMPILER={cxx}",
+                f"-DCMAKE_CXX_FLAGS={flags}",
+            ]
         if shutil.which("ninja"):
             configure += ["-G", "Ninja"]
         if IS_WINDOWS:

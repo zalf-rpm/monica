@@ -41,6 +41,14 @@ zeromq = "4.3.5.*"
 # Odin shells out to `clang` to link on Linux. This also pulls in
 # sysroot_linux-64 and binutils, which is why no extra linker flags are needed.
 clang = "*"
+# clang alone ships libstdc++.so (the runtime) but no C++ standard library
+# headers - fine for Odin's own C-only link, but it means cmd_capnp_shim
+# (tools/odinw.py) cannot build the Cap'n Proto shim with this same
+# clang+sysroot: without this, 'initializer_list' file not found. Pulls in
+# matching headers only (no competing gcc/g++ activation), so the shim can be
+# built against the same old, portable glibc baseline sysroot_linux-64 gives
+# the plain Odin/C binaries, instead of falling back to the system compiler.
+libstdcxx-devel_linux-64 = "*"
 
 # Deliberately NOT depending on conda-forge's `vs2022_win-64`: its activation
 # script assumes a locally installed Visual Studio and would run on every
