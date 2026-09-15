@@ -992,7 +992,10 @@ double monica::cropmodule::fcOxygenDeficiency(CropModule *cm, double criticalOxy
                                                         // stage-dependent waterlogging
     cm->vc_TimeUnderAnoxia += int(cm->vc_TimeStep);
     if (cm->vc_TimeUnderAnoxia >= timeUnderAnoxiaThresholdAtStage) {
-      cm->vc_OxygenDeficit = std::max(0.0, avgAirFilledPoreVolume) / criticalOxygenContent;
+      auto maxOxygenDeficit = std::max(0.0, avgAirFilledPoreVolume) / criticalOxygenContent;
+      cm->vc_OxygenDeficit = std::max(0.0, 1.0 - double(cm->vc_TimeUnderAnoxia) /
+                                                     double(timeUnderAnoxiaThresholdAtStage) *
+                                                     (1.0 - maxOxygenDeficit));
     }
   } else {
     cm->vc_TimeUnderAnoxia = 0;

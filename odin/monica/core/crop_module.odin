@@ -829,7 +829,8 @@ fc_oxygen_deficiency :: proc(cm: ^Crop_Module, criticalOxygenContent: f64) -> f6
 		// MP: conditions changed for stage-dependent waterlogging
 		cm.time_under_anoxia += int(cm.time_step)
 		if cm.time_under_anoxia >= timeUnderAnoxiaThresholdAtStage {
-			cm.oxygen_deficit = max(0.0, avgAirFilledPoreVolume) / criticalOxygenContent
+			max_oxygen_deficit := max(0.0, avgAirFilledPoreVolume) / criticalOxygenContent
+			cm.oxygen_deficit = max(0.0, 1.0 - f64(cm.time_under_anoxia) / f64(timeUnderAnoxiaThresholdAtStage) * (1.0 - max_oxygen_deficit))
 		}
 	} else {
 		cm.time_under_anoxia = 0
