@@ -42,7 +42,7 @@ import "core:slice"
 // C++: struct monica::MonicaModel
 Monica_Model :: struct {
 	site_params:                      p.Site_Parameters,
-	env_params:                           p.Environment_Parameters,
+	env_params:                       p.Environment_Parameters,
 	crop_ps:                          p.Crop_Module_Parameters,
 	sim_ps:                           p.Simulation_Parameters,
 	groundwater_information:          p.Measured_Groundwater_Table_Information,
@@ -309,8 +309,8 @@ monica_model_daily_reset :: proc(model: ^Monica_Model, allocator := context.allo
 	monica_model_clear_events(model, allocator)
 
 	if model.clear_crop_upon_next_day {
-		soil_transport_remove_crop(&model.soil_transport)
-		remove_crop(&model.soil_column)
+		model.soil_transport.crop_module = nil
+		model.soil_column.cropModule = nil
 		model.soil_moisture.crop_module = nil
 		model.soil_organic.crop_module = nil
 		model.current_crop_module = nil

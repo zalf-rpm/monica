@@ -164,8 +164,8 @@ sowing_apply :: proc(
 			)
 		}
 
-		core.soil_transport_put_crop(&model.soil_transport, model.current_crop_module)
-		core.put_crop(&model.soil_column, model.current_crop_module)
+		model.soil_transport.crop_module = model.current_crop_module
+		model.soil_column.cropModule = model.current_crop_module
 		model.soil_moisture.crop_module = model.current_crop_module
 		model.soil_organic.crop_module = model.current_crop_module
 
@@ -675,8 +675,8 @@ automatic_harvest_condition :: proc(
 			(ah.harvestTime == "maturity" &&
 					core.maturity_reached(cg) &&
 					is_soil_moisture_ok(model, ah.minPercentASW, ah.maxPercentASW) &&
-					is_precipitation_ok(// harvest after or at latest date
-						model.climate_data, // has maturity been reached// check soil moisture
+					is_precipitation_ok(
+						model.climate_data, // harvest after or at latest date// has maturity been reached// check soil moisture
 						ah.max3dayPrecipSum,
 						ah.maxCurrentDayPrecipSum,
 					)) // check precipitation
