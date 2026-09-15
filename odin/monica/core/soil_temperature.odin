@@ -29,7 +29,7 @@ Soil_Temperature :: struct {
 	soil_column:               ^Soil_Column,
 	soil_column_ground_layer:  Soil_Layer,
 	soil_column_bottom_layer:  Soil_Layer,
-	params:                    p.Soil_Temperature_Module_Parameters,
+	mod_params:                p.Soil_Temperature_Module_Parameters,
 	no_of_temp_layers:         int,
 	no_of_soil_layers:         int,
 	soil_temperature:          [dynamic]f64,
@@ -77,7 +77,7 @@ make_soil_temperature :: proc(
 	st: Soil_Temperature
 	st.damping_factor = 0.8 // C++ in-class initialiser: double damping_factor{0.8}
 	st.soil_column = soil_column
-	st.params = params
+	st.mod_params = params
 	st.no_of_temp_layers = len(st.soil_column.layers) + 2
 	st.no_of_soil_layers = len(st.soil_column.layers)
 	resize(&st.soil_temperature, st.no_of_temp_layers)
@@ -104,10 +104,10 @@ make_soil_temperature :: proc(
 		st.soil_column_bottom_layer = last
 	}
 
-	soil_moisture_const := st.params.pt_SoilMoisture
+	soil_moisture_const := st.mod_params.pt_SoilMoisture
 
-	base_temp := st.params.pt_BaseTemperature
-	initial_surface_temp := st.params.pt_InitialSurfaceTemperature
+	base_temp := st.mod_params.pt_BaseTemperature
+	initial_surface_temp := st.mod_params.pt_InitialSurfaceTemperature
 	soil_nols := st.no_of_soil_layers
 
 	for i in 0 ..< soil_nols {
@@ -126,7 +126,7 @@ make_soil_temperature :: proc(
 
 	st.v[0] = soil_temperature_layer_at(&st, 0).layer_thickness_m
 	st.b[0] = 2.0 / soil_temperature_layer_at(&st, 0).layer_thickness_m
-	ntau := st.params.pt_NTau
+	ntau := st.mod_params.pt_NTau
 	for i in 1 ..< st.no_of_temp_layers {
 		lti_1 := soil_temperature_layer_at(&st, i - 1).layer_thickness_m
 		lti := soil_temperature_layer_at(&st, i).layer_thickness_m
@@ -135,14 +135,14 @@ make_soil_temperature :: proc(
 	}
 
 	ts := p_time_step
-	dw := st.params.pt_DensityWater
-	cw := st.params.pt_SpecificHeatCapacityWater
-	dq := st.params.pt_QuartzRawDensity
-	cq := st.params.pt_SpecificHeatCapacityQuartz
-	da := st.params.pt_DensityAir
-	ca := st.params.pt_SpecificHeatCapacityAir
-	dh := st.params.pt_DensityHumus
-	ch := st.params.pt_SpecificHeatCapacityHumus
+	dw := st.mod_params.pt_DensityWater
+	cw := st.mod_params.pt_SpecificHeatCapacityWater
+	dq := st.mod_params.pt_QuartzRawDensity
+	cq := st.mod_params.pt_SpecificHeatCapacityQuartz
+	da := st.mod_params.pt_DensityAir
+	ca := st.mod_params.pt_SpecificHeatCapacityAir
+	dh := st.mod_params.pt_DensityHumus
+	ch := st.mod_params.pt_SpecificHeatCapacityHumus
 
 	for i in 0 ..< st.no_of_soil_layers {
 		sbdi := soil_bulk_density(soil_temperature_layer_at(&st, i))
