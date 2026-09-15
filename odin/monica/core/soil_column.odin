@@ -41,7 +41,7 @@ Aom_Properties :: struct {
 	aom_slow_delta:                f64,
 	aom_fast_delta:                f64,
 	incorporation:                 bool,
-	noVolatilization:              bool,
+	no_volatilization:             bool,
 }
 
 // C++ in-class initialisers
@@ -51,14 +51,14 @@ make_aom_properties :: proc() -> Aom_Properties {
 		aom_fast_dec_coeff_standard = 1.0,
 		cn_ratio_aom_slow = 1.0,
 		cn_ratio_aom_fast = 1.0,
-		noVolatilization = true,
+		no_volatilization = true,
 	}
 }
 
 // C++: struct monica::SoilLayer (formerly composed via `Soil::SoilParameters
 // sps;`, flattened directly - see the C++ comment at soilcolumn.h:139)
 Soil_Layer :: struct {
-	layer_thickness:          f64, // [m]
+	layer_thickness_m:        f64, // [m]
 	soil_water_flux:          f64, // water flux at the upper boundary [l m-2]
 	vo_AOM_Pool:              [dynamic]Aom_Properties,
 	som_slow:                 f64, // [kg C m-3]
@@ -96,7 +96,7 @@ Soil_Layer :: struct {
 // C++ in-class initialisers
 make_default_soil_layer :: proc(allocator := context.allocator) -> Soil_Layer {
 	return Soil_Layer {
-		layer_thickness = 0.1,
+		layer_thickness_m = 0.1,
 		soil_nh4 = 0.0001,
 		soil_no2 = 0.001,
 		soil_no3 = 0.0001,
@@ -128,7 +128,7 @@ make_default_soil_layer :: proc(allocator := context.allocator) -> Soil_Layer {
 // sl.soil_no2 in this function body).
 make_soil_layer :: proc(vs_layer_thickness: f64, sps: ^soil.Soil_Parameters) -> Soil_Layer {
 	sl := make_default_soil_layer()
-	sl.layer_thickness = vs_layer_thickness
+	sl.layer_thickness_m = vs_layer_thickness
 	sl.soil_nh4 = sps.vs_SoilAmmonium
 	sl.soil_no3 = sps.vs_SoilNitrate
 	sl.soil_sand_content = sps.vs_SoilSandContent
@@ -204,10 +204,7 @@ soil_silt_content :: proc(sl: ^Soil_Layer) -> f64 {
 // C++: double soillayer::soilRawDensity(const SoilLayer*)
 soil_raw_density :: proc(sl: ^Soil_Layer) -> f64 {
 	if sl.soil_raw_density < 0 {
-		return(
-			((sl.soil_bulk_density / 1000.0) - (0.009 * 100.0 * sl.soil_clay_content)) *
-			1000.0 \
-		)
+		return ((sl.soil_bulk_density / 1000.0) - (0.009 * 100.0 * sl.soil_clay_content)) * 1000.0
 	}
 	return sl.soil_raw_density
 }
@@ -238,41 +235,41 @@ soil_organic_matter :: proc(sl: ^Soil_Layer) -> f64 {
 
 // C++: struct monica::SoilColumn::DelayedNMinApplicationParams
 Delayed_N_Min_Application_Params :: struct {
-	fp:                          p.Mineral_Fertilizer_Parameters,
-	vf_SamplingDepth:            f64,
-	vf_CropNTarget:              f64,
-	vf_CropNTarget30:            f64,
-	vf_FertiliserMinApplication: f64,
-	vf_FertiliserMaxApplication: f64,
-	vf_TopDressingDelay:         int,
+	fp:                         p.Mineral_Fertilizer_Parameters,
+	sampling_depth:             f64,
+	crop_n_target:              f64,
+	crop_n_target_30:           f64,
+	fertilizer_min_application: f64,
+	fertilizer_max_application: f64,
+	top_dressing_delay:         int,
 }
 
 // C++: struct monica::SoilColumn
 Soil_Column :: struct {
-	layers:                    [dynamic]Soil_Layer,
-	vs_SurfaceWaterStorage:    f64, // [mm]
-	vs_InterceptionStorage:    f64, // [mm]
-	vm_GroundwaterTableLayer:  int,
-	vs_FluxAtLowerBoundary:    f64,
-	vq_CropNUptake:            f64, // [kg m-2]
-	vt_SoilSurfaceTemperature: f64,
-	vm_SnowDepth:              f64,
-	ps_MaxMineralisationDepth: f64,
-	vs_NumberOfOrganicLayers:  int,
-	vf_TopDressing:            f64,
-	vf_TopDressingPartition:   p.Mineral_Fertilizer_Parameters,
-	vf_TopDressingDelay:       int,
-	_delayedNMinApplications:  [dynamic]Delayed_N_Min_Application_Params,
+	layers:                      [dynamic]Soil_Layer,
+	surface_water_storage:       f64, // [mm]
+	// vs_InterceptionStorage:    f64, // [mm]
+	groundwater_table_layer_idx: int,
+	flux_at_lower_boundary:      f64,
+	crop_N_uptake:               f64, // [kg m-2]
+	soil_surface_temperature:    f64,
+	snow_depth_mm:               f64,
+	max_mineralisation_depth_m:  f64,
+	number_of_organic_layers:    int,
+	top_dressing:                f64,
+	top_dressing_partition:      p.Mineral_Fertilizer_Parameters,
+	top_dressing_delay:          int,
+	delayed_Nmin_applications:   [dynamic]Delayed_N_Min_Application_Params,
 
 	// C++: CropModule *cropModule{nullptr}
-	cropModule:                ^Crop_Module,
+	cropModule:                  ^Crop_Module,
 }
 
 // C++ in-class initialisers
 make_default_soil_column :: proc(allocator := context.allocator) -> Soil_Column {
 	sc: Soil_Column
 	sc.layers = make([dynamic]Soil_Layer, 0, allocator)
-	sc.ps_MaxMineralisationDepth = 0.4
+	sc.max_mineralisation_depth_m = 0.4
 	return sc
 }
 
@@ -290,12 +287,12 @@ make_soil_column :: proc(
 	allocator := context.allocator,
 ) -> Soil_Column {
 	sc := make_default_soil_column(allocator)
-	sc.ps_MaxMineralisationDepth = max_mineralisation_depth
+	sc.max_mineralisation_depth_m = max_mineralisation_depth
 	for sp_in in soil_params {
 		sp := sp_in
 		append(&sc.layers, make_soil_layer(layer_thickness, &sp))
 	}
-	sc.vs_NumberOfOrganicLayers = calculate_number_of_organic_layers(&sc)
+	sc.number_of_organic_layers = calculate_number_of_organic_layers(&sc)
 	return sc
 }
 
@@ -308,8 +305,8 @@ calculate_number_of_organic_layers :: proc(sc: ^Soil_Column) -> int {
 	count := 0
 	for i := 0; i < len(sc.layers); i += 1 {
 		count += 1
-		lsum += sc.layers[i].layer_thickness
-		if lsum >= sc.ps_MaxMineralisationDepth {
+		lsum += sc.layers[i].layer_thickness_m
+		if lsum >= sc.max_mineralisation_depth_m {
 			break
 		}
 	}
@@ -323,7 +320,7 @@ number_of_layers :: proc(sc: ^Soil_Column) -> int {
 
 // C++: inline size_t monica::soilcolumn::numberOfOrganicLayers(const SoilColumn*)
 number_of_organic_layers :: proc(sc: ^Soil_Column) -> int {
-	return sc.vs_NumberOfOrganicLayers
+	return sc.number_of_organic_layers
 }
 
 // C++: inline double monica::soilcolumn::layerThickness(const SoilColumn*)
@@ -331,13 +328,13 @@ number_of_organic_layers :: proc(sc: ^Soil_Column) -> int {
 // By definition all layers have the same size, so only the first layer's
 // thickness is returned.
 soil_column_layer_thickness :: proc(sc: ^Soil_Column) -> f64 {
-	return sc.layers[0].layer_thickness
+	return sc.layers[0].layer_thickness_m
 }
 
 // C++: inline double monica::soilcolumn::dailyCropNUptake(const SoilColumn*)
 // [kg N ha-1 d-1]
 daily_crop_n_uptake :: proc(sc: ^Soil_Column) -> f64 {
-	return sc.vq_CropNUptake * 10000.0
+	return sc.crop_N_uptake * 10000.0
 }
 
 // C++: size_t monica::soilcolumn::getLayerNumberForDepth(const SoilColumn*, double)
@@ -346,7 +343,7 @@ daily_crop_n_uptake :: proc(sc: ^Soil_Column) -> f64 {
 get_layer_number_for_depth :: proc(sc: ^Soil_Column, depth: f64) -> int {
 	layer := 0
 	accu_depth := 0.0
-	lt := sc.layers[0].layer_thickness
+	lt := sc.layers[0].layer_thickness_m
 	for i := 0; i < len(sc.layers); i += 1 {
 		accu_depth += lt
 		if depth <= accu_depth {
@@ -384,8 +381,8 @@ remove_crop :: proc(sc: ^Soil_Column) {
 
 // C++: void monica::soilcolumn::clearTopDressingParams(SoilColumn*)
 clear_top_dressing_params :: proc(sc: ^Soil_Column) {
-	sc.vf_TopDressing = 0.0
-	sc.vf_TopDressingDelay = 0
+	sc.top_dressing = 0.0
+	sc.top_dressing_delay = 0
 }
 
 // C++: void monica::soilcolumn::deleteAOMPool(SoilColumn*)
@@ -399,13 +396,13 @@ delete_aom_pool :: proc(sc: ^Soil_Column) {
 		vo_SumAOM_Slow := 0.0
 		vo_SumAOM_Fast := 0.0
 
-		for i_Layer := 0; i_Layer < sc.vs_NumberOfOrganicLayers; i_Layer += 1 {
+		for i_Layer := 0; i_Layer < sc.number_of_organic_layers; i_Layer += 1 {
 			vo_SumAOM_Slow += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].aom_slow
 			vo_SumAOM_Fast += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].aom_fast
 		}
 
 		if (vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001 {
-			for i_Layer := 0; i_Layer < sc.vs_NumberOfOrganicLayers; i_Layer += 1 {
+			for i_Layer := 0; i_Layer < sc.number_of_organic_layers; i_Layer += 1 {
 				ordered_remove(&sc.layers[i_Layer].vo_AOM_Pool, i_AOMPool)
 			}
 		} else {
@@ -422,7 +419,7 @@ apply_mineral_fertiliser :: proc(
 	amount: f64,
 ) {
 	// [kg N ha-1 -> kg m-3]
-	kgHaTokgm3 := 10000.0 * sc.layers[0].layer_thickness
+	kgHaTokgm3 := 10000.0 * sc.layers[0].layer_thickness_m
 	sc.layers[0].soil_no3 += amount * fp.vo_NO3 / kgHaTokgm3
 	sc.layers[0].soil_nh4 += amount * fp.vo_NH4 / kgHaTokgm3
 	sc.layers[0].soil_carbamid += amount * fp.vo_Carbamid / kgHaTokgm3
@@ -453,20 +450,20 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 ) -> f64 {
 	if sc.layers[0].soil_moisture_m3 > sc.layers[0].field_capacity {
 		append(
-			&sc._delayedNMinApplications,
+			&sc.delayed_Nmin_applications,
 			Delayed_N_Min_Application_Params {
-				fp                          = fertiliserPartition,
-				vf_SamplingDepth            = samplingDepth,
-				vf_CropNTarget              = cropNTargetValue,
-				vf_CropNTarget30            = cropNTargetValue30,
+				fp                         = fertiliserPartition,
+				sampling_depth             = samplingDepth,
+				crop_n_target              = cropNTargetValue,
+				crop_n_target_30           = cropNTargetValue30,
 				// NOTE(c++-quirk): positions 5/6 of the C++ aggregate-init are
 				// (fertiliserMaxApplication, fertiliserMinApplication), which land
 				// on struct fields 5/6 (vf_FertiliserMinApplication,
 				// vf_FertiliserMaxApplication) - i.e. swapped relative to the field
 				// names. Reproduced exactly; see this proc's doc comment above.
-				vf_FertiliserMinApplication = fertiliserMaxApplication,
-				vf_FertiliserMaxApplication = fertiliserMinApplication,
-				vf_TopDressingDelay         = topDressingDelay,
+				fertilizer_min_application = fertiliserMaxApplication,
+				fertilizer_max_application = fertiliserMinApplication,
+				top_dressing_delay         = topDressingDelay,
 			},
 		)
 		return 0.0
@@ -490,15 +487,15 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 	}
 
 	// Converts [kg N ha-1] to [kg N m-3]
-	vf_CropNTargetValue := cropNTargetValue / 10000.0 / sc.layers[0].layer_thickness
-	vf_CropNTargetValue30 := cropNTargetValue30 / 10000.0 / sc.layers[0].layer_thickness
+	vf_CropNTargetValue := cropNTargetValue / 10000.0 / sc.layers[0].layer_thickness_m
+	vf_CropNTargetValue30 := cropNTargetValue30 / 10000.0 / sc.layers[0].layer_thickness_m
 
 	vf_FertiliserDemandVol := vf_CropNTargetValue - (vf_SoilNO3Sum + vf_SoilNH4Sum)
 	vf_FertiliserDemandVol30 := vf_CropNTargetValue30 - (vf_SoilNO3Sum30 + vf_SoilNH4Sum30)
 
 	// Converts fertiliser demand back from [kg N m-3] to [kg N ha-1]
-	vf_FertiliserDemand := vf_FertiliserDemandVol * 10000.0 * sc.layers[0].layer_thickness
-	vf_FertiliserDemand30 := vf_FertiliserDemandVol30 * 10000.0 * sc.layers[0].layer_thickness
+	vf_FertiliserDemand := vf_FertiliserDemandVol * 10000.0 * sc.layers[0].layer_thickness_m
+	vf_FertiliserDemand30 := vf_FertiliserDemandVol30 * 10000.0 * sc.layers[0].layer_thickness_m
 
 	vf_FertiliserRecommendation := max(vf_FertiliserDemand, vf_FertiliserDemand30)
 
@@ -507,9 +504,9 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 	}
 
 	if vf_FertiliserRecommendation > fertiliserMinApplication {
-		sc.vf_TopDressing = vf_FertiliserRecommendation - fertiliserMinApplication
-		sc.vf_TopDressingPartition = fertiliserPartition
-		sc.vf_TopDressingDelay = topDressingDelay
+		sc.top_dressing = vf_FertiliserRecommendation - fertiliserMinApplication
+		sc.top_dressing_partition = fertiliserPartition
+		sc.top_dressing_delay = topDressingDelay
 		vf_FertiliserRecommendation = fertiliserMinApplication
 	}
 
@@ -529,7 +526,7 @@ apply_mineral_fertiliser_via_n_demand :: proc(
 	depthCm := 0
 	i := 0
 	for &layer in sc.layers {
-		layerSize := layer.layer_thickness
+		layerSize := layer.layer_thickness_m
 		depthCm += int(layerSize * 100.0)
 
 		// convert [kg N m-3] to [kg N ha-1]
@@ -565,20 +562,20 @@ apply_mineral_fertiliser_via_n_demand :: proc(
 // snapshotting the original length up front instead of copying the list.
 apply_possible_delayed_fertilizer :: proc(sc: ^Soil_Column) -> f64 {
 	n_amount := 0.0
-	original_len := len(sc._delayedNMinApplications)
+	original_len := len(sc.delayed_Nmin_applications)
 	for _ in 0 ..< original_len {
-		da := sc._delayedNMinApplications[0]
+		da := sc.delayed_Nmin_applications[0]
 		n_amount += apply_mineral_fertiliser_via_n_min_method(
 			sc,
 			da.fp,
-			da.vf_SamplingDepth,
-			da.vf_CropNTarget,
-			da.vf_CropNTarget30,
-			da.vf_FertiliserMinApplication,
-			da.vf_FertiliserMaxApplication,
-			da.vf_TopDressingDelay,
+			da.sampling_depth,
+			da.crop_n_target,
+			da.crop_n_target_30,
+			da.fertilizer_min_application,
+			da.fertilizer_max_application,
+			da.top_dressing_delay,
 		)
-		ordered_remove(&sc._delayedNMinApplications, 0)
+		ordered_remove(&sc.delayed_Nmin_applications, 0)
 	}
 	return n_amount
 }
@@ -587,12 +584,12 @@ apply_possible_delayed_fertilizer :: proc(sc: ^Soil_Column) -> f64 {
 apply_possible_top_dressing :: proc(sc: ^Soil_Column) -> f64 {
 	amount := 0.0
 
-	if sc.vf_TopDressingDelay > 0 {
-		sc.vf_TopDressingDelay -= 1
-	} else if sc.vf_TopDressingDelay == 0 && sc.vf_TopDressing > 0.0 {
-		amount = sc.vf_TopDressing
-		apply_mineral_fertiliser(sc, sc.vf_TopDressingPartition, amount)
-		sc.vf_TopDressing = 0
+	if sc.top_dressing_delay > 0 {
+		sc.top_dressing_delay -= 1
+	} else if sc.top_dressing_delay == 0 && sc.top_dressing > 0.0 {
+		amount = sc.top_dressing
+		apply_mineral_fertiliser(sc, sc.top_dressing_partition, amount)
+		sc.top_dressing = 0
 	}
 	return amount
 }
@@ -625,7 +622,7 @@ apply_irrigation_via_trigger :: proc(
 		smi := li.soil_moisture_m3
 		fci := li.field_capacity
 		pwpi := li.permanent_wilting_point
-		lti := li.layer_thickness
+		lti := li.layer_thickness_m
 
 		actPAW += (smi - pwpi) * lti * 1000.0 // [mm]
 		maxPAW += (fci - pwpi) * lti * 1000.0 // [mm]
@@ -648,7 +645,7 @@ apply_irrigation_via_trigger :: proc(
 				smi := li.soil_moisture_m3
 				fci := li.field_capacity
 				pwpi := li.permanent_wilting_point
-				lti := li.layer_thickness
+				lti := li.layer_thickness_m
 
 				percentNFCi := (fci - pwpi) * aips.percentNFC / 100.0
 				pawi := smi - pwpi
@@ -659,7 +656,7 @@ apply_irrigation_via_trigger :: proc(
 				nitrateAddedViaIrrigation :=
 					aips.nitrateConcentration *
 					addedIrrigationWaterAtLayer /
-					li.layer_thickness /
+					li.layer_thickness_m /
 					1000000.0
 				li.soil_no3 += nitrateAddedViaIrrigation
 
@@ -678,9 +675,9 @@ apply_irrigation_via_trigger :: proc(
 // C++: void monica::soilcolumn::applyIrrigation(SoilColumn*, double, double)
 apply_irrigation :: proc(sc: ^Soil_Column, amount: f64, nitrateConcentration: f64 = 0) {
 	// Adding irrigation water amount to surface water storage
-	sc.vs_SurfaceWaterStorage += amount // [mm]
+	sc.surface_water_storage += amount // [mm]
 	nitrateAddedViaIrrigation :=
-		nitrateConcentration * amount / sc.layers[0].layer_thickness / 1000000.0 // -> //[kg m-3]// [mg dm-3]//[dm3 m-2]// [m]
+		nitrateConcentration * amount / sc.layers[0].layer_thickness_m / 1000000.0 // -> //[kg m-3]// [mg dm-3]//[dm3 m-2]// [m]
 
 	// adding N from irrigation water to top soil nitrate pool
 	sc.layers[0].soil_no3 += nitrateAddedViaIrrigation

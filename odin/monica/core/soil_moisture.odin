@@ -226,14 +226,14 @@ soil_moisture_step :: proc(
 		i -= 1
 	}
 
-	oscillGroundWaterLayer := int(groundwater_depth_m / sc.layers[0].layer_thickness)
+	oscillGroundWaterLayer := int(groundwater_depth_m / sc.layers[0].layer_thickness_m)
 	if (sm.groundwater_table_layer > oscillGroundWaterLayer &&
 		   sm.groundwater_table_layer < sm.no_of_soil_layers + 2) ||
 	   sm.groundwater_table_layer >= sm.no_of_soil_layers + 2 {
 		sm.groundwater_table_layer = oscillGroundWaterLayer
 	}
 
-	sc.vm_GroundwaterTableLayer = sm.groundwater_table_layer
+	sc.groundwater_table_layer_idx = sm.groundwater_table_layer
 
 	// calculates snow layer water storage and release
 	calc_snow_layer(&sm.snow_component, avg_air_temp_deg_C, sm.net_precipitation_mm)
@@ -283,12 +283,11 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	sm.groundwater_added = 0.0
 	sm.actual_transpiration = 0.0
 
-	vm_SurfaceWaterStorageOld := sc.vs_SurfaceWaterStorage
+	vm_SurfaceWaterStorageOld := sc.surface_water_storage
 
-	sc.vs_SurfaceWaterStorage += vm_WaterToInfiltrate
+	sc.surface_water_storage += vm_WaterToInfiltrate
 
-	sm.soil_moisture_deficit =
-		(scl_0.saturation - scl_0.soil_moisture_m3) / scl_0.saturation
+	sm.soil_moisture_deficit = (scl_0.saturation - scl_0.soil_moisture_m3) / scl_0.saturation
 	vm_ReducedHydraulicConductivity :=
 		sm.mod_params.pm_SaturatedHydraulicConductivity *
 		sm.mod_params.pm_HydraulicConductivityRedux
@@ -300,7 +299,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 			sm.soil_moisture_deficit *
 			sm.soil_moisture_deficit
 
-		sm.infiltration = min(sc.vs_SurfaceWaterStorage, vm_PotentialInfiltration)
+		sm.infiltration = min(sc.surface_water_storage, vm_PotentialInfiltration)
 
 		sm.infiltration = min(
 			sm.infiltration,
@@ -313,10 +312,10 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	}
 
 	if sm.infiltration > 0.0 {
-		sc.vs_SurfaceWaterStorage -= sm.infiltration
+		sc.surface_water_storage -= sm.infiltration
 	}
 
-	if sc.vs_SurfaceWaterStorage >
+	if sc.surface_water_storage >
 	   (10.0 * sm.mod_params.pm_SurfaceRoughness / (sm.site_params.vs_Slope + 0.001)) {
 		vm_RunOffFactor :=
 			0.02 + (sm.mod_params.pm_SurfaceRoughness / 4.0) + (sm.soil_coverage_percent / 15.0)
@@ -325,15 +324,15 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		} else if sm.site_params.vs_Slope == 0.0 {
 			sm.surface_run_off = 0.0
 		} else if sm.site_params.vs_Slope > vm_RunOffFactor {
-			sm.surface_run_off += sc.vs_SurfaceWaterStorage
+			sm.surface_run_off += sc.surface_water_storage
 		} else {
 			sm.surface_run_off +=
 				((sm.site_params.vs_Slope * vm_RunOffFactor) /
 					(vm_RunOffFactor * vm_RunOffFactor)) *
-				sc.vs_SurfaceWaterStorage
+				sc.surface_water_storage
 		}
 
-		sc.vs_SurfaceWaterStorage -= sm.surface_run_off
+		sc.surface_water_storage -= sm.surface_run_off
 	}
 
 	scl_0.soil_moisture_m3 += (sm.infiltration / 1000.0 / sm.layer_thickness_m)
@@ -366,9 +365,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 
 			if scl_0.soil_moisture_m3 > scl_0.saturation {
 				sm.surface_run_off +=
-					(scl_0.soil_moisture_m3 - scl_0.saturation) *
-					1000.0 *
-					sm.layer_thickness_m
+					(scl_0.soil_moisture_m3 - scl_0.saturation) * 1000.0 * sm.layer_thickness_m
 				scl_0.soil_moisture_m3 = scl_0.saturation
 				return
 			}
@@ -381,7 +378,7 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	// Check water balance
 	if libc.fabs(
 		   (vm_SurfaceWaterStorageOld + vm_WaterToInfiltrate) -
-		   (sm.surface_run_off + sm.infiltration + sc.vs_SurfaceWaterStorage),
+		   (sm.surface_run_off + sm.infiltration + sc.surface_water_storage),
 	   ) >
 	   0.01 {
 		fmt.eprintln("water balance wrong!")
@@ -546,9 +543,9 @@ percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscill_groundwater_laye
 	}
 
 	if sm.leaching_depth_layer_idx == sm.no_of_soil_layers {
-		sc.vs_FluxAtLowerBoundary = sm.water_flux_below
+		sc.flux_at_lower_boundary = sm.water_flux_below
 	} else {
-		sc.vs_FluxAtLowerBoundary = sc.layers[sm.leaching_depth_layer_idx].soil_water_flux
+		sc.flux_at_lower_boundary = sc.layers[sm.leaching_depth_layer_idx].soil_water_flux
 	}
 }
 
@@ -590,7 +587,7 @@ groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
 
 			if i == 0 && sm.groundwater_table_layer == 0 {
 				// if groundwater reaches surface
-				sc.vs_SurfaceWaterStorage += sm.groundwater_added
+				sc.surface_water_storage += sm.groundwater_added
 				sm.groundwater_added = 0.0
 			}
 		} else {
@@ -600,20 +597,20 @@ groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
 
 	if sm.leaching_depth_layer_idx > sm.groundwater_table_layer - 1 {
 		if sm.groundwater_table_layer - 1 < 0 {
-			sc.vs_FluxAtLowerBoundary = 0.0
+			sc.flux_at_lower_boundary = 0.0
 		} else {
 			if sm.groundwater_table_layer - 1 == sm.no_of_soil_layers {
-				sc.vs_FluxAtLowerBoundary = sm.water_flux_below
+				sc.flux_at_lower_boundary = sm.water_flux_below
 			} else {
-				sc.vs_FluxAtLowerBoundary =
+				sc.flux_at_lower_boundary =
 					sc.layers[sm.groundwater_table_layer - 1].soil_water_flux
 			}
 		}
 	} else {
 		if sm.leaching_depth_layer_idx == sm.no_of_soil_layers {
-			sc.vs_FluxAtLowerBoundary = sm.water_flux_below
+			sc.flux_at_lower_boundary = sm.water_flux_below
 		} else {
-			sc.vs_FluxAtLowerBoundary = sc.layers[sm.leaching_depth_layer_idx].soil_water_flux
+			sc.flux_at_lower_boundary = sc.layers[sm.leaching_depth_layer_idx].soil_water_flux
 		}
 	}
 }
@@ -674,9 +671,9 @@ percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
 	}
 
 	if sm.leaching_depth_layer_idx > 0 && sm.leaching_depth_layer_idx < sm.no_of_soil_layers {
-		sc.vs_FluxAtLowerBoundary = sc.layers[sm.leaching_depth_layer_idx].soil_water_flux
+		sc.flux_at_lower_boundary = sc.layers[sm.leaching_depth_layer_idx].soil_water_flux
 	} else {
-		sc.vs_FluxAtLowerBoundary = sc.layers[sm.no_of_soil_layers - 1].soil_water_flux
+		sc.flux_at_lower_boundary = sc.layers[sm.no_of_soil_layers - 1].soil_water_flux
 	}
 }
 
@@ -726,7 +723,7 @@ backwater_replenishment :: proc(sm: ^Soil_Moisture) {
 
 			if i == 0 && vm_BackwaterTable == 0 {
 				// if backwater reaches surface
-				sc.vs_SurfaceWaterStorage += vm_BackwaterAdded
+				sc.surface_water_storage += vm_BackwaterAdded
 				vm_BackwaterAdded = 0.0
 			}
 		} else {
@@ -989,7 +986,7 @@ evapotranspiration :: proc(
 
 	if vm_PotentialEvapotranspiration > 0.0 {
 		// If surface is water-logged, subsequent evaporation from surface water sources
-		if sc.vs_SurfaceWaterStorage > 0.0 {
+		if sc.surface_water_storage > 0.0 {
 			vm_EvaporationFromSurface = true
 			// Water surface evaporates with Kc = 1.1.
 			vm_PotentialEvapotranspiration = vm_PotentialEvapotranspiration * (1.1 / sm.kc_factor)
@@ -998,12 +995,12 @@ evapotranspiration :: proc(
 			if vm_SnowDepth > 0.0 {
 				sm.evaporated_from_surface = 0.0
 			} else {
-				if sc.vs_SurfaceWaterStorage < vm_PotentialEvapotranspiration {
-					vm_PotentialEvapotranspiration -= sc.vs_SurfaceWaterStorage
-					sm.evaporated_from_surface = sc.vs_SurfaceWaterStorage
-					sc.vs_SurfaceWaterStorage = 0.0
+				if sc.surface_water_storage < vm_PotentialEvapotranspiration {
+					vm_PotentialEvapotranspiration -= sc.surface_water_storage
+					sm.evaporated_from_surface = sc.surface_water_storage
+					sc.surface_water_storage = 0.0
 				} else {
-					sc.vs_SurfaceWaterStorage -= vm_PotentialEvapotranspiration
+					sc.surface_water_storage -= vm_PotentialEvapotranspiration
 					sm.evaporated_from_surface = vm_PotentialEvapotranspiration
 					vm_PotentialEvapotranspiration = 0.0
 				}
@@ -1402,7 +1399,7 @@ mean_water_content_to_depth :: proc(sm: ^Soil_Moisture, depth_m: f64) -> f64 {
 		fc := sm.soil_column.layers[i].field_capacity
 		pwp := sm.soil_column.layers[i].permanent_wilting_point
 		sum += smm3 / (fc - pwp) //[%nFK]
-		lsum += sm.soil_column.layers[i].layer_thickness
+		lsum += sm.soil_column.layers[i].layer_thickness_m
 		if lsum >= depth_m {
 			break
 		}

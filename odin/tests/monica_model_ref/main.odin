@@ -59,9 +59,9 @@ dump_model :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 }
 
 dump_soil_column_top3 :: proc(t: ^tr.Tracer, path: string, sc: ^core.Soil_Column) {
-	tr.dump(t, strings.concatenate({path, ".vs_SurfaceWaterStorage"}), sc.vs_SurfaceWaterStorage)
-	tr.dump(t, strings.concatenate({path, ".vf_TopDressing"}), sc.vf_TopDressing)
-	tr.dump(t, strings.concatenate({path, ".vf_TopDressingDelay"}), sc.vf_TopDressingDelay)
+	tr.dump(t, strings.concatenate({path, ".vs_SurfaceWaterStorage"}), sc.surface_water_storage)
+	tr.dump(t, strings.concatenate({path, ".vf_TopDressing"}), sc.top_dressing)
+	tr.dump(t, strings.concatenate({path, ".vf_TopDressingDelay"}), sc.top_dressing_delay)
 	for i in 0 ..< 3 {
 		p2 := fmt.tprintf("%s[%d]", path, i)
 		li := &sc.layers[i]
@@ -231,7 +231,7 @@ main :: proc() {
 	tr.set_day(&t, 6)
 	core.monica_model_apply_irrigation(model, 20.0, 5.0)
 	dump_model(&t, "model", model)
-	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.vs_SurfaceWaterStorage)
+	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.surface_water_storage)
 	tr.dump(&t, "sc.layers[0].vs_SoilNO3", model.soil_column.layers[0].soil_no3)
 	tr.dump(&t, "so.irrigationAmount", model.soil_organic.irrigation_amount)
 
@@ -282,7 +282,7 @@ main :: proc() {
 	triggered, triggeredAmount := core.apply_irrigation_via_trigger(&model.soil_column, &aip)
 	tr.dump(&t, "triggered", triggered)
 	tr.dump(&t, "triggeredAmount", triggeredAmount)
-	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.vs_SurfaceWaterStorage)
+	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.surface_water_storage)
 	core.remove_crop(&model.soil_column)
 
 	// scenario 8: applyTillage

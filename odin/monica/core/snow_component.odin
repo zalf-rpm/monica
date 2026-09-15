@@ -302,7 +302,7 @@ calc_snow_depth :: proc(sc: ^Snow_Component, snow_water_equivalent: f64) {
 	}
 
 	if sc.soil_column != nil {
-		sc.soil_column.vm_SnowDepth = sc.snow_depth
+		sc.soil_column.snow_depth_mm = sc.snow_depth
 	}
 	sc.accumulated_snow_depth += sc.snow_depth
 }

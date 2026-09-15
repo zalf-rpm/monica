@@ -21,8 +21,8 @@
 // not a redesign.
 package core
 
-import libc "core:c/libc"
 import p "../params"
+import libc "core:c/libc"
 
 // C++: struct monica::SoilTemperature
 Soil_Temperature :: struct {
@@ -30,7 +30,6 @@ Soil_Temperature :: struct {
 	soil_column_ground_layer:  Soil_Layer,
 	soil_column_bottom_layer:  Soil_Layer,
 	params:                    p.Soil_Temperature_Module_Parameters,
-
 	no_of_temp_layers:         int,
 	no_of_soil_layers:         int,
 	soil_temperature:          [dynamic]f64,
@@ -119,18 +118,18 @@ make_soil_temperature :: proc(
 
 	ground_layer := st.no_of_temp_layers - 2
 	bottom_layer := st.no_of_temp_layers - 1
-	soil_temperature_layer_at(&st, ground_layer).layer_thickness =
-		2.0 * soil_temperature_layer_at(&st, ground_layer - 1).layer_thickness
-	soil_temperature_layer_at(&st, bottom_layer).layer_thickness = 1.0
+	soil_temperature_layer_at(&st, ground_layer).layer_thickness_m =
+		2.0 * soil_temperature_layer_at(&st, ground_layer - 1).layer_thickness_m
+	soil_temperature_layer_at(&st, bottom_layer).layer_thickness_m = 1.0
 	st.soil_temperature[ground_layer] = (st.soil_temperature[ground_layer - 1] + base_temp) * 0.5
 	st.soil_temperature[bottom_layer] = base_temp
 
-	st.v[0] = soil_temperature_layer_at(&st, 0).layer_thickness
-	st.b[0] = 2.0 / soil_temperature_layer_at(&st, 0).layer_thickness
+	st.v[0] = soil_temperature_layer_at(&st, 0).layer_thickness_m
+	st.b[0] = 2.0 / soil_temperature_layer_at(&st, 0).layer_thickness_m
 	ntau := st.params.pt_NTau
 	for i in 1 ..< st.no_of_temp_layers {
-		lti_1 := soil_temperature_layer_at(&st, i - 1).layer_thickness
-		lti := soil_temperature_layer_at(&st, i).layer_thickness
+		lti_1 := soil_temperature_layer_at(&st, i - 1).layer_thickness_m
+		lti := soil_temperature_layer_at(&st, i).layer_thickness_m
 		st.b[i] = 2.0 / (lti + lti_1)
 		st.v[i] = lti * ntau
 	}
@@ -161,7 +160,9 @@ make_soil_temperature :: proc(
 		sati := soil_temperature_layer_at(&st, i).saturation
 		somi := soil_organic_matter(soil_temperature_layer_at(&st, i)) / da * sbdi
 		st.heat_capacity[i] =
-			(smi * dw * cw) + ((sati - smi) * da * ca) + (somi * dh * ch) +
+			(smi * dw * cw) +
+			((sati - smi) * da * ca) +
+			(somi * dh * ch) +
 			((1.0 - sati - somi) * dq * cq)
 	}
 
@@ -173,8 +174,8 @@ make_soil_temperature :: proc(
 
 	st.heat_conductivity_mean[0] = st.heat_conductivity[0]
 	for i in 1 ..< st.no_of_temp_layers {
-		lti_1 := soil_temperature_layer_at(&st, i - 1).layer_thickness
-		lti := soil_temperature_layer_at(&st, i).layer_thickness
+		lti_1 := soil_temperature_layer_at(&st, i - 1).layer_thickness_m
+		lti := soil_temperature_layer_at(&st, i).layer_thickness_m
 		hci_1 := st.heat_conductivity[i - 1]
 		hci := st.heat_conductivity[i]
 		st.heat_conductivity_mean[i] = ((lti_1 * hci_1) + (lti * hci)) / (lti + lti_1)
@@ -190,7 +191,9 @@ make_soil_temperature :: proc(
 
 	for i in 0 ..< st.no_of_temp_layers {
 		st.matrix_primary_diagonal[i] =
-			st.volume_matrix[i] - st.matrix_secondary_diagonal[i] - st.matrix_secondary_diagonal[i + 1]
+			st.volume_matrix[i] -
+			st.matrix_secondary_diagonal[i] -
+			st.matrix_secondary_diagonal[i + 1]
 	}
 
 	return st
@@ -223,14 +226,14 @@ soil_temperature_step :: proc(
 		snow_depth,
 		temperature_under_snow,
 	)
-	st.soil_column.vt_SoilSurfaceTemperature = st.soil_surface_temperature
+	st.soil_column.soil_surface_temperature = st.soil_surface_temperature
 	st.heat_flow[0] = st.soil_surface_temperature * st.b[0] * st.heat_conductivity_mean[0]
 
 	for i in 0 ..< st.no_of_temp_layers {
 		st.solution[i] =
 			(st.volume_matrix_old[i] +
 					(st.volume_matrix[i] - st.volume_matrix_old[i]) /
-						soil_temperature_layer_at(st, i).layer_thickness) *
+						soil_temperature_layer_at(st, i).layer_thickness_m) *
 				st.soil_temperature[i] +
 			st.heat_flow[i]
 	}
@@ -239,7 +242,8 @@ soil_temperature_step :: proc(
 	for i in 1 ..< st.no_of_temp_layers {
 		st.matrix_lower_triangle[i] = st.matrix_secondary_diagonal[i] / st.matrix_diagonal[i - 1]
 		st.matrix_diagonal[i] =
-			st.matrix_primary_diagonal[i] - (st.matrix_lower_triangle[i] * st.matrix_secondary_diagonal[i])
+			st.matrix_primary_diagonal[i] -
+			(st.matrix_lower_triangle[i] * st.matrix_secondary_diagonal[i])
 	}
 
 	for i in 1 ..< st.no_of_temp_layers {
@@ -251,7 +255,8 @@ soil_temperature_step :: proc(
 		j := (bottom_layer - 1) - i
 		j_1 := j + 1
 		st.solution[j] =
-			(st.solution[j] / st.matrix_diagonal[j]) - (st.matrix_lower_triangle[j_1] * st.solution[j_1])
+			(st.solution[j] / st.matrix_diagonal[j]) -
+			(st.matrix_lower_triangle[j_1] * st.solution[j_1])
 	}
 
 	for i in 0 ..< st.no_of_temp_layers {

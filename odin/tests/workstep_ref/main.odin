@@ -52,7 +52,11 @@ dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) 
 		strings.concatenate({path, ".cultivationMethodCount"}),
 		model.cultivation_method_count,
 	)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".clearCropUponNextDay"}),
+		model.clear_crop_upon_next_day,
+	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".currentCropModule"}),
@@ -509,7 +513,7 @@ main :: proc() {
 	run.workstep_apply(ws_min_fert, model)
 	tr.set_day(&t, 9002)
 	dump_model_bits(&t, "model", model)
-	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.vs_SurfaceWaterStorage)
+	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.surface_water_storage)
 	tr.dump(&t, "sc.layers0.vs_SoilNO3", model.soil_column.layers[0].soil_no3)
 
 	// Harvest - dump then apply on whatever crop module is currently present

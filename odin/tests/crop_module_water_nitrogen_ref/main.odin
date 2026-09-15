@@ -238,7 +238,7 @@ day_step :: proc(
 
 		core.fc_crop_water_uptake(
 			cm,
-			soilColumn.vm_GroundwaterTableLayer,
+			soilColumn.groundwater_table_layer_idx,
 			grossPrecipitation,
 			cm.current_total_temperature_sum,
 			cm.total_temperature_sum,
@@ -246,7 +246,7 @@ day_step :: proc(
 
 		core.fc_crop_n_uptake(
 			cm,
-			soilColumn.vm_GroundwaterTableLayer,
+			soilColumn.groundwater_table_layer_idx,
 			cm.current_total_temperature_sum,
 			cm.total_temperature_sum,
 		)

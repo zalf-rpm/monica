@@ -926,7 +926,7 @@ fc_crop_developmental_stage :: proc(
 				// Germination only if no water is stored on the soil surface.
 				if pc_EmergenceFloodingControlOn {
 					emergenceCondition =
-						emergenceCondition && soil_column.vs_SurfaceWaterStorage < 0.001
+						emergenceCondition && soil_column.surface_water_storage < 0.001
 				}
 
 				if emergenceCondition {
@@ -2166,7 +2166,7 @@ fc_frost_kill :: proc(cm: ^Crop_Module, maxAirTemp, minAirTemp: f64) {
 	snowDepth, tempUnderSnow := cm.get_snow_depth_and_calc_temp_under_snow(crownTemperature)
 	if cm.developmental_stage <= 1 {
 		crownTemperature =
-			(3.0 * soil_column.vt_SoilSurfaceTemperature +
+			(3.0 * soil_column.soil_surface_temperature +
 				2.0 * soil_column.layers[0].soil_temperature) /
 			5.0
 	} else if snowDepth > 0.0 {
@@ -2201,8 +2201,8 @@ fc_frost_kill :: proc(cm: ^Crop_Module, maxAirTemp, minAirTemp: f64) {
 	}
 
 	snowDepthFactor := 1.0
-	if soil_column.vm_SnowDepth <= 125.0 {
-		snowDepthFactor = soil_column.vm_SnowDepth / 125.0
+	if soil_column.snow_depth_mm <= 125.0 {
+		snowDepthFactor = soil_column.snow_depth_mm / 125.0
 	}
 	respirationFactor := (libc.exp(0.84 + 0.051 * crownTemperature) - 2.0) / 1.85
 	respiratoryStressParam := cm.crop_params.cultivarParams.pc_RespiratoryStress
@@ -2311,7 +2311,7 @@ calc_root_density_factor_and_sum :: proc(
 	f64,
 ) {
 	nols := len(cm.soil_column.layers)
-	layerThickness := cm.soil_column.layers[0].layer_thickness
+	layerThickness := cm.soil_column.layers[0].layer_thickness_m
 
 	// Calculating a root density distribution factor []
 	vc_RootDensityFactor := make([dynamic]f64, nols, allocator)
@@ -2356,7 +2356,7 @@ fc_move_dead_root_biomass_to_soil :: proc(
 	rootDensityFactor: [dynamic]f64,
 	allocator := context.allocator,
 ) {
-	nools := cm.soil_column.vs_NumberOfOrganicLayers
+	nools := cm.soil_column.number_of_organic_layers
 
 	layer2deadRootBiomassAtLayer := make(map[int]f64, allocator)
 	for i := 0; i < cm.rooting_zone; i += 1 {
@@ -2426,7 +2426,7 @@ fc_crop_dry_matter :: proc(
 	vs_MaxEffectiveRootingDepth := cm.site_params.vs_MaxEffectiveRootingDepth
 
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].layer_thickness
+	layerThickness := soil_column.layers[0].layer_thickness_m
 
 	vc_MaxRootNConcentration := 0.0 // old WGM
 	vc_RootNIncrement := 0.0 // old WUMM
@@ -2924,8 +2924,8 @@ fc_reference_evapotranspiration :: proc(
 // with step()'s call site.
 fc_crop_water_uptake :: proc(
 	cm: ^Crop_Module,
-	vc_GroundwaterTable: int,
-	vw_GrossPrecipitation: f64,
+	groundwater_table_layer_idx: int,
+	gross_precipitation: f64,
 	_vc_CurrentTotalTemperatureSum: f64,
 	_vc_TotalTemperatureSum: f64,
 ) {
@@ -2934,7 +2934,7 @@ fc_crop_water_uptake :: proc(
 	vs_MaxEffectiveRootingDepth := cm.site_params.vs_MaxEffectiveRootingDepth
 
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].layer_thickness
+	layerThickness := soil_column.layers[0].layer_thickness_m
 	cm.potential_transpiration_deficit = 0.0 // [mm]
 	cm.potential_transpiration = 0.0 // old TRAMAX [mm]
 	vc_PotentialEvapotranspiration := 0.0 // [mm]
@@ -2962,16 +2962,16 @@ fc_crop_water_uptake :: proc(
 		vc_Interception = 0.0
 	}
 	// If no precipitation occurs, interception = 0
-	if vw_GrossPrecipitation <= 0 {
+	if gross_precipitation <= 0 {
 		vc_Interception = 0.0
 	}
 
 	// Calculating net precipitation and adding to surface water
-	if vw_GrossPrecipitation <= vc_Interception {
-		vc_Interception = vw_GrossPrecipitation
+	if gross_precipitation <= vc_Interception {
+		vc_Interception = gross_precipitation
 		cm.net_precipitation = 0.0
 	} else {
-		cm.net_precipitation = vw_GrossPrecipitation - vc_Interception
+		cm.net_precipitation = gross_precipitation - vc_Interception
 	}
 
 	// add intercepted precipitation to the virtual interception water storage
@@ -3051,10 +3051,10 @@ fc_crop_water_uptake :: proc(
 			if cm.root_effectivity[i_Layer] < 0 {
 				cm.root_effectivity[i_Layer] = 0.0
 			}
-			if i_Layer == vc_GroundwaterTable { 	// old GRW
+			if i_Layer == groundwater_table_layer_idx { 	// old GRW
 				cm.root_effectivity[i_Layer] = 0.5
 			}
-			if i_Layer > vc_GroundwaterTable { 	// old GRW
+			if i_Layer > groundwater_table_layer_idx { 	// old GRW
 				cm.root_effectivity[i_Layer] = 0.0
 			}
 			if f64(i_Layer + 1) * layerThickness >= vs_MaxEffectiveRootingDepth {
@@ -3072,7 +3072,7 @@ fc_crop_water_uptake :: proc(
 		}
 
 		for i_Layer := 0; i_Layer < nols; i_Layer += 1 {
-			if i_Layer > min(cm.rooting_zone, vc_GroundwaterTable + 1) {
+			if i_Layer > min(cm.rooting_zone, groundwater_table_layer_idx + 1) {
 				cm.transpiration[i_Layer] = 0.0 // [mm]
 			} else {
 				if vc_TotalRootEffectivity != 0.0 {
@@ -3089,7 +3089,9 @@ fc_crop_water_uptake :: proc(
 			}
 		}
 
-		for i_Layer := 0; i_Layer < min(cm.rooting_zone, vc_GroundwaterTable + 1); i_Layer += 1 {
+		for i_Layer := 0;
+		    i_Layer < min(cm.rooting_zone, groundwater_table_layer_idx + 1);
+		    i_Layer += 1 {
 			vc_RemainingTotalRootEffectivity -=
 				cm.root_effectivity[i_Layer] * cm.root_density[i_Layer] // [m m-3]
 
@@ -3123,9 +3125,9 @@ fc_crop_water_uptake :: proc(
 				cm.potential_transpiration_deficit,
 			) // [mm]
 			if cm.actual_transpiration_deficit > 0.0 {
-				if i_Layer < min(cm.rooting_zone, vc_GroundwaterTable + 1) {
+				if i_Layer < min(cm.rooting_zone, groundwater_table_layer_idx + 1) {
 					for i_Layer2 := i_Layer + 1;
-					    i_Layer2 < min(cm.rooting_zone, vc_GroundwaterTable + 1);
+					    i_Layer2 < min(cm.rooting_zone, groundwater_table_layer_idx + 1);
 					    i_Layer2 += 1 {
 						cm.transpiration[i_Layer2] +=
 							cm.actual_transpiration_deficit *
@@ -3140,7 +3142,7 @@ fc_crop_water_uptake :: proc(
 				cm.transpiration[i_Layer] = 0.0
 			}
 			cm.actual_transpiration += cm.transpiration[i_Layer]
-			if i_Layer == vc_GroundwaterTable {
+			if i_Layer == groundwater_table_layer_idx {
 				vc_CropWaterUptakeFromGroundwater =
 					(cm.transpiration[i_Layer] / 1000.0) / layerThickness // [m3 m-3]
 			}
@@ -3151,7 +3153,7 @@ fc_crop_water_uptake :: proc(
 			cm.transpiration_deficit = 1.0
 		}
 
-		vm_GroundwaterDistance := vc_GroundwaterTable - cm.rooting_depth
+		vm_GroundwaterDistance := groundwater_table_layer_idx - cm.rooting_depth
 		if vm_GroundwaterDistance <= 1 {
 			cm.transpiration_deficit = 1.0
 		}
@@ -3183,7 +3185,7 @@ fc_crop_n_uptake :: proc(
 	pc_Tortuosity := cm.mod_params.pc_Tortuosity
 
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].layer_thickness
+	layerThickness := soil_column.layers[0].layer_thickness_m
 
 	vc_ConvectiveNUptake := 0.0 // old TRNSUM
 	vc_DiffusiveNUptake := 0.0 // old SUMDIFF
@@ -3470,7 +3472,7 @@ force_transplant_state :: proc(
 
 	// Settle rooting zone and layers based on standard species parameters
 	nols := len(soil_column.layers)
-	layerThickness := soil_column.layers[0].layer_thickness
+	layerThickness := soil_column.layers[0].layer_thickness_m
 	cm.rooting_depth_m = pc_InitialRootingDepth
 	cm.rooting_depth = min(int(libc.round(cm.rooting_depth_m / layerThickness)), nols)
 	cm.rooting_zone = min(int(libc.round(1.3 * cm.rooting_depth_m / layerThickness)), nols)
@@ -3795,7 +3797,7 @@ crop_module_step :: proc(
 		}
 		fc_crop_water_uptake(
 			cm,
-			soil_column.vm_GroundwaterTableLayer,
+			soil_column.groundwater_table_layer_idx,
 			grossPrecipitation,
 			cm.current_total_temperature_sum,
 			cm.total_temperature_sum,
@@ -3803,7 +3805,7 @@ crop_module_step :: proc(
 
 		fc_crop_n_uptake(
 			cm,
-			soil_column.vm_GroundwaterTableLayer,
+			soil_column.groundwater_table_layer_idx,
 			cm.current_total_temperature_sum,
 			cm.total_temperature_sum,
 		)

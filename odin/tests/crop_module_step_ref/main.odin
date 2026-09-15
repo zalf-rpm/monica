@@ -119,7 +119,7 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(
 		t,
 		"cropModule.soilColumn->vm_GroundwaterTableLayer",
-		cm.soil_column.vm_GroundwaterTableLayer,
+		cm.soil_column.groundwater_table_layer_idx,
 	)
 	tr.dump(t, P + ".vc_ActualTranspiration", cm.actual_transpiration)
 	tr.dump(t, P + ".vc_TranspirationDeficit", cm.transpiration_deficit)

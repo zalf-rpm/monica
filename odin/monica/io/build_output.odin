@@ -533,7 +533,9 @@ of_org_biom :: proc(model: ^core.Monica_Model, oid_in: OId) -> jx.Value {
 	oid := oid_in
 	if oid_is_organ(&oid) &&
 	   model.current_crop_module != nil &&
-	   p.species_parameters_number_of_organs(&model.current_crop_module.crop_params.speciesParams) >
+	   p.species_parameters_number_of_organs(
+		   &model.current_crop_module.crop_params.speciesParams,
+	   ) >
 		   int(oid.organ) {
 		return jx.f(tl.round(model.current_crop_module.organ_biomass[int(oid.organ)], 1))
 	}
@@ -595,7 +597,7 @@ of_kc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_recharge :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return jx.f(tl.round(model.soil_column.vs_FluxAtLowerBoundary, 3))
+	return jx.f(tl.round(model.soil_column.flux_at_lower_boundary, 3))
 }
 
 @(private)
@@ -956,7 +958,10 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	// free. See tools.process_cache_allocator. Everything stored is a procedure
 	// pointer or a string literal, so none of it depends on the caller's data.
 	cache_allocator := tl.process_cache_allocator()
-	g_output_table.ofs = make(map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value, cache_allocator)
+	g_output_table.ofs = make(
+		map[int]proc(_: ^core.Monica_Model, _: OId) -> jx.Value,
+		cache_allocator,
+	)
 	g_output_table.setfs = make(
 		map[int]proc(_: ^core.Monica_Model, _: OId, _: jx.Value),
 		cache_allocator,

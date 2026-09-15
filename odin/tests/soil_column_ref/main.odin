@@ -6,14 +6,14 @@
 // odin/tests/cpp_ref/run_soil_column.sh to build both and diff them.
 package soil_column_ref
 
-import "core:fmt"
-import "core:os"
-import "core:strconv"
-import "core:strings"
 import core "../../monica/core"
 import soil "../../monica/soil"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
+import "core:fmt"
+import "core:os"
+import "core:strconv"
+import "core:strings"
 
 main :: proc() {
 	args := os.args
@@ -77,14 +77,19 @@ main :: proc() {
 		fmt.println(strings.join(fields, "\t"))
 	}
 
-	row("SC", gi(core.number_of_layers(&sc), a), gi(sc.vs_NumberOfOrganicLayers, a), g(core.soil_column_layer_thickness(&sc), a))
+	row(
+		"SC",
+		gi(core.number_of_layers(&sc), a),
+		gi(sc.number_of_organic_layers, a),
+		g(core.soil_column_layer_thickness(&sc), a),
+	)
 
 	for i := 0; i < len(sc.layers); i += 1 {
 		sl := &sc.layers[i]
 		row(
 			"L",
 			gi(i, a),
-			g(sl.layer_thickness, a),
+			g(sl.layer_thickness_m, a),
 			g(sl.soil_water_flux, a),
 			g(sl.som_slow, a),
 			g(sl.som_fast, a),

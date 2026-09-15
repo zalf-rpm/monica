@@ -252,7 +252,7 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 	nols := number_of_layers(sc)
 
 	for i in 0 ..< nols {
-		if f64(i) < libc.floor((fc.frost_depth / sc.layers[i].layer_thickness) + 0.5) {
+		if f64(i) < libc.floor((fc.frost_depth / sc.layers[i].layer_thickness_m) + 0.5) {
 			// soil layer is frozen
 			sc.layers[i].soil_frozen = true
 			fc.lambda_redux[i] = 0.0
@@ -262,9 +262,9 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 			}
 		}
 
-		if f64(i) < libc.floor((fc.thaw_depth / sc.layers[i].layer_thickness) + 0.5) {
+		if f64(i) < libc.floor((fc.thaw_depth / sc.layers[i].layer_thickness_m) + 0.5) {
 			// soil layer is thawing
-			if fc.thaw_depth < (f64(i + 1) * sc.layers[i].layer_thickness) &&
+			if fc.thaw_depth < (f64(i + 1) * sc.layers[i].layer_thickness_m) &&
 			   (fc.thaw_depth < fc.frost_depth) {
 				// soil layer is thawing but there is more frost than thaw
 				sc.layers[i].soil_frozen = true
