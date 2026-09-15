@@ -55,7 +55,7 @@ Soil_Organic :: struct {
 	smb_co2_evolution_rate:       [dynamic]f64,
 	smb_fast_delta:               [dynamic]f64,
 	smb_slow_delta:               [dynamic]f64,
-	vs_SoilMineralNContent:       [dynamic]f64,
+	// vs_SoilMineralNContent:       [dynamic]f64,
 	soil_organic_c:               [dynamic]f64,
 	soil_organic_c_high_cn:       [dynamic]f64,
 	som_fast_delta:               [dynamic]f64,
