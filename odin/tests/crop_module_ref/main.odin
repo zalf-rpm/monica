@@ -8,15 +8,15 @@
 // Run odin/tests/cpp_ref/run_crop_module.sh to build both and diff them.
 package crop_module_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strings"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 noop_fire_event :: proc(event: string) {}
 noop_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {}
@@ -52,7 +52,7 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.vc_BelowgroundBiomass", cm.belowground_biomass)
 	tr.dump(t, "cropModule.vc_BelowgroundBiomassOld", cm.belowground_biomass_old)
 	tr.dump(t, "cropModule.vc_ClearDayRadiation", cm.clear_day_radiation)
-	tr.dump(t, "cropModule.pc_CO2Method", cm.pc_co2_method)
+	tr.dump(t, "cropModule.pc_CO2Method", cm.co2_method)
 	tr.dump(t, "cropModule.vc_CriticalNConcentration", cm.critical_n_concentration)
 	tr.dump(t, "cropModule.vc_CropDiameter", cm.crop_diameter)
 	tr.dump(t, "cropModule.vc_CropFrostRedux", cm.crop_frost_redux)
@@ -63,7 +63,11 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.vc_CropWaterUptake", cm.crop_water_uptake)
 	tr.dump(t, "cropModule.vc_CurrentTemperatureSum", cm.current_temperature_sum)
 	tr.dump(t, "cropModule.vc_CurrentTotalTemperatureSum", cm.current_total_temperature_sum)
-	tr.dump(t, "cropModule.vc_CurrentTotalTemperatureSumRoot", cm.current_total_temperature_sum_root)
+	tr.dump(
+		t,
+		"cropModule.vc_CurrentTotalTemperatureSumRoot",
+		cm.current_total_temperature_sum_root,
+	)
 	tr.dump(t, "cropModule.vc_DaylengthFactor", cm.daylength_factor)
 	tr.dump(t, "cropModule.vc_DaysAfterBeginFlowering", cm.days_after_begin_flowering)
 	tr.dump(t, "cropModule.vc_Declination", cm.declination)
@@ -82,7 +86,11 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.vc_GrossAssimilates", cm.gross_assimilates)
 	tr.dump(t, "cropModule.vc_GrossPhotosynthesis", cm.gross_photosynthesis)
 	tr.dump(t, "cropModule.vc_GrossPhotosynthesis_mol", cm.gross_photosynthesis_mol)
-	tr.dump(t, "cropModule.vc_GrossPhotosynthesisReference_mol", cm.gross_photosynthesis_reference_mol)
+	tr.dump(
+		t,
+		"cropModule.vc_GrossPhotosynthesisReference_mol",
+		cm.gross_photosynthesis_reference_mol,
+	)
 	tr.dump(t, "cropModule.vc_GrossPrimaryProduction", cm.gross_primary_production)
 	tr.dump(t, "cropModule.vc_GrowthCycleEnded", cm.growth_cycle_ended)
 	tr.dump(t, "cropModule.vc_GrowthRespirationAS", cm.growth_respiration_as)
@@ -100,7 +108,11 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.vc_NetPhotosynthesis", cm.net_photosynthesis)
 	tr.dump(t, "cropModule.vc_NetPrecipitation", cm.net_precipitation)
 	tr.dump(t, "cropModule.vc_NetPrimaryProduction", cm.net_primary_production)
-	tr.dump(t, "cropModule.vc_NConcentrationAbovegroundBiomass", cm.n_concentration_aboveground_biomass)
+	tr.dump(
+		t,
+		"cropModule.vc_NConcentrationAbovegroundBiomass",
+		cm.n_concentration_aboveground_biomass,
+	)
 	tr.dump(
 		t,
 		"cropModule.vc_NConcentrationAbovegroundBiomassOld",
@@ -133,9 +145,9 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.vc_RootingDepth_m", cm.rooting_depth_m)
 	tr.dump(t, "cropModule.vc_RootingZone", cm.rooting_zone)
 	tr.dump(t, "cropModule.vc_SoilCoverage", cm.soil_coverage)
-	tr.dump(t, "cropModule.vs_SoilMineralNContent", cm.vs_soil_mineral_n_content)
+	// tr.dump(t, "cropModule.vs_SoilMineralNContent", cm.vs_soil_mineral_n_content)
 	tr.dump(t, "cropModule.vc_SoilSpecificMaxRootingDepth", cm.soil_specific_max_rooting_depth)
-	tr.dump(t, "cropModule.vs_SoilSpecificMaxRootingDepth", cm.vs_soil_specific_max_rooting_depth)
+	// tr.dump(t, "cropModule.vs_SoilSpecificMaxRootingDepth", cm.vs_soil_specific_max_rooting_depth)
 	tr.dump(t, "cropModule.vc_KcbFactor", cm.kcb_factor)
 	tr.dump(t, "cropModule.vc_Kcb_ini", cm.kcb_ini)
 	tr.dump(t, "cropModule.vc_Kcb_mid", cm.kcb_mid)
@@ -144,7 +156,11 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.vc_StorageOrgan", cm.storage_organ)
 	tr.dump(t, "cropModule.vc_TargetNConcentration", cm.target_n_concentration)
 	tr.dump(t, "cropModule.vc_TimeStep", cm.time_step)
-	tr.dump(t, "cropModule.TimeUnderAnoxiaThresholdDefault", cm.time_under_anoxia_threshold_default)
+	tr.dump(
+		t,
+		"cropModule.TimeUnderAnoxiaThresholdDefault",
+		cm.time_under_anoxia_threshold_default,
+	)
 	tr.dump(t, "cropModule.vc_TotalBiomass", cm.total_biomass)
 	tr.dump(t, "cropModule.vc_TotalBiomassNContent", cm.total_biomass_n_content)
 	tr.dump(t, "cropModule.vc_TotalCropHeatImpact", cm.total_crop_heat_impact)
@@ -272,7 +288,10 @@ main :: proc() {
 
 	// --- real CropParameters / CropResidueParameters, loaded the same way
 	// params_ref/main.odin loads them ---
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 		path := strings.concatenate({dir, "/", name}, a)

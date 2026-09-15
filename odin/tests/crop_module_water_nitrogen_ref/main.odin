@@ -57,7 +57,7 @@ dump_crop_module_water_nitrogen :: proc(t: ^tr.Tracer, path: string, cm: ^core.C
 	tr.dump(t, jn(path, "vc_RootEffectivity"), cm.root_effectivity)
 	tr.dump(t, jn(path, "getEffectiveRootingDepth"), core.get_effective_rooting_depth(cm))
 
-	tr.dump(t, jn(path, "vs_SoilMineralNContent"), cm.vs_soil_mineral_n_content)
+	// tr.dump(t, jn(path, "vs_SoilMineralNContent"), cm.vs_soil_mineral_n_content)
 	tr.dump(t, jn(path, "vc_NUptakeFromLayer"), cm.n_uptake_from_layer)
 	tr.dump(t, jn(path, "vc_TotalNUptake"), cm.total_n_uptake)
 	tr.dump(t, jn(path, "vc_TotalNInput"), cm.total_n_input)
@@ -162,8 +162,7 @@ day_step :: proc(
 	if cm.total_temperature_sum == 0.0 {
 		cm.relative_total_development = 0.0
 	} else {
-		cm.relative_total_development =
-			cm.current_total_temperature_sum / cm.total_temperature_sum
+		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
 	if cm.developmental_stage == 0 {

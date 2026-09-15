@@ -89,7 +89,7 @@ Crop_Module :: struct {
 	belowground_biomass:                     f64,
 	belowground_biomass_old:                 f64,
 	clear_day_radiation:                     f64, //! old DRC
-	pc_co2_method:                           int,
+	co2_method:                              int,
 	critical_n_concentration:                f64, //! old GEHMIN
 	crop_diameter:                           f64,
 	crop_frost_redux:                        f64,
@@ -166,9 +166,9 @@ Crop_Module :: struct {
 	rooting_depth_m:                         f64,
 	rooting_zone:                            int, // C++ size_t
 	soil_coverage:                           f64,
-	vs_soil_mineral_n_content:               [dynamic]f64, //! old C1
+	// vs_soil_mineral_n_content:               [dynamic]f64, //! old C1
 	soil_specific_max_rooting_depth:         f64, //! old WURZMAX [m]
-	vs_soil_specific_max_rooting_depth:      f64,
+	// vs_soil_specific_max_rooting_depth:      f64,
 	// FAO-56 Dual Kc: GDD-based trapezoidal Kcb curve state.
 	kcb_factor:                              f64, // Current daily Kcb (output of GDD-based 4-phase interpolation)
 	kcb_ini:                                 f64, // Initial/germination phase Kcb (flat, Phase 1)
@@ -252,7 +252,7 @@ make_crop_module_defaults :: proc() -> Crop_Module {
 		days_since_transplant = -1,
 		transplant_efficiency = 1.0,
 		transpiration_deficit = 1.0,
-		pc_co2_method = 3,
+		co2_method = 3,
 		crop_frost_redux = 1.0,
 		crop_heat_redux = 1.0,
 		crop_n_redux = 1.0,
@@ -442,7 +442,7 @@ make_crop_module :: proc(
 	cm.root_density = make([dynamic]f64, len(cm.soil_column.layers), allocator)
 	cm.root_diameter = make([dynamic]f64, len(cm.soil_column.layers), allocator)
 	cm.root_effectivity = make([dynamic]f64, len(cm.soil_column.layers), allocator)
-	cm.vs_soil_mineral_n_content = make([dynamic]f64, len(cm.soil_column.layers), allocator)
+	// cm.vs_soil_mineral_n_content = make([dynamic]f64, len(cm.soil_column.layers), allocator)
 	cm.transpiration = make([dynamic]f64, len(cm.soil_column.layers), allocator)
 	cm.transpiration_redux = make([dynamic]f64, len(cm.soil_column.layers), allocator)
 	for &v in cm.transpiration_redux {
@@ -830,7 +830,13 @@ fc_oxygen_deficiency :: proc(cm: ^Crop_Module, criticalOxygenContent: f64) -> f6
 		cm.time_under_anoxia += int(cm.time_step)
 		if cm.time_under_anoxia >= timeUnderAnoxiaThresholdAtStage {
 			max_oxygen_deficit := max(0.0, avgAirFilledPoreVolume) / criticalOxygenContent
-			cm.oxygen_deficit = max(0.0, 1.0 - f64(cm.time_under_anoxia) / f64(timeUnderAnoxiaThresholdAtStage) * (1.0 - max_oxygen_deficit))
+			cm.oxygen_deficit = max(
+				0.0,
+				1.0 -
+				f64(cm.time_under_anoxia) /
+					f64(timeUnderAnoxiaThresholdAtStage) *
+					(1.0 - max_oxygen_deficit),
+			)
 		}
 	} else {
 		cm.time_under_anoxia = 0
@@ -1344,7 +1350,7 @@ fc_crop_photosynthesis :: proc(
 
 	if pc_CarboxylationPathway == 1 {
 		// Calculation of CO2 impact on crop growth
-		if cm.pc_co2_method == 3 {
+		if cm.co2_method == 3 {
 			// Long 1991 / Mitchell et al. 1995
 			tempK := vw_MeanAirTemperature + D_IN_K
 			term1 := (tempK - TK25) / (TK25 * tempK * RGAS)
@@ -1449,7 +1455,7 @@ fc_crop_photosynthesis :: proc(
 				cm.assimilation_rate = 0.0 // MP: warum gibt es fuer C3-Pflanzen keine maximale Temperatur
 				vc_AssimilationRateReference = 0.0
 			}
-		} else if cm.pc_co2_method == 2 {
+		} else if cm.co2_method == 2 {
 			// Hoffmann 1995
 			t_response := wang_engel_temperature_response(
 				vw_MeanAirTemperature,
@@ -3203,14 +3209,13 @@ fc_crop_n_uptake :: proc(
 	// if the plant has matured, no N uptake occurs!
 	if cm.developmental_stage < cm.final_developmental_stage {
 		for i_Layer := 0; i_Layer < min(cm.rooting_zone, vc_GroundwaterTable); i_Layer += 1 {
-			cm.vs_soil_mineral_n_content[i_Layer] = soil_column.layers[i_Layer].soil_no3 // [kg m-3]
+			soil_mineral_n_content_i := soil_column.layers[i_Layer].soil_no3 // [kg m-3]
 
 			// Convective N uptake per layer
 			// ([mm -> m]) * ([kg m-3] / old WG [m3 m-3]) -> [kg m-2]
 			vc_ConvectiveNUptakeFromLayer[i_Layer] =
 				(cm.transpiration[i_Layer] / 1000.0) *
-				(cm.vs_soil_mineral_n_content[i_Layer] /
-						soil_column.layers[i_Layer].soil_moisture_m3) *
+				(soil_mineral_n_content_i / soil_column.layers[i_Layer].soil_moisture_m3) *
 				cm.time_step
 
 			vc_ConvectiveNUptake += vc_ConvectiveNUptakeFromLayer[i_Layer] // [kg m-2]
@@ -3227,7 +3232,7 @@ fc_crop_n_uptake :: proc(
 					2.0 *
 					PI *
 					cm.root_diameter[i_Layer] *
-					(cm.vs_soil_mineral_n_content[i_Layer] /
+					(soil_mineral_n_content_i /
 								1000.0 /
 								soil_column.layers[i_Layer].soil_moisture_m3 -
 							0.000014) *
@@ -3269,12 +3274,11 @@ fc_crop_n_uptake :: proc(
 				vc_ConvectiveNUptake_1 += vc_ConvectiveNUptakeFromLayer[i_Layer]
 				vc_DiffusiveNUptake_1 += vc_DiffusiveNUptakeFromLayer[i_Layer]
 
+				soil_mineral_n_content_i := soil_column.layers[i_Layer].soil_no3 // [kg m-3]
 				if cm.n_uptake_from_layer[i_Layer] >
-				   ((cm.vs_soil_mineral_n_content[i_Layer] * layerThickness) -
-						   pc_MinimumAvailableN) {
+				   ((soil_mineral_n_content_i * layerThickness) - pc_MinimumAvailableN) {
 					cm.n_uptake_from_layer[i_Layer] =
-						(cm.vs_soil_mineral_n_content[i_Layer] * layerThickness) -
-						pc_MinimumAvailableN
+						(soil_mineral_n_content_i * layerThickness) - pc_MinimumAvailableN
 				}
 
 				if cm.n_uptake_from_layer[i_Layer] > (pc_MaxCropNDemand / 10000.0 * 0.75) {

@@ -8,18 +8,18 @@
 // Run odin/tests/cpp_ref/run_crop_module_photosynthesis.sh to build both and diff them.
 package crop_module_photosynthesis_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import d "../../support/date"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
@@ -42,7 +42,11 @@ dump_crop_module_photosynthesis :: proc(t: ^tr.Tracer, path: string, cm: ^core.C
 	// in crop_module_photosynthesis_ref_main.cpp's dump_crop_module_photosynthesis.
 	tr.dump(t, jn(path, "vc_GrossPhotosynthesis"), cm.gross_photosynthesis)
 	tr.dump(t, jn(path, "vc_GrossPhotosynthesis_mol"), cm.gross_photosynthesis_mol)
-	tr.dump(t, jn(path, "vc_GrossPhotosynthesisReference_mol"), cm.gross_photosynthesis_reference_mol)
+	tr.dump(
+		t,
+		jn(path, "vc_GrossPhotosynthesisReference_mol"),
+		cm.gross_photosynthesis_reference_mol,
+	)
 	tr.dump(t, jn(path, "vc_Assimilates"), cm.assimilates)
 	tr.dump(t, jn(path, "vc_GrossAssimilates"), cm.gross_assimilates)
 	tr.dump(t, jn(path, "vc_MaintenanceRespirationAS"), cm.maintenance_respiration_as)
@@ -61,7 +65,11 @@ dump_crop_module_photosynthesis :: proc(t: ^tr.Tracer, path: string, cm: ^core.C
 	tr.dump(t, jn(path, "vc_O3_sumUptake"), cm.o3_sum_uptake)
 	tr.dump(t, jn(path, "vc_O3_WStomatalClosure"), cm.o3_w_stomatal_closure)
 
-	tr.dump(t, jn(path, "guentherEmissions.isoprene_emission"), cm.guenther_emissions.isoprene_emission)
+	tr.dump(
+		t,
+		jn(path, "guentherEmissions.isoprene_emission"),
+		cm.guenther_emissions.isoprene_emission,
+	)
 	tr.dump(
 		t,
 		jn(path, "guentherEmissions.monoterpene_emission"),
@@ -97,7 +105,10 @@ day_step :: proc(
 
 	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
 
-	cm.oxygen_deficit = core.fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.developmental_stage])
+	cm.oxygen_deficit = core.fc_oxygen_deficiency(
+		cm,
+		pc_CriticalOxygenContent[cm.developmental_stage],
+	)
 
 	old_DevelopmentalStage := cm.developmental_stage
 
@@ -106,7 +117,14 @@ day_step :: proc(
 			cm.perennial_crop_dormancy_period_end_date = currentDate
 		} else {
 			cm.perennial_crop_dormancy_period_end_date = d.add(
-				d.make_date(1, 1, u16(d.year(currentDate)), false, false, d.DEFAULT_USE_LEAP_YEARS),
+				d.make_date(
+					1,
+					1,
+					u16(d.year(currentDate)),
+					false,
+					false,
+					d.DEFAULT_USE_LEAP_YEARS,
+				),
 				u64(speciesPs.dormancyEndDoy - 1),
 			)
 		}
@@ -201,7 +219,9 @@ day_step :: proc(
 main :: proc() {
 	args := os.args
 	if len(args) < 4 {
-		fmt.eprintln("usage: crop_module_photosynthesis_ref <pathToSimJson> <pathToClimateCsv> <numDaysA>")
+		fmt.eprintln(
+			"usage: crop_module_photosynthesis_ref <pathToSimJson> <pathToClimateCsv> <numDaysA>",
+		)
 		os.exit(2)
 	}
 	path_to_sim_json := args[1]
@@ -265,7 +285,10 @@ main :: proc() {
 		a,
 	)
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 		path := strings.concatenate({dir, "/", name}, a)
@@ -296,7 +319,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)
@@ -398,7 +426,7 @@ main :: proc() {
 			a,
 		)
 		core.set_stage(&cm, 1)
-		cm.pc_co2_method = 2
+		cm.co2_method = 2
 
 		n := min(20, clim.data_accessor_no_of_steps_possible(&da))
 
