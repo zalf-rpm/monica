@@ -41,45 +41,45 @@ import "core:slice"
 
 // C++: struct monica::MonicaModel
 Monica_Model :: struct {
-	site_params:                      p.Site_Parameters,
-	env_params:                       p.Environment_Parameters,
-	crop_ps:                          p.Crop_Module_Parameters,
-	sim_ps:                           p.Simulation_Parameters,
-	groundwater_information:          p.Measured_Groundwater_Table_Information,
-	soil_column:                      Soil_Column, // main soil data structure
-	soil_temperature:                 Soil_Temperature, // temperature code
-	soil_moisture:                    Soil_Moisture, // moisture code
-	soil_organic:                     Soil_Organic, // organic code
-	soil_transport:                   Soil_Transport, // transport code
-	current_crop_module:              ^Crop_Module, // crop code for possibly planted crop; nil if none
+	site_params:                     p.Site_Parameters,
+	env_params:                      p.Environment_Parameters,
+	crop_mod_params:                 p.Crop_Module_Parameters,
+	sim_params:                      p.Simulation_Parameters,
+	groundwater_information:         p.Measured_Groundwater_Table_Information,
+	soil_column:                     Soil_Column, // main soil data structure
+	soil_temperature:                Soil_Temperature, // temperature code
+	soil_moisture:                   Soil_Moisture, // moisture code
+	soil_organic:                    Soil_Organic, // organic code
+	soil_transport:                  Soil_Transport, // transport code
+	current_crop_module:             ^Crop_Module, // crop code for possibly planted crop; nil if none
 
 	// store applied fertiliser during one production process
-	sum_fertiliser:                   f64, // mineral N
-	sum_org_fertiliser:               f64, // organic N
+	sum_fertiliser:                  f64, // mineral N
+	sum_org_fertiliser:              f64, // organic N
 
 	// stores the daily sum of applied fertiliser
-	daily_sum_fertiliser:             f64, // mineral N
-	daily_sum_org_fertiliser:         f64, // organic N
-	daily_sum_organic_fertilizer_dm:  f64,
-	sum_organic_fertilizer_dm:        f64,
-	humus_balance_carry_over:         f64,
-	daily_sum_irrigation_water:       f64,
-	opt_carbon_exported_residues:     f64,
-	opt_carbon_returned_residues:     f64,
-	current_step_date:                d.Date,
-	climate_data:                     [dynamic]map[clim.ACD]f64,
-	current_events:                   map[string]bool,
-	previous_days_events:             map[string]bool,
-	clear_crop_upon_next_day:         bool,
-	p_days_with_crop:                 int,
-	p_accu_n_stress:                  f64,
-	p_accu_water_stress:              f64,
-	p_accu_heat_stress:               f64,
-	p_accu_oxygen_stress:             f64,
-	vw_atmospheric_co2_concentration: f64,
-	vw_atmospheric_o3_concentration:  f64,
-	vs_groundwater_depth:             f64,
-	cultivation_method_count:         int,
+	daily_sum_fertiliser:            f64, // mineral N
+	daily_sum_org_fertiliser:        f64, // organic N
+	daily_sum_organic_fertilizer_dm: f64,
+	sum_organic_fertilizer_dm:       f64,
+	humus_balance_carry_over:        f64,
+	daily_sum_irrigation_water:      f64,
+	opt_carbon_exported_residues:    f64,
+	opt_carbon_returned_residues:    f64,
+	current_step_date:               d.Date,
+	climate_data:                    [dynamic]map[clim.ACD]f64,
+	current_events:                  map[string]bool,
+	previous_days_events:            map[string]bool,
+	clear_crop_upon_next_day:        bool,
+	days_with_crop:                  int,
+	accu_n_stress:                   f64,
+	accu_water_stress:               f64,
+	accu_heat_stress:                f64,
+	accu_oxygen_stress:              f64,
+	atmospheric_co2_concentration:   f64,
+	atmospheric_o3_concentration:    f64,
+	groundwater_depth_m:             f64,
+	cultivation_method_count:        int,
 }
 
 // C++: kj::Own<MonicaModel> monica::makeMonicaModel(const CentralParameterProvider&)
@@ -97,12 +97,12 @@ make_monica_model :: proc(
 
 	model.site_params = cpp.siteParameters
 	model.env_params = cpp.userEnvironmentParameters
-	model.crop_ps = cpp.userCropParameters
-	model.sim_ps = cpp.simulationParameters
+	model.crop_mod_params = cpp.userCropParameters
+	model.sim_params = cpp.simulationParameters
 	model.groundwater_information = cpp.groundwaterInformation
 
 	model.soil_column = make_soil_column(
-		model.sim_ps.p_LayerThickness,
+		model.sim_params.p_LayerThickness,
 		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
 		model.site_params.vs_SoilParameters[:],
 		allocator,
@@ -117,8 +117,8 @@ make_monica_model :: proc(
 		&model.site_params,
 		cpp.userSoilMoistureParameters,
 		&model.env_params,
-		&model.crop_ps,
-		model.sim_ps.p_LayerThickness,
+		&model.crop_mod_params,
+		model.sim_params.p_LayerThickness,
 		allocator,
 	)
 	model.soil_organic = make_soil_organic(&model.soil_column, cpp.userSoilOrganicParameters)
@@ -127,7 +127,7 @@ make_monica_model :: proc(
 		&model.soil_column,
 		&model.site_params,
 		&model.env_params,
-		&model.crop_ps,
+		&model.crop_mod_params,
 	)
 
 	// C++ in-class initialisers: std::set<std::string> currentEvents/
@@ -221,19 +221,19 @@ monica_model_add_daily_sum_org_fertiliser :: proc(
 	amountFM: f64,
 	params: ^p.Organic_Matter_Parameters,
 ) {
-	AOM_fast_factor :=
+	aom_fast_factor :=
 		soil.PO_AOM_TO_C * params.vo_PartAOM_to_AOM_Fast / params.vo_CN_Ratio_AOM_Fast
-	AOM_slow_factor :=
+	aom_slow_factor :=
 		soil.PO_AOM_TO_C * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow
-	SOM_Factor :=
+	som_factor :=
 		(1 - (params.vo_PartAOM_to_AOM_Fast + params.vo_PartAOM_to_AOM_Slow)) *
 		soil.PO_AOM_TO_C /
 		model.soil_column.layers[0].soil_cn_ratio // TODO ask CN for correctness
 
 	conversion :=
-		AOM_fast_factor +
-		AOM_slow_factor +
-		SOM_Factor +
+		aom_fast_factor +
+		aom_slow_factor +
+		som_factor +
 		params.vo_AOM_NH4Content +
 		params.vo_AOM_NO3Content
 
@@ -248,7 +248,7 @@ monica_model_apply_mineral_fertiliser :: proc(
 	partition: p.Mineral_Fertilizer_Parameters,
 	amount: f64,
 ) {
-	if !model.sim_ps.p_UseNMinMineralFertilisingMethod {
+	if !model.sim_params.p_UseNMinMineralFertilisingMethod {
 		apply_mineral_fertiliser(&model.soil_column, partition, amount)
 		monica_model_add_daily_sum_fertiliser(model, amount)
 	}
@@ -285,7 +285,7 @@ monica_model_apply_mineral_fertiliser_via_n_min_method :: proc(
 	partition: p.Mineral_Fertilizer_Parameters,
 	cps: p.NMin_Crop_Parameters,
 ) -> f64 {
-	ups := &model.sim_ps.p_NMinUserParams
+	ups := &model.sim_params.p_NMinUserParams
 	return apply_mineral_fertiliser_via_n_min_method(
 		&model.soil_column,
 		partition,
@@ -332,7 +332,7 @@ monica_model_apply_irrigation :: proc(
 	nitrateConcentration: f64 = 0,
 ) {
 	// if the production process has still some defined manual irrigation dates
-	if !model.sim_ps.p_UseAutomaticIrrigation {
+	if !model.sim_params.p_UseAutomaticIrrigation {
 		apply_irrigation(&model.soil_column, amount, nitrateConcentration)
 		model.soil_organic.irrigation_amount += amount
 		monica_model_add_daily_sum_irrigation_water(model, amount)
@@ -347,47 +347,47 @@ monica_model_apply_tillage :: proc(model: ^Monica_Model, depth: f64) {
 // C++: double monica::monicamodel::CO2ForDate(double year, double julianDay,
 //        bool isLeapYear, RCP)
 co2_for_date :: proc(year, julianDay: f64, isLeapYear: bool, rcp: p.RCP = .RCP85) -> f64 {
-	decimalDate := year + julianDay / (isLeapYear ? 366.0 : 365.0)
+	decimal_date := year + julianDay / (isLeapYear ? 366.0 : 365.0)
 
 	co2 := 0.0
 	switch rcp {
 	case .RCP19:
 		co2 =
 			309.61 +
-			110.21 / (1 + libc.exp(-(0.0819 * (decimalDate - 1995.41)))) +
-			(2.5 * libc.sin((decimalDate - 0.5) / 0.1592))
+			110.21 / (1 + libc.exp(-(0.0819 * (decimal_date - 1995.41)))) +
+			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP26:
 		co2 =
 			306.23 +
-			158.52 / (1 + libc.exp(-(0.0601 * (decimalDate - 2005.77)))) +
-			(2.5 * libc.sin((decimalDate - 0.5) / 0.1592))
+			158.52 / (1 + libc.exp(-(0.0601 * (decimal_date - 2005.77)))) +
+			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP34:
 		co2 =
 			302.24 +
-			185.07 / (1 + libc.exp(-(0.0512 * (decimalDate - 2010.26)))) +
-			(2.5 * libc.sin((decimalDate - 0.5) / 0.1592))
+			185.07 / (1 + libc.exp(-(0.0512 * (decimal_date - 2010.26)))) +
+			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP45:
 		co2 =
 			292.83 +
-			348.08 / (1 + libc.exp(-(0.0349 * (decimalDate - 2036.46)))) +
-			(2.5 * libc.sin((decimalDate - 0.5) / 0.1592))
+			348.08 / (1 + libc.exp(-(0.0349 * (decimal_date - 2036.46)))) +
+			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP60:
 		co2 =
 			287.56 +
-			474.21 / (1 + libc.exp(-(0.0301 * (decimalDate - 2052.37)))) +
-			(2.5 * libc.sin((decimalDate - 0.5) / 0.1592))
+			474.21 / (1 + libc.exp(-(0.0301 * (decimal_date - 2052.37)))) +
+			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP70:
 		co2 =
 			277.25 +
-			1338.47 / (1 + libc.exp(-(0.0237 * (decimalDate - 2110.06)))) +
-			(2.5 * libc.sin((decimalDate - 0.5) / 0.1592))
+			1338.47 / (1 + libc.exp(-(0.0237 * (decimal_date - 2110.06)))) +
+			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP85:
 		fallthrough
 	case:
 		co2 =
 			294.27 +
-			2361.06 / (1 + libc.exp(-(0.0287 * (decimalDate - 2120.53)))) +
-			(2.5 * libc.sin((decimalDate - 0.5) / 0.1592))
+			2361.06 / (1 + libc.exp(-(0.0287 * (decimal_date - 2120.53)))) +
+			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
 	}
 
 	return co2
@@ -401,33 +401,33 @@ co2_for_date_from_date :: proc(dt: d.Date, rcp: p.RCP = .RCP85) -> f64 {
 // C++: double monica::monicamodel::groundwaterDepthForDate(double, double,
 //        int, double, bool)
 groundwater_depth_for_date :: proc(
-	maxGroundwaterDepth: f64,
-	minGroundwaterDepth: f64,
-	minGroundwaterDepthMonth: int,
-	julianDay: f64,
-	isLeapYear: bool,
+	max_gw_depth_m: f64,
+	min_gw_depth_m: f64,
+	min_gw_depth_month_m: int,
+	julian_day: f64,
+	is_leap_year: bool,
 ) -> f64 {
 	days := 365.0
-	if isLeapYear {
+	if is_leap_year {
 		days = 366.0
 	}
 
-	meanGroundwaterDepth := (maxGroundwaterDepth + minGroundwaterDepth) / 2.0
-	groundwaterAmplitude := (maxGroundwaterDepth - minGroundwaterDepth) / 2.0
+	mean_gw_depth_m := (max_gw_depth_m + min_gw_depth_m) / 2.0
+	gw_amplitude_m := (max_gw_depth_m - min_gw_depth_m) / 2.0
 
 	sinus := libc.sin(
-		((julianDay / days * 360.0) - 90.0 - ((f64(minGroundwaterDepthMonth) * 30.0) - 15.0)) *
+		((julian_day / days * 360.0) - 90.0 - ((f64(min_gw_depth_month_m) * 30.0) - 15.0)) *
 		3.14159265358979 /
 		180.0,
 	)
 
-	groundwaterDepth := meanGroundwaterDepth + (sinus * groundwaterAmplitude)
+	gw_depth_m := mean_gw_depth_m + (sinus * gw_amplitude_m)
 
-	if groundwaterDepth < 0.0 {
-		groundwaterDepth = 20.0
+	if gw_depth_m < 0.0 {
+		gw_depth_m = 20.0
 	}
 
-	return groundwaterDepth
+	return gw_depth_m
 }
 
 // C++: void monica::monicamodel::clearEvents(MonicaModel*)
@@ -581,7 +581,11 @@ monica_model_harvest_current_crop :: proc(
 					intermediateHumusBalance +
 					model.opt_carbon_returned_residues / 1000.0 * optCarbMgmtData.residueHeq
 			} else { 	// old default behavior
-				residueBiomass := get_residue_biomass(cm, model.sim_ps.p_UseSecondaryYields, -1)
+				residueBiomass := get_residue_biomass(
+					cm,
+					model.sim_params.p_UseSecondaryYields,
+					-1,
+				)
 				residueNConcentration := get_residues_n_concentration(cm, -1)
 				soil_organic_add_organic_matter_amount(
 					&model.soil_organic,
@@ -732,9 +736,9 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		allocator,
 	)
 	if gw_available {
-		model.vs_groundwater_depth = max(0.0, gw_depth)
+		model.groundwater_depth_m = max(0.0, gw_depth)
 	} else {
-		model.vs_groundwater_depth = groundwater_depth_for_date(
+		model.groundwater_depth_m = groundwater_depth_for_date(
 			model.env_params.p_MaxGroundwaterDepth,
 			model.env_params.p_MinGroundwaterDepth,
 			model.env_params.p_MinGroundwaterDepthMonth,
@@ -745,16 +749,16 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	// first try to get CO2 concentration from climate data
 	if co2v, ok := dailyClimate[.co2]; ok {
-		model.vw_atmospheric_co2_concentration = co2v
+		model.atmospheric_co2_concentration = co2v
 	} else if co2s, ok2 := model.env_params.p_AtmosphericCO2s[d.year(date)]; ok2 {
 		// try to get yearly values from UserEnvironmentParameters
-		model.vw_atmospheric_co2_concentration = co2s
+		model.atmospheric_co2_concentration = co2s
 		// potentially use MONICA algorithm to calculate CO2 concentration
 	} else if int(model.env_params.p_AtmosphericCO2) <= 0 {
-		model.vw_atmospheric_co2_concentration = co2_for_date_from_date(date, model.env_params.rcp)
+		model.atmospheric_co2_concentration = co2_for_date_from_date(date, model.env_params.rcp)
 		// if everything fails value in UserEnvironmentParameters for the whole simulation
 	} else {
-		model.vw_atmospheric_co2_concentration = model.env_params.p_AtmosphericCO2
+		model.atmospheric_co2_concentration = model.env_params.p_AtmosphericCO2
 	}
 
 	delete_aom_pool(&model.soil_column)
@@ -765,14 +769,14 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 	monica_model_add_daily_sum_fertiliser(model, possibleTopDressingAmount)
 
 	if model.current_crop_module != nil &&
-	   model.sim_ps.p_UseNMinMineralFertilisingMethod &&
+	   model.sim_params.p_UseNMinMineralFertilisingMethod &&
 	   model.current_crop_module.crop_params.cultivarParams.winterCrop &&
-	   int(julday) == model.sim_ps.p_JulianDayAutomaticFertilising {
+	   int(julday) == model.sim_params.p_JulianDayAutomaticFertilising {
 		clear_top_dressing_params(&model.soil_column)
 		sps := model.current_crop_module.crop_params.speciesParams
 		fertilizerAmount := monica_model_apply_mineral_fertiliser_via_n_min_method(
 			model,
-			model.sim_ps.p_NMinFertiliserPartition,
+			model.sim_params.p_NMinFertiliserPartition,
 			p.NMin_Crop_Parameters {
 				samplingDepth = sps.pc_SamplingDepth,
 				nTarget = sps.pc_TargetNSamplingDepth,
@@ -802,7 +806,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	soil_moisture_step(
 		&model.soil_moisture,
-		model.vs_groundwater_depth,
+		model.groundwater_depth_m,
 		precip,
 		tmax,
 		tmin,
@@ -813,7 +817,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		globrad,
 		int(julday),
 		et0,
-		model.sim_ps.dualKcMethod,
+		model.sim_params.dualKcMethod,
 	)
 
 	soil_organic_step(&model.soil_organic, tavg, precip, wind)
@@ -833,7 +837,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		return
 	}
 
-	model.p_days_with_crop += 1
+	model.days_with_crop += 1
 
 	// C++ genuine dead store: computed (`unsigned int julday =
 	// date.julianDay();`) but never read anywhere in the rest of cropStep -
@@ -849,13 +853,13 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 
 	// first try to get CO2 concentration from climate data
 	if o3v, ok := dailyClimate[.o3]; ok {
-		model.vw_atmospheric_o3_concentration = o3v
+		model.atmospheric_o3_concentration = o3v
 	} else if o3s, ok2 := model.env_params.p_AtmosphericO3s[d.year(date)]; ok2 {
 		// try to get yearly values from UserEnvironmentParameters
-		model.vw_atmospheric_o3_concentration = o3s
+		model.atmospheric_o3_concentration = o3s
 		// if everything fails value in UserEnvironmentParameters for the whole simulation
 	} else {
-		model.vw_atmospheric_o3_concentration = model.env_params.p_AtmosphericO3
+		model.atmospheric_o3_concentration = model.env_params.p_AtmosphericO3
 	}
 
 	// test if data for sunhours are available; if not, value is set to -1.0
@@ -896,21 +900,21 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		(relhumid / 100.0),
 		wind,
 		vw_WindSpeedHeight,
-		model.vw_atmospheric_co2_concentration,
-		model.vw_atmospheric_o3_concentration,
+		model.atmospheric_co2_concentration,
+		model.atmospheric_o3_concentration,
 		precip,
 		et0,
 		allocator,
 	)
 
-	if model.sim_ps.p_UseAutomaticIrrigation &&
-	   (!d.is_valid(model.sim_ps.p_AutoIrrigationParams.startDate) ||
-			   d.le(model.sim_ps.p_AutoIrrigationParams.startDate, date)) &&
-	   (!d.is_valid(model.sim_ps.p_AutoIrrigationParams.endDate) ||
-			   d.le(date, model.sim_ps.p_AutoIrrigationParams.endDate)) {
+	if model.sim_params.p_UseAutomaticIrrigation &&
+	   (!d.is_valid(model.sim_params.p_AutoIrrigationParams.startDate) ||
+			   d.le(model.sim_params.p_AutoIrrigationParams.startDate, date)) &&
+	   (!d.is_valid(model.sim_params.p_AutoIrrigationParams.endDate) ||
+			   d.le(date, model.sim_params.p_AutoIrrigationParams.endDate)) {
 		irrigationTriggered, irrigationAmount := apply_irrigation_via_trigger(
 			&model.soil_column,
-			&model.sim_ps.p_AutoIrrigationParams,
+			&model.sim_params.p_AutoIrrigationParams,
 		)
 		if irrigationTriggered {
 			model.soil_organic.irrigation_amount += irrigationAmount
@@ -918,8 +922,8 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		}
 	}
 
-	model.p_accu_n_stress += model.current_crop_module.crop_n_redux
-	model.p_accu_water_stress += model.current_crop_module.transpiration_deficit
-	model.p_accu_heat_stress += model.current_crop_module.crop_heat_redux
-	model.p_accu_oxygen_stress += model.current_crop_module.oxygen_deficit
+	model.accu_n_stress += model.current_crop_module.crop_n_redux
+	model.accu_water_stress += model.current_crop_module.transpiration_deficit
+	model.accu_heat_stress += model.current_crop_module.crop_heat_redux
+	model.accu_oxygen_stress += model.current_crop_module.oxygen_deficit
 }

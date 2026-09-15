@@ -342,7 +342,7 @@ main :: proc() {
 			globrad,
 			julday,
 			et0,
-			model.sim_ps.dualKcMethod,
+			model.sim_params.dualKcMethod,
 		)
 
 		run.cultivation_method_apply_at_date(&cm, current_date, model, a)

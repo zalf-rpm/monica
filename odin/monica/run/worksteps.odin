@@ -130,11 +130,11 @@ sowing_apply :: proc(
 ) -> bool {
 	workstep_apply_common(ws, model)
 
-	model.p_days_with_crop = 0
-	model.p_accu_n_stress = 0.0
-	model.p_accu_water_stress = 0.0
-	model.p_accu_heat_stress = 0.0
-	model.p_accu_oxygen_stress = 0.0
+	model.days_with_crop = 0
+	model.accu_n_stress = 0.0
+	model.accu_water_stress = 0.0
+	model.accu_heat_stress = 0.0
+	model.accu_oxygen_stress = 0.0
 
 	if s.isValid {
 		model.cultivation_method_count += 1
@@ -146,8 +146,8 @@ sowing_apply :: proc(
 			&s.cropParams,
 			&s.residueParams,
 			&model.site_params,
-			&model.crop_ps,
-			&model.sim_ps,
+			&model.crop_mod_params,
+			&model.sim_params,
 			core.monica_model_fire_event_cb,
 			core.monica_model_add_organic_matter_cb,
 			core.monica_model_get_snow_depth_cb,
@@ -169,12 +169,12 @@ sowing_apply :: proc(
 		model.soil_moisture.crop_module = model.current_crop_module
 		model.soil_organic.crop_module = model.current_crop_module
 
-		if model.sim_ps.p_UseNMinMineralFertilisingMethod &&
+		if model.sim_params.p_UseNMinMineralFertilisingMethod &&
 		   !model.current_crop_module.crop_params.cultivarParams.winterCrop {
 			core.clear_top_dressing_params(&model.soil_column)
 			fert_amount := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 				model,
-				model.sim_ps.p_NMinFertiliserPartition,
+				model.sim_params.p_NMinFertiliserPartition,
 				p.NMin_Crop_Parameters {
 					samplingDepth = s.cropParams.speciesParams.pc_SamplingDepth,
 					nTarget = s.cropParams.speciesParams.pc_TargetNSamplingDepth,
@@ -186,7 +186,7 @@ sowing_apply :: proc(
 	}
 
 	// FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
-	if model.sim_ps.dualKcMethod && model.current_crop_module != nil {
+	if model.sim_params.dualKcMethod && model.current_crop_module != nil {
 		model.current_crop_module.kcb_ini = s.initialKcb
 	}
 	model.current_events["Sowing"] = true
@@ -266,7 +266,7 @@ transplant_apply :: proc(
 		t.postTransplantDelay,
 	)
 
-	if model.sim_ps.dualKcMethod {
+	if model.sim_params.dualKcMethod {
 		cropModule.kcb_ini = t.initialKcb
 	}
 	model.current_events["Transplant"] = true
@@ -1083,7 +1083,7 @@ irrigation_apply :: proc(i: ^Irrigation_Data, ws: ^Workstep, model: ^core.Monica
 	// FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for
 	// today's ET calculation. LIMITATION: Auto-irrigation uses sim.json params
 	// or defaults (fw=1.0, isDrip=false).
-	if model.sim_ps.dualKcMethod {
+	if model.sim_params.dualKcMethod {
 		model.soil_moisture.irrig_fw_event = i.params.fw
 		model.soil_moisture.irrig_is_drip_event = i.params.isDripIrrigation
 	}

@@ -233,8 +233,8 @@ main :: proc() {
 		&wheat_crop_params,
 		&wheat_residue_params,
 		&model.site_params,
-		&model.crop_ps,
-		&model.sim_ps,
+		&model.crop_mod_params,
+		&model.sim_params,
 		no_fire_event,
 		real_add_organic_matter,
 		real_get_snow_depth,
@@ -309,7 +309,7 @@ main :: proc() {
 			globrad,
 			julday,
 			et0,
-			model.sim_ps.dualKcMethod,
+			model.sim_params.dualKcMethod,
 		)
 		core.crop_module_step(
 			&cm,

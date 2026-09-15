@@ -418,7 +418,7 @@ main :: proc() {
 			globrad,
 			julday,
 			et0,
-			model.sim_ps.dualKcMethod,
+			model.sim_params.dualKcMethod,
 		)
 
 		// dated worksteps: apply on their exact matching day

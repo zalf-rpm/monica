@@ -132,8 +132,8 @@ main :: proc() {
 		&wheatCropParams,
 		&wheatResidueParams,
 		&model.site_params,
-		&model.crop_ps,
-		&model.sim_ps,
+		&model.crop_mod_params,
+		&model.sim_params,
 		core.monica_model_fire_event_cb,
 		core.monica_model_add_organic_matter_cb,
 		core.monica_model_get_snow_depth_cb,
@@ -211,7 +211,7 @@ main :: proc() {
 			globrad,
 			clim.data_accessor_julian_day_for_step(&da, day),
 			et0,
-			model.sim_ps.dualKcMethod,
+			model.sim_params.dualKcMethod,
 		)
 		core.crop_module_step(
 			cm,

@@ -4,19 +4,19 @@
 // Run odin/tests/cpp_ref/run_monica_model_step.sh to build both and diff them.
 package monica_model_step_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import run "../../monica/run"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import run "../../monica/run"
-import d "../../support/date"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 dump_cm_basic :: proc(t: ^tr.Tracer, path: string, cm: ^run.Cultivation_Method) {
 	tr.dump(t, strings.concatenate({path, ".customId"}), cm.customId)
@@ -31,30 +31,42 @@ dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) 
 	tr.dump(t, strings.concatenate({path, ".sumFertiliser"}), model.sum_fertiliser)
 	tr.dump(t, strings.concatenate({path, ".dailySumFertiliser"}), model.daily_sum_fertiliser)
 	tr.dump(t, strings.concatenate({path, ".sumOrgFertiliser"}), model.sum_org_fertiliser)
-	tr.dump(t, strings.concatenate({path, ".dailySumIrrigationWater"}), model.daily_sum_irrigation_water)
-	tr.dump(t, strings.concatenate({path, ".cultivationMethodCount"}), model.cultivation_method_count)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".dailySumIrrigationWater"}),
+		model.daily_sum_irrigation_water,
+	)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".cultivationMethodCount"}),
+		model.cultivation_method_count,
+	)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".clearCropUponNextDay"}),
+		model.clear_crop_upon_next_day,
+	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".currentCropModule"}),
 		model.current_crop_module != nil ? "<ptr:set>" : "<ptr:nil>",
 	)
-	tr.dump(t, strings.concatenate({path, ".vs_GroundwaterDepth"}), model.vs_groundwater_depth)
+	tr.dump(t, strings.concatenate({path, ".vs_GroundwaterDepth"}), model.groundwater_depth_m)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".vw_AtmosphericCO2Concentration"}),
-		model.vw_atmospheric_co2_concentration,
+		model.atmospheric_co2_concentration,
 	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".vw_AtmosphericO3Concentration"}),
-		model.vw_atmospheric_o3_concentration,
+		model.atmospheric_o3_concentration,
 	)
-	tr.dump(t, strings.concatenate({path, ".p_daysWithCrop"}), model.p_days_with_crop)
-	tr.dump(t, strings.concatenate({path, ".p_accuNStress"}), model.p_accu_n_stress)
-	tr.dump(t, strings.concatenate({path, ".p_accuWaterStress"}), model.p_accu_water_stress)
-	tr.dump(t, strings.concatenate({path, ".p_accuHeatStress"}), model.p_accu_heat_stress)
-	tr.dump(t, strings.concatenate({path, ".p_accuOxygenStress"}), model.p_accu_oxygen_stress)
+	tr.dump(t, strings.concatenate({path, ".p_daysWithCrop"}), model.days_with_crop)
+	tr.dump(t, strings.concatenate({path, ".p_accuNStress"}), model.accu_n_stress)
+	tr.dump(t, strings.concatenate({path, ".p_accuWaterStress"}), model.accu_water_stress)
+	tr.dump(t, strings.concatenate({path, ".p_accuHeatStress"}), model.accu_heat_stress)
+	tr.dump(t, strings.concatenate({path, ".p_accuOxygenStress"}), model.accu_oxygen_stress)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".soilColumn->layers[0].vs_SoilTemperature"}),
@@ -146,14 +158,20 @@ main :: proc() {
 	env := mrun.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
 	env_params := jx.get(env, "params")
 
-	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
 
 	cpp := p.make_central_parameter_provider(a)
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	model := core.make_monica_model(&cpp, a)
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	species_json := load(monica_parameters_dir, "crops/wheat.json", a)
 	cultivar_json := load(monica_parameters_dir, "crops/wheat/winter-wheat.json", a)
@@ -187,7 +205,10 @@ main :: proc() {
 							a,
 							{
 								"irrigationParameters",
-								jx.obj(a, {"nitrateConcentration", jx.arr(a, jx.i(0), jx.sl("mg dm-3"))}),
+								jx.obj(
+									a,
+									{"nitrateConcentration", jx.arr(a, jx.i(0), jx.sl("mg dm-3"))},
+								),
 							},
 							{"amount", jx.arr(a, jx.i(17), jx.sl("mm"))},
 							{"trigger_if_nFC_below_%", jx.arr(a, jx.i(90), jx.sl("%"))},
@@ -195,7 +216,12 @@ main :: proc() {
 						),
 					},
 				),
-				jx.obj(a, {"date", jx.sl("0000-09-22")}, {"type", jx.sl("Sowing")}, {"crop", crop_json}),
+				jx.obj(
+					a,
+					{"date", jx.sl("0000-09-22")},
+					{"type", jx.sl("Sowing")},
+					{"crop", crop_json},
+				),
 				jx.obj(
 					a,
 					{"type", jx.sl("NDemandFertilization")},
@@ -260,14 +286,34 @@ main :: proc() {
 	tr.dump(&t, "cm.allAbsWorksteps.size", len(cm.allAbsWorksteps))
 	tr.dump(&t, "cm.unfinishedDynamicWorksteps.size", len(cm.unfinishedDynamicWorksteps))
 	tr.dump(&t, "cm.startDate", d.to_iso_date_string(run.cultivation_method_start_date(&cm, a)))
-	tr.dump(&t, "cm.absStartDate", d.to_iso_date_string(run.cultivation_method_abs_start_date(&cm, true, a)))
-	tr.dump(&t, "cm.absLatestSowingDate", d.to_iso_date_string(run.cultivation_method_abs_latest_sowing_date(&cm)))
+	tr.dump(
+		&t,
+		"cm.absStartDate",
+		d.to_iso_date_string(run.cultivation_method_abs_start_date(&cm, true, a)),
+	)
+	tr.dump(
+		&t,
+		"cm.absLatestSowingDate",
+		d.to_iso_date_string(run.cultivation_method_abs_latest_sowing_date(&cm)),
+	)
 	tr.dump(&t, "cm.endDate", d.to_iso_date_string(run.cultivation_method_end_date(&cm, a)))
 	tr.dump(&t, "cm.absEndDate", d.to_iso_date_string(run.cultivation_method_abs_end_date(&cm, a)))
-	tr.dump(&t, "cm.areOnlyAbsoluteWorksteps", run.cultivation_method_are_only_absolute_worksteps(&cm))
-	tr.dump(&t, "cm.allDynamicWorkstepsFinished", run.cultivation_method_all_dynamic_worksteps_finished(&cm))
+	tr.dump(
+		&t,
+		"cm.areOnlyAbsoluteWorksteps",
+		run.cultivation_method_are_only_absolute_worksteps(&cm),
+	)
+	tr.dump(
+		&t,
+		"cm.allDynamicWorkstepsFinished",
+		run.cultivation_method_all_dynamic_worksteps_finished(&cm),
+	)
 	tr.dump(&t, "cm.staticWorksteps.size", len(run.cultivation_method_static_worksteps(&cm, a)))
-	tr.dump(&t, "cm.allDynamicWorksteps.size", len(run.cultivation_method_all_dynamic_worksteps(&cm, a)))
+	tr.dump(
+		&t,
+		"cm.allDynamicWorksteps.size",
+		len(run.cultivation_method_all_dynamic_worksteps(&cm, a)),
+	)
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -275,7 +321,12 @@ main :: proc() {
 		jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
 		a,
 	)
-	clim_res := clim.read_climate_data_from_csv_file_via_headers(path_to_climate_csv, copts, true, a)
+	clim_res := clim.read_climate_data_from_csv_file_via_headers(
+		path_to_climate_csv,
+		copts,
+		true,
+		a,
+	)
 	if tl.failure(clim_res.errs) {
 		tl.print_possible_errors(clim_res.errs)
 		os.exit(1)

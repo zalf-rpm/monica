@@ -18,15 +18,15 @@
 // climateData to a complete DataAccessor before env_merge ever runs.
 package run
 
-import "core:strconv"
-import "core:strings"
-import core "../core"
-import mio "../io"
-import p "../params"
 import clim "../../support/climate"
 import d "../../support/date"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
+import core "../core"
+import mio "../io"
+import p "../params"
+import "core:strconv"
+import "core:strings"
 
 // ---------------------------------------------------------------------------
 // CropRotation
@@ -57,7 +57,9 @@ extract_and_store :: proc(
 	es: tl.Errors
 	clear(vec)
 	for cmj in jx.array_items(jv) {
-		v := Cultivation_Method{repeat = true}
+		v := Cultivation_Method {
+			repeat = true,
+		}
 		tl.append_errors(&es, cultivation_method_merge(&v, cmj, allocator))
 		append(vec, v)
 	}
@@ -90,7 +92,10 @@ crop_rotation_merge :: proc(
 	es: tl.Errors
 	jx.set_iso_date_value(&cr.start, j, "start")
 	jx.set_iso_date_value(&cr.end, j, "end")
-	tl.append_errors(&es, extract_and_store(jx.get(j, "cropRotation"), &cr.cropRotation, allocator))
+	tl.append_errors(
+		&es,
+		extract_and_store(jx.get(j, "cropRotation"), &cr.cropRotation, allocator),
+	)
 	return es
 }
 
@@ -139,19 +144,34 @@ env_merge :: proc(
 
 	tl.append_errors(
 		&res,
-		p.central_parameter_provider_merge(&env.params, jx.get(j, "params"), path_to_soil_dir, allocator),
+		p.central_parameter_provider_merge(
+			&env.params,
+			jx.get(j, "params"),
+			path_to_soil_dir,
+			allocator,
+		),
 	)
 
 	env.climateData = clim.make_data_accessor(allocator)
-	tl.append_errors(&res, clim.data_accessor_merge(&env.climateData, jx.get(j, "climateData"), allocator))
+	tl.append_errors(
+		&res,
+		clim.data_accessor_merge(&env.climateData, jx.get(j, "climateData"), allocator),
+	)
 
 	env.events = jx.get(j, "events")
 	env.outputs = jx.get(j, "outputs")
 
-	tl.append_errors(&res, extract_and_store(jx.get(j, "cropRotation"), &env.cropRotation, allocator))
 	tl.append_errors(
 		&res,
-		extract_and_store_crop_rotations(jx.get(j, "cropRotations"), &env.cropRotations, allocator),
+		extract_and_store(jx.get(j, "cropRotation"), &env.cropRotation, allocator),
+	)
+	tl.append_errors(
+		&res,
+		extract_and_store_crop_rotations(
+			jx.get(j, "cropRotations"),
+			&env.cropRotations,
+			allocator,
+		),
 	)
 
 	jx.set_bool_value(&env.debugMode, j, "debugMode")
@@ -262,12 +282,16 @@ spec_create_expression_func :: proc(j: jx.Value) -> Spec_Expr {
 		if jts != "" {
 			s := strings.split(jts, "-", context.temp_allocator)
 			// is date event
-			if len(jts) == 10 && len(s) == 3 && len(s[0]) == 4 && len(s[1]) == 2 && len(s[2]) == 2 {
+			if len(jts) == 10 &&
+			   len(s) == 3 &&
+			   len(s[0]) == 4 &&
+			   len(s[1]) == 2 &&
+			   len(s[2]) == 2 {
 				year := parse_date_component(s[0])
 				month := parse_date_component(s[1])
 				day := parse_date_component(s[2])
 				return Spec_Expr{kind = .DATE, day = day, month = month, year = year}
-			} else { // treat all other strings as potential workstep event
+			} else { 	// treat all other strings as potential workstep event
 				return Spec_Expr{kind = .EVENT, eventName = jts}
 			}
 		}
@@ -415,7 +439,8 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 	isCurrentlyEndEvent := false
 
 	// check for possible start event (if one exists at all; enter only if false)
-	if maybe_bool_is_nothing(sd.withinEventStartEndRange) || !maybe_bool_value(sd.withinEventStartEndRange) {
+	if maybe_bool_is_nothing(sd.withinEventStartEndRange) ||
+	   !maybe_bool_value(sd.withinEventStartEndRange) {
 		if spec_expr_is_set(spec.startf) {
 			sd.withinEventStartEndRange = spec_expr_eval(spec.startf, model)
 		}
@@ -426,7 +451,8 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 	//
 	// NOTE(c++-quirk): `isNothing() || isValue()` is a tautology for any
 	// Maybe(bool) - reproduced as-is rather than simplified to `true`.
-	if maybe_bool_is_nothing(sd.withinEventStartEndRange) || maybe_bool_is_value(sd.withinEventStartEndRange) {
+	if maybe_bool_is_nothing(sd.withinEventStartEndRange) ||
+	   maybe_bool_is_value(sd.withinEventStartEndRange) {
 		if spec_expr_is_set(spec.endf) {
 			isCurrentlyEndEvent = spec_expr_eval(spec.endf, model)
 		}
@@ -434,13 +460,15 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 
 	// do something if we are in start/end range or nothing is set at all (means
 	// do it always)
-	if maybe_bool_is_nothing(sd.withinEventStartEndRange) || maybe_bool_value(sd.withinEventStartEndRange) {
+	if maybe_bool_is_nothing(sd.withinEventStartEndRange) ||
+	   maybe_bool_value(sd.withinEventStartEndRange) {
 		// check for at event
 		if spec_expr_is_set(spec.atf) && spec_expr_eval(spec.atf, model) {
 			store_results(sd.outputIds[:], &sd.results, model)
-		} else if spec_expr_is_set(spec.fromf) && spec_expr_is_set(spec.tof) { // or from/to range event
+		} else if spec_expr_is_set(spec.fromf) && spec_expr_is_set(spec.tof) { 	// or from/to range event
 			isCurrentlyToEvent := false
-			if maybe_bool_is_nothing(sd.withinEventFromToRange) || !maybe_bool_value(sd.withinEventFromToRange) {
+			if maybe_bool_is_nothing(sd.withinEventFromToRange) ||
+			   !maybe_bool_value(sd.withinEventFromToRange) {
 				sd.withinEventFromToRange = spec_expr_eval(spec.fromf, model)
 			} else if maybe_bool_is_value(sd.withinEventFromToRange) {
 				isCurrentlyToEvent = spec_expr_eval(spec.tof, model)
@@ -462,7 +490,7 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 					sd.withinEventFromToRange = false
 				}
 			}
-		} else if spec_expr_is_set(spec.whilef) { // or a single while aggregating expression
+		} else if spec_expr_is_set(spec.whilef) { 	// or a single while aggregating expression
 			if spec_expr_eval(spec.whilef, model) {
 				store_results(sd.outputIds[:], &sd.intermediateResults, model)
 			} else if len(sd.intermediateResults) > 0 && len(sd.intermediateResults[0]) > 0 {
@@ -487,8 +515,16 @@ setup_storage :: proc(
 ) -> [dynamic]Store_Data {
 	shortcuts := make(map[string]jx.Value, 0, context.temp_allocator)
 	shortcuts["daily"] = jx.obj(allocator, {"at", jx.sl("xxxx-xx-xx")})
-	shortcuts["monthly"] = jx.obj(allocator, {"from", jx.sl("xxxx-xx-01")}, {"to", jx.sl("xxxx-xx-31")})
-	shortcuts["yearly"] = jx.obj(allocator, {"from", jx.sl("xxxx-01-01")}, {"to", jx.sl("xxxx-12-31")})
+	shortcuts["monthly"] = jx.obj(
+		allocator,
+		{"from", jx.sl("xxxx-xx-01")},
+		{"to", jx.sl("xxxx-xx-31")},
+	)
+	shortcuts["yearly"] = jx.obj(
+		allocator,
+		{"from", jx.sl("xxxx-01-01")},
+		{"to", jx.sl("xxxx-12-31")},
+	)
 	shortcuts["run"] = jx.obj(
 		allocator,
 		{"from", jx.s(d.to_iso_date_string(startDate, "", allocator), allocator)},
@@ -519,7 +555,8 @@ setup_storage :: proc(
 		} else if jx.is_array(spec) &&
 		   len(jx.array_items(spec)) == 4 &&
 		   jx.is_string(jx.at(spec, 0)) &&
-		   (jx.string_value_of(jx.at(spec, 0)) == "while" || jx.string_value_of(jx.at(spec, 0)) == "at") {
+		   (jx.string_value_of(jx.at(spec, 0)) == "while" ||
+				   jx.string_value_of(jx.at(spec, 0)) == "at") {
 			// an array means it's an expression pattern to be stored at 'at'
 			sa := jx.array_items(spec)
 			key := jx.string_value_of(sa[0])
@@ -655,7 +692,10 @@ find_next_cultivation_method :: proc(
 					// if current CM's latest sowing date is actually after current
 					// date, we have to reinit current CM again, but this time prevent
 					// shifting it to the next year
-					lsd := d.with_year(cultivation_method_abs_latest_sowing_date(currentCM), u16(d.year(currentDate)))
+					lsd := d.with_year(
+						cultivation_method_abs_latest_sowing_date(currentCM),
+						u16(d.year(currentDate)),
+					)
 					notFoundNextCM = d.lt(lsd, currentDate)
 					if !notFoundNextCM {
 						cultivation_method_reinit(currentCM, currentDate, true)
@@ -663,11 +703,17 @@ find_next_cultivation_method :: proc(
 				} else {
 					notFoundNextCM = currentCM.canBeSkipped // if current CM was marked skipable, skip it
 				}
-			} else { // not added year or CM also had absolute dates
+			} else { 	// not added year or CM also had absolute dates
 				if currentCM.isCoverCrop {
-					notFoundNextCM = d.lt(cultivation_method_abs_latest_sowing_date(currentCM), currentDate)
+					notFoundNextCM = d.lt(
+						cultivation_method_abs_latest_sowing_date(currentCM),
+						currentDate,
+					)
 				} else if currentCM.canBeSkipped {
-					notFoundNextCM = d.lt(cultivation_method_abs_start_date(currentCM), currentDate)
+					notFoundNextCM = d.lt(
+						cultivation_method_abs_start_date(currentCM),
+						currentDate,
+					)
 				} else {
 					notFoundNextCM = false
 				}
@@ -740,8 +786,8 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	}
 
 	model := core.make_monica_model(&env.params, allocator)
-	model.sim_ps.startDate = clim.data_accessor_start_date(&env.climateData)
-	model.sim_ps.endDate = clim.data_accessor_end_date(&env.climateData)
+	model.sim_params.startDate = clim.data_accessor_start_date(&env.climateData)
+	model.sim_params.endDate = clim.data_accessor_end_date(&env.climateData)
 
 	currentDate := clim.data_accessor_start_date(&env.climateData)
 
@@ -771,7 +817,12 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 	nods := clim.data_accessor_no_of_steps_possible(&env.climateData)
 	for stepNo in 0 ..< nods {
-		if check_and_init_shadow_of_next_crop_rotation(env.cropRotations[:], &crit, &cropRotation, currentDate) {
+		if check_and_init_shadow_of_next_crop_rotation(
+			env.cropRotations[:],
+			&crit,
+			&cropRotation,
+			currentDate,
+		) {
 			cmit = 0
 			currentCM, nextAbsoluteCMApplicationDate = find_next_cultivation_method(
 				currentDate,
@@ -787,7 +838,12 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 		model.current_step_date = currentDate
 		append(
 			&model.climate_data,
-			clim.data_accessor_all_data_for_step(&env.climateData, stepNo, env.params.siteParameters.vs_Latitude, allocator),
+			clim.data_accessor_all_data_for_step(
+				&env.climateData,
+				stepNo,
+				env.params.siteParameters.vs_Latitude,
+				allocator,
+			),
 		)
 
 		// test if monica's crop has been dying in the previous step; if yes, it
@@ -804,8 +860,16 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 		// apply worksteps and cycle through crop rotation
 		if currentCM != nil && d.eq(nextAbsoluteCMApplicationDate, currentDate) {
-			cultivation_method_abs_apply(currentCM, nextAbsoluteCMApplicationDate, model, allocator)
-			nextAbsoluteCMApplicationDate = cultivation_method_next_abs_date(currentCM, nextAbsoluteCMApplicationDate)
+			cultivation_method_abs_apply(
+				currentCM,
+				nextAbsoluteCMApplicationDate,
+				model,
+				allocator,
+			)
+			nextAbsoluteCMApplicationDate = cultivation_method_next_abs_date(
+				currentCM,
+				nextAbsoluteCMApplicationDate,
+			)
 		}
 
 		// monica main stepping method
@@ -847,7 +911,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 		store_data_aggregate_results(&sd)
 		append(
 			&out.data,
-			mio.Output_Data{
+			mio.Output_Data {
 				origSpec = jx.dump(sd.spec.origSpec, allocator),
 				outputIds = sd.outputIds,
 				results = sd.results,
