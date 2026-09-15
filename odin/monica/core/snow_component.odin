@@ -77,65 +77,65 @@ calc_snow_layer :: proc(sc: ^Snow_Component, mean_air_temperature, net_precipita
 		&net_precipitation_snow,
 	)
 
-	vm_Snowmelt := calc_snow_melt(sc, mean_air_temperature)
-	vm_Refreeze := calc_refreeze(sc, mean_air_temperature)
-	vm_NewSnowDensity := calc_new_snow_density(sc, mean_air_temperature, net_precipitation_snow)
-	sc.snow_density = calc_average_snow_density(sc, net_precipitation_snow, vm_NewSnowDensity)
+	snow_melt := calc_snow_melt(sc, mean_air_temperature)
+	refreeze := calc_refreeze(sc, mean_air_temperature)
+	new_snow_density := calc_new_snow_density(sc, mean_air_temperature, net_precipitation_snow)
+	sc.snow_density = calc_average_snow_density(sc, net_precipitation_snow, new_snow_density)
 
 	sc.frozen_water_in_snow =
-		sc.frozen_water_in_snow + net_precipitation_snow - vm_Snowmelt + vm_Refreeze
+		sc.frozen_water_in_snow + net_precipitation_snow - snow_melt + refreeze
 	sc.liquid_water_in_snow =
-		sc.liquid_water_in_snow + net_precipitation_water + vm_Snowmelt - vm_Refreeze
-	vm_SnowWaterEquivalent := sc.frozen_water_in_snow + sc.liquid_water_in_snow
+		sc.liquid_water_in_snow + net_precipitation_water + snow_melt - refreeze
+	snow_water_equivalent := sc.frozen_water_in_snow + sc.liquid_water_in_snow
 
-	vm_LiquidWaterRetainedInSnow := calc_liquid_water_retained_in_snow(
+	liquid_water_retained_in_snow := calc_liquid_water_retained_in_snow(
 		sc,
 		sc.frozen_water_in_snow,
-		vm_SnowWaterEquivalent,
+		snow_water_equivalent,
 	)
 
-	vm_SnowLayerWaterRelease := 0.0
-	if vm_Refreeze > 0.0 {
-		vm_SnowLayerWaterRelease = 0.0
-	} else if sc.liquid_water_in_snow <= vm_LiquidWaterRetainedInSnow {
-		vm_SnowLayerWaterRelease = 0
+	snow_layer_water_release := 0.0
+	if refreeze > 0.0 {
+		snow_layer_water_release = 0.0
+	} else if sc.liquid_water_in_snow <= liquid_water_retained_in_snow {
+		snow_layer_water_release = 0
 	} else {
-		vm_SnowLayerWaterRelease = sc.liquid_water_in_snow - vm_LiquidWaterRetainedInSnow
-		sc.liquid_water_in_snow -= vm_SnowLayerWaterRelease
-		vm_SnowWaterEquivalent = sc.frozen_water_in_snow + sc.liquid_water_in_snow
+		snow_layer_water_release = sc.liquid_water_in_snow - liquid_water_retained_in_snow
+		sc.liquid_water_in_snow -= snow_layer_water_release
+		snow_water_equivalent = sc.frozen_water_in_snow + sc.liquid_water_in_snow
 	}
 
-	calc_snow_depth(sc, vm_SnowWaterEquivalent)
+	calc_snow_depth(sc, snow_water_equivalent)
 
 	sc.water_to_infiltrate = calc_potential_infiltration(
 		sc,
 		net_precipitation,
-		vm_SnowLayerWaterRelease,
+		snow_layer_water_release,
 		sc.snow_depth,
 	)
 }
 
 // C++: double monica::snowcomponent::calcSnowMelt(const SnowComponent*, double)
-calc_snow_melt :: proc(sc: ^Snow_Component, vw_MeanAirTemperature: f64) -> f64 {
-	vm_MeltingFactor := 1.4 * (sc.snow_density / 0.1)
-	vm_Snowmelt := 0.0
+calc_snow_melt :: proc(sc: ^Snow_Component, mean_air_temperature: f64) -> f64 {
+	melting_factor := 1.4 * (sc.snow_density / 0.1)
+	snow_melt := 0.0
 
-	if vm_MeltingFactor > 4.7 {
-		vm_MeltingFactor = 4.7
+	if melting_factor > 4.7 {
+		melting_factor = 4.7
 	}
 
 	if sc.frozen_water_in_snow <= 0.0 {
-		vm_Snowmelt = 0.0
-	} else if vw_MeanAirTemperature < sc.snowmelt_temperature {
-		vm_Snowmelt = 0.0
+		snow_melt = 0.0
+	} else if mean_air_temperature < sc.snowmelt_temperature {
+		snow_melt = 0.0
 	} else {
-		vm_Snowmelt = vm_MeltingFactor * (vw_MeanAirTemperature - sc.snowmelt_temperature)
-		if vm_Snowmelt > sc.frozen_water_in_snow {
-			vm_Snowmelt = sc.frozen_water_in_snow
+		snow_melt = melting_factor * (mean_air_temperature - sc.snowmelt_temperature)
+		if snow_melt > sc.frozen_water_in_snow {
+			snow_melt = sc.frozen_water_in_snow
 		}
 	}
 
-	return vm_Snowmelt
+	return snow_melt
 }
 
 // C++: double monica::snowcomponent::calcNetPrecipitation(const SnowComponent*,
@@ -281,11 +281,11 @@ calc_potential_infiltration :: proc(
 
 // C++: void monica::snowcomponent::calcSnowDepth(SnowComponent*, double)
 calc_snow_depth :: proc(sc: ^Snow_Component, snow_water_equivalent: f64) {
-	pm_WaterDensity := 1.0 // [kg dm-3]
+	water_density := 1.0 // [kg dm-3]
 	if snow_water_equivalent <= 0.0 {
 		sc.snow_depth = 0.0
 	} else {
-		sc.snow_depth = snow_water_equivalent * pm_WaterDensity / sc.snow_density
+		sc.snow_depth = snow_water_equivalent * water_density / sc.snow_density
 
 		if sc.snow_depth > sc.max_snow_depth {
 			sc.max_snow_depth = sc.snow_depth
