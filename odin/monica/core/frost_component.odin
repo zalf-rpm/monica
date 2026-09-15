@@ -7,17 +7,17 @@ import libc "core:c/libc"
 
 // C++: struct monica::FrostComponent
 Frost_Component :: struct {
-	soil_column:                   ^Soil_Column,
-	frost_depth:                   f64,
-	accumulated_frost_depth:       f64,
-	negative_degree_days:          f64, // negative degree-days under snow
-	thaw_depth:                    f64,
-	frost_days:                    int,
-	lambda_redux:                  [dynamic]f64, // reduction factor for Lambda []
-	temperature_under_snow:        f64,
-	hydraulic_conductivity_redux:  f64,
-	pt_TimeStep:                   f64,
-	pm_HydraulicConductivityRedux: f64,
+	soil_column:                          ^Soil_Column,
+	frost_depth:                          f64,
+	accumulated_frost_depth:              f64,
+	negative_degree_days:                 f64, // negative degree-days under snow
+	thaw_depth:                           f64,
+	frost_days:                           int,
+	lambda_redux:                         [dynamic]f64, // reduction factor for Lambda []
+	temperature_under_snow:               f64,
+	hydraulic_conductivity_redux:         f64,
+	time_step:                            f64,
+	initial_hydraulic_conductivity_redux: f64,
 }
 
 // C++: void monica::frostcomponent::initialize(FrostComponent*, SoilColumn*,
@@ -25,7 +25,7 @@ Frost_Component :: struct {
 initialize_frost_component :: proc(
 	fc: ^Frost_Component,
 	soil_column: ^Soil_Column,
-	pm_hydraulic_conductivity_redux, p_time_step: f64,
+	initial_hydraulic_conductivity_redux, time_step: f64,
 	allocator := context.allocator,
 ) {
 	fc.soil_column = soil_column
@@ -39,9 +39,9 @@ initialize_frost_component :: proc(
 		fc.lambda_redux[i] = 1.0
 	}
 	fc.temperature_under_snow = 0.0
-	fc.hydraulic_conductivity_redux = pm_hydraulic_conductivity_redux
-	fc.pt_TimeStep = p_time_step
-	fc.pm_HydraulicConductivityRedux = pm_hydraulic_conductivity_redux
+	fc.hydraulic_conductivity_redux = initial_hydraulic_conductivity_redux
+	fc.time_step = time_step
+	fc.initial_hydraulic_conductivity_redux = initial_hydraulic_conductivity_redux
 }
 
 // C++: void monica::frostcomponent::calcSoilFrost(FrostComponent*, double, double)
@@ -80,23 +80,23 @@ calc_soil_frost :: proc(fc: ^Frost_Component, mean_air_temperature, snow_depth: 
 // C++: double monica::frostcomponent::getMeanBulkDensity(const FrostComponent*)
 get_mean_bulk_density :: proc(fc: ^Frost_Component) -> f64 {
 	sc := fc.soil_column
-	vs_number_of_layers := number_of_layers(sc)
+	nols := number_of_layers(sc)
 	bulk_density_accu := 0.0
-	for i_layer in 0 ..< vs_number_of_layers {
-		bulk_density_accu += soil_bulk_density(&sc.layers[i_layer])
+	for i in 0 ..< nols {
+		bulk_density_accu += soil_bulk_density(&sc.layers[i])
 	}
-	return bulk_density_accu / f64(vs_number_of_layers) / 1000.0 // [Mg m-3]
+	return bulk_density_accu / f64(nols) / 1000.0 // [Mg m-3]
 }
 
 // C++: double monica::frostcomponent::getMeanFieldCapacity(const FrostComponent*)
 get_mean_field_capacity :: proc(fc: ^Frost_Component) -> f64 {
 	sc := fc.soil_column
-	vs_number_of_layers := number_of_layers(sc)
+	nols := number_of_layers(sc)
 	mean_field_capacity_accu := 0.0
-	for i_layer in 0 ..< vs_number_of_layers {
-		mean_field_capacity_accu += sc.layers[i_layer].field_capacity
+	for i in 0 ..< nols {
+		mean_field_capacity_accu += sc.layers[i].field_capacity
 	}
-	return mean_field_capacity_accu / f64(vs_number_of_layers)
+	return mean_field_capacity_accu / f64(nols)
 }
 
 // C++: double monica::frostcomponent::calcSii(double)
@@ -120,7 +120,7 @@ calc_heat_conductivity_frozen :: proc(fc: ^Frost_Component, mean_bulk_density, s
 				(11.5 - 5.0 * mean_bulk_density) *
 					libc.exp((-50.0) * libc.pow((sii / mean_bulk_density), 1.5))) *
 		86400.0 *
-		fc.pt_TimeStep *
+		fc.time_step *
 		4.184 /
 		1000000.0 *
 		100
@@ -142,7 +142,7 @@ calc_heat_conductivity_unfrozen :: proc(
 						(-50.0) *
 						libc.pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5),
 					)) *
-		fc.pt_TimeStep *
+		fc.time_step *
 		4.184 *
 		100.0
 
@@ -249,34 +249,34 @@ calc_temperature_under_snow :: proc(
 // C++: void monica::frostcomponent::updateLambdaRedux(FrostComponent*)
 update_lambda_redux :: proc(fc: ^Frost_Component) {
 	sc := fc.soil_column
-	vs_number_of_layers := number_of_layers(sc)
+	nols := number_of_layers(sc)
 
-	for i_layer in 0 ..< vs_number_of_layers {
-		if f64(i_layer) < libc.floor((fc.frost_depth / sc.layers[i_layer].layer_thickness) + 0.5) {
+	for i in 0 ..< nols {
+		if f64(i) < libc.floor((fc.frost_depth / sc.layers[i].layer_thickness) + 0.5) {
 			// soil layer is frozen
-			sc.layers[i_layer].soil_frozen = true
-			fc.lambda_redux[i_layer] = 0.0
+			sc.layers[i].soil_frozen = true
+			fc.lambda_redux[i] = 0.0
 
-			if i_layer == 0 {
+			if i == 0 {
 				fc.hydraulic_conductivity_redux = 0.0
 			}
 		}
 
-		if f64(i_layer) < libc.floor((fc.thaw_depth / sc.layers[i_layer].layer_thickness) + 0.5) {
+		if f64(i) < libc.floor((fc.thaw_depth / sc.layers[i].layer_thickness) + 0.5) {
 			// soil layer is thawing
-			if fc.thaw_depth < (f64(i_layer + 1) * sc.layers[i_layer].layer_thickness) &&
+			if fc.thaw_depth < (f64(i + 1) * sc.layers[i].layer_thickness) &&
 			   (fc.thaw_depth < fc.frost_depth) {
 				// soil layer is thawing but there is more frost than thaw
-				sc.layers[i_layer].soil_frozen = true
-				fc.lambda_redux[i_layer] = 0.0
-				if i_layer == 0 {
+				sc.layers[i].soil_frozen = true
+				fc.lambda_redux[i] = 0.0
+				if i == 0 {
 					fc.hydraulic_conductivity_redux = 0.0
 				}
 			} else {
 				// soil is thawing
-				sc.layers[i_layer].soil_frozen = false
-				fc.lambda_redux[i_layer] = 1.0
-				if i_layer == 0 {
+				sc.layers[i].soil_frozen = false
+				fc.lambda_redux[i] = 1.0
+				if i == 0 {
 					fc.hydraulic_conductivity_redux = 0.1
 				}
 			}
@@ -289,10 +289,10 @@ update_lambda_redux :: proc(fc: ^Frost_Component) {
 			fc.negative_degree_days = 0.0
 			fc.frost_days = 0
 
-			fc.hydraulic_conductivity_redux = fc.pm_HydraulicConductivityRedux
-			for j_layer in 0 ..< vs_number_of_layers {
-				sc.layers[j_layer].soil_frozen = false
-				fc.lambda_redux[j_layer] = 1.0
+			fc.hydraulic_conductivity_redux = fc.initial_hydraulic_conductivity_redux
+			for j in 0 ..< nols {
+				sc.layers[j].soil_frozen = false
+				fc.lambda_redux[j] = 1.0
 			}
 		}
 	}
