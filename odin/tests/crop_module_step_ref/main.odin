@@ -213,32 +213,32 @@ main :: proc() {
 
 	// --- real, live, fully-wired soil-module chain ---
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 	st := core.make_soil_temperature(
 		&sc,
-		cpp.userSoilTemperatureParameters,
-		cpp.userEnvironmentParameters.p_timeStep,
+		cpp.soil_temperature_mod_params,
+		cpp.env_params.time_step,
 	)
 	sm := core.make_soil_moisture(
 		&sc,
-		&cpp.siteParameters,
-		cpp.userSoilMoistureParameters,
-		&cpp.userEnvironmentParameters,
-		&cpp.userCropParameters,
-		cpp.simulationParameters.p_LayerThickness,
+		&cpp.site_params,
+		cpp.soil_moisture_mod_params,
+		&cpp.env_params,
+		&cpp.crop_params,
+		cpp.sim_params.p_LayerThickness,
 		a,
 	)
-	so := core.make_soil_organic(&sc, cpp.userSoilOrganicParameters)
+	so := core.make_soil_organic(&sc, cpp.soil_organic_mod_params)
 	str := core.make_soil_transport(
-		cpp.userSoilTransportParameters,
+		cpp.soil_transport_mod_params,
 		&sc,
-		&cpp.siteParameters,
-		&cpp.userEnvironmentParameters,
-		&cpp.userCropParameters,
+		&cpp.site_params,
+		&cpp.env_params,
+		&cpp.crop_params,
 	)
 	g_soil_moisture = &sm
 	g_soil_organic = &so
@@ -275,9 +275,9 @@ main :: proc() {
 		&sc,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&cpp.siteParameters,
-		&cpp.userCropParameters,
-		&cpp.simulationParameters,
+		&cpp.site_params,
+		&cpp.crop_params,
+		&cpp.sim_params,
 		recording_fire_event,
 		real_add_organic_matter,
 		real_get_snow_depth,
@@ -316,7 +316,7 @@ main :: proc() {
 		n = num_days_int
 	}
 
-	dual_kc_method := cpp.simulationParameters.dualKcMethod
+	dual_kc_method := cpp.sim_params.dualKcMethod
 
 	t := tr.make_tracer(os.to_stream(os.stdout), a)
 	defer tr.destroy_tracer(&t)
@@ -360,7 +360,7 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			cpp.userEnvironmentParameters.p_WindSpeedHeight,
+			cpp.env_params.wind_speed_height_m,
 			globrad,
 			julday,
 			et0,
@@ -377,7 +377,7 @@ main :: proc() {
 			current_date,
 			(relhumid / 100.0),
 			wind,
-			cpp.userEnvironmentParameters.p_WindSpeedHeight,
+			cpp.env_params.wind_speed_height_m,
 			ATM_CO2,
 			ATM_O3,
 			precip,

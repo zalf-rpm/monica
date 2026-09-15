@@ -2,9 +2,9 @@
 // CultivarParameters, CropParameters.
 package params
 
-import "core:strings"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
+import "core:strings"
 
 // ---------------------------------------------------------------------------
 // SpeciesParameters
@@ -12,81 +12,76 @@ import tl "../../support/tools"
 
 // C++: struct monica::SpeciesParameters
 Species_Parameters :: struct {
-	pc_SpeciesId:                        string,
-	pc_CarboxylationPathway:             int, // old TEMPTYP
-	pc_DefaultRadiationUseEfficiency:    f64,
-	pc_PartBiologicalNFixation:          f64,
-	pc_InitialKcFactor:                  f64, // old Kcini
-	pc_LuxuryNCoeff:                     f64,
-	pc_MaxCropDiameter:                  f64,
-	pc_StageAtMaxHeight:                 f64,
-	pc_StageAtMaxDiameter:               f64,
-	pc_MinimumNConcentration:            f64,
-	pc_MinimumTemperatureForAssimilation: f64, // old MINTMP
-	pc_OptimumTemperatureForAssimilation: f64,
-	pc_MaximumTemperatureForAssimilation: f64,
-	pc_NConcentrationAbovegroundBiomass: f64, // initial value of old GEHOB
-	pc_NConcentrationB0:                 f64,
-	pc_NConcentrationPN:                 f64,
-	pc_NConcentrationRoot:               f64, // initial value to WUGEH
+	pc_SpeciesId:                               string,
+	pc_CarboxylationPathway:                    int, // old TEMPTYP
+	pc_DefaultRadiationUseEfficiency:           f64,
+	pc_PartBiologicalNFixation:                 f64,
+	pc_InitialKcFactor:                         f64, // old Kcini
+	pc_LuxuryNCoeff:                            f64,
+	pc_MaxCropDiameter:                         f64,
+	pc_StageAtMaxHeight:                        f64,
+	pc_StageAtMaxDiameter:                      f64,
+	pc_MinimumNConcentration:                   f64,
+	pc_MinimumTemperatureForAssimilation:       f64, // old MINTMP
+	pc_OptimumTemperatureForAssimilation:       f64,
+	pc_MaximumTemperatureForAssimilation:       f64,
+	pc_NConcentrationAbovegroundBiomass:        f64, // initial value of old GEHOB
+	pc_NConcentrationB0:                        f64,
+	pc_NConcentrationPN:                        f64,
+	pc_NConcentrationRoot:                      f64, // initial value to WUGEH
 	pc_DevelopmentAccelerationByNitrogenStress: int,
-	pc_FieldConditionModifier:           f64,
-	pc_AssimilateReallocation:           f64,
-
-	pc_BaseTemperature:             [dynamic]f64, // old BAS
-	pc_OrganMaintenanceRespiration: [dynamic]f64, // old MAIRT
-	pc_OrganGrowthRespiration:      [dynamic]f64, // old MAIRT
-	pc_StageMaxRootNConcentration:  [dynamic]f64, // old WGMAX
-	pc_InitialOrganBiomass:         [dynamic]f64,
-	pc_CriticalOxygenContent:       [dynamic]f64, // old LUKRIT
-	pc_StageMobilFromStorageCoeff:  [dynamic]f64,
-
-	pc_AbovegroundOrgan: [dynamic]bool, // old KOMP
-	pc_StorageOrgan:     [dynamic]bool,
-
-	pc_SamplingDepth:                    f64,
-	pc_TargetNSamplingDepth:             f64,
-	pc_TargetN30:                        f64,
-	pc_MaxNUptakeParam:                  f64,
-	pc_RootDistributionParam:            f64,
-	pc_PlantDensity:                     int, // [plants m-2]
-	pc_RootGrowthLag:                    f64,
-	pc_MinimumTemperatureRootGrowth:     f64,
-	pc_InitialRootingDepth:              f64,
-	pc_RootPenetrationRate:              f64,
-	pc_RootFormFactor:                   f64,
-	pc_SpecificRootLength:               f64,
-	pc_StageAfterCut:                    int, // stage number is zero-based
-	pc_LimitingTemperatureHeatStress:    f64,
-	pc_CuttingDelayDays:                 int,
-	pc_DroughtImpactOnFertilityFactor:   f64,
-
-	EF_MONO:  f64, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
-	EF_MONOS: f64, // [ug gDW-1 h-1] Monoterpenes stored then emitted
-	EF_ISO:   f64, // Isoprene emission factor
-	VCMAX25:  f64, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
-	AEKC:     f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
-	AEKO:     f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
-	AEVC:     f64, // activation energy for photosynthesis (J mol-1)
-	KC25:     f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
-	KO25:     f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
-
-	pc_TransitionStageLeafExp: int, // [1-7]
-	dormancyStartDoy:          int, // start dormancy of perennial crops at that DOY (0 = unset)
-	dormancyEndDoy:            int, // end dormancy, start accumulating temperature sums (0 = unset)
+	pc_FieldConditionModifier:                  f64,
+	pc_AssimilateReallocation:                  f64,
+	pc_BaseTemperature:                         [dynamic]f64, // old BAS
+	pc_OrganMaintenanceRespiration:             [dynamic]f64, // old MAIRT
+	pc_OrganGrowthRespiration:                  [dynamic]f64, // old MAIRT
+	pc_StageMaxRootNConcentration:              [dynamic]f64, // old WGMAX
+	pc_InitialOrganBiomass:                     [dynamic]f64,
+	pc_CriticalOxygenContent:                   [dynamic]f64, // old LUKRIT
+	pc_StageMobilFromStorageCoeff:              [dynamic]f64,
+	pc_AbovegroundOrgan:                        [dynamic]bool, // old KOMP
+	pc_StorageOrgan:                            [dynamic]bool,
+	pc_SamplingDepth:                           f64,
+	pc_TargetNSamplingDepth:                    f64,
+	pc_TargetN30:                               f64,
+	pc_MaxNUptakeParam:                         f64,
+	pc_RootDistributionParam:                   f64,
+	pc_PlantDensity:                            int, // [plants m-2]
+	pc_RootGrowthLag:                           f64,
+	pc_MinimumTemperatureRootGrowth:            f64,
+	pc_InitialRootingDepth:                     f64,
+	pc_RootPenetrationRate:                     f64,
+	pc_RootFormFactor:                          f64,
+	pc_SpecificRootLength:                      f64,
+	pc_StageAfterCut:                           int, // stage number is zero-based
+	pc_LimitingTemperatureHeatStress:           f64,
+	pc_CuttingDelayDays:                        int,
+	pc_DroughtImpactOnFertilityFactor:          f64,
+	EF_MONO:                                    f64, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
+	EF_MONOS:                                   f64, // [ug gDW-1 h-1] Monoterpenes stored then emitted
+	EF_ISO:                                     f64, // Isoprene emission factor
+	VCMAX25:                                    f64, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
+	AEKC:                                       f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
+	AEKO:                                       f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
+	AEVC:                                       f64, // activation energy for photosynthesis (J mol-1)
+	KC25:                                       f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
+	KO25:                                       f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
+	pc_TransitionStageLeafExp:                  int, // [1-7]
+	dormancyStartDoy:                           int, // start dormancy of perennial crops at that DOY (0 = unset)
+	dormancyEndDoy:                             int, // end dormancy, start accumulating temperature sums (0 = unset)
 }
 
 // C++ in-class initialisers
 make_species_parameters :: proc() -> Species_Parameters {
 	return Species_Parameters {
 		pc_FieldConditionModifier = 1.0,
-		EF_MONO                   = 0.5,
-		EF_MONOS                  = 0.5,
-		AEKC                      = 65800.0,
-		AEKO                      = 1400.0,
-		AEVC                      = 68800.0,
-		KC25                      = 460.0,
-		KO25                      = 330.0,
+		EF_MONO = 0.5,
+		EF_MONOS = 0.5,
+		AEKC = 65800.0,
+		AEKO = 1400.0,
+		AEVC = 68800.0,
+		KC25 = 460.0,
+		KO25 = 330.0,
 		pc_TransitionStageLeafExp = -1,
 	}
 }
@@ -167,11 +162,7 @@ species_parameters_merge :: proc(sp: ^Species_Parameters, j: jx.Value) -> tl.Err
 	}
 	jx.set_double_value(&sp.pc_LimitingTemperatureHeatStress, j, "LimitingTemperatureHeatStress")
 	jx.set_int_value(&sp.pc_CuttingDelayDays, j, "CuttingDelayDays")
-	jx.set_double_value(
-		&sp.pc_DroughtImpactOnFertilityFactor,
-		j,
-		"DroughtImpactOnFertilityFactor",
-	)
+	jx.set_double_value(&sp.pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor")
 
 	jx.set_double_value(&sp.EF_MONO, j, "EF_MONO")
 	jx.set_double_value(&sp.EF_MONOS, j, "EF_MONOS")
@@ -205,18 +196,9 @@ species_parameters_to_json :: proc(sp: ^Species_Parameters, a: Allocator) -> jx.
 		{"StageAtMaxHeight", jx.f(sp.pc_StageAtMaxHeight)},
 		{"StageAtMaxDiameter", jx.f(sp.pc_StageAtMaxDiameter)},
 		{"MinimumNConcentration", jx.f(sp.pc_MinimumNConcentration)},
-		{
-			"MinimumTemperatureForAssimilation",
-			jx.f(sp.pc_MinimumTemperatureForAssimilation),
-		},
-		{
-			"OptimumTemperatureForAssimilation",
-			jx.f(sp.pc_OptimumTemperatureForAssimilation),
-		},
-		{
-			"MaximumTemperatureForAssimilation",
-			jx.f(sp.pc_MaximumTemperatureForAssimilation),
-		},
+		{"MinimumTemperatureForAssimilation", jx.f(sp.pc_MinimumTemperatureForAssimilation)},
+		{"OptimumTemperatureForAssimilation", jx.f(sp.pc_OptimumTemperatureForAssimilation)},
+		{"MaximumTemperatureForAssimilation", jx.f(sp.pc_MaximumTemperatureForAssimilation)},
 		{"NConcentrationAbovegroundBiomass", jx.f(sp.pc_NConcentrationAbovegroundBiomass)},
 		{"NConcentrationB0", jx.f(sp.pc_NConcentrationB0)},
 		{"NConcentrationPN", jx.f(sp.pc_NConcentrationPN)},
@@ -283,65 +265,55 @@ species_parameters_number_of_organs :: proc(sp: ^Species_Parameters) -> int {
 
 // C++: struct monica::CultivarParameters
 Cultivar_Parameters :: struct {
-	pc_CultivarId:                  string,
-	pc_Description:                 string,
-	pc_Perennial:                   bool,
-	pc_MaxAssimilationRate:         f64, // old MAXAMAX
-	pc_LightExtinctionCoefficient:  f64,
-	pc_MaxCropHeight:               f64,
-	pc_ResidueNRatio:               f64,
-	pc_LT50cultivar:                f64,
-
-	pc_CropHeightP1:                f64,
-	pc_CropHeightP2:                f64,
-	pc_CropSpecificMaxRootingDepth: f64, // old WUMAXPF [m]
-
-	pc_AssimilatePartitioningCoeff: [dynamic][dynamic]f64, // old PRO
-	pc_OrganSenescenceRate:         [dynamic][dynamic]f64, // old DEAD
-
-	pc_BaseDaylength:             [dynamic]f64, // old DLBAS
-	pc_OptimumTemperature:        [dynamic]f64,
-	pc_DaylengthRequirement:      [dynamic]f64, // old DEC
-	pc_DroughtStressThreshold:    [dynamic]f64, // old DRYswell
-	pc_SpecificLeafArea:          [dynamic]f64, // old LAIFKT [ha kg-1]
-	pc_StageKcFactor:             [dynamic]f64, // old Kc
-	pc_StageTemperatureSum:       [dynamic]f64, // old TSUM
-	pc_VernalisationRequirement:  [dynamic]f64, // old VSCHWELL
-
-	pc_HeatSumIrrigationStart: f64,
-	pc_HeatSumIrrigationEnd:   f64,
-
-	pc_CriticalTemperatureHeatStress:  f64,
-	pc_BeginSensitivePhaseHeatStress:  f64,
-	pc_EndSensitivePhaseHeatStress:    f64,
-
-	pc_FrostHardening:        f64,
-	pc_FrostDehardening:      f64,
-	pc_LowTemperatureExposure: f64,
-	pc_RespiratoryStress:     f64,
-	pc_LatestHarvestDoy:      int,
-
-	pc_OrganIdsForPrimaryYield:   [dynamic]Yield_Component,
-	pc_OrganIdsForSecondaryYield: [dynamic]Yield_Component,
-	pc_OrganIdsForCutting:        [dynamic]Yield_Component,
-
-	pc_EarlyRefLeafExp: f64, // 12 = wheat (first guess)
-	pc_RefLeafExp:      f64, // 20 = wheat, 22 = maize (first guess)
-
-	pc_MinTempDev_WE: f64,
-	pc_OptTempDev_WE: f64,
-	pc_MaxTempDev_WE: f64,
-
-	winterCrop: bool,
+	pc_CultivarId:                    string,
+	pc_Description:                   string,
+	pc_Perennial:                     bool,
+	pc_MaxAssimilationRate:           f64, // old MAXAMAX
+	pc_LightExtinctionCoefficient:    f64,
+	pc_MaxCropHeight:                 f64,
+	pc_ResidueNRatio:                 f64,
+	pc_LT50cultivar:                  f64,
+	pc_CropHeightP1:                  f64,
+	pc_CropHeightP2:                  f64,
+	pc_CropSpecificMaxRootingDepth:   f64, // old WUMAXPF [m]
+	pc_AssimilatePartitioningCoeff:   [dynamic][dynamic]f64, // old PRO
+	pc_OrganSenescenceRate:           [dynamic][dynamic]f64, // old DEAD
+	pc_BaseDaylength:                 [dynamic]f64, // old DLBAS
+	pc_OptimumTemperature:            [dynamic]f64,
+	pc_DaylengthRequirement:          [dynamic]f64, // old DEC
+	pc_DroughtStressThreshold:        [dynamic]f64, // old DRYswell
+	pc_SpecificLeafArea:              [dynamic]f64, // old LAIFKT [ha kg-1]
+	pc_StageKcFactor:                 [dynamic]f64, // old Kc
+	pc_StageTemperatureSum:           [dynamic]f64, // old TSUM
+	pc_VernalisationRequirement:      [dynamic]f64, // old VSCHWELL
+	pc_HeatSumIrrigationStart:        f64,
+	pc_HeatSumIrrigationEnd:          f64,
+	pc_CriticalTemperatureHeatStress: f64,
+	pc_BeginSensitivePhaseHeatStress: f64,
+	pc_EndSensitivePhaseHeatStress:   f64,
+	pc_FrostHardening:                f64,
+	pc_FrostDehardening:              f64,
+	pc_LowTemperatureExposure:        f64,
+	pc_RespiratoryStress:             f64,
+	pc_LatestHarvestDoy:              int,
+	pc_OrganIdsForPrimaryYield:       [dynamic]Yield_Component,
+	pc_OrganIdsForSecondaryYield:     [dynamic]Yield_Component,
+	pc_OrganIdsForCutting:            [dynamic]Yield_Component,
+	pc_EarlyRefLeafExp:               f64, // 12 = wheat (first guess)
+	pc_RefLeafExp:                    f64, // 20 = wheat, 22 = maize (first guess)
+	pc_MinTempDev_WE:                 f64,
+	pc_OptTempDev_WE:                 f64,
+	pc_MaxTempDev_WE:                 f64,
+	winterCrop:                       bool,
 }
 
 // C++ in-class initialisers
 make_cultivar_parameters :: proc() -> Cultivar_Parameters {
 	return Cultivar_Parameters {
 		pc_LightExtinctionCoefficient = 0.8,
-		pc_LatestHarvestDoy           = -1,
-		pc_EarlyRefLeafExp            = 12.0,
-		pc_RefLeafExp                 = 20.0,
+		pc_LatestHarvestDoy = -1,
+		pc_EarlyRefLeafExp = 12.0,
+		pc_RefLeafExp = 20.0,
 	}
 }
 
@@ -360,7 +332,9 @@ cultivar_parameters_merge :: proc(cp: ^Cultivar_Parameters, j: jx.Value) -> tl.E
 	}
 
 	if jx.is_array(jx.get(j, "OrganIdsForPrimaryYield")) {
-		cp.pc_OrganIdsForPrimaryYield = merge_yield_components(jx.get(j, "OrganIdsForPrimaryYield"))
+		cp.pc_OrganIdsForPrimaryYield = merge_yield_components(
+			jx.get(j, "OrganIdsForPrimaryYield"),
+		)
 	} else {
 		tl.append_errorf(
 			&res,
@@ -370,8 +344,9 @@ cultivar_parameters_merge :: proc(cp: ^Cultivar_Parameters, j: jx.Value) -> tl.E
 	}
 
 	if jx.is_array(jx.get(j, "OrganIdsForSecondaryYield")) {
-		cp.pc_OrganIdsForSecondaryYield =
-			merge_yield_components(jx.get(j, "OrganIdsForSecondaryYield"))
+		cp.pc_OrganIdsForSecondaryYield = merge_yield_components(
+			jx.get(j, "OrganIdsForSecondaryYield"),
+		)
 	} else {
 		tl.append_errorf(
 			&res,
@@ -484,7 +459,10 @@ cultivar_parameters_to_json :: proc(cp: ^Cultivar_Parameters, a: Allocator) -> j
 		{"AssimilatePartitioningCoeff", jx.Value(apcs)},
 		{"OrganSenescenceRate", jx.Value(osrs)},
 		{"BaseDaylength", jx.arr(a, prim_arr_f64(cp.pc_BaseDaylength[:], a), jx.sl("h"))},
-		{"OptimumTemperature", jx.arr(a, prim_arr_f64(cp.pc_OptimumTemperature[:], a), jx.sl("°C"))},
+		{
+			"OptimumTemperature",
+			jx.arr(a, prim_arr_f64(cp.pc_OptimumTemperature[:], a), jx.sl("°C")),
+		},
 		{
 			"DaylengthRequirement",
 			jx.arr(a, prim_arr_f64(cp.pc_DaylengthRequirement[:], a), jx.sl("h")),
@@ -510,10 +488,7 @@ cultivar_parameters_to_json :: proc(cp: ^Cultivar_Parameters, a: Allocator) -> j
 		{"LowTemperatureExposure", jx.f(cp.pc_LowTemperatureExposure)},
 		{"RespiratoryStress", jx.f(cp.pc_RespiratoryStress)},
 		{"LatestHarvestDoy", jx.i(cp.pc_LatestHarvestDoy)},
-		{
-			"OrganIdsForPrimaryYield",
-			yield_components_to_json(cp.pc_OrganIdsForPrimaryYield[:], a),
-		},
+		{"OrganIdsForPrimaryYield", yield_components_to_json(cp.pc_OrganIdsForPrimaryYield[:], a)},
 		{
 			"OrganIdsForSecondaryYield",
 			yield_components_to_json(cp.pc_OrganIdsForSecondaryYield[:], a),
@@ -539,8 +514,8 @@ cultivar_parameters_number_of_developmental_stages :: proc(cp: ^Cultivar_Paramet
 
 // C++: struct monica::CropParameters
 Crop_Parameters :: struct {
-	speciesParams:  Species_Parameters,
-	cultivarParams: Cultivar_Parameters,
+	speciesParams:                       Species_Parameters,
+	cultivarParams:                      Cultivar_Parameters,
 	// Maybe, because unset should fall back to CropModuleParameters'
 	// __enable_vernalisation_factor_fix__ default, not to false.
 	__enable_vernalisation_factor_fix__: Maybe(bool),
@@ -563,7 +538,11 @@ crop_parameters_merge :: proc(cp: ^Crop_Parameters, j: jx.Value) -> tl.Errors {
 }
 
 // C++: Errors cropparameters::merge(CropParameters*, Json sj, Json cj) - split-document overload
-crop_parameters_merge_sj_cj :: proc(cp: ^Crop_Parameters, sj: jx.Value, cj: jx.Value) -> tl.Errors {
+crop_parameters_merge_sj_cj :: proc(
+	cp: ^Crop_Parameters,
+	sj: jx.Value,
+	cj: jx.Value,
+) -> tl.Errors {
 	res: tl.Errors
 	tl.append_errors(&res, species_parameters_merge(&cp.speciesParams, sj))
 	tl.append_errors(&res, cultivar_parameters_merge(&cp.cultivarParams, cj))

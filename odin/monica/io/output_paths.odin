@@ -50,7 +50,10 @@ Alias_Entry :: struct {
 // allocates out of whatever context.allocator happens to be live at init.
 g_alias_table := []Alias_Entry {
 	{"AbBiom", {"current_crop_module.aboveground_biomass", 1, .NONE, "kgDM ha-1"}},
-	{"AbBiomNc", {"current_crop_module.n_concentration_aboveground_biomass", 5, .NONE, "kgN ha-1"}},
+	{
+		"AbBiomNc",
+		{"current_crop_module.n_concentration_aboveground_biomass", 5, .NONE, "kgN ha-1"},
+	},
 	{"Act_ET", {"soil_moisture.actual_evapotranspiration", 1, .NONE, "mm"}},
 	{"Act_Ev", {"soil_moisture.actual_evaporation", 1, .NONE, "mm"}},
 	{"Act_Trans", {"current_crop_module.actual_transpiration", 1, .NONE, "mm"}},
@@ -88,7 +91,12 @@ g_alias_table := []Alias_Entry {
 	{"GrowthR", {"current_crop_module.growth_respiration_as", 4, .NONE, "kgCH2O ha-1"}},
 	{
 		"guenther-isoprene-emission",
-		{"current_crop_module.guenther_emissions.isoprene_emission", 5, .NONE, "umol m-2Ground d-1"},
+		{
+			"current_crop_module.guenther_emissions.isoprene_emission",
+			5,
+			.NONE,
+			"umol m-2Ground d-1",
+		},
 	},
 	{
 		"guenther-monoterpene-emission",
@@ -153,7 +161,7 @@ g_alias_table := []Alias_Entry {
 	{"PotTraDef", {"current_crop_module.potential_transpiration_deficit", 2, .NONE, "0;1"}},
 	{"Precip", {"climate_data.#last.precip", 4, .NONE, "mm"}},
 	{"Pwp", {"soil_column.layers.permanent_wilting_point", 4, .NONE, "m3 m-3"}},
-	{"Recharge", {"soil_column.vs_FluxAtLowerBoundary", 3, .NONE, "mm"}},
+	{"Recharge", {"soil_column.flux_at_lower_boundary", 3, .NONE, "mm"}},
 	{"RelDev", {"current_crop_module.relative_total_development", 2, .NONE, "0;1"}},
 	{"Relhumid", {"climate_data.#last.relhumid", 4, .NONE, ""}},
 	{"residueCutBiomass", {"current_crop_module.residue_cut_biomass", 1, .NONE, "kgDM ha-1"}},
@@ -178,7 +186,10 @@ g_alias_table := []Alias_Entry {
 	{"SumNFert", {"sum_fertiliser", 1, .NONE, "kgN ha-1"}},
 	{"SumNOrgFert", {"sum_org_fertiliser", 1, .NONE, "kgN ha-1"}},
 	{"SumNUp", {"current_crop_module.sum_total_n_uptake", 2, .NONE, "kgN ha-1"}},
-	{"sumResidueCutBiomass", {"current_crop_module.sum_residue_cut_biomass", 1, .NONE, "kgDM ha-1"}},
+	{
+		"sumResidueCutBiomass",
+		{"current_crop_module.sum_residue_cut_biomass", 1, .NONE, "kgDM ha-1"},
+	},
 	{"Sunhours", {"climate_data.#last.sunhours", 4, .NONE, ""}},
 	{"Surface", {"soil_column.vs_SurfaceWaterStorage", 1, .NONE, "mm"}},
 	{"SurfTemp", {"soil_temperature.soil_surface_temperature", 1, .NONE, "�C"}},

@@ -280,9 +280,9 @@ main :: proc() {
 	// --- real, live SoilColumn - makeCropModule only reads soilColumn.layers,
 	// no need for SoilTemperature/Moisture/Organic here ---
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 
@@ -325,9 +325,9 @@ main :: proc() {
 			&sc,
 			&wheat_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.site_params,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
@@ -340,15 +340,15 @@ main :: proc() {
 
 	// --- scenario 1: pc_AdjustRootDepthForSoilProps forced false ---
 	{
-		crop_mod_params := cpp.userCropParameters
+		crop_mod_params := cpp.crop_params
 		crop_mod_params.pc_AdjustRootDepthForSoilProps = false
 		cm := core.make_crop_module(
 			&sc,
 			&wheat_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
+			&cpp.site_params,
 			&crop_mod_params,
-			&cpp.simulationParameters,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
@@ -361,15 +361,15 @@ main :: proc() {
 
 	// --- scenario 2: vs_ImpenetrableLayerDepth clamp branch ---
 	{
-		site_params := cpp.siteParameters
+		site_params := cpp.site_params
 		site_params.vs_ImpenetrableLayerDepth = 0.2
 		cm := core.make_crop_module(
 			&sc,
 			&wheat_crop_params,
 			&wheat_residue_params,
 			&site_params,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
@@ -395,9 +395,9 @@ main :: proc() {
 			&sc,
 			&low_kc_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.site_params,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,

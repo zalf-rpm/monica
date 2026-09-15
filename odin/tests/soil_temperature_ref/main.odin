@@ -8,19 +8,19 @@
 // Run odin/tests/cpp_ref/run_soil_temperature.sh to build both and diff them.
 package soil_temperature_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:bufio"
 import "core:fmt"
 import "core:io"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 main :: proc() {
 	args := os.args
@@ -87,15 +87,15 @@ main :: proc() {
 	// initializeMonicaModelFromParams (monica-model.cpp) minus the modules
 	// soiltemperature doesn't need ---
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 	st := core.make_soil_temperature(
 		&sc,
-		cpp.userSoilTemperatureParameters,
-		cpp.userEnvironmentParameters.p_timeStep,
+		cpp.soil_temperature_mod_params,
+		cpp.env_params.time_step,
 	)
 
 	// --- climate ---
@@ -147,7 +147,15 @@ main :: proc() {
 		snow_depth: f64 = (day % 30) < 10 ? 50.0 : 0.0
 		temperature_under_snow: f64 = -2.0 - f64(day % 5)
 
-		core.soil_temperature_step(&st, tmin, tmax, globrad, 0.0, snow_depth, temperature_under_snow)
+		core.soil_temperature_step(
+			&st,
+			tmin,
+			tmax,
+			globrad,
+			0.0,
+			snow_depth,
+			temperature_under_snow,
+		)
 
 		tr.set_day(&t, day)
 		tr.dump(&t, "soilTemperature", st)

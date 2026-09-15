@@ -110,7 +110,11 @@ dump_crop_module_biomass :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Mod
 	tr.dump(t, jn(path, "vc_RootDensity"), cm.root_density)
 	tr.dump(t, jn(path, "vc_RootDiameter"), cm.root_diameter)
 	tr.dump(t, jn(path, "vc_MaxNUptake"), cm.max_n_uptake)
-	tr.dump(t, jn(path, "vc_CurrentTotalTemperatureSumRoot"), cm.current_total_temperature_sum_root)
+	tr.dump(
+		t,
+		jn(path, "vc_CurrentTotalTemperatureSumRoot"),
+		cm.current_total_temperature_sum_root,
+	)
 
 	tr.dump(t, jn(path, "vc_GrossPrimaryProduction"), cm.gross_primary_production)
 	tr.dump(t, jn(path, "vc_NetPrimaryProduction"), cm.net_primary_production)
@@ -201,8 +205,7 @@ day_step :: proc(
 	if cm.total_temperature_sum == 0.0 {
 		cm.relative_total_development = 0.0
 	} else {
-		cm.relative_total_development =
-			cm.current_total_temperature_sum / cm.total_temperature_sum
+		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
 	if cm.developmental_stage == 0 {
@@ -328,23 +331,23 @@ main :: proc() {
 	// --- real SoilColumn/SoilTemperature/SoilMoisture, bare soil (no
 	// cropModule wiring - checkpoint 7's job) ---
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 	st := core.make_soil_temperature(
 		&sc,
-		cpp.userSoilTemperatureParameters,
-		cpp.userEnvironmentParameters.p_timeStep,
+		cpp.soil_temperature_mod_params,
+		cpp.env_params.time_step,
 	)
 	sm := core.make_soil_moisture(
 		&sc,
-		&cpp.siteParameters,
-		cpp.userSoilMoistureParameters,
-		&cpp.userEnvironmentParameters,
-		&cpp.userCropParameters,
-		cpp.simulationParameters.p_LayerThickness,
+		&cpp.site_params,
+		cpp.soil_moisture_mod_params,
+		&cpp.env_params,
+		&cpp.crop_params,
+		cpp.sim_params.p_LayerThickness,
 		a,
 	)
 	sm.crop_module = nil
@@ -382,9 +385,9 @@ main :: proc() {
 		&sc,
 		&wheat_crop_params,
 		&wheat_residue_params,
-		&cpp.siteParameters,
-		&cpp.userCropParameters,
-		&cpp.simulationParameters,
+		&cpp.site_params,
+		&cpp.crop_params,
+		&cpp.sim_params,
 		noop_fire_event,
 		recording_add_organic_matter,
 		real_get_snow_depth,
@@ -417,7 +420,7 @@ main :: proc() {
 		n = num_days_int
 	}
 
-	frost_kill_on := cpp.simulationParameters.pc_FrostKillOn
+	frost_kill_on := cpp.sim_params.pc_FrostKillOn
 
 	t := tr.make_tracer(os.to_stream(os.stdout), a)
 	defer tr.destroy_tracer(&t)
@@ -454,7 +457,7 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			cpp.userEnvironmentParameters.p_WindSpeedHeight,
+			cpp.env_params.wind_speed_height_m,
 			globrad,
 			julday,
 			et0,
@@ -490,23 +493,23 @@ main :: proc() {
 	// fc_move_dead_root_biomass_to_soil's real addOrganicMatter call.
 	{
 		sc2 := core.make_soil_column(
-			cpp.simulationParameters.p_LayerThickness,
-			cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-			cpp.siteParameters.vs_SoilParameters[:],
+			cpp.sim_params.p_LayerThickness,
+			cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+			cpp.site_params.vs_SoilParameters[:],
 			a,
 		)
 		st2 := core.make_soil_temperature(
 			&sc2,
-			cpp.userSoilTemperatureParameters,
-			cpp.userEnvironmentParameters.p_timeStep,
+			cpp.soil_temperature_mod_params,
+			cpp.env_params.time_step,
 		)
 		sm2 := core.make_soil_moisture(
 			&sc2,
-			&cpp.siteParameters,
-			cpp.userSoilMoistureParameters,
-			&cpp.userEnvironmentParameters,
-			&cpp.userCropParameters,
-			cpp.simulationParameters.p_LayerThickness,
+			&cpp.site_params,
+			cpp.soil_moisture_mod_params,
+			&cpp.env_params,
+			&cpp.crop_params,
+			cpp.sim_params.p_LayerThickness,
 			a,
 		)
 		sm2.crop_module = nil
@@ -538,9 +541,9 @@ main :: proc() {
 			&sc2,
 			&senescent_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.site_params,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			recording_add_organic_matter,
 			real_get_snow_depth,
@@ -582,7 +585,7 @@ main :: proc() {
 				(relhumid / 100.0),
 				tavg,
 				wind,
-				cpp.userEnvironmentParameters.p_WindSpeedHeight,
+				cpp.env_params.wind_speed_height_m,
 				globrad,
 				julday,
 				et0,

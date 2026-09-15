@@ -86,27 +86,27 @@ main :: proc() {
 	// mirroring initializeMonicaModelFromParams minus soiltransport, which
 	// runs after soilorganic in the real order and so isn't needed here ---
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 	st := core.make_soil_temperature(
 		&sc,
-		cpp.userSoilTemperatureParameters,
-		cpp.userEnvironmentParameters.p_timeStep,
+		cpp.soil_temperature_mod_params,
+		cpp.env_params.time_step,
 	)
 	sm := core.make_soil_moisture(
 		&sc,
-		&cpp.siteParameters,
-		cpp.userSoilMoistureParameters,
-		&cpp.userEnvironmentParameters,
-		&cpp.userCropParameters,
-		cpp.simulationParameters.p_LayerThickness,
+		&cpp.site_params,
+		cpp.soil_moisture_mod_params,
+		&cpp.env_params,
+		&cpp.crop_params,
+		cpp.sim_params.p_LayerThickness,
 		a,
 	)
 	sm.crop_module = nil // bare soil - see the file comment
-	so := core.make_soil_organic(&sc, cpp.userSoilOrganicParameters)
+	so := core.make_soil_organic(&sc, cpp.soil_organic_mod_params)
 	so.crop_module = nil
 
 	// --- climate ---
@@ -177,7 +177,7 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			cpp.userEnvironmentParameters.p_WindSpeedHeight,
+			cpp.env_params.wind_speed_height_m,
 			globrad,
 			julday,
 			et0,

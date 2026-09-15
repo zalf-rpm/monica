@@ -7,13 +7,13 @@
 // EnvironmentParameters, CentralParameterProvider.
 package params
 
-import "core:slice"
-import "core:strconv"
-import "core:strings"
 import d "../../support/date"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
 import "../soil"
+import "core:slice"
+import "core:strconv"
+import "core:strings"
 
 // ---------------------------------------------------------------------------
 // MineralFertilizerParameters
@@ -151,13 +151,13 @@ irrigation_parameters_to_json :: proc(ip: ^Irrigation_Parameters, a: Allocator) 
 //
 // `using base` reproduces public data inheritance: aip.fw etc. resolve directly.
 Automatic_Irrigation_Parameters :: struct {
-	using base:                    Irrigation_Parameters,
-	startDate:                     d.Date,
-	endDate:                       d.Date,
-	amount:                        f64,
-	percentNFC:                    f64,
-	threshold:                     f64,
-	criticalMoistureDepthM:        f64,
+	using base:                     Irrigation_Parameters,
+	startDate:                      d.Date,
+	endDate:                        d.Date,
+	amount:                         f64,
+	percentNFC:                     f64,
+	threshold:                      f64,
+	criticalMoistureDepthM:         f64,
 	minDaysBetweenIrrigationEvents: int,
 }
 
@@ -322,22 +322,22 @@ get_groundwater_information :: proc(
 // data member here (plan-odin.md prep 2); pwpFcSatFunction selects the method by
 // name at the point of use, via soil.pwp_fc_sat_method_from_name.
 Site_Parameters :: struct {
-	vs_Latitude:                         f64, // ZALF latitude
-	vs_Slope:                            f64, // [m m-1]
-	vs_HeightNN:                         f64, // [m]
-	vs_GroundwaterDepth:                 f64, // [m]
-	vs_Soil_CN_Ratio:                    f64,
-	vs_DrainageCoeff:                    f64,
-	vq_NDeposition:                      f64, // [kg N ha-1 y-1]
-	vs_MaxEffectiveRootingDepth:         f64, // [m]
-	vs_ImpenetrableLayerDepth:           f64, // [m]
+	vs_Latitude:                           f64, // ZALF latitude
+	vs_Slope:                              f64, // [m m-1]
+	vs_HeightNN:                           f64, // [m]
+	vs_GroundwaterDepth:                   f64, // [m]
+	vs_Soil_CN_Ratio:                      f64,
+	vs_DrainageCoeff:                      f64,
+	vq_NDeposition:                        f64, // [kg N ha-1 y-1]
+	vs_MaxEffectiveRootingDepth:           f64, // [m]
+	vs_ImpenetrableLayerDepth:             f64, // [m]
 	vs_SoilSpecificHumusBalanceCorrection: f64, // humus equivalents
-	bareSoilKcFactor:                    f64,
-	numberOfLayers:                      int,
-	layerThickness:                      f64,
-	vs_SoilParameters:                   [dynamic]soil.Soil_Parameters,
-	initSoilProfileSpec:                 jx.Value, // the raw SoilProfileParameters array
-	pwpFcSatFunction:                    string,
+	bareSoilKcFactor:                      f64,
+	numberOfLayers:                        int,
+	layerThickness:                        f64,
+	vs_SoilParameters:                     [dynamic]soil.Soil_Parameters,
+	initSoilProfileSpec:                   jx.Value, // the raw SoilProfileParameters array
+	pwpFcSatFunction:                      string,
 }
 
 // The C++ in-class initialisers
@@ -447,10 +447,7 @@ site_parameters_to_json :: proc(sp: ^Site_Parameters, a: Allocator) -> jx.Value 
 			jx.arr(a, jx.f(sp.vs_Latitude), jx.sl(""), jx.sl("latitude in decimal degrees")),
 		},
 		{"Slope", jx.vu(sp.vs_Slope, "m m-1", a)},
-		{
-			"HeightNN",
-			jx.arr(a, jx.f(sp.vs_HeightNN), jx.sl("m"), jx.sl("height above sea level")),
-		},
+		{"HeightNN", jx.arr(a, jx.f(sp.vs_HeightNN), jx.sl("m"), jx.sl("height above sea level"))},
 		{"GroundwaterDepth", jx.vu(sp.vs_GroundwaterDepth, "m", a)},
 		{"Soil_CN_Ratio", jx.f(sp.vs_Soil_CN_Ratio)},
 		{"DrainageCoeff", jx.f(sp.vs_DrainageCoeff)},
@@ -478,32 +475,32 @@ site_parameters_to_json :: proc(sp: ^Site_Parameters, a: Allocator) -> jx.Value 
 
 // C++: struct monica::SimulationParameters
 Simulation_Parameters :: struct {
-	startDate:                          d.Date,
-	endDate:                            d.Date,
-	pc_NitrogenResponseOn:              bool,
-	pc_WaterDeficitResponseOn:          bool,
-	pc_EmergenceFloodingControlOn:      bool,
-	pc_EmergenceMoistureControlOn:      bool,
-	pc_FrostKillOn:                     bool,
-	p_UseAutomaticIrrigation:           bool,
-	p_AutoIrrigationParams:             Automatic_Irrigation_Parameters,
-	p_UseNMinMineralFertilisingMethod:  bool,
-	p_NMinFertiliserPartition:          Mineral_Fertilizer_Parameters,
-	p_NMinUserParams:                   NMin_Application_Parameters,
-	p_UseSecondaryYields:               bool,
-	p_UseAutomaticHarvestTrigger:       bool,
-	p_NumberOfLayers:                   int,
-	p_LayerThickness:                   f64,
-	p_StartPVIndex:                     int,
-	p_JulianDayAutomaticFertilising:    int,
-	serializeMonicaStateAtEnd:          bool,
-	serializeMonicaStateAtEndToJson:    bool,
-	pathToSerializationAtEndFile:       string,
-	loadSerializedMonicaStateAtStart:   bool,
-	deserializedMonicaStateFromJson:    bool,
-	pathToLoadSerializationFile:        string,
+	startDate:                             d.Date,
+	endDate:                               d.Date,
+	pc_NitrogenResponseOn:                 bool,
+	pc_WaterDeficitResponseOn:             bool,
+	pc_EmergenceFloodingControlOn:         bool,
+	pc_EmergenceMoistureControlOn:         bool,
+	pc_FrostKillOn:                        bool,
+	p_UseAutomaticIrrigation:              bool,
+	p_AutoIrrigationParams:                Automatic_Irrigation_Parameters,
+	p_UseNMinMineralFertilisingMethod:     bool,
+	p_NMinFertiliserPartition:             Mineral_Fertilizer_Parameters,
+	p_NMinUserParams:                      NMin_Application_Parameters,
+	p_UseSecondaryYields:                  bool,
+	p_UseAutomaticHarvestTrigger:          bool,
+	p_NumberOfLayers:                      int,
+	p_LayerThickness:                      f64,
+	p_StartPVIndex:                        int,
+	p_JulianDayAutomaticFertilising:       int,
+	serializeMonicaStateAtEnd:             bool,
+	serializeMonicaStateAtEndToJson:       bool,
+	pathToSerializationAtEndFile:          string,
+	loadSerializedMonicaStateAtStart:      bool,
+	deserializedMonicaStateFromJson:       bool,
+	pathToLoadSerializationFile:           string,
 	noOfPreviousDaysSerializedClimateData: u64,
-	dualKcMethod:                       bool, // FAO-56 Dual Kc evaporation partitioning
+	dualKcMethod:                          bool, // FAO-56 Dual Kc evaporation partitioning
 }
 
 // The C++ in-class initialisers
@@ -636,10 +633,7 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 		{"StartPVIndex", jx.i(sp.p_StartPVIndex)},
 		{"serializeMonicaStateAtEnd", jx.b(sp.serializeMonicaStateAtEnd)},
 		{"serializedMonicaState", ser_o},
-		{
-			"evapotranspiration-method",
-			jx.sl(sp.dualKcMethod ? "FAO-56-Dual" : "Penman-Monteith"),
-		},
+		{"evapotranspiration-method", jx.sl(sp.dualKcMethod ? "FAO-56-Dual" : "Penman-Monteith")},
 	)
 }
 
@@ -649,23 +643,23 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 
 // C++: struct monica::CropModuleParameters
 Crop_Module_Parameters :: struct {
-	pc_CanopyReflectionCoefficient:      f64,
-	pc_ReferenceMaxAssimilationRate:     f64,
-	pc_ReferenceLeafAreaIndex:           f64,
-	pc_MaintenanceRespirationParameter1: f64,
-	pc_MaintenanceRespirationParameter2: f64,
-	pc_MinimumNConcentrationRoot:        f64,
-	pc_MinimumAvailableN:                f64, // [kg m-2]
-	pc_ReferenceAlbedo:                  f64,
-	pc_StomataConductanceAlpha:          f64,
-	pc_SaturationBeta:                   f64,
-	pc_GrowthRespirationRedux:           f64,
-	pc_MaxCropNDemand:                   f64,
-	pc_GrowthRespirationParameter1:      f64,
-	pc_GrowthRespirationParameter2:      f64,
-	pc_Tortuosity:                       f64, // old AD
-	pc_AdjustRootDepthForSoilProps:      bool,
-	pc_TimeUnderAnoxiaThreshold:         [dynamic]int,
+	pc_CanopyReflectionCoefficient:                         f64,
+	pc_ReferenceMaxAssimilationRate:                        f64,
+	pc_ReferenceLeafAreaIndex:                              f64,
+	pc_MaintenanceRespirationParameter1:                    f64,
+	pc_MaintenanceRespirationParameter2:                    f64,
+	pc_MinimumNConcentrationRoot:                           f64,
+	pc_MinimumAvailableN:                                   f64, // [kg m-2]
+	pc_ReferenceAlbedo:                                     f64,
+	pc_StomataConductanceAlpha:                             f64,
+	pc_SaturationBeta:                                      f64,
+	pc_GrowthRespirationRedux:                              f64,
+	pc_MaxCropNDemand:                                      f64,
+	pc_GrowthRespirationParameter1:                         f64,
+	pc_GrowthRespirationParameter2:                         f64,
+	pc_Tortuosity:                                          f64, // old AD
+	pc_AdjustRootDepthForSoilProps:                         bool,
+	pc_TimeUnderAnoxiaThreshold:                            [dynamic]int,
 	__enable_Phenology_WangEngelTemperatureResponse__:      bool,
 	__enable_Photosynthesis_WangEngelTemperatureResponse__: bool,
 	__enable_hourly_FvCB_photosynthesis__:                  bool,
@@ -673,16 +667,16 @@ Crop_Module_Parameters :: struct {
 	__disable_daily_root_biomass_to_soil__:                 bool,
 	__enable_vernalisation_factor_fix__:                    bool,
 	__enable_PASW_root_penetration__:                       bool,
-	isIntercropping:                     bool,
-	sequentialWaterUse:                  bool,
-	twoWaySync:                          bool,
-	pc_intercropping_k_s:                f64,
-	pc_intercropping_k_t:                f64,
-	pc_intercropping_phRedux:            f64,
-	pc_intercropping_dvs_phr:            f64,
-	pc_intercropping_autoPhRedux:        bool,
-	pc_intercropping_reader_sr:          string,
-	pc_intercropping_writer_sr:          string,
+	isIntercropping:                                        bool,
+	sequentialWaterUse:                                     bool,
+	twoWaySync:                                             bool,
+	pc_intercropping_k_s:                                   f64,
+	pc_intercropping_k_t:                                   f64,
+	pc_intercropping_phRedux:                               f64,
+	pc_intercropping_dvs_phr:                               f64,
+	pc_intercropping_autoPhRedux:                           bool,
+	pc_intercropping_reader_sr:                             string,
+	pc_intercropping_writer_sr:                             string,
 }
 
 // C++ in-class initialisers, incl. pc_TimeUnderAnoxiaThreshold{4,4,4,4,4,4,4}
@@ -775,11 +769,7 @@ crop_module_parameters_merge :: proc(cmp: ^Crop_Module_Parameters, j: jx.Value) 
 		j,
 		"__enable_vernalisation_factor_fix__",
 	)
-	jx.set_bool_value(
-		&cmp.__enable_PASW_root_penetration__,
-		j,
-		"__enable_PASW_root_penetration__",
-	)
+	jx.set_bool_value(&cmp.__enable_PASW_root_penetration__, j, "__enable_PASW_root_penetration__")
 
 	ic := jx.get(j, "intercropping")
 	jx.set_bool_value(&cmp.isIntercropping, ic, "is_intercropping")
@@ -834,14 +824,8 @@ crop_module_parameters_to_json :: proc(cmp: ^Crop_Module_Parameters, a: Allocato
 			"__enable_Photosynthesis_WangEngelTemperatureResponse__",
 			jx.b(cmp.__enable_Photosynthesis_WangEngelTemperatureResponse__),
 		},
-		{
-			"__enable_hourly_FvCB_photosynthesis__",
-			jx.b(cmp.__enable_hourly_FvCB_photosynthesis__),
-		},
-		{
-			"__enable_T_response_leaf_expansion__",
-			jx.b(cmp.__enable_T_response_leaf_expansion__),
-		},
+		{"__enable_hourly_FvCB_photosynthesis__", jx.b(cmp.__enable_hourly_FvCB_photosynthesis__)},
+		{"__enable_T_response_leaf_expansion__", jx.b(cmp.__enable_T_response_leaf_expansion__)},
 		{
 			"__disable_daily_root_biomass_to_soil__",
 			jx.b(cmp.__disable_daily_root_biomass_to_soil__),
@@ -867,29 +851,29 @@ RCP :: enum {
 
 // C++: struct monica::EnvironmentParameters
 Environment_Parameters :: struct {
-	p_Albedo:                 f64,
-	rcp:                      RCP,
-	p_AtmosphericCO2:         f64,
-	p_AtmosphericCO2s:        map[int]f64,
-	p_AtmosphericO3:          f64,
-	p_AtmosphericO3s:         map[int]f64,
-	p_WindSpeedHeight:        f64,
-	p_LeachingDepth:          f64,
-	p_timeStep:               f64,
-	p_MaxGroundwaterDepth:    f64,
-	p_MinGroundwaterDepth:    f64,
-	p_MinGroundwaterDepthMonth: int,
+	albedo:                      f64,
+	rcp:                         RCP,
+	atmospheric_CO2:             f64,
+	atmospheric_CO2s:            map[int]f64,
+	atmospheric_O3:              f64,
+	atmospheric_O3s:             map[int]f64,
+	wind_speed_height_m:         f64,
+	leaching_depth_m:            f64,
+	time_step:                   f64,
+	max_groundwater_depth_m:     f64,
+	min_groundwater_depth_m:     f64,
+	min_groundwater_depth_month: int,
 }
 
 // The C++ in-class initialisers
 make_environment_parameters :: proc() -> Environment_Parameters {
 	return Environment_Parameters {
-		p_Albedo = 0.23,
+		albedo = 0.23,
 		rcp = .RCP85,
-		p_WindSpeedHeight = 2.0,
-		p_MaxGroundwaterDepth = 18.0,
-		p_MinGroundwaterDepth = 20.0,
-		p_MinGroundwaterDepthMonth = 3,
+		wind_speed_height_m = 2.0,
+		max_groundwater_depth_m = 18.0,
+		min_groundwater_depth_m = 20.0,
+		min_groundwater_depth_month = 3,
 	}
 }
 
@@ -953,7 +937,7 @@ environment_parameters_merge :: proc(
 		res = environment_parameters_merge(ep, jx.get(j, "="), a)
 	}
 
-	jx.set_double_value(&ep.p_Albedo, j, "Albedo")
+	jx.set_double_value(&ep.albedo, j, "Albedo")
 
 	// rcp accepts "85" / "8.5" / "rcp85" / "rcp8.5" as strings, or a number
 	// either as 8.5 or as 85. A non-numeric string throws in the C++ and is
@@ -998,36 +982,36 @@ environment_parameters_merge :: proc(
 		}
 	}
 
-	jx.set_double_value(&ep.p_AtmosphericCO2, j, "AtmosphericCO2")
+	jx.set_double_value(&ep.atmospheric_CO2, j, "AtmosphericCO2")
 	if jx.is_object(jx.get(j, "AtmosphericCO2s")) {
-		clear(&ep.p_AtmosphericCO2s)
-		if ep.p_AtmosphericCO2s == nil {
-			ep.p_AtmosphericCO2s = make(map[int]f64, a)
+		clear(&ep.atmospheric_CO2s)
+		if ep.atmospheric_CO2s == nil {
+			ep.atmospheric_CO2s = make(map[int]f64, a)
 		}
 		for k, v in jx.object_items(jx.get(j, "AtmosphericCO2s")) {
 			if year, ok := strconv.parse_int(k); ok {
-				ep.p_AtmosphericCO2s[year] = jx.number_value(v)
+				ep.atmospheric_CO2s[year] = jx.number_value(v)
 			}
 		}
 	}
-	jx.set_double_value(&ep.p_AtmosphericO3, j, "AtmosphericO3")
+	jx.set_double_value(&ep.atmospheric_O3, j, "AtmosphericO3")
 	if jx.is_object(jx.get(j, "AtmosphericO3s")) {
-		clear(&ep.p_AtmosphericO3s)
-		if ep.p_AtmosphericO3s == nil {
-			ep.p_AtmosphericO3s = make(map[int]f64, a)
+		clear(&ep.atmospheric_O3s)
+		if ep.atmospheric_O3s == nil {
+			ep.atmospheric_O3s = make(map[int]f64, a)
 		}
 		for k, v in jx.object_items(jx.get(j, "AtmosphericO3s")) {
 			if year, ok := strconv.parse_int(k); ok {
-				ep.p_AtmosphericO3s[year] = jx.number_value(v)
+				ep.atmospheric_O3s[year] = jx.number_value(v)
 			}
 		}
 	}
-	jx.set_double_value(&ep.p_WindSpeedHeight, j, "WindSpeedHeight")
-	jx.set_double_value(&ep.p_LeachingDepth, j, "LeachingDepth")
-	jx.set_double_value(&ep.p_timeStep, j, "timeStep")
-	jx.set_double_value(&ep.p_MaxGroundwaterDepth, j, "MaxGroundwaterDepth")
-	jx.set_double_value(&ep.p_MinGroundwaterDepth, j, "MinGroundwaterDepth")
-	jx.set_int_value(&ep.p_MinGroundwaterDepthMonth, j, "MinGroundwaterDepthMonth")
+	jx.set_double_value(&ep.wind_speed_height_m, j, "WindSpeedHeight")
+	jx.set_double_value(&ep.leaching_depth_m, j, "LeachingDepth")
+	jx.set_double_value(&ep.time_step, j, "timeStep")
+	jx.set_double_value(&ep.max_groundwater_depth_m, j, "MaxGroundwaterDepth")
+	jx.set_double_value(&ep.min_groundwater_depth_m, j, "MinGroundwaterDepth")
+	jx.set_int_value(&ep.min_groundwater_depth_month, j, "MinGroundwaterDepthMonth")
 
 	return res
 }
@@ -1047,18 +1031,18 @@ environment_parameters_to_json :: proc(ep: ^Environment_Parameters, a: Allocator
 	return jx.obj(
 		a,
 		{"type", jx.sl("EnvironmentParameters")},
-		{"Albedo", jx.f(ep.p_Albedo)},
+		{"Albedo", jx.f(ep.albedo)},
 		{"rcp", jx.sl(rcp_2_str(ep.rcp))},
-		{"AtmosphericCO2", jx.f(ep.p_AtmosphericCO2)},
-		{"AtmosphericCO2s", year_map_to_json(ep.p_AtmosphericCO2s, a)},
-		{"AtmosphericO3", jx.f(ep.p_AtmosphericO3)},
-		{"AtmosphericO3s", year_map_to_json(ep.p_AtmosphericO3s, a)},
-		{"WindSpeedHeight", jx.f(ep.p_WindSpeedHeight)},
-		{"LeachingDepth", jx.f(ep.p_LeachingDepth)},
-		{"timeStep", jx.f(ep.p_timeStep)},
-		{"MaxGroundwaterDepth", jx.f(ep.p_MaxGroundwaterDepth)},
-		{"MinGroundwaterDepth", jx.f(ep.p_MinGroundwaterDepth)},
-		{"MinGroundwaterDepthMonth", jx.i(ep.p_MinGroundwaterDepthMonth)},
+		{"AtmosphericCO2", jx.f(ep.atmospheric_CO2)},
+		{"AtmosphericCO2s", year_map_to_json(ep.atmospheric_CO2s, a)},
+		{"AtmosphericO3", jx.f(ep.atmospheric_O3)},
+		{"AtmosphericO3s", year_map_to_json(ep.atmospheric_O3s, a)},
+		{"WindSpeedHeight", jx.f(ep.wind_speed_height_m)},
+		{"LeachingDepth", jx.f(ep.leaching_depth_m)},
+		{"timeStep", jx.f(ep.time_step)},
+		{"MaxGroundwaterDepth", jx.f(ep.max_groundwater_depth_m)},
+		{"MinGroundwaterDepth", jx.f(ep.min_groundwater_depth_m)},
+		{"MinGroundwaterDepthMonth", jx.i(ep.min_groundwater_depth_month)},
 	)
 }
 
@@ -1068,25 +1052,25 @@ environment_parameters_to_json :: proc(ep: ^Environment_Parameters, a: Allocator
 
 // C++: struct monica::CentralParameterProvider
 Central_Parameter_Provider :: struct {
-	userCropParameters:            Crop_Module_Parameters,
-	userEnvironmentParameters:     Environment_Parameters,
-	userSoilMoistureParameters:    Soil_Moisture_Module_Parameters,
-	userSoilTemperatureParameters: Soil_Temperature_Module_Parameters,
-	userSoilTransportParameters:   Soil_Transport_Module_Parameters,
-	userSoilOrganicParameters:     Soil_Organic_Module_Parameters,
-	simulationParameters:          Simulation_Parameters,
-	siteParameters:                Site_Parameters,
-	groundwaterInformation:        Measured_Groundwater_Table_Information,
+	crop_params:                 Crop_Module_Parameters,
+	env_params:                  Environment_Parameters,
+	soil_moisture_mod_params:    Soil_Moisture_Module_Parameters,
+	soil_temperature_mod_params: Soil_Temperature_Module_Parameters,
+	soil_transport_mod_params:   Soil_Transport_Module_Parameters,
+	soil_organic_mod_params:     Soil_Organic_Module_Parameters,
+	sim_params:                  Simulation_Parameters,
+	site_params:                 Site_Parameters,
+	groundwater_information:     Measured_Groundwater_Table_Information,
 }
 
 make_central_parameter_provider :: proc(a: Allocator) -> Central_Parameter_Provider {
 	return Central_Parameter_Provider {
-		userCropParameters = make_crop_module_parameters(a),
-		userEnvironmentParameters = make_environment_parameters(),
-		userSoilTemperatureParameters = make_soil_temperature_module_parameters(),
-		userSoilOrganicParameters = make_soil_organic_module_parameters(),
-		simulationParameters = make_simulation_parameters(),
-		siteParameters = make_site_parameters(),
+		crop_params = make_crop_module_parameters(a),
+		env_params = make_environment_parameters(),
+		soil_temperature_mod_params = make_soil_temperature_module_parameters(),
+		soil_organic_mod_params = make_soil_organic_module_parameters(),
+		sim_params = make_simulation_parameters(),
+		site_params = make_site_parameters(),
 	}
 }
 
@@ -1105,63 +1089,54 @@ central_parameter_provider_merge :: proc(
 
 	tl.append_errors(
 		&res,
-		crop_module_parameters_merge(&cpp.userCropParameters, jx.get(j, "userCropParameters")),
+		crop_module_parameters_merge(&cpp.crop_params, jx.get(j, "userCropParameters")),
 	)
 	tl.append_errors(
 		&res,
-		environment_parameters_merge(
-			&cpp.userEnvironmentParameters,
-			jx.get(j, "userEnvironmentParameters"),
-			a,
-		),
+		environment_parameters_merge(&cpp.env_params, jx.get(j, "userEnvironmentParameters"), a),
 	)
 	tl.append_errors(
 		&res,
 		soil_moisture_module_parameters_merge(
-			&cpp.userSoilMoistureParameters,
+			&cpp.soil_moisture_mod_params,
 			jx.get(j, "userSoilMoistureParameters"),
 		),
 	)
 	tl.append_errors(
 		&res,
 		soil_temperature_module_parameters_merge(
-			&cpp.userSoilTemperatureParameters,
+			&cpp.soil_temperature_mod_params,
 			jx.get(j, "userSoilTemperatureParameters"),
 		),
 	)
 	tl.append_errors(
 		&res,
 		soil_transport_module_parameters_merge(
-			&cpp.userSoilTransportParameters,
+			&cpp.soil_transport_mod_params,
 			jx.get(j, "userSoilTransportParameters"),
 		),
 	)
 	tl.append_errors(
 		&res,
 		soil_organic_module_parameters_merge(
-			&cpp.userSoilOrganicParameters,
+			&cpp.soil_organic_mod_params,
 			jx.get(j, "userSoilOrganicParameters"),
 		),
 	)
 	tl.append_errors(
 		&res,
-		simulation_parameters_merge(&cpp.simulationParameters, jx.get(j, "simulationParameters")),
+		simulation_parameters_merge(&cpp.sim_params, jx.get(j, "simulationParameters")),
 	)
 	tl.append_errors(
 		&res,
-		site_parameters_merge(
-			&cpp.siteParameters,
-			jx.get(j, "siteParameters"),
-			path_to_soil_dir,
-			a,
-		),
+		site_parameters_merge(&cpp.site_params, jx.get(j, "siteParameters"), path_to_soil_dir, a),
 	)
 
 	if !jx.is_null(jx.get(j, "groundwaterInformation")) {
 		tl.append_errors(
 			&res,
 			measured_groundwater_table_information_merge(
-				&cpp.groundwaterInformation,
+				&cpp.groundwater_information,
 				jx.get(j, "groundwaterInformation"),
 				a,
 			),
@@ -1182,29 +1157,26 @@ central_parameter_provider_to_json :: proc(
 	return jx.obj(
 		a,
 		{"type", jx.sl("CentralParameterProvider")},
-		{"userCropParameters", crop_module_parameters_to_json(&cpp.userCropParameters, a)},
-		{
-			"userEnvironmentParameters",
-			environment_parameters_to_json(&cpp.userEnvironmentParameters, a),
-		},
+		{"userCropParameters", crop_module_parameters_to_json(&cpp.crop_params, a)},
+		{"userEnvironmentParameters", environment_parameters_to_json(&cpp.env_params, a)},
 		{
 			"userSoilMoistureParameters",
-			soil_moisture_module_parameters_to_json(&cpp.userSoilMoistureParameters, a),
+			soil_moisture_module_parameters_to_json(&cpp.soil_moisture_mod_params, a),
 		},
 		{
 			"userSoilTemperatureParameters",
-			soil_temperature_module_parameters_to_json(&cpp.userSoilTemperatureParameters, a),
+			soil_temperature_module_parameters_to_json(&cpp.soil_temperature_mod_params, a),
 		},
 		{
 			"userSoilTransportParameters",
-			soil_transport_module_parameters_to_json(&cpp.userSoilTransportParameters, a),
+			soil_transport_module_parameters_to_json(&cpp.soil_transport_mod_params, a),
 		},
 		{
 			"userSoilOrganicParameters",
-			soil_organic_module_parameters_to_json(&cpp.userSoilOrganicParameters, a),
+			soil_organic_module_parameters_to_json(&cpp.soil_organic_mod_params, a),
 		},
-		{"simulationParameters", simulation_parameters_to_json(&cpp.simulationParameters, a)},
-		{"siteParameters", site_parameters_to_json(&cpp.siteParameters, a)},
+		{"simulationParameters", simulation_parameters_to_json(&cpp.sim_params, a)},
+		{"siteParameters", site_parameters_to_json(&cpp.site_params, a)},
 	)
 }
 

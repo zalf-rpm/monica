@@ -279,9 +279,9 @@ main :: proc() {
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 
@@ -340,9 +340,9 @@ main :: proc() {
 			&sc,
 			&wheat_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.site_params,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
@@ -374,16 +374,16 @@ main :: proc() {
 
 	// === Scenario B: real wheat, hourly FvCB forced on, rooted ===
 	{
-		hourly_crop_mod_params := cpp.userCropParameters
+		hourly_crop_mod_params := cpp.crop_params
 		hourly_crop_mod_params.__enable_hourly_FvCB_photosynthesis__ = true
 
 		cm := core.make_crop_module(
 			&sc,
 			&wheat_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
+			&cpp.site_params,
 			&hourly_crop_mod_params,
-			&cpp.simulationParameters,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
@@ -416,9 +416,9 @@ main :: proc() {
 			&sc,
 			&wheat_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.site_params,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
@@ -454,9 +454,9 @@ main :: proc() {
 			&sc,
 			&c4_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.site_params,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,

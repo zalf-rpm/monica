@@ -8,18 +8,18 @@
 // Run odin/tests/cpp_ref/run_crop_module_phenology.sh to build both and diff them.
 package crop_module_phenology_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import d "../../support/date"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 noop_fire_event :: proc(event: string) {}
 noop_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {}
@@ -52,7 +52,11 @@ dump_crop_module_phenology :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_M
 	tr.dump(t, jn(path, "vc_GrowthCycleEnded"), cm.growth_cycle_ended)
 	tr.dump(t, jn(path, "noOfOrgans"), cm.no_of_organs)
 	tr.dump(t, jn(path, "noOfDevStages"), cm.no_of_dev_stages)
-	tr.dump(t, jn(path, "cropParams.cultivarParams.pc_CultivarId"), cm.crop_params.cultivarParams.pc_CultivarId)
+	tr.dump(
+		t,
+		jn(path, "cropParams.cultivarParams.pc_CultivarId"),
+		cm.crop_params.cultivarParams.pc_CultivarId,
+	)
 
 	tr.dump(t, jn(path, "vc_AnthesisDay"), cm.anthesis_day)
 	tr.dump(t, jn(path, "vc_MaturityDay"), cm.maturity_day)
@@ -100,7 +104,10 @@ phenology_day_step :: proc(
 
 	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
 
-	cm.oxygen_deficit = core.fc_oxygen_deficiency(cm, pc_CriticalOxygenContent[cm.developmental_stage])
+	cm.oxygen_deficit = core.fc_oxygen_deficiency(
+		cm,
+		pc_CriticalOxygenContent[cm.developmental_stage],
+	)
 
 	old_DevelopmentalStage := cm.developmental_stage
 
@@ -110,7 +117,14 @@ phenology_day_step :: proc(
 			cm.perennial_crop_dormancy_period_end_date = currentDate
 		} else {
 			cm.perennial_crop_dormancy_period_end_date = d.add(
-				d.make_date(1, 1, u16(d.year(currentDate)), false, false, d.DEFAULT_USE_LEAP_YEARS),
+				d.make_date(
+					1,
+					1,
+					u16(d.year(currentDate)),
+					false,
+					false,
+					d.DEFAULT_USE_LEAP_YEARS,
+				),
 				u64(speciesPs.dormancyEndDoy - 1),
 			)
 		}
@@ -192,7 +206,9 @@ phenology_day_step :: proc(
 main :: proc() {
 	args := os.args
 	if len(args) < 4 {
-		fmt.eprintln("usage: crop_module_phenology_ref <pathToSimJson> <pathToClimateCsv> <numDaysA>")
+		fmt.eprintln(
+			"usage: crop_module_phenology_ref <pathToSimJson> <pathToClimateCsv> <numDaysA>",
+		)
 		os.exit(2)
 	}
 	path_to_sim_json := args[1]
@@ -251,13 +267,16 @@ main :: proc() {
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 
-	monica_parameters_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}", a), a)
+	monica_parameters_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}", a),
+		a,
+	)
 
 	load :: proc(dir, name: string, a: jx.Allocator) -> jx.Value {
 		path := strings.concatenate({dir, "/", name}, a)
@@ -291,9 +310,9 @@ main :: proc() {
 			&sc,
 			&wheat_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
-			&cpp.userCropParameters,
-			&cpp.simulationParameters,
+			&cpp.site_params,
+			&cpp.crop_params,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
@@ -305,7 +324,11 @@ main :: proc() {
 		copts := clim.make_csv_via_header_options()
 		_ = clim.csv_via_header_options_merge(
 			&copts,
-			jx.obj(a, {"no-of-climate-file-header-lines", jx.i(2)}, {"csv-separator", jx.s(",", a)}),
+			jx.obj(
+				a,
+				{"no-of-climate-file-header-lines", jx.i(2)},
+				{"csv-separator", jx.s(",", a)},
+			),
 			a,
 		)
 		clim_res := clim.read_climate_data_from_csv_file_via_headers(
@@ -369,7 +392,7 @@ main :: proc() {
 		perennial_next_season := synth_crop_params
 		perennial_next_season.cultivarParams.pc_CultivarId = "synthetic-next-season"
 
-		synth_crop_mod_params := cpp.userCropParameters
+		synth_crop_mod_params := cpp.crop_params
 		synth_crop_mod_params.__enable_Phenology_WangEngelTemperatureResponse__ = true
 		synth_crop_mod_params.__enable_vernalisation_factor_fix__ = true
 
@@ -377,9 +400,9 @@ main :: proc() {
 			&sc,
 			&synth_crop_params,
 			&wheat_residue_params,
-			&cpp.siteParameters,
+			&cpp.site_params,
 			&synth_crop_mod_params,
-			&cpp.simulationParameters,
+			&cpp.sim_params,
 			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,

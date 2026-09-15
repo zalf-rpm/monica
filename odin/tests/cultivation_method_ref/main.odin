@@ -44,7 +44,11 @@ dump_model_bits :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) 
 		strings.concatenate({path, ".cultivationMethodCount"}),
 		model.cultivation_method_count,
 	)
-	tr.dump(t, strings.concatenate({path, ".clearCropUponNextDay"}), model.clear_crop_upon_next_day)
+	tr.dump(
+		t,
+		strings.concatenate({path, ".clearCropUponNextDay"}),
+		model.clear_crop_upon_next_day,
+	)
 	tr.dump(
 		t,
 		strings.concatenate({path, ".currentCropModule"}),
@@ -338,7 +342,7 @@ main :: proc() {
 			(relhumid / 100.0),
 			tavg,
 			wind,
-			model.env_params.p_WindSpeedHeight,
+			model.env_params.wind_speed_height_m,
 			globrad,
 			julday,
 			et0,
@@ -359,7 +363,7 @@ main :: proc() {
 				current_date,
 				(relhumid / 100.0),
 				wind,
-				model.env_params.p_WindSpeedHeight,
+				model.env_params.wind_speed_height_m,
 				ATM_CO2,
 				ATM_O3,
 				precip,

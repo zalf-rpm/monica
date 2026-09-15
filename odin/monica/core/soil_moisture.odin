@@ -150,14 +150,14 @@ make_soil_moisture :: proc(
 
 	sm.layer_thickness_m = layer_thickness
 	sm.leaching_depth_layer_idx =
-		int(libc.floor(0.5 + (sm.env_params.p_LeachingDepth / layer_thickness))) - 1
+		int(libc.floor(0.5 + (sm.env_params.leaching_depth_m / layer_thickness))) - 1
 
 	initialize_snow_component(&sm.snow_component, sc, &sm.mod_params)
 	initialize_frost_component(
 		&sm.frost_component,
 		sc,
 		sm.mod_params.pm_HydraulicConductivityRedux,
-		sm.env_params.p_timeStep,
+		sm.env_params.time_step,
 		allocator,
 	)
 

@@ -39,10 +39,6 @@
 //   - stop (service.capnp Stoppable): commented out in the C++ too.
 package capnp
 
-import "base:runtime"
-import "core:encoding/uuid"
-import "core:fmt"
-import "core:sync"
 import capnp_dyn "../../support/capnp/odin/capnp_dynamic"
 import clim "../../support/climate"
 import jx "../../support/jsonx"
@@ -50,6 +46,10 @@ import tl "../../support/tools"
 import mio "../io"
 import p "../params"
 import "../run"
+import "base:runtime"
+import "core:encoding/uuid"
+import "core:fmt"
+import "core:sync"
 
 // Disk locations of the raw .capnp files the shim parses at runtime. There is no
 // codegen step, so these are needed by the running binary, not just at build time.
@@ -114,9 +114,18 @@ make_run_monica :: proc(
 // C++: kj::Promise<void> RunMonica::info(InfoContext context)
 run_monica_info :: proc(rm: ^Run_Monica, allocator := context.allocator) -> []capnp_dyn.Field {
 	fields := make([]capnp_dyn.Field, 3, allocator)
-	fields[0] = {name = "id", value = rm._id}
-	fields[1] = {name = "name", value = rm._name}
-	fields[2] = {name = "description", value = rm._description}
+	fields[0] = {
+		name  = "id",
+		value = rm._id,
+	}
+	fields[1] = {
+		name  = "name",
+		value = rm._name,
+	}
+	fields[2] = {
+		name  = "description",
+		value = rm._description,
+	}
 	return fields
 }
 
@@ -229,7 +238,11 @@ run_monica_run :: proc(
 	if !as_ok {
 		run_call_abort(
 			call,
-			fmt.aprintf("run: 'env.rest' is not a StructuredText: %s", as_err, allocator = call.allocator),
+			fmt.aprintf(
+				"run: 'env.rest' is not a StructuredText: %s",
+				as_err,
+				allocator = call.allocator,
+			),
 		)
 		return "", true
 	}
@@ -446,7 +459,10 @@ run_call_finish :: proc(call: ^Run_Call) {
 		name  = "value",
 		value = jx.dump(mio.output_to_json(&out, call.allocator), call.allocator),
 	}
-	out_fields[1] = {name = "type", value = capnp_dyn.Enum_Value{name = "json"}}
+	out_fields[1] = {
+		name = "type",
+		value = capnp_dyn.Enum_Value{name = "json"},
+	}
 
 	result_ap, from_err, from_ok := capnp_dyn.any_pointer_from_struct(
 		call.rm.schema.common,
@@ -465,7 +481,10 @@ run_call_finish :: proc(call: ^Run_Call) {
 	}
 
 	fields := make([]capnp_dyn.Field, 1, call.allocator)
-	fields[0] = {name = "result", value = result_ap}
+	fields[0] = {
+		name  = "result",
+		value = result_ap,
+	}
 	// Copies into the shim's own value tree, so the arena can go immediately after.
 	capnp_dyn.pending_result_fulfill(call.token, fields)
 	capnp_dyn.any_pointer_free(result_ap)
@@ -521,7 +540,7 @@ run_monica_env :: proc(
 		tl.append_errors(
 			&errors,
 			p.site_parameters_merge(
-				&env.params.siteParameters,
+				&env.params.site_params,
 				jx.obj(allocator, {"SoilProfileParameters", soil_layers}),
 				rm.pathToSoilDir,
 				allocator,
@@ -543,15 +562,27 @@ run_monica_env :: proc(
 		// port's Env - so read them straight off the incoming JSON, exactly as
 		// run/serve_zmq.odin does and for the same reason (see its file header).
 		csv_opts := clim.make_csv_via_header_options()
-		_ = clim.csv_via_header_options_merge(&csv_opts, jx.get(envJson, "csvViaHeaderOptions"), allocator)
+		_ = clim.csv_via_header_options_merge(
+			&csv_opts,
+			jx.get(envJson, "csvViaHeaderOptions"),
+			allocator,
+		)
 
 		climate_csv := jx.string_value_of(jx.get(envJson, "climateCSV"))
 		if climate_csv != "" {
-			eda = clim.read_climate_data_from_csv_string_via_headers(climate_csv, csv_opts, allocator)
+			eda = clim.read_climate_data_from_csv_string_via_headers(
+				climate_csv,
+				csv_opts,
+				allocator,
+			)
 		} else {
 			paths := extract_paths_to_climate_csv(jx.get(envJson, "pathToClimateCSV"), allocator)
 			if len(paths) > 0 {
-				eda = clim.read_climate_data_from_csv_files_via_headers(paths[:], csv_opts, allocator)
+				eda = clim.read_climate_data_from_csv_files_via_headers(
+					paths[:],
+					csv_opts,
+					allocator,
+				)
 			}
 		}
 	}
@@ -619,7 +650,11 @@ run_monica_env_blocking :: proc(
 	)
 	if !as_ok {
 		return mio.make_output(
-			fmt.aprintf("Error: 'rest' is not a StructuredText: %s", as_err, allocator = allocator),
+			fmt.aprintf(
+				"Error: 'rest' is not a StructuredText: %s",
+				as_err,
+				allocator = allocator,
+			),
 			allocator,
 		)
 	}
@@ -680,7 +715,10 @@ data_accessor_from_time_series :: proc(
 	}
 	data_res, data_err, data_ok := capnp_dyn.call(ts, "dataT", nil)
 	if !data_ok {
-		fmt.eprintfln("monica: error while trying to get transposed time series data: %s", data_err)
+		fmt.eprintfln(
+			"monica: error while trying to get transposed time series data: %s",
+			data_err,
+		)
 		return {}
 	}
 
@@ -735,7 +773,10 @@ capability_field :: proc(
 // extraction that used to live in Env::merge. Same helper as run/serve_zmq.odin's
 // own private copy, which is not visible from this package.
 @(private)
-extract_paths_to_climate_csv :: proc(v: jx.Value, allocator := context.allocator) -> [dynamic]string {
+extract_paths_to_climate_csv :: proc(
+	v: jx.Value,
+	allocator := context.allocator,
+) -> [dynamic]string {
 	paths := make([dynamic]string, 0, allocator)
 	if jx.is_string(v) {
 		s := jx.string_value_of(v)

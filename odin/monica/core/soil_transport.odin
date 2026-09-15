@@ -111,7 +111,7 @@ soil_transport_step :: proc(st: ^Soil_Transport) {
 	// Nitrate transport is called according to the set time step
 	st.leaching_at_boundary = 0.0
 	for ts := 0; f64(ts) < (1.0 / min_time_step_factor); ts += 1 {
-		n_transport(st, st.env_params.p_LeachingDepth, min_time_step_factor)
+		n_transport(st, st.env_params.leaching_depth_m, min_time_step_factor)
 	}
 
 	for i in 0 ..< nols {
@@ -274,7 +274,7 @@ n_transport :: proc(st: ^Soil_Transport, leaching_depth_m, time_step_factor: f64
 					(st.diffusion_coeff[i] + dispersion_length * st.pore_water_velocity[i]) -
 				(0.5 * lti * libc.fabs(pri)) +
 				((0.5 *
-							st.env_params.p_timeStep *
+							st.env_params.time_step *
 							time_step_factor *
 							libc.fabs((pri + pr0) / 2.0)) *
 						st.pore_water_velocity[i])
@@ -286,7 +286,7 @@ n_transport :: proc(st: ^Soil_Transport, leaching_depth_m, time_step_factor: f64
 					(st.diffusion_coeff[i] + dispersion_length * st.pore_water_velocity[i]) -
 				(0.5 * lti * libc.fabs(pri)) +
 				((0.5 *
-							st.env_params.p_timeStep *
+							st.env_params.time_step *
 							time_step_factor *
 							libc.fabs((pri + pr_o) / 2.0)) *
 						st.pore_water_velocity[i])

@@ -764,7 +764,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	//
 	// Deliberately checked here rather than in each server: monica-run reaches the
 	// same code path, and this is the one place all three entry points share.
-	if len(env.params.siteParameters.vs_SoilParameters) == 0 {
+	if len(env.params.site_params.vs_SoilParameters) == 0 {
 		out.errors = make([dynamic]string, allocator)
 		append(
 			&out.errors,
@@ -841,7 +841,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 			clim.data_accessor_all_data_for_step(
 				&env.climateData,
 				stepNo,
-				env.params.siteParameters.vs_Latitude,
+				env.params.site_params.vs_Latitude,
 				allocator,
 			),
 		)

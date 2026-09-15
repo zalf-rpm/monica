@@ -207,121 +207,96 @@ organic_matter_parameters_to_json_object :: proc(
 	}
 
 	o := jx.obj(
-		a,
-		{"type", jx.sl("OrganicMatterParameters")},
-		{
-			"AOM_DryMatterContent",
-			vud(
-				omp.vo_AOM_DryMatterContent,
-				"kg DM kg FM-1",
-				"Dry matter content of added organic matter",
-				a,
-			),
-		},
-		{
-			"AOM_NH4Content",
-			vud(
-				omp.vo_AOM_NH4Content,
-				"kg N kg DM-1",
-				"Ammonium content in added organic matter",
-				a,
-			),
-		},
-		// the surviving one of the two duplicate AOM_NO3Content entries
-		{
-			"AOM_NO3Content",
-			vud(
-				omp.vo_AOM_NO3Content,
-				"kg N kg DM-1",
-				"Nitrate content in added organic matter",
-				a,
-			),
-		},
-		{
-			"AOM_SlowDecCoeffStandard",
-			vud(
-				omp.vo_AOM_SlowDecCoeffStandard,
-				"d-1",
-				"Decomposition rate coefficient of slow AOM at standard conditions",
-				a,
-			),
-		},
-		{
-			"AOM_FastDecCoeffStandard",
-			vud(
-				omp.vo_AOM_FastDecCoeffStandard,
-				"d-1",
-				"Decomposition rate coefficient of fast AOM at standard conditions",
-				a,
-			),
-		},
-		{
-			"PartAOM_to_AOM_Slow",
-			vud(
-				omp.vo_PartAOM_to_AOM_Slow,
-				"kg kg-1",
-				"Part of AOM that is assigned to the slowly decomposing pool",
-				a,
-			),
-		},
-		{
-			"PartAOM_to_AOM_Fast",
-			vud(
-				omp.vo_PartAOM_to_AOM_Fast,
-				"kg kg-1",
-				"Part of AOM that is assigned to the rapidly decomposing pool",
-				a,
-			),
-		},
-		{
-			"CN_Ratio_AOM_Slow",
-			vud(
-				omp.vo_CN_Ratio_AOM_Slow,
-				"",
-				"C to N ratio of the slowly decomposing AOM pool",
-				a,
-			),
-		},
-		{
-			"CN_Ratio_AOM_Fast",
-			vud(
-				omp.vo_CN_Ratio_AOM_Fast,
-				"",
-				"C to N ratio of the rapidly decomposing AOM pool",
-				a,
-			),
-		},
-		{
-			"PartAOM_Slow_to_SMB_Slow",
-			vud(
-				omp.vo_PartAOM_Slow_to_SMB_Slow,
-				"kg kg-1",
-				"Part of AOM slow consumed by slow soil microbial biomass",
-				a,
-			),
-		},
-		{
-			"PartAOM_Slow_to_SMB_Fast",
-			vud(
-				omp.vo_PartAOM_Slow_to_SMB_Fast,
-				"kg kg-1",
-				"Part of AOM slow consumed by fast soil microbial biomass",
-				a,
-			),
-		},
-		{
-			"NConcentration",
-			vud(
-				omp.vo_NConcentration,
-				"kg N kg DM-1",
-				"Nitrogen content in added organic matter",
-				a,
-			),
-		},
-		{
-			"CorgContent",
-			vud(omp.vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter", a),
-		},
+	a,
+	{"type", jx.sl("OrganicMatterParameters")},
+	{
+		"AOM_DryMatterContent",
+		vud(
+			omp.vo_AOM_DryMatterContent,
+			"kg DM kg FM-1",
+			"Dry matter content of added organic matter",
+			a,
+		),
+	},
+	{
+		"AOM_NH4Content",
+		vud(omp.vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter", a),
+	},
+	// the surviving one of the two duplicate AOM_NO3Content entries
+	{
+		"AOM_NO3Content",
+		vud(omp.vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter", a),
+	},
+	{
+		"AOM_SlowDecCoeffStandard",
+		vud(
+			omp.vo_AOM_SlowDecCoeffStandard,
+			"d-1",
+			"Decomposition rate coefficient of slow AOM at standard conditions",
+			a,
+		),
+	},
+	{
+		"AOM_FastDecCoeffStandard",
+		vud(
+			omp.vo_AOM_FastDecCoeffStandard,
+			"d-1",
+			"Decomposition rate coefficient of fast AOM at standard conditions",
+			a,
+		),
+	},
+	{
+		"PartAOM_to_AOM_Slow",
+		vud(
+			omp.vo_PartAOM_to_AOM_Slow,
+			"kg kg-1",
+			"Part of AOM that is assigned to the slowly decomposing pool",
+			a,
+		),
+	},
+	{
+		"PartAOM_to_AOM_Fast",
+		vud(
+			omp.vo_PartAOM_to_AOM_Fast,
+			"kg kg-1",
+			"Part of AOM that is assigned to the rapidly decomposing pool",
+			a,
+		),
+	},
+	{
+		"CN_Ratio_AOM_Slow",
+		vud(omp.vo_CN_Ratio_AOM_Slow, "", "C to N ratio of the slowly decomposing AOM pool", a),
+	},
+	{
+		"CN_Ratio_AOM_Fast",
+		vud(omp.vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool", a),
+	},
+	{
+		"PartAOM_Slow_to_SMB_Slow",
+		vud(
+			omp.vo_PartAOM_Slow_to_SMB_Slow,
+			"kg kg-1",
+			"Part of AOM slow consumed by slow soil microbial biomass",
+			a,
+		),
+	},
+	{
+		"PartAOM_Slow_to_SMB_Fast",
+		vud(
+			omp.vo_PartAOM_Slow_to_SMB_Fast,
+			"kg kg-1",
+			"Part of AOM slow consumed by fast soil microbial biomass",
+			a,
+		),
+	},
+	{
+		"NConcentration",
+		vud(omp.vo_NConcentration, "kg N kg DM-1", "Nitrogen content in added organic matter", a),
+	},
+	{
+		"CorgContent",
+		vud(omp.vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter", a),
+	},
 	)
 	return o.(jx.Object)
 }
@@ -385,10 +360,7 @@ Crop_Residue_Parameters :: struct {
 }
 
 // C++: Errors cropresidueparameters::merge(...)
-crop_residue_parameters_merge :: proc(
-	crp: ^Crop_Residue_Parameters,
-	j: jx.Value,
-) -> tl.Errors {
+crop_residue_parameters_merge :: proc(crp: ^Crop_Residue_Parameters, j: jx.Value) -> tl.Errors {
 	res := default_merge(crp, j, crop_residue_parameters_merge)
 
 	tl.append_errors(&res, organic_matter_parameters_merge(&crp.base, j))
@@ -399,10 +371,7 @@ crop_residue_parameters_merge :: proc(
 }
 
 // C++: json11::Json cropresidueparameters::to_json(...)
-crop_residue_parameters_to_json :: proc(
-	crp: ^Crop_Residue_Parameters,
-	a: Allocator,
-) -> jx.Value {
+crop_residue_parameters_to_json :: proc(crp: ^Crop_Residue_Parameters, a: Allocator) -> jx.Value {
 	o := organic_matter_parameters_to_json_object(&crp.base, a)
 	jx.obj_set(&o, "type", jx.sl("CropResidueParameters"), a)
 	jx.obj_set(&o, "species", jx.s(crp.species, a), a)

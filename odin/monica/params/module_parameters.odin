@@ -8,9 +8,9 @@
 // snake_cased. Cap'n Proto serialize/deserialize is not ported.
 package params
 
-import "base:runtime"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
+import "base:runtime"
 
 Allocator :: runtime.Allocator
 
@@ -46,29 +46,29 @@ default_merge :: proc(
 // member; per plan-odin.md prep 2 that callback is not part of the data struct
 // here - the capillary-rise lookup is wired up at the call site instead.
 Soil_Moisture_Module_Parameters :: struct {
-	pm_SaturatedHydraulicConductivity:     f64,
-	pm_SurfaceRoughness:                   f64,
-	pm_GroundwaterDischarge:               f64,
-	pm_HydraulicConductivityRedux:         f64,
+	pm_SaturatedHydraulicConductivity:      f64,
+	pm_SurfaceRoughness:                    f64,
+	pm_GroundwaterDischarge:                f64,
+	pm_HydraulicConductivityRedux:          f64,
 	pm_SnowAccumulationTresholdTemperature: f64,
-	pm_KcFactor:                           f64,
-	pm_TemperatureLimitForLiquidWater:     f64,
-	pm_CorrectionSnow:                     f64,
-	pm_CorrectionRain:                     f64,
-	pm_SnowMaxAdditionalDensity:           f64,
-	pm_NewSnowDensityMin:                  f64,
-	pm_SnowRetentionCapacityMin:           f64,
-	pm_RefreezeParameter1:                 f64,
-	pm_RefreezeParameter2:                 f64,
-	pm_RefreezeTemperature:                f64,
-	pm_SnowMeltTemperature:                f64,
-	pm_SnowPacking:                        f64,
-	pm_SnowRetentionCapacityMax:           f64,
-	pm_EvaporationZeta:                    f64,
-	pm_XSACriticalSoilMoisture:            f64,
-	pm_MaximumEvaporationImpactDepth:      f64,
-	pm_MaxPercolationRate:                 f64,
-	pm_MoistureInitValue:                  f64,
+	pm_KcFactor:                            f64,
+	pm_TemperatureLimitForLiquidWater:      f64,
+	pm_CorrectionSnow:                      f64,
+	pm_CorrectionRain:                      f64,
+	pm_SnowMaxAdditionalDensity:            f64,
+	pm_NewSnowDensityMin:                   f64,
+	pm_SnowRetentionCapacityMin:            f64,
+	pm_RefreezeParameter1:                  f64,
+	pm_RefreezeParameter2:                  f64,
+	pm_RefreezeTemperature:                 f64,
+	pm_SnowMeltTemperature:                 f64,
+	pm_SnowPacking:                         f64,
+	pm_SnowRetentionCapacityMax:            f64,
+	pm_EvaporationZeta:                     f64,
+	pm_XSACriticalSoilMoisture:             f64,
+	pm_MaximumEvaporationImpactDepth:       f64,
+	pm_MaxPercolationRate:                  f64,
+	pm_MoistureInitValue:                   f64,
 }
 // all C++ defaults are 0.0, so the Odin zero value matches
 
@@ -79,7 +79,11 @@ soil_moisture_module_parameters_merge :: proc(
 ) -> tl.Errors {
 	res := default_merge(smp, j, soil_moisture_module_parameters_merge)
 
-	jx.set_double_value(&smp.pm_SaturatedHydraulicConductivity, j, "SaturatedHydraulicConductivity")
+	jx.set_double_value(
+		&smp.pm_SaturatedHydraulicConductivity,
+		j,
+		"SaturatedHydraulicConductivity",
+	)
 	jx.set_double_value(&smp.pm_SurfaceRoughness, j, "SurfaceRoughness")
 	jx.set_double_value(&smp.pm_GroundwaterDischarge, j, "GroundwaterDischarge")
 	jx.set_double_value(&smp.pm_HydraulicConductivityRedux, j, "HydraulicConductivityRedux")
@@ -89,7 +93,11 @@ soil_moisture_module_parameters_merge :: proc(
 		"SnowAccumulationTresholdTemperature",
 	)
 	jx.set_double_value(&smp.pm_KcFactor, j, "KcFactor")
-	jx.set_double_value(&smp.pm_TemperatureLimitForLiquidWater, j, "TemperatureLimitForLiquidWater")
+	jx.set_double_value(
+		&smp.pm_TemperatureLimitForLiquidWater,
+		j,
+		"TemperatureLimitForLiquidWater",
+	)
 	jx.set_double_value(&smp.pm_CorrectionSnow, j, "CorrectionSnow")
 	jx.set_double_value(&smp.pm_CorrectionRain, j, "CorrectionRain")
 	jx.set_double_value(&smp.pm_SnowMaxAdditionalDensity, j, "SnowMaxAdditionalDensity")
@@ -150,19 +158,19 @@ soil_moisture_module_parameters_to_json :: proc(
 
 // C++: struct monica::SoilTemperatureModuleParameters
 Soil_Temperature_Module_Parameters :: struct {
-	pt_NTau:                     f64,
-	pt_InitialSurfaceTemperature: f64,
-	pt_BaseTemperature:          f64,
-	pt_QuartzRawDensity:         f64,
-	pt_DensityAir:               f64,
-	pt_DensityWater:             f64,
-	pt_DensityHumus:             f64,
-	pt_SpecificHeatCapacityAir:  f64,
+	pt_NTau:                       f64,
+	pt_InitialSurfaceTemperature:  f64,
+	pt_BaseTemperature:            f64,
+	pt_QuartzRawDensity:           f64,
+	pt_DensityAir:                 f64,
+	pt_DensityWater:               f64,
+	pt_DensityHumus:               f64,
+	pt_SpecificHeatCapacityAir:    f64,
 	pt_SpecificHeatCapacityQuartz: f64,
-	pt_SpecificHeatCapacityWater: f64,
-	pt_SpecificHeatCapacityHumus: f64,
-	pt_SoilAlbedo:               f64,
-	pt_SoilMoisture:             f64, // C++ default 0.25
+	pt_SpecificHeatCapacityWater:  f64,
+	pt_SpecificHeatCapacityHumus:  f64,
+	pt_SoilAlbedo:                 f64,
+	pt_SoilMoisture:               f64, // C++ default 0.25
 }
 
 // C++ default: pt_SoilMoisture{0.25}; everything else 0.0
@@ -452,49 +460,49 @@ stics_parameters_to_json :: proc(sp: ^Stics_Parameters, a: Allocator) -> jx.Valu
 
 // C++: struct monica::SoilOrganicModuleParameters
 Soil_Organic_Module_Parameters :: struct {
-	po_SOM_SlowDecCoeffStandard:          f64,
-	po_SOM_FastDecCoeffStandard:          f64,
-	po_SMB_SlowMaintRateStandard:         f64,
-	po_SMB_FastMaintRateStandard:         f64,
-	po_SMB_SlowDeathRateStandard:         f64,
-	po_SMB_FastDeathRateStandard:         f64,
-	po_SMB_UtilizationEfficiency:         f64,
-	po_SOM_SlowUtilizationEfficiency:     f64,
-	po_SOM_FastUtilizationEfficiency:     f64,
-	po_AOM_SlowUtilizationEfficiency:     f64,
-	po_AOM_FastUtilizationEfficiency:     f64,
-	po_AOM_FastMaxC_to_N:                 f64,
-	po_PartSOM_Fast_to_SOM_Slow:          f64,
-	po_PartSMB_Slow_to_SOM_Fast:          f64,
-	po_PartSMB_Fast_to_SOM_Fast:          f64,
-	po_PartSOM_to_SMB_Slow:               f64,
-	po_PartSOM_to_SMB_Fast:               f64,
-	po_CN_Ratio_SMB:                      f64,
-	po_LimitClayEffect:                   f64,
-	po_QTenFactor:                        f64,
-	po_TempDecOptimal:                    f64,
-	po_MoistureDecOptimal:                f64,
-	po_AmmoniaOxidationRateCoeffStandard: f64,
-	po_NitriteOxidationRateCoeffStandard: f64,
-	po_TransportRateCoeff:                f64,
-	po_SpecAnaerobDenitrification:        f64,
-	po_ImmobilisationRateCoeffNO3:        f64,
-	po_ImmobilisationRateCoeffNH4:        f64,
-	po_Denit1:                            f64,
-	po_Denit2:                            f64,
-	po_Denit3:                            f64,
-	po_HydrolysisKM:                      f64,
-	po_ActivationEnergy:                  f64,
-	po_HydrolysisP1:                      f64,
-	po_HydrolysisP2:                      f64,
-	po_AtmosphericResistance:             f64,
-	po_N2OProductionRate:                 f64,
-	po_Inhibitor_NH3:                     f64,
-	ps_MaxMineralisationDepth:            f64,
+	po_SOM_SlowDecCoeffStandard:            f64,
+	po_SOM_FastDecCoeffStandard:            f64,
+	po_SMB_SlowMaintRateStandard:           f64,
+	po_SMB_FastMaintRateStandard:           f64,
+	po_SMB_SlowDeathRateStandard:           f64,
+	po_SMB_FastDeathRateStandard:           f64,
+	po_SMB_UtilizationEfficiency:           f64,
+	po_SOM_SlowUtilizationEfficiency:       f64,
+	po_SOM_FastUtilizationEfficiency:       f64,
+	po_AOM_SlowUtilizationEfficiency:       f64,
+	po_AOM_FastUtilizationEfficiency:       f64,
+	po_AOM_FastMaxC_to_N:                   f64,
+	po_PartSOM_Fast_to_SOM_Slow:            f64,
+	po_PartSMB_Slow_to_SOM_Fast:            f64,
+	po_PartSMB_Fast_to_SOM_Fast:            f64,
+	po_PartSOM_to_SMB_Slow:                 f64,
+	po_PartSOM_to_SMB_Fast:                 f64,
+	po_CN_Ratio_SMB:                        f64,
+	po_LimitClayEffect:                     f64,
+	po_QTenFactor:                          f64,
+	po_TempDecOptimal:                      f64,
+	po_MoistureDecOptimal:                  f64,
+	po_AmmoniaOxidationRateCoeffStandard:   f64,
+	po_NitriteOxidationRateCoeffStandard:   f64,
+	po_TransportRateCoeff:                  f64,
+	po_SpecAnaerobDenitrification:          f64,
+	po_ImmobilisationRateCoeffNO3:          f64,
+	po_ImmobilisationRateCoeffNH4:          f64,
+	po_Denit1:                              f64,
+	po_Denit2:                              f64,
+	po_Denit3:                              f64,
+	po_HydrolysisKM:                        f64,
+	po_ActivationEnergy:                    f64,
+	po_HydrolysisP1:                        f64,
+	po_HydrolysisP2:                        f64,
+	po_AtmosphericResistance:               f64,
+	po_N2OProductionRate:                   f64,
+	po_Inhibitor_NH3:                       f64,
+	ps_MaxMineralisationDepth:              f64,
 	__enable_kaiteew_TempOnDecompostion__:  bool,
 	__enable_kaiteew_MoistOnDecompostion__: bool,
 	__enable_kaiteew_ClayOnDecompostion__:  bool,
-	sticsParams:                          Stics_Parameters,
+	sticsParams:                            Stics_Parameters,
 }
 
 // The C++ in-class initialisers

@@ -7,19 +7,19 @@
 // Run odin/tests/cpp_ref/run_snow_frost.sh to build both and diff them.
 package snow_frost_ref
 
+import core "../../monica/core"
+import p "../../monica/params"
+import mrun "../../monica/run"
+import tr "../../monica/trace"
+import clim "../../support/climate"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import "core:bufio"
 import "core:fmt"
 import "core:io"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import clim "../../support/climate"
-import core "../../monica/core"
-import p "../../monica/params"
-import tr "../../monica/trace"
-import mrun "../../monica/run"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 main :: proc() {
 	args := os.args
@@ -85,20 +85,20 @@ main :: proc() {
 	// --- build SoilColumn, then SnowComponent/FrostComponent exactly like
 	// initializeFromParams (soilmoisture.cpp:88-92) ---
 	sc := core.make_soil_column(
-		cpp.simulationParameters.p_LayerThickness,
-		cpp.userSoilOrganicParameters.ps_MaxMineralisationDepth,
-		cpp.siteParameters.vs_SoilParameters[:],
+		cpp.sim_params.p_LayerThickness,
+		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
 
 	snow: core.Snow_Component
-	core.initialize_snow_component(&snow, &sc, &cpp.userSoilMoistureParameters)
+	core.initialize_snow_component(&snow, &sc, &cpp.soil_moisture_mod_params)
 	frost: core.Frost_Component
 	core.initialize_frost_component(
 		&frost,
 		&sc,
-		cpp.userSoilMoistureParameters.pm_HydraulicConductivityRedux,
-		cpp.userEnvironmentParameters.p_timeStep,
+		cpp.soil_moisture_mod_params.pm_HydraulicConductivityRedux,
+		cpp.env_params.time_step,
 		a,
 	)
 
