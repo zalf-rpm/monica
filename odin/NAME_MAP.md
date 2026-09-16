@@ -305,7 +305,7 @@ Not renamed this round: `soilColumn` (no `vm_` prefix). Note Soil_Column has its
 | `pm_SurfaceRoughness` | `surface_roughness` |
 | `pm_GroundwaterDischarge` | `groundwater_discharge` |
 | `pm_HydraulicConductivityRedux` | `hydraulic_conductivity_redux` |
-| `pm_SnowAccumulationTresholdTemperature` | `snow_accumulation_treshold_temperature` |
+| `pm_SnowAccumulationTresholdTemperature` | `snow_accumulation_threshold_temperature` |
 | `pm_KcFactor` | `kc_factor` |
 | `pm_TemperatureLimitForLiquidWater` | `temperature_limit_for_liquid_water` |
 | `pm_CorrectionSnow` | `correction_snow` |
@@ -325,9 +325,11 @@ Not renamed this round: `soilColumn` (no `vm_` prefix). Note Soil_Column has its
 | `pm_MaxPercolationRate` | `max_percolation_rate` |
 | `pm_MoistureInitValue` | `moisture_init_value` |
 
-`pm_SnowAccumulationTresholdTemperature`'s "Treshold" typo (missing `h`) is in the C++ source and the
-external JSON key both; kept verbatim per §1 (translate literally) rather than "fixed" to `threshold`,
-unlike the correctly-spelled, unrelated `vm_SnowAccumulationThresholdTemperature` in `Snow_Component` above.
+`pm_SnowAccumulationTresholdTemperature`'s "Treshold" typo (missing `h`) is only in the C++ field
+name and the external JSON key ("SnowAccumulationTresholdTemperature", unchanged - both the merge
+and to_json procs still read/write that literal key, since it must match the parameter files on
+disk). The Odin field itself is spelled correctly, matching the correctly-spelled, unrelated
+`vm_SnowAccumulationThresholdTemperature` in `Snow_Component` above.
 
 ## `monica::SoilTransport` -> `core.Soil_Transport` (odin/monica/core/soil_transport.odin)
 
@@ -410,11 +412,15 @@ Not renamed: `params`, `solution` (already lowercase). Full camelCase->snake_cas
 | `sumFertiliser` | `sum_fertiliser` |
 | `sumOrganicFertilizerDM` | `sum_organic_fertilizer_dm` |
 | `sumOrgFertiliser` | `sum_org_fertiliser` |
-| `vs_GroundwaterDepth` | `vs_groundwater_depth` |
-| `vw_AtmosphericCO2Concentration` | `vw_atmospheric_co2_concentration` |
-| `vw_AtmosphericO3Concentration` | `vw_atmospheric_o3_concentration` |
+| `vs_GroundwaterDepth` | `groundwater_depth_m` |
+| `vw_AtmosphericCO2Concentration` | `atmospheric_co2_concentration` |
+| `vw_AtmosphericO3Concentration` | `atmospheric_o3_concentration` |
 
-Full camelCase->snake_case pass, no prefix stripped (p_/vw_/vs_ prefixes kept, rest snake_cased).
+Full camelCase->snake_case pass, no prefix stripped (p_/vw_/vs_ prefixes kept, rest snake_cased) -
+except these three, whose `vs_`/`vw_` prefix was dropped (and `GroundwaterDepth` got a `_m` unit
+suffix) in a later rename pass that updated `monica_model.odin` but missed the `AtmCO2`/`AtmO3`/
+`Groundw` rows in `output_paths.odin`, which still had the intermediate `vw_`/`vs_`-prefixed names
+and so failed `output_paths_test.odin`'s `test_every_alias_compiles` until fixed.
 
 ## `monica::SpeciesParameters` -> `params.Species_Parameters` (odin/monica/params/crop_parameters.odin)
 

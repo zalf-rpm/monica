@@ -51,7 +51,7 @@ initialize_snow_component :: proc(
 	sc.max_snow_depth = 0.0
 	sc.accumulated_snow_depth = 0.0
 	sc.snowmelt_temperature = smps.snow_melt_temperature
-	sc.snow_accumulation_threshold_temperature = smps.snow_accumulation_treshold_temperature
+	sc.snow_accumulation_threshold_temperature = smps.snow_accumulation_threshold_temperature
 	sc.temperature_limit_for_liquid_water = smps.temperature_limit_for_liquid_water
 	sc.correction_rain = smps.correction_rain
 	sc.correction_snow = smps.correction_snow
