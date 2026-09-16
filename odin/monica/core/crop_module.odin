@@ -1354,23 +1354,23 @@ fc_crop_photosynthesis :: proc(
 			// --------------------------------------------------------------------
 			// Method 3:
 			// Long, S.P. 1991. Modification of the response of photosynthetic
-		 	// productivity to rising temperature by atmospheric CO2
+			// productivity to rising temperature by atmospheric CO2
 			// concentrations - Has its importance been underestimated. Plant
-		 	// Cell Environ. 14(8): 729-739.
+			// Cell Environ. 14(8): 729-739.
 			// and
-		 	// Mitchell, R.A.C., D.W. Lawlor, V.J. Mitchell, C.L. Gibbard, E.M.
+			// Mitchell, R.A.C., D.W. Lawlor, V.J. Mitchell, C.L. Gibbard, E.M.
 			// White, and J.R. Porter. 1995. Effects of elevated CO2
-		 	// concentration and increased temperature on winter-wheat - Test
+			// concentration and increased temperature on winter-wheat - Test
 			// of ARCWHEAT1 simulation model. Plant Cell Environ. 18(7):736-748.
-		    // ----------------------------------------------------------------------
+			// ----------------------------------------------------------------------
 			tempK := vw_MeanAirTemperature + D_IN_K
 			term1 := (tempK - TK25) / (TK25 * tempK * RGAS)
 			term2 := libc.sqrt(tempK / TK25)
-			cm.k_tkc = libc.exp(speciesPs.AEKC * term1) * term2
-			cm.k_tko = libc.exp(speciesPs.AEKO * term1) * term2
-			Mkc := speciesPs.KC25 * cm.k_tkc // [umol mol-1]
+			cm.k_tkc = libc.exp(speciesPs.aekc * term1) * term2
+			cm.k_tko = libc.exp(speciesPs.aeko * term1) * term2
+			Mkc := speciesPs.kc25 * cm.k_tkc // [umol mol-1]
 			cm.crop_photosynthesis_results.kc = Mkc
-			Mko := speciesPs.KO25 * cm.k_tko // [mmol mol-1]
+			Mko := speciesPs.ko25 * cm.k_tko // [mmol mol-1]
 			cm.crop_photosynthesis_results.ko = Mko * 1000.0 // mmol -> umol
 
 			// OLD exponential response
@@ -1387,7 +1387,7 @@ fc_crop_photosynthesis :: proc(
 					),
 				)
 			} else {
-				KTvmax = libc.exp(speciesPs.AEVC * term1) * term2
+				KTvmax = libc.exp(speciesPs.aevc * term1) * term2
 			}
 
 			// Berechnung des Transformationsfaktors fuer pflanzenspez. AMAX bei
@@ -1469,9 +1469,9 @@ fc_crop_photosynthesis :: proc(
 		} else if cm.co2_method == 2 {
 			// -----------------------------------------------------------------
 			// Method 2:
-      		// Hoffmann, F. 1995. Fagus, a model for growth and development of
-        	// beech. Ecol. Mod. 83 (3):327-348.
-         	// -----------------------------------------------------------------
+			// Hoffmann, F. 1995. Fagus, a model for growth and development of
+			// beech. Ecol. Mod. 83 (3):327-348.
+			// -----------------------------------------------------------------
 			t_response := wang_engel_temperature_response(
 				vw_MeanAirTemperature,
 				pc_MinimumTemperatureForAssimilation,
@@ -1713,7 +1713,7 @@ fc_crop_photosynthesis :: proc(
 			FvCB_in.Ca = vw_AtmosphericCO2Concentration
 
 			hps := make_fvcb_canopy_hourly_params()
-			hps.Vcmax_25 = speciesPs.VCMAX25 * cm.o3_short_term_damage * cm.o3_senescence
+			hps.Vcmax_25 = speciesPs.vcmax25 * cm.o3_short_term_damage * cm.o3_senescence
 
 			FvCB_res := fvcb_canopy_hourly_c3(FvCB_in, hps)
 
@@ -1822,14 +1822,14 @@ fc_crop_photosynthesis :: proc(
 			species.sla =
 				species.mFol > 0 ? species.lai / species.mFol : pc_SpecificLeafArea[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
 
-			species.EF_MONO = speciesPs.EF_MONO
-			species.EF_MONOS = speciesPs.EF_MONOS
-			species.EF_ISO = speciesPs.EF_ISO
-			species.VCMAX25 = speciesPs.VCMAX25
-			species.AEKC = speciesPs.AEKC
-			species.AEKO = speciesPs.AEKO
-			species.AEVC = speciesPs.AEVC
-			species.KC25 = speciesPs.KC25
+			species.EF_MONO = speciesPs.ef_mono
+			species.EF_MONOS = speciesPs.ef_monos
+			species.EF_ISO = speciesPs.ef_iso
+			species.VCMAX25 = speciesPs.vcmax25
+			species.AEKC = speciesPs.aekc
+			species.AEKO = speciesPs.aeko
+			species.AEVC = speciesPs.aevc
+			species.KC25 = speciesPs.kc25
 
 			ges := voc_guenther_emissions(species, &mcd, 1.0 / 24.0, allocator)
 			voc_emissions_add(&cm.guenther_emissions, &ges, allocator)
@@ -1854,7 +1854,7 @@ fc_crop_photosynthesis :: proc(
 				cm.crop_photosynthesis_results.oi = lf.oi * 1000
 				cm.crop_photosynthesis_results.ci = lf.ci
 				cm.crop_photosynthesis_results.vcMax =
-					fvcb_Vcmax_bernacchi_f(mcd.tFol, speciesPs.VCMAX25) *
+					fvcb_Vcmax_bernacchi_f(mcd.tFol, speciesPs.vcmax25) *
 					cm.crop_n_redux *
 					cm.transpiration_deficit
 				cm.crop_photosynthesis_results.jMax =
@@ -2061,14 +2061,14 @@ calculate_voc_emissions :: proc(
 	species.mFol = cm.organ_biomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
 	species.sla = pc_SpecificLeafArea[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
 
-	species.EF_MONO = speciesPs.EF_MONO
-	species.EF_MONOS = speciesPs.EF_MONOS
-	species.EF_ISO = speciesPs.EF_ISO
-	species.VCMAX25 = speciesPs.VCMAX25
-	species.AEKC = speciesPs.AEKC
-	species.AEKO = speciesPs.AEKO
-	species.AEVC = speciesPs.AEVC
-	species.KC25 = speciesPs.KC25
+	species.EF_MONO = speciesPs.ef_mono
+	species.EF_MONOS = speciesPs.ef_monos
+	species.EF_ISO = speciesPs.ef_iso
+	species.VCMAX25 = speciesPs.vcmax25
+	species.AEKC = speciesPs.aekc
+	species.AEKO = speciesPs.aeko
+	species.AEVC = speciesPs.aevc
+	species.KC25 = speciesPs.kc25
 
 	cm.guenther_emissions = voc_guenther_emissions(species, mcd, 1.0, allocator)
 	cm.jjv_emissions = voc_jjv_emissions(
@@ -2173,7 +2173,7 @@ fc_heat_stress_impact :: proc(cm: ^Crop_Module, vw_MaxAirTemperature, vw_MinAirT
 // Cereals. Crop Sci. 54:2395-2405.
 fc_frost_kill :: proc(cm: ^Crop_Module, maxAirTemp, minAirTemp: f64) {
 	soil_column := cm.soil_column
-	LT50cultivar := cm.crop_params.cultivarParams.lt50cultivar
+	LT50cultivar := cm.crop_params.cultivarParams.lt50_cultivar
 
 	LT50old := cm.lt50
 	cm.lt50_m = min(cm.lt50, cm.lt50_m)

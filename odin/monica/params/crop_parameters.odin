@@ -57,15 +57,15 @@ Species_Parameters :: struct {
 	limiting_temperature_heat_stress:            f64,
 	cutting_delay_days:                          int,
 	drought_impact_on_fertility_factor:          f64,
-	EF_MONO:                                     f64, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
-	EF_MONOS:                                    f64, // [ug gDW-1 h-1] Monoterpenes stored then emitted
-	EF_ISO:                                      f64, // Isoprene emission factor
-	VCMAX25:                                     f64, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
-	AEKC:                                        f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
-	AEKO:                                        f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
-	AEVC:                                        f64, // activation energy for photosynthesis (J mol-1)
-	KC25:                                        f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
-	KO25:                                        f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
+	ef_mono:                                     f64, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
+	ef_monos:                                    f64, // [ug gDW-1 h-1] Monoterpenes stored then emitted
+	ef_iso:                                      f64, // Isoprene emission factor
+	vcmax25:                                     f64, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
+	aekc:                                        f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
+	aeko:                                        f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
+	aevc:                                        f64, // activation energy for photosynthesis (J mol-1)
+	kc25:                                        f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
+	ko25:                                        f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
 	transition_stage_leaf_exp:                   int, // [1-7]
 	dormancy_start_doy:                          int, // start dormancy of perennial crops at that DOY (0 = unset)
 	dormancy_end_doy:                            int, // end dormancy, start accumulating temperature sums (0 = unset)
@@ -75,13 +75,13 @@ Species_Parameters :: struct {
 make_species_parameters :: proc() -> Species_Parameters {
 	return Species_Parameters {
 		field_condition_modifier = 1.0,
-		EF_MONO = 0.5,
-		EF_MONOS = 0.5,
-		AEKC = 65800.0,
-		AEKO = 1400.0,
-		AEVC = 68800.0,
-		KC25 = 460.0,
-		KO25 = 330.0,
+		ef_mono = 0.5,
+		ef_monos = 0.5,
+		aekc = 65800.0,
+		aeko = 1400.0,
+		aevc = 68800.0,
+		kc25 = 460.0,
+		ko25 = 330.0,
 		transition_stage_leaf_exp = -1,
 	}
 }
@@ -162,17 +162,21 @@ species_parameters_merge :: proc(sp: ^Species_Parameters, j: jx.Value) -> tl.Err
 	}
 	jx.set_double_value(&sp.limiting_temperature_heat_stress, j, "LimitingTemperatureHeatStress")
 	jx.set_int_value(&sp.cutting_delay_days, j, "CuttingDelayDays")
-	jx.set_double_value(&sp.drought_impact_on_fertility_factor, j, "DroughtImpactOnFertilityFactor")
+	jx.set_double_value(
+		&sp.drought_impact_on_fertility_factor,
+		j,
+		"DroughtImpactOnFertilityFactor",
+	)
 
-	jx.set_double_value(&sp.EF_MONO, j, "EF_MONO")
-	jx.set_double_value(&sp.EF_MONOS, j, "EF_MONOS")
-	jx.set_double_value(&sp.EF_ISO, j, "EF_ISO")
-	jx.set_double_value(&sp.VCMAX25, j, "VCMAX25")
-	jx.set_double_value(&sp.AEKC, j, "AEKC")
-	jx.set_double_value(&sp.AEVC, j, "AEVC")
-	jx.set_double_value(&sp.AEKO, j, "AEKO")
-	jx.set_double_value(&sp.KC25, j, "KC25")
-	jx.set_double_value(&sp.KO25, j, "KO25")
+	jx.set_double_value(&sp.ef_mono, j, "EF_MONO")
+	jx.set_double_value(&sp.ef_monos, j, "EF_MONOS")
+	jx.set_double_value(&sp.ef_iso, j, "EF_ISO")
+	jx.set_double_value(&sp.vcmax25, j, "VCMAX25")
+	jx.set_double_value(&sp.aekc, j, "AEKC")
+	jx.set_double_value(&sp.aevc, j, "AEVC")
+	jx.set_double_value(&sp.aeko, j, "AEKO")
+	jx.set_double_value(&sp.kc25, j, "KC25")
+	jx.set_double_value(&sp.ko25, j, "KO25")
 
 	jx.set_int_value(&sp.transition_stage_leaf_exp, j, "TransitionStageLeafExp")
 	jx.set_int_value(&sp.dormancy_start_doy, j, "DormancyStartDoy")
@@ -234,15 +238,15 @@ species_parameters_to_json :: proc(sp: ^Species_Parameters, a: Allocator) -> jx.
 		{"LimitingTemperatureHeatStress", jx.f(sp.limiting_temperature_heat_stress)},
 		{"CuttingDelayDays", jx.i(sp.cutting_delay_days)},
 		{"DroughtImpactOnFertilityFactor", jx.f(sp.drought_impact_on_fertility_factor)},
-		{"EF_MONO", jx.vu(sp.EF_MONO, "ug gDW-1 h-1", a)},
-		{"EF_MONOS", jx.vu(sp.EF_MONOS, "ug gDW-1 h-1", a)},
-		{"EF_ISO", jx.vu(sp.EF_ISO, "ug gDW-1 h-1", a)},
-		{"VCMAX25", jx.vu(sp.VCMAX25, "umol m-2 s-1", a)},
-		{"AEKC", jx.vu(sp.AEKC, "J mol-1", a)},
-		{"AEKO", jx.vu(sp.AEKO, "J mol-1", a)},
-		{"AEVC", jx.vu(sp.AEVC, "J mol-1", a)},
-		{"KC25", jx.vu(sp.KC25, "umol mol-1 ubar-1", a)},
-		{"KO25", jx.vu(sp.KO25, "mmol mol-1 mbar-1", a)},
+		{"EF_MONO", jx.vu(sp.ef_mono, "ug gDW-1 h-1", a)},
+		{"EF_MONOS", jx.vu(sp.ef_monos, "ug gDW-1 h-1", a)},
+		{"EF_ISO", jx.vu(sp.ef_iso, "ug gDW-1 h-1", a)},
+		{"VCMAX25", jx.vu(sp.vcmax25, "umol m-2 s-1", a)},
+		{"AEKC", jx.vu(sp.aekc, "J mol-1", a)},
+		{"AEKO", jx.vu(sp.aeko, "J mol-1", a)},
+		{"AEVC", jx.vu(sp.aevc, "J mol-1", a)},
+		{"KC25", jx.vu(sp.kc25, "umol mol-1 ubar-1", a)},
+		{"KO25", jx.vu(sp.ko25, "mmol mol-1 mbar-1", a)},
 		{"TransitionStageLeafExp", jx.vu_int(sp.transition_stage_leaf_exp, "1-7", a)},
 		{"DormancyStartDoy", jx.i(sp.dormancy_start_doy)},
 		{"DormancyEndDoy", jx.i(sp.dormancy_end_doy)},
@@ -272,7 +276,7 @@ Cultivar_Parameters :: struct {
 	light_extinction_coefficient:      f64,
 	max_crop_height:                   f64,
 	residue_n_ratio:                   f64,
-	lt50cultivar:                      f64,
+	lt50_cultivar:                     f64,
 	crop_height_p1:                    f64,
 	crop_height_p2:                    f64,
 	crop_specific_max_rooting_depth:   f64, // old WUMAXPF [m]
@@ -372,7 +376,7 @@ cultivar_parameters_merge :: proc(cp: ^Cultivar_Parameters, j: jx.Value) -> tl.E
 	jx.set_double_value(&cp.light_extinction_coefficient, j, "LightExtinctionCoefficient")
 	jx.set_double_value(&cp.max_crop_height, j, "MaxCropHeight")
 	jx.set_double_value(&cp.residue_n_ratio, j, "ResidueNRatio")
-	jx.set_double_value(&cp.lt50cultivar, j, "LT50cultivar")
+	jx.set_double_value(&cp.lt50_cultivar, j, "LT50cultivar")
 	jx.set_double_value(&cp.crop_height_p1, j, "CropHeightP1")
 	jx.set_double_value(&cp.crop_height_p2, j, "CropHeightP2")
 	jx.set_double_value(&cp.crop_specific_max_rooting_depth, j, "CropSpecificMaxRootingDepth")
@@ -452,7 +456,7 @@ cultivar_parameters_to_json :: proc(cp: ^Cultivar_Parameters, a: Allocator) -> j
 		{"LightExtinctionCoefficient", jx.f(cp.light_extinction_coefficient)},
 		{"MaxCropHeight", jx.vu(cp.max_crop_height, "m", a)},
 		{"ResidueNRatio", jx.f(cp.residue_n_ratio)},
-		{"LT50cultivar", jx.f(cp.lt50cultivar)},
+		{"LT50cultivar", jx.f(cp.lt50_cultivar)},
 		{"CropHeightP1", jx.f(cp.crop_height_p1)},
 		{"CropHeightP2", jx.f(cp.crop_height_p2)},
 		{"CropSpecificMaxRootingDepth", jx.f(cp.crop_specific_max_rooting_depth)},
@@ -488,7 +492,10 @@ cultivar_parameters_to_json :: proc(cp: ^Cultivar_Parameters, a: Allocator) -> j
 		{"LowTemperatureExposure", jx.f(cp.low_temperature_exposure)},
 		{"RespiratoryStress", jx.f(cp.respiratory_stress)},
 		{"LatestHarvestDoy", jx.i(cp.latest_harvest_doy)},
-		{"OrganIdsForPrimaryYield", yield_components_to_json(cp.organ_ids_for_primary_yield[:], a)},
+		{
+			"OrganIdsForPrimaryYield",
+			yield_components_to_json(cp.organ_ids_for_primary_yield[:], a),
+		},
 		{
 			"OrganIdsForSecondaryYield",
 			yield_components_to_json(cp.organ_ids_for_secondary_yield[:], a),
