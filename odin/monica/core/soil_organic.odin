@@ -1343,7 +1343,7 @@ soil_organic_add_organic_matter :: proc(
 	nools := sc.number_of_organic_layers
 	layerThickness := sc.layers[0].layer_thickness_m
 
-	areCropResidueParams := int(params.vo_CN_Ratio_AOM_Fast * 10000.0) == 0
+	areCropResidueParams := int(params.cn_ratio_aom_fast * 10000.0) == 0
 
 	calc_CN_Ratio_AOM_Fast_and_added_Corg_amount :: proc(
 		params: ^p.Organic_Matter_Parameters,
@@ -1356,20 +1356,20 @@ soil_organic_add_organic_matter :: proc(
 		added_Norg_amount: f64,
 	) {
 		added_Corg_amount =
-			(params.vo_CorgContent <= 0.0 ? soil.PO_AOM_TO_C : params.vo_CorgContent) *
+			(params.corg_content <= 0.0 ? soil.PO_AOM_TO_C : params.corg_content) *
 			vo_AddedOrganicMatterAmount *
-			params.vo_AOM_DryMatterContent /
+			params.aom_dry_matter_content /
 			10000.0 /
 			layerThickness
 
 		added_Norg_amount =
-			vo_AddedOrganicMatterNConcentration <= 0.0 ? 0.01 : (vo_AddedOrganicMatterAmount * params.vo_AOM_DryMatterContent * vo_AddedOrganicMatterNConcentration / 10000.0 / layerThickness)
+			vo_AddedOrganicMatterNConcentration <= 0.0 ? 0.01 : (vo_AddedOrganicMatterAmount * params.aom_dry_matter_content * vo_AddedOrganicMatterNConcentration / 10000.0 / layerThickness)
 
 		N_for_AOM_slow :=
-			added_Corg_amount * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow
+			added_Corg_amount * params.part_aom_to_aom_slow / params.cn_ratio_aom_slow
 		if N_for_AOM_slow < added_Norg_amount {
 			N_for_AOM_fast := added_Norg_amount - N_for_AOM_slow
-			CN_ratio_AOM_fast = added_Corg_amount * params.vo_PartAOM_to_AOM_Fast / N_for_AOM_fast
+			CN_ratio_AOM_fast = added_Corg_amount * params.part_aom_to_aom_fast / N_for_AOM_fast
 		} else {
 			CN_ratio_AOM_fast = so.mod_params.aom_fast_max_c_to_n
 		}
@@ -1378,11 +1378,11 @@ soil_organic_add_organic_matter :: proc(
 		return
 	}
 
-	rounded_AOM_SlowDecCoeffStandard := tl.round_shifted_int(params.vo_AOM_SlowDecCoeffStandard, 4)
-	rounded_AOM_FastDecCoeffStandard := tl.round_shifted_int(params.vo_AOM_FastDecCoeffStandard, 4)
-	rounded_PartAOM_Slow_to_SMB_Slow := tl.round_shifted_int(params.vo_PartAOM_Slow_to_SMB_Slow, 4)
-	rounded_PartAOM_Slow_to_SMB_Fast := tl.round_shifted_int(params.vo_PartAOM_Slow_to_SMB_Fast, 4)
-	rounded_CN_Ratio_AOM_Slow := tl.round_shifted_int(params.vo_CN_Ratio_AOM_Slow, 4)
+	rounded_AOM_SlowDecCoeffStandard := tl.round_shifted_int(params.aom_slow_dec_coeff_standard, 4)
+	rounded_AOM_FastDecCoeffStandard := tl.round_shifted_int(params.aom_fast_dec_coeff_standard, 4)
+	rounded_PartAOM_Slow_to_SMB_Slow := tl.round_shifted_int(params.part_aom_slow_to_smb_slow, 4)
+	rounded_PartAOM_Slow_to_SMB_Fast := tl.round_shifted_int(params.part_aom_slow_to_smb_fast, 4)
+	rounded_CN_Ratio_AOM_Slow := tl.round_shifted_int(params.cn_ratio_aom_slow, 4)
 
 	are_same_aom_props_as_om_params :: proc(
 		props: ^Aom_Properties,
@@ -1426,8 +1426,8 @@ soil_organic_add_organic_matter :: proc(
 			if k < nools {
 				sc.layers[k].soil_carbamid +=
 					v *
-					params.vo_AOM_DryMatterContent *
-					params.vo_AOM_CarbamidContent /
+					params.aom_dry_matter_content *
+					params.aom_carbamid_content /
 					10000.0 /
 					layerThickness
 			}
@@ -1474,13 +1474,13 @@ soil_organic_add_organic_matter :: proc(
 
 		if poolSetIndex < 0 {
 			pool: Aom_Properties
-			pool.aom_slow_dec_coeff_standard = params.vo_AOM_SlowDecCoeffStandard
-			pool.aom_fast_dec_coeff_standard = params.vo_AOM_FastDecCoeffStandard
-			pool.cn_ratio_aom_slow = params.vo_CN_Ratio_AOM_Slow
+			pool.aom_slow_dec_coeff_standard = params.aom_slow_dec_coeff_standard
+			pool.aom_fast_dec_coeff_standard = params.aom_fast_dec_coeff_standard
+			pool.cn_ratio_aom_slow = params.cn_ratio_aom_slow
 			pool.cn_ratio_aom_fast =
-				areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast
-			pool.part_aom_slow_to_smb_slow = params.vo_PartAOM_Slow_to_SMB_Slow
-			pool.part_aom_slow_to_smb_fast = params.vo_PartAOM_Slow_to_SMB_Fast
+				areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.cn_ratio_aom_fast
+			pool.part_aom_slow_to_smb_slow = params.part_aom_slow_to_smb_slow
+			pool.part_aom_slow_to_smb_fast = params.part_aom_slow_to_smb_fast
 			pool.incorporation = so.incorporation
 			pool.no_volatilization = areCropResidueParams
 
@@ -1490,11 +1490,11 @@ soil_organic_add_organic_matter :: proc(
 				if i == intoLayerIndex {
 					cpool := &intoLayer.vo_AOM_Pool[len(intoLayer.vo_AOM_Pool) - 1]
 					cpool.days_after_application = 1
-					cpool.aom_dry_matter_content = params.vo_AOM_DryMatterContent
-					cpool.aom_nh4_content = params.vo_AOM_NH4Content
-					cpool.aom_slow = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount
+					cpool.aom_dry_matter_content = params.aom_dry_matter_content
+					cpool.aom_nh4_content = params.aom_nh4_content
+					cpool.aom_slow = params.part_aom_to_aom_slow * added_Corg_amount
 					AOM_slow_input = cpool.aom_slow
-					cpool.aom_fast = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount
+					cpool.aom_fast = params.part_aom_to_aom_fast * added_Corg_amount
 					AOM_fast_input = cpool.aom_fast
 				}
 			}
@@ -1502,35 +1502,35 @@ soil_organic_add_organic_matter :: proc(
 			poolSetIndex = len(sc.layers[0].vo_AOM_Pool) - 1
 		} else {
 			cpool := &intoLayer.vo_AOM_Pool[poolSetIndex]
-			AOM_slow_input = params.vo_PartAOM_to_AOM_Slow * added_Corg_amount
+			AOM_slow_input = params.part_aom_to_aom_slow * added_Corg_amount
 			cpool.aom_slow += AOM_slow_input
 			added_CN_ratio_AOM_fast :=
-				areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.vo_CN_Ratio_AOM_Fast
+				areCropResidueParams ? calced_CN_Ratio_AOM_Fast : params.cn_ratio_aom_fast
 			pool_fast_N := cpool.aom_fast / cpool.cn_ratio_aom_fast
 			added_fast_N :=
-				params.vo_PartAOM_to_AOM_Fast * added_Corg_amount / added_CN_ratio_AOM_fast
-			AOM_fast_input = params.vo_PartAOM_to_AOM_Fast * added_Corg_amount
+				params.part_aom_to_aom_fast * added_Corg_amount / added_CN_ratio_AOM_fast
+			AOM_fast_input = params.part_aom_to_aom_fast * added_Corg_amount
 			cpool.aom_fast += AOM_fast_input
 			new_CN_ratio_AOM_fast := cpool.aom_fast / (pool_fast_N + added_fast_N)
 			cpool.cn_ratio_aom_fast = new_CN_ratio_AOM_fast
 		}
 
 		soil_NH4_input :=
-			params.vo_AOM_NH4Content *
+			params.aom_nh4_content *
 			addedOrganicMatterAmount *
-			params.vo_AOM_DryMatterContent /
+			params.aom_dry_matter_content /
 			10000.0 /
 			layerThickness
 
 		soil_NO3_input :=
-			params.vo_AOM_NO3Content *
+			params.aom_no3_content *
 			addedOrganicMatterAmount *
-			params.vo_AOM_DryMatterContent /
+			params.aom_dry_matter_content /
 			10000.0 /
 			layerThickness
 
 		SOM_FastInput :=
-			max(0.0, (1.0 - (params.vo_PartAOM_to_AOM_Slow + params.vo_PartAOM_to_AOM_Fast))) *
+			max(0.0, (1.0 - (params.part_aom_to_aom_slow + params.part_aom_to_aom_fast))) *
 			added_Corg_amount
 
 		intoLayer.soil_nh4 += soil_NH4_input

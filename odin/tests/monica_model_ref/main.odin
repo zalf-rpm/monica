@@ -167,15 +167,15 @@ main :: proc() {
 	// scenario 2: applyOrganicFertiliser
 	tr.set_day(&t, 2)
 	omp := p.Organic_Matter_Parameters {
-		vo_AOM_DryMatterContent = 0.35,
-		vo_AOM_NH4Content       = 0.002,
-		vo_AOM_NO3Content       = 0.0005,
-		vo_AOM_CarbamidContent  = 0.0,
-		vo_PartAOM_to_AOM_Slow  = 0.5,
-		vo_PartAOM_to_AOM_Fast  = 0.3,
-		vo_CN_Ratio_AOM_Slow    = 20.0,
-		vo_CN_Ratio_AOM_Fast    = 10.0,
-		vo_NConcentration       = 0.01,
+		aom_dry_matter_content = 0.35,
+		aom_nh4_content        = 0.002,
+		aom_no3_content        = 0.0005,
+		aom_carbamid_content   = 0.0,
+		part_aom_to_aom_slow   = 0.5,
+		part_aom_to_aom_fast   = 0.3,
+		cn_ratio_aom_slow      = 20.0,
+		cn_ratio_aom_fast      = 10.0,
+		n_concentration        = 0.01,
 	}
 	core.monica_model_apply_organic_fertiliser(model, &omp, 1000.0, true, 0)
 	dump_model(&t, "model", model)

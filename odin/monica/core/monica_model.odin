@@ -222,11 +222,11 @@ monica_model_add_daily_sum_org_fertiliser :: proc(
 	params: ^p.Organic_Matter_Parameters,
 ) {
 	aom_fast_factor :=
-		soil.PO_AOM_TO_C * params.vo_PartAOM_to_AOM_Fast / params.vo_CN_Ratio_AOM_Fast
+		soil.PO_AOM_TO_C * params.part_aom_to_aom_fast / params.cn_ratio_aom_fast
 	aom_slow_factor :=
-		soil.PO_AOM_TO_C * params.vo_PartAOM_to_AOM_Slow / params.vo_CN_Ratio_AOM_Slow
+		soil.PO_AOM_TO_C * params.part_aom_to_aom_slow / params.cn_ratio_aom_slow
 	som_factor :=
-		(1 - (params.vo_PartAOM_to_AOM_Fast + params.vo_PartAOM_to_AOM_Slow)) *
+		(1 - (params.part_aom_to_aom_fast + params.part_aom_to_aom_slow)) *
 		soil.PO_AOM_TO_C /
 		model.soil_column.layers[0].soil_cn_ratio // TODO ask CN for correctness
 
@@ -234,11 +234,11 @@ monica_model_add_daily_sum_org_fertiliser :: proc(
 		aom_fast_factor +
 		aom_slow_factor +
 		som_factor +
-		params.vo_AOM_NH4Content +
-		params.vo_AOM_NO3Content
+		params.aom_nh4_content +
+		params.aom_no3_content
 
-	model.daily_sum_org_fertiliser += amountFM * params.vo_AOM_DryMatterContent * conversion
-	model.sum_org_fertiliser += amountFM * params.vo_AOM_DryMatterContent * conversion
+	model.daily_sum_org_fertiliser += amountFM * params.aom_dry_matter_content * conversion
+	model.sum_org_fertiliser += amountFM * params.aom_dry_matter_content * conversion
 }
 
 // C++: void monica::monicamodel::applyMineralFertiliser(MonicaModel*,
@@ -268,13 +268,13 @@ monica_model_apply_organic_fertiliser :: proc(
 		&model.soil_organic,
 		params,
 		amountFM,
-		params.vo_NConcentration,
+		params.n_concentration,
 		incorporateIntoLayerIndex,
 	)
 	monica_model_add_daily_sum_org_fertiliser(model, amountFM, params)
 	monica_model_add_daily_sum_organic_fertilizer_dm(
 		model,
-		amountFM * params.vo_AOM_DryMatterContent,
+		amountFM * params.aom_dry_matter_content,
 	)
 }
 

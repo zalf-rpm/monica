@@ -271,7 +271,7 @@ main :: proc() {
 		_ = p.crop_residue_parameters_merge(&v, load(dir, "../crop-residues/wheat.json", a))
 		dump("merged-CropResidue", p.crop_residue_parameters_to_json(&v, a), a)
 		// the value to_json cannot show, printed directly to pin the data loss
-		fmt.printf("merged-CropResidue-carbamid\t%s\n", fmt17(v.vo_AOM_CarbamidContent, a))
+		fmt.printf("merged-CropResidue-carbamid\t%s\n", fmt17(v.aom_carbamid_content, a))
 	}
 	{
 		v: p.Organic_Fertilizer_Parameters
@@ -280,7 +280,7 @@ main :: proc() {
 			load(dir, "../organic-fertilisers/CAM.json", a),
 		)
 		dump("merged-OrganicFertilizer", p.organic_fertilizer_parameters_to_json(&v, a), a)
-		fmt.printf("merged-OrganicFertilizer-carbamid\t%s\n", fmt17(v.vo_AOM_CarbamidContent, a))
+		fmt.printf("merged-OrganicFertilizer-carbamid\t%s\n", fmt17(v.aom_carbamid_content, a))
 	}
 
 	// ---- tranche 3b ------------------------------------------------------

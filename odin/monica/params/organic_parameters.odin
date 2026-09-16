@@ -143,20 +143,20 @@ nmin_crop_parameters_to_json :: proc(ncp: ^NMin_Crop_Parameters, a: Allocator) -
 
 // C++: struct monica::OrganicMatterParameters
 Organic_Matter_Parameters :: struct {
-	vo_AOM_DryMatterContent:     f64, // [kg DM kg FM-1]
-	vo_AOM_NH4Content:           f64, // [kg N kg DM-1]
-	vo_AOM_NO3Content:           f64, // [kg N kg DM-1]
-	vo_AOM_CarbamidContent:      f64, // [kg N kg DM-1]
-	vo_CorgContent:              f64, // [kg C kg DM-1]
-	vo_AOM_SlowDecCoeffStandard: f64,
-	vo_AOM_FastDecCoeffStandard: f64,
-	vo_PartAOM_to_AOM_Slow:      f64,
-	vo_PartAOM_to_AOM_Fast:      f64,
-	vo_CN_Ratio_AOM_Slow:        f64,
-	vo_CN_Ratio_AOM_Fast:        f64,
-	vo_PartAOM_Slow_to_SMB_Slow: f64,
-	vo_PartAOM_Slow_to_SMB_Fast: f64,
-	vo_NConcentration:           f64,
+	aom_dry_matter_content:      f64, // [kg DM kg FM-1]
+	aom_nh4_content:             f64, // [kg N kg DM-1]
+	aom_no3_content:             f64, // [kg N kg DM-1]
+	aom_carbamid_content:        f64, // [kg N kg DM-1]
+	corg_content:                f64, // [kg C kg DM-1]
+	aom_slow_dec_coeff_standard: f64,
+	aom_fast_dec_coeff_standard: f64,
+	part_aom_to_aom_slow:        f64,
+	part_aom_to_aom_fast:        f64,
+	cn_ratio_aom_slow:           f64,
+	cn_ratio_aom_fast:           f64,
+	part_aom_slow_to_smb_slow:   f64,
+	part_aom_slow_to_smb_fast:   f64,
+	n_concentration:             f64,
 }
 // all C++ defaults are 0.0, so the Odin zero value matches
 
@@ -167,20 +167,20 @@ organic_matter_parameters_merge :: proc(
 ) -> tl.Errors {
 	res := default_merge(omp, j, organic_matter_parameters_merge)
 
-	jx.set_double_value(&omp.vo_AOM_DryMatterContent, j, "AOM_DryMatterContent")
-	jx.set_double_value(&omp.vo_AOM_NH4Content, j, "AOM_NH4Content")
-	jx.set_double_value(&omp.vo_AOM_NO3Content, j, "AOM_NO3Content")
-	jx.set_double_value(&omp.vo_AOM_CarbamidContent, j, "AOM_CarbamidContent")
-	jx.set_double_value(&omp.vo_AOM_SlowDecCoeffStandard, j, "AOM_SlowDecCoeffStandard")
-	jx.set_double_value(&omp.vo_AOM_FastDecCoeffStandard, j, "AOM_FastDecCoeffStandard")
-	jx.set_double_value(&omp.vo_PartAOM_to_AOM_Slow, j, "PartAOM_to_AOM_Slow")
-	jx.set_double_value(&omp.vo_PartAOM_to_AOM_Fast, j, "PartAOM_to_AOM_Fast")
-	jx.set_double_value(&omp.vo_CN_Ratio_AOM_Slow, j, "CN_Ratio_AOM_Slow")
-	jx.set_double_value(&omp.vo_CN_Ratio_AOM_Fast, j, "CN_Ratio_AOM_Fast")
-	jx.set_double_value(&omp.vo_PartAOM_Slow_to_SMB_Slow, j, "PartAOM_Slow_to_SMB_Slow")
-	jx.set_double_value(&omp.vo_PartAOM_Slow_to_SMB_Fast, j, "PartAOM_Slow_to_SMB_Fast")
-	jx.set_double_value(&omp.vo_NConcentration, j, "NConcentration")
-	jx.set_double_value(&omp.vo_CorgContent, j, "CorgContent")
+	jx.set_double_value(&omp.aom_dry_matter_content, j, "AOM_DryMatterContent")
+	jx.set_double_value(&omp.aom_nh4_content, j, "AOM_NH4Content")
+	jx.set_double_value(&omp.aom_no3_content, j, "AOM_NO3Content")
+	jx.set_double_value(&omp.aom_carbamid_content, j, "AOM_CarbamidContent")
+	jx.set_double_value(&omp.aom_slow_dec_coeff_standard, j, "AOM_SlowDecCoeffStandard")
+	jx.set_double_value(&omp.aom_fast_dec_coeff_standard, j, "AOM_FastDecCoeffStandard")
+	jx.set_double_value(&omp.part_aom_to_aom_slow, j, "PartAOM_to_AOM_Slow")
+	jx.set_double_value(&omp.part_aom_to_aom_fast, j, "PartAOM_to_AOM_Fast")
+	jx.set_double_value(&omp.cn_ratio_aom_slow, j, "CN_Ratio_AOM_Slow")
+	jx.set_double_value(&omp.cn_ratio_aom_fast, j, "CN_Ratio_AOM_Fast")
+	jx.set_double_value(&omp.part_aom_slow_to_smb_slow, j, "PartAOM_Slow_to_SMB_Slow")
+	jx.set_double_value(&omp.part_aom_slow_to_smb_fast, j, "PartAOM_Slow_to_SMB_Fast")
+	jx.set_double_value(&omp.n_concentration, j, "NConcentration")
+	jx.set_double_value(&omp.corg_content, j, "CorgContent")
 
 	return res
 }
@@ -190,14 +190,14 @@ organic_matter_parameters_merge :: proc(
 // NOTE(c++-quirk): the C++ initialiser list contains the key "AOM_NO3Content"
 // TWICE. The second entry carries the description "Carbamide content in added
 // organic matter" and was clearly meant to be "AOM_CarbamidContent", but it
-// repeats both the key and the value (vo_AOM_NO3Content). Because
+// repeats both the key and the value (aom_no3_content). Because
 // json11::Json::object is a std::map and map's initializer-list constructor
 // inserts rather than assigns, the FIRST entry wins - so the duplicate is
-// silently dropped and vo_AOM_CarbamidContent is never emitted at all.
+// silently dropped and aom_carbamid_content is never emitted at all.
 //
 // Reproduced exactly: only one AOM_NO3Content entry, with the "Nitrate content"
 // description, and no AOM_CarbamidContent key. Note this makes to_json lossy -
-// a to_json/merge round trip zeroes vo_AOM_CarbamidContent.
+// a to_json/merge round trip zeroes aom_carbamid_content.
 organic_matter_parameters_to_json_object :: proc(
 	omp: ^Organic_Matter_Parameters,
 	a: Allocator,
@@ -212,7 +212,7 @@ organic_matter_parameters_to_json_object :: proc(
 	{
 		"AOM_DryMatterContent",
 		vud(
-			omp.vo_AOM_DryMatterContent,
+			omp.aom_dry_matter_content,
 			"kg DM kg FM-1",
 			"Dry matter content of added organic matter",
 			a,
@@ -220,17 +220,17 @@ organic_matter_parameters_to_json_object :: proc(
 	},
 	{
 		"AOM_NH4Content",
-		vud(omp.vo_AOM_NH4Content, "kg N kg DM-1", "Ammonium content in added organic matter", a),
+		vud(omp.aom_nh4_content, "kg N kg DM-1", "Ammonium content in added organic matter", a),
 	},
 	// the surviving one of the two duplicate AOM_NO3Content entries
 	{
 		"AOM_NO3Content",
-		vud(omp.vo_AOM_NO3Content, "kg N kg DM-1", "Nitrate content in added organic matter", a),
+		vud(omp.aom_no3_content, "kg N kg DM-1", "Nitrate content in added organic matter", a),
 	},
 	{
 		"AOM_SlowDecCoeffStandard",
 		vud(
-			omp.vo_AOM_SlowDecCoeffStandard,
+			omp.aom_slow_dec_coeff_standard,
 			"d-1",
 			"Decomposition rate coefficient of slow AOM at standard conditions",
 			a,
@@ -239,7 +239,7 @@ organic_matter_parameters_to_json_object :: proc(
 	{
 		"AOM_FastDecCoeffStandard",
 		vud(
-			omp.vo_AOM_FastDecCoeffStandard,
+			omp.aom_fast_dec_coeff_standard,
 			"d-1",
 			"Decomposition rate coefficient of fast AOM at standard conditions",
 			a,
@@ -248,7 +248,7 @@ organic_matter_parameters_to_json_object :: proc(
 	{
 		"PartAOM_to_AOM_Slow",
 		vud(
-			omp.vo_PartAOM_to_AOM_Slow,
+			omp.part_aom_to_aom_slow,
 			"kg kg-1",
 			"Part of AOM that is assigned to the slowly decomposing pool",
 			a,
@@ -257,7 +257,7 @@ organic_matter_parameters_to_json_object :: proc(
 	{
 		"PartAOM_to_AOM_Fast",
 		vud(
-			omp.vo_PartAOM_to_AOM_Fast,
+			omp.part_aom_to_aom_fast,
 			"kg kg-1",
 			"Part of AOM that is assigned to the rapidly decomposing pool",
 			a,
@@ -265,16 +265,16 @@ organic_matter_parameters_to_json_object :: proc(
 	},
 	{
 		"CN_Ratio_AOM_Slow",
-		vud(omp.vo_CN_Ratio_AOM_Slow, "", "C to N ratio of the slowly decomposing AOM pool", a),
+		vud(omp.cn_ratio_aom_slow, "", "C to N ratio of the slowly decomposing AOM pool", a),
 	},
 	{
 		"CN_Ratio_AOM_Fast",
-		vud(omp.vo_CN_Ratio_AOM_Fast, "", "C to N ratio of the rapidly decomposing AOM pool", a),
+		vud(omp.cn_ratio_aom_fast, "", "C to N ratio of the rapidly decomposing AOM pool", a),
 	},
 	{
 		"PartAOM_Slow_to_SMB_Slow",
 		vud(
-			omp.vo_PartAOM_Slow_to_SMB_Slow,
+			omp.part_aom_slow_to_smb_slow,
 			"kg kg-1",
 			"Part of AOM slow consumed by slow soil microbial biomass",
 			a,
@@ -283,7 +283,7 @@ organic_matter_parameters_to_json_object :: proc(
 	{
 		"PartAOM_Slow_to_SMB_Fast",
 		vud(
-			omp.vo_PartAOM_Slow_to_SMB_Fast,
+			omp.part_aom_slow_to_smb_fast,
 			"kg kg-1",
 			"Part of AOM slow consumed by fast soil microbial biomass",
 			a,
@@ -291,11 +291,11 @@ organic_matter_parameters_to_json_object :: proc(
 	},
 	{
 		"NConcentration",
-		vud(omp.vo_NConcentration, "kg N kg DM-1", "Nitrogen content in added organic matter", a),
+		vud(omp.n_concentration, "kg N kg DM-1", "Nitrogen content in added organic matter", a),
 	},
 	{
 		"CorgContent",
-		vud(omp.vo_CorgContent, "kg C kg DM-1", "Carbon content in added organic matter", a),
+		vud(omp.corg_content, "kg C kg DM-1", "Carbon content in added organic matter", a),
 	},
 	)
 	return o.(jx.Object)
