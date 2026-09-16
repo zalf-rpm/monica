@@ -66,9 +66,9 @@ sowing_merge :: proc(s: ^Sowing_Data, j: jx.Value, allocator := context.allocato
 			}
 
 			if val, ok := s.isPerennialCrop.?; ok {
-				s.cropParams.cultivarParams.pc_Perennial = val
+				s.cropParams.cultivarParams.perennial = val
 			} else {
-				s.isPerennialCrop = s.cropParams.cultivarParams.pc_Perennial
+				s.isPerennialCrop = s.cropParams.cultivarParams.perennial
 			}
 
 			s.isValid = true
@@ -113,7 +113,7 @@ sowing_merge :: proc(s: ^Sowing_Data, j: jx.Value, allocator := context.allocato
 
 	jx.set_int_value(&s.plantDensity, j, "PlantDensity")
 	if s.plantDensity > 0 {
-		s.cropParams.speciesParams.pc_PlantDensity = s.plantDensity
+		s.cropParams.speciesParams.plant_density = s.plantDensity
 	}
 	// FAO-56 Dual Kc: optional initial Kcb at sowing (default 0.15 = bare soil)
 	jx.set_double_value(&s.initialKcb, j, "initialKcb")
@@ -170,15 +170,15 @@ sowing_apply :: proc(
 		model.soil_organic.crop_module = model.current_crop_module
 
 		if model.sim_params.p_UseNMinMineralFertilisingMethod &&
-		   !model.current_crop_module.crop_params.cultivarParams.winterCrop {
+		   !model.current_crop_module.crop_params.cultivarParams.winter_crop {
 			core.clear_top_dressing_params(&model.soil_column)
 			fert_amount := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 				model,
 				model.sim_params.p_NMinFertiliserPartition,
 				p.NMin_Crop_Parameters {
-					samplingDepth = s.cropParams.speciesParams.pc_SamplingDepth,
-					nTarget = s.cropParams.speciesParams.pc_TargetNSamplingDepth,
-					nTarget30 = s.cropParams.speciesParams.pc_TargetN30,
+					samplingDepth = s.cropParams.speciesParams.sampling_depth,
+					nTarget = s.cropParams.speciesParams.target_n_sampling_depth,
+					nTarget30 = s.cropParams.speciesParams.target_n30,
 				},
 			)
 			core.monica_model_add_daily_sum_fertiliser(model, fert_amount)
@@ -450,7 +450,7 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 
 	// check temperature
 	Tok := false
-	if as.cropParams.cultivarParams.winterCrop {
+	if as.cropParams.cultivarParams.winter_crop {
 		avgTavg := avg(cd, .tavg, as.daysInTempWindow)
 		Tok = avgTavg <= as.minTempThreshold
 	} else {

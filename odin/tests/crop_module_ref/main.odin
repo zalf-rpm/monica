@@ -383,13 +383,13 @@ main :: proc() {
 	// --- scenario 3: synthetic low-Kc cultivar (Kcb "low-coverage crop" branch) ---
 	{
 		low_kc_crop_params := wheat_crop_params
-		low_kc_crop_params.cultivarParams.pc_StageKcFactor = make(
+		low_kc_crop_params.cultivarParams.stage_kc_factor = make(
 			[dynamic]f64,
-			len(wheat_crop_params.cultivarParams.pc_StageKcFactor),
+			len(wheat_crop_params.cultivarParams.stage_kc_factor),
 			a,
 		)
-		for v, i in wheat_crop_params.cultivarParams.pc_StageKcFactor {
-			low_kc_crop_params.cultivarParams.pc_StageKcFactor[i] = v * 0.5
+		for v, i in wheat_crop_params.cultivarParams.stage_kc_factor {
+			low_kc_crop_params.cultivarParams.stage_kc_factor[i] = v * 0.5
 		}
 		cm := core.make_crop_module(
 			&sc,

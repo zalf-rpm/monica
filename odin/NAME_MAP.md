@@ -383,3 +383,103 @@ Not renamed: `params`, `solution` (already lowercase). Full camelCase->snake_cas
 | `vw_AtmosphericO3Concentration` | `vw_atmospheric_o3_concentration` |
 
 Full camelCase->snake_case pass, no prefix stripped (p_/vw_/vs_ prefixes kept, rest snake_cased).
+
+## `monica::SpeciesParameters` -> `params.Species_Parameters` (odin/monica/params/crop_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `dormancyEndDoy` | `dormancy_end_doy` |
+| `dormancyStartDoy` | `dormancy_start_doy` |
+| `pc_AbovegroundOrgan` | `aboveground_organ` |
+| `pc_AssimilateReallocation` | `assimilate_reallocation` |
+| `pc_BaseTemperature` | `base_temperature` |
+| `pc_CarboxylationPathway` | `carboxylation_pathway` |
+| `pc_CriticalOxygenContent` | `critical_oxygen_content` |
+| `pc_CuttingDelayDays` | `cutting_delay_days` |
+| `pc_DefaultRadiationUseEfficiency` | `default_radiation_use_efficiency` |
+| `pc_DevelopmentAccelerationByNitrogenStress` | `development_acceleration_by_nitrogen_stress` |
+| `pc_DroughtImpactOnFertilityFactor` | `drought_impact_on_fertility_factor` |
+| `pc_FieldConditionModifier` | `field_condition_modifier` |
+| `pc_InitialKcFactor` | `initial_kc_factor` |
+| `pc_InitialOrganBiomass` | `initial_organ_biomass` |
+| `pc_InitialRootingDepth` | `initial_rooting_depth` |
+| `pc_LimitingTemperatureHeatStress` | `limiting_temperature_heat_stress` |
+| `pc_LuxuryNCoeff` | `luxury_n_coeff` |
+| `pc_MaxCropDiameter` | `max_crop_diameter` |
+| `pc_MaximumTemperatureForAssimilation` | `maximum_temperature_for_assimilation` |
+| `pc_MaxNUptakeParam` | `max_n_uptake_param` |
+| `pc_MinimumNConcentration` | `minimum_n_concentration` |
+| `pc_MinimumTemperatureForAssimilation` | `minimum_temperature_for_assimilation` |
+| `pc_MinimumTemperatureRootGrowth` | `minimum_temperature_root_growth` |
+| `pc_NConcentrationAbovegroundBiomass` | `n_concentration_aboveground_biomass` |
+| `pc_NConcentrationB0` | `n_concentration_b0` |
+| `pc_NConcentrationPN` | `n_concentration_pn` |
+| `pc_NConcentrationRoot` | `n_concentration_root` |
+| `pc_OptimumTemperatureForAssimilation` | `optimum_temperature_for_assimilation` |
+| `pc_OrganGrowthRespiration` | `organ_growth_respiration` |
+| `pc_OrganMaintenanceRespiration` | `organ_maintenance_respiration` |
+| `pc_PartBiologicalNFixation` | `part_biological_n_fixation` |
+| `pc_PlantDensity` | `plant_density` |
+| `pc_RootDistributionParam` | `root_distribution_param` |
+| `pc_RootFormFactor` | `root_form_factor` |
+| `pc_RootGrowthLag` | `root_growth_lag` |
+| `pc_RootPenetrationRate` | `root_penetration_rate` |
+| `pc_SamplingDepth` | `sampling_depth` |
+| `pc_SpeciesId` | `species_id` |
+| `pc_SpecificRootLength` | `specific_root_length` |
+| `pc_StageAfterCut` | `stage_after_cut` |
+| `pc_StageAtMaxDiameter` | `stage_at_max_diameter` |
+| `pc_StageAtMaxHeight` | `stage_at_max_height` |
+| `pc_StageMaxRootNConcentration` | `stage_max_root_n_concentration` |
+| `pc_StageMobilFromStorageCoeff` | `stage_mobil_from_storage_coeff` |
+| `pc_StorageOrgan` | `storage_organ` |
+| `pc_TargetN30` | `target_n30` |
+| `pc_TargetNSamplingDepth` | `target_n_sampling_depth` |
+| `pc_TransitionStageLeafExp` | `transition_stage_leaf_exp` |
+
+Not renamed: `EF_MONO`, `EF_MONOS`, `EF_ISO`, `VCMAX25`, `AEKC`, `AEKO`, `AEVC`, `KC25`, `KO25` (ALL-CAPS literature symbols, neither `pc_`-prefixed nor camelCase - out of scope).
+
+## `monica::CultivarParameters` -> `params.Cultivar_Parameters` (odin/monica/params/crop_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `pc_AssimilatePartitioningCoeff` | `assimilate_partitioning_coeff` |
+| `pc_BaseDaylength` | `base_daylength` |
+| `pc_BeginSensitivePhaseHeatStress` | `begin_sensitive_phase_heat_stress` |
+| `pc_CriticalTemperatureHeatStress` | `critical_temperature_heat_stress` |
+| `pc_CropHeightP1` | `crop_height_p1` |
+| `pc_CropHeightP2` | `crop_height_p2` |
+| `pc_CropSpecificMaxRootingDepth` | `crop_specific_max_rooting_depth` |
+| `pc_CultivarId` | `cultivar_id` |
+| `pc_DaylengthRequirement` | `daylength_requirement` |
+| `pc_Description` | `description` |
+| `pc_DroughtStressThreshold` | `drought_stress_threshold` |
+| `pc_EarlyRefLeafExp` | `early_ref_leaf_exp` |
+| `pc_EndSensitivePhaseHeatStress` | `end_sensitive_phase_heat_stress` |
+| `pc_FrostDehardening` | `frost_dehardening` |
+| `pc_FrostHardening` | `frost_hardening` |
+| `pc_HeatSumIrrigationEnd` | `heat_sum_irrigation_end` |
+| `pc_HeatSumIrrigationStart` | `heat_sum_irrigation_start` |
+| `pc_LatestHarvestDoy` | `latest_harvest_doy` |
+| `pc_LightExtinctionCoefficient` | `light_extinction_coefficient` |
+| `pc_LowTemperatureExposure` | `low_temperature_exposure` |
+| `pc_LT50cultivar` | `lt50cultivar` |
+| `pc_MaxAssimilationRate` | `max_assimilation_rate` |
+| `pc_MaxCropHeight` | `max_crop_height` |
+| `pc_MaxTempDev_WE` | `max_temp_dev_we` |
+| `pc_MinTempDev_WE` | `min_temp_dev_we` |
+| `pc_OptimumTemperature` | `optimum_temperature` |
+| `pc_OptTempDev_WE` | `opt_temp_dev_we` |
+| `pc_OrganIdsForCutting` | `organ_ids_for_cutting` |
+| `pc_OrganIdsForPrimaryYield` | `organ_ids_for_primary_yield` |
+| `pc_OrganIdsForSecondaryYield` | `organ_ids_for_secondary_yield` |
+| `pc_OrganSenescenceRate` | `organ_senescence_rate` |
+| `pc_Perennial` | `perennial` |
+| `pc_RefLeafExp` | `ref_leaf_exp` |
+| `pc_ResidueNRatio` | `residue_n_ratio` |
+| `pc_RespiratoryStress` | `respiratory_stress` |
+| `pc_SpecificLeafArea` | `specific_leaf_area` |
+| `pc_StageKcFactor` | `stage_kc_factor` |
+| `pc_StageTemperatureSum` | `stage_temperature_sum` |
+| `pc_VernalisationRequirement` | `vernalisation_requirement` |
+| `winterCrop` | `winter_crop` |

@@ -86,15 +86,15 @@ day_step :: proc(
 	relativeHumidity, windSpeed, windSpeedHeight, grossPrecipitation: f64,
 	allocator := context.allocator,
 ) {
-	pc_BaseDaylength := cm.crop_params.cultivarParams.pc_BaseDaylength
-	pc_CriticalOxygenContent := cm.crop_params.speciesParams.pc_CriticalOxygenContent
-	pc_DaylengthRequirement := cm.crop_params.cultivarParams.pc_DaylengthRequirement
-	pc_MaxCropHeight := cm.crop_params.cultivarParams.pc_MaxCropHeight
-	pc_Perennial := cm.crop_params.cultivarParams.pc_Perennial
-	pc_SpecificLeafArea := cm.crop_params.cultivarParams.pc_SpecificLeafArea
-	pc_StageKcFactor := cm.crop_params.cultivarParams.pc_StageKcFactor
-	pc_StageTemperatureSum := cm.crop_params.cultivarParams.pc_StageTemperatureSum
-	pc_VernalisationRequirement := cm.crop_params.cultivarParams.pc_VernalisationRequirement
+	pc_BaseDaylength := cm.crop_params.cultivarParams.base_daylength
+	pc_CriticalOxygenContent := cm.crop_params.speciesParams.critical_oxygen_content
+	pc_DaylengthRequirement := cm.crop_params.cultivarParams.daylength_requirement
+	pc_MaxCropHeight := cm.crop_params.cultivarParams.max_crop_height
+	pc_Perennial := cm.crop_params.cultivarParams.perennial
+	pc_SpecificLeafArea := cm.crop_params.cultivarParams.specific_leaf_area
+	pc_StageKcFactor := cm.crop_params.cultivarParams.stage_kc_factor
+	pc_StageTemperatureSum := cm.crop_params.cultivarParams.stage_temperature_sum
+	pc_VernalisationRequirement := cm.crop_params.cultivarParams.vernalisation_requirement
 	speciesPs := &cm.crop_params.speciesParams
 	soilColumn := cm.soil_column
 
@@ -110,7 +110,7 @@ day_step :: proc(
 	old_DevelopmentalStage := cm.developmental_stage
 
 	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
-		if speciesPs.dormancyEndDoy == 0 {
+		if speciesPs.dormancy_end_doy == 0 {
 			cm.perennial_crop_dormancy_period_end_date = currentDate
 		} else {
 			cm.perennial_crop_dormancy_period_end_date = d.add(
@@ -122,7 +122,7 @@ day_step :: proc(
 					false,
 					d.DEFAULT_USE_LEAP_YEARS,
 				),
-				u64(speciesPs.dormancyEndDoy - 1),
+				u64(speciesPs.dormancy_end_doy - 1),
 			)
 		}
 	}

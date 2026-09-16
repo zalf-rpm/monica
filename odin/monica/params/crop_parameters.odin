@@ -12,69 +12,69 @@ import "core:strings"
 
 // C++: struct monica::SpeciesParameters
 Species_Parameters :: struct {
-	pc_SpeciesId:                               string,
-	pc_CarboxylationPathway:                    int, // old TEMPTYP
-	pc_DefaultRadiationUseEfficiency:           f64,
-	pc_PartBiologicalNFixation:                 f64,
-	pc_InitialKcFactor:                         f64, // old Kcini
-	pc_LuxuryNCoeff:                            f64,
-	pc_MaxCropDiameter:                         f64,
-	pc_StageAtMaxHeight:                        f64,
-	pc_StageAtMaxDiameter:                      f64,
-	pc_MinimumNConcentration:                   f64,
-	pc_MinimumTemperatureForAssimilation:       f64, // old MINTMP
-	pc_OptimumTemperatureForAssimilation:       f64,
-	pc_MaximumTemperatureForAssimilation:       f64,
-	pc_NConcentrationAbovegroundBiomass:        f64, // initial value of old GEHOB
-	pc_NConcentrationB0:                        f64,
-	pc_NConcentrationPN:                        f64,
-	pc_NConcentrationRoot:                      f64, // initial value to WUGEH
-	pc_DevelopmentAccelerationByNitrogenStress: int,
-	pc_FieldConditionModifier:                  f64,
-	pc_AssimilateReallocation:                  f64,
-	pc_BaseTemperature:                         [dynamic]f64, // old BAS
-	pc_OrganMaintenanceRespiration:             [dynamic]f64, // old MAIRT
-	pc_OrganGrowthRespiration:                  [dynamic]f64, // old MAIRT
-	pc_StageMaxRootNConcentration:              [dynamic]f64, // old WGMAX
-	pc_InitialOrganBiomass:                     [dynamic]f64,
-	pc_CriticalOxygenContent:                   [dynamic]f64, // old LUKRIT
-	pc_StageMobilFromStorageCoeff:              [dynamic]f64,
-	pc_AbovegroundOrgan:                        [dynamic]bool, // old KOMP
-	pc_StorageOrgan:                            [dynamic]bool,
-	pc_SamplingDepth:                           f64,
-	pc_TargetNSamplingDepth:                    f64,
-	pc_TargetN30:                               f64,
-	pc_MaxNUptakeParam:                         f64,
-	pc_RootDistributionParam:                   f64,
-	pc_PlantDensity:                            int, // [plants m-2]
-	pc_RootGrowthLag:                           f64,
-	pc_MinimumTemperatureRootGrowth:            f64,
-	pc_InitialRootingDepth:                     f64,
-	pc_RootPenetrationRate:                     f64,
-	pc_RootFormFactor:                          f64,
-	pc_SpecificRootLength:                      f64,
-	pc_StageAfterCut:                           int, // stage number is zero-based
-	pc_LimitingTemperatureHeatStress:           f64,
-	pc_CuttingDelayDays:                        int,
-	pc_DroughtImpactOnFertilityFactor:          f64,
-	EF_MONO:                                    f64, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
-	EF_MONOS:                                   f64, // [ug gDW-1 h-1] Monoterpenes stored then emitted
-	EF_ISO:                                     f64, // Isoprene emission factor
-	VCMAX25:                                    f64, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
-	AEKC:                                       f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
-	AEKO:                                       f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
-	AEVC:                                       f64, // activation energy for photosynthesis (J mol-1)
-	KC25:                                       f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
-	KO25:                                       f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
-	pc_TransitionStageLeafExp:                  int, // [1-7]
-	dormancyStartDoy:                           int, // start dormancy of perennial crops at that DOY (0 = unset)
-	dormancyEndDoy:                             int, // end dormancy, start accumulating temperature sums (0 = unset)
+	species_id:                                  string,
+	carboxylation_pathway:                       int, // old TEMPTYP
+	default_radiation_use_efficiency:            f64,
+	part_biological_n_fixation:                  f64,
+	initial_kc_factor:                           f64, // old Kcini
+	luxury_n_coeff:                              f64,
+	max_crop_diameter:                           f64,
+	stage_at_max_height:                         f64,
+	stage_at_max_diameter:                       f64,
+	minimum_n_concentration:                     f64,
+	minimum_temperature_for_assimilation:        f64, // old MINTMP
+	optimum_temperature_for_assimilation:        f64,
+	maximum_temperature_for_assimilation:        f64,
+	n_concentration_aboveground_biomass:         f64, // initial value of old GEHOB
+	n_concentration_b0:                          f64,
+	n_concentration_pn:                          f64,
+	n_concentration_root:                        f64, // initial value to WUGEH
+	development_acceleration_by_nitrogen_stress: int,
+	field_condition_modifier:                    f64,
+	assimilate_reallocation:                     f64,
+	base_temperature:                            [dynamic]f64, // old BAS
+	organ_maintenance_respiration:               [dynamic]f64, // old MAIRT
+	organ_growth_respiration:                    [dynamic]f64, // old MAIRT
+	stage_max_root_n_concentration:              [dynamic]f64, // old WGMAX
+	initial_organ_biomass:                       [dynamic]f64,
+	critical_oxygen_content:                     [dynamic]f64, // old LUKRIT
+	stage_mobil_from_storage_coeff:              [dynamic]f64,
+	aboveground_organ:                           [dynamic]bool, // old KOMP
+	storage_organ:                               [dynamic]bool,
+	sampling_depth:                              f64,
+	target_n_sampling_depth:                     f64,
+	target_n30:                                  f64,
+	max_n_uptake_param:                          f64,
+	root_distribution_param:                     f64,
+	plant_density:                               int, // [plants m-2]
+	root_growth_lag:                             f64,
+	minimum_temperature_root_growth:             f64,
+	initial_rooting_depth:                       f64,
+	root_penetration_rate:                       f64,
+	root_form_factor:                            f64,
+	specific_root_length:                        f64,
+	stage_after_cut:                             int, // stage number is zero-based
+	limiting_temperature_heat_stress:            f64,
+	cutting_delay_days:                          int,
+	drought_impact_on_fertility_factor:          f64,
+	EF_MONO:                                     f64, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
+	EF_MONOS:                                    f64, // [ug gDW-1 h-1] Monoterpenes stored then emitted
+	EF_ISO:                                      f64, // Isoprene emission factor
+	VCMAX25:                                     f64, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
+	AEKC:                                        f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
+	AEKO:                                        f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
+	AEVC:                                        f64, // activation energy for photosynthesis (J mol-1)
+	KC25:                                        f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
+	KO25:                                        f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
+	transition_stage_leaf_exp:                   int, // [1-7]
+	dormancy_start_doy:                          int, // start dormancy of perennial crops at that DOY (0 = unset)
+	dormancy_end_doy:                            int, // end dormancy, start accumulating temperature sums (0 = unset)
 }
 
 // C++ in-class initialisers
 make_species_parameters :: proc() -> Species_Parameters {
 	return Species_Parameters {
-		pc_FieldConditionModifier = 1.0,
+		field_condition_modifier = 1.0,
 		EF_MONO = 0.5,
 		EF_MONOS = 0.5,
 		AEKC = 65800.0,
@@ -82,7 +82,7 @@ make_species_parameters :: proc() -> Species_Parameters {
 		AEVC = 68800.0,
 		KC25 = 460.0,
 		KO25 = 330.0,
-		pc_TransitionStageLeafExp = -1,
+		transition_stage_leaf_exp = -1,
 	}
 }
 
@@ -90,79 +90,79 @@ make_species_parameters :: proc() -> Species_Parameters {
 species_parameters_merge :: proc(sp: ^Species_Parameters, j: jx.Value) -> tl.Errors {
 	res := default_merge(sp, j, species_parameters_merge)
 
-	jx.set_string_value(&sp.pc_SpeciesId, j, "SpeciesName")
-	jx.set_int_value(&sp.pc_CarboxylationPathway, j, "CarboxylationPathway")
-	jx.set_double_value(&sp.pc_DefaultRadiationUseEfficiency, j, "DefaultRadiationUseEfficiency")
-	jx.set_double_value(&sp.pc_PartBiologicalNFixation, j, "PartBiologicalNFixation")
-	jx.set_double_value(&sp.pc_InitialKcFactor, j, "InitialKcFactor")
-	jx.set_double_value(&sp.pc_LuxuryNCoeff, j, "LuxuryNCoeff")
-	jx.set_double_value(&sp.pc_MaxCropDiameter, j, "MaxCropDiameter")
-	jx.set_double_value(&sp.pc_StageAtMaxHeight, j, "StageAtMaxHeight")
-	jx.set_double_value(&sp.pc_StageAtMaxDiameter, j, "StageAtMaxDiameter")
-	jx.set_double_value(&sp.pc_MinimumNConcentration, j, "MinimumNConcentration")
+	jx.set_string_value(&sp.species_id, j, "SpeciesName")
+	jx.set_int_value(&sp.carboxylation_pathway, j, "CarboxylationPathway")
+	jx.set_double_value(&sp.default_radiation_use_efficiency, j, "DefaultRadiationUseEfficiency")
+	jx.set_double_value(&sp.part_biological_n_fixation, j, "PartBiologicalNFixation")
+	jx.set_double_value(&sp.initial_kc_factor, j, "InitialKcFactor")
+	jx.set_double_value(&sp.luxury_n_coeff, j, "LuxuryNCoeff")
+	jx.set_double_value(&sp.max_crop_diameter, j, "MaxCropDiameter")
+	jx.set_double_value(&sp.stage_at_max_height, j, "StageAtMaxHeight")
+	jx.set_double_value(&sp.stage_at_max_diameter, j, "StageAtMaxDiameter")
+	jx.set_double_value(&sp.minimum_n_concentration, j, "MinimumNConcentration")
 	jx.set_double_value(
-		&sp.pc_MinimumTemperatureForAssimilation,
+		&sp.minimum_temperature_for_assimilation,
 		j,
 		"MinimumTemperatureForAssimilation",
 	)
 	jx.set_double_value(
-		&sp.pc_OptimumTemperatureForAssimilation,
+		&sp.optimum_temperature_for_assimilation,
 		j,
 		"OptimumTemperatureForAssimilation",
 	)
 	jx.set_double_value(
-		&sp.pc_MaximumTemperatureForAssimilation,
+		&sp.maximum_temperature_for_assimilation,
 		j,
 		"MaximumTemperatureForAssimilation",
 	)
 	jx.set_double_value(
-		&sp.pc_NConcentrationAbovegroundBiomass,
+		&sp.n_concentration_aboveground_biomass,
 		j,
 		"NConcentrationAbovegroundBiomass",
 	)
-	jx.set_double_value(&sp.pc_NConcentrationB0, j, "NConcentrationB0")
-	jx.set_double_value(&sp.pc_NConcentrationPN, j, "NConcentrationPN")
-	jx.set_double_value(&sp.pc_NConcentrationRoot, j, "NConcentrationRoot")
+	jx.set_double_value(&sp.n_concentration_b0, j, "NConcentrationB0")
+	jx.set_double_value(&sp.n_concentration_pn, j, "NConcentrationPN")
+	jx.set_double_value(&sp.n_concentration_root, j, "NConcentrationRoot")
 	jx.set_int_value(
-		&sp.pc_DevelopmentAccelerationByNitrogenStress,
+		&sp.development_acceleration_by_nitrogen_stress,
 		j,
 		"DevelopmentAccelerationByNitrogenStress",
 	)
-	jx.set_double_value(&sp.pc_FieldConditionModifier, j, "FieldConditionModifier")
-	jx.set_double_value(&sp.pc_AssimilateReallocation, j, "AssimilateReallocation")
-	jx.set_double_vector(&sp.pc_BaseTemperature, j, "BaseTemperature")
-	jx.set_double_vector(&sp.pc_OrganMaintenanceRespiration, j, "OrganMaintenanceRespiration")
-	jx.set_double_vector(&sp.pc_OrganGrowthRespiration, j, "OrganGrowthRespiration")
-	jx.set_double_vector(&sp.pc_StageMaxRootNConcentration, j, "StageMaxRootNConcentration")
-	jx.set_double_vector(&sp.pc_InitialOrganBiomass, j, "InitialOrganBiomass")
-	jx.set_double_vector(&sp.pc_CriticalOxygenContent, j, "CriticalOxygenContent")
+	jx.set_double_value(&sp.field_condition_modifier, j, "FieldConditionModifier")
+	jx.set_double_value(&sp.assimilate_reallocation, j, "AssimilateReallocation")
+	jx.set_double_vector(&sp.base_temperature, j, "BaseTemperature")
+	jx.set_double_vector(&sp.organ_maintenance_respiration, j, "OrganMaintenanceRespiration")
+	jx.set_double_vector(&sp.organ_growth_respiration, j, "OrganGrowthRespiration")
+	jx.set_double_vector(&sp.stage_max_root_n_concentration, j, "StageMaxRootNConcentration")
+	jx.set_double_vector(&sp.initial_organ_biomass, j, "InitialOrganBiomass")
+	jx.set_double_vector(&sp.critical_oxygen_content, j, "CriticalOxygenContent")
 
-	jx.set_double_vector(&sp.pc_StageMobilFromStorageCoeff, j, "StageMobilFromStorageCoeff")
-	if len(sp.pc_StageMobilFromStorageCoeff) == 0 {
-		resize(&sp.pc_StageMobilFromStorageCoeff, len(sp.pc_CriticalOxygenContent))
+	jx.set_double_vector(&sp.stage_mobil_from_storage_coeff, j, "StageMobilFromStorageCoeff")
+	if len(sp.stage_mobil_from_storage_coeff) == 0 {
+		resize(&sp.stage_mobil_from_storage_coeff, len(sp.critical_oxygen_content))
 	}
 
-	jx.set_bool_vector(&sp.pc_AbovegroundOrgan, j, "AbovegroundOrgan")
-	jx.set_bool_vector(&sp.pc_StorageOrgan, j, "StorageOrgan")
-	jx.set_double_value(&sp.pc_SamplingDepth, j, "SamplingDepth")
-	jx.set_double_value(&sp.pc_TargetNSamplingDepth, j, "TargetNSamplingDepth")
-	jx.set_double_value(&sp.pc_TargetN30, j, "TargetN30")
-	jx.set_double_value(&sp.pc_MaxNUptakeParam, j, "MaxNUptakeParam")
-	jx.set_double_value(&sp.pc_RootDistributionParam, j, "RootDistributionParam")
-	jx.set_int_value(&sp.pc_PlantDensity, j, "PlantDensity")
-	jx.set_double_value(&sp.pc_RootGrowthLag, j, "RootGrowthLag")
-	jx.set_double_value(&sp.pc_MinimumTemperatureRootGrowth, j, "MinimumTemperatureRootGrowth")
-	jx.set_double_value(&sp.pc_InitialRootingDepth, j, "InitialRootingDepth")
-	jx.set_double_value(&sp.pc_RootPenetrationRate, j, "RootPenetrationRate")
-	jx.set_double_value(&sp.pc_RootFormFactor, j, "RootFormFactor")
-	jx.set_double_value(&sp.pc_SpecificRootLength, j, "SpecificRootLength")
-	jx.set_int_value(&sp.pc_StageAfterCut, j, "StageAfterCut")
-	if sp.pc_StageAfterCut > 0 {
-		sp.pc_StageAfterCut -= 1
+	jx.set_bool_vector(&sp.aboveground_organ, j, "AbovegroundOrgan")
+	jx.set_bool_vector(&sp.storage_organ, j, "StorageOrgan")
+	jx.set_double_value(&sp.sampling_depth, j, "SamplingDepth")
+	jx.set_double_value(&sp.target_n_sampling_depth, j, "TargetNSamplingDepth")
+	jx.set_double_value(&sp.target_n30, j, "TargetN30")
+	jx.set_double_value(&sp.max_n_uptake_param, j, "MaxNUptakeParam")
+	jx.set_double_value(&sp.root_distribution_param, j, "RootDistributionParam")
+	jx.set_int_value(&sp.plant_density, j, "PlantDensity")
+	jx.set_double_value(&sp.root_growth_lag, j, "RootGrowthLag")
+	jx.set_double_value(&sp.minimum_temperature_root_growth, j, "MinimumTemperatureRootGrowth")
+	jx.set_double_value(&sp.initial_rooting_depth, j, "InitialRootingDepth")
+	jx.set_double_value(&sp.root_penetration_rate, j, "RootPenetrationRate")
+	jx.set_double_value(&sp.root_form_factor, j, "RootFormFactor")
+	jx.set_double_value(&sp.specific_root_length, j, "SpecificRootLength")
+	jx.set_int_value(&sp.stage_after_cut, j, "StageAfterCut")
+	if sp.stage_after_cut > 0 {
+		sp.stage_after_cut -= 1
 	}
-	jx.set_double_value(&sp.pc_LimitingTemperatureHeatStress, j, "LimitingTemperatureHeatStress")
-	jx.set_int_value(&sp.pc_CuttingDelayDays, j, "CuttingDelayDays")
-	jx.set_double_value(&sp.pc_DroughtImpactOnFertilityFactor, j, "DroughtImpactOnFertilityFactor")
+	jx.set_double_value(&sp.limiting_temperature_heat_stress, j, "LimitingTemperatureHeatStress")
+	jx.set_int_value(&sp.cutting_delay_days, j, "CuttingDelayDays")
+	jx.set_double_value(&sp.drought_impact_on_fertility_factor, j, "DroughtImpactOnFertilityFactor")
 
 	jx.set_double_value(&sp.EF_MONO, j, "EF_MONO")
 	jx.set_double_value(&sp.EF_MONOS, j, "EF_MONOS")
@@ -174,9 +174,9 @@ species_parameters_merge :: proc(sp: ^Species_Parameters, j: jx.Value) -> tl.Err
 	jx.set_double_value(&sp.KC25, j, "KC25")
 	jx.set_double_value(&sp.KO25, j, "KO25")
 
-	jx.set_int_value(&sp.pc_TransitionStageLeafExp, j, "TransitionStageLeafExp")
-	jx.set_int_value(&sp.dormancyStartDoy, j, "DormancyStartDoy")
-	jx.set_int_value(&sp.dormancyEndDoy, j, "DormancyEndDoy")
+	jx.set_int_value(&sp.transition_stage_leaf_exp, j, "TransitionStageLeafExp")
+	jx.set_int_value(&sp.dormancy_start_doy, j, "DormancyStartDoy")
+	jx.set_int_value(&sp.dormancy_end_doy, j, "DormancyEndDoy")
 
 	return res
 }
@@ -186,54 +186,54 @@ species_parameters_to_json :: proc(sp: ^Species_Parameters, a: Allocator) -> jx.
 	return jx.obj(
 		a,
 		{"type", jx.sl("SpeciesParameters")},
-		{"SpeciesName", jx.s(sp.pc_SpeciesId, a)},
-		{"CarboxylationPathway", jx.i(sp.pc_CarboxylationPathway)},
-		{"DefaultRadiationUseEfficiency", jx.f(sp.pc_DefaultRadiationUseEfficiency)},
-		{"PartBiologicalNFixation", jx.f(sp.pc_PartBiologicalNFixation)},
-		{"InitialKcFactor", jx.f(sp.pc_InitialKcFactor)},
-		{"LuxuryNCoeff", jx.f(sp.pc_LuxuryNCoeff)},
-		{"MaxCropDiameter", jx.f(sp.pc_MaxCropDiameter)},
-		{"StageAtMaxHeight", jx.f(sp.pc_StageAtMaxHeight)},
-		{"StageAtMaxDiameter", jx.f(sp.pc_StageAtMaxDiameter)},
-		{"MinimumNConcentration", jx.f(sp.pc_MinimumNConcentration)},
-		{"MinimumTemperatureForAssimilation", jx.f(sp.pc_MinimumTemperatureForAssimilation)},
-		{"OptimumTemperatureForAssimilation", jx.f(sp.pc_OptimumTemperatureForAssimilation)},
-		{"MaximumTemperatureForAssimilation", jx.f(sp.pc_MaximumTemperatureForAssimilation)},
-		{"NConcentrationAbovegroundBiomass", jx.f(sp.pc_NConcentrationAbovegroundBiomass)},
-		{"NConcentrationB0", jx.f(sp.pc_NConcentrationB0)},
-		{"NConcentrationPN", jx.f(sp.pc_NConcentrationPN)},
-		{"NConcentrationRoot", jx.f(sp.pc_NConcentrationRoot)},
+		{"SpeciesName", jx.s(sp.species_id, a)},
+		{"CarboxylationPathway", jx.i(sp.carboxylation_pathway)},
+		{"DefaultRadiationUseEfficiency", jx.f(sp.default_radiation_use_efficiency)},
+		{"PartBiologicalNFixation", jx.f(sp.part_biological_n_fixation)},
+		{"InitialKcFactor", jx.f(sp.initial_kc_factor)},
+		{"LuxuryNCoeff", jx.f(sp.luxury_n_coeff)},
+		{"MaxCropDiameter", jx.f(sp.max_crop_diameter)},
+		{"StageAtMaxHeight", jx.f(sp.stage_at_max_height)},
+		{"StageAtMaxDiameter", jx.f(sp.stage_at_max_diameter)},
+		{"MinimumNConcentration", jx.f(sp.minimum_n_concentration)},
+		{"MinimumTemperatureForAssimilation", jx.f(sp.minimum_temperature_for_assimilation)},
+		{"OptimumTemperatureForAssimilation", jx.f(sp.optimum_temperature_for_assimilation)},
+		{"MaximumTemperatureForAssimilation", jx.f(sp.maximum_temperature_for_assimilation)},
+		{"NConcentrationAbovegroundBiomass", jx.f(sp.n_concentration_aboveground_biomass)},
+		{"NConcentrationB0", jx.f(sp.n_concentration_b0)},
+		{"NConcentrationPN", jx.f(sp.n_concentration_pn)},
+		{"NConcentrationRoot", jx.f(sp.n_concentration_root)},
 		{
 			"DevelopmentAccelerationByNitrogenStress",
-			jx.i(sp.pc_DevelopmentAccelerationByNitrogenStress),
+			jx.i(sp.development_acceleration_by_nitrogen_stress),
 		},
-		{"FieldConditionModifier", jx.f(sp.pc_FieldConditionModifier)},
-		{"AssimilateReallocation", jx.f(sp.pc_AssimilateReallocation)},
-		{"BaseTemperature", prim_arr_f64(sp.pc_BaseTemperature[:], a)},
-		{"OrganMaintenanceRespiration", prim_arr_f64(sp.pc_OrganMaintenanceRespiration[:], a)},
-		{"OrganGrowthRespiration", prim_arr_f64(sp.pc_OrganGrowthRespiration[:], a)},
-		{"StageMaxRootNConcentration", prim_arr_f64(sp.pc_StageMaxRootNConcentration[:], a)},
-		{"InitialOrganBiomass", prim_arr_f64(sp.pc_InitialOrganBiomass[:], a)},
-		{"CriticalOxygenContent", prim_arr_f64(sp.pc_CriticalOxygenContent[:], a)},
-		{"StageMobilFromStorageCoeff", prim_arr_f64(sp.pc_StageMobilFromStorageCoeff[:], a)},
-		{"AbovegroundOrgan", prim_arr_bool(sp.pc_AbovegroundOrgan[:], a)},
-		{"StorageOrgan", prim_arr_bool(sp.pc_StorageOrgan[:], a)},
-		{"SamplingDepth", jx.f(sp.pc_SamplingDepth)},
-		{"TargetNSamplingDepth", jx.f(sp.pc_TargetNSamplingDepth)},
-		{"TargetN30", jx.f(sp.pc_TargetN30)},
-		{"MaxNUptakeParam", jx.f(sp.pc_MaxNUptakeParam)},
-		{"RootDistributionParam", jx.f(sp.pc_RootDistributionParam)},
-		{"PlantDensity", jx.vu_int(sp.pc_PlantDensity, "plants m-2", a)},
-		{"RootGrowthLag", jx.f(sp.pc_RootGrowthLag)},
-		{"MinimumTemperatureRootGrowth", jx.f(sp.pc_MinimumTemperatureRootGrowth)},
-		{"InitialRootingDepth", jx.f(sp.pc_InitialRootingDepth)},
-		{"RootPenetrationRate", jx.f(sp.pc_RootPenetrationRate)},
-		{"RootFormFactor", jx.f(sp.pc_RootFormFactor)},
-		{"SpecificRootLength", jx.f(sp.pc_SpecificRootLength)},
-		{"StageAfterCut", jx.i(sp.pc_StageAfterCut)},
-		{"LimitingTemperatureHeatStress", jx.f(sp.pc_LimitingTemperatureHeatStress)},
-		{"CuttingDelayDays", jx.i(sp.pc_CuttingDelayDays)},
-		{"DroughtImpactOnFertilityFactor", jx.f(sp.pc_DroughtImpactOnFertilityFactor)},
+		{"FieldConditionModifier", jx.f(sp.field_condition_modifier)},
+		{"AssimilateReallocation", jx.f(sp.assimilate_reallocation)},
+		{"BaseTemperature", prim_arr_f64(sp.base_temperature[:], a)},
+		{"OrganMaintenanceRespiration", prim_arr_f64(sp.organ_maintenance_respiration[:], a)},
+		{"OrganGrowthRespiration", prim_arr_f64(sp.organ_growth_respiration[:], a)},
+		{"StageMaxRootNConcentration", prim_arr_f64(sp.stage_max_root_n_concentration[:], a)},
+		{"InitialOrganBiomass", prim_arr_f64(sp.initial_organ_biomass[:], a)},
+		{"CriticalOxygenContent", prim_arr_f64(sp.critical_oxygen_content[:], a)},
+		{"StageMobilFromStorageCoeff", prim_arr_f64(sp.stage_mobil_from_storage_coeff[:], a)},
+		{"AbovegroundOrgan", prim_arr_bool(sp.aboveground_organ[:], a)},
+		{"StorageOrgan", prim_arr_bool(sp.storage_organ[:], a)},
+		{"SamplingDepth", jx.f(sp.sampling_depth)},
+		{"TargetNSamplingDepth", jx.f(sp.target_n_sampling_depth)},
+		{"TargetN30", jx.f(sp.target_n30)},
+		{"MaxNUptakeParam", jx.f(sp.max_n_uptake_param)},
+		{"RootDistributionParam", jx.f(sp.root_distribution_param)},
+		{"PlantDensity", jx.vu_int(sp.plant_density, "plants m-2", a)},
+		{"RootGrowthLag", jx.f(sp.root_growth_lag)},
+		{"MinimumTemperatureRootGrowth", jx.f(sp.minimum_temperature_root_growth)},
+		{"InitialRootingDepth", jx.f(sp.initial_rooting_depth)},
+		{"RootPenetrationRate", jx.f(sp.root_penetration_rate)},
+		{"RootFormFactor", jx.f(sp.root_form_factor)},
+		{"SpecificRootLength", jx.f(sp.specific_root_length)},
+		{"StageAfterCut", jx.i(sp.stage_after_cut)},
+		{"LimitingTemperatureHeatStress", jx.f(sp.limiting_temperature_heat_stress)},
+		{"CuttingDelayDays", jx.i(sp.cutting_delay_days)},
+		{"DroughtImpactOnFertilityFactor", jx.f(sp.drought_impact_on_fertility_factor)},
 		{"EF_MONO", jx.vu(sp.EF_MONO, "ug gDW-1 h-1", a)},
 		{"EF_MONOS", jx.vu(sp.EF_MONOS, "ug gDW-1 h-1", a)},
 		{"EF_ISO", jx.vu(sp.EF_ISO, "ug gDW-1 h-1", a)},
@@ -243,20 +243,20 @@ species_parameters_to_json :: proc(sp: ^Species_Parameters, a: Allocator) -> jx.
 		{"AEVC", jx.vu(sp.AEVC, "J mol-1", a)},
 		{"KC25", jx.vu(sp.KC25, "umol mol-1 ubar-1", a)},
 		{"KO25", jx.vu(sp.KO25, "mmol mol-1 mbar-1", a)},
-		{"TransitionStageLeafExp", jx.vu_int(sp.pc_TransitionStageLeafExp, "1-7", a)},
-		{"DormancyStartDoy", jx.i(sp.dormancyStartDoy)},
-		{"DormancyEndDoy", jx.i(sp.dormancyEndDoy)},
+		{"TransitionStageLeafExp", jx.vu_int(sp.transition_stage_leaf_exp, "1-7", a)},
+		{"DormancyStartDoy", jx.i(sp.dormancy_start_doy)},
+		{"DormancyEndDoy", jx.i(sp.dormancy_end_doy)},
 	)
 }
 
 // C++: size_t speciesparameters::numberOfDevelopmentalStages(const SpeciesParameters*)
 species_parameters_number_of_developmental_stages :: proc(sp: ^Species_Parameters) -> int {
-	return len(sp.pc_BaseTemperature)
+	return len(sp.base_temperature)
 }
 
 // C++: size_t speciesparameters::numberOfOrgans(const SpeciesParameters*) - old NRKOM
 species_parameters_number_of_organs :: proc(sp: ^Species_Parameters) -> int {
-	return len(sp.pc_OrganGrowthRespiration)
+	return len(sp.organ_growth_respiration)
 }
 
 // ---------------------------------------------------------------------------
@@ -265,55 +265,55 @@ species_parameters_number_of_organs :: proc(sp: ^Species_Parameters) -> int {
 
 // C++: struct monica::CultivarParameters
 Cultivar_Parameters :: struct {
-	pc_CultivarId:                    string,
-	pc_Description:                   string,
-	pc_Perennial:                     bool,
-	pc_MaxAssimilationRate:           f64, // old MAXAMAX
-	pc_LightExtinctionCoefficient:    f64,
-	pc_MaxCropHeight:                 f64,
-	pc_ResidueNRatio:                 f64,
-	pc_LT50cultivar:                  f64,
-	pc_CropHeightP1:                  f64,
-	pc_CropHeightP2:                  f64,
-	pc_CropSpecificMaxRootingDepth:   f64, // old WUMAXPF [m]
-	pc_AssimilatePartitioningCoeff:   [dynamic][dynamic]f64, // old PRO
-	pc_OrganSenescenceRate:           [dynamic][dynamic]f64, // old DEAD
-	pc_BaseDaylength:                 [dynamic]f64, // old DLBAS
-	pc_OptimumTemperature:            [dynamic]f64,
-	pc_DaylengthRequirement:          [dynamic]f64, // old DEC
-	pc_DroughtStressThreshold:        [dynamic]f64, // old DRYswell
-	pc_SpecificLeafArea:              [dynamic]f64, // old LAIFKT [ha kg-1]
-	pc_StageKcFactor:                 [dynamic]f64, // old Kc
-	pc_StageTemperatureSum:           [dynamic]f64, // old TSUM
-	pc_VernalisationRequirement:      [dynamic]f64, // old VSCHWELL
-	pc_HeatSumIrrigationStart:        f64,
-	pc_HeatSumIrrigationEnd:          f64,
-	pc_CriticalTemperatureHeatStress: f64,
-	pc_BeginSensitivePhaseHeatStress: f64,
-	pc_EndSensitivePhaseHeatStress:   f64,
-	pc_FrostHardening:                f64,
-	pc_FrostDehardening:              f64,
-	pc_LowTemperatureExposure:        f64,
-	pc_RespiratoryStress:             f64,
-	pc_LatestHarvestDoy:              int,
-	pc_OrganIdsForPrimaryYield:       [dynamic]Yield_Component,
-	pc_OrganIdsForSecondaryYield:     [dynamic]Yield_Component,
-	pc_OrganIdsForCutting:            [dynamic]Yield_Component,
-	pc_EarlyRefLeafExp:               f64, // 12 = wheat (first guess)
-	pc_RefLeafExp:                    f64, // 20 = wheat, 22 = maize (first guess)
-	pc_MinTempDev_WE:                 f64,
-	pc_OptTempDev_WE:                 f64,
-	pc_MaxTempDev_WE:                 f64,
-	winterCrop:                       bool,
+	cultivar_id:                       string,
+	description:                       string,
+	perennial:                         bool,
+	max_assimilation_rate:             f64, // old MAXAMAX
+	light_extinction_coefficient:      f64,
+	max_crop_height:                   f64,
+	residue_n_ratio:                   f64,
+	lt50cultivar:                      f64,
+	crop_height_p1:                    f64,
+	crop_height_p2:                    f64,
+	crop_specific_max_rooting_depth:   f64, // old WUMAXPF [m]
+	assimilate_partitioning_coeff:     [dynamic][dynamic]f64, // old PRO
+	organ_senescence_rate:             [dynamic][dynamic]f64, // old DEAD
+	base_daylength:                    [dynamic]f64, // old DLBAS
+	optimum_temperature:               [dynamic]f64,
+	daylength_requirement:             [dynamic]f64, // old DEC
+	drought_stress_threshold:          [dynamic]f64, // old DRYswell
+	specific_leaf_area:                [dynamic]f64, // old LAIFKT [ha kg-1]
+	stage_kc_factor:                   [dynamic]f64, // old Kc
+	stage_temperature_sum:             [dynamic]f64, // old TSUM
+	vernalisation_requirement:         [dynamic]f64, // old VSCHWELL
+	heat_sum_irrigation_start:         f64,
+	heat_sum_irrigation_end:           f64,
+	critical_temperature_heat_stress:  f64,
+	begin_sensitive_phase_heat_stress: f64,
+	end_sensitive_phase_heat_stress:   f64,
+	frost_hardening:                   f64,
+	frost_dehardening:                 f64,
+	low_temperature_exposure:          f64,
+	respiratory_stress:                f64,
+	latest_harvest_doy:                int,
+	organ_ids_for_primary_yield:       [dynamic]Yield_Component,
+	organ_ids_for_secondary_yield:     [dynamic]Yield_Component,
+	organ_ids_for_cutting:             [dynamic]Yield_Component,
+	early_ref_leaf_exp:                f64, // 12 = wheat (first guess)
+	ref_leaf_exp:                      f64, // 20 = wheat, 22 = maize (first guess)
+	min_temp_dev_we:                   f64,
+	opt_temp_dev_we:                   f64,
+	max_temp_dev_we:                   f64,
+	winter_crop:                       bool,
 }
 
 // C++ in-class initialisers
 make_cultivar_parameters :: proc() -> Cultivar_Parameters {
 	return Cultivar_Parameters {
-		pc_LightExtinctionCoefficient = 0.8,
-		pc_LatestHarvestDoy = -1,
-		pc_EarlyRefLeafExp = 12.0,
-		pc_RefLeafExp = 20.0,
+		light_extinction_coefficient = 0.8,
+		latest_harvest_doy = -1,
+		early_ref_leaf_exp = 12.0,
+		ref_leaf_exp = 20.0,
 	}
 }
 
@@ -332,7 +332,7 @@ cultivar_parameters_merge :: proc(cp: ^Cultivar_Parameters, j: jx.Value) -> tl.E
 	}
 
 	if jx.is_array(jx.get(j, "OrganIdsForPrimaryYield")) {
-		cp.pc_OrganIdsForPrimaryYield = merge_yield_components(
+		cp.organ_ids_for_primary_yield = merge_yield_components(
 			jx.get(j, "OrganIdsForPrimaryYield"),
 		)
 	} else {
@@ -344,7 +344,7 @@ cultivar_parameters_merge :: proc(cp: ^Cultivar_Parameters, j: jx.Value) -> tl.E
 	}
 
 	if jx.is_array(jx.get(j, "OrganIdsForSecondaryYield")) {
-		cp.pc_OrganIdsForSecondaryYield = merge_yield_components(
+		cp.organ_ids_for_secondary_yield = merge_yield_components(
 			jx.get(j, "OrganIdsForSecondaryYield"),
 		)
 	} else {
@@ -356,7 +356,7 @@ cultivar_parameters_merge :: proc(cp: ^Cultivar_Parameters, j: jx.Value) -> tl.E
 	}
 
 	if jx.is_array(jx.get(j, "OrganIdsForCutting")) {
-		cp.pc_OrganIdsForCutting = merge_yield_components(jx.get(j, "OrganIdsForCutting"))
+		cp.organ_ids_for_cutting = merge_yield_components(jx.get(j, "OrganIdsForCutting"))
 	} else {
 		tl.append_warningf(
 			&res,
@@ -365,71 +365,71 @@ cultivar_parameters_merge :: proc(cp: ^Cultivar_Parameters, j: jx.Value) -> tl.E
 		)
 	}
 
-	jx.set_string_value(&cp.pc_CultivarId, j, "CultivarName")
-	jx.set_string_value(&cp.pc_Description, j, "Description")
-	jx.set_bool_value(&cp.pc_Perennial, j, "Perennial")
-	jx.set_double_value(&cp.pc_MaxAssimilationRate, j, "MaxAssimilationRate")
-	jx.set_double_value(&cp.pc_LightExtinctionCoefficient, j, "LightExtinctionCoefficient")
-	jx.set_double_value(&cp.pc_MaxCropHeight, j, "MaxCropHeight")
-	jx.set_double_value(&cp.pc_ResidueNRatio, j, "ResidueNRatio")
-	jx.set_double_value(&cp.pc_LT50cultivar, j, "LT50cultivar")
-	jx.set_double_value(&cp.pc_CropHeightP1, j, "CropHeightP1")
-	jx.set_double_value(&cp.pc_CropHeightP2, j, "CropHeightP2")
-	jx.set_double_value(&cp.pc_CropSpecificMaxRootingDepth, j, "CropSpecificMaxRootingDepth")
-	jx.set_double_vector(&cp.pc_BaseDaylength, j, "BaseDaylength")
-	jx.set_double_vector(&cp.pc_OptimumTemperature, j, "OptimumTemperature")
-	jx.set_double_vector(&cp.pc_DaylengthRequirement, j, "DaylengthRequirement")
-	jx.set_double_vector(&cp.pc_DroughtStressThreshold, j, "DroughtStressThreshold")
-	jx.set_double_vector(&cp.pc_SpecificLeafArea, j, "SpecificLeafArea")
-	jx.set_double_vector(&cp.pc_StageKcFactor, j, "StageKcFactor")
-	jx.set_double_vector(&cp.pc_StageTemperatureSum, j, "StageTemperatureSum")
-	jx.set_double_vector(&cp.pc_VernalisationRequirement, j, "VernalisationRequirement")
-	jx.set_double_value(&cp.pc_HeatSumIrrigationStart, j, "HeatSumIrrigationStart")
-	jx.set_double_value(&cp.pc_HeatSumIrrigationEnd, j, "HeatSumIrrigationEnd")
-	jx.set_double_value(&cp.pc_CriticalTemperatureHeatStress, j, "CriticalTemperatureHeatStress")
-	jx.set_double_value(&cp.pc_BeginSensitivePhaseHeatStress, j, "BeginSensitivePhaseHeatStress")
-	jx.set_double_value(&cp.pc_EndSensitivePhaseHeatStress, j, "EndSensitivePhaseHeatStress")
-	jx.set_double_value(&cp.pc_FrostHardening, j, "FrostHardening")
-	jx.set_double_value(&cp.pc_FrostDehardening, j, "FrostDehardening")
-	jx.set_double_value(&cp.pc_LowTemperatureExposure, j, "LowTemperatureExposure")
-	jx.set_double_value(&cp.pc_RespiratoryStress, j, "RespiratoryStress")
-	jx.set_int_value(&cp.pc_LatestHarvestDoy, j, "LatestHarvestDoy")
-	jx.set_bool_value(&cp.winterCrop, j, "WinterCrop")
+	jx.set_string_value(&cp.cultivar_id, j, "CultivarName")
+	jx.set_string_value(&cp.description, j, "Description")
+	jx.set_bool_value(&cp.perennial, j, "Perennial")
+	jx.set_double_value(&cp.max_assimilation_rate, j, "MaxAssimilationRate")
+	jx.set_double_value(&cp.light_extinction_coefficient, j, "LightExtinctionCoefficient")
+	jx.set_double_value(&cp.max_crop_height, j, "MaxCropHeight")
+	jx.set_double_value(&cp.residue_n_ratio, j, "ResidueNRatio")
+	jx.set_double_value(&cp.lt50cultivar, j, "LT50cultivar")
+	jx.set_double_value(&cp.crop_height_p1, j, "CropHeightP1")
+	jx.set_double_value(&cp.crop_height_p2, j, "CropHeightP2")
+	jx.set_double_value(&cp.crop_specific_max_rooting_depth, j, "CropSpecificMaxRootingDepth")
+	jx.set_double_vector(&cp.base_daylength, j, "BaseDaylength")
+	jx.set_double_vector(&cp.optimum_temperature, j, "OptimumTemperature")
+	jx.set_double_vector(&cp.daylength_requirement, j, "DaylengthRequirement")
+	jx.set_double_vector(&cp.drought_stress_threshold, j, "DroughtStressThreshold")
+	jx.set_double_vector(&cp.specific_leaf_area, j, "SpecificLeafArea")
+	jx.set_double_vector(&cp.stage_kc_factor, j, "StageKcFactor")
+	jx.set_double_vector(&cp.stage_temperature_sum, j, "StageTemperatureSum")
+	jx.set_double_vector(&cp.vernalisation_requirement, j, "VernalisationRequirement")
+	jx.set_double_value(&cp.heat_sum_irrigation_start, j, "HeatSumIrrigationStart")
+	jx.set_double_value(&cp.heat_sum_irrigation_end, j, "HeatSumIrrigationEnd")
+	jx.set_double_value(&cp.critical_temperature_heat_stress, j, "CriticalTemperatureHeatStress")
+	jx.set_double_value(&cp.begin_sensitive_phase_heat_stress, j, "BeginSensitivePhaseHeatStress")
+	jx.set_double_value(&cp.end_sensitive_phase_heat_stress, j, "EndSensitivePhaseHeatStress")
+	jx.set_double_value(&cp.frost_hardening, j, "FrostHardening")
+	jx.set_double_value(&cp.frost_dehardening, j, "FrostDehardening")
+	jx.set_double_value(&cp.low_temperature_exposure, j, "LowTemperatureExposure")
+	jx.set_double_value(&cp.respiratory_stress, j, "RespiratoryStress")
+	jx.set_int_value(&cp.latest_harvest_doy, j, "LatestHarvestDoy")
+	jx.set_bool_value(&cp.winter_crop, j, "WinterCrop")
 
 	if jx.is_array(jx.get(j, "AssimilatePartitioningCoeff")) {
 		apcs := jx.array_items(jx.get(j, "AssimilatePartitioningCoeff"))
-		resize(&cp.pc_AssimilatePartitioningCoeff, len(apcs))
+		resize(&cp.assimilate_partitioning_coeff, len(apcs))
 		for js, idx in apcs {
-			cp.pc_AssimilatePartitioningCoeff[idx] = jx.double_vector(js)
+			cp.assimilate_partitioning_coeff[idx] = jx.double_vector(js)
 		}
 	}
 	if jx.is_array(jx.get(j, "OrganSenescenceRate")) {
 		osrs := jx.array_items(jx.get(j, "OrganSenescenceRate"))
-		resize(&cp.pc_OrganSenescenceRate, len(osrs))
+		resize(&cp.organ_senescence_rate, len(osrs))
 		for js, idx in osrs {
-			cp.pc_OrganSenescenceRate[idx] = jx.double_vector(js)
+			cp.organ_senescence_rate[idx] = jx.double_vector(js)
 		}
 	}
 
-	jx.set_double_value(&cp.pc_EarlyRefLeafExp, j, "EarlyRefLeafExp")
-	jx.set_double_value(&cp.pc_RefLeafExp, j, "RefLeafExp")
+	jx.set_double_value(&cp.early_ref_leaf_exp, j, "EarlyRefLeafExp")
+	jx.set_double_value(&cp.ref_leaf_exp, j, "RefLeafExp")
 
-	jx.set_double_value(&cp.pc_MinTempDev_WE, j, "MinTempDev_WE")
-	jx.set_double_value(&cp.pc_OptTempDev_WE, j, "OptTempDev_WE")
-	jx.set_double_value(&cp.pc_MaxTempDev_WE, j, "MaxTempDev_WE")
+	jx.set_double_value(&cp.min_temp_dev_we, j, "MinTempDev_WE")
+	jx.set_double_value(&cp.opt_temp_dev_we, j, "OptTempDev_WE")
+	jx.set_double_value(&cp.max_temp_dev_we, j, "MaxTempDev_WE")
 
 	return res
 }
 
 // C++: json11::Json cultivarparameters::to_json(const CultivarParameters*)
 cultivar_parameters_to_json :: proc(cp: ^Cultivar_Parameters, a: Allocator) -> jx.Value {
-	apcs := make(jx.Array, 0, len(cp.pc_AssimilatePartitioningCoeff), a)
-	for row in cp.pc_AssimilatePartitioningCoeff {
+	apcs := make(jx.Array, 0, len(cp.assimilate_partitioning_coeff), a)
+	for row in cp.assimilate_partitioning_coeff {
 		append(&apcs, prim_arr_f64(row[:], a))
 	}
 
-	osrs := make(jx.Array, 0, len(cp.pc_OrganSenescenceRate), a)
-	for row in cp.pc_OrganSenescenceRate {
+	osrs := make(jx.Array, 0, len(cp.organ_senescence_rate), a)
+	for row in cp.organ_senescence_rate {
 		append(&osrs, prim_arr_f64(row[:], a))
 	}
 
@@ -445,67 +445,67 @@ cultivar_parameters_to_json :: proc(cp: ^Cultivar_Parameters, a: Allocator) -> j
 	return jx.obj(
 		a,
 		{"type", jx.sl("CultivarParameters")},
-		{"CultivarName", jx.s(cp.pc_CultivarId, a)},
-		{"Description", jx.s(cp.pc_Description, a)},
-		{"Perennial", jx.b(cp.pc_Perennial)},
-		{"MaxAssimilationRate", jx.f(cp.pc_MaxAssimilationRate)},
-		{"LightExtinctionCoefficient", jx.f(cp.pc_LightExtinctionCoefficient)},
-		{"MaxCropHeight", jx.vu(cp.pc_MaxCropHeight, "m", a)},
-		{"ResidueNRatio", jx.f(cp.pc_ResidueNRatio)},
-		{"LT50cultivar", jx.f(cp.pc_LT50cultivar)},
-		{"CropHeightP1", jx.f(cp.pc_CropHeightP1)},
-		{"CropHeightP2", jx.f(cp.pc_CropHeightP2)},
-		{"CropSpecificMaxRootingDepth", jx.f(cp.pc_CropSpecificMaxRootingDepth)},
+		{"CultivarName", jx.s(cp.cultivar_id, a)},
+		{"Description", jx.s(cp.description, a)},
+		{"Perennial", jx.b(cp.perennial)},
+		{"MaxAssimilationRate", jx.f(cp.max_assimilation_rate)},
+		{"LightExtinctionCoefficient", jx.f(cp.light_extinction_coefficient)},
+		{"MaxCropHeight", jx.vu(cp.max_crop_height, "m", a)},
+		{"ResidueNRatio", jx.f(cp.residue_n_ratio)},
+		{"LT50cultivar", jx.f(cp.lt50cultivar)},
+		{"CropHeightP1", jx.f(cp.crop_height_p1)},
+		{"CropHeightP2", jx.f(cp.crop_height_p2)},
+		{"CropSpecificMaxRootingDepth", jx.f(cp.crop_specific_max_rooting_depth)},
 		{"AssimilatePartitioningCoeff", jx.Value(apcs)},
 		{"OrganSenescenceRate", jx.Value(osrs)},
-		{"BaseDaylength", jx.arr(a, prim_arr_f64(cp.pc_BaseDaylength[:], a), jx.sl("h"))},
+		{"BaseDaylength", jx.arr(a, prim_arr_f64(cp.base_daylength[:], a), jx.sl("h"))},
 		{
 			"OptimumTemperature",
-			jx.arr(a, prim_arr_f64(cp.pc_OptimumTemperature[:], a), jx.sl("°C")),
+			jx.arr(a, prim_arr_f64(cp.optimum_temperature[:], a), jx.sl("°C")),
 		},
 		{
 			"DaylengthRequirement",
-			jx.arr(a, prim_arr_f64(cp.pc_DaylengthRequirement[:], a), jx.sl("h")),
+			jx.arr(a, prim_arr_f64(cp.daylength_requirement[:], a), jx.sl("h")),
 		},
-		{"DroughtStressThreshold", prim_arr_f64(cp.pc_DroughtStressThreshold[:], a)},
+		{"DroughtStressThreshold", prim_arr_f64(cp.drought_stress_threshold[:], a)},
 		{
 			"SpecificLeafArea",
-			jx.arr(a, prim_arr_f64(cp.pc_SpecificLeafArea[:], a), jx.sl("ha kg-1")),
+			jx.arr(a, prim_arr_f64(cp.specific_leaf_area[:], a), jx.sl("ha kg-1")),
 		},
-		{"StageKcFactor", jx.arr(a, prim_arr_f64(cp.pc_StageKcFactor[:], a), jx.sl("1;0"))},
+		{"StageKcFactor", jx.arr(a, prim_arr_f64(cp.stage_kc_factor[:], a), jx.sl("1;0"))},
 		{
 			"StageTemperatureSum",
-			jx.arr(a, prim_arr_f64(cp.pc_StageTemperatureSum[:], a), jx.sl("°C d")),
+			jx.arr(a, prim_arr_f64(cp.stage_temperature_sum[:], a), jx.sl("°C d")),
 		},
-		{"VernalisationRequirement", prim_arr_f64(cp.pc_VernalisationRequirement[:], a)},
-		{"HeatSumIrrigationStart", jx.f(cp.pc_HeatSumIrrigationStart)},
-		{"HeatSumIrrigationEnd", jx.f(cp.pc_HeatSumIrrigationEnd)},
-		{"CriticalTemperatureHeatStress", jx.vu(cp.pc_CriticalTemperatureHeatStress, "°C", a)},
-		{"BeginSensitivePhaseHeatStress", jx.vu(cp.pc_BeginSensitivePhaseHeatStress, "°C d", a)},
-		{"EndSensitivePhaseHeatStress", jx.vu(cp.pc_EndSensitivePhaseHeatStress, "°C d", a)},
-		{"FrostHardening", jx.f(cp.pc_FrostHardening)},
-		{"FrostDehardening", jx.f(cp.pc_FrostDehardening)},
-		{"LowTemperatureExposure", jx.f(cp.pc_LowTemperatureExposure)},
-		{"RespiratoryStress", jx.f(cp.pc_RespiratoryStress)},
-		{"LatestHarvestDoy", jx.i(cp.pc_LatestHarvestDoy)},
-		{"OrganIdsForPrimaryYield", yield_components_to_json(cp.pc_OrganIdsForPrimaryYield[:], a)},
+		{"VernalisationRequirement", prim_arr_f64(cp.vernalisation_requirement[:], a)},
+		{"HeatSumIrrigationStart", jx.f(cp.heat_sum_irrigation_start)},
+		{"HeatSumIrrigationEnd", jx.f(cp.heat_sum_irrigation_end)},
+		{"CriticalTemperatureHeatStress", jx.vu(cp.critical_temperature_heat_stress, "°C", a)},
+		{"BeginSensitivePhaseHeatStress", jx.vu(cp.begin_sensitive_phase_heat_stress, "°C d", a)},
+		{"EndSensitivePhaseHeatStress", jx.vu(cp.end_sensitive_phase_heat_stress, "°C d", a)},
+		{"FrostHardening", jx.f(cp.frost_hardening)},
+		{"FrostDehardening", jx.f(cp.frost_dehardening)},
+		{"LowTemperatureExposure", jx.f(cp.low_temperature_exposure)},
+		{"RespiratoryStress", jx.f(cp.respiratory_stress)},
+		{"LatestHarvestDoy", jx.i(cp.latest_harvest_doy)},
+		{"OrganIdsForPrimaryYield", yield_components_to_json(cp.organ_ids_for_primary_yield[:], a)},
 		{
 			"OrganIdsForSecondaryYield",
-			yield_components_to_json(cp.pc_OrganIdsForSecondaryYield[:], a),
+			yield_components_to_json(cp.organ_ids_for_secondary_yield[:], a),
 		},
-		{"OrganIdsForCutting", yield_components_to_json(cp.pc_OrganIdsForCutting[:], a)},
-		{"EarlyRefLeafExp", jx.f(cp.pc_EarlyRefLeafExp)},
-		{"RefLeafExp", jx.f(cp.pc_RefLeafExp)},
-		{"MinTempDev_WE", jx.f(cp.pc_MinTempDev_WE)},
-		{"OptTempDev_WE", jx.f(cp.pc_OptTempDev_WE)},
-		{"MaxTempDev_WE", jx.f(cp.pc_MaxTempDev_WE)},
-		{"WinterCrop", jx.b(cp.winterCrop)},
+		{"OrganIdsForCutting", yield_components_to_json(cp.organ_ids_for_cutting[:], a)},
+		{"EarlyRefLeafExp", jx.f(cp.early_ref_leaf_exp)},
+		{"RefLeafExp", jx.f(cp.ref_leaf_exp)},
+		{"MinTempDev_WE", jx.f(cp.min_temp_dev_we)},
+		{"OptTempDev_WE", jx.f(cp.opt_temp_dev_we)},
+		{"MaxTempDev_WE", jx.f(cp.max_temp_dev_we)},
+		{"WinterCrop", jx.b(cp.winter_crop)},
 	)
 }
 
 // C++: inline size_t cultivarparameters::numberOfDevelopmentalStages(const CultivarParameters*)
 cultivar_parameters_number_of_developmental_stages :: proc(cp: ^Cultivar_Parameters) -> int {
-	return len(cp.pc_BaseDaylength)
+	return len(cp.base_daylength)
 }
 
 // ---------------------------------------------------------------------------
@@ -562,7 +562,7 @@ crop_parameters_to_json :: proc(cp: ^Crop_Parameters, a: Allocator) -> jx.Value 
 // C++: inline string cropparameters::cropName(const CropParameters*) - old FRUCHT$(AKF)
 crop_name :: proc(cp: ^Crop_Parameters, a: Allocator) -> string {
 	return strings.concatenate(
-		{cp.speciesParams.pc_SpeciesId, "/", cp.cultivarParams.pc_CultivarId},
+		{cp.speciesParams.species_id, "/", cp.cultivarParams.cultivar_id},
 		a,
 	)
 }

@@ -770,7 +770,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	if model.current_crop_module != nil &&
 	   model.sim_params.p_UseNMinMineralFertilisingMethod &&
-	   model.current_crop_module.crop_params.cultivarParams.winterCrop &&
+	   model.current_crop_module.crop_params.cultivarParams.winter_crop &&
 	   int(julday) == model.sim_params.p_JulianDayAutomaticFertilising {
 		clear_top_dressing_params(&model.soil_column)
 		sps := model.current_crop_module.crop_params.speciesParams
@@ -778,9 +778,9 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 			model,
 			model.sim_params.p_NMinFertiliserPartition,
 			p.NMin_Crop_Parameters {
-				samplingDepth = sps.pc_SamplingDepth,
-				nTarget = sps.pc_TargetNSamplingDepth,
-				nTarget30 = sps.pc_TargetN30,
+				samplingDepth = sps.sampling_depth,
+				nTarget = sps.target_n_sampling_depth,
+				nTarget30 = sps.target_n30,
 			},
 		)
 		monica_model_add_daily_sum_fertiliser(model, fertilizerAmount)

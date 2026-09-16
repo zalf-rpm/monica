@@ -270,8 +270,8 @@ main :: proc() {
 	)
 	core.put_crop(&model.soil_column, &cm)
 	cm.current_total_temperature_sum =
-		(cm.crop_params.cultivarParams.pc_HeatSumIrrigationStart +
-			cm.crop_params.cultivarParams.pc_HeatSumIrrigationEnd) /
+		(cm.crop_params.cultivarParams.heat_sum_irrigation_start +
+			cm.crop_params.cultivarParams.heat_sum_irrigation_end) /
 		2.0
 	aip := p.Automatic_Irrigation_Parameters {
 		base = p.Irrigation_Parameters{nitrateConcentration = 3.0, fw = 1.0},

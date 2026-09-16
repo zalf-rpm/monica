@@ -132,7 +132,7 @@ dump_cutting_state :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module) {
 	tr.dump(
 		t,
 		strings.concatenate({path, ".cropParams.cultivarParams.pc_MaxAssimilationRate"}),
-		cm.crop_params.cultivarParams.pc_MaxAssimilationRate,
+		cm.crop_params.cultivarParams.max_assimilation_rate,
 	)
 }
 

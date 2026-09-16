@@ -55,7 +55,7 @@ dump_crop_module_phenology :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_M
 	tr.dump(
 		t,
 		jn(path, "cropParams.cultivarParams.pc_CultivarId"),
-		cm.crop_params.cultivarParams.pc_CultivarId,
+		cm.crop_params.cultivarParams.cultivar_id,
 	)
 
 	tr.dump(t, jn(path, "vc_AnthesisDay"), cm.anthesis_day)
@@ -89,15 +89,15 @@ phenology_day_step :: proc(
 	currentDate: d.Date,
 	julianDayOverride: int = -1,
 ) {
-	pc_BaseDaylength := cm.crop_params.cultivarParams.pc_BaseDaylength
-	pc_CriticalOxygenContent := cm.crop_params.speciesParams.pc_CriticalOxygenContent
-	pc_DaylengthRequirement := cm.crop_params.cultivarParams.pc_DaylengthRequirement
-	pc_MaxCropHeight := cm.crop_params.cultivarParams.pc_MaxCropHeight
-	pc_Perennial := cm.crop_params.cultivarParams.pc_Perennial
-	pc_SpecificLeafArea := cm.crop_params.cultivarParams.pc_SpecificLeafArea
-	pc_StageKcFactor := cm.crop_params.cultivarParams.pc_StageKcFactor
-	pc_StageTemperatureSum := cm.crop_params.cultivarParams.pc_StageTemperatureSum
-	pc_VernalisationRequirement := cm.crop_params.cultivarParams.pc_VernalisationRequirement
+	pc_BaseDaylength := cm.crop_params.cultivarParams.base_daylength
+	pc_CriticalOxygenContent := cm.crop_params.speciesParams.critical_oxygen_content
+	pc_DaylengthRequirement := cm.crop_params.cultivarParams.daylength_requirement
+	pc_MaxCropHeight := cm.crop_params.cultivarParams.max_crop_height
+	pc_Perennial := cm.crop_params.cultivarParams.perennial
+	pc_SpecificLeafArea := cm.crop_params.cultivarParams.specific_leaf_area
+	pc_StageKcFactor := cm.crop_params.cultivarParams.stage_kc_factor
+	pc_StageTemperatureSum := cm.crop_params.cultivarParams.stage_temperature_sum
+	pc_VernalisationRequirement := cm.crop_params.cultivarParams.vernalisation_requirement
 	speciesPs := &cm.crop_params.speciesParams
 
 	vs_JulianDay := julianDayOverride >= 0 ? julianDayOverride : int(d.julian_day(currentDate))
@@ -113,7 +113,7 @@ phenology_day_step :: proc(
 
 	// start accumulating temperature sums only after dormancy
 	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
-		if speciesPs.dormancyEndDoy == 0 {
+		if speciesPs.dormancy_end_doy == 0 {
 			cm.perennial_crop_dormancy_period_end_date = currentDate
 		} else {
 			cm.perennial_crop_dormancy_period_end_date = d.add(
@@ -125,7 +125,7 @@ phenology_day_step :: proc(
 					false,
 					d.DEFAULT_USE_LEAP_YEARS,
 				),
-				u64(speciesPs.dormancyEndDoy - 1),
+				u64(speciesPs.dormancy_end_doy - 1),
 			)
 		}
 	}
@@ -365,32 +365,32 @@ main :: proc() {
 	// === Scenario B: synthetic perennial/short-day/WangEngel/germination ===
 	{
 		synth_crop_params := wheat_crop_params
-		synth_crop_params.cultivarParams.pc_Perennial = true
-		synth_crop_params.cultivarParams.pc_MinTempDev_WE = 0.0
-		synth_crop_params.cultivarParams.pc_OptTempDev_WE = 20.0
-		synth_crop_params.cultivarParams.pc_MaxTempDev_WE = 35.0
+		synth_crop_params.cultivarParams.perennial = true
+		synth_crop_params.cultivarParams.min_temp_dev_we = 0.0
+		synth_crop_params.cultivarParams.opt_temp_dev_we = 20.0
+		synth_crop_params.cultivarParams.max_temp_dev_we = 35.0
 		synth_crop_params.__enable_vernalisation_factor_fix__ = false
-		synth_crop_params.speciesParams.dormancyStartDoy = 6
-		synth_crop_params.speciesParams.dormancyEndDoy = 3
-		synth_crop_params.cultivarParams.pc_StageTemperatureSum = make(
+		synth_crop_params.speciesParams.dormancy_start_doy = 6
+		synth_crop_params.speciesParams.dormancy_end_doy = 3
+		synth_crop_params.cultivarParams.stage_temperature_sum = make(
 			[dynamic]f64,
-			len(wheat_crop_params.cultivarParams.pc_StageTemperatureSum),
+			len(wheat_crop_params.cultivarParams.stage_temperature_sum),
 			a,
 		)
-		for v, i in wheat_crop_params.cultivarParams.pc_StageTemperatureSum {
-			synth_crop_params.cultivarParams.pc_StageTemperatureSum[i] = min(v, 5.0)
+		for v, i in wheat_crop_params.cultivarParams.stage_temperature_sum {
+			synth_crop_params.cultivarParams.stage_temperature_sum[i] = min(v, 5.0)
 		}
-		synth_crop_params.cultivarParams.pc_DaylengthRequirement = make(
+		synth_crop_params.cultivarParams.daylength_requirement = make(
 			[dynamic]f64,
-			len(wheat_crop_params.cultivarParams.pc_DaylengthRequirement),
+			len(wheat_crop_params.cultivarParams.daylength_requirement),
 			a,
 		)
-		for v, i in wheat_crop_params.cultivarParams.pc_DaylengthRequirement {
-			synth_crop_params.cultivarParams.pc_DaylengthRequirement[i] = -abs(v) - 1.0
+		for v, i in wheat_crop_params.cultivarParams.daylength_requirement {
+			synth_crop_params.cultivarParams.daylength_requirement[i] = -abs(v) - 1.0
 		}
 
 		perennial_next_season := synth_crop_params
-		perennial_next_season.cultivarParams.pc_CultivarId = "synthetic-next-season"
+		perennial_next_season.cultivarParams.cultivar_id = "synthetic-next-season"
 
 		synth_crop_mod_params := cpp.crop_params
 		synth_crop_mod_params.__enable_Phenology_WangEngelTemperatureResponse__ = true
@@ -412,7 +412,7 @@ main :: proc() {
 		perennial_next_season_ptr := new(p.Crop_Parameters, a)
 		perennial_next_season_ptr^ = perennial_next_season
 		cm.perennial_crop_params = perennial_next_season_ptr
-		cm.crop_params.cultivarParams.pc_CultivarId = "synthetic-season-1"
+		cm.crop_params.cultivarParams.cultivar_id = "synthetic-season-1"
 
 		Day :: struct {
 			meanAirTemperature, globalRadiation, sunshineHours: f64,
