@@ -86,7 +86,7 @@ main :: proc() {
 	// initializeFromParams (soilmoisture.cpp:88-92) ---
 	sc := core.make_soil_column(
 		cpp.sim_params.p_LayerThickness,
-		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.soil_organic_mod_params.max_mineralisation_depth,
 		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)

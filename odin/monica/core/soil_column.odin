@@ -299,7 +299,7 @@ make_soil_column :: proc(
 // C++: int monica::soilcolumn::calculateNumberOfOrganicLayers(const SoilColumn*)
 //
 // Number of organic layers, usually the number of layers in the first
-// ps_MaxMineralisationDepth of soil.
+// max_mineralisation_depth of soil.
 calculate_number_of_organic_layers :: proc(sc: ^Soil_Column) -> int {
 	lsum := 0.0
 	count := 0

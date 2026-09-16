@@ -331,6 +331,85 @@ and to_json procs still read/write that literal key, since it must match the par
 disk). The Odin field itself is spelled correctly, matching the correctly-spelled, unrelated
 `vm_SnowAccumulationThresholdTemperature` in `Snow_Component` above.
 
+## `monica::SoilTemperatureModuleParameters` -> `params.Soil_Temperature_Module_Parameters` (odin/monica/params/module_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `pt_NTau` | `n_tau` |
+| `pt_InitialSurfaceTemperature` | `initial_surface_temperature` |
+| `pt_BaseTemperature` | `base_temperature` |
+| `pt_QuartzRawDensity` | `quartz_raw_density` |
+| `pt_DensityAir` | `density_air` |
+| `pt_DensityWater` | `density_water` |
+| `pt_DensityHumus` | `density_humus` |
+| `pt_SpecificHeatCapacityAir` | `specific_heat_capacity_air` |
+| `pt_SpecificHeatCapacityQuartz` | `specific_heat_capacity_quartz` |
+| `pt_SpecificHeatCapacityWater` | `specific_heat_capacity_water` |
+| `pt_SpecificHeatCapacityHumus` | `specific_heat_capacity_humus` |
+| `pt_SoilAlbedo` | `soil_albedo` |
+| `pt_SoilMoisture` | `soil_moisture` |
+
+## `monica::SoilTransportModuleParameters` -> `params.Soil_Transport_Module_Parameters` (odin/monica/params/module_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `pq_DispersionLength` | `dispersion_length` |
+| `pq_AD` | `ad` |
+| `pq_DiffusionCoefficientStandard` | `diffusion_coefficient_standard` |
+| `pq_NDeposition` | `n_deposition` |
+
+## `monica::SoilOrganicModuleParameters` -> `params.Soil_Organic_Module_Parameters` (odin/monica/params/module_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `po_SOM_SlowDecCoeffStandard` | `som_slow_dec_coeff_standard` |
+| `po_SOM_FastDecCoeffStandard` | `som_fast_dec_coeff_standard` |
+| `po_SMB_SlowMaintRateStandard` | `smb_slow_maint_rate_standard` |
+| `po_SMB_FastMaintRateStandard` | `smb_fast_maint_rate_standard` |
+| `po_SMB_SlowDeathRateStandard` | `smb_slow_death_rate_standard` |
+| `po_SMB_FastDeathRateStandard` | `smb_fast_death_rate_standard` |
+| `po_SMB_UtilizationEfficiency` | `smb_utilization_efficiency` |
+| `po_SOM_SlowUtilizationEfficiency` | `som_slow_utilization_efficiency` |
+| `po_SOM_FastUtilizationEfficiency` | `som_fast_utilization_efficiency` |
+| `po_AOM_SlowUtilizationEfficiency` | `aom_slow_utilization_efficiency` |
+| `po_AOM_FastUtilizationEfficiency` | `aom_fast_utilization_efficiency` |
+| `po_AOM_FastMaxC_to_N` | `aom_fast_max_c_to_n` |
+| `po_PartSOM_Fast_to_SOM_Slow` | `part_som_fast_to_som_slow` |
+| `po_PartSMB_Slow_to_SOM_Fast` | `part_smb_slow_to_som_fast` |
+| `po_PartSMB_Fast_to_SOM_Fast` | `part_smb_fast_to_som_fast` |
+| `po_PartSOM_to_SMB_Slow` | `part_som_to_smb_slow` |
+| `po_PartSOM_to_SMB_Fast` | `part_som_to_smb_fast` |
+| `po_CN_Ratio_SMB` | `cn_ratio_smb` |
+| `po_LimitClayEffect` | `limit_clay_effect` |
+| `po_QTenFactor` | `q_ten_factor` |
+| `po_TempDecOptimal` | `temp_dec_optimal` |
+| `po_MoistureDecOptimal` | `moisture_dec_optimal` |
+| `po_AmmoniaOxidationRateCoeffStandard` | `ammonia_oxidation_rate_coeff_standard` |
+| `po_NitriteOxidationRateCoeffStandard` | `nitrite_oxidation_rate_coeff_standard` |
+| `po_TransportRateCoeff` | `transport_rate_coeff` |
+| `po_SpecAnaerobDenitrification` | `spec_anaerob_denitrification` |
+| `po_ImmobilisationRateCoeffNO3` | `immobilisation_rate_coeff_no3` |
+| `po_ImmobilisationRateCoeffNH4` | `immobilisation_rate_coeff_nh4` |
+| `po_Denit1` | `denit1` |
+| `po_Denit2` | `denit2` |
+| `po_Denit3` | `denit3` |
+| `po_HydrolysisKM` | `hydrolysis_km` |
+| `po_ActivationEnergy` | `activation_energy` |
+| `po_HydrolysisP1` | `hydrolysis_p1` |
+| `po_HydrolysisP2` | `hydrolysis_p2` |
+| `po_AtmosphericResistance` | `atmospheric_resistance` |
+| `po_N2OProductionRate` | `n2o_production_rate` |
+| `po_Inhibitor_NH3` | `inhibitor_nh3` |
+| `ps_MaxMineralisationDepth` | `max_mineralisation_depth` |
+| `sticsParams` | `stics_params` |
+
+`ps_MaxMineralisationDepth` and `sticsParams` are members of `SoilOrganicModuleParameters` despite
+not following its `po_` prefix (confirmed in `src/core/monica-parameters.h`/`.cpp` - genuinely `ps_`
+in the C++, not a transcription slip); renamed anyway for consistency with the rest of the struct.
+The three `__enable_kaiteew_*__` flags are left as-is - they follow the codebase-wide dunder-flag
+convention also used by `__enable_vernalisation_factor_fix__` and friends in `crop_parameters.odin`,
+where the literal name doubles as the JSON key, not an unconverted CamelCase leftover.
+
 ## `monica::SoilTransport` -> `core.Soil_Transport` (odin/monica/core/soil_transport.odin)
 
 | C++ (`soiltransport.h`) | Odin |

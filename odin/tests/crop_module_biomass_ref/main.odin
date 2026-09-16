@@ -332,7 +332,7 @@ main :: proc() {
 	// cropModule wiring - checkpoint 7's job) ---
 	sc := core.make_soil_column(
 		cpp.sim_params.p_LayerThickness,
-		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.soil_organic_mod_params.max_mineralisation_depth,
 		cpp.site_params.vs_SoilParameters[:],
 		a,
 	)
@@ -494,7 +494,7 @@ main :: proc() {
 	{
 		sc2 := core.make_soil_column(
 			cpp.sim_params.p_LayerThickness,
-			cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+			cpp.soil_organic_mod_params.max_mineralisation_depth,
 			cpp.site_params.vs_SoilParameters[:],
 			a,
 		)

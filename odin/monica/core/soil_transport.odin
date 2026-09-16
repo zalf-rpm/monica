@@ -173,9 +173,9 @@ n_uptake :: proc(st: ^Soil_Transport) {
 //
 // Kersebaum 1989.
 n_transport :: proc(st: ^Soil_Transport, leaching_depth_m, time_step_factor: f64) {
-	diffusion_coeff_standard := st.mod_params.pq_DiffusionCoefficientStandard // [m2 d-1]; old D0
-	ad := st.mod_params.pq_AD // Factor a in Kersebaum 1989 p.24 for Loess soils
-	dispersion_length := st.mod_params.pq_DispersionLength // [m]
+	diffusion_coeff_standard := st.mod_params.diffusion_coefficient_standard // [m2 d-1]; old D0
+	ad := st.mod_params.ad // Factor a in Kersebaum 1989 p.24 for Loess soils
+	dispersion_length := st.mod_params.dispersion_length // [m]
 	soil_profile := 0.0
 	leaching_depth_layer_idx := 0
 	nols := len(st.soil_column.layers)

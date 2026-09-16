@@ -103,7 +103,7 @@ make_monica_model :: proc(
 
 	model.soil_column = make_soil_column(
 		model.sim_params.p_LayerThickness,
-		cpp.soil_organic_mod_params.ps_MaxMineralisationDepth,
+		cpp.soil_organic_mod_params.max_mineralisation_depth,
 		model.site_params.vs_SoilParameters[:],
 		allocator,
 	)

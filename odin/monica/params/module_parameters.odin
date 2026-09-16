@@ -158,24 +158,24 @@ soil_moisture_module_parameters_to_json :: proc(
 
 // C++: struct monica::SoilTemperatureModuleParameters
 Soil_Temperature_Module_Parameters :: struct {
-	pt_NTau:                       f64,
-	pt_InitialSurfaceTemperature:  f64,
-	pt_BaseTemperature:            f64,
-	pt_QuartzRawDensity:           f64,
-	pt_DensityAir:                 f64,
-	pt_DensityWater:               f64,
-	pt_DensityHumus:               f64,
-	pt_SpecificHeatCapacityAir:    f64,
-	pt_SpecificHeatCapacityQuartz: f64,
-	pt_SpecificHeatCapacityWater:  f64,
-	pt_SpecificHeatCapacityHumus:  f64,
-	pt_SoilAlbedo:                 f64,
-	pt_SoilMoisture:               f64, // C++ default 0.25
+	n_tau:                         f64,
+	initial_surface_temperature:   f64,
+	base_temperature:              f64,
+	quartz_raw_density:            f64,
+	density_air:                   f64,
+	density_water:                 f64,
+	density_humus:                 f64,
+	specific_heat_capacity_air:    f64,
+	specific_heat_capacity_quartz: f64,
+	specific_heat_capacity_water:  f64,
+	specific_heat_capacity_humus:  f64,
+	soil_albedo:                   f64,
+	soil_moisture:                 f64, // C++ default 0.25
 }
 
 // C++ default: pt_SoilMoisture{0.25}; everything else 0.0
 make_soil_temperature_module_parameters :: proc() -> Soil_Temperature_Module_Parameters {
-	return Soil_Temperature_Module_Parameters{pt_SoilMoisture = 0.25}
+	return Soil_Temperature_Module_Parameters{soil_moisture = 0.25}
 }
 
 // C++: Errors soiltemperaturemoduleparameters::merge(...)
@@ -185,19 +185,19 @@ soil_temperature_module_parameters_merge :: proc(
 ) -> tl.Errors {
 	res := default_merge(stp, j, soil_temperature_module_parameters_merge)
 
-	jx.set_double_value(&stp.pt_NTau, j, "NTau")
-	jx.set_double_value(&stp.pt_InitialSurfaceTemperature, j, "InitialSurfaceTemperature")
-	jx.set_double_value(&stp.pt_BaseTemperature, j, "BaseTemperature")
-	jx.set_double_value(&stp.pt_QuartzRawDensity, j, "QuartzRawDensity")
-	jx.set_double_value(&stp.pt_DensityAir, j, "DensityAir")
-	jx.set_double_value(&stp.pt_DensityWater, j, "DensityWater")
-	jx.set_double_value(&stp.pt_DensityHumus, j, "DensityHumus")
-	jx.set_double_value(&stp.pt_SpecificHeatCapacityAir, j, "SpecificHeatCapacityAir")
-	jx.set_double_value(&stp.pt_SpecificHeatCapacityQuartz, j, "SpecificHeatCapacityQuartz")
-	jx.set_double_value(&stp.pt_SpecificHeatCapacityWater, j, "SpecificHeatCapacityWater")
-	jx.set_double_value(&stp.pt_SpecificHeatCapacityHumus, j, "SpecificHeatCapacityHumus")
-	jx.set_double_value(&stp.pt_SoilAlbedo, j, "SoilAlbedo")
-	jx.set_double_value(&stp.pt_SoilMoisture, j, "SoilMoisture")
+	jx.set_double_value(&stp.n_tau, j, "NTau")
+	jx.set_double_value(&stp.initial_surface_temperature, j, "InitialSurfaceTemperature")
+	jx.set_double_value(&stp.base_temperature, j, "BaseTemperature")
+	jx.set_double_value(&stp.quartz_raw_density, j, "QuartzRawDensity")
+	jx.set_double_value(&stp.density_air, j, "DensityAir")
+	jx.set_double_value(&stp.density_water, j, "DensityWater")
+	jx.set_double_value(&stp.density_humus, j, "DensityHumus")
+	jx.set_double_value(&stp.specific_heat_capacity_air, j, "SpecificHeatCapacityAir")
+	jx.set_double_value(&stp.specific_heat_capacity_quartz, j, "SpecificHeatCapacityQuartz")
+	jx.set_double_value(&stp.specific_heat_capacity_water, j, "SpecificHeatCapacityWater")
+	jx.set_double_value(&stp.specific_heat_capacity_humus, j, "SpecificHeatCapacityHumus")
+	jx.set_double_value(&stp.soil_albedo, j, "SoilAlbedo")
+	jx.set_double_value(&stp.soil_moisture, j, "SoilMoisture")
 
 	return res
 }
@@ -210,19 +210,19 @@ soil_temperature_module_parameters_to_json :: proc(
 	return jx.obj(
 		a,
 		{"type", jx.sl("SoilTemperatureModuleParameters")},
-		{"NTau", jx.f(stp.pt_NTau)},
-		{"InitialSurfaceTemperature", jx.f(stp.pt_InitialSurfaceTemperature)},
-		{"BaseTemperature", jx.f(stp.pt_BaseTemperature)},
-		{"QuartzRawDensity", jx.f(stp.pt_QuartzRawDensity)},
-		{"DensityAir", jx.f(stp.pt_DensityAir)},
-		{"DensityWater", jx.f(stp.pt_DensityWater)},
-		{"DensityHumus", jx.f(stp.pt_DensityHumus)},
-		{"SpecificHeatCapacityAir", jx.f(stp.pt_SpecificHeatCapacityAir)},
-		{"SpecificHeatCapacityQuartz", jx.f(stp.pt_SpecificHeatCapacityQuartz)},
-		{"SpecificHeatCapacityWater", jx.f(stp.pt_SpecificHeatCapacityWater)},
-		{"SpecificHeatCapacityHumus", jx.f(stp.pt_SpecificHeatCapacityHumus)},
-		{"SoilAlbedo", jx.f(stp.pt_SoilAlbedo)},
-		{"SoilMoisture", jx.f(stp.pt_SoilMoisture)},
+		{"NTau", jx.f(stp.n_tau)},
+		{"InitialSurfaceTemperature", jx.f(stp.initial_surface_temperature)},
+		{"BaseTemperature", jx.f(stp.base_temperature)},
+		{"QuartzRawDensity", jx.f(stp.quartz_raw_density)},
+		{"DensityAir", jx.f(stp.density_air)},
+		{"DensityWater", jx.f(stp.density_water)},
+		{"DensityHumus", jx.f(stp.density_humus)},
+		{"SpecificHeatCapacityAir", jx.f(stp.specific_heat_capacity_air)},
+		{"SpecificHeatCapacityQuartz", jx.f(stp.specific_heat_capacity_quartz)},
+		{"SpecificHeatCapacityWater", jx.f(stp.specific_heat_capacity_water)},
+		{"SpecificHeatCapacityHumus", jx.f(stp.specific_heat_capacity_humus)},
+		{"SoilAlbedo", jx.f(stp.soil_albedo)},
+		{"SoilMoisture", jx.f(stp.soil_moisture)},
 	)
 }
 
@@ -232,10 +232,10 @@ soil_temperature_module_parameters_to_json :: proc(
 
 // C++: struct monica::SoilTransportModuleParameters
 Soil_Transport_Module_Parameters :: struct {
-	pq_DispersionLength:             f64,
-	pq_AD:                           f64,
-	pq_DiffusionCoefficientStandard: f64,
-	pq_NDeposition:                  f64,
+	dispersion_length:              f64,
+	ad:                             f64,
+	diffusion_coefficient_standard: f64,
+	n_deposition:                   f64,
 }
 
 // C++: Errors soiltransportmoduleparameters::merge(...)
@@ -245,10 +245,10 @@ soil_transport_module_parameters_merge :: proc(
 ) -> tl.Errors {
 	res := default_merge(stp, j, soil_transport_module_parameters_merge)
 
-	jx.set_double_value(&stp.pq_DispersionLength, j, "DispersionLength")
-	jx.set_double_value(&stp.pq_AD, j, "AD")
-	jx.set_double_value(&stp.pq_DiffusionCoefficientStandard, j, "DiffusionCoefficientStandard")
-	jx.set_double_value(&stp.pq_NDeposition, j, "NDeposition")
+	jx.set_double_value(&stp.dispersion_length, j, "DispersionLength")
+	jx.set_double_value(&stp.ad, j, "AD")
+	jx.set_double_value(&stp.diffusion_coefficient_standard, j, "DiffusionCoefficientStandard")
+	jx.set_double_value(&stp.n_deposition, j, "NDeposition")
 
 	return res
 }
@@ -261,10 +261,10 @@ soil_transport_module_parameters_to_json :: proc(
 	return jx.obj(
 		a,
 		{"type", jx.sl("SoilTransportModuleParameters")},
-		{"DispersionLength", jx.f(stp.pq_DispersionLength)},
-		{"AD", jx.f(stp.pq_AD)},
-		{"DiffusionCoefficientStandard", jx.f(stp.pq_DiffusionCoefficientStandard)},
-		{"NDeposition", jx.f(stp.pq_NDeposition)},
+		{"DispersionLength", jx.f(stp.dispersion_length)},
+		{"AD", jx.f(stp.ad)},
+		{"DiffusionCoefficientStandard", jx.f(stp.diffusion_coefficient_standard)},
+		{"NDeposition", jx.f(stp.n_deposition)},
 	)
 }
 
@@ -460,97 +460,97 @@ stics_parameters_to_json :: proc(sp: ^Stics_Parameters, a: Allocator) -> jx.Valu
 
 // C++: struct monica::SoilOrganicModuleParameters
 Soil_Organic_Module_Parameters :: struct {
-	po_SOM_SlowDecCoeffStandard:            f64,
-	po_SOM_FastDecCoeffStandard:            f64,
-	po_SMB_SlowMaintRateStandard:           f64,
-	po_SMB_FastMaintRateStandard:           f64,
-	po_SMB_SlowDeathRateStandard:           f64,
-	po_SMB_FastDeathRateStandard:           f64,
-	po_SMB_UtilizationEfficiency:           f64,
-	po_SOM_SlowUtilizationEfficiency:       f64,
-	po_SOM_FastUtilizationEfficiency:       f64,
-	po_AOM_SlowUtilizationEfficiency:       f64,
-	po_AOM_FastUtilizationEfficiency:       f64,
-	po_AOM_FastMaxC_to_N:                   f64,
-	po_PartSOM_Fast_to_SOM_Slow:            f64,
-	po_PartSMB_Slow_to_SOM_Fast:            f64,
-	po_PartSMB_Fast_to_SOM_Fast:            f64,
-	po_PartSOM_to_SMB_Slow:                 f64,
-	po_PartSOM_to_SMB_Fast:                 f64,
-	po_CN_Ratio_SMB:                        f64,
-	po_LimitClayEffect:                     f64,
-	po_QTenFactor:                          f64,
-	po_TempDecOptimal:                      f64,
-	po_MoistureDecOptimal:                  f64,
-	po_AmmoniaOxidationRateCoeffStandard:   f64,
-	po_NitriteOxidationRateCoeffStandard:   f64,
-	po_TransportRateCoeff:                  f64,
-	po_SpecAnaerobDenitrification:          f64,
-	po_ImmobilisationRateCoeffNO3:          f64,
-	po_ImmobilisationRateCoeffNH4:          f64,
-	po_Denit1:                              f64,
-	po_Denit2:                              f64,
-	po_Denit3:                              f64,
-	po_HydrolysisKM:                        f64,
-	po_ActivationEnergy:                    f64,
-	po_HydrolysisP1:                        f64,
-	po_HydrolysisP2:                        f64,
-	po_AtmosphericResistance:               f64,
-	po_N2OProductionRate:                   f64,
-	po_Inhibitor_NH3:                       f64,
-	ps_MaxMineralisationDepth:              f64,
+	som_slow_dec_coeff_standard:            f64,
+	som_fast_dec_coeff_standard:            f64,
+	smb_slow_maint_rate_standard:           f64,
+	smb_fast_maint_rate_standard:           f64,
+	smb_slow_death_rate_standard:           f64,
+	smb_fast_death_rate_standard:           f64,
+	smb_utilization_efficiency:             f64,
+	som_slow_utilization_efficiency:        f64,
+	som_fast_utilization_efficiency:        f64,
+	aom_slow_utilization_efficiency:        f64,
+	aom_fast_utilization_efficiency:        f64,
+	aom_fast_max_c_to_n:                    f64,
+	part_som_fast_to_som_slow:              f64,
+	part_smb_slow_to_som_fast:              f64,
+	part_smb_fast_to_som_fast:              f64,
+	part_som_to_smb_slow:                   f64,
+	part_som_to_smb_fast:                   f64,
+	cn_ratio_smb:                           f64,
+	limit_clay_effect:                      f64,
+	q_ten_factor:                           f64,
+	temp_dec_optimal:                       f64,
+	moisture_dec_optimal:                   f64,
+	ammonia_oxidation_rate_coeff_standard:  f64,
+	nitrite_oxidation_rate_coeff_standard:  f64,
+	transport_rate_coeff:                   f64,
+	spec_anaerob_denitrification:           f64,
+	immobilisation_rate_coeff_no3:          f64,
+	immobilisation_rate_coeff_nh4:          f64,
+	denit1:                                 f64,
+	denit2:                                 f64,
+	denit3:                                 f64,
+	hydrolysis_km:                          f64,
+	activation_energy:                      f64,
+	hydrolysis_p1:                          f64,
+	hydrolysis_p2:                          f64,
+	atmospheric_resistance:                 f64,
+	n2o_production_rate:                    f64,
+	inhibitor_nh3:                          f64,
+	max_mineralisation_depth:               f64,
 	__enable_kaiteew_TempOnDecompostion__:  bool,
 	__enable_kaiteew_MoistOnDecompostion__: bool,
 	__enable_kaiteew_ClayOnDecompostion__:  bool,
-	sticsParams:                            Stics_Parameters,
+	stics_params:                           Stics_Parameters,
 }
 
 // The C++ in-class initialisers
 make_soil_organic_module_parameters :: proc() -> Soil_Organic_Module_Parameters {
 	return Soil_Organic_Module_Parameters {
-		po_SOM_SlowDecCoeffStandard = 4.30e-5,
-		po_SOM_FastDecCoeffStandard = 1.40e-4,
-		po_SMB_SlowMaintRateStandard = 1.00e-3,
-		po_SMB_FastMaintRateStandard = 1.00e-2,
-		po_SMB_SlowDeathRateStandard = 1.00e-3,
-		po_SMB_FastDeathRateStandard = 1.00e-2,
-		po_SMB_UtilizationEfficiency = 0.60,
-		po_SOM_SlowUtilizationEfficiency = 0.40,
-		po_SOM_FastUtilizationEfficiency = 0.50,
-		po_AOM_SlowUtilizationEfficiency = 0.40,
-		po_AOM_FastUtilizationEfficiency = 0.10,
-		po_AOM_FastMaxC_to_N = 1000.0,
-		po_PartSOM_Fast_to_SOM_Slow = 0.30,
-		po_PartSMB_Slow_to_SOM_Fast = 0.60,
-		po_PartSMB_Fast_to_SOM_Fast = 0.60,
-		po_PartSOM_to_SMB_Slow = 0.0150,
-		po_PartSOM_to_SMB_Fast = 0.0002,
-		po_CN_Ratio_SMB = 6.70,
-		po_LimitClayEffect = 0.25,
-		po_QTenFactor = 2.9,
-		po_TempDecOptimal = 38,
-		po_MoistureDecOptimal = 0.45,
-		po_AmmoniaOxidationRateCoeffStandard = 1.0e-1,
-		po_NitriteOxidationRateCoeffStandard = 9.0e-1,
-		po_TransportRateCoeff = 0.1,
-		po_SpecAnaerobDenitrification = 0.1,
-		po_ImmobilisationRateCoeffNO3 = 0.5,
-		po_ImmobilisationRateCoeffNH4 = 0.5,
-		po_Denit1 = 0.2,
-		po_Denit2 = 0.8,
-		po_Denit3 = 0.9,
-		po_HydrolysisKM = 0.00334,
-		po_ActivationEnergy = 41000.0,
-		po_HydrolysisP1 = 4.259e-12,
-		po_HydrolysisP2 = 1.408e-12,
-		po_AtmosphericResistance = 0.0025,
-		po_N2OProductionRate = 0.5,
-		po_Inhibitor_NH3 = 1.0,
-		ps_MaxMineralisationDepth = 0.4,
+		som_slow_dec_coeff_standard = 4.30e-5,
+		som_fast_dec_coeff_standard = 1.40e-4,
+		smb_slow_maint_rate_standard = 1.00e-3,
+		smb_fast_maint_rate_standard = 1.00e-2,
+		smb_slow_death_rate_standard = 1.00e-3,
+		smb_fast_death_rate_standard = 1.00e-2,
+		smb_utilization_efficiency = 0.60,
+		som_slow_utilization_efficiency = 0.40,
+		som_fast_utilization_efficiency = 0.50,
+		aom_slow_utilization_efficiency = 0.40,
+		aom_fast_utilization_efficiency = 0.10,
+		aom_fast_max_c_to_n = 1000.0,
+		part_som_fast_to_som_slow = 0.30,
+		part_smb_slow_to_som_fast = 0.60,
+		part_smb_fast_to_som_fast = 0.60,
+		part_som_to_smb_slow = 0.0150,
+		part_som_to_smb_fast = 0.0002,
+		cn_ratio_smb = 6.70,
+		limit_clay_effect = 0.25,
+		q_ten_factor = 2.9,
+		temp_dec_optimal = 38,
+		moisture_dec_optimal = 0.45,
+		ammonia_oxidation_rate_coeff_standard = 1.0e-1,
+		nitrite_oxidation_rate_coeff_standard = 9.0e-1,
+		transport_rate_coeff = 0.1,
+		spec_anaerob_denitrification = 0.1,
+		immobilisation_rate_coeff_no3 = 0.5,
+		immobilisation_rate_coeff_nh4 = 0.5,
+		denit1 = 0.2,
+		denit2 = 0.8,
+		denit3 = 0.9,
+		hydrolysis_km = 0.00334,
+		activation_energy = 41000.0,
+		hydrolysis_p1 = 4.259e-12,
+		hydrolysis_p2 = 1.408e-12,
+		atmospheric_resistance = 0.0025,
+		n2o_production_rate = 0.5,
+		inhibitor_nh3 = 1.0,
+		max_mineralisation_depth = 0.4,
 		__enable_kaiteew_TempOnDecompostion__ = true,
 		__enable_kaiteew_MoistOnDecompostion__ = true,
 		__enable_kaiteew_ClayOnDecompostion__ = true,
-		sticsParams = make_stics_parameters(),
+		stics_params = make_stics_parameters(),
 	}
 }
 
@@ -561,53 +561,53 @@ soil_organic_module_parameters_merge :: proc(
 ) -> tl.Errors {
 	res := default_merge(sop, j, soil_organic_module_parameters_merge)
 
-	jx.set_double_value(&sop.po_SOM_SlowDecCoeffStandard, j, "SOM_SlowDecCoeffStandard")
-	jx.set_double_value(&sop.po_SOM_FastDecCoeffStandard, j, "SOM_FastDecCoeffStandard")
-	jx.set_double_value(&sop.po_SMB_SlowMaintRateStandard, j, "SMB_SlowMaintRateStandard")
-	jx.set_double_value(&sop.po_SMB_FastMaintRateStandard, j, "SMB_FastMaintRateStandard")
-	jx.set_double_value(&sop.po_SMB_SlowDeathRateStandard, j, "SMB_SlowDeathRateStandard")
-	jx.set_double_value(&sop.po_SMB_FastDeathRateStandard, j, "SMB_FastDeathRateStandard")
-	jx.set_double_value(&sop.po_SMB_UtilizationEfficiency, j, "SMB_UtilizationEfficiency")
-	jx.set_double_value(&sop.po_SOM_SlowUtilizationEfficiency, j, "SOM_SlowUtilizationEfficiency")
-	jx.set_double_value(&sop.po_SOM_FastUtilizationEfficiency, j, "SOM_FastUtilizationEfficiency")
-	jx.set_double_value(&sop.po_AOM_SlowUtilizationEfficiency, j, "AOM_SlowUtilizationEfficiency")
-	jx.set_double_value(&sop.po_AOM_FastUtilizationEfficiency, j, "AOM_FastUtilizationEfficiency")
-	jx.set_double_value(&sop.po_AOM_FastMaxC_to_N, j, "AOM_FastMaxC_to_N")
-	jx.set_double_value(&sop.po_PartSOM_Fast_to_SOM_Slow, j, "PartSOM_Fast_to_SOM_Slow")
-	jx.set_double_value(&sop.po_PartSMB_Slow_to_SOM_Fast, j, "PartSMB_Slow_to_SOM_Fast")
-	jx.set_double_value(&sop.po_PartSMB_Fast_to_SOM_Fast, j, "PartSMB_Fast_to_SOM_Fast")
-	jx.set_double_value(&sop.po_PartSOM_to_SMB_Slow, j, "PartSOM_to_SMB_Slow")
-	jx.set_double_value(&sop.po_PartSOM_to_SMB_Fast, j, "PartSOM_to_SMB_Fast")
-	jx.set_double_value(&sop.po_CN_Ratio_SMB, j, "CN_Ratio_SMB")
-	jx.set_double_value(&sop.po_LimitClayEffect, j, "LimitClayEffect")
-	jx.set_double_value(&sop.po_QTenFactor, j, "QTenFactor")
-	jx.set_double_value(&sop.po_TempDecOptimal, j, "TempDecOptimal")
-	jx.set_double_value(&sop.po_MoistureDecOptimal, j, "MoistureDecOptimal")
+	jx.set_double_value(&sop.som_slow_dec_coeff_standard, j, "SOM_SlowDecCoeffStandard")
+	jx.set_double_value(&sop.som_fast_dec_coeff_standard, j, "SOM_FastDecCoeffStandard")
+	jx.set_double_value(&sop.smb_slow_maint_rate_standard, j, "SMB_SlowMaintRateStandard")
+	jx.set_double_value(&sop.smb_fast_maint_rate_standard, j, "SMB_FastMaintRateStandard")
+	jx.set_double_value(&sop.smb_slow_death_rate_standard, j, "SMB_SlowDeathRateStandard")
+	jx.set_double_value(&sop.smb_fast_death_rate_standard, j, "SMB_FastDeathRateStandard")
+	jx.set_double_value(&sop.smb_utilization_efficiency, j, "SMB_UtilizationEfficiency")
+	jx.set_double_value(&sop.som_slow_utilization_efficiency, j, "SOM_SlowUtilizationEfficiency")
+	jx.set_double_value(&sop.som_fast_utilization_efficiency, j, "SOM_FastUtilizationEfficiency")
+	jx.set_double_value(&sop.aom_slow_utilization_efficiency, j, "AOM_SlowUtilizationEfficiency")
+	jx.set_double_value(&sop.aom_fast_utilization_efficiency, j, "AOM_FastUtilizationEfficiency")
+	jx.set_double_value(&sop.aom_fast_max_c_to_n, j, "AOM_FastMaxC_to_N")
+	jx.set_double_value(&sop.part_som_fast_to_som_slow, j, "PartSOM_Fast_to_SOM_Slow")
+	jx.set_double_value(&sop.part_smb_slow_to_som_fast, j, "PartSMB_Slow_to_SOM_Fast")
+	jx.set_double_value(&sop.part_smb_fast_to_som_fast, j, "PartSMB_Fast_to_SOM_Fast")
+	jx.set_double_value(&sop.part_som_to_smb_slow, j, "PartSOM_to_SMB_Slow")
+	jx.set_double_value(&sop.part_som_to_smb_fast, j, "PartSOM_to_SMB_Fast")
+	jx.set_double_value(&sop.cn_ratio_smb, j, "CN_Ratio_SMB")
+	jx.set_double_value(&sop.limit_clay_effect, j, "LimitClayEffect")
+	jx.set_double_value(&sop.q_ten_factor, j, "QTenFactor")
+	jx.set_double_value(&sop.temp_dec_optimal, j, "TempDecOptimal")
+	jx.set_double_value(&sop.moisture_dec_optimal, j, "MoistureDecOptimal")
 	jx.set_double_value(
-		&sop.po_AmmoniaOxidationRateCoeffStandard,
+		&sop.ammonia_oxidation_rate_coeff_standard,
 		j,
 		"AmmoniaOxidationRateCoeffStandard",
 	)
 	jx.set_double_value(
-		&sop.po_NitriteOxidationRateCoeffStandard,
+		&sop.nitrite_oxidation_rate_coeff_standard,
 		j,
 		"NitriteOxidationRateCoeffStandard",
 	)
-	jx.set_double_value(&sop.po_TransportRateCoeff, j, "TransportRateCoeff")
-	jx.set_double_value(&sop.po_SpecAnaerobDenitrification, j, "SpecAnaerobDenitrification")
-	jx.set_double_value(&sop.po_ImmobilisationRateCoeffNO3, j, "ImmobilisationRateCoeffNO3")
-	jx.set_double_value(&sop.po_ImmobilisationRateCoeffNH4, j, "ImmobilisationRateCoeffNH4")
-	jx.set_double_value(&sop.po_Denit1, j, "Denit1")
-	jx.set_double_value(&sop.po_Denit2, j, "Denit2")
-	jx.set_double_value(&sop.po_Denit3, j, "Denit3")
-	jx.set_double_value(&sop.po_HydrolysisKM, j, "HydrolysisKM")
-	jx.set_double_value(&sop.po_ActivationEnergy, j, "ActivationEnergy")
-	jx.set_double_value(&sop.po_HydrolysisP1, j, "HydrolysisP1")
-	jx.set_double_value(&sop.po_HydrolysisP2, j, "HydrolysisP2")
-	jx.set_double_value(&sop.po_AtmosphericResistance, j, "AtmosphericResistance")
-	jx.set_double_value(&sop.po_N2OProductionRate, j, "N2OProductionRate")
-	jx.set_double_value(&sop.po_Inhibitor_NH3, j, "Inhibitor_NH3")
-	jx.set_double_value(&sop.ps_MaxMineralisationDepth, j, "MaxMineralisationDepth")
+	jx.set_double_value(&sop.transport_rate_coeff, j, "TransportRateCoeff")
+	jx.set_double_value(&sop.spec_anaerob_denitrification, j, "SpecAnaerobDenitrification")
+	jx.set_double_value(&sop.immobilisation_rate_coeff_no3, j, "ImmobilisationRateCoeffNO3")
+	jx.set_double_value(&sop.immobilisation_rate_coeff_nh4, j, "ImmobilisationRateCoeffNH4")
+	jx.set_double_value(&sop.denit1, j, "Denit1")
+	jx.set_double_value(&sop.denit2, j, "Denit2")
+	jx.set_double_value(&sop.denit3, j, "Denit3")
+	jx.set_double_value(&sop.hydrolysis_km, j, "HydrolysisKM")
+	jx.set_double_value(&sop.activation_energy, j, "ActivationEnergy")
+	jx.set_double_value(&sop.hydrolysis_p1, j, "HydrolysisP1")
+	jx.set_double_value(&sop.hydrolysis_p2, j, "HydrolysisP2")
+	jx.set_double_value(&sop.atmospheric_resistance, j, "AtmosphericResistance")
+	jx.set_double_value(&sop.n2o_production_rate, j, "N2OProductionRate")
+	jx.set_double_value(&sop.inhibitor_nh3, j, "Inhibitor_NH3")
+	jx.set_double_value(&sop.max_mineralisation_depth, j, "MaxMineralisationDepth")
 
 	jx.set_bool_value(
 		&sop.__enable_kaiteew_TempOnDecompostion__,
@@ -626,7 +626,7 @@ soil_organic_module_parameters_merge :: proc(
 	)
 
 	if jx.is_object(jx.get(j, "stics")) {
-		e := stics_parameters_merge(&sop.sticsParams, jx.get(j, "stics"))
+		e := stics_parameters_merge(&sop.stics_params, jx.get(j, "stics"))
 		tl.append_errors(&res, e)
 	}
 
@@ -636,7 +636,7 @@ soil_organic_module_parameters_merge :: proc(
 // C++: json11::Json soilorganicmoduleparameters::to_json(const SoilOrganicModuleParameters*)
 //
 // NOTE(c++-quirk): to_json is lossy - it emits neither the three
-// __enable_kaiteew_*__ flags nor the nested sticsParams, so a to_json/merge
+// __enable_kaiteew_*__ flags nor the nested stics_params, so a to_json/merge
 // round trip does not preserve them. Reproduced.
 soil_organic_module_parameters_to_json :: proc(
 	sop: ^Soil_Organic_Module_Parameters,
@@ -645,53 +645,53 @@ soil_organic_module_parameters_to_json :: proc(
 	return jx.obj(
 		a,
 		{"type", jx.sl("SoilOrganicModuleParameters")},
-		{"SOM_SlowDecCoeffStandard", jx.vu(sop.po_SOM_SlowDecCoeffStandard, "d-1", a)},
-		{"SOM_FastDecCoeffStandard", jx.vu(sop.po_SOM_FastDecCoeffStandard, "d-1", a)},
-		{"SMB_SlowMaintRateStandard", jx.vu(sop.po_SMB_SlowMaintRateStandard, "d-1", a)},
-		{"SMB_FastMaintRateStandard", jx.vu(sop.po_SMB_FastMaintRateStandard, "d-1", a)},
-		{"SMB_SlowDeathRateStandard", jx.vu(sop.po_SMB_SlowDeathRateStandard, "d-1", a)},
-		{"SMB_FastDeathRateStandard", jx.vu(sop.po_SMB_FastDeathRateStandard, "d-1", a)},
-		{"SMB_UtilizationEfficiency", jx.vu(sop.po_SMB_UtilizationEfficiency, "d-1", a)},
-		{"SOM_SlowUtilizationEfficiency", jx.vu(sop.po_SOM_SlowUtilizationEfficiency, "", a)},
-		{"SOM_FastUtilizationEfficiency", jx.vu(sop.po_SOM_FastUtilizationEfficiency, "", a)},
-		{"AOM_SlowUtilizationEfficiency", jx.vu(sop.po_AOM_SlowUtilizationEfficiency, "", a)},
-		{"AOM_FastUtilizationEfficiency", jx.vu(sop.po_AOM_FastUtilizationEfficiency, "", a)},
-		{"AOM_FastMaxC_to_N", jx.vu(sop.po_AOM_FastMaxC_to_N, "", a)},
-		{"PartSOM_Fast_to_SOM_Slow", jx.vu(sop.po_PartSOM_Fast_to_SOM_Slow, "", a)},
-		{"PartSMB_Slow_to_SOM_Fast", jx.vu(sop.po_PartSMB_Slow_to_SOM_Fast, "", a)},
-		{"PartSMB_Fast_to_SOM_Fast", jx.vu(sop.po_PartSMB_Fast_to_SOM_Fast, "", a)},
-		{"PartSOM_to_SMB_Slow", jx.vu(sop.po_PartSOM_to_SMB_Slow, "", a)},
-		{"PartSOM_to_SMB_Fast", jx.vu(sop.po_PartSOM_to_SMB_Fast, "", a)},
-		{"CN_Ratio_SMB", jx.vu(sop.po_CN_Ratio_SMB, "", a)},
-		{"LimitClayEffect", jx.vu(sop.po_LimitClayEffect, "kg kg-1", a)},
-		{"QTenFactor", jx.vu(sop.po_QTenFactor, "", a)},
-		{"TempDecOptimal", jx.vu(sop.po_TempDecOptimal, "°C", a)},
-		{"MoistureDecOptimal", jx.vu(sop.po_MoistureDecOptimal, "%", a)},
+		{"SOM_SlowDecCoeffStandard", jx.vu(sop.som_slow_dec_coeff_standard, "d-1", a)},
+		{"SOM_FastDecCoeffStandard", jx.vu(sop.som_fast_dec_coeff_standard, "d-1", a)},
+		{"SMB_SlowMaintRateStandard", jx.vu(sop.smb_slow_maint_rate_standard, "d-1", a)},
+		{"SMB_FastMaintRateStandard", jx.vu(sop.smb_fast_maint_rate_standard, "d-1", a)},
+		{"SMB_SlowDeathRateStandard", jx.vu(sop.smb_slow_death_rate_standard, "d-1", a)},
+		{"SMB_FastDeathRateStandard", jx.vu(sop.smb_fast_death_rate_standard, "d-1", a)},
+		{"SMB_UtilizationEfficiency", jx.vu(sop.smb_utilization_efficiency, "d-1", a)},
+		{"SOM_SlowUtilizationEfficiency", jx.vu(sop.som_slow_utilization_efficiency, "", a)},
+		{"SOM_FastUtilizationEfficiency", jx.vu(sop.som_fast_utilization_efficiency, "", a)},
+		{"AOM_SlowUtilizationEfficiency", jx.vu(sop.aom_slow_utilization_efficiency, "", a)},
+		{"AOM_FastUtilizationEfficiency", jx.vu(sop.aom_fast_utilization_efficiency, "", a)},
+		{"AOM_FastMaxC_to_N", jx.vu(sop.aom_fast_max_c_to_n, "", a)},
+		{"PartSOM_Fast_to_SOM_Slow", jx.vu(sop.part_som_fast_to_som_slow, "", a)},
+		{"PartSMB_Slow_to_SOM_Fast", jx.vu(sop.part_smb_slow_to_som_fast, "", a)},
+		{"PartSMB_Fast_to_SOM_Fast", jx.vu(sop.part_smb_fast_to_som_fast, "", a)},
+		{"PartSOM_to_SMB_Slow", jx.vu(sop.part_som_to_smb_slow, "", a)},
+		{"PartSOM_to_SMB_Fast", jx.vu(sop.part_som_to_smb_fast, "", a)},
+		{"CN_Ratio_SMB", jx.vu(sop.cn_ratio_smb, "", a)},
+		{"LimitClayEffect", jx.vu(sop.limit_clay_effect, "kg kg-1", a)},
+		{"QTenFactor", jx.vu(sop.q_ten_factor, "", a)},
+		{"TempDecOptimal", jx.vu(sop.temp_dec_optimal, "°C", a)},
+		{"MoistureDecOptimal", jx.vu(sop.moisture_dec_optimal, "%", a)},
 		{
 			"AmmoniaOxidationRateCoeffStandard",
-			jx.vu(sop.po_AmmoniaOxidationRateCoeffStandard, "d-1", a),
+			jx.vu(sop.ammonia_oxidation_rate_coeff_standard, "d-1", a),
 		},
 		{
 			"NitriteOxidationRateCoeffStandard",
-			jx.vu(sop.po_NitriteOxidationRateCoeffStandard, "d-1", a),
+			jx.vu(sop.nitrite_oxidation_rate_coeff_standard, "d-1", a),
 		},
-		{"TransportRateCoeff", jx.vu(sop.po_TransportRateCoeff, "d-1", a)},
+		{"TransportRateCoeff", jx.vu(sop.transport_rate_coeff, "d-1", a)},
 		{
 			"SpecAnaerobDenitrification",
-			jx.vu(sop.po_SpecAnaerobDenitrification, "g gas-N g CO2-C-1", a),
+			jx.vu(sop.spec_anaerob_denitrification, "g gas-N g CO2-C-1", a),
 		},
-		{"ImmobilisationRateCoeffNO3", jx.vu(sop.po_ImmobilisationRateCoeffNO3, "d-1", a)},
-		{"ImmobilisationRateCoeffNH4", jx.vu(sop.po_ImmobilisationRateCoeffNH4, "d-1", a)},
-		{"Denit1", jx.vu(sop.po_Denit1, "", a)},
-		{"Denit2", jx.vu(sop.po_Denit2, "", a)},
-		{"Denit3", jx.vu(sop.po_Denit3, "", a)},
-		{"HydrolysisKM", jx.vu(sop.po_HydrolysisKM, "", a)},
-		{"ActivationEnergy", jx.vu(sop.po_ActivationEnergy, "", a)},
-		{"HydrolysisP1", jx.vu(sop.po_HydrolysisP1, "", a)},
-		{"HydrolysisP2", jx.vu(sop.po_HydrolysisP2, "", a)},
-		{"AtmosphericResistance", jx.vu(sop.po_AtmosphericResistance, "s m-1", a)},
-		{"N2OProductionRate", jx.vu(sop.po_N2OProductionRate, "d-1", a)},
-		{"Inhibitor_NH3", jx.vu(sop.po_Inhibitor_NH3, "kg N m-3", a)},
-		{"MaxMineralisationDepth", jx.f(sop.ps_MaxMineralisationDepth)},
+		{"ImmobilisationRateCoeffNO3", jx.vu(sop.immobilisation_rate_coeff_no3, "d-1", a)},
+		{"ImmobilisationRateCoeffNH4", jx.vu(sop.immobilisation_rate_coeff_nh4, "d-1", a)},
+		{"Denit1", jx.vu(sop.denit1, "", a)},
+		{"Denit2", jx.vu(sop.denit2, "", a)},
+		{"Denit3", jx.vu(sop.denit3, "", a)},
+		{"HydrolysisKM", jx.vu(sop.hydrolysis_km, "", a)},
+		{"ActivationEnergy", jx.vu(sop.activation_energy, "", a)},
+		{"HydrolysisP1", jx.vu(sop.hydrolysis_p1, "", a)},
+		{"HydrolysisP2", jx.vu(sop.hydrolysis_p2, "", a)},
+		{"AtmosphericResistance", jx.vu(sop.atmospheric_resistance, "s m-1", a)},
+		{"N2OProductionRate", jx.vu(sop.n2o_production_rate, "d-1", a)},
+		{"Inhibitor_NH3", jx.vu(sop.inhibitor_nh3, "kg N m-3", a)},
+		{"MaxMineralisationDepth", jx.f(sop.max_mineralisation_depth)},
 	)
 }

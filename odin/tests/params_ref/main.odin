@@ -89,7 +89,7 @@ main :: proc() {
 		_ = e
 		dump("merged-SoilOrganic", p.soil_organic_module_parameters_to_json(&v, a), a)
 		// soilorganic's to_json drops the nested stics params, so dump them directly
-		dump("merged-SoilOrganic-stics", p.stics_parameters_to_json(&v.sticsParams, a), a)
+		dump("merged-SoilOrganic-stics", p.stics_parameters_to_json(&v.stics_params, a), a)
 	}
 
 	// ---- tranche 2 -----------------------------------------------------------
