@@ -316,18 +316,18 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	}
 
 	if sc.surface_water_storage >
-	   (10.0 * sm.mod_params.surface_roughness / (sm.site_params.vs_Slope + 0.001)) {
+	   (10.0 * sm.mod_params.surface_roughness / (sm.site_params.slope + 0.001)) {
 		vm_RunOffFactor :=
 			0.02 + (sm.mod_params.surface_roughness / 4.0) + (sm.soil_coverage_percent / 15.0)
-		if sm.site_params.vs_Slope < 0.0 || sm.site_params.vs_Slope > 1.0 {
+		if sm.site_params.slope < 0.0 || sm.site_params.slope > 1.0 {
 			fmt.eprintln("Slope value out ouf boundary")
-		} else if sm.site_params.vs_Slope == 0.0 {
+		} else if sm.site_params.slope == 0.0 {
 			sm.surface_run_off = 0.0
-		} else if sm.site_params.vs_Slope > vm_RunOffFactor {
+		} else if sm.site_params.slope > vm_RunOffFactor {
 			sm.surface_run_off += sc.surface_water_storage
 		} else {
 			sm.surface_run_off +=
-				((sm.site_params.vs_Slope * vm_RunOffFactor) /
+				((sm.site_params.slope * vm_RunOffFactor) /
 					(vm_RunOffFactor * vm_RunOffFactor)) *
 				sc.surface_water_storage
 		}
@@ -1143,9 +1143,9 @@ reference_evapotranspiration :: proc(
 	vw_GlobalRadiation: f64,
 	vs_JulianDay: int,
 ) -> f64 {
-	pc_ReferenceAlbedo := sm.crop_mod_params.pc_ReferenceAlbedo
-	vs_HeightNN := sm.site_params.vs_HeightNN
-	vs_Latitude := sm.site_params.vs_Latitude
+	pc_ReferenceAlbedo := sm.crop_mod_params.reference_albedo
+	vs_HeightNN := sm.site_params.height_nn
+	vs_Latitude := sm.site_params.latitude
 	PI := 3.14159265358979323
 
 	vc_Declination := -23.4 * libc.cos(2.0 * PI * ((f64(vs_JulianDay) + 10.0) / 365.0))

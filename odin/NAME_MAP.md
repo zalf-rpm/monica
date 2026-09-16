@@ -623,3 +623,150 @@ Not renamed: `EF_MONO`, `EF_MONOS`, `EF_ISO`, `VCMAX25`, `AEKC`, `AEKO`, `AEVC`,
 | `pc_StageTemperatureSum` | `stage_temperature_sum` |
 | `pc_VernalisationRequirement` | `vernalisation_requirement` |
 | `winterCrop` | `winter_crop` |
+
+## `monica::MineralFertilizerParameters` -> `params.Mineral_Fertilizer_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `vo_Carbamid` | `carbamid` |
+| `vo_NH4` | `nh4` |
+| `vo_NO3` | `no3` |
+
+## `monica::NMinApplicationParameters` -> `params.NMin_Application_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `delayInDays` | `delay_in_days` |
+
+## `monica::IrrigationParameters` -> `params.Irrigation_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `nitrateConcentration` | `nitrate_concentration` |
+| `sulfateConcentration` | `sulfate_concentration` |
+| `isDripIrrigation` | `is_drip_irrigation` |
+
+`fw` was already a bare, unprefixed short name - left as-is.
+
+## `monica::AutomaticIrrigationParameters` -> `params.Automatic_Irrigation_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `startDate` | `start_date` |
+| `endDate` | `end_date` |
+| `percentNFC` | `percent_nfc` |
+| `criticalMoistureDepthM` | `critical_moisture_depth_m` |
+| `minDaysBetweenIrrigationEvents` | `min_days_between_irrigation_events` |
+
+`amount` and `threshold` were already bare, unprefixed short names - left as-is. `base` (the
+embedded `Irrigation_Parameters`) is untouched.
+
+## `monica::MeasuredGroundwaterTableInformation` -> `params.Measured_Groundwater_Table_Information` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `groundwaterInformationAvailable` | `groundwater_information_available` |
+| `groundwaterInfo` | `groundwater_info` |
+
+## `monica::SiteParameters` -> `params.Site_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `vs_Latitude` | `latitude` |
+| `vs_Slope` | `slope` |
+| `vs_HeightNN` | `height_nn` |
+| `vs_GroundwaterDepth` | `groundwater_depth` |
+| `vs_Soil_CN_Ratio` | `soil_cn_ratio` |
+| `vs_DrainageCoeff` | `drainage_coeff` |
+| `vq_NDeposition` | `n_deposition` |
+| `vs_MaxEffectiveRootingDepth` | `max_effective_rooting_depth` |
+| `vs_ImpenetrableLayerDepth` | `impenetrable_layer_depth` |
+| `vs_SoilSpecificHumusBalanceCorrection` | `soil_specific_humus_balance_correction` |
+| `bareSoilKcFactor` | `bare_soil_kc_factor` |
+| `numberOfLayers` | `number_of_layers` |
+| `layerThickness` | `layer_thickness` |
+| `vs_SoilParameters` | `soil_parameters` |
+| `initSoilProfileSpec` | `init_soil_profile_spec` |
+| `pwpFcSatFunction` | `pwp_fc_sat_function` |
+
+`vs_Soil_CN_Ratio` has zero genuine outside uses - every apparent external match (`monica/core/
+soil_column.odin`, `monica/soil/soil_parameters.odin`) actually belongs to the unrelated
+`soil.Soil_Parameters` struct, which coincidentally has its own field of the identical C++ name.
+Confirmed by reading both call sites' receiver types before touching anything outside this file.
+
+## `monica::SimulationParameters` -> `params.Simulation_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `startDate` | `start_date` |
+| `endDate` | `end_date` |
+| `pc_NitrogenResponseOn` | `nitrogen_response_on` |
+| `pc_WaterDeficitResponseOn` | `water_deficit_response_on` |
+| `pc_EmergenceFloodingControlOn` | `emergence_flooding_control_on` |
+| `pc_EmergenceMoistureControlOn` | `emergence_moisture_control_on` |
+| `pc_FrostKillOn` | `frost_kill_on` |
+| `p_UseAutomaticIrrigation` | `use_automatic_irrigation` |
+| `p_AutoIrrigationParams` | `auto_irrigation_params` |
+| `p_UseNMinMineralFertilisingMethod` | `use_n_min_mineral_fertilising_method` |
+| `p_NMinFertiliserPartition` | `n_min_fertiliser_partition` |
+| `p_NMinUserParams` | `n_min_user_params` |
+| `p_UseSecondaryYields` | `use_secondary_yields` |
+| `p_UseAutomaticHarvestTrigger` | `use_automatic_harvest_trigger` |
+| `p_NumberOfLayers` | `number_of_layers` |
+| `p_LayerThickness` | `layer_thickness` |
+| `p_StartPVIndex` | `start_pv_index` |
+| `p_JulianDayAutomaticFertilising` | `julian_day_automatic_fertilising` |
+| `serializeMonicaStateAtEnd` | `serialize_monica_state_at_end` |
+| `serializeMonicaStateAtEndToJson` | `serialize_monica_state_at_end_to_json` |
+| `pathToSerializationAtEndFile` | `path_to_serialization_at_end_file` |
+| `loadSerializedMonicaStateAtStart` | `load_serialized_monica_state_at_start` |
+| `deserializedMonicaStateFromJson` | `deserialized_monica_state_from_json` |
+| `pathToLoadSerializationFile` | `path_to_load_serialization_file` |
+| `noOfPreviousDaysSerializedClimateData` | `no_of_previous_days_serialized_climate_data` |
+| `dualKcMethod` | `dual_kc_method` |
+
+Several JSON keys are textually identical to the C++ field name (`"startDate"`,
+`"noOfPreviousDaysSerializedClimateData"`, `"serializeMonicaStateAtEnd"` and others across the
+structs above) - those string literals are untouched, only the Odin identifiers changed.
+
+## `monica::CropModuleParameters` -> `params.Crop_Module_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `pc_CanopyReflectionCoefficient` | `canopy_reflection_coefficient` |
+| `pc_ReferenceMaxAssimilationRate` | `reference_max_assimilation_rate` |
+| `pc_ReferenceLeafAreaIndex` | `reference_leaf_area_index` |
+| `pc_MaintenanceRespirationParameter1` | `maintenance_respiration_parameter1` |
+| `pc_MaintenanceRespirationParameter2` | `maintenance_respiration_parameter2` |
+| `pc_MinimumNConcentrationRoot` | `minimum_n_concentration_root` |
+| `pc_MinimumAvailableN` | `minimum_available_n` |
+| `pc_ReferenceAlbedo` | `reference_albedo` |
+| `pc_StomataConductanceAlpha` | `stomata_conductance_alpha` |
+| `pc_SaturationBeta` | `saturation_beta` |
+| `pc_GrowthRespirationRedux` | `growth_respiration_redux` |
+| `pc_MaxCropNDemand` | `max_crop_n_demand` |
+| `pc_GrowthRespirationParameter1` | `growth_respiration_parameter1` |
+| `pc_GrowthRespirationParameter2` | `growth_respiration_parameter2` |
+| `pc_Tortuosity` | `tortuosity` |
+| `pc_AdjustRootDepthForSoilProps` | `adjust_root_depth_for_soil_props` |
+| `pc_TimeUnderAnoxiaThreshold` | `time_under_anoxia_threshold` |
+| `isIntercropping` | `is_intercropping` |
+| `sequentialWaterUse` | `sequential_water_use` |
+| `twoWaySync` | `two_way_sync` |
+| `pc_intercropping_k_s` | `intercropping_k_s` |
+| `pc_intercropping_k_t` | `intercropping_k_t` |
+| `pc_intercropping_phRedux` | `intercropping_ph_redux` |
+| `pc_intercropping_dvs_phr` | `intercropping_dvs_phr` |
+| `pc_intercropping_autoPhRedux` | `intercropping_auto_ph_redux` |
+| `pc_intercropping_reader_sr` | `intercropping_reader_sr` |
+| `pc_intercropping_writer_sr` | `intercropping_writer_sr` |
+
+The seven `__enable_*__`/`__disable_*__` flags are left as-is, matching the codebase-wide dunder-flag
+convention (see the `Soil_Organic_Module_Parameters` note above). `EnvironmentParameters` and
+`CentralParameterProvider` in this same file were already fully snake_cased in earlier work and are
+not part of this pass.
+
+Local variables in `crop_module.odin`, `soil_moisture.odin` and `soil_transport.odin` that cache one
+of these fields under its original C++ name (e.g. `vs_Latitude := cm.site_params.latitude`, `pc_Tortuosity
+:= cm.mod_params.tortuosity`) keep that C++-matching local name per CONVENTIONS.md #1 - only the
+field access on the right-hand side was renamed.

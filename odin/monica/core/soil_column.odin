@@ -420,9 +420,9 @@ apply_mineral_fertiliser :: proc(
 ) {
 	// [kg N ha-1 -> kg m-3]
 	kgHaTokgm3 := 10000.0 * sc.layers[0].layer_thickness_m
-	sc.layers[0].soil_no3 += amount * fp.vo_NO3 / kgHaTokgm3
-	sc.layers[0].soil_nh4 += amount * fp.vo_NH4 / kgHaTokgm3
-	sc.layers[0].soil_carbamid += amount * fp.vo_Carbamid / kgHaTokgm3
+	sc.layers[0].soil_no3 += amount * fp.no3 / kgHaTokgm3
+	sc.layers[0].soil_nh4 += amount * fp.nh4 / kgHaTokgm3
+	sc.layers[0].soil_carbamid += amount * fp.carbamid / kgHaTokgm3
 }
 
 // C++: double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(...)
@@ -617,7 +617,7 @@ apply_irrigation_via_trigger :: proc(
 	actPAW := 0.0 // actualPlantAvailableWater
 	maxPAW := 0.0 // maxPlantAvailableWater
 	layerDepthM := 0.0
-	for i := 0; i < len(sc.layers) && layerDepthM < aips.criticalMoistureDepthM; i += 1 {
+	for i := 0; i < len(sc.layers) && layerDepthM < aips.critical_moisture_depth_m; i += 1 {
 		li := &sc.layers[i]
 		smi := li.soil_moisture_m3
 		fci := li.field_capacity
@@ -636,25 +636,25 @@ apply_irrigation_via_trigger :: proc(
 	if fractPAW <= aips.threshold {
 		addedIrrigationWater := 0.0
 		if aips.amount > 0.0 {
-			apply_irrigation(sc, aips.amount, aips.nitrateConcentration)
+			apply_irrigation(sc, aips.amount, aips.nitrate_concentration)
 			addedIrrigationWater = aips.amount
-		} else if aips.percentNFC > 0.0 {
+		} else if aips.percent_nfc > 0.0 {
 			layerDepthM = 0.0
-			for i := 0; i < len(sc.layers) && layerDepthM < aips.criticalMoistureDepthM; i += 1 {
+			for i := 0; i < len(sc.layers) && layerDepthM < aips.critical_moisture_depth_m; i += 1 {
 				li := &sc.layers[i]
 				smi := li.soil_moisture_m3
 				fci := li.field_capacity
 				pwpi := li.permanent_wilting_point
 				lti := li.layer_thickness_m
 
-				percentNFCi := (fci - pwpi) * aips.percentNFC / 100.0
+				percentNFCi := (fci - pwpi) * aips.percent_nfc / 100.0
 				pawi := smi - pwpi
 				addedIrrigationWaterAtLayer := max(0.0, percentNFCi - pawi)
 				addedIrrigationWater += addedIrrigationWaterAtLayer
 				li.soil_moisture_m3 = percentNFCi + pwpi
 				// [kg m-3] = [mg dm-3] * [dm3 m-2] / [m]
 				nitrateAddedViaIrrigation :=
-					aips.nitrateConcentration *
+					aips.nitrate_concentration *
 					addedIrrigationWaterAtLayer /
 					li.layer_thickness_m /
 					1000000.0

@@ -102,9 +102,9 @@ make_monica_model :: proc(
 	model.groundwater_information = cpp.groundwater_information
 
 	model.soil_column = make_soil_column(
-		model.sim_params.p_LayerThickness,
+		model.sim_params.layer_thickness,
 		cpp.soil_organic_mod_params.max_mineralisation_depth,
-		model.site_params.vs_SoilParameters[:],
+		model.site_params.soil_parameters[:],
 		allocator,
 	)
 	model.soil_temperature = make_soil_temperature(
@@ -118,7 +118,7 @@ make_monica_model :: proc(
 		cpp.soil_moisture_mod_params,
 		&model.env_params,
 		&model.crop_mod_params,
-		model.sim_params.p_LayerThickness,
+		model.sim_params.layer_thickness,
 		allocator,
 	)
 	model.soil_organic = make_soil_organic(&model.soil_column, cpp.soil_organic_mod_params)
@@ -248,7 +248,7 @@ monica_model_apply_mineral_fertiliser :: proc(
 	partition: p.Mineral_Fertilizer_Parameters,
 	amount: f64,
 ) {
-	if !model.sim_params.p_UseNMinMineralFertilisingMethod {
+	if !model.sim_params.use_n_min_mineral_fertilising_method {
 		apply_mineral_fertiliser(&model.soil_column, partition, amount)
 		monica_model_add_daily_sum_fertiliser(model, amount)
 	}
@@ -285,7 +285,7 @@ monica_model_apply_mineral_fertiliser_via_n_min_method :: proc(
 	partition: p.Mineral_Fertilizer_Parameters,
 	cps: p.NMin_Crop_Parameters,
 ) -> f64 {
-	ups := &model.sim_params.p_NMinUserParams
+	ups := &model.sim_params.n_min_user_params
 	return apply_mineral_fertiliser_via_n_min_method(
 		&model.soil_column,
 		partition,
@@ -294,7 +294,7 @@ monica_model_apply_mineral_fertiliser_via_n_min_method :: proc(
 		cps.nTarget30,
 		ups.max,
 		ups.min,
-		ups.delayInDays,
+		ups.delay_in_days,
 	)
 }
 
@@ -332,7 +332,7 @@ monica_model_apply_irrigation :: proc(
 	nitrateConcentration: f64 = 0,
 ) {
 	// if the production process has still some defined manual irrigation dates
-	if !model.sim_params.p_UseAutomaticIrrigation {
+	if !model.sim_params.use_automatic_irrigation {
 		apply_irrigation(&model.soil_column, amount, nitrateConcentration)
 		model.soil_organic.irrigation_amount += amount
 		monica_model_add_daily_sum_irrigation_water(model, amount)
@@ -535,7 +535,7 @@ monica_model_harvest_current_crop :: proc(
 					appliedOrganicFertilizerDryMatter /
 						1000.0 *
 						optCarbMgmtData.organicFertilizerHeq -
-					model.site_params.vs_SoilSpecificHumusBalanceCorrection
+					model.site_params.soil_specific_humus_balance_correction
 				potentialHumusFromResidues := residueBiomass / 1000.0 * optCarbMgmtData.residueHeq
 
 				fractionToBeLeftOnField := 0.0
@@ -583,7 +583,7 @@ monica_model_harvest_current_crop :: proc(
 			} else { 	// old default behavior
 				residueBiomass := get_residue_biomass(
 					cm,
-					model.sim_params.p_UseSecondaryYields,
+					model.sim_params.use_secondary_yields,
 					-1,
 				)
 				residueNConcentration := get_residues_n_concentration(cm, -1)
@@ -769,14 +769,14 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 	monica_model_add_daily_sum_fertiliser(model, possibleTopDressingAmount)
 
 	if model.current_crop_module != nil &&
-	   model.sim_params.p_UseNMinMineralFertilisingMethod &&
+	   model.sim_params.use_n_min_mineral_fertilising_method &&
 	   model.current_crop_module.crop_params.cultivarParams.winter_crop &&
-	   int(julday) == model.sim_params.p_JulianDayAutomaticFertilising {
+	   int(julday) == model.sim_params.julian_day_automatic_fertilising {
 		clear_top_dressing_params(&model.soil_column)
 		sps := model.current_crop_module.crop_params.speciesParams
 		fertilizerAmount := monica_model_apply_mineral_fertiliser_via_n_min_method(
 			model,
-			model.sim_params.p_NMinFertiliserPartition,
+			model.sim_params.n_min_fertiliser_partition,
 			p.NMin_Crop_Parameters {
 				samplingDepth = sps.sampling_depth,
 				nTarget = sps.target_n_sampling_depth,
@@ -817,7 +817,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		globrad,
 		int(julday),
 		et0,
-		model.sim_params.dualKcMethod,
+		model.sim_params.dual_kc_method,
 	)
 
 	soil_organic_step(&model.soil_organic, tavg, precip, wind)
@@ -907,14 +907,14 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		allocator,
 	)
 
-	if model.sim_params.p_UseAutomaticIrrigation &&
-	   (!d.is_valid(model.sim_params.p_AutoIrrigationParams.startDate) ||
-			   d.le(model.sim_params.p_AutoIrrigationParams.startDate, date)) &&
-	   (!d.is_valid(model.sim_params.p_AutoIrrigationParams.endDate) ||
-			   d.le(date, model.sim_params.p_AutoIrrigationParams.endDate)) {
+	if model.sim_params.use_automatic_irrigation &&
+	   (!d.is_valid(model.sim_params.auto_irrigation_params.start_date) ||
+			   d.le(model.sim_params.auto_irrigation_params.start_date, date)) &&
+	   (!d.is_valid(model.sim_params.auto_irrigation_params.end_date) ||
+			   d.le(date, model.sim_params.auto_irrigation_params.end_date)) {
 		irrigationTriggered, irrigationAmount := apply_irrigation_via_trigger(
 			&model.soil_column,
-			&model.sim_params.p_AutoIrrigationParams,
+			&model.sim_params.auto_irrigation_params,
 		)
 		if irrigationTriggered {
 			model.soil_organic.irrigation_amount += irrigationAmount

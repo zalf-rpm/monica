@@ -213,9 +213,9 @@ main :: proc() {
 
 	// --- real, live, fully-wired soil-module chain ---
 	sc := core.make_soil_column(
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		cpp.soil_organic_mod_params.max_mineralisation_depth,
-		cpp.site_params.vs_SoilParameters[:],
+		cpp.site_params.soil_parameters[:],
 		a,
 	)
 	st := core.make_soil_temperature(
@@ -229,7 +229,7 @@ main :: proc() {
 		cpp.soil_moisture_mod_params,
 		&cpp.env_params,
 		&cpp.crop_params,
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		a,
 	)
 	so := core.make_soil_organic(&sc, cpp.soil_organic_mod_params)
@@ -316,7 +316,7 @@ main :: proc() {
 		n = num_days_int
 	}
 
-	dual_kc_method := cpp.sim_params.dualKcMethod
+	dual_kc_method := cpp.sim_params.dual_kc_method
 
 	t := tr.make_tracer(os.to_stream(os.stdout), a)
 	defer tr.destroy_tracer(&t)

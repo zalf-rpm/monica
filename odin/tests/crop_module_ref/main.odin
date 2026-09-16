@@ -280,9 +280,9 @@ main :: proc() {
 	// --- real, live SoilColumn - makeCropModule only reads soilColumn.layers,
 	// no need for SoilTemperature/Moisture/Organic here ---
 	sc := core.make_soil_column(
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		cpp.soil_organic_mod_params.max_mineralisation_depth,
-		cpp.site_params.vs_SoilParameters[:],
+		cpp.site_params.soil_parameters[:],
 		a,
 	)
 
@@ -338,10 +338,10 @@ main :: proc() {
 		dump_crop_module(&t, &cm)
 	}
 
-	// --- scenario 1: pc_AdjustRootDepthForSoilProps forced false ---
+	// --- scenario 1: adjust_root_depth_for_soil_props forced false ---
 	{
 		crop_mod_params := cpp.crop_params
-		crop_mod_params.pc_AdjustRootDepthForSoilProps = false
+		crop_mod_params.adjust_root_depth_for_soil_props = false
 		cm := core.make_crop_module(
 			&sc,
 			&wheat_crop_params,
@@ -359,10 +359,10 @@ main :: proc() {
 		dump_crop_module(&t, &cm)
 	}
 
-	// --- scenario 2: vs_ImpenetrableLayerDepth clamp branch ---
+	// --- scenario 2: impenetrable_layer_depth clamp branch ---
 	{
 		site_params := cpp.site_params
-		site_params.vs_ImpenetrableLayerDepth = 0.2
+		site_params.impenetrable_layer_depth = 0.2
 		cm := core.make_crop_module(
 			&sc,
 			&wheat_crop_params,

@@ -137,7 +137,7 @@ env_merge :: proc(
 	res: tl.Errors
 
 	// C++'s `Env env;` default-constructs `CentralParameterProvider params`
-	// with its own in-class member defaults (Site_Parameters.vs_Latitude=52.5
+	// with its own in-class member defaults (Site_Parameters.latitude=52.5
 	// etc - see site_sim_parameters.odin); a zero-value Odin Central_Parameter_Provider{}
 	// lacks those, so callers starting from a zero Env need this run explicitly.
 	env.params = p.make_central_parameter_provider(allocator)
@@ -764,7 +764,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	//
 	// Deliberately checked here rather than in each server: monica-run reaches the
 	// same code path, and this is the one place all three entry points share.
-	if len(env.params.site_params.vs_SoilParameters) == 0 {
+	if len(env.params.site_params.soil_parameters) == 0 {
 		out.errors = make([dynamic]string, allocator)
 		append(
 			&out.errors,
@@ -786,8 +786,8 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	}
 
 	model := core.make_monica_model(&env.params, allocator)
-	model.sim_params.startDate = clim.data_accessor_start_date(&env.climateData)
-	model.sim_params.endDate = clim.data_accessor_end_date(&env.climateData)
+	model.sim_params.start_date = clim.data_accessor_start_date(&env.climateData)
+	model.sim_params.end_date = clim.data_accessor_end_date(&env.climateData)
 
 	currentDate := clim.data_accessor_start_date(&env.climateData)
 
@@ -841,7 +841,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 			clim.data_accessor_all_data_for_step(
 				&env.climateData,
 				stepNo,
-				env.params.site_params.vs_Latitude,
+				env.params.site_params.latitude,
 				allocator,
 			),
 		)

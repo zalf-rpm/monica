@@ -85,9 +85,9 @@ main :: proc() {
 	// --- build SoilColumn, then SnowComponent/FrostComponent exactly like
 	// initializeFromParams (soilmoisture.cpp:88-92) ---
 	sc := core.make_soil_column(
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		cpp.soil_organic_mod_params.max_mineralisation_depth,
-		cpp.site_params.vs_SoilParameters[:],
+		cpp.site_params.soil_parameters[:],
 		a,
 	)
 

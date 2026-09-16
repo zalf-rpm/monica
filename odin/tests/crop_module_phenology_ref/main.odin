@@ -169,7 +169,7 @@ phenology_day_step :: proc(
 	}
 
 	if cm.developmental_stage == 0 {
-		cm.kc_factor = cm.site_params.bareSoilKcFactor
+		cm.kc_factor = cm.site_params.bare_soil_kc_factor
 	} else {
 		cm.kc_factor = core.fc_kc_factor(
 			cm,
@@ -267,9 +267,9 @@ main :: proc() {
 	_ = p.central_parameter_provider_merge(&cpp, env_params, path_to_soil_dir, a)
 
 	sc := core.make_soil_column(
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		cpp.soil_organic_mod_params.max_mineralisation_depth,
-		cpp.site_params.vs_SoilParameters[:],
+		cpp.site_params.soil_parameters[:],
 		a,
 	)
 

@@ -127,7 +127,7 @@ soil_transport_step :: proc(st: ^Soil_Transport) {
 // Kersebaum 1989. Daily N deposition, transformed from an annual value, added
 // to the ammonium... (really nitrate: soil_no3) pool of the top soil layer.
 n_deposition :: proc(st: ^Soil_Transport) {
-	daily_N_deposition := st.site_params.vq_NDeposition / 365.0
+	daily_N_deposition := st.site_params.n_deposition / 365.0
 
 	st.soil_column.layers[0].soil_no3 +=
 		daily_N_deposition / (10000.0 * st.soil_column.layers[0].layer_thickness_m)
@@ -146,9 +146,9 @@ n_uptake :: proc(st: ^Soil_Transport) {
 
 		// Lower boundary for N exploitation per layer
 		if st.n_uptake_from_layer[i] >
-		   ((soil_no3_i^ * lti) - st.crop_mod_params.pc_MinimumAvailableN) {
+		   ((soil_no3_i^ * lti) - st.crop_mod_params.minimum_available_n) {
 			st.n_uptake_from_layer[i] =
-				((soil_no3_i^ * lti) - st.crop_mod_params.pc_MinimumAvailableN)
+				((soil_no3_i^ * lti) - st.crop_mod_params.minimum_available_n)
 		} // Crop N uptake from layer i [kg N m-2]
 
 		if st.n_uptake_from_layer[i] < 0 {

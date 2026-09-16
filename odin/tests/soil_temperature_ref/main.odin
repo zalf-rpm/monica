@@ -87,9 +87,9 @@ main :: proc() {
 	// initializeMonicaModelFromParams (monica-model.cpp) minus the modules
 	// soiltemperature doesn't need ---
 	sc := core.make_soil_column(
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		cpp.soil_organic_mod_params.max_mineralisation_depth,
-		cpp.site_params.vs_SoilParameters[:],
+		cpp.site_params.soil_parameters[:],
 		a,
 	)
 	st := core.make_soil_temperature(

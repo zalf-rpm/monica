@@ -248,7 +248,7 @@ main :: proc() {
 			globrad,
 			julday,
 			et0,
-			model.sim_params.dualKcMethod,
+			model.sim_params.dual_kc_method,
 		)
 		core.crop_module_step(
 			&cm,

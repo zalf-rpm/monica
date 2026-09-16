@@ -156,9 +156,9 @@ main :: proc() {
 	// scenario 1: applyMineralFertiliser
 	tr.set_day(&t, 1)
 	mfp := p.Mineral_Fertilizer_Parameters {
-		vo_NO3      = 50.0,
-		vo_NH4      = 30.0,
-		vo_Carbamid = 20.0,
+		no3      = 50.0,
+		nh4      = 30.0,
+		carbamid = 20.0,
 	}
 	core.monica_model_apply_mineral_fertiliser(model, mfp, 40.0)
 	dump_model(&t, "model", model)
@@ -274,10 +274,10 @@ main :: proc() {
 			cm.crop_params.cultivarParams.heat_sum_irrigation_end) /
 		2.0
 	aip := p.Automatic_Irrigation_Parameters {
-		base = p.Irrigation_Parameters{nitrateConcentration = 3.0, fw = 1.0},
+		base = p.Irrigation_Parameters{nitrate_concentration = 3.0, fw = 1.0},
 		amount = 15.0,
 		threshold = 0.99,
-		criticalMoistureDepthM = 0.3,
+		critical_moisture_depth_m = 0.3,
 	}
 	triggered, triggeredAmount := core.apply_irrigation_via_trigger(&model.soil_column, &aip)
 	tr.dump(&t, "triggered", triggered)

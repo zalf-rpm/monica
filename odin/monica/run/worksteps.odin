@@ -169,12 +169,12 @@ sowing_apply :: proc(
 		model.soil_moisture.crop_module = model.current_crop_module
 		model.soil_organic.crop_module = model.current_crop_module
 
-		if model.sim_params.p_UseNMinMineralFertilisingMethod &&
+		if model.sim_params.use_n_min_mineral_fertilising_method &&
 		   !model.current_crop_module.crop_params.cultivarParams.winter_crop {
 			core.clear_top_dressing_params(&model.soil_column)
 			fert_amount := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 				model,
-				model.sim_params.p_NMinFertiliserPartition,
+				model.sim_params.n_min_fertiliser_partition,
 				p.NMin_Crop_Parameters {
 					samplingDepth = s.cropParams.speciesParams.sampling_depth,
 					nTarget = s.cropParams.speciesParams.target_n_sampling_depth,
@@ -186,7 +186,7 @@ sowing_apply :: proc(
 	}
 
 	// FAO-56 Dual Kc: push initial Kcb into the freshly created crop module
-	if model.sim_params.dualKcMethod && model.current_crop_module != nil {
+	if model.sim_params.dual_kc_method && model.current_crop_module != nil {
 		model.current_crop_module.kcb_ini = s.initialKcb
 	}
 	model.current_events["Sowing"] = true
@@ -266,7 +266,7 @@ transplant_apply :: proc(
 		t.postTransplantDelay,
 	)
 
-	if model.sim_params.dualKcMethod {
+	if model.sim_params.dual_kc_method {
 		cropModule.kcb_ini = t.initialKcb
 	}
 	model.current_events["Transplant"] = true
@@ -1079,13 +1079,13 @@ irrigation_merge :: proc(i: ^Irrigation_Data, j: jx.Value) -> tl.Errors {
 irrigation_apply :: proc(i: ^Irrigation_Data, ws: ^Workstep, model: ^core.Monica_Model) -> bool {
 	workstep_apply_common(ws, model)
 
-	core.monica_model_apply_irrigation(model, i.amount, i.params.nitrateConcentration)
+	core.monica_model_apply_irrigation(model, i.amount, i.params.nitrate_concentration)
 	// FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for
 	// today's ET calculation. LIMITATION: Auto-irrigation uses sim.json params
 	// or defaults (fw=1.0, isDrip=false).
-	if model.sim_params.dualKcMethod {
+	if model.sim_params.dual_kc_method {
 		model.soil_moisture.irrig_fw_event = i.params.fw
-		model.soil_moisture.irrig_is_drip_event = i.params.isDripIrrigation
+		model.soil_moisture.irrig_is_drip_event = i.params.is_drip_irrigation
 	}
 	model.current_events["Irrigation"] = true
 
@@ -1235,14 +1235,14 @@ automatic_irrigation_reinit :: proc(
 
 	startAddedYear: bool
 	ai.absStartDate, startAddedYear = make_init_abs_date(
-		ai.params.startDate,
+		ai.params.start_date,
 		date,
 		addYear,
 		forceInitYear,
 	)
 	stopAddedYear: bool
 	ai.absEndDate, stopAddedYear = make_init_abs_date(
-		ai.params.endDate,
+		ai.params.end_date,
 		date,
 		addYear,
 		forceInitYear,

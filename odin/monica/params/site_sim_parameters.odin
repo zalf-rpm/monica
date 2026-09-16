@@ -21,11 +21,11 @@ import "core:strings"
 
 // C++: struct monica::MineralFertilizerParameters
 Mineral_Fertilizer_Parameters :: struct {
-	id:          string,
-	name:        string,
-	vo_Carbamid: f64, // [%]
-	vo_NH4:      f64, // [%]
-	vo_NO3:      f64, // [%]
+	id:       string,
+	name:     string,
+	carbamid: f64, // [%]
+	nh4:      f64, // [%]
+	no3:      f64, // [%]
 }
 
 // C++: Errors mineralfertilizerparameters::merge(...)
@@ -37,9 +37,9 @@ mineral_fertilizer_parameters_merge :: proc(
 
 	jx.set_string_value(&fp.id, j, "id")
 	jx.set_string_value(&fp.name, j, "name")
-	jx.set_double_value(&fp.vo_Carbamid, j, "Carbamid")
-	jx.set_double_value(&fp.vo_NH4, j, "NH4")
-	jx.set_double_value(&fp.vo_NO3, j, "NO3")
+	jx.set_double_value(&fp.carbamid, j, "Carbamid")
+	jx.set_double_value(&fp.nh4, j, "NH4")
+	jx.set_double_value(&fp.no3, j, "NO3")
 
 	return res
 }
@@ -54,9 +54,9 @@ mineral_fertilizer_parameters_to_json :: proc(
 		{"type", jx.sl("MineralFertilizerParameters")},
 		{"id", jx.s(fp.id, a)},
 		{"name", jx.s(fp.name, a)},
-		{"Carbamid", jx.f(fp.vo_Carbamid)},
-		{"NH4", jx.f(fp.vo_NH4)},
-		{"NO3", jx.f(fp.vo_NO3)},
+		{"Carbamid", jx.f(fp.carbamid)},
+		{"NH4", jx.f(fp.nh4)},
+		{"NO3", jx.f(fp.no3)},
 	)
 }
 
@@ -66,9 +66,9 @@ mineral_fertilizer_parameters_to_json :: proc(
 
 // C++: struct monica::NMinApplicationParameters
 NMin_Application_Parameters :: struct {
-	min:         f64,
-	max:         f64,
-	delayInDays: int,
+	min:           f64,
+	max:           f64,
+	delay_in_days: int,
 }
 
 // C++: Errors nminapplicationparameters::merge(...)
@@ -80,7 +80,7 @@ nmin_application_parameters_merge :: proc(
 
 	jx.set_double_value(&nap.min, j, "min")
 	jx.set_double_value(&nap.max, j, "max")
-	jx.set_int_value(&nap.delayInDays, j, "delayInDays")
+	jx.set_int_value(&nap.delay_in_days, j, "delayInDays")
 
 	return res
 }
@@ -95,7 +95,7 @@ nmin_application_parameters_to_json :: proc(
 		{"type", jx.sl("NMinApplicationParameters")},
 		{"min", jx.f(nap.min)},
 		{"max", jx.f(nap.max)},
-		{"delayInDays", jx.i(nap.delayInDays)},
+		{"delayInDays", jx.i(nap.delay_in_days)},
 	)
 }
 
@@ -105,10 +105,10 @@ nmin_application_parameters_to_json :: proc(
 
 // C++: struct monica::IrrigationParameters
 Irrigation_Parameters :: struct {
-	nitrateConcentration: f64, // [mg dm-3]
-	sulfateConcentration: f64, // [mg dm-3]
-	isDripIrrigation:     bool,
-	fw:                   f64, // fraction of wetted soil surface [0-1]
+	nitrate_concentration: f64, // [mg dm-3]
+	sulfate_concentration: f64, // [mg dm-3]
+	is_drip_irrigation:    bool,
+	fw:                    f64, // fraction of wetted soil surface [0-1]
 }
 
 // C++ default: fw{1.0}
@@ -120,9 +120,9 @@ make_irrigation_parameters :: proc() -> Irrigation_Parameters {
 irrigation_parameters_merge :: proc(ip: ^Irrigation_Parameters, j: jx.Value) -> tl.Errors {
 	res := default_merge(ip, j, irrigation_parameters_merge)
 
-	jx.set_double_value(&ip.nitrateConcentration, j, "nitrateConcentration")
-	jx.set_double_value(&ip.sulfateConcentration, j, "sulfateConcentration")
-	jx.set_bool_value(&ip.isDripIrrigation, j, "isDripIrrigation")
+	jx.set_double_value(&ip.nitrate_concentration, j, "nitrateConcentration")
+	jx.set_double_value(&ip.sulfate_concentration, j, "sulfateConcentration")
+	jx.set_bool_value(&ip.is_drip_irrigation, j, "isDripIrrigation")
 	// note: fw is clamped and only assigned when the key is a bare number
 	if jx.is_number(jx.get(j, "fw")) {
 		ip.fw = max(0.0, min(1.0, jx.number_value(jx.get(j, "fw"))))
@@ -136,9 +136,9 @@ irrigation_parameters_to_json :: proc(ip: ^Irrigation_Parameters, a: Allocator) 
 	return jx.obj(
 		a,
 		{"type", jx.sl("IrrigationParameters")},
-		{"nitrateConcentration", jx.vu(ip.nitrateConcentration, "mg dm-3", a)},
-		{"sulfateConcentration", jx.vu(ip.sulfateConcentration, "mg dm-3", a)},
-		{"isDripIrrigation", jx.b(ip.isDripIrrigation)},
+		{"nitrateConcentration", jx.vu(ip.nitrate_concentration, "mg dm-3", a)},
+		{"sulfateConcentration", jx.vu(ip.sulfate_concentration, "mg dm-3", a)},
+		{"isDripIrrigation", jx.b(ip.is_drip_irrigation)},
 		{"fw", jx.f(ip.fw)},
 	)
 }
@@ -151,30 +151,30 @@ irrigation_parameters_to_json :: proc(ip: ^Irrigation_Parameters, a: Allocator) 
 //
 // `using base` reproduces public data inheritance: aip.fw etc. resolve directly.
 Automatic_Irrigation_Parameters :: struct {
-	using base:                     Irrigation_Parameters,
-	startDate:                      d.Date,
-	endDate:                        d.Date,
-	amount:                         f64,
-	percentNFC:                     f64,
-	threshold:                      f64,
-	criticalMoistureDepthM:         f64,
-	minDaysBetweenIrrigationEvents: int,
+	using base:                         Irrigation_Parameters,
+	start_date:                         d.Date,
+	end_date:                           d.Date,
+	amount:                             f64,
+	percent_nfc:                        f64,
+	threshold:                          f64,
+	critical_moisture_depth_m:          f64,
+	min_days_between_irrigation_events: int,
 }
 
-// C++ defaults: amount{-1}, percentNFC{-1}, threshold{-1}, criticalMoistureDepthM{0.3}
+// C++ defaults: amount{-1}, percent_nfc{-1}, threshold{-1}, critical_moisture_depth_m{0.3}
 make_automatic_irrigation_parameters :: proc() -> Automatic_Irrigation_Parameters {
 	return Automatic_Irrigation_Parameters {
 		base = make_irrigation_parameters(),
 		amount = -1.0,
-		percentNFC = -1.0,
+		percent_nfc = -1.0,
 		threshold = -1.0,
-		criticalMoistureDepthM = 0.3,
+		critical_moisture_depth_m = 0.3,
 	}
 }
 
 // C++: Errors automaticirrigationparameters::merge(...)
 //
-// NOTE(c++-quirk): endDate is read from the key "stopDate", not "endDate"; and
+// NOTE(c++-quirk): end_date is read from the key "stopDate", not "endDate"; and
 // `threshold` is written twice - first from "threshold" (percent-transformed),
 // then unconditionally from "trigger_if_nFC_below_%" divided by 100, so the
 // latter wins whenever it is present. Both reproduced.
@@ -187,46 +187,46 @@ automatic_irrigation_parameters_merge :: proc(
 	e := irrigation_parameters_merge(&aip.base, jx.get(j, "irrigationParameters"))
 	tl.append_errors(&res, e)
 
-	jx.set_iso_date_value(&aip.startDate, j, "startDate")
-	jx.set_iso_date_value(&aip.endDate, j, "stopDate")
+	jx.set_iso_date_value(&aip.start_date, j, "startDate")
+	jx.set_iso_date_value(&aip.end_date, j, "stopDate")
 	jx.set_double_value(&aip.amount, j, "amount")
-	jx.set_double_value(&aip.percentNFC, j, "set_to_%nFC")
+	jx.set_double_value(&aip.percent_nfc, j, "set_to_%nFC")
 	jx.set_double_value(&aip.threshold, j, "threshold", jx.transform_if_percent(j, "threshold"))
 	jx.set_double_value(&aip.threshold, j, "trigger_if_nFC_below_%", .PERCENT)
 	jx.set_double_value(
-		&aip.criticalMoistureDepthM,
+		&aip.critical_moisture_depth_m,
 		j,
 		"calc_nFC_until_depth_m",
 		jx.transform_if_not_meters(j, "calc_nFC_until_depth_m"),
 	)
-	jx.set_int_value(&aip.minDaysBetweenIrrigationEvents, j, "minDaysBetweenIrrigationEvents")
+	jx.set_int_value(&aip.min_days_between_irrigation_events, j, "minDaysBetweenIrrigationEvents")
 
 	return res
 }
 
 // C++: json11::Json automaticirrigationparameters::to_json(...)
 //
-// NOTE(c++-quirk): endDate is not emitted at all, so a to_json/merge round trip
+// NOTE(c++-quirk): end_date is not emitted at all, so a to_json/merge round trip
 // loses it. Reproduced.
 automatic_irrigation_parameters_to_json :: proc(
 	aip: ^Automatic_Irrigation_Parameters,
 	a: Allocator,
 ) -> jx.Value {
-	iso := d.to_iso_date_string(aip.startDate, "", a)
+	iso := d.to_iso_date_string(aip.start_date, "", a)
 	o := jx.obj(
 		a,
 		{"type", jx.sl("AutomaticIrrigationParameters")},
 		{"startDate", jx.s(iso, a)},
 		{"irrigationParameters", irrigation_parameters_to_json(&aip.base, a)},
 		{"trigger_if_nFC_below_%", jx.vu(aip.threshold * 100.0, "%", a)},
-		{"calc_nFC_until_depth_m", jx.vu(aip.criticalMoistureDepthM, "m", a)},
-		{"minDaysBetweenIrrigationEvents", jx.vu_int(aip.minDaysBetweenIrrigationEvents, "d", a)},
+		{"calc_nFC_until_depth_m", jx.vu(aip.critical_moisture_depth_m, "m", a)},
+		{"minDaysBetweenIrrigationEvents", jx.vu_int(aip.min_days_between_irrigation_events, "d", a)},
 	)
 	oo := o.(jx.Object)
 	if aip.amount > 0 {
 		jx.obj_set(&oo, "amount", jx.vu(aip.amount, "mm", a), a)
 	} else {
-		jx.obj_set(&oo, "set_to_%nFC", jx.vu(aip.percentNFC, "%", a), a)
+		jx.obj_set(&oo, "set_to_%nFC", jx.vu(aip.percent_nfc, "%", a), a)
 	}
 	return jx.Value(oo)
 }
@@ -241,8 +241,8 @@ automatic_irrigation_parameters_to_json :: proc(
 // string is the key and to_json sorts, which reproduces the ordering json11's
 // std::map<string,Json> would have produced on output.
 Measured_Groundwater_Table_Information :: struct {
-	groundwaterInformationAvailable: bool,
-	groundwaterInfo:                 map[string]f64, // ISO date -> depth
+	groundwater_information_available: bool,
+	groundwater_info:                 map[string]f64, // ISO date -> depth
 }
 
 // C++: Errors measuredgroundwatertableinformation::merge(...)
@@ -255,18 +255,18 @@ measured_groundwater_table_information_merge :: proc(
 ) -> tl.Errors {
 	res: tl.Errors
 
-	jx.set_bool_value(&gwi.groundwaterInformationAvailable, j, "groundwaterInformationAvailable")
+	jx.set_bool_value(&gwi.groundwater_information_available, j, "groundwaterInformationAvailable")
 
 	if jx.has_object_shape(j, "groundwaterInfo") {
-		if gwi.groundwaterInfo == nil {
-			gwi.groundwaterInfo = make(map[string]f64, a)
+		if gwi.groundwater_info == nil {
+			gwi.groundwater_info = make(map[string]f64, a)
 		}
 		for k, v in jx.object_items(jx.get(j, "groundwaterInfo")) {
 			// the C++ round-trips through Date::fromIsoDateString; normalise the
 			// same way so a non-canonical key produces the same output key
 			dd := d.from_iso_date_string(k)
 			key := d.to_iso_date_string(dd, "", a)
-			gwi.groundwaterInfo[key] = jx.number_value(v)
+			gwi.groundwater_info[key] = jx.number_value(v)
 		}
 	} else {
 		dump := jx.dump(j, a)
@@ -282,13 +282,13 @@ measured_groundwater_table_information_to_json :: proc(
 	a: Allocator,
 ) -> jx.Value {
 	gi := make(jx.Object, 0, a)
-	for k, v in gwi.groundwaterInfo {
+	for k, v in gwi.groundwater_info {
 		gi[strings.clone(k, a)] = jx.f(v)
 	}
 	return jx.obj(
 		a,
 		{"type", jx.sl("MeasuredGroundwaterTableInformation")},
-		{"groundwaterInformationAvailable", jx.b(gwi.groundwaterInformationAvailable)},
+		{"groundwaterInformationAvailable", jx.b(gwi.groundwater_information_available)},
 		{"groundwaterInfo", jx.Value(gi)},
 	)
 }
@@ -303,9 +303,9 @@ get_groundwater_information :: proc(
 	available: bool,
 	depth: f64,
 ) {
-	if gwi.groundwaterInformationAvailable && len(gwi.groundwaterInfo) > 0 {
+	if gwi.groundwater_information_available && len(gwi.groundwater_info) > 0 {
 		key := d.to_iso_date_string(gwDate, "", allocator)
-		if v, ok := gwi.groundwaterInfo[key]; ok {
+		if v, ok := gwi.groundwater_info[key]; ok {
 			return true, v
 		}
 	}
@@ -319,44 +319,44 @@ get_groundwater_information :: proc(
 // C++: struct monica::SiteParameters
 //
 // The C++ `calculateAndSetPwpFcSatFunctions` map<string, std::function> is not a
-// data member here (plan-odin.md prep 2); pwpFcSatFunction selects the method by
+// data member here (plan-odin.md prep 2); pwp_fc_sat_function selects the method by
 // name at the point of use, via soil.pwp_fc_sat_method_from_name.
 Site_Parameters :: struct {
-	vs_Latitude:                           f64, // ZALF latitude
-	vs_Slope:                              f64, // [m m-1]
-	vs_HeightNN:                           f64, // [m]
-	vs_GroundwaterDepth:                   f64, // [m]
-	vs_Soil_CN_Ratio:                      f64,
-	vs_DrainageCoeff:                      f64,
-	vq_NDeposition:                        f64, // [kg N ha-1 y-1]
-	vs_MaxEffectiveRootingDepth:           f64, // [m]
-	vs_ImpenetrableLayerDepth:             f64, // [m]
-	vs_SoilSpecificHumusBalanceCorrection: f64, // humus equivalents
-	bareSoilKcFactor:                      f64,
-	numberOfLayers:                        int,
-	layerThickness:                        f64,
-	vs_SoilParameters:                     [dynamic]soil.Soil_Parameters,
-	initSoilProfileSpec:                   jx.Value, // the raw SoilProfileParameters array
-	pwpFcSatFunction:                      string,
+	latitude:                                f64, // ZALF latitude
+	slope:                                   f64, // [m m-1]
+	height_nn:                               f64, // [m]
+	groundwater_depth:                       f64, // [m]
+	soil_cn_ratio:                           f64,
+	drainage_coeff:                          f64,
+	n_deposition:                            f64, // [kg N ha-1 y-1]
+	max_effective_rooting_depth:             f64, // [m]
+	impenetrable_layer_depth:                f64, // [m]
+	soil_specific_humus_balance_correction:  f64, // humus equivalents
+	bare_soil_kc_factor:                     f64,
+	number_of_layers:                        int,
+	layer_thickness:                         f64,
+	soil_parameters:                         [dynamic]soil.Soil_Parameters,
+	init_soil_profile_spec:                  jx.Value, // the raw SoilProfileParameters array
+	pwp_fc_sat_function:                     string,
 }
 
 // The C++ in-class initialisers
 make_site_parameters :: proc() -> Site_Parameters {
 	return Site_Parameters {
-		vs_Latitude = 52.5,
-		vs_Slope = 0.01,
-		vs_HeightNN = 50.0,
-		vs_GroundwaterDepth = 70.0,
-		vs_Soil_CN_Ratio = 10.0,
-		vs_DrainageCoeff = 1.0,
-		vq_NDeposition = 30.0,
-		vs_MaxEffectiveRootingDepth = 2.0,
-		vs_ImpenetrableLayerDepth = -1,
-		vs_SoilSpecificHumusBalanceCorrection = 0.0,
-		bareSoilKcFactor = 0.4,
-		numberOfLayers = 20,
-		layerThickness = 0.1,
-		pwpFcSatFunction = "Wessolek2009",
+		latitude = 52.5,
+		slope = 0.01,
+		height_nn = 50.0,
+		groundwater_depth = 70.0,
+		soil_cn_ratio = 10.0,
+		drainage_coeff = 1.0,
+		n_deposition = 30.0,
+		max_effective_rooting_depth = 2.0,
+		impenetrable_layer_depth = -1,
+		soil_specific_humus_balance_correction = 0.0,
+		bare_soil_kc_factor = 0.4,
+		number_of_layers = 20,
+		layer_thickness = 0.1,
+		pwp_fc_sat_function = "Wessolek2009",
 	}
 }
 
@@ -381,46 +381,46 @@ site_parameters_merge :: proc(
 		res = site_parameters_merge(sp, jx.get(j, "="), path_to_soil_dir, allocator)
 	}
 
-	jx.set_double_value(&sp.vs_Latitude, j, "Latitude")
-	jx.set_double_value(&sp.vs_Slope, j, "Slope")
-	jx.set_double_value(&sp.vs_HeightNN, j, "HeightNN")
-	jx.set_double_value(&sp.vs_GroundwaterDepth, j, "GroundwaterDepth")
-	jx.set_double_value(&sp.vs_Soil_CN_Ratio, j, "Soil_CN_Ratio")
-	jx.set_double_value(&sp.vs_DrainageCoeff, j, "DrainageCoeff")
-	jx.set_double_value(&sp.vq_NDeposition, j, "NDeposition")
-	jx.set_double_value(&sp.vs_MaxEffectiveRootingDepth, j, "MaxEffectiveRootingDepth")
-	jx.set_double_value(&sp.vs_ImpenetrableLayerDepth, j, "ImpenetrableLayerDepth")
+	jx.set_double_value(&sp.latitude, j, "Latitude")
+	jx.set_double_value(&sp.slope, j, "Slope")
+	jx.set_double_value(&sp.height_nn, j, "HeightNN")
+	jx.set_double_value(&sp.groundwater_depth, j, "GroundwaterDepth")
+	jx.set_double_value(&sp.soil_cn_ratio, j, "Soil_CN_Ratio")
+	jx.set_double_value(&sp.drainage_coeff, j, "DrainageCoeff")
+	jx.set_double_value(&sp.n_deposition, j, "NDeposition")
+	jx.set_double_value(&sp.max_effective_rooting_depth, j, "MaxEffectiveRootingDepth")
+	jx.set_double_value(&sp.impenetrable_layer_depth, j, "ImpenetrableLayerDepth")
 	jx.set_double_value(
-		&sp.vs_SoilSpecificHumusBalanceCorrection,
+		&sp.soil_specific_humus_balance_correction,
 		j,
 		"SoilSpecificHumusBalanceCorrection",
 	)
-	jx.set_double_value(&sp.bareSoilKcFactor, j, "Bare_soil_KC_factor")
-	jx.set_string_value(&sp.pwpFcSatFunction, j, "pwpFcSatFunction")
+	jx.set_double_value(&sp.bare_soil_kc_factor, j, "Bare_soil_KC_factor")
+	jx.set_string_value(&sp.pwp_fc_sat_function, j, "pwpFcSatFunction")
 
-	jx.set_int_value(&sp.numberOfLayers, j, "NumberOfLayers")
-	jx.set_double_value(&sp.layerThickness, j, "LayerThickness")
+	jx.set_int_value(&sp.number_of_layers, j, "NumberOfLayers")
+	jx.set_double_value(&sp.layer_thickness, j, "LayerThickness")
 
 	// C++: std::function selectedSetPwpFcSatFunction = noSetPwpFcSat; if (find in
 	// calculateAndSetPwpFcSatFunctions) ... else warn
-	method, found := soil.pwp_fc_sat_method_from_name(sp.pwpFcSatFunction)
+	method, found := soil.pwp_fc_sat_method_from_name(sp.pwp_fc_sat_function)
 	if !found {
-		tl.append_warningf(&res, "Couldn't find pwpFcSatFunction: %s", sp.pwpFcSatFunction)
+		tl.append_warningf(&res, "Couldn't find pwpFcSatFunction: %s", sp.pwp_fc_sat_function)
 	}
 
 	if jx.is_array(jx.get(j, "SoilProfileParameters")) {
-		sp.initSoilProfileSpec = jx.get(j, "SoilProfileParameters")
+		sp.init_soil_profile_spec = jx.get(j, "SoilProfileParameters")
 		r := soil.create_equal_sized_soil_pms(
 			method,
 			path_to_soil_dir,
-			jx.array_items(sp.initSoilProfileSpec),
-			sp.layerThickness,
-			sp.numberOfLayers,
+			jx.array_items(sp.init_soil_profile_spec),
+			sp.layer_thickness,
+			sp.number_of_layers,
 			allocator,
 		)
 		if tl.success(r.errs) {
-			sp.vs_SoilParameters = r.result
-			if len(sp.vs_SoilParameters) == 0 {
+			sp.soil_parameters = r.result
+			if len(sp.soil_parameters) == 0 {
 				tl.append_error(&res, "Soil profile is empty!")
 			}
 		} else {
@@ -444,25 +444,25 @@ site_parameters_to_json :: proc(sp: ^Site_Parameters, a: Allocator) -> jx.Value 
 		{"type", jx.sl("SiteParameters")},
 		{
 			"Latitude",
-			jx.arr(a, jx.f(sp.vs_Latitude), jx.sl(""), jx.sl("latitude in decimal degrees")),
+			jx.arr(a, jx.f(sp.latitude), jx.sl(""), jx.sl("latitude in decimal degrees")),
 		},
-		{"Slope", jx.vu(sp.vs_Slope, "m m-1", a)},
-		{"HeightNN", jx.arr(a, jx.f(sp.vs_HeightNN), jx.sl("m"), jx.sl("height above sea level"))},
-		{"GroundwaterDepth", jx.vu(sp.vs_GroundwaterDepth, "m", a)},
-		{"Soil_CN_Ratio", jx.f(sp.vs_Soil_CN_Ratio)},
-		{"DrainageCoeff", jx.f(sp.vs_DrainageCoeff)},
-		{"NDeposition", jx.vu(sp.vq_NDeposition, "kg N ha-1 y-1", a)},
-		{"MaxEffectiveRootingDepth", jx.vu(sp.vs_MaxEffectiveRootingDepth, "m", a)},
-		{"ImpenetrableLayerDepth", jx.vu(sp.vs_ImpenetrableLayerDepth, "m", a)},
+		{"Slope", jx.vu(sp.slope, "m m-1", a)},
+		{"HeightNN", jx.arr(a, jx.f(sp.height_nn), jx.sl("m"), jx.sl("height above sea level"))},
+		{"GroundwaterDepth", jx.vu(sp.groundwater_depth, "m", a)},
+		{"Soil_CN_Ratio", jx.f(sp.soil_cn_ratio)},
+		{"DrainageCoeff", jx.f(sp.drainage_coeff)},
+		{"NDeposition", jx.vu(sp.n_deposition, "kg N ha-1 y-1", a)},
+		{"MaxEffectiveRootingDepth", jx.vu(sp.max_effective_rooting_depth, "m", a)},
+		{"ImpenetrableLayerDepth", jx.vu(sp.impenetrable_layer_depth, "m", a)},
 		{
 			"SoilSpecificHumusBalanceCorrection",
-			jx.vu(sp.vs_SoilSpecificHumusBalanceCorrection, "humus equivalents", a),
+			jx.vu(sp.soil_specific_humus_balance_correction, "humus equivalents", a),
 		},
-		{"Bare_soil_KC_factor", jx.f(sp.bareSoilKcFactor)},
+		{"Bare_soil_KC_factor", jx.f(sp.bare_soil_kc_factor)},
 	)
 	oo := o.(jx.Object)
-	soil_profile_params := make(jx.Array, 0, len(sp.vs_SoilParameters), a)
-	for &sp_item in sp.vs_SoilParameters {
+	soil_profile_params := make(jx.Array, 0, len(sp.soil_parameters), a)
+	for &sp_item in sp.soil_parameters {
 		append(&soil_profile_params, soil.soil_parameters_to_json(&sp_item, a))
 	}
 	jx.obj_set(&oo, "SoilProfileParameters", jx.Value(soil_profile_params), a)
@@ -475,46 +475,46 @@ site_parameters_to_json :: proc(sp: ^Site_Parameters, a: Allocator) -> jx.Value 
 
 // C++: struct monica::SimulationParameters
 Simulation_Parameters :: struct {
-	startDate:                             d.Date,
-	endDate:                               d.Date,
-	pc_NitrogenResponseOn:                 bool,
-	pc_WaterDeficitResponseOn:             bool,
-	pc_EmergenceFloodingControlOn:         bool,
-	pc_EmergenceMoistureControlOn:         bool,
-	pc_FrostKillOn:                        bool,
-	p_UseAutomaticIrrigation:              bool,
-	p_AutoIrrigationParams:                Automatic_Irrigation_Parameters,
-	p_UseNMinMineralFertilisingMethod:     bool,
-	p_NMinFertiliserPartition:             Mineral_Fertilizer_Parameters,
-	p_NMinUserParams:                      NMin_Application_Parameters,
-	p_UseSecondaryYields:                  bool,
-	p_UseAutomaticHarvestTrigger:          bool,
-	p_NumberOfLayers:                      int,
-	p_LayerThickness:                      f64,
-	p_StartPVIndex:                        int,
-	p_JulianDayAutomaticFertilising:       int,
-	serializeMonicaStateAtEnd:             bool,
-	serializeMonicaStateAtEndToJson:       bool,
-	pathToSerializationAtEndFile:          string,
-	loadSerializedMonicaStateAtStart:      bool,
-	deserializedMonicaStateFromJson:       bool,
-	pathToLoadSerializationFile:           string,
-	noOfPreviousDaysSerializedClimateData: u64,
-	dualKcMethod:                          bool, // FAO-56 Dual Kc evaporation partitioning
+	start_date:                                  d.Date,
+	end_date:                                    d.Date,
+	nitrogen_response_on:                        bool,
+	water_deficit_response_on:                   bool,
+	emergence_flooding_control_on:               bool,
+	emergence_moisture_control_on:               bool,
+	frost_kill_on:                               bool,
+	use_automatic_irrigation:                    bool,
+	auto_irrigation_params:                      Automatic_Irrigation_Parameters,
+	use_n_min_mineral_fertilising_method:        bool,
+	n_min_fertiliser_partition:                  Mineral_Fertilizer_Parameters,
+	n_min_user_params:                           NMin_Application_Parameters,
+	use_secondary_yields:                        bool,
+	use_automatic_harvest_trigger:               bool,
+	number_of_layers:                            int,
+	layer_thickness:                             f64,
+	start_pv_index:                              int,
+	julian_day_automatic_fertilising:            int,
+	serialize_monica_state_at_end:               bool,
+	serialize_monica_state_at_end_to_json:       bool,
+	path_to_serialization_at_end_file:           string,
+	load_serialized_monica_state_at_start:       bool,
+	deserialized_monica_state_from_json:         bool,
+	path_to_load_serialization_file:             string,
+	no_of_previous_days_serialized_climate_data: u64,
+	dual_kc_method:                              bool, // FAO-56 Dual Kc evaporation partitioning
 }
 
 // The C++ in-class initialisers
 make_simulation_parameters :: proc() -> Simulation_Parameters {
 	return Simulation_Parameters {
-		pc_NitrogenResponseOn = true,
-		pc_WaterDeficitResponseOn = true,
-		pc_EmergenceFloodingControlOn = true,
-		pc_EmergenceMoistureControlOn = true,
-		pc_FrostKillOn = true,
-		p_AutoIrrigationParams = make_automatic_irrigation_parameters(),
-		p_UseSecondaryYields = true,
-		p_NumberOfLayers = 20,
-		p_LayerThickness = 0.1,
+		nitrogen_response_on = true,
+		water_deficit_response_on = true,
+		emergence_flooding_control_on = true,
+		emergence_moisture_control_on = true,
+		frost_kill_on = true,
+		auto_irrigation_params = make_automatic_irrigation_parameters(),
+		use_secondary_yields = true,
+		number_of_layers = 20,
+		layer_thickness = 0.1,
 	}
 }
 
@@ -522,51 +522,51 @@ make_simulation_parameters :: proc() -> Simulation_Parameters {
 simulation_parameters_merge :: proc(sp: ^Simulation_Parameters, j: jx.Value) -> tl.Errors {
 	res := default_merge(sp, j, simulation_parameters_merge)
 
-	jx.set_iso_date_value(&sp.startDate, j, "startDate")
-	jx.set_iso_date_value(&sp.endDate, j, "endDate")
+	jx.set_iso_date_value(&sp.start_date, j, "startDate")
+	jx.set_iso_date_value(&sp.end_date, j, "endDate")
 
-	jx.set_bool_value(&sp.pc_NitrogenResponseOn, j, "NitrogenResponseOn")
-	jx.set_bool_value(&sp.pc_WaterDeficitResponseOn, j, "WaterDeficitResponseOn")
-	jx.set_bool_value(&sp.pc_EmergenceFloodingControlOn, j, "EmergenceFloodingControlOn")
-	jx.set_bool_value(&sp.pc_EmergenceMoistureControlOn, j, "EmergenceMoistureControlOn")
-	jx.set_bool_value(&sp.pc_FrostKillOn, j, "FrostKillOn")
+	jx.set_bool_value(&sp.nitrogen_response_on, j, "NitrogenResponseOn")
+	jx.set_bool_value(&sp.water_deficit_response_on, j, "WaterDeficitResponseOn")
+	jx.set_bool_value(&sp.emergence_flooding_control_on, j, "EmergenceFloodingControlOn")
+	jx.set_bool_value(&sp.emergence_moisture_control_on, j, "EmergenceMoistureControlOn")
+	jx.set_bool_value(&sp.frost_kill_on, j, "FrostKillOn")
 
-	jx.set_bool_value(&sp.p_UseAutomaticIrrigation, j, "UseAutomaticIrrigation")
+	jx.set_bool_value(&sp.use_automatic_irrigation, j, "UseAutomaticIrrigation")
 	// the C++ discards this merge's errors
 	_ = automatic_irrigation_parameters_merge(
-		&sp.p_AutoIrrigationParams,
+		&sp.auto_irrigation_params,
 		jx.get(j, "AutoIrrigationParams"),
 	)
 
-	jx.set_bool_value(&sp.p_UseNMinMineralFertilisingMethod, j, "UseNMinMineralFertilisingMethod")
+	jx.set_bool_value(&sp.use_n_min_mineral_fertilising_method, j, "UseNMinMineralFertilisingMethod")
 	_ = mineral_fertilizer_parameters_merge(
-		&sp.p_NMinFertiliserPartition,
+		&sp.n_min_fertiliser_partition,
 		jx.get(j, "NMinFertiliserPartition"),
 	)
-	_ = nmin_application_parameters_merge(&sp.p_NMinUserParams, jx.get(j, "NMinUserParams"))
-	jx.set_int_value(&sp.p_JulianDayAutomaticFertilising, j, "JulianDayAutomaticFertilising")
+	_ = nmin_application_parameters_merge(&sp.n_min_user_params, jx.get(j, "NMinUserParams"))
+	jx.set_int_value(&sp.julian_day_automatic_fertilising, j, "JulianDayAutomaticFertilising")
 
-	jx.set_bool_value(&sp.p_UseSecondaryYields, j, "UseSecondaryYields")
-	jx.set_bool_value(&sp.p_UseAutomaticHarvestTrigger, j, "UseAutomaticHarvestTrigger")
-	jx.set_int_value(&sp.p_NumberOfLayers, j, "NumberOfLayers")
-	jx.set_double_value(&sp.p_LayerThickness, j, "LayerThickness")
+	jx.set_bool_value(&sp.use_secondary_yields, j, "UseSecondaryYields")
+	jx.set_bool_value(&sp.use_automatic_harvest_trigger, j, "UseAutomaticHarvestTrigger")
+	jx.set_int_value(&sp.number_of_layers, j, "NumberOfLayers")
+	jx.set_double_value(&sp.layer_thickness, j, "LayerThickness")
 
-	jx.set_int_value(&sp.p_StartPVIndex, j, "StartPVIndex")
+	jx.set_int_value(&sp.start_pv_index, j, "StartPVIndex")
 
 	ser_state := jx.get(j, "serializedMonicaState")
 	if jx.is_object(ser_state) && len(jx.object_items(ser_state)) > 0 {
 		load_state := jx.get(ser_state, "load")
 		if jx.is_object(load_state) {
-			jx.set_bool_value(&sp.loadSerializedMonicaStateAtStart, load_state, "atStart")
-			jx.set_bool_value(&sp.deserializedMonicaStateFromJson, load_state, "fromJson")
-			jx.set_string_value(&sp.pathToLoadSerializationFile, load_state, "path")
+			jx.set_bool_value(&sp.load_serialized_monica_state_at_start, load_state, "atStart")
+			jx.set_bool_value(&sp.deserialized_monica_state_from_json, load_state, "fromJson")
+			jx.set_string_value(&sp.path_to_load_serialization_file, load_state, "path")
 		}
 		save_state := jx.get(ser_state, "save")
 		if jx.is_object(save_state) {
-			jx.set_bool_value(&sp.serializeMonicaStateAtEnd, save_state, "atEnd")
-			jx.set_bool_value(&sp.serializeMonicaStateAtEndToJson, save_state, "toJson")
-			jx.set_string_value(&sp.pathToSerializationAtEndFile, save_state, "path")
-			sp.noOfPreviousDaysSerializedClimateData = u64(
+			jx.set_bool_value(&sp.serialize_monica_state_at_end, save_state, "atEnd")
+			jx.set_bool_value(&sp.serialize_monica_state_at_end_to_json, save_state, "toJson")
+			jx.set_string_value(&sp.path_to_serialization_at_end_file, save_state, "path")
+			sp.no_of_previous_days_serialized_climate_data = u64(
 				max(0, jx.int_value(save_state, "noOfPreviousDaysSerializedClimateData")),
 			)
 		}
@@ -575,7 +575,7 @@ simulation_parameters_merge :: proc(sp: ^Simulation_Parameters, j: jx.Value) -> 
 	// FAO-56 Dual Kc: "evapotranspiration-method": "FAO-56-Dual" activates the
 	// Dual Kc pathway; any other value (or an absent key) keeps single-Kc.
 	if jx.string_value_of(jx.get(j, "evapotranspiration-method")) == "FAO-56-Dual" {
-		sp.dualKcMethod = true
+		sp.dual_kc_method = true
 	}
 
 	return res
@@ -583,23 +583,23 @@ simulation_parameters_merge :: proc(sp: ^Simulation_Parameters, j: jx.Value) -> 
 
 // C++: json11::Json simulationparameters::to_json(const SimulationParameters*)
 simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) -> jx.Value {
-	start_iso := d.to_iso_date_string(sp.startDate, "", a)
-	end_iso := d.to_iso_date_string(sp.endDate, "", a)
+	start_iso := d.to_iso_date_string(sp.start_date, "", a)
+	end_iso := d.to_iso_date_string(sp.end_date, "", a)
 
 	load_o := jx.obj(
 		a,
-		{"atStart", jx.b(sp.loadSerializedMonicaStateAtStart)},
-		{"fromJson", jx.b(sp.deserializedMonicaStateFromJson)},
-		{"path", jx.s(sp.pathToLoadSerializationFile, a)},
+		{"atStart", jx.b(sp.load_serialized_monica_state_at_start)},
+		{"fromJson", jx.b(sp.deserialized_monica_state_from_json)},
+		{"path", jx.s(sp.path_to_load_serialization_file, a)},
 	)
 	save_o := jx.obj(
 		a,
-		{"atEnd", jx.b(sp.serializeMonicaStateAtEnd)},
-		{"toJson", jx.b(sp.serializeMonicaStateAtEndToJson)},
-		{"path", jx.s(sp.pathToSerializationAtEndFile, a)},
+		{"atEnd", jx.b(sp.serialize_monica_state_at_end)},
+		{"toJson", jx.b(sp.serialize_monica_state_at_end_to_json)},
+		{"path", jx.s(sp.path_to_serialization_at_end_file, a)},
 		{
 			"noOfPreviousDaysSerializedClimateData",
-			jx.i(int(sp.noOfPreviousDaysSerializedClimateData)),
+			jx.i(int(sp.no_of_previous_days_serialized_climate_data)),
 		},
 	)
 	ser_o := jx.obj(a, {"load", load_o}, {"save", save_o})
@@ -609,31 +609,31 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 		{"type", jx.sl("SimulationParameters")},
 		{"startDate", jx.s(start_iso, a)},
 		{"endDate", jx.s(end_iso, a)},
-		{"NitrogenResponseOn", jx.b(sp.pc_NitrogenResponseOn)},
-		{"WaterDeficitResponseOn", jx.b(sp.pc_WaterDeficitResponseOn)},
-		{"EmergenceFloodingControlOn", jx.b(sp.pc_EmergenceFloodingControlOn)},
-		{"EmergenceMoistureControlOn", jx.b(sp.pc_EmergenceMoistureControlOn)},
-		{"FrostKillOn", jx.b(sp.pc_FrostKillOn)},
-		{"UseAutomaticIrrigation", jx.b(sp.p_UseAutomaticIrrigation)},
+		{"NitrogenResponseOn", jx.b(sp.nitrogen_response_on)},
+		{"WaterDeficitResponseOn", jx.b(sp.water_deficit_response_on)},
+		{"EmergenceFloodingControlOn", jx.b(sp.emergence_flooding_control_on)},
+		{"EmergenceMoistureControlOn", jx.b(sp.emergence_moisture_control_on)},
+		{"FrostKillOn", jx.b(sp.frost_kill_on)},
+		{"UseAutomaticIrrigation", jx.b(sp.use_automatic_irrigation)},
 		{
 			"AutoIrrigationParams",
-			automatic_irrigation_parameters_to_json(&sp.p_AutoIrrigationParams, a),
+			automatic_irrigation_parameters_to_json(&sp.auto_irrigation_params, a),
 		},
-		{"UseNMinMineralFertilisingMethod", jx.b(sp.p_UseNMinMineralFertilisingMethod)},
+		{"UseNMinMineralFertilisingMethod", jx.b(sp.use_n_min_mineral_fertilising_method)},
 		{
 			"NMinFertiliserPartition",
-			mineral_fertilizer_parameters_to_json(&sp.p_NMinFertiliserPartition, a),
+			mineral_fertilizer_parameters_to_json(&sp.n_min_fertiliser_partition, a),
 		},
-		{"NMinUserParams", nmin_application_parameters_to_json(&sp.p_NMinUserParams, a)},
-		{"JulianDayAutomaticFertilising", jx.i(sp.p_JulianDayAutomaticFertilising)},
-		{"UseSecondaryYields", jx.b(sp.p_UseSecondaryYields)},
-		{"UseAutomaticHarvestTrigger", jx.b(sp.p_UseAutomaticHarvestTrigger)},
-		{"NumberOfLayers", jx.i(sp.p_NumberOfLayers)},
-		{"LayerThickness", jx.f(sp.p_LayerThickness)},
-		{"StartPVIndex", jx.i(sp.p_StartPVIndex)},
-		{"serializeMonicaStateAtEnd", jx.b(sp.serializeMonicaStateAtEnd)},
+		{"NMinUserParams", nmin_application_parameters_to_json(&sp.n_min_user_params, a)},
+		{"JulianDayAutomaticFertilising", jx.i(sp.julian_day_automatic_fertilising)},
+		{"UseSecondaryYields", jx.b(sp.use_secondary_yields)},
+		{"UseAutomaticHarvestTrigger", jx.b(sp.use_automatic_harvest_trigger)},
+		{"NumberOfLayers", jx.i(sp.number_of_layers)},
+		{"LayerThickness", jx.f(sp.layer_thickness)},
+		{"StartPVIndex", jx.i(sp.start_pv_index)},
+		{"serializeMonicaStateAtEnd", jx.b(sp.serialize_monica_state_at_end)},
 		{"serializedMonicaState", ser_o},
-		{"evapotranspiration-method", jx.sl(sp.dualKcMethod ? "FAO-56-Dual" : "Penman-Monteith")},
+		{"evapotranspiration-method", jx.sl(sp.dual_kc_method ? "FAO-56-Dual" : "Penman-Monteith")},
 	)
 }
 
@@ -643,23 +643,23 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 
 // C++: struct monica::CropModuleParameters
 Crop_Module_Parameters :: struct {
-	pc_CanopyReflectionCoefficient:                         f64,
-	pc_ReferenceMaxAssimilationRate:                        f64,
-	pc_ReferenceLeafAreaIndex:                              f64,
-	pc_MaintenanceRespirationParameter1:                    f64,
-	pc_MaintenanceRespirationParameter2:                    f64,
-	pc_MinimumNConcentrationRoot:                           f64,
-	pc_MinimumAvailableN:                                   f64, // [kg m-2]
-	pc_ReferenceAlbedo:                                     f64,
-	pc_StomataConductanceAlpha:                             f64,
-	pc_SaturationBeta:                                      f64,
-	pc_GrowthRespirationRedux:                              f64,
-	pc_MaxCropNDemand:                                      f64,
-	pc_GrowthRespirationParameter1:                         f64,
-	pc_GrowthRespirationParameter2:                         f64,
-	pc_Tortuosity:                                          f64, // old AD
-	pc_AdjustRootDepthForSoilProps:                         bool,
-	pc_TimeUnderAnoxiaThreshold:                            [dynamic]int,
+	canopy_reflection_coefficient:                          f64,
+	reference_max_assimilation_rate:                        f64,
+	reference_leaf_area_index:                              f64,
+	maintenance_respiration_parameter1:                     f64,
+	maintenance_respiration_parameter2:                     f64,
+	minimum_n_concentration_root:                           f64,
+	minimum_available_n:                                    f64, // [kg m-2]
+	reference_albedo:                                       f64,
+	stomata_conductance_alpha:                              f64,
+	saturation_beta:                                        f64,
+	growth_respiration_redux:                               f64,
+	max_crop_n_demand:                                      f64,
+	growth_respiration_parameter1:                          f64,
+	growth_respiration_parameter2:                          f64,
+	tortuosity:                                             f64, // old AD
+	adjust_root_depth_for_soil_props:                       bool,
+	time_under_anoxia_threshold:                            [dynamic]int,
 	__enable_Phenology_WangEngelTemperatureResponse__:      bool,
 	__enable_Photosynthesis_WangEngelTemperatureResponse__: bool,
 	__enable_hourly_FvCB_photosynthesis__:                  bool,
@@ -667,30 +667,30 @@ Crop_Module_Parameters :: struct {
 	__disable_daily_root_biomass_to_soil__:                 bool,
 	__enable_vernalisation_factor_fix__:                    bool,
 	__enable_PASW_root_penetration__:                       bool,
-	isIntercropping:                                        bool,
-	sequentialWaterUse:                                     bool,
-	twoWaySync:                                             bool,
-	pc_intercropping_k_s:                                   f64,
-	pc_intercropping_k_t:                                   f64,
-	pc_intercropping_phRedux:                               f64,
-	pc_intercropping_dvs_phr:                               f64,
-	pc_intercropping_autoPhRedux:                           bool,
-	pc_intercropping_reader_sr:                             string,
-	pc_intercropping_writer_sr:                             string,
+	is_intercropping:                                       bool,
+	sequential_water_use:                                   bool,
+	two_way_sync:                                           bool,
+	intercropping_k_s:                                      f64,
+	intercropping_k_t:                                      f64,
+	intercropping_ph_redux:                                 f64,
+	intercropping_dvs_phr:                                  f64,
+	intercropping_auto_ph_redux:                            bool,
+	intercropping_reader_sr:                                string,
+	intercropping_writer_sr:                                string,
 }
 
-// C++ in-class initialisers, incl. pc_TimeUnderAnoxiaThreshold{4,4,4,4,4,4,4}
+// C++ in-class initialisers, incl. time_under_anoxia_threshold{4,4,4,4,4,4,4}
 make_crop_module_parameters :: proc(a: Allocator) -> Crop_Module_Parameters {
 	cmp := Crop_Module_Parameters {
-		pc_AdjustRootDepthForSoilProps = true,
-		twoWaySync                     = true,
-		pc_intercropping_phRedux       = 0.5,
-		pc_intercropping_dvs_phr       = 5.791262,
-		pc_intercropping_autoPhRedux   = true,
+		adjust_root_depth_for_soil_props = true,
+		two_way_sync                     = true,
+		intercropping_ph_redux           = 0.5,
+		intercropping_dvs_phr            = 5.791262,
+		intercropping_auto_ph_redux      = true,
 	}
-	cmp.pc_TimeUnderAnoxiaThreshold = make([dynamic]int, 0, 7, a)
+	cmp.time_under_anoxia_threshold = make([dynamic]int, 0, 7, a)
 	for _ in 0 ..< 7 {
-		append(&cmp.pc_TimeUnderAnoxiaThreshold, 4)
+		append(&cmp.time_under_anoxia_threshold, 4)
 	}
 	return cmp
 }
@@ -699,42 +699,42 @@ make_crop_module_parameters :: proc(a: Allocator) -> Crop_Module_Parameters {
 crop_module_parameters_merge :: proc(cmp: ^Crop_Module_Parameters, j: jx.Value) -> tl.Errors {
 	res := default_merge(cmp, j, crop_module_parameters_merge)
 
-	jx.set_double_value(&cmp.pc_CanopyReflectionCoefficient, j, "CanopyReflectionCoefficient")
-	jx.set_double_value(&cmp.pc_ReferenceMaxAssimilationRate, j, "ReferenceMaxAssimilationRate")
-	jx.set_double_value(&cmp.pc_ReferenceLeafAreaIndex, j, "ReferenceLeafAreaIndex")
+	jx.set_double_value(&cmp.canopy_reflection_coefficient, j, "CanopyReflectionCoefficient")
+	jx.set_double_value(&cmp.reference_max_assimilation_rate, j, "ReferenceMaxAssimilationRate")
+	jx.set_double_value(&cmp.reference_leaf_area_index, j, "ReferenceLeafAreaIndex")
 	jx.set_double_value(
-		&cmp.pc_MaintenanceRespirationParameter1,
+		&cmp.maintenance_respiration_parameter1,
 		j,
 		"MaintenanceRespirationParameter1",
 	)
 	jx.set_double_value(
-		&cmp.pc_MaintenanceRespirationParameter2,
+		&cmp.maintenance_respiration_parameter2,
 		j,
 		"MaintenanceRespirationParameter2",
 	)
-	jx.set_double_value(&cmp.pc_MinimumNConcentrationRoot, j, "MinimumNConcentrationRoot")
-	jx.set_double_value(&cmp.pc_MinimumAvailableN, j, "MinimumAvailableN")
-	jx.set_double_value(&cmp.pc_ReferenceAlbedo, j, "ReferenceAlbedo")
-	jx.set_double_value(&cmp.pc_StomataConductanceAlpha, j, "StomataConductanceAlpha")
-	jx.set_double_value(&cmp.pc_SaturationBeta, j, "SaturationBeta")
-	jx.set_double_value(&cmp.pc_GrowthRespirationRedux, j, "GrowthRespirationRedux")
-	jx.set_double_value(&cmp.pc_MaxCropNDemand, j, "MaxCropNDemand")
-	jx.set_double_value(&cmp.pc_GrowthRespirationParameter1, j, "GrowthRespirationParameter1")
-	jx.set_double_value(&cmp.pc_GrowthRespirationParameter2, j, "GrowthRespirationParameter2")
-	jx.set_double_value(&cmp.pc_Tortuosity, j, "Tortuosity")
-	jx.set_bool_value(&cmp.pc_AdjustRootDepthForSoilProps, j, "AdjustRootDepthForSoilProps")
+	jx.set_double_value(&cmp.minimum_n_concentration_root, j, "MinimumNConcentrationRoot")
+	jx.set_double_value(&cmp.minimum_available_n, j, "MinimumAvailableN")
+	jx.set_double_value(&cmp.reference_albedo, j, "ReferenceAlbedo")
+	jx.set_double_value(&cmp.stomata_conductance_alpha, j, "StomataConductanceAlpha")
+	jx.set_double_value(&cmp.saturation_beta, j, "SaturationBeta")
+	jx.set_double_value(&cmp.growth_respiration_redux, j, "GrowthRespirationRedux")
+	jx.set_double_value(&cmp.max_crop_n_demand, j, "MaxCropNDemand")
+	jx.set_double_value(&cmp.growth_respiration_parameter1, j, "GrowthRespirationParameter1")
+	jx.set_double_value(&cmp.growth_respiration_parameter2, j, "GrowthRespirationParameter2")
+	jx.set_double_value(&cmp.tortuosity, j, "Tortuosity")
+	jx.set_bool_value(&cmp.adjust_root_depth_for_soil_props, j, "AdjustRootDepthForSoilProps")
 
 	// a bare number fills every element; otherwise it is read as a vector
 	if jx.is_number(jx.get(j, "TimeUnderAnoxiaThreshold")) {
 		v := int(jx.number_value(jx.get(j, "TimeUnderAnoxiaThreshold")))
-		for i in 0 ..< len(cmp.pc_TimeUnderAnoxiaThreshold) {
-			cmp.pc_TimeUnderAnoxiaThreshold[i] = v
+		for i in 0 ..< len(cmp.time_under_anoxia_threshold) {
+			cmp.time_under_anoxia_threshold[i] = v
 		}
 	} else if jx.is_array(jx.get(j, "TimeUnderAnoxiaThreshold")) {
 		nv := jx.int_vector_d(jx.get(j, "TimeUnderAnoxiaThreshold"), nil, 0, context.allocator)
-		clear(&cmp.pc_TimeUnderAnoxiaThreshold)
+		clear(&cmp.time_under_anoxia_threshold)
 		for x in nv {
-			append(&cmp.pc_TimeUnderAnoxiaThreshold, x)
+			append(&cmp.time_under_anoxia_threshold, x)
 		}
 		delete(nv)
 	}
@@ -772,16 +772,16 @@ crop_module_parameters_merge :: proc(cmp: ^Crop_Module_Parameters, j: jx.Value) 
 	jx.set_bool_value(&cmp.__enable_PASW_root_penetration__, j, "__enable_PASW_root_penetration__")
 
 	ic := jx.get(j, "intercropping")
-	jx.set_bool_value(&cmp.isIntercropping, ic, "is_intercropping")
-	jx.set_bool_value(&cmp.sequentialWaterUse, ic, "sequential_water_use")
-	jx.set_bool_value(&cmp.twoWaySync, ic, "two_way_sync")
-	jx.set_double_value(&cmp.pc_intercropping_k_s, ic, "k_s")
-	jx.set_double_value(&cmp.pc_intercropping_k_t, ic, "k_t")
-	jx.set_double_value(&cmp.pc_intercropping_phRedux, ic, "PHredux")
-	jx.set_double_value(&cmp.pc_intercropping_dvs_phr, ic, "DVS_PHr")
-	jx.set_bool_value(&cmp.pc_intercropping_autoPhRedux, ic, "auto_PHredux")
-	jx.set_string_value(&cmp.pc_intercropping_reader_sr, ic, "reader_sr")
-	jx.set_string_value(&cmp.pc_intercropping_writer_sr, ic, "writer_sr")
+	jx.set_bool_value(&cmp.is_intercropping, ic, "is_intercropping")
+	jx.set_bool_value(&cmp.sequential_water_use, ic, "sequential_water_use")
+	jx.set_bool_value(&cmp.two_way_sync, ic, "two_way_sync")
+	jx.set_double_value(&cmp.intercropping_k_s, ic, "k_s")
+	jx.set_double_value(&cmp.intercropping_k_t, ic, "k_t")
+	jx.set_double_value(&cmp.intercropping_ph_redux, ic, "PHredux")
+	jx.set_double_value(&cmp.intercropping_dvs_phr, ic, "DVS_PHr")
+	jx.set_bool_value(&cmp.intercropping_auto_ph_redux, ic, "auto_PHredux")
+	jx.set_string_value(&cmp.intercropping_reader_sr, ic, "reader_sr")
+	jx.set_string_value(&cmp.intercropping_writer_sr, ic, "writer_sr")
 
 	return res
 }
@@ -791,30 +791,30 @@ crop_module_parameters_merge :: proc(cmp: ^Crop_Module_Parameters, j: jx.Value) 
 // NOTE(c++-quirk): to_json omits __enable_PASW_root_penetration__ and the whole
 // intercropping block, so a to_json/merge round trip drops them. Reproduced.
 crop_module_parameters_to_json :: proc(cmp: ^Crop_Module_Parameters, a: Allocator) -> jx.Value {
-	anoxia := make(jx.Array, 0, len(cmp.pc_TimeUnderAnoxiaThreshold), a)
-	for v in cmp.pc_TimeUnderAnoxiaThreshold {
+	anoxia := make(jx.Array, 0, len(cmp.time_under_anoxia_threshold), a)
+	for v in cmp.time_under_anoxia_threshold {
 		append(&anoxia, jx.i(v))
 	}
 
 	return jx.obj(
 		a,
 		{"type", jx.sl("CropModuleParameters")},
-		{"CanopyReflectionCoefficient", jx.f(cmp.pc_CanopyReflectionCoefficient)},
-		{"ReferenceMaxAssimilationRate", jx.f(cmp.pc_ReferenceMaxAssimilationRate)},
-		{"ReferenceLeafAreaIndex", jx.f(cmp.pc_ReferenceLeafAreaIndex)},
-		{"MaintenanceRespirationParameter1", jx.f(cmp.pc_MaintenanceRespirationParameter1)},
-		{"MaintenanceRespirationParameter2", jx.f(cmp.pc_MaintenanceRespirationParameter2)},
-		{"MinimumNConcentrationRoot", jx.f(cmp.pc_MinimumNConcentrationRoot)},
-		{"MinimumAvailableN", jx.f(cmp.pc_MinimumAvailableN)},
-		{"ReferenceAlbedo", jx.f(cmp.pc_ReferenceAlbedo)},
-		{"StomataConductanceAlpha", jx.f(cmp.pc_StomataConductanceAlpha)},
-		{"SaturationBeta", jx.f(cmp.pc_SaturationBeta)},
-		{"GrowthRespirationRedux", jx.f(cmp.pc_GrowthRespirationRedux)},
-		{"MaxCropNDemand", jx.f(cmp.pc_MaxCropNDemand)},
-		{"GrowthRespirationParameter1", jx.f(cmp.pc_GrowthRespirationParameter1)},
-		{"GrowthRespirationParameter2", jx.f(cmp.pc_GrowthRespirationParameter2)},
-		{"Tortuosity", jx.f(cmp.pc_Tortuosity)},
-		{"AdjustRootDepthForSoilProps", jx.b(cmp.pc_AdjustRootDepthForSoilProps)},
+		{"CanopyReflectionCoefficient", jx.f(cmp.canopy_reflection_coefficient)},
+		{"ReferenceMaxAssimilationRate", jx.f(cmp.reference_max_assimilation_rate)},
+		{"ReferenceLeafAreaIndex", jx.f(cmp.reference_leaf_area_index)},
+		{"MaintenanceRespirationParameter1", jx.f(cmp.maintenance_respiration_parameter1)},
+		{"MaintenanceRespirationParameter2", jx.f(cmp.maintenance_respiration_parameter2)},
+		{"MinimumNConcentrationRoot", jx.f(cmp.minimum_n_concentration_root)},
+		{"MinimumAvailableN", jx.f(cmp.minimum_available_n)},
+		{"ReferenceAlbedo", jx.f(cmp.reference_albedo)},
+		{"StomataConductanceAlpha", jx.f(cmp.stomata_conductance_alpha)},
+		{"SaturationBeta", jx.f(cmp.saturation_beta)},
+		{"GrowthRespirationRedux", jx.f(cmp.growth_respiration_redux)},
+		{"MaxCropNDemand", jx.f(cmp.max_crop_n_demand)},
+		{"GrowthRespirationParameter1", jx.f(cmp.growth_respiration_parameter1)},
+		{"GrowthRespirationParameter2", jx.f(cmp.growth_respiration_parameter2)},
+		{"Tortuosity", jx.f(cmp.tortuosity)},
+		{"AdjustRootDepthForSoilProps", jx.b(cmp.adjust_root_depth_for_soil_props)},
 		{"TimeUnderAnoxiaThreshold", jx.Value(anoxia)},
 		{
 			"__enable_Phenology_WangEngelTemperatureResponse__",

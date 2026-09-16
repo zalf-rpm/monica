@@ -179,7 +179,7 @@ main :: proc() {
 		// endDate is not emitted by to_json, so check it separately
 		fmt.printf(
 			"merged-AutomaticIrrigation-endDate\t%s\n",
-			d.to_iso_date_string(v.endDate, "", a),
+			d.to_iso_date_string(v.end_date, "", a),
 		)
 	}
 	{

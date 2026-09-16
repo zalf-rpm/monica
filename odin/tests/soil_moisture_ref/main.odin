@@ -85,9 +85,9 @@ main :: proc() {
 	// mirroring initializeMonicaModelFromParams minus the modules soilmoisture
 	// doesn't need ---
 	sc := core.make_soil_column(
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		cpp.soil_organic_mod_params.max_mineralisation_depth,
-		cpp.site_params.vs_SoilParameters[:],
+		cpp.site_params.soil_parameters[:],
 		a,
 	)
 	sm := core.make_soil_moisture(
@@ -96,7 +96,7 @@ main :: proc() {
 		cpp.soil_moisture_mod_params,
 		&cpp.env_params,
 		&cpp.crop_params,
-		cpp.sim_params.p_LayerThickness,
+		cpp.sim_params.layer_thickness,
 		a,
 	)
 	sm.crop_module = nil // bare soil - see the file comment
