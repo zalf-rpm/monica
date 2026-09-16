@@ -156,7 +156,7 @@ make_soil_moisture :: proc(
 	initialize_frost_component(
 		&sm.frost_component,
 		sc,
-		sm.mod_params.pm_HydraulicConductivityRedux,
+		sm.mod_params.hydraulic_conductivity_redux,
 		sm.env_params.time_step,
 		allocator,
 	)
@@ -212,7 +212,7 @@ soil_moisture_step :: proc(
 			sm.net_precipitation_mm = precipitation_mm
 		}
 	} else {
-		sm.kc_factor = sm.mod_params.pm_KcFactor
+		sm.kc_factor = sm.mod_params.kc_factor
 		sm.net_precipitation_mm = precipitation_mm
 		sm.soil_coverage_percent = 0.0
 	}
@@ -289,8 +289,8 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 
 	sm.soil_moisture_deficit = (scl_0.saturation - scl_0.soil_moisture_m3) / scl_0.saturation
 	vm_ReducedHydraulicConductivity :=
-		sm.mod_params.pm_SaturatedHydraulicConductivity *
-		sm.mod_params.pm_HydraulicConductivityRedux
+		sm.mod_params.saturated_hydraulic_conductivity *
+		sm.mod_params.hydraulic_conductivity_redux
 
 	if vm_ReducedHydraulicConductivity > 0.0 {
 		vm_PotentialInfiltration :=
@@ -316,9 +316,9 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 	}
 
 	if sc.surface_water_storage >
-	   (10.0 * sm.mod_params.pm_SurfaceRoughness / (sm.site_params.vs_Slope + 0.001)) {
+	   (10.0 * sm.mod_params.surface_roughness / (sm.site_params.vs_Slope + 0.001)) {
 		vm_RunOffFactor :=
-			0.02 + (sm.mod_params.pm_SurfaceRoughness / 4.0) + (sm.soil_coverage_percent / 15.0)
+			0.02 + (sm.mod_params.surface_roughness / 4.0) + (sm.soil_coverage_percent / 15.0)
 		if sm.site_params.vs_Slope < 0.0 || sm.site_params.vs_Slope > 1.0 {
 			fmt.eprintln("Slope value out ouf boundary")
 		} else if sm.site_params.vs_Slope == 0.0 {
@@ -347,8 +347,8 @@ infiltration :: proc(sm: ^Soil_Moisture, vm_WaterToInfiltrate: f64) {
 		sm.percolation_rate[0] =
 			(sm.gravitational_water[0] * sm.gravitational_water[0] * vm_LambdaReduced) /
 			vm_PercolationFactor
-		if sm.percolation_rate[0] > sm.mod_params.pm_MaxPercolationRate {
-			sm.percolation_rate[0] = sm.mod_params.pm_MaxPercolationRate
+		if sm.percolation_rate[0] > sm.mod_params.max_percolation_rate {
+			sm.percolation_rate[0] = sm.mod_params.max_percolation_rate
 		}
 		sm.gravitational_water[0] = sm.gravitational_water[0] - sm.percolation_rate[0]
 		sm.gravitational_water[0] = max(0.0, sm.gravitational_water[0])
@@ -448,7 +448,7 @@ capillary_rise :: proc(sm: ^Soil_Moisture, allocator := context.allocator) {
 percolation_with_groundwater :: proc(sm: ^Soil_Moisture, oscill_groundwater_layer: int) {
 	sm.groundwater_added = 0.0
 	sc := sm.soil_column
-	groundwater_discharge := sm.mod_params.pm_GroundwaterDischarge
+	groundwater_discharge := sm.mod_params.groundwater_discharge
 
 	for i in 0 ..< sm.no_of_soil_layers {
 		ib := i + 1
@@ -573,7 +573,7 @@ groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
 		soil_moisture_i^ += sm.groundwater_added / 1000.0 / sm.layer_thickness_m
 
 		if i == start_layer {
-			sm.percolation_rate[i] = sm.mod_params.pm_GroundwaterDischarge
+			sm.percolation_rate[i] = sm.mod_params.groundwater_discharge
 		} else {
 			sm.percolation_rate[i] -= sm.groundwater_added
 			water_flux_ib^ = sm.percolation_rate[i]
@@ -617,7 +617,7 @@ groundwater_replenishment :: proc(sm: ^Soil_Moisture) {
 
 // C++: void monica::soilmoisture::percolationWithoutGroundwater(SoilMoisture*)
 percolation_without_groundwater :: proc(sm: ^Soil_Moisture) {
-	max_percolation_rate := sm.mod_params.pm_MaxPercolationRate
+	max_percolation_rate := sm.mod_params.max_percolation_rate
 	sc := sm.soil_column
 
 	for i in 0 ..< sm.no_of_soil_layers {
@@ -939,11 +939,11 @@ evapotranspiration :: proc(
 	vm_SnowDepth := sm.snow_component.snow_depth
 
 	// Berechnung der Bodenevaporation bis max. 4dm Tiefe
-	pm_EvaporationZeta = sm.mod_params.pm_EvaporationZeta
+	pm_EvaporationZeta = sm.mod_params.evaporation_zeta
 
-	sm.xsa_critical_soil_moisture = sm.mod_params.pm_XSACriticalSoilMoisture
+	sm.xsa_critical_soil_moisture = sm.mod_params.xsa_critical_soil_moisture
 
-	pm_MaximumEvaporationImpactDepth = sm.mod_params.pm_MaximumEvaporationImpactDepth
+	pm_MaximumEvaporationImpactDepth = sm.mod_params.maximum_evaporation_impact_depth
 
 	// If a crop grows, ETp is taken from crop module
 	if developmental_stage > 0 {

@@ -50,19 +50,19 @@ initialize_snow_component :: proc(
 	sc.water_to_infiltrate = 0.0
 	sc.max_snow_depth = 0.0
 	sc.accumulated_snow_depth = 0.0
-	sc.snowmelt_temperature = smps.pm_SnowMeltTemperature
-	sc.snow_accumulation_threshold_temperature = smps.pm_SnowAccumulationTresholdTemperature
-	sc.temperature_limit_for_liquid_water = smps.pm_TemperatureLimitForLiquidWater
-	sc.correction_rain = smps.pm_CorrectionRain
-	sc.correction_snow = smps.pm_CorrectionSnow
-	sc.refreeze_temperature = smps.pm_RefreezeTemperature
-	sc.refreeze_p1 = smps.pm_RefreezeParameter1
-	sc.refreeze_p2 = smps.pm_RefreezeParameter2
-	sc.new_snow_density_min = smps.pm_NewSnowDensityMin
-	sc.snow_max_additional_density = smps.pm_SnowMaxAdditionalDensity
-	sc.snow_packing = smps.pm_SnowPacking
-	sc.snow_retention_capacity_min = smps.pm_SnowRetentionCapacityMin
-	sc.snow_retention_capacity_max = smps.pm_SnowRetentionCapacityMax
+	sc.snowmelt_temperature = smps.snow_melt_temperature
+	sc.snow_accumulation_threshold_temperature = smps.snow_accumulation_treshold_temperature
+	sc.temperature_limit_for_liquid_water = smps.temperature_limit_for_liquid_water
+	sc.correction_rain = smps.correction_rain
+	sc.correction_snow = smps.correction_snow
+	sc.refreeze_temperature = smps.refreeze_temperature
+	sc.refreeze_p1 = smps.refreeze_parameter1
+	sc.refreeze_p2 = smps.refreeze_parameter2
+	sc.new_snow_density_min = smps.new_snow_density_min
+	sc.snow_max_additional_density = smps.snow_max_additional_density
+	sc.snow_packing = smps.snow_packing
+	sc.snow_retention_capacity_min = smps.snow_retention_capacity_min
+	sc.snow_retention_capacity_max = smps.snow_retention_capacity_max
 }
 
 // C++: void monica::snowcomponent::calcSnowLayer(SnowComponent*, double, double)

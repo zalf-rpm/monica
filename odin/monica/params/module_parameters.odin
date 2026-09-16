@@ -46,29 +46,29 @@ default_merge :: proc(
 // member; per plan-odin.md prep 2 that callback is not part of the data struct
 // here - the capillary-rise lookup is wired up at the call site instead.
 Soil_Moisture_Module_Parameters :: struct {
-	pm_SaturatedHydraulicConductivity:      f64,
-	pm_SurfaceRoughness:                    f64,
-	pm_GroundwaterDischarge:                f64,
-	pm_HydraulicConductivityRedux:          f64,
-	pm_SnowAccumulationTresholdTemperature: f64,
-	pm_KcFactor:                            f64,
-	pm_TemperatureLimitForLiquidWater:      f64,
-	pm_CorrectionSnow:                      f64,
-	pm_CorrectionRain:                      f64,
-	pm_SnowMaxAdditionalDensity:            f64,
-	pm_NewSnowDensityMin:                   f64,
-	pm_SnowRetentionCapacityMin:            f64,
-	pm_RefreezeParameter1:                  f64,
-	pm_RefreezeParameter2:                  f64,
-	pm_RefreezeTemperature:                 f64,
-	pm_SnowMeltTemperature:                 f64,
-	pm_SnowPacking:                         f64,
-	pm_SnowRetentionCapacityMax:            f64,
-	pm_EvaporationZeta:                     f64,
-	pm_XSACriticalSoilMoisture:             f64,
-	pm_MaximumEvaporationImpactDepth:       f64,
-	pm_MaxPercolationRate:                  f64,
-	pm_MoistureInitValue:                   f64,
+	saturated_hydraulic_conductivity:       f64,
+	surface_roughness:                      f64,
+	groundwater_discharge:                  f64,
+	hydraulic_conductivity_redux:           f64,
+	snow_accumulation_treshold_temperature: f64,
+	kc_factor:                              f64,
+	temperature_limit_for_liquid_water:     f64,
+	correction_snow:                        f64,
+	correction_rain:                        f64,
+	snow_max_additional_density:            f64,
+	new_snow_density_min:                   f64,
+	snow_retention_capacity_min:            f64,
+	refreeze_parameter1:                    f64,
+	refreeze_parameter2:                    f64,
+	refreeze_temperature:                   f64,
+	snow_melt_temperature:                  f64,
+	snow_packing:                           f64,
+	snow_retention_capacity_max:            f64,
+	evaporation_zeta:                       f64,
+	xsa_critical_soil_moisture:             f64,
+	maximum_evaporation_impact_depth:       f64,
+	max_percolation_rate:                   f64,
+	moisture_init_value:                    f64,
 }
 // all C++ defaults are 0.0, so the Odin zero value matches
 
@@ -80,40 +80,40 @@ soil_moisture_module_parameters_merge :: proc(
 	res := default_merge(smp, j, soil_moisture_module_parameters_merge)
 
 	jx.set_double_value(
-		&smp.pm_SaturatedHydraulicConductivity,
+		&smp.saturated_hydraulic_conductivity,
 		j,
 		"SaturatedHydraulicConductivity",
 	)
-	jx.set_double_value(&smp.pm_SurfaceRoughness, j, "SurfaceRoughness")
-	jx.set_double_value(&smp.pm_GroundwaterDischarge, j, "GroundwaterDischarge")
-	jx.set_double_value(&smp.pm_HydraulicConductivityRedux, j, "HydraulicConductivityRedux")
+	jx.set_double_value(&smp.surface_roughness, j, "SurfaceRoughness")
+	jx.set_double_value(&smp.groundwater_discharge, j, "GroundwaterDischarge")
+	jx.set_double_value(&smp.hydraulic_conductivity_redux, j, "HydraulicConductivityRedux")
 	jx.set_double_value(
-		&smp.pm_SnowAccumulationTresholdTemperature,
+		&smp.snow_accumulation_treshold_temperature,
 		j,
 		"SnowAccumulationTresholdTemperature",
 	)
-	jx.set_double_value(&smp.pm_KcFactor, j, "KcFactor")
+	jx.set_double_value(&smp.kc_factor, j, "KcFactor")
 	jx.set_double_value(
-		&smp.pm_TemperatureLimitForLiquidWater,
+		&smp.temperature_limit_for_liquid_water,
 		j,
 		"TemperatureLimitForLiquidWater",
 	)
-	jx.set_double_value(&smp.pm_CorrectionSnow, j, "CorrectionSnow")
-	jx.set_double_value(&smp.pm_CorrectionRain, j, "CorrectionRain")
-	jx.set_double_value(&smp.pm_SnowMaxAdditionalDensity, j, "SnowMaxAdditionalDensity")
-	jx.set_double_value(&smp.pm_NewSnowDensityMin, j, "NewSnowDensityMin")
-	jx.set_double_value(&smp.pm_SnowRetentionCapacityMin, j, "SnowRetentionCapacityMin")
-	jx.set_double_value(&smp.pm_RefreezeParameter1, j, "RefreezeParameter1")
-	jx.set_double_value(&smp.pm_RefreezeParameter2, j, "RefreezeParameter2")
-	jx.set_double_value(&smp.pm_RefreezeTemperature, j, "RefreezeTemperature")
-	jx.set_double_value(&smp.pm_SnowMeltTemperature, j, "SnowMeltTemperature")
-	jx.set_double_value(&smp.pm_SnowPacking, j, "SnowPacking")
-	jx.set_double_value(&smp.pm_SnowRetentionCapacityMax, j, "SnowRetentionCapacityMax")
-	jx.set_double_value(&smp.pm_EvaporationZeta, j, "EvaporationZeta")
-	jx.set_double_value(&smp.pm_XSACriticalSoilMoisture, j, "XSACriticalSoilMoisture")
-	jx.set_double_value(&smp.pm_MaximumEvaporationImpactDepth, j, "MaximumEvaporationImpactDepth")
-	jx.set_double_value(&smp.pm_MaxPercolationRate, j, "MaxPercolationRate")
-	jx.set_double_value(&smp.pm_MoistureInitValue, j, "MoistureInitValue")
+	jx.set_double_value(&smp.correction_snow, j, "CorrectionSnow")
+	jx.set_double_value(&smp.correction_rain, j, "CorrectionRain")
+	jx.set_double_value(&smp.snow_max_additional_density, j, "SnowMaxAdditionalDensity")
+	jx.set_double_value(&smp.new_snow_density_min, j, "NewSnowDensityMin")
+	jx.set_double_value(&smp.snow_retention_capacity_min, j, "SnowRetentionCapacityMin")
+	jx.set_double_value(&smp.refreeze_parameter1, j, "RefreezeParameter1")
+	jx.set_double_value(&smp.refreeze_parameter2, j, "RefreezeParameter2")
+	jx.set_double_value(&smp.refreeze_temperature, j, "RefreezeTemperature")
+	jx.set_double_value(&smp.snow_melt_temperature, j, "SnowMeltTemperature")
+	jx.set_double_value(&smp.snow_packing, j, "SnowPacking")
+	jx.set_double_value(&smp.snow_retention_capacity_max, j, "SnowRetentionCapacityMax")
+	jx.set_double_value(&smp.evaporation_zeta, j, "EvaporationZeta")
+	jx.set_double_value(&smp.xsa_critical_soil_moisture, j, "XSACriticalSoilMoisture")
+	jx.set_double_value(&smp.maximum_evaporation_impact_depth, j, "MaximumEvaporationImpactDepth")
+	jx.set_double_value(&smp.max_percolation_rate, j, "MaxPercolationRate")
+	jx.set_double_value(&smp.moisture_init_value, j, "MoistureInitValue")
 
 	return res
 }
@@ -126,29 +126,29 @@ soil_moisture_module_parameters_to_json :: proc(
 	return jx.obj(
 		a,
 		{"type", jx.sl("SoilMoistureModuleParameters")},
-		{"SaturatedHydraulicConductivity", jx.f(smp.pm_SaturatedHydraulicConductivity)},
-		{"SurfaceRoughness", jx.f(smp.pm_SurfaceRoughness)},
-		{"GroundwaterDischarge", jx.f(smp.pm_GroundwaterDischarge)},
-		{"HydraulicConductivityRedux", jx.f(smp.pm_HydraulicConductivityRedux)},
-		{"SnowAccumulationTresholdTemperature", jx.f(smp.pm_SnowAccumulationTresholdTemperature)},
-		{"KcFactor", jx.f(smp.pm_KcFactor)},
-		{"TemperatureLimitForLiquidWater", jx.f(smp.pm_TemperatureLimitForLiquidWater)},
-		{"CorrectionSnow", jx.f(smp.pm_CorrectionSnow)},
-		{"CorrectionRain", jx.f(smp.pm_CorrectionRain)},
-		{"SnowMaxAdditionalDensity", jx.f(smp.pm_SnowMaxAdditionalDensity)},
-		{"NewSnowDensityMin", jx.f(smp.pm_NewSnowDensityMin)},
-		{"SnowRetentionCapacityMin", jx.f(smp.pm_SnowRetentionCapacityMin)},
-		{"RefreezeParameter1", jx.f(smp.pm_RefreezeParameter1)},
-		{"RefreezeParameter2", jx.f(smp.pm_RefreezeParameter2)},
-		{"RefreezeTemperature", jx.f(smp.pm_RefreezeTemperature)},
-		{"SnowMeltTemperature", jx.f(smp.pm_SnowMeltTemperature)},
-		{"SnowPacking", jx.f(smp.pm_SnowPacking)},
-		{"SnowRetentionCapacityMax", jx.f(smp.pm_SnowRetentionCapacityMax)},
-		{"EvaporationZeta", jx.f(smp.pm_EvaporationZeta)},
-		{"XSACriticalSoilMoisture", jx.f(smp.pm_XSACriticalSoilMoisture)},
-		{"MaximumEvaporationImpactDepth", jx.f(smp.pm_MaximumEvaporationImpactDepth)},
-		{"MaxPercolationRate", jx.f(smp.pm_MaxPercolationRate)},
-		{"MoistureInitValue", jx.f(smp.pm_MoistureInitValue)},
+		{"SaturatedHydraulicConductivity", jx.f(smp.saturated_hydraulic_conductivity)},
+		{"SurfaceRoughness", jx.f(smp.surface_roughness)},
+		{"GroundwaterDischarge", jx.f(smp.groundwater_discharge)},
+		{"HydraulicConductivityRedux", jx.f(smp.hydraulic_conductivity_redux)},
+		{"SnowAccumulationTresholdTemperature", jx.f(smp.snow_accumulation_treshold_temperature)},
+		{"KcFactor", jx.f(smp.kc_factor)},
+		{"TemperatureLimitForLiquidWater", jx.f(smp.temperature_limit_for_liquid_water)},
+		{"CorrectionSnow", jx.f(smp.correction_snow)},
+		{"CorrectionRain", jx.f(smp.correction_rain)},
+		{"SnowMaxAdditionalDensity", jx.f(smp.snow_max_additional_density)},
+		{"NewSnowDensityMin", jx.f(smp.new_snow_density_min)},
+		{"SnowRetentionCapacityMin", jx.f(smp.snow_retention_capacity_min)},
+		{"RefreezeParameter1", jx.f(smp.refreeze_parameter1)},
+		{"RefreezeParameter2", jx.f(smp.refreeze_parameter2)},
+		{"RefreezeTemperature", jx.f(smp.refreeze_temperature)},
+		{"SnowMeltTemperature", jx.f(smp.snow_melt_temperature)},
+		{"SnowPacking", jx.f(smp.snow_packing)},
+		{"SnowRetentionCapacityMax", jx.f(smp.snow_retention_capacity_max)},
+		{"EvaporationZeta", jx.f(smp.evaporation_zeta)},
+		{"XSACriticalSoilMoisture", jx.f(smp.xsa_critical_soil_moisture)},
+		{"MaximumEvaporationImpactDepth", jx.f(smp.maximum_evaporation_impact_depth)},
+		{"MaxPercolationRate", jx.f(smp.max_percolation_rate)},
+		{"MoistureInitValue", jx.f(smp.moisture_init_value)},
 	)
 }
 

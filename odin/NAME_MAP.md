@@ -268,7 +268,7 @@ Not renamed this round: `vo_AOM_Pool` (`vo_` prefix, not `vs_`).
 | `vm_TemperatureUnderSnow` | `temperature_under_snow` |
 | `vm_ThawDepth` | `thaw_depth` |
 
-Not renamed this round: `soilColumn`, `pt_TimeStep`, `pm_HydraulicConductivityRedux` (no `vm_` prefix).
+Not renamed this round: `soilColumn`, `pt_TimeStep` (no `vm_` prefix). `pm_HydraulicConductivityRedux` was renamed later, see `monica::SoilMoistureModuleParameters` below.
 
 ## `monica::SnowComponent` -> `core.Snow_Component` (odin/monica/core/snow_component.odin)
 
@@ -296,6 +296,38 @@ Not renamed this round: `soilColumn`, `pt_TimeStep`, `pm_HydraulicConductivityRe
 | `vm_WaterToInfiltrate` | `water_to_infiltrate` |
 
 Not renamed this round: `soilColumn` (no `vm_` prefix). Note Soil_Column has its own, separate `vm_SnowDepth` mirror field (`sc.soilColumn.vm_SnowDepth = sc.snow_depth`) - out of scope this round, unrelated to Snow_Component's own field of the same C++ name.
+
+## `monica::SoilMoistureModuleParameters` -> `params.Soil_Moisture_Module_Parameters` (odin/monica/params/module_parameters.odin)
+
+| C++ (`monica-parameters.h`) | Odin |
+| --- | --- |
+| `pm_SaturatedHydraulicConductivity` | `saturated_hydraulic_conductivity` |
+| `pm_SurfaceRoughness` | `surface_roughness` |
+| `pm_GroundwaterDischarge` | `groundwater_discharge` |
+| `pm_HydraulicConductivityRedux` | `hydraulic_conductivity_redux` |
+| `pm_SnowAccumulationTresholdTemperature` | `snow_accumulation_treshold_temperature` |
+| `pm_KcFactor` | `kc_factor` |
+| `pm_TemperatureLimitForLiquidWater` | `temperature_limit_for_liquid_water` |
+| `pm_CorrectionSnow` | `correction_snow` |
+| `pm_CorrectionRain` | `correction_rain` |
+| `pm_SnowMaxAdditionalDensity` | `snow_max_additional_density` |
+| `pm_NewSnowDensityMin` | `new_snow_density_min` |
+| `pm_SnowRetentionCapacityMin` | `snow_retention_capacity_min` |
+| `pm_RefreezeParameter1` | `refreeze_parameter1` |
+| `pm_RefreezeParameter2` | `refreeze_parameter2` |
+| `pm_RefreezeTemperature` | `refreeze_temperature` |
+| `pm_SnowMeltTemperature` | `snow_melt_temperature` |
+| `pm_SnowPacking` | `snow_packing` |
+| `pm_SnowRetentionCapacityMax` | `snow_retention_capacity_max` |
+| `pm_EvaporationZeta` | `evaporation_zeta` |
+| `pm_XSACriticalSoilMoisture` | `xsa_critical_soil_moisture` |
+| `pm_MaximumEvaporationImpactDepth` | `maximum_evaporation_impact_depth` |
+| `pm_MaxPercolationRate` | `max_percolation_rate` |
+| `pm_MoistureInitValue` | `moisture_init_value` |
+
+`pm_SnowAccumulationTresholdTemperature`'s "Treshold" typo (missing `h`) is in the C++ source and the
+external JSON key both; kept verbatim per §1 (translate literally) rather than "fixed" to `threshold`,
+unlike the correctly-spelled, unrelated `vm_SnowAccumulationThresholdTemperature` in `Snow_Component` above.
 
 ## `monica::SoilTransport` -> `core.Soil_Transport` (odin/monica/core/soil_transport.odin)
 

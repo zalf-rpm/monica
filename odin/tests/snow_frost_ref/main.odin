@@ -97,7 +97,7 @@ main :: proc() {
 	core.initialize_frost_component(
 		&frost,
 		&sc,
-		cpp.soil_moisture_mod_params.pm_HydraulicConductivityRedux,
+		cpp.soil_moisture_mod_params.hydraulic_conductivity_redux,
 		cpp.env_params.time_step,
 		a,
 	)
