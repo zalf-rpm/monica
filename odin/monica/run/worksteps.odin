@@ -165,7 +165,7 @@ sowing_apply :: proc(
 		}
 
 		model.soil_transport.crop_module = model.current_crop_module
-		model.soil_column.cropModule = model.current_crop_module
+		model.soil_column.crop_module = model.current_crop_module
 		model.soil_moisture.crop_module = model.current_crop_module
 		model.soil_organic.crop_module = model.current_crop_module
 

@@ -919,3 +919,13 @@ under the struct that declares them. JSON keys (`"initialKcb"`, `"runAtStartOfDa
 
 `__enable_vernalisation_factor_fix__` keeps its dunder spelling, like the other `__enable_*__` flags.
 `Species_Parameters` and `Cultivar_Parameters` were already snake_cased (tables above).
+
+## `monica::SoilColumn` -> `core.Soil_Column` (odin/monica/core/soil_column.odin)
+
+Only the fields that did not already match their snake_cased C++ name are listed.
+
+| C++ (`soilcolumn.h`) | Odin |
+| --- | --- |
+| `cropModule` | `crop_module` |
+| `vq_CropNUptake` | `crop_n_uptake` |
+| `_delayedNMinApplications` | `delayed_n_min_applications` |

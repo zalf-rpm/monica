@@ -251,7 +251,7 @@ Soil_Column :: struct {
 	// vs_InterceptionStorage:    f64, // [mm]
 	groundwater_table_layer_idx: int,
 	flux_at_lower_boundary:      f64,
-	crop_N_uptake:               f64, // [kg m-2]
+	crop_n_uptake:               f64, // [kg m-2]
 	soil_surface_temperature:    f64,
 	snow_depth_mm:               f64,
 	max_mineralisation_depth_m:  f64,
@@ -259,10 +259,10 @@ Soil_Column :: struct {
 	top_dressing:                f64,
 	top_dressing_partition:      p.Mineral_Fertilizer_Parameters,
 	top_dressing_delay:          int,
-	delayed_Nmin_applications:   [dynamic]Delayed_N_Min_Application_Params,
+	delayed_n_min_applications:  [dynamic]Delayed_N_Min_Application_Params,
 
 	// C++: CropModule *cropModule{nullptr}
-	cropModule:                  ^Crop_Module,
+	crop_module:                 ^Crop_Module,
 }
 
 // C++ in-class initialisers
@@ -334,7 +334,7 @@ soil_column_layer_thickness :: proc(sc: ^Soil_Column) -> f64 {
 // C++: inline double monica::soilcolumn::dailyCropNUptake(const SoilColumn*)
 // [kg N ha-1 d-1]
 daily_crop_n_uptake :: proc(sc: ^Soil_Column) -> f64 {
-	return sc.crop_N_uptake * 10000.0
+	return sc.crop_n_uptake * 10000.0
 }
 
 // C++: size_t monica::soilcolumn::getLayerNumberForDepth(const SoilColumn*, double)
@@ -371,12 +371,12 @@ sum_soil_temperature :: proc(sc: ^Soil_Column, layers: int) -> f64 {
 
 // C++: void monica::soilcolumn::putCrop(SoilColumn*, CropModule*)
 put_crop :: proc(sc: ^Soil_Column, cm: ^Crop_Module) {
-	sc.cropModule = cm
+	sc.crop_module = cm
 }
 
 // C++: void monica::soilcolumn::removeCrop(SoilColumn*)
 remove_crop :: proc(sc: ^Soil_Column) {
-	sc.cropModule = nil
+	sc.crop_module = nil
 }
 
 // C++: void monica::soilcolumn::clearTopDressingParams(SoilColumn*)
@@ -450,7 +450,7 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 ) -> f64 {
 	if sc.layers[0].soil_moisture_m3 > sc.layers[0].field_capacity {
 		append(
-			&sc.delayed_Nmin_applications,
+			&sc.delayed_n_min_applications,
 			Delayed_N_Min_Application_Params {
 				fp                         = fertiliserPartition,
 				sampling_depth             = samplingDepth,
@@ -562,9 +562,9 @@ apply_mineral_fertiliser_via_n_demand :: proc(
 // snapshotting the original length up front instead of copying the list.
 apply_possible_delayed_fertilizer :: proc(sc: ^Soil_Column) -> f64 {
 	n_amount := 0.0
-	original_len := len(sc.delayed_Nmin_applications)
+	original_len := len(sc.delayed_n_min_applications)
 	for _ in 0 ..< original_len {
-		da := sc.delayed_Nmin_applications[0]
+		da := sc.delayed_n_min_applications[0]
 		n_amount += apply_mineral_fertiliser_via_n_min_method(
 			sc,
 			da.fp,
@@ -575,7 +575,7 @@ apply_possible_delayed_fertilizer :: proc(sc: ^Soil_Column) -> f64 {
 			da.fertilizer_max_application,
 			da.top_dressing_delay,
 		)
-		ordered_remove(&sc.delayed_Nmin_applications, 0)
+		ordered_remove(&sc.delayed_n_min_applications, 0)
 	}
 	return n_amount
 }
@@ -603,13 +603,13 @@ apply_irrigation_via_trigger :: proc(
 	triggered: bool,
 	amount: f64,
 ) {
-	if sc.cropModule == nil {
+	if sc.crop_module == nil {
 		return false, 0
 	}
 
-	s := sc.cropModule.crop_params.cultivar_params.heat_sum_irrigation_start
-	e := sc.cropModule.crop_params.cultivar_params.heat_sum_irrigation_end
-	cts := sc.cropModule.current_total_temperature_sum
+	s := sc.crop_module.crop_params.cultivar_params.heat_sum_irrigation_start
+	e := sc.crop_module.crop_params.cultivar_params.heat_sum_irrigation_end
+	cts := sc.crop_module.current_total_temperature_sum
 	if cts < s || cts > e || aips.threshold < 0.0 {
 		return false, 0
 	}

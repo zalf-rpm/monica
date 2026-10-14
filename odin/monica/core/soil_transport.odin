@@ -166,7 +166,7 @@ n_uptake :: proc(st: ^Soil_Transport) {
 		st.soil_no3_aq[i] = soil_no3_i^ / smi
 	}
 
-	st.soil_column.crop_N_uptake = crop_n_uptake // [kg m-2]
+	st.soil_column.crop_n_uptake = crop_n_uptake // [kg m-2]
 }
 
 // C++: void monica::soiltransport::nTransport(SoilTransport*, double, double)

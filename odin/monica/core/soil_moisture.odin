@@ -735,7 +735,7 @@ backwater_replenishment :: proc(sm: ^Soil_Moisture) {
 // C++: double monica::soilmoisture::dualKcPrecomputation(SoilMoisture*, double,
 //        double, double)
 //
-// Only ever called when sm.cropModule != nil (see evapotranspiration's
+// Only ever called when sm.crop_module != nil (see evapotranspiration's
 // useDualKc guard), matching the C++'s unchecked `cropModule->` derefs below.
 // daily_sum_irrigation_water stands in for `sm->monica.dailySumIrrigationWater`
 // - see the package comment.
@@ -1011,7 +1011,7 @@ evapotranspiration :: proc(
 			// FAO-56 Dual Kc pathway - precompute potential soil evaporation
 			// (E_pot) using the Ke coefficient. Runs ONLY when dualKcMethod is
 			// enabled, a crop is present (vc_DevelopmentalStage > 0), and
-			// sm.cropModule != nil. Otherwise the Single Kc loop runs unchanged.
+			// sm.crop_module != nil. Otherwise the Single Kc loop runs unchanged.
 			// -----------------------------------------------------------------
 			e_pot_dual_kc := 0.0
 			use_dual_kc := dual_kc_method && developmental_stage > 0 && sm.crop_module != nil
