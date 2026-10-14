@@ -25,16 +25,16 @@ ATM_O3 :: 60.0
 dump_ws_common :: proc(t: ^tr.Tracer, path: string, ws: ^run.Workstep) {
 	tr.dump(t, strings.concatenate({path, ".date.isValid"}), d.is_valid(ws.date))
 	tr.dump(t, strings.concatenate({path, ".date.toIsoDateString"}), d.to_iso_date_string(ws.date))
-	tr.dump(t, strings.concatenate({path, ".apply_no_of_days_after_event"}), ws.apply_no_of_days_after_event)
-	tr.dump(t, strings.concatenate({path, ".after_event"}), ws.after_event)
-	tr.dump(t, strings.concatenate({path, ".days_after_event_count"}), ws.days_after_event_count)
+	tr.dump(t, strings.concatenate({path, ".applyNoOfDaysAfterEvent"}), ws.apply_no_of_days_after_event)
+	tr.dump(t, strings.concatenate({path, ".afterEvent"}), ws.after_event)
+	tr.dump(t, strings.concatenate({path, ".daysAfterEventCount"}), ws.days_after_event_count)
 	tr.dump(
 		t,
-		strings.concatenate({path, ".days_after_event_count_activated"}),
+		strings.concatenate({path, ".daysAfterEventCountActivated"}),
 		ws.days_after_event_count_activated,
 	)
 	tr.dump(t, strings.concatenate({path, ".isActive"}), ws.is_active)
-	tr.dump(t, strings.concatenate({path, ".run_at_start_of_day"}), ws.run_at_start_of_day)
+	tr.dump(t, strings.concatenate({path, ".runAtStartOfDay"}), ws.run_at_start_of_day)
 	tr.dump(t, strings.concatenate({path, ".errors.errors.size"}), len(ws.errors.errors))
 }
 
@@ -310,35 +310,35 @@ main :: proc() {
 	{
 		sd := &ws_sow.data.(run.Sowing_Data)
 		tr.dump(&t, "wsSow.cropName", sd.crop_params.speciesParams.species_id)
-		tr.dump(&t, "wsSow.initial_kcb", sd.initial_kcb)
+		tr.dump(&t, "wsSow.initialKcb", sd.initial_kcb)
 		tr.dump(&t, "wsSow.isValid", sd.is_valid)
 	}
 	{
 		td := &ws_transplant.data.(run.Transplant_Data)
-		tr.dump(&t, "wsTransplant.initial_gdd", td.initial_gdd)
-		tr.dump(&t, "wsTransplant.initial_stage", td.initial_stage)
+		tr.dump(&t, "wsTransplant.initialGDD", td.initial_gdd)
+		tr.dump(&t, "wsTransplant.initialStage", td.initial_stage)
 	}
 	{
 		cd := &ws_cutting.data.(run.Cutting_Data)
-		tr.dump(&t, "wsCutting.organ_id_2_cutting_spec.size", len(cd.organ_id_2_cutting_spec))
+		tr.dump(&t, "wsCutting.organId2cuttingSpec.size", len(cd.organ_id_2_cutting_spec))
 		for _, v in cd.organ_id_2_cutting_spec {
 			tr.dump(&t, "wsCutting.spec.value", v.value)
 			tr.dump(&t, "wsCutting.spec.unit", int(v.unit))
 			tr.dump(&t, "wsCutting.spec.cut_or_left", int(v.cut_or_left))
 		}
-		tr.dump(&t, "wsCutting.cut_max_assimilation_rate_fraction", cd.cut_max_assimilation_rate_fraction)
+		tr.dump(&t, "wsCutting.cutMaxAssimilationRateFraction", cd.cut_max_assimilation_rate_fraction)
 	}
 	{
 		aid := &ws_ai.data.(run.Automatic_Irrigation_Data)
 		tr.dump(&t, "wsAI.startStage", aid.start_stage)
-		tr.dump(&t, "wsAI.end_stage", aid.end_stage)
+		tr.dump(&t, "wsAI.endStage", aid.end_stage)
 		tr.dump(&t, "wsAI.irrigateCrop", aid.irrigate_crop)
 		tr.dump(&t, "wsAI.params.amount", aid.params.amount)
 		tr.dump(&t, "wsAI.params.threshold", aid.params.threshold)
 	}
 	{
 		nd := &ws_nd1.data.(run.N_Demand_Fertilization_Data)
-		tr.dump(&t, "wsND1.n_demand", nd.n_demand)
+		tr.dump(&t, "wsND1.Ndemand", nd.n_demand)
 		tr.dump(&t, "wsND1.depth", nd.depth)
 	}
 

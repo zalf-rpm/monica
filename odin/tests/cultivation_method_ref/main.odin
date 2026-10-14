@@ -24,7 +24,7 @@ ATM_O3 :: 60.0
 dump_cm_basic :: proc(t: ^tr.Tracer, path: string, cm: ^run.Cultivation_Method) {
 	tr.dump(t, strings.concatenate({path, ".customId"}), cm.custom_id)
 	tr.dump(t, strings.concatenate({path, ".name"}), cm.name)
-	tr.dump(t, strings.concatenate({path, ".can_be_skipped"}), cm.can_be_skipped)
+	tr.dump(t, strings.concatenate({path, ".canBeSkipped"}), cm.can_be_skipped)
 	tr.dump(t, strings.concatenate({path, ".isCoverCrop"}), cm.is_cover_crop)
 	tr.dump(t, strings.concatenate({path, ".repeat"}), cm.repeat)
 	tr.dump(t, strings.concatenate({path, ".allWorksteps.size"}), len(cm.all_worksteps))
@@ -244,7 +244,7 @@ main :: proc() {
 	season_start := d.from_iso_date_string("2020-09-22")
 	_ = run.cultivation_method_reinit(&cm, season_start)
 	tr.dump(&t, "cm.allAbsWorksteps.size", len(cm.all_abs_worksteps))
-	tr.dump(&t, "cm.unfinished_dynamic_worksteps.size", len(cm.unfinished_dynamic_worksteps))
+	tr.dump(&t, "cm.unfinishedDynamicWorksteps.size", len(cm.unfinished_dynamic_worksteps))
 	tr.dump(&t, "cm.startDate", d.to_iso_date_string(run.cultivation_method_start_date(&cm, a)))
 	tr.dump(
 		&t,
@@ -257,7 +257,7 @@ main :: proc() {
 		d.to_iso_date_string(run.cultivation_method_abs_latest_sowing_date(&cm)),
 	)
 	tr.dump(&t, "cm.endDate", d.to_iso_date_string(run.cultivation_method_end_date(&cm, a)))
-	tr.dump(&t, "cm.abs_end_date", d.to_iso_date_string(run.cultivation_method_abs_end_date(&cm, a)))
+	tr.dump(&t, "cm.absEndDate", d.to_iso_date_string(run.cultivation_method_abs_end_date(&cm, a)))
 	tr.dump(
 		&t,
 		"cm.areOnlyAbsoluteWorksteps",
@@ -395,5 +395,5 @@ main :: proc() {
 	tr.set_day(&t, 9000)
 	dump_model_bits(&t, "modelFinal", model)
 	tr.dump(&t, "harvested", harvested)
-	tr.dump(&t, "cm.unfinished_dynamic_worksteps.sizeFinal", len(cm.unfinished_dynamic_worksteps))
+	tr.dump(&t, "cm.unfinishedDynamicWorksteps.sizeFinal", len(cm.unfinished_dynamic_worksteps))
 }
