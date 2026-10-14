@@ -928,8 +928,6 @@ evapotranspiration :: proc(
 	e_reducer_1 := 0.0
 	e_reducer_2 := 0.0
 	e_reducer_3 := 0.0
-	evaporation_zeta: f64
-	maximum_evaporation_impact_depth: f64
 	e_reducer := 0.0
 	potential_evapotranspiration := 0.0
 	evaporated_from_intercept := 0.0
@@ -939,11 +937,11 @@ evapotranspiration :: proc(
 	snow_depth := sm.snow_component.snow_depth
 
 	// Berechnung der Bodenevaporation bis max. 4dm Tiefe
-	evaporation_zeta = sm.mod_params.evaporation_zeta
+	evaporation_zeta := sm.mod_params.evaporation_zeta
 
 	sm.xsa_critical_soil_moisture = sm.mod_params.xsa_critical_soil_moisture
 
-	maximum_evaporation_impact_depth = sm.mod_params.maximum_evaporation_impact_depth
+	maximum_evaporation_impact_depth := sm.mod_params.maximum_evaporation_impact_depth
 
 	// If a crop grows, ETp is taken from crop module
 	if developmental_stage > 0 {
@@ -1143,16 +1141,13 @@ reference_evapotranspiration :: proc(
 	global_radiation: f64,
 	julian_day: int,
 ) -> f64 {
-	reference_albedo := sm.crop_mod_params.reference_albedo
-	height_nn := sm.site_params.height_nn
-	latitude := sm.site_params.latitude
 	pi := 3.14159265358979323
 
 	declination := -23.4 * libc.cos(2.0 * pi * ((f64(julian_day) + 10.0) / 365.0))
 	declination_sinus :=
-		libc.sin(declination * pi / 180.0) * libc.sin(latitude * pi / 180.0)
+		libc.sin(declination * pi / 180.0) * libc.sin(sm.site_params.latitude * pi / 180.0)
 	declination_cosinus :=
-		libc.cos(declination * pi / 180.0) * libc.cos(latitude * pi / 180.0)
+		libc.cos(declination * pi / 180.0) * libc.cos(sm.site_params.latitude * pi / 180.0)
 
 	arg_astro_day_length := declination_sinus / declination_cosinus
 	// The argument of asin must be in the range of -1 to 1
@@ -1199,7 +1194,7 @@ reference_evapotranspiration :: proc(
 	sc := 24.0 * 60.0 / pi * 8.20 * (1.0 + 0.033 * libc.cos(2.0 * pi * f64(julian_day) / 365.0))
 	arg_sha := tl.bound(
 		-1.0,
-		-libc.tan(latitude * pi / 180.0) * libc.tan(declination * pi / 180.0),
+		-libc.tan(sm.site_params.latitude * pi / 180.0) * libc.tan(declination * pi / 180.0),
 		1.0,
 	)
 	// The argument of acos must be in the range of -1 to 1
@@ -1210,7 +1205,8 @@ reference_evapotranspiration :: proc(
 		sc * (sha * declination_sinus + declination_cosinus * libc.sin(sha)) / 100.0
 
 	// Calculation of atmospheric pressure
-	atmospheric_pressure := 101.3 * libc.pow(((293.0 - (0.0065 * height_nn)) / 293.0), 5.26)
+	atmospheric_pressure :=
+		101.3 * libc.pow(((293.0 - (0.0065 * sm.site_params.height_nn)) / 293.0), 5.26)
 
 	// Calculation of psychrometer constant - Luftfeuchtigkeit
 	psycrometer_constant := 0.000665 * atmospheric_pressure
@@ -1256,12 +1252,13 @@ reference_evapotranspiration :: proc(
 
 	surface_resistance := STOMATA_RESISTANCE / 1.44
 
-	clear_sky_solar_radiation := (0.75 + 0.00002 * height_nn) * extraterrestrial_radiation
+	clear_sky_solar_radiation :=
+		(0.75 + 0.00002 * sm.site_params.height_nn) * extraterrestrial_radiation
 	relative_shortwave_radiation :=
 		clear_sky_solar_radiation > 0 ? min(global_radiation / clear_sky_solar_radiation, 1.0) : 1.0
 
 	bolzmann_constant := 0.0000000049
-	shortwave_radiation := (1.0 - reference_albedo) * global_radiation
+	shortwave_radiation := (1.0 - sm.crop_mod_params.reference_albedo) * global_radiation
 	longwave_radiation :=
 		bolzmann_constant *
 		((libc.pow(min_air_temperature + 273.16, 4.0) +
