@@ -130,16 +130,16 @@ day_step :: proc(
 	frostKillOn: bool,
 	allocator := context.allocator,
 ) {
-	pc_BaseDaylength := cm.crop_params.cultivarParams.base_daylength
-	pc_CriticalOxygenContent := cm.crop_params.speciesParams.critical_oxygen_content
-	pc_DaylengthRequirement := cm.crop_params.cultivarParams.daylength_requirement
-	pc_MaxCropHeight := cm.crop_params.cultivarParams.max_crop_height
-	pc_Perennial := cm.crop_params.cultivarParams.perennial
-	pc_SpecificLeafArea := cm.crop_params.cultivarParams.specific_leaf_area
-	pc_StageKcFactor := cm.crop_params.cultivarParams.stage_kc_factor
-	pc_StageTemperatureSum := cm.crop_params.cultivarParams.stage_temperature_sum
-	pc_VernalisationRequirement := cm.crop_params.cultivarParams.vernalisation_requirement
-	speciesPs := &cm.crop_params.speciesParams
+	pc_BaseDaylength := cm.crop_params.cultivar_params.base_daylength
+	pc_CriticalOxygenContent := cm.crop_params.species_params.critical_oxygen_content
+	pc_DaylengthRequirement := cm.crop_params.cultivar_params.daylength_requirement
+	pc_MaxCropHeight := cm.crop_params.cultivar_params.max_crop_height
+	pc_Perennial := cm.crop_params.cultivar_params.perennial
+	pc_SpecificLeafArea := cm.crop_params.cultivar_params.specific_leaf_area
+	pc_StageKcFactor := cm.crop_params.cultivar_params.stage_kc_factor
+	pc_StageTemperatureSum := cm.crop_params.cultivar_params.stage_temperature_sum
+	pc_VernalisationRequirement := cm.crop_params.cultivar_params.vernalisation_requirement
+	speciesPs := &cm.crop_params.species_params
 
 	vs_JulianDay := int(d.julian_day(currentDate))
 
@@ -516,20 +516,20 @@ main :: proc() {
 		g_soil_moisture = &sm2
 
 		senescent_crop_params := wheat_crop_params
-		senescent_crop_params.cultivarParams.organ_senescence_rate = make(
+		senescent_crop_params.cultivar_params.organ_senescence_rate = make(
 			[dynamic][dynamic]f64,
-			len(wheat_crop_params.cultivarParams.organ_senescence_rate),
+			len(wheat_crop_params.cultivar_params.organ_senescence_rate),
 			a,
 		)
-		for row, i in wheat_crop_params.cultivarParams.organ_senescence_rate {
-			senescent_crop_params.cultivarParams.organ_senescence_rate[i] = make(
+		for row, i in wheat_crop_params.cultivar_params.organ_senescence_rate {
+			senescent_crop_params.cultivar_params.organ_senescence_rate[i] = make(
 				[dynamic]f64,
 				len(row),
 				a,
 			)
-			copy(senescent_crop_params.cultivarParams.organ_senescence_rate[i][:], row[:])
+			copy(senescent_crop_params.cultivar_params.organ_senescence_rate[i][:], row[:])
 			if len(row) > 0 {
-				senescent_crop_params.cultivarParams.organ_senescence_rate[i][0] = 0.01 // root organ
+				senescent_crop_params.cultivar_params.organ_senescence_rate[i][0] = 0.01 // root organ
 			}
 		}
 

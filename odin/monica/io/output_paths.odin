@@ -227,7 +227,7 @@ g_alias_table := []Alias_Entry {
 //   PotNup, Ra, LightInterception1/2, ActNupLayer
 //                 proc calls
 //   OrgBiom, OrgGreenBiom, NPP-Organs, Ra-Organs
-//                 guarded by speciesParams' organ COUNT, not by the array
+//                 guarded by species_params' organ COUNT, not by the array
 //                 bound, so an out-of-range organ must read 0.0 even when the
 //                 array has an element there
 //   OrgN, Co, AOMf, AOMs, SMBf, SMBs, SOMf, SOMs, CBal, SMB-CO2-ER,

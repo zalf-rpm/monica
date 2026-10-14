@@ -86,16 +86,16 @@ day_step :: proc(
 	relativeHumidity, windSpeed, windSpeedHeight, grossPrecipitation: f64,
 	allocator := context.allocator,
 ) {
-	pc_BaseDaylength := cm.crop_params.cultivarParams.base_daylength
-	pc_CriticalOxygenContent := cm.crop_params.speciesParams.critical_oxygen_content
-	pc_DaylengthRequirement := cm.crop_params.cultivarParams.daylength_requirement
-	pc_MaxCropHeight := cm.crop_params.cultivarParams.max_crop_height
-	pc_Perennial := cm.crop_params.cultivarParams.perennial
-	pc_SpecificLeafArea := cm.crop_params.cultivarParams.specific_leaf_area
-	pc_StageKcFactor := cm.crop_params.cultivarParams.stage_kc_factor
-	pc_StageTemperatureSum := cm.crop_params.cultivarParams.stage_temperature_sum
-	pc_VernalisationRequirement := cm.crop_params.cultivarParams.vernalisation_requirement
-	speciesPs := &cm.crop_params.speciesParams
+	pc_BaseDaylength := cm.crop_params.cultivar_params.base_daylength
+	pc_CriticalOxygenContent := cm.crop_params.species_params.critical_oxygen_content
+	pc_DaylengthRequirement := cm.crop_params.cultivar_params.daylength_requirement
+	pc_MaxCropHeight := cm.crop_params.cultivar_params.max_crop_height
+	pc_Perennial := cm.crop_params.cultivar_params.perennial
+	pc_SpecificLeafArea := cm.crop_params.cultivar_params.specific_leaf_area
+	pc_StageKcFactor := cm.crop_params.cultivar_params.stage_kc_factor
+	pc_StageTemperatureSum := cm.crop_params.cultivar_params.stage_temperature_sum
+	pc_VernalisationRequirement := cm.crop_params.cultivar_params.vernalisation_requirement
+	speciesPs := &cm.crop_params.species_params
 	soilColumn := cm.soil_column
 
 	vs_JulianDay := int(d.julian_day(currentDate))

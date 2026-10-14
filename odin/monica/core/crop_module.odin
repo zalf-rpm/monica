@@ -389,8 +389,8 @@ clone_crop_parameters :: proc(
 	allocator := context.allocator,
 ) -> p.Crop_Parameters {
 	out := cp
-	out.speciesParams = clone_species_parameters(cp.speciesParams, allocator)
-	out.cultivarParams = clone_cultivar_parameters(cp.cultivarParams, allocator)
+	out.species_params = clone_species_parameters(cp.species_params, allocator)
+	out.cultivar_params = clone_cultivar_parameters(cp.cultivar_params, allocator)
 	return out
 }
 
@@ -426,9 +426,9 @@ make_crop_module :: proc(
 	cm.add_organic_matter = add_organic_matter
 	cm.get_snow_depth_and_calc_temp_under_snow = get_snow_depth_and_calc_temp_under_snow
 
-	cm.no_of_organs = p.species_parameters_number_of_organs(&cm.crop_params.speciesParams)
+	cm.no_of_organs = p.species_parameters_number_of_organs(&cm.crop_params.species_params)
 	cm.no_of_dev_stages = p.species_parameters_number_of_developmental_stages(
-		&cm.crop_params.speciesParams,
+		&cm.crop_params.species_params,
 	)
 	cm.current_temperature_sum = make([dynamic]f64, cm.no_of_dev_stages, allocator)
 	cm.sunlit_leaf_area_index = make([dynamic]f64, 24, allocator)
@@ -455,7 +455,7 @@ make_crop_module :: proc(
 
 	// Determining the total temperature sum of all developmental stages after
 	// emergence (that's why i_Stage starts with 1) until before senescence
-	stage_temp_sum := cm.crop_params.cultivarParams.stage_temperature_sum
+	stage_temp_sum := cm.crop_params.cultivar_params.stage_temperature_sum
 	for i_stage := 1; i_stage < cm.no_of_dev_stages - 1; i_stage += 1 {
 		cm.total_temperature_sum += stage_temp_sum[i_stage]
 		if i_stage < cm.no_of_dev_stages - 3 {
@@ -467,28 +467,28 @@ make_crop_module :: proc(
 
 	// Determining the initial crop organ's biomass
 	for i_organ := 0; i_organ < cm.no_of_organs; i_organ += 1 {
-		cm.organ_biomass[i_organ] = cm.crop_params.speciesParams.initial_organ_biomass[i_organ] // [kg ha-1]
+		cm.organ_biomass[i_organ] = cm.crop_params.species_params.initial_organ_biomass[i_organ] // [kg ha-1]
 
-		if cm.crop_params.speciesParams.aboveground_organ[i_organ] {
-			cm.aboveground_biomass += cm.crop_params.speciesParams.initial_organ_biomass[i_organ] // [kg ha-1]
+		if cm.crop_params.species_params.aboveground_organ[i_organ] {
+			cm.aboveground_biomass += cm.crop_params.species_params.initial_organ_biomass[i_organ] // [kg ha-1]
 		}
 
-		cm.total_biomass += cm.crop_params.speciesParams.initial_organ_biomass[i_organ] // [kg ha-1]
+		cm.total_biomass += cm.crop_params.species_params.initial_organ_biomass[i_organ] // [kg ha-1]
 
 		// Define storage organ
-		if cm.crop_params.speciesParams.storage_organ[i_organ] {
+		if cm.crop_params.species_params.storage_organ[i_organ] {
 			cm.storage_organ = i_organ
 		}
 	}
 
 	cm.organ_green_biomass = clone_f64_array(cm.organ_biomass, allocator)
 
-	cm.root_biomass = cm.crop_params.speciesParams.initial_organ_biomass[0] // [kg ha-1]
+	cm.root_biomass = cm.crop_params.species_params.initial_organ_biomass[0] // [kg ha-1]
 
 	// Initialisisng the leaf area index
 	cm.leaf_area_index =
 		cm.organ_biomass[Organ_Leaf] *
-		cm.crop_params.cultivarParams.specific_leaf_area[cm.developmental_stage] // [ha ha-1]
+		cm.crop_params.cultivar_params.specific_leaf_area[cm.developmental_stage] // [ha ha-1]
 
 	if cm.leaf_area_index <= 0.0 {
 		cm.leaf_area_index = 0.001
@@ -502,15 +502,15 @@ make_crop_module :: proc(
 	cm.total_root_length = (cm.root_biomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * PI)
 
 	cm.n_concentration_aboveground_biomass =
-		cm.crop_params.speciesParams.n_concentration_aboveground_biomass
-	cm.n_concentration_root = cm.crop_params.speciesParams.n_concentration_root
+		cm.crop_params.species_params.n_concentration_aboveground_biomass
+	cm.n_concentration_root = cm.crop_params.species_params.n_concentration_root
 	cm.total_biomass_n_content =
 		(cm.aboveground_biomass * cm.n_concentration_aboveground_biomass) +
 		(cm.root_biomass * cm.n_concentration_root)
 
 	// Initialising the initial maximum rooting depth
 	if cm.mod_params.adjust_root_depth_for_soil_props {
-		r_p_max := cm.crop_params.cultivarParams.crop_specific_max_rooting_depth
+		r_p_max := cm.crop_params.cultivar_params.crop_specific_max_rooting_depth
 		f_s := cm.soil_column.layers[0].soil_sand_content // [kg kg-1]
 		r_s := (f_s - 0.5) * -0.6
 
@@ -522,7 +522,7 @@ make_crop_module :: proc(
 			((r_p_max + (r_p_max * r_s)) / r_p_max) *
 			((r_p_max + (r_p_max * r_d)) / r_p_max)
 	} else {
-		cm.max_rooting_depth = cm.crop_params.cultivarParams.crop_specific_max_rooting_depth // [m]
+		cm.max_rooting_depth = cm.crop_params.cultivar_params.crop_specific_max_rooting_depth // [m]
 	}
 
 	if cm.site_params.impenetrable_layer_depth > 0 {
@@ -532,7 +532,7 @@ make_crop_module :: proc(
 	// FAO-56 Dual Kc: Initialize GDD-based trapezoidal Kcb curve from
 	// pc_StageKcFactor. kcb_ini defaults to 0.15 (FAO-56 Table 17 bare
 	// soil); setInitialKcb() may override it.
-	stage_kc_factor := cm.crop_params.cultivarParams.stage_kc_factor
+	stage_kc_factor := cm.crop_params.cultivar_params.stage_kc_factor
 	if len(stage_kc_factor) > 0 {
 		max_kc := stage_kc_factor[0]
 		for v in stage_kc_factor {
@@ -604,7 +604,7 @@ sum_stage_temperature_sums :: proc(cm: ^Crop_Module, start_at_stage, end_at_incl
 	end_at_incl_stage2 :=
 		end_at_incl_stage < 0 ? f64(cm.no_of_dev_stages + end_at_incl_stage + 1) : f64(end_at_incl_stage)
 	for s := start_at_stage; f64(s) < end_at_incl_stage2; s += 1 {
-		ts += cm.crop_params.cultivarParams.stage_temperature_sum[s]
+		ts += cm.crop_params.cultivar_params.stage_temperature_sum[s]
 	}
 	return ts
 }
@@ -870,8 +870,8 @@ fc_crop_developmental_stage :: proc(
 	current_date: d.Date,
 	allocator := context.allocator,
 ) {
-	cultivar_ps := &cm.crop_params.cultivarParams
-	species_ps := &cm.crop_params.speciesParams
+	cultivar_ps := &cm.crop_params.cultivar_params
+	species_ps := &cm.crop_params.species_params
 	base_temperature := species_ps.base_temperature
 	stage_temperature_sum := cultivar_ps.stage_temperature_sum
 
@@ -1062,7 +1062,7 @@ fc_kc_factor :: proc(
 	}
 
 	if cm.developmental_stage == 0 {
-		initial_kc_factor := cm.crop_params.speciesParams.initial_kc_factor
+		initial_kc_factor := cm.crop_params.species_params.initial_kc_factor
 		return initial_kc_factor + (stage_kc_factor - initial_kc_factor) * relative_development
 	} else {
 		// Interpolating the Kc Factors
@@ -1075,10 +1075,10 @@ fc_kc_factor :: proc(
 
 // C++: void monica::cropmodule::fcCropSize(CropModule*, double maxCropHeight)
 fc_crop_size :: proc(cm: ^Crop_Module, max_crop_height: f64) {
-	stage_temperature_sum := cm.crop_params.cultivarParams.stage_temperature_sum
+	stage_temperature_sum := cm.crop_params.cultivar_params.stage_temperature_sum
 
 	total_temperature_sum_for_height := 0.0
-	for stage := 1; f64(stage) < cm.crop_params.speciesParams.stage_at_max_height + 1; stage += 1 {
+	for stage := 1; f64(stage) < cm.crop_params.species_params.stage_at_max_height + 1; stage += 1 {
 		total_temperature_sum_for_height += stage_temperature_sum[stage]
 	}
 	relative_total_development_for_height := min(
@@ -1090,16 +1090,16 @@ fc_crop_size :: proc(cm: ^Crop_Module, max_crop_height: f64) {
 			max_crop_height /
 			(1.0 +
 					libc.exp(
-						-cm.crop_params.cultivarParams.crop_height_p1 *
+						-cm.crop_params.cultivar_params.crop_height_p1 *
 						(relative_total_development_for_height -
-								cm.crop_params.cultivarParams.crop_height_p2),
+								cm.crop_params.cultivar_params.crop_height_p2),
 					))
 	} else {
 		cm.crop_height = 0.0
 	}
 
 	total_temperature_sum_for_diameter := 0.0
-	for stage := 1; f64(stage) < cm.crop_params.speciesParams.stage_at_max_diameter + 1; stage += 1 {
+	for stage := 1; f64(stage) < cm.crop_params.species_params.stage_at_max_diameter + 1; stage += 1 {
 		total_temperature_sum_for_diameter += stage_temperature_sum[stage]
 	}
 	relative_total_development_for_diameter := min(
@@ -1108,7 +1108,7 @@ fc_crop_size :: proc(cm: ^Crop_Module, max_crop_height: f64) {
 	)
 	if relative_total_development_for_diameter > 0.0 {
 		cm.crop_diameter =
-			cm.crop_params.speciesParams.max_crop_diameter * relative_total_development_for_diameter
+			cm.crop_params.species_params.max_crop_diameter * relative_total_development_for_diameter
 	} else {
 		cm.crop_diameter = 0.0
 	}
@@ -1129,10 +1129,10 @@ fc_crop_green_area :: proc(
 	temp_response_expansion := 1.0
 	if cm.mod_params.__enable_T_response_leaf_expansion__ {
 		// Stage switch T response leaf exp (wheat = 2, maize = -1 (deactivated))
-		if cm.developmental_stage + 1 <= cm.crop_params.speciesParams.transition_stage_leaf_exp {
+		if cm.developmental_stage + 1 <= cm.crop_params.species_params.transition_stage_leaf_exp {
 			// Early stages leaf expansion T response
 			reference_temp_response_expansion :=
-				223.9 * libc.exp(-5.03 * libc.exp(-0.0653 * cm.crop_params.cultivarParams.early_ref_leaf_exp))
+				223.9 * libc.exp(-5.03 * libc.exp(-0.0653 * cm.crop_params.cultivar_params.early_ref_leaf_exp))
 			temp_response_expansion = min(
 				223.9 *
 				libc.exp(-5.03 * libc.exp(-0.0653 * mean_air_temperature)) /
@@ -1142,7 +1142,7 @@ fc_crop_green_area :: proc(
 		} else {
 			// leaf expansion T response
 			reference_temp_response_expansion :=
-				37.7 * libc.exp(-7.23 * libc.exp(-0.1462 * cm.crop_params.cultivarParams.ref_leaf_exp))
+				37.7 * libc.exp(-7.23 * libc.exp(-0.1462 * cm.crop_params.cultivar_params.ref_leaf_exp))
 			temp_response_expansion = min(
 				37.7 *
 				libc.exp(-7.23 * libc.exp(-0.1462 * mean_air_temperature)) /
@@ -1167,7 +1167,7 @@ fc_crop_green_area :: proc(
 	}
 	PI :: 3.14159265358979323
 	cm.green_area_index =
-		cm.leaf_area_index + (cm.crop_height * PI * cm.crop_diameter * f64(cm.crop_params.speciesParams.plant_density)) // [m2 m-2]
+		cm.leaf_area_index + (cm.crop_height * PI * cm.crop_diameter * f64(cm.crop_params.species_params.plant_density)) // [m2 m-2]
 }
 
 // C++: double monica::cropmodule::fcSoilCoverage(const CropModule*)
@@ -1181,9 +1181,9 @@ fc_update_crop_parameters_for_perennial :: proc(cm: ^Crop_Module, allocator := c
 		return
 	}
 	cm.crop_params = clone_crop_parameters(cm.perennial_crop_params^, allocator)
-	cm.no_of_organs = p.species_parameters_number_of_organs(&cm.crop_params.speciesParams)
+	cm.no_of_organs = p.species_parameters_number_of_organs(&cm.crop_params.species_params)
 	cm.no_of_dev_stages = p.species_parameters_number_of_developmental_stages(
-		&cm.crop_params.speciesParams,
+		&cm.crop_params.species_params,
 	)
 }
 
@@ -1288,8 +1288,8 @@ fc_crop_photosynthesis :: proc(
 ) {
 	crop_ps := cm.mod_params
 	soil_column := cm.soil_column
-	species_ps := &cm.crop_params.speciesParams
-	cultivar_ps := &cm.crop_params.cultivarParams
+	species_ps := &cm.crop_params.species_params
+	cultivar_ps := &cm.crop_params.cultivar_params
 	assimilate_partitioning_coeff := cultivar_ps.assimilate_partitioning_coeff
 	minimum_temperature_for_assimilation := species_ps.minimum_temperature_for_assimilation
 	maximum_temperature_for_assimilation := species_ps.maximum_temperature_for_assimilation
@@ -2015,12 +2015,12 @@ calculate_voc_emissions :: proc(
 	mcd: ^Voc_Micro_Climate_Data,
 	allocator := context.allocator,
 ) {
-	species_ps := &cm.crop_params.speciesParams
+	species_ps := &cm.crop_params.species_params
 
 	species: Voc_Species_Data
 	species.lai = cm.leaf_area_index
 	species.mFol = cm.organ_biomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
-	species.sla = cm.crop_params.cultivarParams.specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
+	species.sla = cm.crop_params.cultivar_params.specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
 
 	species.EF_MONO = species_ps.ef_mono
 	species.EF_MONOS = species_ps.ef_monos
@@ -2064,7 +2064,7 @@ calculate_voc_emissions :: proc(
 // C++: void monica::cropmodule::fcHeatStressImpact(CropModule*, double
 // vw_MaxAirTemperature, double vw_MinAirTemperature)
 fc_heat_stress_impact :: proc(cm: ^Crop_Module, max_air_temperature, min_air_temperature: f64) {
-	cultivar_ps := &cm.crop_params.cultivarParams
+	cultivar_ps := &cm.crop_params.cultivar_params
 
 	// AGROSIM night and day temperatures
 	photo_temperature :=
@@ -2084,7 +2084,7 @@ fc_heat_stress_impact :: proc(cm: ^Crop_Module, max_air_temperature, min_air_tem
 		crop_heat_impact :=
 			1.0 -
 			((photo_temperature - cultivar_ps.critical_temperature_heat_stress) /
-					(cm.crop_params.speciesParams.limiting_temperature_heat_stress -
+					(cm.crop_params.species_params.limiting_temperature_heat_stress -
 							cultivar_ps.critical_temperature_heat_stress))
 
 		if crop_heat_impact > 1.0 {
@@ -2129,7 +2129,7 @@ fc_heat_stress_impact :: proc(cm: ^Crop_Module, max_air_temperature, min_air_tem
 // Fowler, Byrns & Greer (2014): Overwinter Low-Temperature Responses of
 // Cereals. Crop Sci. 54:2395-2405.
 fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64) {
-	cultivar_ps := &cm.crop_params.cultivarParams
+	cultivar_ps := &cm.crop_params.cultivar_params
 	soil_column := cm.soil_column
 
 	lt50_old := cm.lt50
@@ -2191,7 +2191,7 @@ fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64) {
 
 // C++: void monica::cropmodule::fcDroughtImpactOnFertility(CropModule*)
 fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module) {
-	cultivar_ps := &cm.crop_params.cultivarParams
+	cultivar_ps := &cm.crop_params.cultivar_params
 
 	if cm.transpiration_deficit < 0.0 {
 		cm.transpiration_deficit = 0.0
@@ -2199,7 +2199,7 @@ fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module) {
 
 	// Fertility of the crop is reduced in cases of severe drought during bloom
 	fertility_drought_threshold :=
-		cm.crop_params.speciesParams.drought_impact_on_fertility_factor *
+		cm.crop_params.species_params.drought_impact_on_fertility_factor *
 		cultivar_ps.drought_stress_threshold[cm.developmental_stage]
 	if cm.transpiration_deficit < fertility_drought_threshold &&
 	   cultivar_ps.assimilate_partitioning_coeff[cm.developmental_stage][cm.storage_organ] > 0.0 {
@@ -2219,7 +2219,7 @@ fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module) {
 
 // C++: void monica::cropmodule::fcCropNitrogen(CropModule*)
 fc_crop_nitrogen :: proc(cm: ^Crop_Module) {
-	species_ps := &cm.crop_params.speciesParams
+	species_ps := &cm.crop_params.species_params
 
 	cm.critical_n_concentration =
 		species_ps.n_concentration_pn *
@@ -2282,7 +2282,7 @@ calc_root_density_factor_and_sum :: proc(
 	for i_layer := 0; i_layer < nols; i_layer += 1 {
 		if i_layer < cm.rooting_depth {
 			root_density_factor[i_layer] = libc.exp(
-				-cm.crop_params.speciesParams.root_form_factor * (f64(i_layer) * layer_thickness),
+				-cm.crop_params.species_params.root_form_factor * (f64(i_layer) * layer_thickness),
 			)
 		} else if i_layer < cm.rooting_zone {
 			// NOTE(c++-quirk): (i_Layer - rooting_depth) / (rooting_zone -
@@ -2293,7 +2293,7 @@ calc_root_density_factor_and_sum :: proc(
 			int_div := (i_layer - cm.rooting_depth) / (cm.rooting_zone - cm.rooting_depth)
 			root_density_factor[i_layer] =
 				libc.exp(
-					-cm.crop_params.speciesParams.root_form_factor *
+					-cm.crop_params.species_params.root_form_factor *
 					(f64(i_layer) * layer_thickness),
 				) *
 				(1.0 - f64(int_div))
@@ -2367,8 +2367,8 @@ fc_crop_dry_matter :: proc(
 ) {
 	crop_ps := cm.mod_params
 	soil_column := cm.soil_column
-	species_ps := &cm.crop_params.speciesParams
-	cultivar_ps := &cm.crop_params.cultivarParams
+	species_ps := &cm.crop_params.species_params
+	cultivar_ps := &cm.crop_params.cultivar_params
 	aboveground_organ := species_ps.aboveground_organ
 	assimilate_partitioning_coeff_arr := cultivar_ps.assimilate_partitioning_coeff
 	assimilate_reallocation := species_ps.assimilate_reallocation
@@ -2813,7 +2813,7 @@ fc_reference_evapotranspiration :: proc(
 		cm.stomata_resistance = 999999.9
 	} else {
 		// Yu et al. 2001: crop_ps.saturation_beta = 3.5, crop_ps.stomata_conductance_alpha = 0.06
-		if cm.crop_params.speciesParams.carboxylation_pathway == 1 {
+		if cm.crop_params.species_params.carboxylation_pathway == 1 {
 			cm.stomata_resistance =
 				(atmospheric_co2_concentration *
 					(1.0 + saturation_deficit / crop_ps.saturation_beta)) /
@@ -3247,7 +3247,7 @@ fc_crop_n_uptake :: proc(
 		// Biological N Fixation - part of the deficit which can be covered
 		// by biological N fixation.
 		cm.fixed_n =
-			cm.crop_params.speciesParams.part_biological_n_fixation *
+			cm.crop_params.species_params.part_biological_n_fixation *
 			cm.crop_n_demand *
 			10000.0 // [kg N ha-1]
 
@@ -3283,14 +3283,14 @@ fc_crop_n_uptake :: proc(
 		cm.n_concentration_root = tl.bound(
 			minimum_n_concentration_root,
 			cm.n_concentration_root,
-			cm.crop_params.speciesParams.stage_max_root_n_concentration[cm.developmental_stage],
+			cm.crop_params.species_params.stage_max_root_n_concentration[cm.developmental_stage],
 		)
 	}
 
 	cm.n_concentration_aboveground_biomass =
 		(cm.total_biomass_n_content - (cm.root_biomass * cm.n_concentration_root)) /
 		(cm.aboveground_biomass +
-				(cm.belowground_biomass / cm.crop_params.cultivarParams.residue_n_ratio))
+				(cm.belowground_biomass / cm.crop_params.cultivar_params.residue_n_ratio))
 
 	if (cm.n_concentration_aboveground_biomass * cm.aboveground_biomass) <
 	   (cm.n_concentration_aboveground_biomass_old * cm.aboveground_biomass_old) {
@@ -3304,7 +3304,7 @@ fc_crop_n_uptake :: proc(
 				(cm.n_concentration_aboveground_biomass * cm.aboveground_biomass) -
 				(cm.n_concentration_aboveground_biomass *
 						cm.belowground_biomass /
-						cm.crop_params.cultivarParams.residue_n_ratio)) /
+						cm.crop_params.cultivar_params.residue_n_ratio)) /
 			cm.root_biomass
 
 		if temp_n_concentration_root >= minimum_n_concentration_root {
@@ -3389,7 +3389,7 @@ force_transplant_state :: proc(
 	remaining_gdd := temperature_sum
 	for i := 0; i < len(cm.current_temperature_sum); i += 1 {
 		if i < stage {
-			threshold := cm.crop_params.cultivarParams.stage_temperature_sum[i]
+			threshold := cm.crop_params.cultivar_params.stage_temperature_sum[i]
 			cm.current_temperature_sum[i] = threshold
 			remaining_gdd -= threshold
 		} else if i == stage {
@@ -3417,7 +3417,7 @@ force_transplant_state :: proc(
 	// Settle rooting zone and layers based on standard species parameters
 	nols := len(cm.soil_column.layers)
 	layer_thickness := cm.soil_column.layers[0].layer_thickness_m
-	cm.rooting_depth_m = cm.crop_params.speciesParams.initial_rooting_depth
+	cm.rooting_depth_m = cm.crop_params.species_params.initial_rooting_depth
 	cm.rooting_depth = min(int(libc.round(cm.rooting_depth_m / layer_thickness)), nols)
 	cm.rooting_zone = min(int(libc.round(1.3 * cm.rooting_depth_m / layer_thickness)), nols)
 
@@ -3428,8 +3428,8 @@ force_transplant_state :: proc(
 	// Force nitrogen pools to prevent severe immediate starvation stress in
 	// new seedlings
 	cm.n_concentration_aboveground_biomass =
-		cm.crop_params.speciesParams.n_concentration_aboveground_biomass
-	cm.n_concentration_root = cm.crop_params.speciesParams.n_concentration_root
+		cm.crop_params.species_params.n_concentration_aboveground_biomass
+	cm.n_concentration_root = cm.crop_params.species_params.n_concentration_root
 	cm.total_biomass_n_content =
 		(cm.aboveground_biomass * cm.n_concentration_aboveground_biomass) +
 		(cm.root_biomass * cm.n_concentration_root)
@@ -3475,8 +3475,8 @@ crop_module_step :: proc(
 	// the C++'s `const auto&` references, they must see the perennial reset in
 	// fc_crop_developmental_stage, which reassigns cm.crop_params mid-step (a
 	// by-value copy of e.g. stage_temperature_sum would keep the old arrays).
-	species_ps := &cm.crop_params.speciesParams
-	cultivar_ps := &cm.crop_params.cultivarParams
+	species_ps := &cm.crop_params.species_params
+	cultivar_ps := &cm.crop_params.cultivar_params
 
 	julian_day := int(d.julian_day(current_date))
 
@@ -3787,7 +3787,7 @@ organ_ids_for_primary_yield :: proc(
 	allocator := context.allocator,
 ) -> map[int]bool {
 	ids := make(map[int]bool, 0, allocator)
-	for yc in cm.crop_params.cultivarParams.organ_ids_for_primary_yield {
+	for yc in cm.crop_params.cultivar_params.organ_ids_for_primary_yield {
 		ids[yc.organId] = true
 	}
 	return ids
@@ -3806,7 +3806,7 @@ calculate_crop_yield :: proc(ycs: [dynamic]p.Yield_Component, bmv: [dynamic]f64)
 // C++: double monica::cropmodule::getPrimaryCropYield(const CropModule*)
 get_primary_crop_yield :: proc(cm: ^Crop_Module) -> f64 {
 	return calculate_crop_yield(
-		cm.crop_params.cultivarParams.organ_ids_for_primary_yield,
+		cm.crop_params.cultivar_params.organ_ids_for_primary_yield,
 		cm.organ_biomass,
 	)
 }
@@ -3814,7 +3814,7 @@ get_primary_crop_yield :: proc(cm: ^Crop_Module) -> f64 {
 // C++: double monica::cropmodule::getSecondaryCropYield(const CropModule*)
 get_secondary_crop_yield :: proc(cm: ^Crop_Module) -> f64 {
 	return calculate_crop_yield(
-		cm.crop_params.cultivarParams.organ_ids_for_secondary_yield,
+		cm.crop_params.cultivar_params.organ_ids_for_secondary_yield,
 		cm.organ_biomass,
 	)
 }
@@ -3842,7 +3842,7 @@ get_residues_n_concentration :: proc(
 
 	return(
 		(cm.total_biomass_n_content - (root_biomass * cm.n_concentration_root)) /
-		((primary_crop_yield / cm.crop_params.cultivarParams.residue_n_ratio) +
+		((primary_crop_yield / cm.crop_params.cultivar_params.residue_n_ratio) +
 				(cm.total_biomass - root_biomass - primary_crop_yield)) \
 	)
 }
@@ -3859,7 +3859,7 @@ get_primary_yield_n_concentration :: proc(
 	return(
 		(cm.total_biomass_n_content - (root_biomass * cm.n_concentration_root)) /
 		(primary_crop_yield +
-				(cm.crop_params.cultivarParams.residue_n_ratio *
+				(cm.crop_params.cultivar_params.residue_n_ratio *
 						(cm.total_biomass - root_biomass - primary_crop_yield))) \
 	)
 }
@@ -3960,7 +3960,7 @@ apply_cutting :: proc(
 
 	organs := organs
 	if len(organs) == 0 {
-		for yc in cm.crop_params.cultivarParams.organ_ids_for_cutting {
+		for yc in cm.crop_params.cultivar_params.organ_ids_for_cutting {
 			organs[yc.organId - 1] = Cutting_Value {
 				value = yc.yieldPercentage,
 			}
@@ -4055,10 +4055,10 @@ apply_cutting :: proc(
 	}
 
 	// reset stage and temperature sum after cutting
-	set_stage(cm, cm.crop_params.speciesParams.stage_after_cut)
+	set_stage(cm, cm.crop_params.species_params.stage_after_cut)
 
-	cm.cutting_delay_days = cm.crop_params.speciesParams.cutting_delay_days
-	cm.crop_params.cultivarParams.max_assimilation_rate *= cut_max_assimilation_fraction
+	cm.cutting_delay_days = cm.crop_params.species_params.cutting_delay_days
+	cm.crop_params.cultivar_params.max_assimilation_rate *= cut_max_assimilation_fraction
 
 	if old_aboveground_biomass > 0.0 {
 		cm.total_biomass_n_content -=

@@ -910,3 +910,13 @@ that were only read a few times outside loops were inlined.
 closure; see `Set_Value_Get_Value` in workstep.odin). Fields inherited via `using` (`Transplant_Data`/
 `Automatic_Sowing_Data` -> `Sowing_Data`, `Automatic_Harvest_Data` -> `Harvest_Data`) are listed only
 under the struct that declares them. JSON keys (`"initialKcb"`, `"runAtStartOfDay"`, ...) are unchanged.
+
+## `monica::CropParameters` -> `params.Crop_Parameters` (odin/monica/params/crop_parameters.odin)
+
+| C++ (`crop-parameters.h`) | Odin |
+| --- | --- |
+| `speciesParams` | `species_params` |
+| `cultivarParams` | `cultivar_params` |
+
+`__enable_vernalisation_factor_fix__` keeps its dunder spelling, like the other `__enable_*__` flags.
+`Species_Parameters` and `Cultivar_Parameters` were already snake_cased (tables above).

@@ -770,10 +770,10 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	if model.current_crop_module != nil &&
 	   model.sim_params.use_n_min_mineral_fertilising_method &&
-	   model.current_crop_module.crop_params.cultivarParams.winter_crop &&
+	   model.current_crop_module.crop_params.cultivar_params.winter_crop &&
 	   int(julday) == model.sim_params.julian_day_automatic_fertilising {
 		clear_top_dressing_params(&model.soil_column)
-		sps := model.current_crop_module.crop_params.speciesParams
+		sps := model.current_crop_module.crop_params.species_params
 		fertilizerAmount := monica_model_apply_mineral_fertiliser_via_n_min_method(
 			model,
 			model.sim_params.n_min_fertiliser_partition,

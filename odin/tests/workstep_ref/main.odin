@@ -309,7 +309,7 @@ main :: proc() {
 	dump_ws_common(&t, "wsIrrig", ws_irrig)
 	{
 		sd := &ws_sow.data.(run.Sowing_Data)
-		tr.dump(&t, "wsSow.cropName", sd.crop_params.speciesParams.species_id)
+		tr.dump(&t, "wsSow.cropName", sd.crop_params.species_params.species_id)
 		tr.dump(&t, "wsSow.initialKcb", sd.initial_kcb)
 		tr.dump(&t, "wsSow.isValid", sd.is_valid)
 	}

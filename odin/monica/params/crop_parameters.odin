@@ -521,8 +521,8 @@ cultivar_parameters_number_of_developmental_stages :: proc(cp: ^Cultivar_Paramet
 
 // C++: struct monica::CropParameters
 Crop_Parameters :: struct {
-	speciesParams:                       Species_Parameters,
-	cultivarParams:                      Cultivar_Parameters,
+	species_params:                      Species_Parameters,
+	cultivar_params:                     Cultivar_Parameters,
 	// Maybe, because unset should fall back to CropModuleParameters'
 	// __enable_vernalisation_factor_fix__ default, not to false.
 	__enable_vernalisation_factor_fix__: Maybe(bool),
@@ -530,8 +530,8 @@ Crop_Parameters :: struct {
 
 make_crop_parameters :: proc() -> Crop_Parameters {
 	return Crop_Parameters {
-		speciesParams = make_species_parameters(),
-		cultivarParams = make_cultivar_parameters(),
+		species_params = make_species_parameters(),
+		cultivar_params = make_cultivar_parameters(),
 	}
 }
 
@@ -551,8 +551,8 @@ crop_parameters_merge_sj_cj :: proc(
 	cj: jx.Value,
 ) -> tl.Errors {
 	res: tl.Errors
-	tl.append_errors(&res, species_parameters_merge(&cp.speciesParams, sj))
-	tl.append_errors(&res, cultivar_parameters_merge(&cp.cultivarParams, cj))
+	tl.append_errors(&res, species_parameters_merge(&cp.species_params, sj))
+	tl.append_errors(&res, cultivar_parameters_merge(&cp.cultivar_params, cj))
 	return res
 }
 
@@ -561,15 +561,15 @@ crop_parameters_to_json :: proc(cp: ^Crop_Parameters, a: Allocator) -> jx.Value 
 	return jx.obj(
 		a,
 		{"type", jx.sl("CropParameters")},
-		{"species", species_parameters_to_json(&cp.speciesParams, a)},
-		{"cultivar", cultivar_parameters_to_json(&cp.cultivarParams, a)},
+		{"species", species_parameters_to_json(&cp.species_params, a)},
+		{"cultivar", cultivar_parameters_to_json(&cp.cultivar_params, a)},
 	)
 }
 
 // C++: inline string cropparameters::cropName(const CropParameters*) - old FRUCHT$(AKF)
 crop_name :: proc(cp: ^Crop_Parameters, a: Allocator) -> string {
 	return strings.concatenate(
-		{cp.speciesParams.species_id, "/", cp.cultivarParams.cultivar_id},
+		{cp.species_params.species_id, "/", cp.cultivar_params.cultivar_id},
 		a,
 	)
 }

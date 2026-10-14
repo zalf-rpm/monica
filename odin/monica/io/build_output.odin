@@ -534,7 +534,7 @@ of_org_biom :: proc(model: ^core.Monica_Model, oid_in: OId) -> jx.Value {
 	if oid_is_organ(&oid) &&
 	   model.current_crop_module != nil &&
 	   p.species_parameters_number_of_organs(
-		   &model.current_crop_module.crop_params.speciesParams,
+		   &model.current_crop_module.crop_params.species_params,
 	   ) >
 		   int(oid.organ) {
 		return jx.f(tl.round(model.current_crop_module.organ_biomass[int(oid.organ)], 1))
