@@ -688,7 +688,7 @@ find_next_cultivation_method :: proc(
 			if addedYear {
 				// current CM is a cover crop, check if the latest sowing date would
 				// have been before current date, if so, skip current CM
-				if currentCM.isCoverCrop {
+				if currentCM.is_cover_crop {
 					// if current CM's latest sowing date is actually after current
 					// date, we have to reinit current CM again, but this time prevent
 					// shifting it to the next year
@@ -701,15 +701,15 @@ find_next_cultivation_method :: proc(
 						cultivation_method_reinit(currentCM, currentDate, true)
 					}
 				} else {
-					notFoundNextCM = currentCM.canBeSkipped // if current CM was marked skipable, skip it
+					notFoundNextCM = currentCM.can_be_skipped // if current CM was marked skipable, skip it
 				}
 			} else { 	// not added year or CM also had absolute dates
-				if currentCM.isCoverCrop {
+				if currentCM.is_cover_crop {
 					notFoundNextCM = d.lt(
 						cultivation_method_abs_latest_sowing_date(currentCM),
 						currentDate,
 					)
-				} else if currentCM.canBeSkipped {
+				} else if currentCM.can_be_skipped {
 					notFoundNextCM = d.lt(
 						cultivation_method_abs_start_date(currentCM),
 						currentDate,

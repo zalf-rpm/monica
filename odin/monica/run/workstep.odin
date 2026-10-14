@@ -64,15 +64,15 @@ Workstep_Type :: enum {
 
 // C++: struct SowingData
 Sowing_Data :: struct {
-	isValid:                     bool,
-	sowingDate:                  d.Date,
-	harvestDate:                 d.Date,
-	isPerennialCrop:             Maybe(bool),
-	cropParams:                  p.Crop_Parameters,
-	separatePerennialCropParams: ^p.Crop_Parameters,
-	residueParams:               p.Crop_Residue_Parameters,
-	plantDensity:                int, // C++ default: -1
-	initialKcb:                  f64, // C++ default: 0.15 - FAO-56 Dual Kc initial Kcb at planting
+	is_valid:                       bool,
+	sowing_date:                    d.Date,
+	harvest_date:                   d.Date,
+	is_perennial_crop:              Maybe(bool),
+	crop_params:                    p.Crop_Parameters,
+	separate_perennial_crop_params: ^p.Crop_Parameters,
+	residue_params:                 p.Crop_Residue_Parameters,
+	plant_density:                  int, // C++ default: -1
+	initial_kcb:                    f64, // C++ default: 0.15 - FAO-56 Dual Kc initial Kcb at planting
 }
 
 // C++: struct TransplantData : SowingData
@@ -84,86 +84,86 @@ Sowing_Data :: struct {
 // in apply() (C++ unqualified-name lookup prefers the derived member).
 // Unlike C++, Odin's `using` field promotion does NOT allow an outer field
 // to share a name with a promoted one (a hard redeclaration error, not a
-// shadow) - so this struct has no second initialKcb at all. Since both C++
+// shadow) - so this struct has no second initial_kcb at all. Since both C++
 // storage locations always hold the same value (same JSON key, parsed
-// twice), reusing the single promoted `sowing.initialKcb` (reachable as
-// `t.initialKcb` via `using`) for both merge and apply is behaviourally
+// twice), reusing the single promoted `sowing.initial_kcb` (reachable as
+// `t.initial_kcb` via `using`) for both merge and apply is behaviourally
 // identical to the C++, not an approximation - transplant_merge below
 // simply doesn't repeat sowing_merge's already-done "initialKcb" parse.
 Transplant_Data :: struct {
-	using sowing:        Sowing_Data,
-	initialStage:        int, // C++ default: 2 (size_t)
-	initialGDD:          f64,
-	initRootMass:        f64,
-	initLeafMass:        f64,
-	initShootMass:       f64,
-	initLAI:             f64,
-	postTransplantDelay: int,
+	using sowing:          Sowing_Data,
+	initial_stage:         int, // C++ default: 2 (size_t)
+	initial_gdd:           f64,
+	init_root_mass:        f64,
+	init_leaf_mass:        f64,
+	init_shoot_mass:       f64,
+	init_lai:              f64,
+	post_transplant_delay: int,
 }
 
 // C++: struct AutomaticSowingData : SowingData
 //
-// getAvgSoilTemps (C++ std::function<vector<double>&()>) is the daily-values
+// get_avg_soil_temps (C++ std::function<vector<double>&()>) is the daily-values
 // callback registerDailyFunction below wires up - its real, non-nil
 // implementation is registered and driven by run-monica.cpp (phase 7, not
 // yet ported); sim-min.json's crop-min.json never uses AutomaticSowing at
 // all (confirmed - only Sowing/NDemandFertilization/AutomaticHarvest/
 // AutomaticIrrigation/OrganicFertilization appear there), so this field
 // stays nil until a phase-7 fixture actually exercises
-// checkForSoilTemperature.
+// check_for_soil_temperature.
 Automatic_Sowing_Data :: struct {
-	using sowing:             Sowing_Data,
-	absEarliestDate:          d.Date,
-	earliestDate:             d.Date,
-	latestDate:               d.Date,
-	absLatestDate:            d.Date,
-	minTempThreshold:         f64,
-	daysInTempWindow:         int,
-	minPercentASW:            f64,
-	maxPercentASW:            f64, // C++ default: 100
-	max3dayPrecipSum:         f64,
-	maxCurrentDayPrecipSum:   f64,
-	tempSumAboveBaseTemp:     f64,
-	baseTemp:                 f64,
-	checkForSoilTemperature:  bool,
-	soilDepthForAveraging:    f64, // C++ default: 0.30
-	daysInSoilTempWindow:     int,
-	sowingIfAboveAvgSoilTemp: f64,
-	getAvgSoilTemps:          proc() -> [dynamic]f64,
-	inSowingRange:            bool,
-	cropSeeded:                bool,
+	using sowing:                  Sowing_Data,
+	abs_earliest_date:             d.Date,
+	earliest_date:                 d.Date,
+	latest_date:                   d.Date,
+	abs_latest_date:               d.Date,
+	min_temp_threshold:            f64,
+	days_in_temp_window:           int,
+	min_percent_asw:               f64,
+	max_percent_asw:               f64, // C++ default: 100
+	max_3day_precip_sum:           f64,
+	max_current_day_precip_sum:    f64,
+	temp_sum_above_base_temp:      f64,
+	base_temp:                     f64,
+	check_for_soil_temperature:    bool,
+	soil_depth_for_averaging:      f64, // C++ default: 0.30
+	days_in_soil_temp_window:      int,
+	sowing_if_above_avg_soil_temp: f64,
+	get_avg_soil_temps:            proc() -> [dynamic]f64,
+	in_sowing_range:               bool,
+	crop_seeded:                   bool,
 }
 
 // C++: struct HarvestData
 Harvest_Data :: struct {
-	sowing:                 ^Sowing_Data, // non-owning, points into another workstep's variant payload
-	exported:               bool, // C++ default: true
-	spec:                   core.Harvest_Spec,
-	optCarbMgmtData:        core.Harvest_Opt_Carbon_Management_Data,
-	incorporateIntoLayerNo: int, // C++ default: 1
+	sowing:                    ^Sowing_Data, // non-owning, points into another workstep's variant payload
+	exported:                  bool, // C++ default: true
+	spec:                      core.Harvest_Spec,
+	opt_carb_mgmt_data:        core.Harvest_Opt_Carbon_Management_Data,
+	incorporate_into_layer_no: int, // C++ default: 1
 }
 
 // C++: struct AutomaticHarvestData : HarvestData
 Automatic_Harvest_Data :: struct {
-	using harvest:          Harvest_Data,
-	harvestTime:            string, // C++ default: "maturity"
-	latestDate:             d.Date,
-	absLatestDate:          d.Date,
-	minPercentASW:          f64,
-	maxPercentASW:          f64, // C++ default: 999
-	max3dayPrecipSum:       f64, // C++ default: 9999
-	maxCurrentDayPrecipSum: f64, // C++ default: 9999
-	cropHarvested:          bool,
+	using harvest:              Harvest_Data,
+	harvest_time:               string, // C++ default: "maturity"
+	latest_date:                d.Date,
+	abs_latest_date:            d.Date,
+	min_percent_asw:            f64,
+	max_percent_asw:            f64, // C++ default: 999
+	max_3day_precip_sum:        f64, // C++ default: 9999
+	max_current_day_precip_sum: f64, // C++ default: 9999
+	crop_harvested:             bool,
 }
 
 // C++: struct CuttingData - CuttingData::Value/Unit/CL are hoisted into
 // `core` (Cutting_Value/Cutting_Unit/Cutting_Cl) since crop_module.odin's
 // applyCutting needs them and cannot import this `run` package back.
 Cutting_Data :: struct {
-	organId2cuttingSpec:            map[int]core.Cutting_Value,
-	organId2biomAfterCutting:       map[int]f64,
-	organId2exportFraction:         map[int]f64,
-	cutMaxAssimilationRateFraction: f64, // C++ default: 1.0
+	organ_id_2_cutting_spec:            map[int]core.Cutting_Value,
+	organ_id_2_biom_after_cutting:      map[int]f64,
+	organ_id_2_export_fraction:         map[int]f64,
+	cut_max_assimilation_rate_fraction: f64, // C++ default: 1.0
 }
 
 // C++: struct MineralFertilizationData
@@ -174,20 +174,20 @@ Mineral_Fertilization_Data :: struct {
 
 // C++: struct NDemandFertilizationData
 N_Demand_Fertilization_Data :: struct {
-	initialDate:       d.Date,
-	partition:         p.Mineral_Fertilizer_Parameters,
-	Ndemand:           f64,
-	depth:             f64,
-	stage:             int, // C++ default: 1
-	appliedFertilizer: bool,
+	initial_date:       d.Date,
+	partition:          p.Mineral_Fertilizer_Parameters,
+	n_demand:           f64,
+	depth:              f64,
+	stage:              int, // C++ default: 1
+	applied_fertilizer: bool,
 }
 
 // C++: struct OrganicFertilizationData
 Organic_Fertilization_Data :: struct {
-	params:                 p.Organic_Matter_Parameters,
-	amount:                 f64,
-	incorporation:          bool,
-	incorporateIntoLayerNo: int, // C++ default: 1
+	params:                    p.Organic_Matter_Parameters,
+	amount:                    f64,
+	incorporation:             bool,
+	incorporate_into_layer_no: int, // C++ default: 1
 }
 
 // C++: struct TillageData
@@ -203,14 +203,14 @@ Irrigation_Data :: struct {
 
 // C++: struct AutomaticIrrigationData
 Automatic_Irrigation_Data :: struct {
-	absStartDate: d.Date,
-	absEndDate:   d.Date,
-	irrigateCrop: bool,
-	startStage:   int, // C++ default: -1
-	endStage:     int, // C++ default: -1
-	params:       p.Automatic_Irrigation_Parameters,
-	done:         bool,
-	cropPlanted:  bool,
+	abs_start_date: d.Date,
+	abs_end_date:   d.Date,
+	irrigate_crop:  bool,
+	start_stage:    int, // C++ default: -1
+	end_stage:      int, // C++ default: -1
+	params:         p.Automatic_Irrigation_Parameters,
+	done:           bool,
+	crop_planted:   bool,
 }
 
 // C++: std::function<json11::Json(const MonicaModel*)> SetValueData::getValue
@@ -224,21 +224,21 @@ Automatic_Irrigation_Data :: struct {
 Set_Value_Get_Value_Kind :: enum {
 	NONE,
 	CONSTANT, // return SetValueData::value unchanged
-	OID_LOOKUP, // read sourceOid - a registered lambda or a compiled path
+	OID_LOOKUP, // read source_oid - a registered lambda or a compiled path
 	CALC_EXPR, // the ["=", a, op, b] arithmetic form
 }
 
 Set_Value_Get_Value :: struct {
-	kind:      Set_Value_Get_Value_Kind,
-	sourceOid: mio.OId, // used when kind == .OID_LOOKUP
-	calc:      mio.Calc_Expr, // used when kind == .CALC_EXPR
+	kind:       Set_Value_Get_Value_Kind,
+	source_oid: mio.OId, // used when kind == .OID_LOOKUP
+	calc:       mio.Calc_Expr, // used when kind == .CALC_EXPR
 }
 
 // C++: struct SetValueData
 Set_Value_Data :: struct {
-	oid:      mio.OId,
-	value:    jx.Value,
-	getValue: Set_Value_Get_Value,
+	oid:       mio.OId,
+	value:     jx.Value,
+	get_value: Set_Value_Get_Value,
 }
 
 // C++: using WorkstepData = std::variant<...>
@@ -260,15 +260,15 @@ Workstep_Data :: union {
 
 // C++: struct Workstep
 Workstep :: struct {
-	date:                         d.Date,
-	absDate:                      d.Date,
-	applyNoOfDaysAfterEvent:      int,
-	afterEvent:                   string,
-	daysAfterEventCount:          int,
-	daysAfterEventCountActivated: bool,
-	isActive:                     bool, // C++ default: true
-	runAtStartOfDay:              bool, // C++ default: true
-	errors:                       tl.Errors,
+	date:                             d.Date,
+	abs_date:                         d.Date,
+	apply_no_of_days_after_event:     int,
+	after_event:                      string,
+	days_after_event_count:           int,
+	days_after_event_count_activated: bool,
+	is_active:                        bool, // C++ default: true
+	run_at_start_of_day:              bool, // C++ default: true
+	errors:                           tl.Errors,
 
 	data: Workstep_Data,
 }
@@ -279,8 +279,8 @@ Workstep :: struct {
 // uses this instead of a raw `new(Workstep, allocator)`.
 new_workstep :: proc(allocator := context.allocator) -> ^Workstep {
 	ws := new(Workstep, allocator)
-	ws.isActive = true
-	ws.runAtStartOfDay = true
+	ws.is_active = true
+	ws.run_at_start_of_day = true
 	return ws
 }
 
@@ -390,12 +390,12 @@ workstep_merge_common :: proc(ws: ^Workstep, j: jx.Value) -> tl.Errors {
 	// at is a shortcut for after=event and days=1
 	at := jx.string_value(j, "at")
 	if at != "" {
-		ws.afterEvent = at
-		ws.applyNoOfDaysAfterEvent = 1
+		ws.after_event = at
+		ws.apply_no_of_days_after_event = 1
 	}
-	jx.set_int_value(&ws.applyNoOfDaysAfterEvent, j, "days")
-	jx.set_string_value(&ws.afterEvent, j, "after")
-	jx.set_bool_value(&ws.runAtStartOfDay, j, "runAtStartOfDay")
+	jx.set_int_value(&ws.apply_no_of_days_after_event, j, "days")
+	jx.set_string_value(&ws.after_event, j, "after")
+	jx.set_bool_value(&ws.run_at_start_of_day, j, "runAtStartOfDay")
 
 	return res
 }
@@ -408,20 +408,20 @@ workstep_apply_common :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> bool 
 
 // C++: bool workstep::conditionCommon(Workstep*, MonicaModel*)
 workstep_condition_common :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> bool {
-	if ws.afterEvent == "" || ws.applyNoOfDaysAfterEvent <= 0 {
+	if ws.after_event == "" || ws.apply_no_of_days_after_event <= 0 {
 		return false
 	}
 
-	_, curr_ok := model.current_events[ws.afterEvent]
-	_, prev_ok := model.previous_days_events[ws.afterEvent]
+	_, curr_ok := model.current_events[ws.after_event]
+	_, prev_ok := model.previous_days_events[ws.after_event]
 
-	if ws.daysAfterEventCountActivated {
-		ws.daysAfterEventCount += 1
+	if ws.days_after_event_count_activated {
+		ws.days_after_event_count += 1
 	} else if curr_ok || prev_ok {
-		ws.daysAfterEventCountActivated = true
+		ws.days_after_event_count_activated = true
 	}
 
-	return ws.daysAfterEventCount == ws.applyNoOfDaysAfterEvent
+	return ws.days_after_event_count == ws.apply_no_of_days_after_event
 }
 
 // C++: bool workstep::reinitCommon(Workstep*, Date, bool, bool)
@@ -434,14 +434,14 @@ workstep_reinit_common :: proc(
 	addedYear := false
 
 	if d.is_valid(ws.date) {
-		ws.absDate, addedYear = make_init_abs_date(ws.date, date, addYear, forceInitYear)
+		ws.abs_date, addedYear = make_init_abs_date(ws.date, date, addYear, forceInitYear)
 	} else {
-		ws.absDate = d.Date{}
+		ws.abs_date = d.Date{}
 	}
 
-	ws.isActive = true
-	ws.daysAfterEventCount = 0
-	ws.daysAfterEventCountActivated = false
+	ws.is_active = true
+	ws.days_after_event_count = 0
+	ws.days_after_event_count_activated = false
 
 	return addedYear
 }
@@ -494,13 +494,13 @@ is_dynamic_workstep :: proc(ws: ^Workstep) -> bool {
 
 // C++: Date workstep::absDate(const Workstep*)
 workstep_abs_date :: proc(ws: ^Workstep) -> d.Date {
-	return d.is_absolute_date(ws.date) ? ws.date : ws.absDate
+	return d.is_absolute_date(ws.date) ? ws.date : ws.abs_date
 }
 
 // C++: Date workstep::earliestDate(const Workstep*)
 workstep_earliest_date :: proc(ws: ^Workstep) -> d.Date {
 	if workstep_type(ws) == .Automatic_Sowing {
-		return ws.data.(Automatic_Sowing_Data).earliestDate
+		return ws.data.(Automatic_Sowing_Data).earliest_date
 	}
 	return ws.date
 }
@@ -508,7 +508,7 @@ workstep_earliest_date :: proc(ws: ^Workstep) -> d.Date {
 // C++: Date workstep::absEarliestDate(const Workstep*)
 workstep_abs_earliest_date :: proc(ws: ^Workstep) -> d.Date {
 	if workstep_type(ws) == .Automatic_Sowing {
-		return ws.data.(Automatic_Sowing_Data).absEarliestDate
+		return ws.data.(Automatic_Sowing_Data).abs_earliest_date
 	}
 	return workstep_abs_date(ws)
 }
@@ -517,9 +517,9 @@ workstep_abs_earliest_date :: proc(ws: ^Workstep) -> d.Date {
 workstep_latest_date :: proc(ws: ^Workstep) -> d.Date {
 	#partial switch workstep_type(ws) {
 	case .Automatic_Sowing:
-		return ws.data.(Automatic_Sowing_Data).latestDate
+		return ws.data.(Automatic_Sowing_Data).latest_date
 	case .Automatic_Harvest:
-		return ws.data.(Automatic_Harvest_Data).latestDate
+		return ws.data.(Automatic_Harvest_Data).latest_date
 	case:
 		return ws.date
 	}
@@ -529,9 +529,9 @@ workstep_latest_date :: proc(ws: ^Workstep) -> d.Date {
 workstep_abs_latest_date :: proc(ws: ^Workstep) -> d.Date {
 	#partial switch workstep_type(ws) {
 	case .Automatic_Sowing:
-		return ws.data.(Automatic_Sowing_Data).absLatestDate
+		return ws.data.(Automatic_Sowing_Data).abs_latest_date
 	case .Automatic_Harvest:
-		return ws.data.(Automatic_Harvest_Data).absLatestDate
+		return ws.data.(Automatic_Harvest_Data).abs_latest_date
 	case:
 		return workstep_abs_date(ws)
 	}
@@ -582,13 +582,13 @@ workstep_merge :: proc(ws: ^Workstep, j: jx.Value) -> tl.Errors {
 workstep_is_active :: proc(ws: ^Workstep) -> bool {
 	#partial switch workstep_type(ws) {
 	case .Automatic_Sowing:
-		return !ws.data.(Automatic_Sowing_Data).cropSeeded
+		return !ws.data.(Automatic_Sowing_Data).crop_seeded
 	case .Automatic_Harvest:
-		return !ws.data.(Automatic_Harvest_Data).cropHarvested
+		return !ws.data.(Automatic_Harvest_Data).crop_harvested
 	case .N_Demand_Fertilization:
-		return !ws.data.(N_Demand_Fertilization_Data).appliedFertilizer
+		return !ws.data.(N_Demand_Fertilization_Data).applied_fertilizer
 	case:
-		return ws.isActive
+		return ws.is_active
 	}
 }
 
@@ -634,7 +634,7 @@ workstep_apply_with_possible_condition :: proc(ws: ^Workstep, model: ^core.Monic
 		} else {
 			workstepFinished = workstep_apply(ws, model)
 		}
-		ws.isActive = !workstepFinished
+		ws.is_active = !workstepFinished
 	}
 	return workstepFinished
 }

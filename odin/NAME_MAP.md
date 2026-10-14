@@ -770,3 +770,141 @@ Local variables in `crop_module.odin`, `soil_moisture.odin` and `soil_transport.
 of these fields under its original C++ name (e.g. `vs_Latitude := cm.site_params.latitude`, `pc_Tortuosity
 := cm.mod_params.tortuosity`) keep that C++-matching local name per CONVENTIONS.md #1 - only the
 field access on the right-hand side was renamed.
+
+## `monica::CultivationMethod` -> `run.Cultivation_Method` (odin/monica/run/cultivation_method.odin)
+
+| C++ (`cultivation-method.h`) | Odin |
+| --- | --- |
+| `allWorksteps` | `all_worksteps` |
+| `allAbsWorksteps` | `all_abs_worksteps` |
+| `unfinishedDynamicWorksteps` | `unfinished_dynamic_worksteps` |
+| `customId` | `custom_id` |
+| `canBeSkipped` | `can_be_skipped` |
+| `isCoverCrop` | `is_cover_crop` |
+
+## `monica::Workstep` -> `run.Workstep` (odin/monica/run/workstep.odin)
+
+| C++ (`workstep.h`) | Odin |
+| --- | --- |
+| `absDate` | `abs_date` |
+| `applyNoOfDaysAfterEvent` | `apply_no_of_days_after_event` |
+| `afterEvent` | `after_event` |
+| `daysAfterEventCount` | `days_after_event_count` |
+| `daysAfterEventCountActivated` | `days_after_event_count_activated` |
+| `isActive` | `is_active` |
+| `runAtStartOfDay` | `run_at_start_of_day` |
+
+## `monica::SowingData` -> `run.Sowing_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/sowing.h`) | Odin |
+| --- | --- |
+| `isValid` | `is_valid` |
+| `sowingDate` | `sowing_date` |
+| `harvestDate` | `harvest_date` |
+| `isPerennialCrop` | `is_perennial_crop` |
+| `cropParams` | `crop_params` |
+| `separatePerennialCropParams` | `separate_perennial_crop_params` |
+| `residueParams` | `residue_params` |
+| `plantDensity` | `plant_density` |
+| `initialKcb` | `initial_kcb` |
+
+## `monica::TransplantData` -> `run.Transplant_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/transplant.h`) | Odin |
+| --- | --- |
+| `initialStage` | `initial_stage` |
+| `initialGDD` | `initial_gdd` |
+| `initRootMass` | `init_root_mass` |
+| `initLeafMass` | `init_leaf_mass` |
+| `initShootMass` | `init_shoot_mass` |
+| `initLAI` | `init_lai` |
+| `postTransplantDelay` | `post_transplant_delay` |
+
+## `monica::AutomaticSowingData` -> `run.Automatic_Sowing_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/automatic-sowing.h`) | Odin |
+| --- | --- |
+| `absEarliestDate` | `abs_earliest_date` |
+| `earliestDate` | `earliest_date` |
+| `latestDate` | `latest_date` |
+| `absLatestDate` | `abs_latest_date` |
+| `minTempThreshold` | `min_temp_threshold` |
+| `daysInTempWindow` | `days_in_temp_window` |
+| `minPercentASW` | `min_percent_asw` |
+| `maxPercentASW` | `max_percent_asw` |
+| `max3dayPrecipSum` | `max_3day_precip_sum` |
+| `maxCurrentDayPrecipSum` | `max_current_day_precip_sum` |
+| `tempSumAboveBaseTemp` | `temp_sum_above_base_temp` |
+| `baseTemp` | `base_temp` |
+| `checkForSoilTemperature` | `check_for_soil_temperature` |
+| `soilDepthForAveraging` | `soil_depth_for_averaging` |
+| `daysInSoilTempWindow` | `days_in_soil_temp_window` |
+| `sowingIfAboveAvgSoilTemp` | `sowing_if_above_avg_soil_temp` |
+| `getAvgSoilTemps` | `get_avg_soil_temps` |
+| `inSowingRange` | `in_sowing_range` |
+| `cropSeeded` | `crop_seeded` |
+
+## `monica::HarvestData` -> `run.Harvest_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/harvest.h`) | Odin |
+| --- | --- |
+| `optCarbMgmtData` | `opt_carb_mgmt_data` |
+| `incorporateIntoLayerNo` | `incorporate_into_layer_no` |
+
+## `monica::AutomaticHarvestData` -> `run.Automatic_Harvest_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/automatic-harvest.h`) | Odin |
+| --- | --- |
+| `harvestTime` | `harvest_time` |
+| `latestDate` | `latest_date` |
+| `absLatestDate` | `abs_latest_date` |
+| `minPercentASW` | `min_percent_asw` |
+| `maxPercentASW` | `max_percent_asw` |
+| `max3dayPrecipSum` | `max_3day_precip_sum` |
+| `maxCurrentDayPrecipSum` | `max_current_day_precip_sum` |
+| `cropHarvested` | `crop_harvested` |
+
+## `monica::CuttingData` -> `run.Cutting_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/cutting.h`) | Odin |
+| --- | --- |
+| `organId2cuttingSpec` | `organ_id_2_cutting_spec` |
+| `organId2biomAfterCutting` | `organ_id_2_biom_after_cutting` |
+| `organId2exportFraction` | `organ_id_2_export_fraction` |
+| `cutMaxAssimilationRateFraction` | `cut_max_assimilation_rate_fraction` |
+
+## `monica::NDemandFertilizationData` -> `run.N_Demand_Fertilization_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/n-demand-fertilization.h`) | Odin |
+| --- | --- |
+| `initialDate` | `initial_date` |
+| `Ndemand` | `n_demand` |
+| `appliedFertilizer` | `applied_fertilizer` |
+
+## `monica::OrganicFertilizationData` -> `run.Organic_Fertilization_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/organic-fertilization.h`) | Odin |
+| --- | --- |
+| `incorporateIntoLayerNo` | `incorporate_into_layer_no` |
+
+## `monica::AutomaticIrrigationData` -> `run.Automatic_Irrigation_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/automatic-irrigation.h`) | Odin |
+| --- | --- |
+| `absStartDate` | `abs_start_date` |
+| `absEndDate` | `abs_end_date` |
+| `irrigateCrop` | `irrigate_crop` |
+| `startStage` | `start_stage` |
+| `endStage` | `end_stage` |
+| `cropPlanted` | `crop_planted` |
+
+## `monica::SetValueData` -> `run.Set_Value_Data` (odin/monica/run/workstep.odin)
+
+| C++ (`worksteps/set-value.h`) | Odin |
+| --- | --- |
+| `getValue` | `get_value` |
+
+`Set_Value_Get_Value.sourceOid` -> `source_oid` has no C++ counterpart (the C++ `getValue` is a
+closure; see `Set_Value_Get_Value` in workstep.odin). Fields inherited via `using` (`Transplant_Data`/
+`Automatic_Sowing_Data` -> `Sowing_Data`, `Automatic_Harvest_Data` -> `Harvest_Data`) are listed only
+under the struct that declares them. JSON keys (`"initialKcb"`, `"runAtStartOfDay"`, ...) are unchanged.

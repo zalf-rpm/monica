@@ -13,14 +13,14 @@ import tl "../../support/tools"
 
 // C++: struct monica::CultivationMethod
 Cultivation_Method :: struct {
-	allWorksteps:               [dynamic]^Workstep,
-	allAbsWorksteps:            [dynamic]^Workstep,
-	unfinishedDynamicWorksteps: [dynamic]^Workstep,
-	customId:                   int,
-	name:                       string,
-	canBeSkipped:               bool,
-	isCoverCrop:                bool,
-	repeat:                     bool, // C++ default: true
+	all_worksteps:                [dynamic]^Workstep,
+	all_abs_worksteps:            [dynamic]^Workstep,
+	unfinished_dynamic_worksteps: [dynamic]^Workstep,
+	custom_id:                    int,
+	name:                         string,
+	can_be_skipped:               bool,
+	is_cover_crop:                bool,
+	repeat:                       bool, // C++ default: true
 }
 
 // C++: CultivationMethod monica::makeCultivationMethod(json11::Json)
@@ -42,10 +42,10 @@ cultivation_method_merge :: proc(
 ) -> tl.Errors {
 	res: tl.Errors
 
-	jx.set_int_value(&cm.customId, j, "customId")
+	jx.set_int_value(&cm.custom_id, j, "customId")
 	jx.set_string_value(&cm.name, j, "name")
-	jx.set_bool_value(&cm.canBeSkipped, j, "can-be-skipped")
-	jx.set_bool_value(&cm.isCoverCrop, j, "is-cover-crop")
+	jx.set_bool_value(&cm.can_be_skipped, j, "can-be-skipped")
+	jx.set_bool_value(&cm.is_cover_crop, j, "is-cover-crop")
 	jx.set_bool_value(&cm.repeat, j, "repeat")
 
 	// keep reference to sowing workstep for use with harvest workstep
@@ -57,7 +57,7 @@ cultivation_method_merge :: proc(
 			continue
 		}
 		tl.append_errors(&res, ws.errors)
-		append(&cm.allWorksteps, ws)
+		append(&cm.all_worksteps, ws)
 		switch _ in ws.data {
 		case Sowing_Data:
 			sowingWS = &ws.data.(Sowing_Data)
@@ -116,9 +116,9 @@ cultivation_method_abs_apply :: proc(
 
 // C++: void cultivationmethod::apply(CultivationMethod*, MonicaModel*, bool)
 //
-// Odin translation of the erase-remove idiom: walk unfinishedDynamicWorksteps
+// Odin translation of the erase-remove idiom: walk unfinished_dynamic_worksteps
 // once, removing (via ordered_remove, so relative order among survivors is
-// preserved like std::vector::erase) any workstep whose runAtStartOfDay flag
+// preserved like std::vector::erase) any workstep whose run_at_start_of_day flag
 // matches the requested filter AND that applyWithPossibleCondition reports
 // finished.
 cultivation_method_apply :: proc(
@@ -127,11 +127,11 @@ cultivation_method_apply :: proc(
 	runOnlyAtStartOfDayWorksteps: bool,
 ) {
 	i := 0
-	for i < len(cm.unfinishedDynamicWorksteps) {
-		wsp := cm.unfinishedDynamicWorksteps[i]
-		if runOnlyAtStartOfDayWorksteps == wsp.runAtStartOfDay &&
+	for i < len(cm.unfinished_dynamic_worksteps) {
+		wsp := cm.unfinished_dynamic_worksteps[i]
+		if runOnlyAtStartOfDayWorksteps == wsp.run_at_start_of_day &&
 		   workstep_apply_with_possible_condition(wsp, model) {
-			ordered_remove(&cm.unfinishedDynamicWorksteps, i)
+			ordered_remove(&cm.unfinished_dynamic_worksteps, i)
 		} else {
 			i += 1
 		}
@@ -140,7 +140,7 @@ cultivation_method_apply :: proc(
 
 // C++: Date cultivationmethod::nextDate(const CultivationMethod*, const Date&)
 cultivation_method_next_date :: proc(cm: ^Cultivation_Method, date: d.Date) -> d.Date {
-	for ws in cm.allWorksteps {
+	for ws in cm.all_worksteps {
 		dt := ws.date
 		if d.is_valid(dt) && d.gt(dt, date) {
 			return dt
@@ -151,7 +151,7 @@ cultivation_method_next_date :: proc(cm: ^Cultivation_Method, date: d.Date) -> d
 
 // C++: Date cultivationmethod::nextAbsDate(const CultivationMethod*, const Date&)
 cultivation_method_next_abs_date :: proc(cm: ^Cultivation_Method, date: d.Date) -> d.Date {
-	for ws in cm.allAbsWorksteps {
+	for ws in cm.all_abs_worksteps {
 		ad := workstep_abs_date(ws)
 		if d.is_valid(ad) && d.gt(ad, date) {
 			return ad
@@ -167,7 +167,7 @@ cultivation_method_worksteps_at :: proc(
 	allocator := context.allocator,
 ) -> [dynamic]^Workstep {
 	apps := make([dynamic]^Workstep, 0, allocator)
-	for ws in cm.allWorksteps {
+	for ws in cm.all_worksteps {
 		if d.is_valid(ws.date) && d.eq(ws.date, date) {
 			append(&apps, ws)
 		}
@@ -182,7 +182,7 @@ cultivation_method_abs_worksteps_at :: proc(
 	allocator := context.allocator,
 ) -> [dynamic]^Workstep {
 	apps := make([dynamic]^Workstep, 0, allocator)
-	for ws in cm.allAbsWorksteps {
+	for ws in cm.all_abs_worksteps {
 		ad := workstep_abs_date(ws)
 		if d.is_valid(ad) && d.eq(ad, date) {
 			append(&apps, ws)
@@ -193,7 +193,7 @@ cultivation_method_abs_worksteps_at :: proc(
 
 // C++: bool cultivationmethod::areOnlyAbsoluteWorksteps(const CultivationMethod*)
 cultivation_method_are_only_absolute_worksteps :: proc(cm: ^Cultivation_Method) -> bool {
-	for ws in cm.allWorksteps {
+	for ws in cm.all_worksteps {
 		if !(d.is_valid(ws.date) && d.is_absolute_date(ws.date)) {
 			return false
 		}
@@ -207,7 +207,7 @@ cultivation_method_static_worksteps :: proc(
 	allocator := context.allocator,
 ) -> [dynamic]^Workstep {
 	wss := make([dynamic]^Workstep, 0, allocator)
-	for ws in cm.allWorksteps {
+	for ws in cm.all_worksteps {
 		if d.is_valid(ws.date) {
 			append(&wss, ws)
 		}
@@ -225,10 +225,10 @@ cultivation_method_all_dynamic_worksteps :: proc(
 
 // C++: bool cultivationmethod::allDynamicWorkstepsFinished(const CultivationMethod*)
 cultivation_method_all_dynamic_worksteps_finished :: proc(cm: ^Cultivation_Method) -> bool {
-	if len(cm.unfinishedDynamicWorksteps) == 0 {
+	if len(cm.unfinished_dynamic_worksteps) == 0 {
 		return true
 	}
-	for wsp in cm.unfinishedDynamicWorksteps {
+	for wsp in cm.unfinished_dynamic_worksteps {
 		if workstep_type(wsp) != .N_Demand_Fertilization {
 			return false
 		}
@@ -241,7 +241,7 @@ cultivation_method_start_date :: proc(
 	cm: ^Cultivation_Method,
 	allocator := context.allocator,
 ) -> d.Date {
-	if len(cm.allWorksteps) == 0 {
+	if len(cm.all_worksteps) == 0 {
 		return d.Date{}
 	}
 
@@ -255,7 +255,7 @@ cultivation_method_start_date :: proc(
 	}
 
 	startDate := dynEarliestStart
-	for ws in cm.allWorksteps {
+	for ws in cm.all_worksteps {
 		dt := ws.date
 		if d.is_valid(dt) && (d.lt(dt, startDate) || !d.is_valid(startDate)) {
 			startDate = dt
@@ -271,7 +271,7 @@ cultivation_method_abs_start_date :: proc(
 	includeDynamicWorksteps: bool = true,
 	allocator := context.allocator,
 ) -> d.Date {
-	if len(cm.allAbsWorksteps) == 0 {
+	if len(cm.all_abs_worksteps) == 0 {
 		return d.Date{}
 	}
 
@@ -287,7 +287,7 @@ cultivation_method_abs_start_date :: proc(
 	}
 
 	startDate := dynEarliestStart
-	for ws in cm.allAbsWorksteps {
+	for ws in cm.all_abs_worksteps {
 		ad := workstep_abs_date(ws)
 		if d.is_valid(ad) && (d.lt(ad, startDate) || !d.is_valid(startDate)) {
 			startDate = ad
@@ -300,7 +300,7 @@ cultivation_method_abs_start_date :: proc(
 // C++: Date cultivationmethod::absLatestSowingDate(const CultivationMethod*)
 cultivation_method_abs_latest_sowing_date :: proc(cm: ^Cultivation_Method) -> d.Date {
 	dynLatestSowingDate := d.Date{}
-	for ws in cm.allAbsWorksteps {
+	for ws in cm.all_abs_worksteps {
 		t := workstep_type(ws)
 		if t == .Sowing || t == .Automatic_Sowing {
 			lsd := workstep_abs_latest_date(ws)
@@ -317,7 +317,7 @@ cultivation_method_end_date :: proc(
 	cm: ^Cultivation_Method,
 	allocator := context.allocator,
 ) -> d.Date {
-	if len(cm.allWorksteps) == 0 {
+	if len(cm.all_worksteps) == 0 {
 		return d.Date{}
 	}
 
@@ -331,7 +331,7 @@ cultivation_method_end_date :: proc(
 	}
 
 	endDate := dynLatestEnd
-	for ws in cm.allWorksteps {
+	for ws in cm.all_worksteps {
 		dt := ws.date
 		if d.is_valid(dt) && (d.gt(dt, endDate) || !d.is_valid(endDate)) {
 			endDate = dt
@@ -346,7 +346,7 @@ cultivation_method_abs_end_date :: proc(
 	cm: ^Cultivation_Method,
 	allocator := context.allocator,
 ) -> d.Date {
-	if len(cm.allAbsWorksteps) == 0 {
+	if len(cm.all_abs_worksteps) == 0 {
 		return d.Date{}
 	}
 
@@ -360,7 +360,7 @@ cultivation_method_abs_end_date :: proc(
 	}
 
 	endDate := dynLatestEnd
-	for ws in cm.allAbsWorksteps {
+	for ws in cm.all_abs_worksteps {
 		ad := workstep_abs_date(ws)
 		if d.is_valid(ad) && (d.gt(ad, endDate) || !d.is_valid(endDate)) {
 			endDate = ad
@@ -376,15 +376,15 @@ cultivation_method_reinit :: proc(
 	date: d.Date,
 	forceInitYear: bool = false,
 ) -> bool {
-	clear(&cm.allAbsWorksteps)
-	clear(&cm.unfinishedDynamicWorksteps)
+	clear(&cm.all_abs_worksteps)
+	clear(&cm.unfinished_dynamic_worksteps)
 
 	addedYear := false
-	for ws in cm.allWorksteps {
+	for ws in cm.all_worksteps {
 		addedYear = workstep_reinit(ws, date, addedYear, forceInitYear) || addedYear
-		append(&cm.allAbsWorksteps, ws)
+		append(&cm.all_abs_worksteps, ws)
 		if !d.is_valid(workstep_abs_date(ws)) {
-			append(&cm.unfinishedDynamicWorksteps, ws)
+			append(&cm.unfinished_dynamic_worksteps, ws)
 		}
 	}
 
