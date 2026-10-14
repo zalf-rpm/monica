@@ -12,8 +12,8 @@ build, so any "cleanup" is a potential regression with no upside.
 
 - Keep C++ procedure names and argument order. Variable names originally kept their C++ spelling,
   including the `vc_` / `vs_` / `vw_` / `pc_` / `vm_` / `vo_` prefixes; the post-port cleanup
-  snake_cases them and drops the prefixes (done so far: `monica/core/crop_module.odin`, whose
-  plain field aliases were also inlined). The trace oracle doesn't depend on local names (every
+  snake_cases them and drops the prefixes (done so far: `monica/core/crop_module.odin`,
+  `soil_moisture.odin` and `soil_transport.odin`, whose plain field aliases were also inlined). The trace oracle doesn't depend on local names (every
   `tr.dump` label is a separate string literal), and `NAME_MAP.md` maps struct fields back to C++.
 - Keep statement order in numeric routines. Reassociating float arithmetic (`a*b + a*c` ->
   `a*(b+c)`) changes the last bits.

@@ -766,12 +766,11 @@ convention (see the `Soil_Organic_Module_Parameters` note above). `EnvironmentPa
 `CentralParameterProvider` in this same file were already fully snake_cased in earlier work and are
 not part of this pass.
 
-Local variables in `soil_moisture.odin` and `soil_transport.odin` that cache one of these fields
-under its original C++ name (e.g. `vs_Latitude := cm.site_params.latitude`) still keep that
-C++-matching local name - only the field access on the right-hand side was renamed. In
-`crop_module.odin` the locals and parameters have since been snake_cased with the prefixes dropped
-(`vs_Latitude` -> inlined `cm.site_params.latitude`, `pc_Tortuosity` -> `tortuosity`), and aliases
-that were only read a few times outside loops were inlined.
+Locals and parameters in `crop_module.odin`, `soil_moisture.odin` and `soil_transport.odin` that
+used to cache one of these fields under its original C++ name have since been snake_cased with the
+prefixes dropped (`pc_Tortuosity` -> `tortuosity`, `vm_SoilMoisture_m3` -> `soil_moisture_m3`), and
+aliases that were only read a few times outside loops were inlined (`vs_Latitude` ->
+`cm.site_params.latitude`).
 
 ## `monica::CultivationMethod` -> `run.Cultivation_Method` (odin/monica/run/cultivation_method.odin)
 
