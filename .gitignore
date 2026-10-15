@@ -132,3 +132,4 @@ pip-log.txt
 .tox
 
 build
+.direnv/
