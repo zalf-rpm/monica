@@ -226,6 +226,7 @@ main :: proc() {
 	}
 
 	out := run.run_monica(&env, a)
+	returnObjOutputs := run.env_return_obj_outputs(&env)
 
 	// NOTE(deviation): the C++ main ignores runMonica's Output.errors, because
 	// there runMonica never sets any. run_monica.odin's empty-soil-profile guard
@@ -305,7 +306,11 @@ main :: proc() {
 			}
 
 			mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
-			mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
+			if returnObjOutputs {
+				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep)
+			} else {
+				mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
+			}
 
 			bufio.writer_flush(&bw)
 			bufio.writer_destroy(&bw)
@@ -340,7 +345,11 @@ main :: proc() {
 			io.write_string(w, sanitize_section_filename(section.origSpec, a))
 			io.write_string(w, "\"\r\n")
 			mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
-			mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
+			if returnObjOutputs {
+				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep)
+			} else {
+				mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
+			}
 			io.write_string(w, "\r\n")
 		}
 

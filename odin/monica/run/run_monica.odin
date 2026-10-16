@@ -334,9 +334,6 @@ spec_expr_eval :: proc(e: Spec_Expr, model: ^core.Monica_Model) -> bool {
 // ---------------------------------------------------------------------------
 
 // C++: struct monica::StoreData
-//
-// resultsObj is not ported - see output.odin's Output_Data comment
-// (sim-min.json never sets "obj-outputs?").
 Store_Data :: struct {
 	withinEventStartEndRange: Maybe(bool),
 	withinEventFromToRange:   Maybe(bool),
@@ -344,6 +341,7 @@ Store_Data :: struct {
 	outputIds:                [dynamic]mio.OId,
 	intermediateResults:      [dynamic][dynamic]jx.Value,
 	results:                  [dynamic][dynamic]jx.Value,
+	resultsObj:               [dynamic]jx.Value,
 }
 
 // C++: void storeResults(const vector<OId>&, vector<J11Array>&, const MonicaModel&) [private]
@@ -366,6 +364,23 @@ store_results :: proc(
 			append(&results^[i], v)
 		}
 	}
+}
+
+// C++: void storeResultsObj(const vector<OId>&, vector<J11Object>&, const MonicaModel&) [private]
+@(private)
+store_results_obj :: proc(
+	outputIds: []mio.OId,
+	results: ^[dynamic]jx.Value,
+	model: ^core.Monica_Model,
+	allocator := context.allocator,
+) {
+	result := make(jx.Object, allocator)
+	for &oid in outputIds {
+		if v, ok := mio.oid_get_value(model, oid); ok {
+			jx.obj_set(&result, mio.oid_output_name(&oid, context.temp_allocator), v, allocator)
+		}
+	}
+	append(results, jx.Value(result))
 }
 
 // C++: void monica::store_data_aggregate_results(StoreData*)
@@ -409,6 +424,47 @@ store_data_aggregate_results :: proc(sd: ^Store_Data, allocator := context.alloc
 	}
 }
 
+// C++: void monica::store_data_aggregate_results_obj(StoreData*)
+//
+// Same aggregation as store_data_aggregate_results, collected into one object
+// per call instead of appended per column.
+//
+// NOTE(c++-quirk): the object is appended even when every intermediate list
+// was empty. run_monica's final aggregation pass therefore adds one empty
+// row ({}) to every while / from-to section whose last range was already
+// aggregated, which the array path doesn't. Reproduced.
+store_data_aggregate_results_obj :: proc(sd: ^Store_Data, allocator := context.allocator) {
+	if len(sd.intermediateResults) == 0 {
+		return
+	}
+
+	result := make(jx.Object, allocator)
+	for &oid, i in sd.outputIds {
+		ivs := sd.intermediateResults[i]
+		if len(ivs) > 0 {
+			name := mio.oid_output_name(&oid, context.temp_allocator)
+			if jx.is_string(ivs[0]) {
+				switch oid.timeAggOp {
+				case .FIRST:
+					jx.obj_set(&result, name, ivs[0], allocator)
+				case .LAST:
+					jx.obj_set(&result, name, ivs[len(ivs) - 1], allocator)
+				case .AVG, .MEDIAN, .SUM, .MIN, .MAX, .NONE, .UNDEFINED_OP:
+					jx.obj_set(&result, name, ivs[0], allocator)
+				}
+			} else {
+				ds := make([dynamic]f64, 0, len(ivs), context.temp_allocator)
+				for v in ivs {
+					append(&ds, jx.number_value(v))
+				}
+				jx.obj_set(&result, name, jx.f(mio.apply_oid_op(oid.timeAggOp, ds[:])), allocator)
+			}
+			clear(&sd.intermediateResults[i])
+		}
+	}
+	append(&sd.resultsObj, jx.Value(result))
+}
+
 @(private)
 maybe_bool_is_nothing :: proc(m: Maybe(bool)) -> bool {
 	_, ok := m.?
@@ -429,12 +485,14 @@ maybe_bool_value :: proc(m: Maybe(bool)) -> bool {
 
 // C++: void monica::store_data_store_results_if_spec_applies(StoreData*, const MonicaModel&, bool)
 //
-// storeObjOutputs is always false for this port (see Store_Data's comment),
-// so the obj-output branches (storeResultsObj/store_data_aggregate_results_obj)
-// are dropped. Also dropped: `string os = spec.origSpec.dump();` - a local
-// that's computed and never read anywhere in the C++ body either (dump() is
-// pure, so omitting it changes nothing observable).
-store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.Monica_Model) {
+// Dropped: `string os = spec.origSpec.dump();` - a local that's computed and
+// never read anywhere in the C++ body either (dump() is pure, so omitting it
+// changes nothing observable).
+store_data_store_results_if_spec_applies :: proc(
+	sd: ^Store_Data,
+	model: ^core.Monica_Model,
+	storeObjOutputs := false,
+) {
 	spec := &sd.spec
 	isCurrentlyEndEvent := false
 
@@ -464,7 +522,11 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 	   maybe_bool_value(sd.withinEventStartEndRange) {
 		// check for at event
 		if spec_expr_is_set(spec.atf) && spec_expr_eval(spec.atf, model) {
-			store_results(sd.outputIds[:], &sd.results, model)
+			if storeObjOutputs {
+				store_results_obj(sd.outputIds[:], &sd.resultsObj, model)
+			} else {
+				store_results(sd.outputIds[:], &sd.results, model)
+			}
 		} else if spec_expr_is_set(spec.fromf) && spec_expr_is_set(spec.tof) { 	// or from/to range event
 			isCurrentlyToEvent := false
 			if maybe_bool_is_nothing(sd.withinEventFromToRange) ||
@@ -486,7 +548,11 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 					store_results(sd.outputIds[:], &sd.intermediateResults, model)
 				}
 				if isCurrentlyToEvent {
-					store_data_aggregate_results(sd)
+					if storeObjOutputs {
+						store_data_aggregate_results_obj(sd)
+					} else {
+						store_data_aggregate_results(sd)
+					}
 					sd.withinEventFromToRange = false
 				}
 			}
@@ -496,7 +562,11 @@ store_data_store_results_if_spec_applies :: proc(sd: ^Store_Data, model: ^core.M
 			} else if len(sd.intermediateResults) > 0 && len(sd.intermediateResults[0]) > 0 {
 				// if while event was not successful but we got intermediate results,
 				// they should be aggregated
-				store_data_aggregate_results(sd)
+				if storeObjOutputs {
+					store_data_aggregate_results_obj(sd)
+				} else {
+					store_data_aggregate_results(sd)
+				}
 			}
 		}
 	}
@@ -806,6 +876,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 		allocator,
 	)
 
+	returnObjOutputs := env_return_obj_outputs(env)
 	store := setup_storage(
 		env.events,
 		clim.data_accessor_start_date(&env.climateData),
@@ -883,7 +954,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 		// store results
 		for &s in store {
-			store_data_store_results_if_spec_applies(&s, model)
+			store_data_store_results_if_spec_applies(&s, model, returnObjOutputs)
 		}
 
 		// if the next application date is not valid, we're at the end of the
@@ -908,13 +979,18 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	for &sd in store {
 		// aggregate results of while events or unfinished other from/to ranges
 		// (where the to event didn't happen yet)
-		store_data_aggregate_results(&sd)
+		if returnObjOutputs {
+			store_data_aggregate_results_obj(&sd)
+		} else {
+			store_data_aggregate_results(&sd)
+		}
 		append(
 			&out.data,
 			mio.Output_Data {
 				origSpec = jx.dump(sd.spec.origSpec, allocator),
 				outputIds = sd.outputIds,
 				results = sd.results,
+				resultsObj = sd.resultsObj,
 			},
 		)
 	}

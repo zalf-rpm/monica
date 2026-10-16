@@ -497,6 +497,12 @@ of_year :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	return jx.i(d.year(model.current_step_date))
 }
 
+// C++: build({id++, "DOY", ...}) - int(monica.currentStepDate.dayOfYear())
+@(private)
+of_doy :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.i(int(d.day_of_year(model.current_step_date)))
+}
+
 @(private)
 of_crop :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.current_crop_module != nil {
@@ -1001,6 +1007,9 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	build(18, "Globrad", "", "", of_globrad)
 	build(19, "N", "kgN m-3", "", of_n)
 	build(20, "ETa/ETc", "", "Act_ET / Pot_ET", of_eta_etc)
+	// Ported on demand: the Hohenfinow2 Python pipeline (test_env.json) asks for
+	// "DOY|S2_10_DOY" etc.; without it those columns were silently dropped.
+	build(21, "DOY", "", "output current day of year", of_doy)
 
 	g_output_table_built = true
 	return &g_output_table

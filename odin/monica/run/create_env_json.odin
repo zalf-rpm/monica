@@ -122,6 +122,11 @@ create_env_json_from_json_objects :: proc(
 		set(&env, "events2", jx.get(output, "events2"), allocator)
 	}
 
+	// NOTE(c++-quirk): "obj-outputs?" lands at outputs.output["obj-outputs?"],
+	// but env_return_obj_outputs reads outputs["obj-outputs?"] - so a sim.json's
+	// "obj-outputs" never takes effect, and monica-run always writes the array
+	// form. Only envs built elsewhere (e.g. Python's zalfmas_common, which puts
+	// the flag at the top level) reach the obj path. Reproduced.
 	inner := make(jx.Object, 0, allocator)
 	set(
 		&inner,

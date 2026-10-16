@@ -123,14 +123,18 @@ write_output_header_rows :: proc(
 	}
 }
 
+// `csvSep` decides quoting, `trailing` is what gets written after the value
+// ("" for the last column/element). The C++ quotes against csvSep in both
+// cases (escapeTokens = "\n\"" + csvSep); deciding by `trailing` instead left
+// a last-column string containing the separator unquoted.
 @(private)
-write_json_scalar :: proc(w: io.Writer, v: jx.Value, sep: string) {
+write_json_scalar :: proc(w: io.Writer, v: jx.Value, csvSep, trailing: string) {
 	switch {
 	case jx.is_number(v):
 		fmt.wprintf(w, "%.6g", jx.number_value(v))
 	case jx.is_string(v):
 		s := jx.string_value_of(v)
-		if needs_quote(s, sep) {
+		if needs_quote(s, csvSep) {
 			io.write_byte(w, '"')
 			io.write_string(w, s)
 			io.write_byte(w, '"')
@@ -142,7 +146,7 @@ write_json_scalar :: proc(w: io.Writer, v: jx.Value, sep: string) {
 	case:
 		io.write_string(w, "UNKNOWN")
 	}
-	io.write_string(w, sep)
+	io.write_string(w, trailing)
 }
 
 // C++: void monica::writeOutput(ostream&, const vector<OId>&, const vector<J11Array>&, string)
@@ -162,11 +166,43 @@ write_output :: proc(w: io.Writer, outputIds: []OId, values: [][dynamic]jx.Value
 				jSize := len(items)
 				for jv, jvi in items {
 					csvSep__ := jvi + 1 == jSize ? "" : csvSep
-					write_json_scalar(w, jv, csvSep__)
+					write_json_scalar(w, jv, csvSep, csvSep__)
 				}
 				io.write_string(w, csvSep_)
 			} else {
-				write_json_scalar(w, j, csvSep_)
+				write_json_scalar(w, j, csvSep, csvSep_)
+			}
+		}
+		io.write_string(w, "\r\n")
+	}
+	io.flush(w)
+}
+
+// C++: void monica::writeOutputObj(ostream&, const vector<OId>&, const vector<J11Object>&, string)
+//
+// NOTE(c++-quirk): an output id missing from a row's object writes nothing at
+// all - not even its separator - so that row's later columns shift left.
+// Reproduced.
+write_output_obj :: proc(w: io.Writer, outputIds: []OId, values: []jx.Value, csvSep: string) {
+	oidsSize := len(outputIds)
+	for o in values {
+		obj := jx.object_items(o)
+		for &oid, i in outputIds {
+			csvSep_ := i + 1 == oidsSize ? "" : csvSep
+			j, found := obj[oid_output_name(&oid, context.temp_allocator)]
+			if !found {
+				continue
+			}
+			if jx.is_array(j) {
+				items := jx.array_items(j)
+				jSize := len(items)
+				for jv, jvi in items {
+					csvSep__ := jvi + 1 == jSize ? "" : csvSep
+					write_json_scalar(w, jv, csvSep, csvSep__)
+				}
+				io.write_string(w, csvSep_)
+			} else {
+				write_json_scalar(w, j, csvSep, csvSep_)
 			}
 		}
 		io.write_string(w, "\r\n")

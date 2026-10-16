@@ -186,13 +186,14 @@ oid_output_name :: proc(oid: ^OId, allocator := context.allocator) -> string {
 
 // C++: struct Output::Data
 //
-// resultsObj (the obj-outputs? path) is not ported: sim-min.json never sets
-// "obj-outputs?" (defaults false), so env_return_obj_outputs is always
-// false for this port's fixture - "port on demand".
+// Exactly one of results / resultsObj is filled, depending on the env's
+// "obj-outputs?" (see run.env_return_obj_outputs): results is one column per
+// output id, resultsObj one JSON object per row, keyed by oid_output_name.
 Output_Data :: struct {
-	origSpec:  string,
-	outputIds: [dynamic]OId,
-	results:   [dynamic][dynamic]jx.Value,
+	origSpec:   string,
+	outputIds:  [dynamic]OId,
+	results:    [dynamic][dynamic]jx.Value,
+	resultsObj: [dynamic]jx.Value,
 }
 
 // C++: struct monica::Output
@@ -239,18 +240,18 @@ oid_to_json :: proc(oid: ^OId, allocator := context.allocator) -> jx.Value {
 }
 
 // C++: json11::Json output::to_json(const Output*)
-//
-// The resultsObj branch (d.resultsObj non-empty) is not ported, matching
-// Output_Data's own comment - this port's results are always the J11Array
-// form.
 output_to_json :: proc(out: ^Output, allocator := context.allocator) -> jx.Value {
 	ds := make(jx.Array, 0, len(out.data), allocator)
 	for &dd in out.data {
-		rs := make(jx.Array, 0, len(dd.results), allocator)
-		for r in dd.results {
-			row := make(jx.Array, 0, len(r), allocator)
-			append(&row, ..r[:])
-			append(&rs, jx.Value(row))
+		rs := make(jx.Array, 0, max(len(dd.results), len(dd.resultsObj)), allocator)
+		if len(dd.results) > 0 {
+			for r in dd.results {
+				row := make(jx.Array, 0, len(r), allocator)
+				append(&row, ..r[:])
+				append(&rs, jx.Value(row))
+			}
+		} else {
+			append(&rs, ..dd.resultsObj[:])
 		}
 		outputIds := make(jx.Array, 0, len(dd.outputIds), allocator)
 		for &o in dd.outputIds {
