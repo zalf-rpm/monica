@@ -1,0 +1,96 @@
+# The two setup-free builds from the README: pixi on Linux and Windows, and
+# Nix. Each ends with a real monica-run of installer/Hohenfinow2/sim-min.json,
+# so a build that compiles but can't run (missing runtime libs, broken
+# parameters path) fails here too.
+name: Build (pixi, Nix)
+
+on:
+  push:
+    paths-ignore:
+      - "**.md"
+      - "documentation/**"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "documentation/**"
+  workflow_dispatch:
+
+jobs:
+  pixi:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      # build.py then clones vcpkg at vcpkg_tag.txt into .vcpkg/ - the pinned
+      # version, not whatever checkout the runner image happens to have.
+      VCPKG_ROOT: ""
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          path: monica
+
+      - uses: actions/checkout@v7
+        with:
+          repository: zalf-rpm/monica-parameters
+          path: monica-parameters
+
+      # vcpkg's binary cache. vcpkg keys every package on its full ABI itself,
+      # so a stale cache only means rebuilding what changed.
+      - uses: actions/cache@v6
+        with:
+          path: ${{ runner.os == 'Windows' && '~\AppData\Local\vcpkg\archives' || '~/.cache/vcpkg/archives' }}
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('monica/cmake/vcpkg/vcpkg.json', 'monica/vcpkg_tag.txt', 'monica/pixi.lock') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - uses: prefix-dev/setup-pixi@v0.11.2
+        with:
+          manifest-path: monica/pixi.toml
+
+      - name: Build
+        working-directory: monica
+        run: pixi run build
+
+      - name: Run sim-min.json
+        shell: bash
+        working-directory: monica/installer/Hohenfinow2
+        env:
+          MONICA_PARAMETERS: ${{ github.workspace }}/monica-parameters
+        run: |
+          exe=../../_cmake_release/monica-run
+          [ "$RUNNER_OS" = Windows ] && exe=../../_cmake_release/Release/monica-run.exe
+          "$exe" sim-min.json
+          rows=$(wc -l < sim-min-out.csv)
+          echo "sim-min-out.csv: $rows rows"
+          [ "$rows" -eq 2598 ]
+
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          path: monica
+
+      - uses: actions/checkout@v7
+        with:
+          repository: zalf-rpm/monica-parameters
+          path: monica-parameters
+
+      - uses: cachix/install-nix-action@v31.11.2
+
+      - name: nix build
+        working-directory: monica
+        run: nix build -L
+
+      - name: Run sim-min.json
+        working-directory: monica/installer/Hohenfinow2
+        env:
+          MONICA_PARAMETERS: ${{ github.workspace }}/monica-parameters
+        run: |
+          ../../result/bin/monica-run sim-min.json
+          rows=$(wc -l < sim-min-out.csv)
+          echo "sim-min-out.csv: $rows rows"
+          [ "$rows" -eq 2598 ]
