@@ -437,7 +437,7 @@ Json monica::createEnvJsonFromJsonObjects(std::map<std::string, json11::Json> pa
   if(cropj["cropRotations2"].is_array()) env["cropRotations2"] = cropj["cropRotations2"];
   env["events"] = simj["output"]["events"];
   if(simj["output"]["events"].is_array()) env["events2"] = simj["output"]["events2"];
-  env["outputs"] = J11Object{ {"output", J11Object{ {"obj-outputs?", simj["output"]["obj-outputs"].bool_value() } } } };
+  env["outputs"] = J11Object{{"obj-outputs?", simj["output"]["obj-outputs"].bool_value()}};
 
   env["pathToClimateCSV"] = simj["climate.csv"];
   auto csvos = simj["climate.csv-options"].object_items();
