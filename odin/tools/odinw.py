@@ -39,6 +39,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -90,6 +91,7 @@ ODIN_EXE = DIST_DIR / ("odin.exe" if IS_WINDOWS else "odin")
 TARGETS = {
     "monica-run": "cmd/monica-run",
     "monica-zmq-server": "cmd/monica-zmq-server",
+    "monica-zmq-proxy": "cmd/monica-zmq-proxy",
     "monica-capnp-server": "cmd/monica-capnp-server",
     "monica-capnp-fbp-component": "cmd/monica-capnp-fbp-component",
 }
@@ -530,16 +532,22 @@ def _write_vcpkg_manifest() -> Path:
     return VCPKG_MANIFEST_DIR
 
 
-def _check_pixi_zeromq() -> None:
-    """pixi.toml can't read versions.json, so at least catch the two drifting."""
+def _pixi_zeromq_mismatch() -> str | None:
     try:
         import tomllib
     except ImportError:  # Python 3.10 and older; pixi.toml requires 3.11+
-        return
+        return None
     spec = tomllib.loads((ROOT / "pixi.toml").read_text())["dependencies"]["zeromq"]
     want = VERSIONS["zeromq"]
     if spec.removesuffix(".*") != want:
-        die(f"pixi.toml pins zeromq {spec!r} but versions.json says {want!r}; make them agree")
+        return f"pixi.toml pins zeromq {spec!r} but versions.json says {want!r}; make them agree"
+    return None
+
+
+def _check_pixi_zeromq() -> None:
+    """pixi.toml can't read versions.json, so at least catch the two drifting."""
+    if (msg := _pixi_zeromq_mismatch()) is not None:
+        die(msg)
 
 
 def _cached_cxx_compiler(build_dir: Path) -> str | None:
@@ -911,6 +919,129 @@ def cmd_check_msvc(ns: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_check_pins(ns: argparse.Namespace) -> int:
+    """Check, from any OS, that everything versions.json pins actually exists for
+    every path that consumes it - see UPDATING_VERSIONS.md. Availability only:
+    whether the Windows build then compiles and links is CI's job.
+
+    Parts whose tool is missing (no $VCPKG_ROOT, no nix) are reported as SKIP,
+    not failures, so this runs anywhere; CI runs it with everything present.
+    """
+    results: list[tuple[str, str, str]] = []
+
+    def report(status: str, what: str, detail: str = "") -> None:
+        results.append((status, what, detail))
+        print(f"  {status:<4} {what}{': ' + detail if detail else ''}", flush=True)
+
+    print(f"==> checking pins in {ROOT / 'versions.json'}")
+
+    # Odin: both release assets exist and match their SHA256 - downloaded into
+    # the same cache bootstrap uses, so a later bootstrap reuses them.
+    for plat, (asset, want) in sorted(ODIN_ASSETS.items()):
+        url = ODIN_URL.format(tag=ODIN_TAG, asset=asset)
+        dest = CACHE_DIR / asset
+        try:
+            if not dest.exists() or sha256_file(dest) != want:
+                download(url, dest)
+        except OSError as e:
+            report("FAIL", f"odin {plat}", f"cannot download {url} ({e})")
+            continue
+        got = sha256_file(dest)
+        if got == want:
+            report("OK", f"odin {plat}", asset)
+        else:
+            dest.unlink(missing_ok=True)
+            report("FAIL", f"odin {plat}", f"SHA256 is {got}, versions.json says {want}")
+
+    # zeromq: pixi.toml, the lock (both platforms - this is what proves the
+    # conda-forge package exists for Windows too), the vendored Windows import
+    # lib, and the version the Odin bindings were written against.
+    zmq = VERSIONS["zeromq"]
+    if (msg := _pixi_zeromq_mismatch()) is not None:
+        report("FAIL", "zeromq pixi.toml", msg)
+    else:
+        report("OK", "zeromq pixi.toml", zmq)
+    locked = dict(
+        re.findall(r"conda-forge/(linux-64|win-64)/zeromq-([0-9.]+)-", (ROOT / "pixi.lock").read_text())
+    )
+    for plat in ("linux-64", "win-64"):
+        got = locked.get(plat)
+        if got == zmq:
+            report("OK", f"zeromq pixi.lock {plat}", got)
+        else:
+            report("FAIL", f"zeromq pixi.lock {plat}", f"locked {got!r}; run `pixi update zeromq`")
+    zmq_lib = ROOT / "support" / "zeromq" / "windows" / "libzmq.lib"
+    dll = f"libzmq-mt-{zmq.replace('.', '_')}.dll"
+    if dll.encode() in zmq_lib.read_bytes():
+        report("OK", "zeromq windows/libzmq.lib", f"imports {dll}")
+    else:
+        report("FAIL", "zeromq windows/libzmq.lib", f"does not import {dll}; replace it (see UPDATING_VERSIONS.md)")
+    bindings = (ROOT / "support" / "zeromq" / "bindings.odin").read_text()
+    parts = [re.search(rf"VERSION_{k}\s*::\s*(\d+)", bindings) for k in ("MAJOR", "MINOR", "PATCH")]
+    bound = ".".join(m.group(1) for m in parts if m)
+    if bound == zmq:
+        report("OK", "zeromq bindings.odin", bound)
+    else:
+        report("WARN", "zeromq bindings.odin", f"VERSION_* say {bound}, pin is {zmq} (compile-time constants only)")
+
+    # Cap'n Proto via vcpkg. Manifest mode resolves the override against the
+    # versions database of the CHECKOUT, so the version must exist there; the
+    # baseline commit must exist too (shallow clones lack it).
+    capnp = VERSIONS["capnproto"]["version"]
+    baseline = VERSIONS["vcpkg_baseline"]
+    vcpkg_root = os.environ.get("VCPKG_ROOT")
+    if not vcpkg_root or shutil.which("git") is None:
+        report("SKIP", "capnproto vcpkg", "VCPKG_ROOT not set (or no git)")
+    else:
+        root = Path(vcpkg_root).expanduser()
+
+        def git(*a: str) -> subprocess.CompletedProcess:
+            return subprocess.run(["git", "-C", str(root), *a], capture_output=True, text=True)
+
+        if git("cat-file", "-e", f"{baseline}^{{commit}}").returncode != 0:
+            report("FAIL", "capnproto vcpkg baseline", f"{baseline} not in {root}; `git -C $VCPKG_ROOT fetch` (full history)")
+        else:
+            report("OK", "capnproto vcpkg baseline", baseline[:12])
+            db = root / "versions" / "c-" / "capnproto.json"
+            known = {v.get("version") for v in json.loads(db.read_text())["versions"]} if db.exists() else set()
+            if capnp in known:
+                report("OK", "capnproto vcpkg version", capnp)
+            else:
+                report("FAIL", "capnproto vcpkg version", f"{capnp} not in {db}; update the vcpkg checkout")
+            r = git("show", f"{baseline}:versions/baseline.json")
+            default = json.loads(r.stdout)["default"].get("capnproto", {}).get("baseline") if r.returncode == 0 else None
+            if default != capnp:
+                report("WARN", "capnproto vcpkg baseline default", f"{default}; only the override selects {capnp}")
+
+    # Cap'n Proto + zeromq via Nix: the source hash, and the flake evaluating
+    # at all (its zeromq assertion fires during evaluation).
+    if shutil.which("nix") is None:
+        report("SKIP", "nix", "nix not on PATH")
+    else:
+        r = subprocess.run(
+            ["nix", "flake", "prefetch", "--json", f"github:capnproto/capnproto/v{capnp}"],
+            capture_output=True, text=True,
+        )
+        want = VERSIONS["capnproto"]["nix_src_hash"]
+        got = json.loads(r.stdout)["hash"] if r.returncode == 0 else None
+        if got == want:
+            report("OK", "capnproto nix_src_hash", got)
+        else:
+            report("FAIL", "capnproto nix_src_hash", f"is {got}, versions.json says {want}" if got else (r.stderr.strip().splitlines() or ["prefetch failed"])[-1])
+        r = subprocess.run(
+            ["nix", "eval", "--raw", f"{REPO}#packages.x86_64-linux.monica-odin.drvPath"],
+            capture_output=True, text=True,
+        )
+        if r.returncode == 0:
+            report("OK", "nix flake evaluates", "monica-odin")
+        else:
+            report("FAIL", "nix flake evaluates", r.stderr.strip().splitlines()[-1] if r.stderr.strip() else "")
+
+    failed = [r for r in results if r[0] == "FAIL"]
+    print(f"==> {len(failed)} failed, {sum(r[0] == 'WARN' for r in results)} warnings")
+    return 1 if failed else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         prog="odinw", description="build the Odin port of MONICA"
@@ -955,6 +1086,12 @@ def main() -> int:
         help="remove build/ and the Cap'n Proto shim's CMake build dirs",
     )
     p.set_defaults(fn=cmd_clean)
+
+    p = sub.add_parser(
+        "check-pins",
+        help="check that every version in versions.json exists for pixi, vcpkg, Nix and Windows",
+    )
+    p.set_defaults(fn=cmd_check_pins)
 
     p = sub.add_parser("test", help="run the odin/tests unit suite")
     p.set_defaults(fn=cmd_test)

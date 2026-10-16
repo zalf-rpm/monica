@@ -1,0 +1,113 @@
+# The Odin port, built every way it can be built: pixi on Linux and Windows
+# (the Windows job is the only place the MSVC side gets verified), Nix, and the
+# Alpine Docker image. A version bump is a PR that edits odin/versions.json -
+# see odin/UPDATING_VERSIONS.md - and this workflow is what tells you whether
+# all of them still work.
+name: Odin
+
+on:
+  push:
+    paths:
+      - "odin/**"
+      - "docker/**"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/odin.yml"
+  pull_request:
+    paths:
+      - "odin/**"
+      - "docker/**"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/odin.yml"
+  workflow_dispatch:
+
+jobs:
+  pixi:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          path: monica
+
+      # Full history: the manifest's builtin-baseline is a commit that must be
+      # reachable, and check-pins reads the versions database.
+      - uses: actions/checkout@v7
+        with:
+          repository: microsoft/vcpkg
+          fetch-depth: 0
+          path: vcpkg
+
+      - name: Bootstrap vcpkg
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then ./vcpkg/bootstrap-vcpkg.bat -disableMetrics
+          else ./vcpkg/bootstrap-vcpkg.sh -disableMetrics; fi
+
+      # vcpkg's binary cache. vcpkg keys each package on its full ABI (triplet,
+      # toolchain, port version) itself, so restoring a stale cache is safe -
+      # it just rebuilds what changed.
+      - uses: actions/cache@v6
+        with:
+          path: ${{ runner.os == 'Windows' && '~\AppData\Local\vcpkg\archives' || '~/.cache/vcpkg/archives' }}
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('monica/odin/versions.json', 'monica/odin/tools/odinw.py') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - uses: prefix-dev/setup-pixi@v0.11.2
+        with:
+          manifest-path: monica/odin/pixi.toml
+
+      - name: Check pins
+        working-directory: monica/odin
+        run: pixi run python tools/odinw.py check-pins
+
+      - name: Build the Cap'n Proto shim
+        working-directory: monica/odin
+        run: pixi run capnp-shim
+
+      - name: Build
+        working-directory: monica/odin
+        run: pixi run build
+
+      - name: Test
+        working-directory: monica/odin
+        run: pixi run test
+
+      # Windows only: the single-binary release variant (static shim). Its
+      # combined lib is MSVC-only, see support/capnp/shim_dynamic/CMakeLists.txt.
+      - name: Build standalone monica-capnp-server
+        if: runner.os == 'Windows'
+        working-directory: monica/odin
+        run: |
+          pixi run capnp-shim-static
+          pixi run build-standalone
+
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v31.11.2
+      - name: nix build
+        run: nix build .#monica-odin -L
+      - name: Smoke test
+        run: ./result/bin/monica-zmq-server -v
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Build the image
+        run: docker build -f odin/Dockerfile -t monica-odin:ci .
+      - name: Smoke test
+        run: docker run --rm monica-odin:ci /run/monica/monica-zmq-server -v

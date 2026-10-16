@@ -1,11 +1,12 @@
 {
   "_comment": [
     "Single source of truth for the Odin port's pinned third-party versions.",
-    "Read by tools/odinw.py (pixi path) and by ../flake.nix (Nix path).",
+    "Read by tools/odinw.py (pixi path), ../flake.nix (Nix path) and Dockerfile (Alpine image).",
     "pixi.toml cannot read this file; odinw.py checks that its zeromq spec agrees.",
     "odin.sha256: per sys.platform, of the release asset; verify with curl -sL <url> | sha256sum.",
     "capnproto.nix_src_hash: SRI hash of the GitHub source tag; nix flake prefetch github:capnproto/capnproto/v<version>.",
-    "vcpkg_baseline: commit of the vcpkg tag in ../vcpkg_tag.txt; git -C $VCPKG_ROOT rev-parse <tag>^{commit}."
+    "vcpkg_baseline: a vcpkg commit whose versions database has capnproto.version (independent of ../vcpkg_tag.txt, which only the C++ build uses).",
+    "After editing: python tools/odinw.py check-pins. Procedure: UPDATING_VERSIONS.md."
   ],
   "odin": {
     "tag": "dev-2026-08",

@@ -96,7 +96,7 @@
           mkdir -p build
           # Unoptimized, like `odinw.py build` without --release: that is what
           # the byte-identical CSV comparison against C++ validates.
-          for t in monica-run monica-zmq-server monica-capnp-server monica-capnp-fbp-component; do
+          for t in monica-run monica-zmq-server monica-zmq-proxy monica-capnp-server monica-capnp-fbp-component; do
             odin build cmd/$t -out:build/$t
           done
           runHook postBuild
