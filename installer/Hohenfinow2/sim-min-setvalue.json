@@ -23,7 +23,7 @@
       [
         "Date",
         [
-          "soilColumn.layers.vs_SoilNO3",
+          "soil_column.layers.soil_no3",
           [
             1,
             3

@@ -237,7 +237,7 @@ guard — the bootstrapped compiler's own `core` library legitimately calls `mat
 ## 9. Output ids: prefer a path over a lambda
 
 `monica/io/output_paths.odin` maps a legacy output name to a *path* into `Monica_Model`
-(`"soilColumn.layers.vs_SoilNH4"`), which `support/reflectpath` resolves. Adding an output that is
+(`"soil_column.layers.soil_nh4"`), which `support/reflectpath` resolves. Adding an output that is
 just "read this field, round to N digits" is one table row, not a new proc - and
 `python odin/tools/gen_output_aliases.py` regenerates the whole table from
 `src/io/build-output.cpp`. Write a lambda in `build_output.odin` only when the value is genuinely

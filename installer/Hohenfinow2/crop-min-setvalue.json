@@ -66,7 +66,7 @@
           "type": "SetValue",
           "date": "0001-04-01",
           "var": [
-            "soilColumn.layers.vs_SoilNO3",
+            "soil_column.layers.soil_no3",
             [
               1,
               3
