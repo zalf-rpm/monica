@@ -453,7 +453,7 @@ BOTRes &monica::buildOutputTable() {
                                    max(0, int(value.number_value()) - 1));
           });
 
-      build({id++, "TempSum", "�Cd", "CurrentTemperatureSum"},
+      build({id++, "TempSum", "°Cd", "CurrentTemperatureSum"},
             [](const MonicaModel &monica, OId oid) {
               return monica.currentCropModule.get()
                          ? round(monica.currentCropModule.get()->vc_CurrentTotalTemperatureSum, 1)
@@ -924,11 +924,11 @@ BOTRes &monica::buildOutputTable() {
             3);
       });
 
-      build({id++, "SurfTemp", "�C", ""}, [](const MonicaModel &monica, OId oid) {
+      build({id++, "SurfTemp", "°C", ""}, [](const MonicaModel &monica, OId oid) {
         return round(monica.soilTemperature->soilSurfaceTemperature, 1);
       });
 
-      build({id++, "STemp", "�C", ""}, [](const MonicaModel &monica, OId oid) {
+      build({id++, "STemp", "°C", ""}, [](const MonicaModel &monica, OId oid) {
         return getComplexValues<double>(
             oid,
             [&](int i) {
@@ -1231,7 +1231,7 @@ BOTRes &monica::buildOutputTable() {
         return ci == cd.end() ? 0.0 : round(ci->second, 4);
       });
 
-      build({id++, "Tmax>=40", "0|1", "if Tmax >= 40�C then 1 else 0"},
+      build({id++, "Tmax>=40", "0|1", "if Tmax >= 40°C then 1 else 0"},
             [](const MonicaModel &monica, OId oid) {
               const auto &cd = monica.climateData.back();
               auto ci = cd.find(Climate::tmax);
@@ -1517,7 +1517,7 @@ BOTRes &monica::buildOutputTable() {
                          : 0.0;
             });
 
-      build({id++, "O3-total-uptake", "�mol m-2", "total O3 uptake"}, // TODO units are not correct
+      build({id++, "O3-total-uptake", "µmol m-2", "total O3 uptake"}, // TODO units are not correct
             [](const MonicaModel &monica, OId oid) {
               return monica.currentCropModule.get()
                          ? round(monica.currentCropModule.get()->vc_O3_sumUptake, 2)
