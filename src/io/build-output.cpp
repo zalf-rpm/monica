@@ -388,8 +388,8 @@ BOTRes& monica::buildOutputTable() {
                        setStage(max(0, int(value.number_value()) - 1));
             });
 
-      build({id++, "TempSum", "�Cd", "CurrentTemperatureSum"},
-            [](const MonicaModel& monica, OId oid) {
+      build({id++, "TempSum", "°Cd", "CurrentTemperatureSum"},
+            [](const MonicaModel &monica, OId oid) {
               return monica.cropGrowth() ? round(monica.cropGrowth()->get_CurrentTemperatureSum(), 1) : 0.0;
             });
 
@@ -758,13 +758,12 @@ BOTRes& monica::buildOutputTable() {
               }, 3);
             });
 
-      build({id++, "SurfTemp", "�C", ""},
-            [](const MonicaModel& monica, OId oid) {
-              return round(monica.soilTemperature().getSoilSurfaceTemperature(), 1);
-            });
+      build({id++, "SurfTemp", "°C", ""}, [](const MonicaModel &monica, OId oid) {
+        return round(monica.soilTemperature().getSoilSurfaceTemperature(), 1);
+      });
 
-      build({id++, "STemp", "�C", ""},
-            [](const MonicaModel& monica, OId oid) {
+      build({id++, "STemp", "°C", ""},
+            [](const MonicaModel &monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
                 return monica.soilTemperature().getSoilTemperature(i);
               }, 1);
@@ -1043,8 +1042,8 @@ BOTRes& monica::buildOutputTable() {
               return ci == cd.end() ? 0.0 : round(ci->second, 4);
             });
 
-      build({id++, "Tmax>=40", "0|1", "if Tmax >= 40�C then 1 else 0"},
-            [](const MonicaModel& monica, OId oid) {
+      build({id++, "Tmax>=40", "0|1", "if Tmax >= 40°C then 1 else 0"},
+            [](const MonicaModel &monica, OId oid) {
               const auto& cd = monica.currentStepClimateData();
               auto ci = cd.find(Climate::tmax);
               return ci == cd.end() ? 0 : (ci->second >= 40 ? 1 : 0);
@@ -1326,8 +1325,8 @@ BOTRes& monica::buildOutputTable() {
               return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_WStomatalClosure(), 2) : 0.0;
             });
 
-      build({id++, "O3-total-uptake", "�mol m-2", "total O3 uptake"}, //TODO units are not correct
-            [](const MonicaModel& monica, OId oid) {
+      build({id++, "O3-total-uptake", "µmol m-2", "total O3 uptake"}, // TODO units are not correct
+            [](const MonicaModel &monica, OId oid) {
               return monica.cropGrowth() ? round(monica.cropGrowth()->get_O3_sumUptake(), 2) : 0.0;
             });
 
