@@ -76,6 +76,15 @@
           done
           runHook postInstall
         '';
+
+        meta = {
+          description = "MONICA - Model for Nitrogen and Carbon in Agro-ecosystems";
+          homepage = "https://github.com/zalf-rpm/monica";
+          license = pkgs.lib.licenses.mpl20;
+          platforms = pkgs.lib.platforms.linux;
+          # what `nix run github:zalf-rpm/monica -- sim.json` starts
+          mainProgram = "monica-run";
+        };
       };
     in
     {

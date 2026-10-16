@@ -226,3 +226,5 @@ _cmake_linux_release
 .vcpkg/
 result
 result-*
+# direnv (.envrc: use flake)
+.direnv/
