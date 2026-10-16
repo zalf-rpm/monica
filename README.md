@@ -25,6 +25,32 @@ Builds can be downloaded from the repository's [releases page](https://github.co
 
 # Building
 
+There are two ways to build MONICA that need no manual dependency setup.
+Both need the submodules checked out:
+
+    git clone --recurse-submodules https://github.com/zalf-rpm/monica.git
+    # or, in an existing clone:
+    git submodule update --init --recursive
+
+## With pixi (Linux and Windows)
+
+With [pixi](https://pixi.sh) installed (on Windows also Visual Studio with
+"Desktop development with C++"), pixi provides CMake, Ninja, Python and, on
+Linux, the compiler. vcpkg provides Cap'n Proto, ZeroMQ and libsodium: if
+`VCPKG_ROOT` isn't set, the vcpkg version in `vcpkg_tag.txt` is cloned into
+`.vcpkg/` on the first build.
+
+    pixi run build              # Release build into _cmake_release/
+    pixi run build -- --debug   # Debug build into _cmake_debug/
+
+## With Nix (Linux)
+
+    nix build                   # all executables in result/bin
+    nix develop                 # shell with all dependencies, then e.g.:
+    cmake -B _cmake_release -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build _cmake_release
+
+## Manual setup
+
 In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/mas-infrastructure and 
 zalf-rpm/monica-parameters (parameters repository for MONICA) in addition to monica itself.
 
@@ -38,7 +64,7 @@ After cloning the repositories you should have this file structure:
 
 Also install Python to run the minimal examples. 
 
-## Windows
+### Windows
  see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Windows) for installation and build instructions
 
 monica-run will execute a local MONICA with the example Hohenfinow2 in the installer directory and output its result into 
@@ -47,7 +73,7 @@ installer\Hohenfinow2\out.csv.
     cd monica/_cmake_win64
     ./monica-run -o out.csv installer/Hohenfinow2/sim-min.json
     
-## Linux
+### Linux
 
 see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Linux) for installation and build instructions.
 
