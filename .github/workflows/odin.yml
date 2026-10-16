@@ -1,6 +1,6 @@
 # The Odin port, built every way it can be built: pixi on Linux and Windows
 # (the Windows job is the only place the MSVC side gets verified), Nix, and the
-# Alpine Docker image. A version bump is a PR that edits odin/versions.json -
+# Debian Docker image. A version bump is a PR that edits odin/versions.json -
 # see odin/UPDATING_VERSIONS.md - and this workflow is what tells you whether
 # all of them still work.
 name: Odin

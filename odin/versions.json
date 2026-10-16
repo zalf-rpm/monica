@@ -1,7 +1,7 @@
 {
   "_comment": [
     "Single source of truth for the Odin port's pinned third-party versions.",
-    "Read by tools/odinw.py (pixi path), ../flake.nix (Nix path) and Dockerfile (Alpine image).",
+    "Read by tools/odinw.py (pixi path), ../flake.nix (Nix path) and Dockerfile (Docker image).",
     "pixi.toml cannot read this file; odinw.py checks that its zeromq spec agrees.",
     "odin.sha256: per sys.platform, of the release asset; verify with curl -sL <url> | sha256sum.",
     "capnproto.nix_src_hash: SRI hash of the GitHub source tag; nix flake prefetch github:capnproto/capnproto/v<version>.",

@@ -1,8 +1,13 @@
 # syntax=docker/dockerfile:1
 #
-# Odin MONICA on Alpine - a drop-in for the C++ image (../Dockerfile): same
-# /run/monica layout, same environment variables, same supervisord.conf
-# (two monica-zmq-proxy + $monica_instances monica-zmq-server workers).
+# Odin MONICA on Debian slim - a drop-in for the C++ image (../Dockerfile):
+# same Debian release, same /run/monica layout, same environment variables,
+# same supervisord.conf (two monica-zmq-proxy + $monica_instances
+# monica-zmq-server workers).
+#
+# Debian (glibc) rather than Alpine (musl) on purpose: the port calls the C
+# library's pow/exp/log to stay bit-identical with C++ (CONVENTIONS.md §1), and
+# musl's libm rounds differently - see Dockerfile.alpine.
 #
 # Build from the REPO ROOT (the context needs ../docker as well as odin/):
 #   docker build -f odin/Dockerfile -t zalfrpm/monica-odin .
@@ -11,14 +16,17 @@
 #
 # Pins come from odin/versions.json (see odin/UPDATING_VERSIONS.md): the Odin
 # compiler via tools/odinw.py bootstrap, Cap'n Proto built from source here
-# (Alpine's own capnproto package lags behind). zeromq is Alpine's.
+# (Debian's own capnproto package lags behind). zeromq is Debian's.
 
-ARG ALPINE_VERSION=3.24
+ARG DEBIAN_VERSION=13
 
-FROM alpine:${ALPINE_VERSION} AS build
+FROM debian:${DEBIAN_VERSION} AS build
 
-RUN apk add --no-cache build-base clang lld cmake ninja git python3 jq \
-    zeromq-dev zlib-dev linux-headers
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        build-essential clang lld cmake ninja-build git ca-certificates python3 jq \
+        libzmq3-dev zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Cap'n Proto first: it changes rarely and is the slowest step, so it gets its
 # own layer keyed only on versions.json. Static + PIC, so the shim .so absorbs
@@ -42,7 +50,8 @@ COPY odin /src/odin
 WORKDIR /src/odin
 
 # The shim, where `odinw.py build` expects it. Not `odinw.py capnp-shim`: that
-# is the pixi/vcpkg path; here everything is built against Alpine's musl.
+# is the pixi/vcpkg path, which links against conda's glibc-2.28 sysroot; here
+# everything is built against this image's own glibc.
 RUN cmake -S support/capnp/shim_dynamic -B support/capnp/shim_dynamic/build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ \
     && cmake --build support/capnp/shim_dynamic/build --target mas_capnp_dynamic_shim
@@ -59,9 +68,12 @@ RUN git clone --depth 1 -b "${MONICA_PARAMETERS_REF}" \
         https://github.com/zalf-rpm/monica-parameters.git /src/monica-parameters
 
 
-FROM alpine:${ALPINE_VERSION}
+FROM debian:${DEBIAN_VERSION}-slim
 
-RUN apk add --no-cache zeromq libstdc++ libgcc zlib supervisor
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libzmq5 supervisor \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV monica_dir=/run/monica
 ENV supervisor_conf=/etc/supervisor/supervisord.conf
@@ -95,7 +107,7 @@ COPY --from=build /src/odin/support/capnp/shim/external/mas_capnproto_schemas/za
 RUN mkdir -p ${MONICA_WORK} && chmod -R 777 ${MONICA_WORK} \
     && chmod -R +rx ${monica_dir} \
     && touch /var/log/supervisord.log && chmod 777 /var/log/supervisord.log \
-    && adduser -D myuser
+    && useradd -ms /bin/bash myuser
 USER myuser
 
 CMD ["sh", "/start.sh"]
