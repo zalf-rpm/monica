@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "Single source of truth for the Odin port's pinned third-party versions.",
+    "Read by tools/odinw.py (pixi path) and by ../flake.nix (Nix path).",
+    "pixi.toml cannot read this file; odinw.py checks that its zeromq spec agrees.",
+    "odin.sha256: per sys.platform, of the release asset; verify with curl -sL <url> | sha256sum.",
+    "capnproto.nix_src_hash: SRI hash of the GitHub source tag; nix flake prefetch github:capnproto/capnproto/v<version>.",
+    "vcpkg_baseline: commit of the vcpkg tag in ../vcpkg_tag.txt; git -C $VCPKG_ROOT rev-parse <tag>^{commit}."
+  ],
+  "odin": {
+    "tag": "dev-2026-08",
+    "sha256": {
+      "linux": "d858c0a182bb28d7b04b04dbb8aed592a9c96c84e4400ee917c74b45848a4d87",
+      "win32": "4fa5bfcc1f51d748705a7b9bfe09de6ba71459429ac6c89fa6d2218a0976ba23"
+    }
+  },
+  "zeromq": "4.3.5",
+  "capnproto": {
+    "version": "1.2.0",
+    "nix_src_hash": "sha256-aDcn4bLZGq8915/NPPQsN5Jv8FRWd8cAspkG3078psc="
+  },
+  "vcpkg_baseline": "74e6536215718009aae747d86d84b78376bf9e09"
+}

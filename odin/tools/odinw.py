@@ -5,7 +5,8 @@ Windows MSVC toolchain, and drives `odin build` / `odin test`.
 Why a Python driver instead of plain pixi tasks:
 
 - The Odin compiler is NOT on conda-forge (checked: no package matches `odin`),
-  so it has to come from a GitHub release. Pinning tag + SHA256 here is what
+  so it has to come from a GitHub release. Pinning tag + SHA256 (in
+  versions.json, shared with ../flake.nix) is what
   makes builds repeatable; `pixi.lock` only covers the conda half.
 - The two release archives normalize differently: the Linux tarball unpacks to
   `odin-linux-amd64-nightly+2026-08-06/` (a name that changes every release)
@@ -36,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -46,20 +48,16 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-# --- pinned Odin compiler -----------------------------------------------------
-# Bump all three fields together. Verify a new SHA256 with:
-#   curl -sL <url> | sha256sum
-ODIN_TAG = "dev-2026-08"
+# --- pinned versions ----------------------------------------------------------
+# All third-party pins live in versions.json, which ../flake.nix reads too, so
+# the pixi and Nix builds cannot drift apart. Bump the tag and both SHA256s
+# together there.
+VERSIONS = json.loads((Path(__file__).resolve().parent.parent / "versions.json").read_text())
+ODIN_TAG = VERSIONS["odin"]["tag"]
 ODIN_ASSETS = {
     # sys.platform -> (asset filename, sha256)
-    "linux": (
-        f"odin-linux-amd64-{ODIN_TAG}.tar.gz",
-        "d858c0a182bb28d7b04b04dbb8aed592a9c96c84e4400ee917c74b45848a4d87",
-    ),
-    "win32": (
-        f"odin-windows-amd64-{ODIN_TAG}.zip",
-        "4fa5bfcc1f51d748705a7b9bfe09de6ba71459429ac6c89fa6d2218a0976ba23",
-    ),
+    "linux": (f"odin-linux-amd64-{ODIN_TAG}.tar.gz", VERSIONS["odin"]["sha256"]["linux"]),
+    "win32": (f"odin-windows-amd64-{ODIN_TAG}.zip", VERSIONS["odin"]["sha256"]["win32"]),
 }
 ODIN_URL = "https://github.com/odin-lang/Odin/releases/download/{tag}/{asset}"
 
@@ -84,6 +82,7 @@ BUILD_DIR = ROOT / "build"
 MSVC_DIR = ROOT / "msvc"                           # portable-msvc output
 DOWNLOADS_DIR = ROOT / "downloads"                 # portable-msvc scratch/cache
 SHIM_DIR = ROOT / "support" / "capnp" / "shim_dynamic"  # Cap'n Proto C++ shim (submodule)
+VCPKG_MANIFEST_DIR = BUILD_DIR / "vcpkg-manifest"        # generated, see _write_vcpkg_manifest
 
 IS_WINDOWS = sys.platform == "win32"
 ODIN_EXE = DIST_DIR / ("odin.exe" if IS_WINDOWS else "odin")
@@ -417,6 +416,7 @@ def _capnp_shim_artifacts() -> dict:
 
 
 def cmd_build(ns: argparse.Namespace) -> int:
+    _check_pixi_zeromq()
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     ext = ".exe" if IS_WINDOWS else ""
     wanted = ns.targets or list(TARGETS)
@@ -497,10 +497,49 @@ def _vcpkg_toolchain() -> Path:
             "VCPKG_ROOT is not set - the Cap'n Proto shim needs vcpkg's capnproto.\n"
             "  Set VCPKG_ROOT to your vcpkg checkout (the one with scripts/buildsystems/)."
         )
-    tc = Path(root) / "scripts" / "buildsystems" / "vcpkg.cmake"
+    # expanduser: a literal "~/..." is easy to end up with (e.g. set from a Nix
+    # attribute, where no shell expands it).
+    tc = Path(root).expanduser() / "scripts" / "buildsystems" / "vcpkg.cmake"
     if not tc.exists():
         die(f"{tc} not found - VCPKG_ROOT={root!r} does not look like a vcpkg checkout")
     return tc
+
+
+def _write_vcpkg_manifest() -> Path:
+    """Generate the vcpkg manifest the shim's CMake configure installs from.
+
+    Manifest mode makes the configure step install Cap'n Proto itself (into the
+    shim's build dir), instead of relying on a manual `vcpkg install` into the
+    checkout. It is generated rather than committed so the Cap'n Proto version
+    and baseline come from versions.json - the same pins the Nix build uses -
+    and it lives outside SHIM_DIR because that is a submodule of another repo.
+    The baseline alone would already fix the version; the override makes it
+    explicit and fails loudly if the baseline doesn't know that version.
+    """
+    manifest = {
+        "name": "mas-capnp-dynamic-shim",
+        "dependencies": ["capnproto"],
+        "builtin-baseline": VERSIONS["vcpkg_baseline"],
+        "overrides": [{"name": "capnproto", "version": VERSIONS["capnproto"]["version"]}],
+    }
+    VCPKG_MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
+    path = VCPKG_MANIFEST_DIR / "vcpkg.json"
+    text = json.dumps(manifest, indent=2) + "\n"
+    if not path.exists() or path.read_text() != text:
+        path.write_text(text)
+    return VCPKG_MANIFEST_DIR
+
+
+def _check_pixi_zeromq() -> None:
+    """pixi.toml can't read versions.json, so at least catch the two drifting."""
+    try:
+        import tomllib
+    except ImportError:  # Python 3.10 and older; pixi.toml requires 3.11+
+        return
+    spec = tomllib.loads((ROOT / "pixi.toml").read_text())["dependencies"]["zeromq"]
+    want = VERSIONS["zeromq"]
+    if spec.removesuffix(".*") != want:
+        die(f"pixi.toml pins zeromq {spec!r} but versions.json says {want!r}; make them agree")
 
 
 def _cached_cxx_compiler(build_dir: Path) -> str | None:
@@ -538,12 +577,12 @@ def _capnp_shim_toolchain(env: dict) -> tuple[str, str] | None:
     (a deliberately old, portable baseline). A shim .so linked with the
     system's newer glibc (2.34+ on a current Ubuntu) then fails Odin's link
     with "undefined reference to `pthread_create@GLIBC_2.34`" and similar -
-    a toolchain mismatch, not a stale-cache problem, since the specific
-    GLIBC_x.y a symbol reference resolves to is recorded at the FINAL link
-    step (this shim's own .so), not baked into individual .o/.a files - so
-    pointing that final link at the same clang+sysroot Odin itself links
-    with is sufficient, regardless of what compiler vcpkg's own
-    capnproto/kj static libs were originally built with.
+    a toolchain mismatch, not a stale-cache problem. Pinning only the shim's
+    own final link is NOT enough: glibc's headers (2.38+) redirect e.g.
+    strtoll to __isoc23_strtoll, and fortified builds call __inet_pton_chk -
+    both baked into the .o files at COMPILE time, and absent from the 2.28
+    sysroot. So vcpkg's capnproto/kj (and zlib) static libs must be built with
+    this same clang+sysroot too, which _vcpkg_pixi_triplet arranges.
 
     Why all the manual flags instead of just -DCMAKE_CXX_COMPILER=clang++:
     conda's `clang` package ships the runtime (libstdc++.so) but not the
@@ -600,6 +639,51 @@ def _capnp_shim_toolchain(env: dict) -> tuple[str, str] | None:
         ]
     )
     return cxx, flags
+
+
+VCPKG_TRIPLET_DIR = BUILD_DIR / "vcpkg-triplets"  # generated, see _vcpkg_pixi_triplet
+VCPKG_PIXI_TRIPLET = "x64-linux-pixi"
+
+
+def _vcpkg_pixi_triplet(cxx: str, flags: str) -> Path:
+    """Generate an overlay triplet that builds vcpkg's ports with the shim's
+    clang+sysroot (see _capnp_shim_toolchain for why), instead of whatever
+    compiler vcpkg would detect on PATH. Returns the overlay directory.
+
+    Static libraries, like vcpkg's default x64-linux, so the shim .so absorbs
+    Cap'n Proto and needs nothing else at runtime. The C compiler (for zlib) is
+    the clang-<ver> next to clang++-<ver>; the C++-only -isystem flags are
+    harmless for it but the sysroot and -L/-rpath are what matter.
+    """
+    cc = Path(cxx).with_name(Path(cxx).name.replace("clang++-", "clang-"))
+    if not cc.exists():
+        die(f"{cc} not found next to {cxx}")
+    sysroot_flags = " ".join(f for f in flags.split() if not f.startswith("-isystem"))
+    VCPKG_TRIPLET_DIR.mkdir(parents=True, exist_ok=True)
+    toolchain = VCPKG_TRIPLET_DIR / "pixi-toolchain.cmake"
+    files = {
+        toolchain: (
+            "# Generated by tools/odinw.py - see _vcpkg_pixi_triplet.\n"
+            f'set(CMAKE_C_COMPILER "{cc.as_posix()}")\n'
+            f'set(CMAKE_CXX_COMPILER "{Path(cxx).as_posix()}")\n'
+            f'set(CMAKE_C_FLAGS_INIT "-fPIC {sysroot_flags}")\n'
+            f'set(CMAKE_CXX_FLAGS_INIT "-fPIC {flags}")\n'
+        ),
+        VCPKG_TRIPLET_DIR / f"{VCPKG_PIXI_TRIPLET}.cmake": (
+            "# Generated by tools/odinw.py - see _vcpkg_pixi_triplet.\n"
+            "set(VCPKG_TARGET_ARCHITECTURE x64)\n"
+            "set(VCPKG_CRT_LINKAGE dynamic)\n"
+            "set(VCPKG_LIBRARY_LINKAGE static)\n"
+            "set(VCPKG_CMAKE_SYSTEM_NAME Linux)\n"
+            f'set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "{toolchain.as_posix()}")\n'
+        ),
+    }
+    # Only rewrite on change: vcpkg hashes these into its ABI key, and an
+    # unchanged mtime keeps CMake from reconfiguring for nothing.
+    for path, text in files.items():
+        if not path.exists() or path.read_text() != text:
+            path.write_text(text)
+    return VCPKG_TRIPLET_DIR
 
 
 def _drop_stale_build_dir(build_dir: Path, env: dict, target_cxx: str | None) -> None:
@@ -663,6 +747,7 @@ def cmd_capnp_shim(ns: argparse.Namespace) -> int:
         die("cmake not found on PATH")
 
     toolchain = _vcpkg_toolchain()
+    manifest_dir = _write_vcpkg_manifest()
     env = odin_env()
     shim_toolchain = _capnp_shim_toolchain(env)
     if not IS_WINDOWS and shim_toolchain is None:
@@ -688,6 +773,7 @@ def cmd_capnp_shim(ns: argparse.Namespace) -> int:
         configure = [
             "cmake", "-S", str(SHIM_DIR), "-B", str(build_dir),
             f"-DCMAKE_TOOLCHAIN_FILE={toolchain}",
+            f"-DVCPKG_MANIFEST_DIR={manifest_dir}",
             f"-DCMAKE_BUILD_TYPE={config}",
         ]
         if shim_toolchain is not None:
@@ -695,6 +781,8 @@ def cmd_capnp_shim(ns: argparse.Namespace) -> int:
             configure += [
                 f"-DCMAKE_CXX_COMPILER={cxx}",
                 f"-DCMAKE_CXX_FLAGS={flags}",
+                f"-DVCPKG_OVERLAY_TRIPLETS={_vcpkg_pixi_triplet(cxx, flags)}",
+                f"-DVCPKG_TARGET_TRIPLET={VCPKG_PIXI_TRIPLET}",
             ]
         if shutil.which("ninja"):
             configure += ["-G", "Ninja"]

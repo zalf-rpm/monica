@@ -1,9 +1,14 @@
 # Reproducible build environment for the Odin port (see ../plan-odin.md).
 #
-# Two halves, pinned separately:
+# Three parts, pinned separately:
 #   - the conda-forge dependencies below, locked by pixi.lock (commit it);
 #   - the Odin compiler itself, pinned by release tag + SHA256 in
-#     tools/odinw.py, because Odin is not packaged on conda-forge.
+#     versions.json, because Odin is not packaged on conda-forge;
+#   - Cap'n Proto for the shim, installed by vcpkg in manifest mode from the
+#     baseline + version in versions.json (tools/odinw.py generates the
+#     manifest; no manual `vcpkg install` needed).
+# versions.json is shared with ../flake.nix (the Nix build). This file can't
+# read it, so tools/odinw.py checks that the zeromq version below agrees.
 #
 # Linux needs nothing preinstalled. Windows additionally needs an MSVC
 # toolchain, which conda-forge cannot supply - Odin cannot link a PE binary
