@@ -133,3 +133,7 @@ pip-log.txt
 
 build
 .direnv/
+
+# nix build output symlinks
+result
+result-*
