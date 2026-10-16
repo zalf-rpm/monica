@@ -233,14 +233,15 @@ def _msvc_env_problem(env: dict) -> str | None:
 
     lib_dirs = [Path(p) for p in env.get("LIB", "").split(";") if p.strip()]
     for suffix, probe in _LIB_PROBES:
-        hit = next(
-            (d for d in lib_dirs if str(d).lower().rstrip("\\/").endswith(suffix)),
-            None,
-        )
-        if hit is None:
+        # ALL matching directories, like the linker searches all of %LIB%: the
+        # .NET Framework SDK's NETFXSDK\<ver>\lib\um\x64 also ends in um\x64,
+        # holds no kernel32.lib, and comes before the Windows SDK's on e.g.
+        # GitHub's windows-latest runners.
+        candidates = [d for d in lib_dirs if str(d).lower().rstrip("\\/").endswith(suffix)]
+        if not candidates:
             return f"no Windows SDK {suffix} directory on %LIB%"
-        if not (hit / probe).is_file():
-            return f"incomplete Windows SDK ({hit / probe} is missing)"
+        if not any((d / probe).is_file() for d in candidates):
+            return f"incomplete Windows SDK ({probe} is in none of: {', '.join(map(str, candidates))})"
     return None
 
 
