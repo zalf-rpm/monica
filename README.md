@@ -1,4 +1,5 @@
-![Build Status](https://github.com/zalf-rpm/monica/actions/workflows/docker-image.yml/badge.svg)
+[![Docker Image CI](https://github.com/zalf-rpm/monica/actions/workflows/docker-image.yml/badge.svg)](https://github.com/zalf-rpm/monica/actions/workflows/docker-image.yml)
+[![Build (pixi, Nix)](https://github.com/zalf-rpm/monica/actions/workflows/build.yml/badge.svg)](https://github.com/zalf-rpm/monica/actions/workflows/build.yml)
 
 # MONICA - The Model for Nitrogen and Carbon in Agro-ecosystems
 
@@ -6,27 +7,81 @@ MONICA is a dynamic, process-based simulation model which describes transport an
 
 The acronym MONICA is derived from „MOdel of Nitrogen and Carbon dynamics in Agro-ecosystems”.
 
-# Content
+**Documentation:** the [MONICA documentation](https://zalf-rpm.github.io/monica-documentation/)
+covers the model, its parameters and how to use it; the
+[wiki](https://github.com/zalf-rpm/monica/wiki) has further notes.
 
-* [Download](#download)
-* [Building](#building)
-  * [Windows](#windows)
-  * [Linux](#linux)
-* [Usage](#usage)
-* [Installation](#installation)
-* [Contributing](#contributing)
-* [License](#license)
+# Getting MONICA
 
+* **Windows:** download `monica_win64_<version>.zip` from the
+  [releases page](https://github.com/zalf-rpm/monica/releases). It contains the
+  executables (`bin/`), the parameters (`monica-parameters/`) and the
+  Hohenfinow2 examples (`projects/`).
+* **Docker:** `zalfrpm/monica-cluster:<version>`, e.g.
+  `zalfrpm/monica-cluster:3.6.63.ext_channel`. Only versioned tags are published
+  (no `latest`), so a run is always tied to a known version; see
+  [Docker Hub](https://hub.docker.com/r/zalfrpm/monica-cluster/tags) for the list.
+* **Nix (Linux):** no installation needed, see below.
+* **From source:** see [Building](#building).
 
-# Download
+# Running a simulation
 
-Builds can be downloaded from the repository's [releases page](https://github.com/zalf-rpm/monica/releases).
+A simulation is described by a `sim.json` (simulation settings and outputs),
+which refers to a `crop.json` (crop rotation, cultivation), a `site.json`
+(soil, location) and a climate CSV. These include shared base data from the
+[monica-parameters](https://github.com/zalf-rpm/monica-parameters) repository,
+which MONICA finds via the `MONICA_PARAMETERS` environment variable:
 
+    git clone https://github.com/zalf-rpm/monica-parameters.git
+    export MONICA_PARAMETERS=$PWD/monica-parameters      # Windows: set MONICA_PARAMETERS=...
+
+Then run `monica-run` on a `sim.json`, e.g. the Hohenfinow2 example in
+`installer/Hohenfinow2` (`-o` overrides the output file set in `sim.json`):
+
+    cd installer/Hohenfinow2
+    monica-run sim-min.json
+    monica-run -o out.csv sim-min.json
+
+The same with Docker (mounting the current directory and the parameters):
+
+    docker run --rm -v "$PWD":/data -w /data -v "$MONICA_PARAMETERS":/params:ro -e MONICA_PARAMETERS=/params \
+      zalfrpm/monica-cluster:3.6.63.ext_channel /run/monica/monica-run sim-min.json
+
+Or with Nix, straight from GitHub (the `git+https` form with `submodules=1` is
+needed: `github:` URLs download a tarball without the git submodules):
+
+    nix run 'git+https://github.com/zalf-rpm/monica?submodules=1' -- sim-min.json
+    nix shell 'git+https://github.com/zalf-rpm/monica?submodules=1'   # all tools on PATH
+
+## As a server, from Python
+
+For many runs, MONICA runs as a server and gets its jobs over ZeroMQ: a
+producer sends simulation setups, `monica-zmq-server` runs them, a consumer
+collects the results. `installer/Hohenfinow2/python` has a minimal producer
+(`run-producer.py`) and consumer (`run-consumer.py`), see its
+[README_pipeline.md](installer/Hohenfinow2/python/README_pipeline.md). They need
+`pyzmq` and `zalfmas-common` (`pip install pyzmq zalfmas-common`):
+
+    monica-zmq-server -bi -i tcp://localhost:6666 -bo -o tcp://localhost:7777 &
+    python run-consumer.py &
+    python run-producer.py
+
+Without arguments, the Docker image starts such a setup itself (under
+supervisor): two `monica-zmq-proxy`s and `$monica_instances` (default 3)
+workers, taking jobs on port 6666 and returning results on port 7777.
+
+## Tools
+
+* `monica-run` - runs a single simulation from the command line
+* `monica-zmq-server` - runs simulations received via ZeroMQ
+* `monica-zmq-proxy` - distributes ZeroMQ jobs to a pool of `monica-zmq-server` workers
+* `monica-capnp-server`, `monica-capnp-proxy` - the same via Cap'n Proto RPC
+* `monica-capnp-fbp-component`, `daily-monica-fbp-component` - MONICA as components in flow-based (FBP) pipelines
+* `channel`, `gateway-service`, `host-port-resolver-service`, `storage-service` - supporting services for the Cap'n Proto setups
 
 # Building
 
-There are two ways to build MONICA that need no manual dependency setup.
-Both need the submodules checked out:
+Clone with the git submodules:
 
     git clone --recurse-submodules https://github.com/zalf-rpm/monica.git
     # or, in an existing clone:
@@ -49,91 +104,46 @@ Linux, the compiler. vcpkg provides Cap'n Proto, ZeroMQ and libsodium: if
     nix develop                 # shell with all dependencies, then e.g.:
     cmake -B _cmake_release -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build _cmake_release
 
-Without a checkout, straight from GitHub (the `git+https` form with
-`submodules=1` is needed, because `github:` URLs download a tarball without the
-submodules):
+With [direnv](https://direnv.net) (and nix-direnv), the dev shell activates
+automatically in the checkout after a one-time `direnv allow`.
 
-    nix run 'git+https://github.com/zalf-rpm/monica?submodules=1' -- sim.json
+## Manually with vcpkg
 
-## Manual setup
+Install CMake, a C++17 compiler and [vcpkg](https://vcpkg.io) (at the version in
+`vcpkg_tag.txt`), then install `capnproto`, `zeromq` and `libsodium` with vcpkg
+and configure with vcpkg's toolchain. On Windows, use the static triplet for
+both (`vcpkg install ...:x64-windows-static`, and add
+`-DVCPKG_TARGET_TRIPLET=x64-windows-static` to the first `cmake` line):
 
-In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/mas-infrastructure and 
-zalf-rpm/monica-parameters (parameters repository for MONICA) in addition to monica itself.
+    cmake -B _cmake_release -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
+    cmake --build _cmake_release --config Release
 
-After cloning the repositories you should have this file structure:
+## Docker image
 
-    monica-master
-		      |_ monica
-		      |_ monica-parameters
-		      |_ mas-infrastructure
-   
+    docker build -t zalfrpm/monica-cluster:<version> .
 
-Also install Python to run the minimal examples. 
+Note that the `Dockerfile` builds MONICA from a fresh clone of `master` on
+GitHub, not from your local checkout. Tagged releases build and push the image
+automatically (`.github/workflows/on-tag.yml`).
 
-### Windows
- see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Windows) for installation and build instructions
+## Step-by-step guides
 
-monica-run will execute a local MONICA with the example Hohenfinow2 in the installer directory and output its result into 
-installer\Hohenfinow2\out.csv.
+The wiki has step-by-step instructions for
+[Windows](https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Windows)) and
+[Linux](https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Linux)).
 
-    cd monica/_cmake_win64
-    ./monica-run -o out.csv installer/Hohenfinow2/sim-min.json
-    
-### Linux
-
-see https://github.com/zalf-rpm/monica/wiki/How-to-compile-MONICA-(Linux) for installation and build instructions.
-
-Create a folder for the output files:
-Shell:
-    mkdir output_csv
-
-Assign the path to the monica-parameters directory:
-Shell:
-    export MONICA_PARAMETERS=`pwd`/monica-parameters
-Run the standard example and write the results into out.csv
-Shell:
-    cd monica/_cmake_release
-    ./monica-run -o ../../output_csv/out.csv ../installer/Hohenfinow2/sim-min.json
-
-# Usage
-
-To run MONICA locally with the standard Hohenfinow2 example under Windows using the standard installer, 
-go to the c:\users\USER_PROFILE\MONICA directory and execute in a Commandshell
-
-    monica-run -o out.csv Examples/Hohenfinow2/sim-min.json
-
-There are the following tools/versions of MONICA available.
-
-* libmonica ... the libmonica.dll/.so with the MONICA core functionality
-* monica-run ... the standalone MONICA commandline model (using libmonica)
-* monica-zmq-proxy ... a tool to run serverside and forward/distribute jobs (ZMQ job messages) to MONICA workers (servers)
-* monica-zmq-server ... a MONICA server accepting ZeroMQ messages and process them, usually to be used in connection with ZMQ proxy/proxies and a cloud of worker monica-zmq-servers
-
-
-# Installation
-
-On Windows an NSIS installer can be created. The installer will by default install all programm code into c:\program files and
-the parameters, databases and examples into c:\users\USER_PROFILE\MONICA. The MONICA install directory will be added to the 
-PATH environment variable as well as add it to the PYTHONPATH environment variable. So after a normal installation MONICA should be useable from the commandline.
-
-
-## Contributing 
+# Contributing
 
 Contributions are welcome.
 
-## Credits: Include a section for credits in order to highlight and link to the authors of your project.
+# Authors
 
-MONICA is model of the [Research Platform "Data Analysis & Simulation"](https://www.zalf.de/en/struktur/fds/Pages/default.aspx) at the [Leibniz Centre for Agricultural Landscape Research (ZALF)](http://www.zalf.de/en).
+MONICA is a model of the [Research Platform "Data Analysis & Simulation"](https://www.zalf.de/en/struktur/fds/Pages/default.aspx) at the [Leibniz Centre for Agricultural Landscape Research (ZALF)](http://www.zalf.de/en), maintained by its authors:
 
-Authors
 * Claas Nendel (claas (dot) nendel [at] zalf (dot) de)
 * Xenia Specka (xenia (dot) specka [at] zalf (dot) de)
 * Michael Berg-Mohnicke (michael (dot) berg [at] zalf (dot) de)
 
-Maintainers:
-Currently maintained by the authors.
+# License
 
-## License
-
-Monica is distributed under the [Mozilla Public License, v. 2.0](http://mozilla.org/MPL/2.0/)
-
+MONICA is distributed under the [Mozilla Public License, v. 2.0](http://mozilla.org/MPL/2.0/).
