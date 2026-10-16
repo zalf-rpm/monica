@@ -49,6 +49,12 @@ Linux, the compiler. vcpkg provides Cap'n Proto, ZeroMQ and libsodium: if
     nix develop                 # shell with all dependencies, then e.g.:
     cmake -B _cmake_release -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build _cmake_release
 
+Without a checkout, straight from GitHub (the `git+https` form with
+`submodules=1` is needed, because `github:` URLs download a tarball without the
+submodules):
+
+    nix run 'git+https://github.com/zalf-rpm/monica?submodules=1' -- sim.json
+
 ## Manual setup
 
 In order to build MONICA one needs to have at least to clone the repositories zalf-rpm/mas-infrastructure and 

@@ -82,7 +82,8 @@
           homepage = "https://github.com/zalf-rpm/monica";
           license = pkgs.lib.licenses.mpl20;
           platforms = pkgs.lib.platforms.linux;
-          # what `nix run github:zalf-rpm/monica -- sim.json` starts
+          # what `nix run` starts. From GitHub that needs the git+https form:
+          # github: URLs fetch a tarball, which never contains submodules.
           mainProgram = "monica-run";
         };
       };
