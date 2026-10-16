@@ -929,3 +929,16 @@ Only the fields that did not already match their snake_cased C++ name are listed
 | `cropModule` | `crop_module` |
 | `vq_CropNUptake` | `crop_n_uptake` |
 | `_delayedNMinApplications` | `delayed_n_min_applications` |
+
+## `monica::SoilMoisture` -> `core.Soil_Moisture` (odin/monica/core/soil_moisture.odin)
+
+Ported in snake_case from the start: every other field is its C++ name with
+the `vm_`/`vc_`/`vs_` prefix dropped and snake_cased (`vm_ActualEvaporation`
+-> `actual_evaporation`), which `tools/gen_output_aliases.py` derives on its
+own. Only the exceptions are listed. `vm_SurfaceWaterStorage`,
+`vm_FluxAtLowerBoundary` and `vm_WaterFlux` moved to `Soil_Column` /
+`Soil_Layer` instead (see that script's `MOVED`).
+
+| C++ (`soilmoisture.h`) | Odin |
+| --- | --- |
+| `vc_PercentageSoilCoverage` | `soil_coverage_percent` |

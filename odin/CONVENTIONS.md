@@ -249,11 +249,15 @@ The same table is the *write* side: the SetValue workstep sets any field a path 
 
 Two consequences for the rules above. Field names keep mattering for a new reason - path *segments*
 are what make the 125 generated alias rows resolve, and `odin/tests/output_paths_test.odin` fails if
-one drifts. Since §2's "unchanged" rule was superseded, a renamed struct's alias rows in
-`output_paths.odin` must be updated by hand to the new field names (see `odin/NAME_MAP.md`) -
-`gen_output_aliases.py` regenerates paths straight from the C++ source and does not know about any
-rename, so re-running it on a renamed struct reintroduces the old C++ names and needs the same
-manual fix-up again. And a path leaf reached through a nil
+one drifts. Since §2's "unchanged" rule was superseded, `gen_output_aliases.py` walks each C++
+path through the Odin struct definitions and renames every segment: `odin/NAME_MAP.md` first, then
+the port's convention (C++ prefix dropped, snake_cased), accepting a name only if that field
+exists. So after renaming a field, add its row to `NAME_MAP.md` (needed only when the convention
+doesn't produce the new name) and regenerate. The script exits non-zero and lists every path it
+can't resolve, and it never emits a guessed name. A field that moved to a different struct goes
+in the script's `MOVED` table. Never rename an alias's *key*: that is the C++ output name a
+sim.json asks for, and `test_every_alias_is_a_cpp_output_name` fails if one stops matching
+`src/io/build-output.cpp`. And a path leaf reached through a nil
 pointer or an unset `Maybe` yields *missing*, which the output layer turns into `0.0` - that is
 the C++ `... ? ... : 0.0` ternary, not a violation of §5; §5 still governs everything that reads
 a `Maybe` in model code.

@@ -12,6 +12,7 @@
 // mistyped path from a silent zero into a failing test.
 package tests
 
+import "core:os"
 import "core:strings"
 import "core:testing"
 import mio "../monica/io"
@@ -117,3 +118,28 @@ find_alias :: proc(name: string) -> (mio.Alias, bool) {
 }
 
 _ :: strings
+
+// An alias's key is the output name a sim.json asks for, so it must stay the
+// C++'s registered name - only its *path* follows Odin renames. A bulk
+// snake_case rename once rewrote three keys along with their paths
+// (humusBalanceCarryOver -> humus_balance_carry_over), silently breaking
+// those outputs for every existing sim.json; test_every_alias_compiles can't
+// see that, since the paths still compiled. Reads the C++ from the repo root,
+// where `odin test` runs (see tools/odinw.py).
+@(test)
+test_every_alias_is_a_cpp_output_name :: proc(t: ^testing.T) {
+	data, err := os.read_entire_file("src/io/build-output.cpp", context.temp_allocator)
+	if !testing.expectf(t, err == nil, "can't read src/io/build-output.cpp: %v", err) {
+		return
+	}
+	cpp := string(data)
+	for e in mio.g_alias_table {
+		needle := strings.concatenate({"id++, \"", e.name, "\""}, context.temp_allocator)
+		testing.expectf(
+			t,
+			strings.contains(cpp, needle),
+			"alias %q is not an output name registered in src/io/build-output.cpp",
+			e.name,
+		)
+	}
+}
