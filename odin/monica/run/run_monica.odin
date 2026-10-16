@@ -191,7 +191,7 @@ env_return_obj_outputs :: proc(env: ^Env) -> bool {
 // plan-reflective-outputs.md §2.5 - when a CSV column moves, this is what
 // pins it to the engine rather than to anything else in the same commit.
 env_use_legacy_output_fns :: proc(env: ^Env) -> bool {
-	return jx.bool_value_of(jx.get(jx.get(env.outputs, "output"), "use-legacy-output-fns?"))
+	return jx.bool_value_of(jx.get(env.outputs, "use-legacy-output-fns?"))
 }
 
 // ---------------------------------------------------------------------------

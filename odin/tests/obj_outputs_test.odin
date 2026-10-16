@@ -1,9 +1,8 @@
 // The "obj-outputs?" result form: one JSON object per row instead of one array
 // per output id. Needs no Monica_Model - aggregation, CSV writing and JSON
-// serialisation only. The end-to-end check is the Hohenfinow2 Python
+// serialisation only. The end-to-end checks are the Hohenfinow2 Python
 // producer/consumer pipeline against monica-zmq-server (test_env.json sets
-// "obj-outputs?"); monica-run can't reach this path from a sim.json, see
-// create_env_json.odin.
+// "obj-outputs?") and monica-run with a sim.json "output": {"obj-outputs": true}.
 package tests
 
 import "core:strings"
@@ -108,4 +107,32 @@ test_output_to_json_obj_rows :: proc(t: ^testing.T) {
 	testing.expect_value(t, len(results), 1)
 	testing.expect(t, jx.is_object(results[0]))
 	testing.expect_value(t, jx.number_value(jx.get(results[0], "Yield")), 7.0)
+}
+
+// sim.json's output."obj-outputs" has to land where env_return_obj_outputs
+// reads it. The C++ nests it one level too deep (outputs.output), so there it
+// never takes effect - this pins the fixed, flat layout.
+@(test)
+test_sim_json_obj_outputs_flag :: proc(t: ^testing.T) {
+	ta := context.temp_allocator
+	context.allocator = ta
+
+	for want in ([]bool{true, false}) {
+		output := make(jx.Object, 0, ta)
+		jx.obj_set(&output, "obj-outputs", jx.b(want), ta)
+		jx.obj_set(&output, "use-legacy-output-fns?", jx.b(want), ta)
+		sim := make(jx.Object, 0, ta)
+		jx.obj_set(&sim, "output", jx.Value(output), ta)
+
+		env_json := run.create_env_json_from_json_objects(
+			jx.Value(make(jx.Object, 0, ta)),
+			jx.Value(make(jx.Object, 0, ta)),
+			jx.Value(sim),
+			ta,
+		)
+		env: run.Env
+		env.outputs = jx.get(env_json, "outputs")
+		testing.expect_value(t, run.env_return_obj_outputs(&env), want)
+		testing.expect_value(t, run.env_use_legacy_output_fns(&env), want)
+	}
 }

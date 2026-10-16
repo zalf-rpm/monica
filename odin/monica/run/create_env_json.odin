@@ -122,14 +122,14 @@ create_env_json_from_json_objects :: proc(
 		set(&env, "events2", jx.get(output, "events2"), allocator)
 	}
 
-	// NOTE(c++-quirk): "obj-outputs?" lands at outputs.output["obj-outputs?"],
-	// but env_return_obj_outputs reads outputs["obj-outputs?"] - so a sim.json's
-	// "obj-outputs" never takes effect, and monica-run always writes the array
-	// form. Only envs built elsewhere (e.g. Python's zalfmas_common, which puts
-	// the flag at the top level) reach the obj path. Reproduced.
-	inner := make(jx.Object, 0, allocator)
+	// NOTE(deviation): the C++ nests this as outputs.output["obj-outputs?"],
+	// while env_return_obj_outputs reads outputs["obj-outputs?"], so a
+	// sim.json's "obj-outputs" never took effect there (C++ bug, to be fixed
+	// on that side too). Flat here, where the reader - and Python's
+	// zalfmas_common, which builds the same env - expect it.
+	outputs := make(jx.Object, 0, allocator)
 	set(
-		&inner,
+		&outputs,
 		"obj-outputs?",
 		jx.Value(jx.Boolean(jx.bool_value_of(jx.get(output, "obj-outputs")))),
 		allocator,
@@ -138,13 +138,11 @@ create_env_json_from_json_objects :: proc(
 	// alias table, for A/B bisecting a moved CSV column
 	// (plan-reflective-outputs.md §2.5).
 	set(
-		&inner,
+		&outputs,
 		"use-legacy-output-fns?",
 		jx.Value(jx.Boolean(jx.bool_value_of(jx.get(output, "use-legacy-output-fns?")))),
 		allocator,
 	)
-	outputs := make(jx.Object, 0, allocator)
-	set(&outputs, "output", jx.Value(inner), allocator)
 	set(&env, "outputs", jx.Value(outputs), allocator)
 
 	set(&env, "pathToClimateCSV", jx.get(simj, "climate.csv"), allocator)
