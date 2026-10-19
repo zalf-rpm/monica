@@ -38,6 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 using namespace Voc;
 
