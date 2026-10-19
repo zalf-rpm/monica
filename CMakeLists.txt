@@ -24,17 +24,13 @@ macro(set_absolute_path var_name path)
     set(${var_name} ${toAbsPath})
 endmacro(set_absolute_path)
 
-set_absolute_path(AMEI_ST_COMPONENTS_DIR ../SoilTemperatureModels/Models)
-set_absolute_path(AMEI_ET_COMPONENTS_DIR ../EvapoTranspirationModels/Monica)
-
-#add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
-
-set(CPP_FOLDER_NAME "cpp2")
-#add_compile_definitions(CPP2)
-
-
-set_absolute_path(AMEI_ST_COMPONENTS_DIR ../SoilTemperatureModels/Models)
-set_absolute_path(AMEI_ET_COMPONENTS_DIR ../EvapoTranspirationModels/Monica)
+# default: sibling checkouts next to this repo; can be overridden with -D (the Nix flake does)
+if (NOT DEFINED AMEI_ST_COMPONENTS_DIR)
+    set_absolute_path(AMEI_ST_COMPONENTS_DIR ../SoilTemperatureModels/Models)
+endif()
+if (NOT DEFINED AMEI_ET_COMPONENTS_DIR)
+    set_absolute_path(AMEI_ET_COMPONENTS_DIR ../EvapoTranspirationModels/Monica)
+endif()
 
 #add_compile_definitions(AMEI_SENSITIVITY_ANALYSIS)
 
