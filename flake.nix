@@ -15,11 +15,11 @@
 
       # The pre-generated schema code (mas_cpp_misc/mas_capnproto_schemas/gen/c++)
       # refuses to compile against any Cap'n Proto but the one that generated it
-      # (`#elif CAPNP_VERSION != 1004000`). 1.4.0 is also what the vcpkg baseline
+      # (`#elif CAPNP_VERSION != 1005000`). 1.5.0 is also what the vcpkg baseline
       # in vcpkg_tag.txt resolves to. While nixpkgs ships exactly that, its
       # package is used as is (prebuilt in the binary cache); once nixpkgs moves
       # on, the same recipe is rebuilt from the pinned source.
-      capnprotoVersion = "1.4.0";
+      capnprotoVersion = "1.5.0";
       capnproto =
         if pkgs.capnproto.version == capnprotoVersion then
           pkgs.capnproto
@@ -30,7 +30,7 @@
               owner = "capnproto";
               repo = "capnproto";
               rev = "v${capnprotoVersion}";
-              hash = "sha256-CuhKOJwU+QG25lRR8F7ina+DV45ZlLzg/UJ2swf2tZ0=";
+              hash = "sha256-2J3FYwPAtbahHI1y1KMqU8Gn2YlKyIW8kZIJz2Ja31w=";
             };
             # nixpkgs' patches are for its own version and may not apply to
             # another; the one it has today only matters on musl.
