@@ -37,20 +37,25 @@
         '';
       };
 
-      # nixpkgs builds whatever Cap'n Proto is current; pin it to the version
-      # the vcpkg baseline (pixi build) resolves to.
-      capnproto = pkgs.capnproto.overrideAttrs (old: {
-        version = versions.capnproto.version;
-        src = pkgs.fetchFromGitHub {
-          owner = "capnproto";
-          repo = "capnproto";
-          rev = "v${versions.capnproto.version}";
-          hash = versions.capnproto.nix_src_hash;
-        };
-        # nixpkgs' only patch fixes libucontext detection (musl) for its own
-        # newer version; irrelevant on glibc.
-        patches = [ ];
-      });
+      # The version the vcpkg baseline (pixi build) resolves to. When nixpkgs
+      # ships exactly that, use its package as is (prebuilt in the binary
+      # cache); otherwise rebuild nixpkgs' recipe from the pinned source.
+      capnproto =
+        if pkgs.capnproto.version == versions.capnproto.version then
+          pkgs.capnproto
+        else
+          pkgs.capnproto.overrideAttrs (old: {
+            version = versions.capnproto.version;
+            src = pkgs.fetchFromGitHub {
+              owner = "capnproto";
+              repo = "capnproto";
+              rev = "v${versions.capnproto.version}";
+              hash = versions.capnproto.nix_src_hash;
+            };
+            # nixpkgs' patches are for its own version and may not apply to
+            # another; the one it has today only matters on musl.
+            patches = [ ];
+          });
 
       zeromq =
         assert lib.assertMsg (pkgs.zeromq.version == versions.zeromq)
