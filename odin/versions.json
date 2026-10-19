@@ -17,8 +17,8 @@
   },
   "zeromq": "4.3.5",
   "capnproto": {
-    "version": "1.4.0",
-    "nix_src_hash": "sha256-CuhKOJwU+QG25lRR8F7ina+DV45ZlLzg/UJ2swf2tZ0="
+    "version": "1.5.0",
+    "nix_src_hash": "sha256-2J3FYwPAtbahHI1y1KMqU8Gn2YlKyIW8kZIJz2Ja31w="
   },
-  "vcpkg_baseline": "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3"
+  "vcpkg_baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d"
 }

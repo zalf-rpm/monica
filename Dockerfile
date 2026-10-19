@@ -6,7 +6,7 @@ RUN apt-get update
 # install monica prerequisites
 RUN apt-get install -y apt-utils curl unzip tar cmake pkg-config
 RUN apt-get install -y git python3 build-essential
-RUN apt-get install -y curl zip unzip tar autoconf libtool automake
+RUN apt-get install -y curl zip unzip tar autoconf autoconf-archive libtool automake
 
 ENV WORK_DIR=/resource
 
