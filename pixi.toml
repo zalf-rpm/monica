@@ -28,6 +28,8 @@ binutils = "*"
 make = "*"
 # libsodium is built with autotools on Linux (the C++ Dockerfile installs the same)
 autoconf = "*"
+# vcpkg's libsodium port needs its macros (with the 2026.06.24 baseline)
+autoconf-archive = "*"
 automake = "*"
 libtool = "*"
 pkg-config = "*"

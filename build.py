@@ -56,8 +56,13 @@ def vcpkg_root() -> Path:
         have = subprocess.run(["git", "-C", str(LOCAL_VCPKG), "describe", "--tags", "--exact-match"],
                               capture_output=True, text=True).stdout.strip()
         if have != tag:
-            print(f"warning: .vcpkg is at {have or 'an untagged commit'}, vcpkg_tag.txt says {tag}; "
-                  "delete .vcpkg/ to re-clone", flush=True)
+            # vcpkg_tag.txt was bumped: move the clone along, and re-bootstrap,
+            # since a newer tag can require a newer vcpkg executable.
+            print(f"==> .vcpkg is at {have or 'an untagged commit'}, vcpkg_tag.txt says {tag}; updating",
+                  flush=True)
+            run(["git", "-C", str(LOCAL_VCPKG), "fetch", "--depth", "1", "origin", "tag", tag])
+            run(["git", "-C", str(LOCAL_VCPKG), "checkout", "--detach", tag])
+            exe.unlink(missing_ok=True)
     if not exe.is_file():
         script = "bootstrap-vcpkg.bat" if IS_WINDOWS else "bootstrap-vcpkg.sh"
         run([str(LOCAL_VCPKG / script), "-disableMetrics"], cwd=LOCAL_VCPKG)

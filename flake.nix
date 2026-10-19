@@ -15,20 +15,27 @@
 
       # The pre-generated schema code (mas_cpp_misc/mas_capnproto_schemas/gen/c++)
       # refuses to compile against any Cap'n Proto but the one that generated it
-      # (`#elif CAPNP_VERSION != 1002000`), and nixpkgs ships a newer one. 1.2.0
-      # is also what the vcpkg baseline in vcpkg_tag.txt resolves to.
-      capnproto = pkgs.capnproto.overrideAttrs (old: {
-        version = "1.2.0";
-        src = pkgs.fetchFromGitHub {
-          owner = "capnproto";
-          repo = "capnproto";
-          rev = "v1.2.0";
-          hash = "sha256-aDcn4bLZGq8915/NPPQsN5Jv8FRWd8cAspkG3078psc=";
-        };
-        # nixpkgs' only patch fixes libucontext detection (musl) for its own
-        # newer version; irrelevant on glibc.
-        patches = [ ];
-      });
+      # (`#elif CAPNP_VERSION != 1004000`). 1.4.0 is also what the vcpkg baseline
+      # in vcpkg_tag.txt resolves to. While nixpkgs ships exactly that, its
+      # package is used as is (prebuilt in the binary cache); once nixpkgs moves
+      # on, the same recipe is rebuilt from the pinned source.
+      capnprotoVersion = "1.4.0";
+      capnproto =
+        if pkgs.capnproto.version == capnprotoVersion then
+          pkgs.capnproto
+        else
+          pkgs.capnproto.overrideAttrs (old: {
+            version = capnprotoVersion;
+            src = pkgs.fetchFromGitHub {
+              owner = "capnproto";
+              repo = "capnproto";
+              rev = "v${capnprotoVersion}";
+              hash = "sha256-CuhKOJwU+QG25lRR8F7ina+DV45ZlLzg/UJ2swf2tZ0=";
+            };
+            # nixpkgs' patches are for its own version and may not apply to
+            # another; the one it has today only matters on musl.
+            patches = [ ];
+          });
 
       # vcpkg's `unofficial-sodium::sodium` target, rebuilt from libsodium's
       # pkg-config file - see cmake/compat/unofficial-sodium.

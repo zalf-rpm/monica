@@ -18,6 +18,7 @@ environments:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/autoconf-2.72-pl5321hbb4ee43_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/autoconf-archive-2021.02.19-ha770c72_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/automake-1.19-hfc2019e_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/binutils-2.46.1-default_h4852527_103.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/binutils_impl_linux-64-2.46.1-default_hfdba357_103.conda
@@ -137,6 +138,16 @@ packages:
   run_exports: {}
   size: 648370
   timestamp: 1747238591729
+- conda: https://conda.anaconda.org/conda-forge/linux-64/autoconf-archive-2021.02.19-ha770c72_0.tar.bz2
+  sha256: e32720491a030f20d8820b0121bb17f6fc75f7e1e97465e86b0f6094a5c06723
+  md5: bdf8c8e5d445b99458823c5d3bee3855
+  depends:
+  - autoconf
+  license: GPL-3.0-or-later
+  license_family: GPL
+  run_exports: {}
+  size: 517260
+  timestamp: 1632726283037
 - conda: https://conda.anaconda.org/conda-forge/linux-64/automake-1.19-hfc2019e_0.conda
   sha256: 8591c66aec7d92fdb35b55fa5681fedc7077a1278dce43d42dbb3d1473eccad2
   md5: 6f0dcf7703457bafec5f7c0f7f8fe078

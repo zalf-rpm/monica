@@ -3,10 +3,10 @@
     "vcpkg manifest for the pixi build (build.py passes it via VCPKG_MANIFEST_DIR).",
     "Deliberately NOT at the repo root: there it would switch the Dockerfile's and the Windows CI's classic `vcpkg install` builds into manifest mode too.",
     "builtin-baseline is the commit of the vcpkg tag in ../../vcpkg_tag.txt - keep the two in sync.",
-    "capnproto is pinned explicitly: the pre-generated schema code in mas_cpp_misc only compiles against exactly 1.2.0."
+    "capnproto is pinned explicitly: the pre-generated schema code in mas_cpp_misc only compiles against exactly 1.4.0."
   ],
   "name": "monica",
   "dependencies": ["capnproto", "zeromq", "libsodium"],
-  "builtin-baseline": "74e6536215718009aae747d86d84b78376bf9e09",
-  "overrides": [{ "name": "capnproto", "version": "1.2.0" }]
+  "builtin-baseline": "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3",
+  "overrides": [{ "name": "capnproto", "version": "1.4.0" }]
 }
