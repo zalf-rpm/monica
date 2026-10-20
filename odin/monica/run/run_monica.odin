@@ -384,14 +384,6 @@ store_results_obj :: proc(
 }
 
 // C++: void monica::store_data_aggregate_results(StoreData*)
-//
-// The Json-vector overload of applyOIdOP that aggregates per-day ARRAYS
-// element-wise (a from/to-aggregated layer range) is not ported: every oid
-// that reaches a from/to-range section in sim-min.json's "events" is scalar
-// (Year, N - its own layerAggOp already collapses it to one value before it
-// ever reaches here, RunOff, NLeach, Recharge, Precip, CM-count, Yield, the
-// Date|sowing / Date|harvest strings). "Port on demand" if a future fixture
-// needs the array branch.
 store_data_aggregate_results :: proc(sd: ^Store_Data, allocator := context.allocator) {
 	if len(sd.intermediateResults) == 0 {
 		return
@@ -413,11 +405,7 @@ store_data_aggregate_results :: proc(sd: ^Store_Data, allocator := context.alloc
 					append(&sd.results[i], ivs[0])
 				}
 			} else {
-				ds := make([dynamic]f64, 0, len(ivs), context.temp_allocator)
-				for v in ivs {
-					append(&ds, jx.number_value(v))
-				}
-				append(&sd.results[i], jx.f(mio.apply_oid_op(oid.timeAggOp, ds[:])))
+				append(&sd.results[i], mio.apply_oid_op_json(oid.timeAggOp, ivs[:], allocator))
 			}
 			clear(&sd.intermediateResults[i])
 		}
@@ -453,11 +441,7 @@ store_data_aggregate_results_obj :: proc(sd: ^Store_Data, allocator := context.a
 					jx.obj_set(&result, name, ivs[0], allocator)
 				}
 			} else {
-				ds := make([dynamic]f64, 0, len(ivs), context.temp_allocator)
-				for v in ivs {
-					append(&ds, jx.number_value(v))
-				}
-				jx.obj_set(&result, name, jx.f(mio.apply_oid_op(oid.timeAggOp, ds[:])), allocator)
+				jx.obj_set(&result, name, mio.apply_oid_op_json(oid.timeAggOp, ivs[:], allocator), allocator)
 			}
 			clear(&sd.intermediateResults[i])
 		}

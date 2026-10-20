@@ -1,8 +1,10 @@
-// Phase 7 checkpoint 2: src/io/build-output.h/.cpp - a 21-entry replacement
-// for the ~300-entry buildOutputTable, exactly the ids sim-min.json's
-// output.events section needs (plan-odin.md's own scoping call): CM-count,
-// Date, Year, Crop, Stage, AbBiom, OrgBiom, Yield, LAI, Mois, Irrig, RunOff,
-// Kc, Recharge, NLeach, SOC, Tavg, Precip, Globrad, N, ETa/ETc.
+// src/io/build-output.h/.cpp: the output table. Phase 7 checkpoint 2 started
+// it with the 21 ids sim-min.json needs; it now holds every output of the C++
+// table that is *computed* (a proc call, arithmetic, a Date method, a guard).
+// The ones that are just a field read plus rounding live in
+// output_paths.odin's alias table instead (gen_output_aliases.py), so
+// together they cover the whole C++ table. Verified against C++ master over
+// its test suites (Hohenfinow2 + 48 muencheberg_v140 simulations).
 //
 // Each entry's `id` is purely an internal map key in both the C++ and this
 // port - never serialized, never displayed (csv-format.cpp writes name/
@@ -91,6 +93,39 @@ apply_oid_op :: proc(op: OId_Op, vs: []f64) -> f64 {
 		}
 	}
 	return v
+}
+
+// C++: Json monica::applyOIdOP(OId::OP, const vector<Json>&)
+//
+// Time aggregation of whatever an output produced each day: a scalar per
+// day aggregates to a scalar; an array per day - a layer range without its
+// own layer op, e.g. ["N", [1, 3]] in a yearly section - aggregates element
+// by element (per layer) to an array.
+//
+// NOTE(c++-quirk): the element count comes from the first day's array; a
+// later, longer one would index past it in the C++ (undefined behaviour) -
+// its extra elements are ignored here instead.
+apply_oid_op_json :: proc(op: OId_Op, js: []jx.Value, allocator := context.allocator) -> jx.Value {
+	if len(js) > 0 && jx.is_array(js[0]) {
+		dss := make([][dynamic]f64, len(jx.array_items(js[0])), context.temp_allocator)
+		for j in js {
+			for j2, i in jx.array_items(j) {
+				if i < len(dss) {
+					append(&dss[i], jx.number_value(j2))
+				}
+			}
+		}
+		r := make(jx.Array, 0, len(dss), allocator)
+		for ds in dss {
+			append(&r, jx.f(apply_oid_op(op, ds[:])))
+		}
+		return jx.Value(r)
+	}
+	ds := make([dynamic]f64, 0, len(js), context.temp_allocator)
+	for j in js {
+		append(&ds, jx.number_value(j))
+	}
+	return jx.f(apply_oid_op(op, ds[:]))
 }
 
 // C++: template<typename T> Json getComplexValues(OId, function<T(int)>, int)
@@ -669,6 +704,439 @@ of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 }
 
 // ---------------------------------------------------------------------------
+// The rest of the C++ table's computed outputs (the ones that are more than a
+// field read + rounding, so not in output_paths.odin's alias table). Each is
+// a literal port of its build() entry in src/io/build-output.cpp.
+// ---------------------------------------------------------------------------
+
+// C++: the recurring
+//   auto nools = int(soilcolumn::numberOfOrganicLayers(monica.soilColumn.get()));
+//   oid.fromLayer = min(oid.fromLayer, nools - 1);
+//   oid.toLayer = min(oid.toLayer, nools - 1);
+// of the soil-organic outputs, whose arrays only have the organic layers.
+@(private)
+clamp_to_organic_layers :: proc(model: ^core.Monica_Model, oid_in: OId) -> OId {
+	oid := oid_in
+	nools := core.number_of_organic_layers(&model.soil_column)
+	oid.fromLayer = min(oid.fromLayer, nools - 1)
+	oid.toLayer = min(oid.toLayer, nools - 1)
+	return oid
+}
+
+// C++: the `isOrgan(&oid) && currentCropModule && numberOfOrgans(...) > oid.organ`
+// guard of the organ-specific outputs.
+@(private)
+organ_in_crop :: proc(model: ^core.Monica_Model, oid_in: OId) -> bool {
+	oid := oid_in
+	return oid_is_organ(&oid) &&
+		model.current_crop_module != nil &&
+		p.species_parameters_number_of_organs(&model.current_crop_module.crop_params.species_params) >
+			int(oid.organ)
+}
+
+@(private)
+of_count :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.i(1)
+}
+
+@(private)
+of_days_since_start :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.i(d.diff(model.current_step_date, model.sim_params.start_date))
+}
+
+@(private)
+of_month :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.i(int(d.month(model.current_step_date)))
+}
+
+@(private)
+of_tmax_ge_40 :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	cd := model.climate_data[len(model.climate_data) - 1]
+	if v, ok := cd[.tmax]; ok {
+		return jx.i(v >= 40 ? 1 : 0)
+	}
+	return jx.i(0)
+}
+
+// --- crop module -----------------------------------------------------------
+
+@(private)
+of_ab_biom_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_aboveground_biomass_n_content(model.current_crop_module), 1))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_eff_root_dep :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_effective_rooting_depth(model.current_crop_module), 2))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_grain_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_fruit_biomass_n_content(model.current_crop_module), 5))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_light_interception1 :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_fraction_of_intercepted_radiation1(model.current_crop_module), 5))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_light_interception2 :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_fraction_of_intercepted_radiation2(model.current_crop_module), 5))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_nresid :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_residues_n_content(model.current_crop_module), 1))
+	}
+	return jx.f(0.0)
+}
+
+// NOTE(c++-quirk): AbBiomNc/CritN are the *rounded* values (5 digits) the
+// C++ compares and divides. Reproduced.
+@(private)
+of_nstress :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	nstress := 0.0
+	cm := model.current_crop_module
+	ab_biom_nc := cm != nil ? tl.round(cm.n_concentration_aboveground_biomass, 5) : 0.0
+	crit_n := cm != nil ? tl.round(cm.critical_n_concentration, 5) : 0.0
+	if cm != nil {
+		nstress = ab_biom_nc < crit_n ? tl.round(ab_biom_nc / crit_n, 5) : 1
+	}
+	return jx.f(nstress)
+}
+
+@(private)
+of_pot_nup :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(model.current_crop_module.crop_n_demand * 10000.0, 2))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_protein :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_raw_protein_concentration(model.current_crop_module), 3))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_ra :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_autotrophic_respiration(model.current_crop_module), 5))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_secondary_yield :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_secondary_crop_yield(model.current_crop_module), 3))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_yield_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_primary_yield_n_content(model.current_crop_module), 3))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_yield_nc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if model.current_crop_module != nil {
+		return jx.f(tl.round(core.get_primary_yield_n_concentration(model.current_crop_module), 3))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_npp_organs :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if organ_in_crop(model, oid) {
+		return jx.f(tl.round(core.get_organ_specific_npp(model.current_crop_module, int(oid.organ)), 4))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_ra_organs :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if organ_in_crop(model, oid) {
+		return jx.f(
+			tl.round(core.get_organ_specific_total_respired(model.current_crop_module, int(oid.organ)), 4),
+		)
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+of_org_green_biom :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	if organ_in_crop(model, oid) {
+		return jx.f(tl.round(model.current_crop_module.organ_green_biomass[int(oid.organ)], 1))
+	}
+	return jx.f(0.0)
+}
+
+@(private)
+act_nup_layer_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	cm := model.current_crop_module
+	return cm != nil ? cm.n_uptake_from_layer[i] * 10000.0 : 0.0
+}
+
+@(private)
+of_act_nup_layer :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, oid, act_nup_layer_get_value, 4)
+}
+
+// --- soil organic (organic layers only) ------------------------------------
+
+@(private)
+actammoxrate_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.act_ammonia_oxidation_rate[i]
+}
+
+@(private)
+of_actammoxrate :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), actammoxrate_get_value, 6)
+}
+
+@(private)
+actdenitrate_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.act_denitrification_rate[i]
+}
+
+@(private)
+of_actdenitrate :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), actdenitrate_get_value, 6)
+}
+
+@(private)
+actnitrate_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.act_nitrification_rate[i]
+}
+
+@(private)
+of_actnitrate :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), actnitrate_get_value, 6)
+}
+
+@(private)
+aomf_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.aom_fast_sum[i]
+}
+
+@(private)
+of_aomf :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), aomf_get_value, 4)
+}
+
+@(private)
+aoms_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.aom_slow_sum[i]
+}
+
+@(private)
+of_aoms :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), aoms_get_value, 4)
+}
+
+@(private)
+cbal_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.c_balance[i]
+}
+
+@(private)
+of_cbal :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), cbal_get_value, 4)
+}
+
+@(private)
+co_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return core.soil_organic_get_soil_organic_c(&model.soil_organic, i)
+}
+
+@(private)
+of_co :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), co_get_value, 2)
+}
+
+@(private)
+nmin_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return core.soil_organic_get_net_n_mineralisation_rate(&model.soil_organic, i)
+}
+
+@(private)
+of_nmin :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), nmin_get_value, 6)
+}
+
+@(private)
+org_n_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return core.soil_organic_get_organic_n(&model.soil_organic, i)
+}
+
+@(private)
+of_org_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), org_n_get_value, 4)
+}
+
+@(private)
+smb_co2_er_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.smb_co2_evolution_rate[i]
+}
+
+@(private)
+of_smb_co2_er :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), smb_co2_er_get_value, 1)
+}
+
+@(private)
+smbf_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.soil_column.layers[i].smb_fast
+}
+
+@(private)
+of_smbf :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), smbf_get_value, 4)
+}
+
+@(private)
+smbs_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.soil_column.layers[i].smb_slow
+}
+
+@(private)
+of_smbs :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), smbs_get_value, 4)
+}
+
+@(private)
+somf_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.soil_column.layers[i].som_fast
+}
+
+@(private)
+of_somf :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), somf_get_value, 4)
+}
+
+@(private)
+soms_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_organic.soil_column.layers[i].som_slow
+}
+
+@(private)
+of_soms :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, clamp_to_organic_layers(model, oid), soms_get_value, 4)
+}
+
+@(private)
+of_denit :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.f(tl.round(core.soil_organic_get_denitrification(&model.soil_organic), 5))
+}
+
+@(private)
+of_net_nmin :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.f(tl.round(core.soil_organic_get_net_n_mineralisation(&model.soil_organic), 5))
+}
+
+@(private)
+of_nh3 :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.f(tl.round(core.soil_organic_get_nh3_volatilised(&model.soil_organic), 3))
+}
+
+@(private)
+of_rh :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.f(tl.round(core.soil_organic_get_decomposer_respiration(&model.soil_organic), 5))
+}
+
+// --- soil column / moisture ------------------------------------------------
+
+@(private)
+awc_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	fc := model.soil_column.layers[i].field_capacity
+	pwp := model.soil_column.layers[i].permanent_wilting_point
+	return fc - pwp
+}
+
+@(private)
+of_awc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, oid, awc_get_value, 4)
+}
+
+// C++ reads soilMoisture->soilColumn - the same SoilColumn as monica.soilColumn.
+@(private)
+pasw_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return model.soil_moisture.soil_column.layers[i].soil_moisture_m3 -
+		model.soil_column.layers[i].permanent_wilting_point
+}
+
+@(private)
+of_pasw :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, oid, pasw_get_value, 3)
+}
+
+@(private)
+water_content_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	smm3 := model.soil_moisture.soil_column.layers[i].soil_moisture_m3
+	fc := model.soil_column.layers[i].field_capacity
+	pwp := model.soil_column.layers[i].permanent_wilting_point
+	return (smm3 - pwp) / (fc - pwp) //[%nFK]
+}
+
+@(private)
+of_water_content :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, oid, water_content_get_value, 4)
+}
+
+@(private)
+silt_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	return core.soil_silt_content(&model.soil_column.layers[i])
+}
+
+@(private)
+of_silt :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, oid, silt_get_value, 2)
+}
+
+@(private)
+soc_x_y_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
+	layer := &model.soil_column.layers[i]
+	return core.soil_organic_carbon(layer) * core.soil_bulk_density(layer) * layer.layer_thickness_m * 1000
+}
+
+@(private)
+of_soc_x_y :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return get_complex_values(model, oid, soc_x_y_get_value, 4)
+}
+
+@(private)
+of_pot_et :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
+	return jx.f(
+		tl.round(model.soil_moisture.reference_evapotranspiration * model.soil_moisture.kc_factor, 1),
+	)
+}
+
+// ---------------------------------------------------------------------------
 // the primitive-calc expression: ["=", a, op, b] in a SetValue's "value"
 // ---------------------------------------------------------------------------
 //
@@ -1010,6 +1478,53 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	// Ported on demand: the Hohenfinow2 Python pipeline (test_env.json) asks for
 	// "DOY|S2_10_DOY" etc.; without it those columns were silently dropped.
 	build(21, "DOY", "", "output current day of year", of_doy)
+	// The rest of the C++ table's computed outputs; names, units and
+	// descriptions exactly as in src/io/build-output.cpp.
+	build(22, "Count", "", "output 1 for counting things", of_count)
+	build(23, "days-since-start", "", "output number of days since simulation start", of_days_since_start)
+	build(24, "Month", "", "output current Month", of_month)
+	build(25, "Tmax>=40", "0|1", "if Tmax >= 40°C then 1 else 0", of_tmax_ge_40)
+	build(26, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent", of_ab_biom_n)
+	build(27, "EffRootDep", "m", "Effective RootingDepth", of_eff_root_dep)
+	build(28, "GrainN", "kg ha-1", "get_FruitBiomassNContent", of_grain_n)
+	build(29, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop", of_light_interception1)
+	build(30, "LightInterception2", "", "LightInterception of lower layer of taller crop", of_light_interception2)
+	build(31, "Nresid", "kg N ha-1", "Nitrogen content in crop residues", of_nresid)
+	build(32, "Nstress", "-", "NitrogenStressIndex", of_nstress)
+	build(33, "PotNup", "kgN ha-1", "PotNUptake", of_pot_nup)
+	build(34, "Protein", "kg kg-1", "RawProteinConcentration", of_protein)
+	build(35, "Ra", "kgC ha-1", "autotrophic respiration", of_ra)
+	build(36, "SecondaryYield", "kgDM ha-1", "get_SecondaryCropYield", of_secondary_yield)
+	build(37, "YieldN", "kgN ha-1", "PrimaryYieldNContent", of_yield_n)
+	build(38, "YieldNc", "kgN ha-1", "PrimaryYieldNConcentration", of_yield_nc)
+	build(39, "NPP-Organs", "kgC ha-1", "organ specific NPP", of_npp_organs)
+	build(40, "Ra-Organs", "kgC ha-1", "organ specific autotrophic respiration", of_ra_organs)
+	build(41, "OrgGreenBiom", "kgDM ha-1", "get_OrganGreenBiomass(i)", of_org_green_biom)
+	build(42, "ActNupLayer", "KgN ha-1", "ActNUptakefromLayer", of_act_nup_layer)
+	build(43, "actammoxrate", "kgN/m3/d", "actual ammonia oxidation rate in layer", of_actammoxrate)
+	build(44, "actdenitrate", "kgN/m3/d", "actual denitrification rate in layer", of_actdenitrate)
+	build(45, "actnitrate", "kgN/m3/d", "actual nitrification rate in layer", of_actnitrate)
+	build(46, "AOMf", "kgC m-3", "get_AOM_FastSum", of_aomf)
+	build(47, "AOMs", "kgC m-3", "get_AOM_SlowSum", of_aoms)
+	build(48, "CBal", "kgC m-3", "get_CBalance", of_cbal)
+	build(49, "Co", "kgC m-3", "", of_co)
+	build(50, "Nmin", "kgN ha-1", "NetNMineralisationRate", of_nmin)
+	build(51, "OrgN", "kg N m-3", "get_Organic_N", of_org_n)
+	build(52, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate", of_smb_co2_er)
+	build(53, "SMBf", "kgC m-3", "get_SMB_Fast", of_smbf)
+	build(54, "SMBs", "kgC m-3", "get_SMB_Slow", of_smbs)
+	build(55, "SOMf", "kgC m-3", "get_SOM_Fast", of_somf)
+	build(56, "SOMs", "kgC m-3", "get_SOM_Slow", of_soms)
+	build(57, "Denit", "kgN ha-1", "Denit", of_denit)
+	build(58, "NetNmin", "kgN ha-1", "NetNmin", of_net_nmin)
+	build(59, "NH3", "kgN ha-1", "NH3_Volatilised", of_nh3)
+	build(60, "Rh", "kgC ha-", "Rh", of_rh)
+	build(61, "AWC", "m3 m-3", "available water capacity", of_awc)
+	build(62, "PASW", "m3 m-3", "PASW", of_pasw)
+	build(63, "WaterContent", "fraction nFC", "soil water content in % of available soil water", of_water_content)
+	build(64, "Silt", "kg kg-1", "Soil silt content", of_silt)
+	build(65, "SOC-X-Y", "gC m-2", "SOC-X-Y", of_soc_x_y)
+	build(66, "Pot_ET", "mm", "potential evapotranspiration = ET0 * Kc = the plants water use", of_pot_et)
 
 	g_output_table_built = true
 	return &g_output_table

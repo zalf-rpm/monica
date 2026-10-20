@@ -3904,6 +3904,47 @@ get_aboveground_biomass_n_content :: proc(cm: ^Crop_Module) -> f64 {
 	return cm.aboveground_biomass * cm.n_concentration_aboveground_biomass
 }
 
+// C++: double monica::cropmodule::getFruitBiomassNContent(const CropModule*)
+get_fruit_biomass_n_content :: proc(cm: ^Crop_Module) -> f64 {
+	root_biomass := cm.organ_biomass[0]
+	fruit_biomass := cm.organ_biomass[3]
+	fruit_n_concentration :=
+		(cm.total_biomass_n_content - (root_biomass * cm.n_concentration_root)) /
+		(fruit_biomass +
+				(cm.crop_params.cultivar_params.residue_n_ratio *
+						(cm.total_biomass - root_biomass - fruit_biomass)))
+	return fruit_biomass * fruit_n_concentration
+}
+
+// C++: double monica::cropmodule::getRawProteinConcentration(const CropModule*)
+get_raw_protein_concentration :: proc(cm: ^Crop_Module) -> f64 {
+	// Assuming an average N concentration of raw protein of 16%
+	return get_primary_yield_n_concentration(cm) * 6.25
+}
+
+// C++: double monica::cropmodule::getAutotrophicRespiration(const CropModule*)
+get_autotrophic_respiration :: proc(cm: ^Crop_Module) -> f64 {
+	return cm.total_respired / 30.0 * 12.0 // Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
+}
+
+// C++: double monica::cropmodule::getOrganSpecificTotalRespired(const CropModule*, int)
+get_organ_specific_total_respired :: proc(cm: ^Crop_Module, organ: int) -> f64 {
+	// get total amount of actual biomass
+	total_biomass := cm.total_biomass
+	// get biomass of specific organ and calculates ratio
+	organ_percentage := cm.organ_biomass[organ] / total_biomass
+	return get_autotrophic_respiration(cm) * organ_percentage
+}
+
+// C++: double monica::cropmodule::getOrganSpecificNPP(const CropModule*, int)
+get_organ_specific_npp :: proc(cm: ^Crop_Module, organ: int) -> f64 {
+	// get total amount of actual biomass
+	total_biomass := cm.total_biomass
+	// get biomass of specific organ and calculates ratio
+	organ_percentage := cm.organ_biomass[organ] / total_biomass
+	return cm.net_primary_production * organ_percentage
+}
+
 // ---------------------------------------------------------------------------
 // applyCutting - deferred from phase 5 checkpoint 7 to whichever checkpoint
 // ports the Cutting workstep (this one). Its payload types (CuttingData::
