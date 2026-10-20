@@ -23,6 +23,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm>
 #include <cmath>
+#include "cr_math.h"
 #include <tuple>
 #include <utility>
 
@@ -81,7 +82,7 @@ void foUrea(SoilOrganic *so) {
     vo_SoilCarbamid_aq[i] =
         (-1258.9 + 13.2843 * (layer.vs_SoilTemperature + 273.15) -
          0.047381 * ((layer.vs_SoilTemperature + 273.15) * (layer.vs_SoilTemperature + 273.15)) +
-         5.77264e-5 * (pow((layer.vs_SoilTemperature + 273.15), 3.0)));
+         5.77264e-5 * (cr::pow((layer.vs_SoilTemperature + 273.15), 3.0)));
 
     // kmol urea m-3 soil
     vo_SoilCarbamid_aq[i] = (vo_SoilCarbamid_aq[i] / (1.0 + (vo_SoilCarbamid_aq[i] * 0.0453))) *
@@ -103,13 +104,13 @@ void foUrea(SoilOrganic *so) {
                              po_HydrolysisP2) /
                             OrganicConstants::po_UreaMolecularWeight;
 
-    vo_HydrolysisRate2[i] = vo_HydrolysisRate1[i] / (exp(-po_ActivationEnergy / (8.314 * 310.0)));
+    vo_HydrolysisRate2[i] = vo_HydrolysisRate1[i] / (cr::exp(-po_ActivationEnergy / (8.314 * 310.0)));
 
     vo_HydrolysisRateMax[i] =
         vo_HydrolysisRate2[i] *
-        exp(-po_ActivationEnergy / (8.314 * (layer.vs_SoilTemperature + 273.15)));
+        cr::exp(-po_ActivationEnergy / (8.314 * (layer.vs_SoilTemperature + 273.15)));
 
-    vo_Hydrolysis_pH_Effect[i] = exp(-0.064 * ((layer.vs_SoilpH - 6.5) * (layer.vs_SoilpH - 6.5)));
+    vo_Hydrolysis_pH_Effect[i] = cr::exp(-0.064 * ((layer.vs_SoilpH - 6.5) * (layer.vs_SoilpH - 6.5)));
 
     // kmol urea kg soil-1 s-1
     vo_HydrolysisRate[i] = vo_HydrolysisRateMax[i] *
@@ -140,11 +141,11 @@ void foUrea(SoilOrganic *so) {
     if (i == 0) {
       auto layer0 = so->soilColumn.layers.at(0);
 
-      vo_H3OIonConcentration = pow(10.0, (-layer0.vs_SoilpH)); // kmol m-3
-      vo_NH3aq_EquilibriumConst = pow(10.0, ((-2728.3 / (layer0.vs_SoilTemperature + 273.15)) -
+      vo_H3OIonConcentration = cr::pow(10.0, (-layer0.vs_SoilpH)); // kmol m-3
+      vo_NH3aq_EquilibriumConst = cr::pow(10.0, ((-2728.3 / (layer0.vs_SoilTemperature + 273.15)) -
                                              0.094219)); // K2 in Sadeghi's program
 
-      vo_NH3_EquilibriumConst = pow(10.0, ((1630.5 / (layer0.vs_SoilTemperature + 273.15)) -
+      vo_NH3_EquilibriumConst = cr::pow(10.0, ((1630.5 / (layer0.vs_SoilTemperature + 273.15)) -
                                            2.301)); // K1 in Sadeghi's program
 
       // kmol m-3, assuming that all NH4 is solved
@@ -449,7 +450,7 @@ void initializeFromParams(SoilOrganic *so) {
 
       so->vo_InertSoilOrganicC[i] =
           (0.049 *
-           pow((so->vo_SoilOrganicC_highCN[i] * layer.vs_LayerThickness / 1000 * 10000.0), 1.139)) /
+           cr::pow((so->vo_SoilOrganicC_highCN[i] * layer.vs_LayerThickness / 1000 * 10000.0), 1.139)) /
           10000.0 * 1000.0 / layer.vs_LayerThickness;
 
       so->vo_InertSoilOrganicC[i] =
@@ -457,7 +458,7 @@ void initializeFromParams(SoilOrganic *so) {
     } else {
       so->vo_InertSoilOrganicC[i] =
           (0.049 *
-           pow((so->vo_SoilOrganicC[i] * layer.vs_LayerThickness / 1000 * 10000.0), 1.139)) /
+           cr::pow((so->vo_SoilOrganicC[i] * layer.vs_LayerThickness / 1000 * 10000.0), 1.139)) /
           10000.0 * 1000.0 / layer.vs_LayerThickness;
     }
     so->vo_SoilOrganicC[i] -= so->vo_InertSoilOrganicC[i];
@@ -1035,15 +1036,15 @@ void foVolatilisation(SoilOrganic *so, bool vo_AOM_Addition, double vw_MeanAirTe
       vo_AOM_TAN_Content = props.vo_AOM_NH4Content * 1000.0 * props.vo_AOM_DryMatterContent;
 
       vo_MaxVolatilisation =
-          0.0495 * pow(1.1020, vo_SoilWet) * pow(1.0223, vw_MeanAirTemperature) *
-          pow(1.0417, vw_WindSpeed) * pow(1.1080, props.vo_AOM_DryMatterContent) *
-          pow(0.8280, vo_AOM_TAN_Content) * pow(11.300, double(props.incorporation));
+          0.0495 * cr::pow(1.1020, vo_SoilWet) * cr::pow(1.0223, vw_MeanAirTemperature) *
+          cr::pow(1.0417, vw_WindSpeed) * cr::pow(1.1080, props.vo_AOM_DryMatterContent) *
+          cr::pow(0.8280, vo_AOM_TAN_Content) * cr::pow(11.300, double(props.incorporation));
 
       vo_VolatilisationHalfLife =
-          1.0380 * pow(1.1020, vo_SoilWet) * pow(0.9600, vw_MeanAirTemperature) *
-          pow(0.9500, vw_WindSpeed) * pow(1.1750, props.vo_AOM_DryMatterContent) *
-          pow(1.1060, vo_AOM_TAN_Content) * pow(1.0000, double(props.incorporation)) *
-          (18869.3 * exp(-lay0.vs_SoilpH / 0.63321) + 0.70165);
+          1.0380 * cr::pow(1.1020, vo_SoilWet) * cr::pow(0.9600, vw_MeanAirTemperature) *
+          cr::pow(0.9500, vw_WindSpeed) * cr::pow(1.1750, props.vo_AOM_DryMatterContent) *
+          cr::pow(1.1060, vo_AOM_TAN_Content) * cr::pow(1.0000, double(props.incorporation)) *
+          (18869.3 * cr::exp(-lay0.vs_SoilpH / 0.63321) + 0.70165);
 
       // ******************************************************************************************
       // *** Based on He et al. (1999): Soil Sci. 164 (10), 750-758. The curves
@@ -1058,7 +1059,7 @@ void foVolatilisation(SoilOrganic *so, bool vo_AOM_Addition, double vw_MeanAirTe
       vo_VolatilisationRate =
           vo_MaxVolatilisation *
           (vo_VolatilisationHalfLife /
-           (pow((props.vo_DaysAfterApplication + vo_VolatilisationHalfLife), 2.0)));
+           (cr::pow((props.vo_DaysAfterApplication + vo_VolatilisationHalfLife), 2.0)));
 
       vo_N_PotVolatilised = vo_VolatilisationRate * vo_AOM_TAN_Content *
                             (props.vo_AOM_Slow + props.vo_AOM_Fast) / 10000.0 / 1000.0;
@@ -1300,7 +1301,7 @@ double foN2OProduction(SoilOrganic *so) {
 
     // pKaHNO2 original concept pow10. We used pow2 to allow reactive HNO2 being
     // available at higer pH values
-    double pH_response = 1.0 / (1.0 + pow(2.0, pHi - pKaHNO2));
+    double pH_response = 1.0 / (1.0 + cr::pow(2.0, pHi - pKaHNO2));
 
     double N2OProductionAtLayer =
         NO2i * foTempOnNitrification(so, tempi) * N2OProductionRate * pH_response * lti *
@@ -1435,7 +1436,7 @@ double foClayOnDecompostionKaiteew(SoilOrganic *so, double d_SoilClayContent,
 
   if (d_SoilClayContent >= 0.0 && d_SoilClayContent <= 1.0) {
     clayOnDecomposition =
-        (1.0 - d_LimitClayEffect) / (1.0 + exp(-3.14 + d_SoilClayContent * 16)) + d_LimitClayEffect;
+        (1.0 - d_LimitClayEffect) / (1.0 + cr::exp(-3.14 + d_SoilClayContent * 16)) + d_LimitClayEffect;
   } else {
     so->vo_ErrorMessage = "irregular clay content";
   }
@@ -1477,9 +1478,9 @@ double foTempOnDecompostionKaiteew(SoilOrganic *so, double soilTemperature, doub
 
   if (soilTemperature > 0.0 && soilTemperature <= 100.0) {
     tempOnDecomposition = 1.0 /
-                          pow(1.0 + exp(soilTemperature - (2.72 + tempDecOptimal)),
+                          cr::pow(1.0 + cr::exp(soilTemperature - (2.72 + tempDecOptimal)),
                               QTenFactor / (tempDecOptimal / 3.14)) *
-                          (-1.0 + pow(QTenFactor, soilTemperature / 15.76));
+                          (-1.0 + cr::pow(QTenFactor, soilTemperature / 15.76));
   } else if (soilTemperature <= 0.0 && soilTemperature > -50.0) {
     tempOnDecomposition = 0.0;
   } else {
@@ -1505,7 +1506,7 @@ double foTempOnDecompostion(SoilOrganic *so, double d_SoilTemperature) {
   } else if (d_SoilTemperature > 20.0 && d_SoilTemperature <= 70.0) {
 
     fo_TempOnDecompostion =
-        exp(0.47 - (0.027 * d_SoilTemperature) + (0.00193 * d_SoilTemperature * d_SoilTemperature));
+        cr::exp(0.47 - (0.027 * d_SoilTemperature) + (0.00193 * d_SoilTemperature * d_SoilTemperature));
   } else {
     so->vo_ErrorMessage = "irregular soil temperature";
   }
@@ -1526,7 +1527,7 @@ double foMoistOnDecompostionKaiteew(SoilOrganic *so, double d_SoilMoisture_m3, d
 
   if (d_SoilMoisture_m3 / d_Saturation >= 0.0 && d_SoilMoisture_m3 / d_Saturation <= 1.0) {
     moistOnDecomposition =
-        exp(-18 * pow((d_SoilMoisture_m3 / d_Saturation - d_MoistureDecOptimal), 2));
+        cr::exp(-18 * cr::pow((d_SoilMoisture_m3 / d_Saturation - d_MoistureDecOptimal), 2));
   } else {
     so->vo_ErrorMessage = "irregular soil water content";
   }
@@ -1616,7 +1617,7 @@ double foTempOnNitrification(SoilOrganic *so, double soilTemp) {
   else if (soilTemp > 6.0 && soilTemp <= 20.0)
     result = 0.1 * soilTemp;
   else if (soilTemp > 20.0 && soilTemp <= 70.0)
-    result = exp(0.47 - (0.027 * soilTemp) + (0.00193 * soilTemp * soilTemp));
+    result = cr::exp(0.47 - (0.027 * soilTemp) + (0.00193 * soilTemp * soilTemp));
   else
     so->vo_ErrorMessage = "irregular soil temperature";
 
@@ -1701,7 +1702,7 @@ double foNH3onNitriteOxidation(SoilOrganic *so, double d_SoilNH4, double d_Soilp
   fo_NH3onNitriteOxidation =
       po_Inhibitor_NH3 /
       (po_Inhibitor_NH3 +
-       d_SoilNH4 * (1 - 1 / (1.0 + pow(10.0, d_SoilpH - OrganicConstants::po_pKaNH3))));
+       d_SoilNH4 * (1 - 1 / (1.0 + cr::pow(10.0, d_SoilpH - OrganicConstants::po_pKaNH3))));
 
   return fo_NH3onNitriteOxidation;
 }

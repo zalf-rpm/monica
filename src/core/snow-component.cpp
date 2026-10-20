@@ -17,6 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "snow-component.h"
 
 #include <cmath>
+#include "cr_math.h"
 
 #include "monica-parameters.h"
 #include "soilcolumn.h"
@@ -241,7 +242,7 @@ double monica::snowcomponent::calcRefreeze(const SnowComponent *sc, double mean_
   if (refreeze_helper < sc->vm_RefreezeTemperature) {
     if (sc->vm_LiquidWaterInSnow > 0.0) {
       refreeze = sc->vm_RefreezeP1 *
-                 pow((sc->vm_RefreezeTemperature - refreeze_helper), sc->vm_RefreezeP2);
+                 cr::pow((sc->vm_RefreezeTemperature - refreeze_helper), sc->vm_RefreezeP2);
     }
     if (refreeze > sc->vm_LiquidWaterInSnow) {
       refreeze = sc->vm_LiquidWaterInSnow;

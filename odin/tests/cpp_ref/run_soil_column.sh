@@ -53,7 +53,7 @@ cat > build/ref/_build_soil_column.bat <<EOF
 @echo off
 call "$VCVARS" >nul
 cd /d $(cygpath -w "$REPO")
-cl /EHsc /std:c++17 /nologo /Zi /D_USE_MATH_DEFINES $FLAGS /Fe:build\\ref\\soil_column_ref.exe /Fo:"build\\ref\\soil_column\\\\" /Fd:"build\\ref\\soil_column\\\\" odin\\tests\\cpp_ref\\soil_column_ref_main.cpp /link /LIBPATH:build /LIBPATH:$VCPKG_LIB monica_run_lib.lib monica_lib.lib climate\\climate-file-io\\climate_file_io_lib.lib climate\\climate-file-io\\climate_common\\climate_common_lib.lib common\\common_lib.lib common\\json11\\json11_lib.lib common\\json11\\date\\date_lib.lib common\\tools\\helpers\\helpers_lib.lib tools\\debug\\debug_lib.lib soil\\soil_lib.lib mas-infrastructure\\capnproto_schemas\\capnp_schemas_lib.lib capnp-json.lib capnp-rpc.lib capnp.lib capnpc.lib kj-http.lib kj-gzip.lib kj-async.lib kj.lib zlibd.lib libsodium.lib advapi32.lib ws2_32.lib
+cl /EHsc /std:c++17 /nologo /Zi /D_USE_MATH_DEFINES $FLAGS /Fe:build\\ref\\soil_column_ref.exe /Fo:"build\\ref\\soil_column\\\\" /Fd:"build\\ref\\soil_column\\\\" odin\\tests\\cpp_ref\\soil_column_ref_main.cpp /link /LIBPATH:build /LIBPATH:$VCPKG_LIB monica_run_lib.lib monica_lib.lib climate\\climate-file-io\\climate_file_io_lib.lib climate\\climate-file-io\\climate_common\\climate_common_lib.lib common\\common_lib.lib common\\json11\\json11_lib.lib common\\json11\\date\\date_lib.lib common\\tools\\helpers\\helpers_lib.lib common\\tools\\helpers\\cr_math\\cr_math_lib.lib tools\\debug\\debug_lib.lib soil\\soil_lib.lib mas-infrastructure\\capnproto_schemas\\capnp_schemas_lib.lib capnp-json.lib capnp-rpc.lib capnp.lib capnpc.lib kj-http.lib kj-gzip.lib kj-async.lib kj.lib zlibd.lib libsodium.lib advapi32.lib ws2_32.lib
 EOF
 cmd //c "$(cygpath -w build/ref/_build_soil_column.bat)" > build/ref/_build_soil_column.log 2>&1
 if [ ! -f build/ref/soil_column_ref.exe ]; then
@@ -63,6 +63,7 @@ if [ ! -f build/ref/soil_column_ref.exe ]; then
 fi
 
 echo "== building Odin driver"
+[ -f odin/build/cr_math/cr_math_lib.lib ] || { echo "need odin/build/cr_math/cr_math_lib.lib (CORE-MATH, see odin/CONVENTIONS.md §1) - build it: cd odin && pixi run python tools/odinw.py cr-math"; exit 1; }
 "$ODIN" build odin/tests/soil_column_ref -out:build/ref/soil_column_ref_odin.exe || exit 1
 
 fail=0

@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm>
 #include <cmath>
+#include "cr_math.h"
 
 #include "crop-module.h"
 #include "soil/constants.h"
@@ -210,8 +211,8 @@ double soillayer::soilMoisturePF(const SoilLayer *sl) {
       sm <= ps.thetaR
           ? 5.0E+7
           : (1.0 / ps.alpha) *
-                (pow(pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR), 1 / ps.m) - 1, 1 / ps.n));
-  double soilMoisture_pF = log10(matricHead);
+                (cr::pow(cr::pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR), 1 / ps.m) - 1, 1 / ps.n));
+  double soilMoisture_pF = cr::log10(matricHead);
 
   /* JV! set _vs_SoilMoisture_pF to "small" number in case of vs_Theta "close"
    * to vs_ThetaS (vs_Psi < 1 -> log(vs_Psi) < 0) */

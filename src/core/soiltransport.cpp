@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm> //for min, max
 #include <cmath>
+#include "cr_math.h"
 #include <iostream>
 #include <math.h>
 
@@ -336,7 +337,7 @@ void nTransport(SoilTransport *st, double leachingDepth, double timeStepFactor) 
 
     st->vq_DiffusionCoeff[i] =
         diffusionCoeffStandard *
-        (AD * exp(soilMoistureGradient[i] * 2.0 * 5.0) / soilMoistureGradient[i]) *
+        (AD * cr::exp(soilMoistureGradient[i] * 2.0 * 5.0) / soilMoistureGradient[i]) *
         timeStepFactor; //[m2 t-1] * [t t-1]
 
     // Dispersion coefficient, old DB

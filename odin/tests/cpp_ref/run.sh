@@ -32,6 +32,7 @@ if [ ! -f build/ref/date_ref.exe ]; then
 fi
 
 echo "== building Odin dumper"
+[ -f odin/build/cr_math/cr_math_lib.lib ] || { echo "need odin/build/cr_math/cr_math_lib.lib (CORE-MATH, see odin/CONVENTIONS.md §1) - build it: cd odin && pixi run python tools/odinw.py cr-math"; exit 1; }
 "$ODIN" build odin/tests/date_ref -out:build/ref/date_ref_odin.exe || exit 1
 
 echo "== running both"

@@ -31,6 +31,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "voc-guenther.h"
 
 #include "tools/helper.h"
+#include "cr_math.h"
 
 using namespace Voc;
 using namespace Tools;
@@ -40,13 +41,13 @@ LeafEmissions calcLeafEmission(const leaf_emission_t &lemi, double _species_EF_M
   {
     // isoprene, Guenther et al. 1999 (from Harley et al. 2004)
     double const x30 = (1.0 / TOPT - 1.0 / (30.0 + D_IN_K)) / RGAS;
-    double const cti30 = CT2 * exp(CT1 * x30) / (CT2 - CT1 * (1.0 - exp(CT2 * x30)));
+    double const cti30 = CT2 * cr::exp(CT1 * x30) / (CT2 - CT1 * (1.0 - cr::exp(CT2 * x30)));
 
     double const eopt = flt_equal_zero(cti30) ? lemi.enz_act.ef_iso : (lemi.enz_act.ef_iso / cti30);
     double const x = (1.0 / TOPT - 1.0 / lemi.fol.tempK) / RGAS;
 
     // emission scaling factor of isoprenes to temperature
-    double const cti = CT2 * exp(CT1 * x) / (CT2 - CT1 * (1.0 - exp(CT2 * x)));
+    double const cti = CT2 * cr::exp(CT1 * x) / (CT2 - CT1 * (1.0 - cr::exp(CT2 * x)));
     // emission scaling factor to light
     double const cl = ALPHA * CL1 * lemi.pho.par / sqrt(1.0 + sqr(ALPHA) * sqr(lemi.pho.par));
 
@@ -58,11 +59,11 @@ LeafEmissions calcLeafEmission(const leaf_emission_t &lemi, double _species_EF_M
   {
     // monoterpene, Guenther et al. (1993, 1995 (ctm), 1997 (factor 0.961, cit.
     // in Lindfors et al. 2000))
-    double const ctm = exp(BETA * (lemi.fol.tempK - TREF));
+    double const ctm = cr::exp(BETA * (lemi.fol.tempK - TREF));
     // ??
     double const cti =
-        exp(CT1 * (lemi.fol.tempK - TREF) / (RGAS * TREF * lemi.fol.tempK)) /
-        (0.961 + exp(CT2 * (lemi.fol.tempK - TOPT) / (RGAS * TREF * lemi.fol.tempK)));
+        cr::exp(CT1 * (lemi.fol.tempK - TREF) / (RGAS * TREF * lemi.fol.tempK)) /
+        (0.961 + cr::exp(CT2 * (lemi.fol.tempK - TOPT) / (RGAS * TREF * lemi.fol.tempK)));
     double const cl = ALPHA * CL1 * lemi.pho.par / sqrt(1.0 + sqr(ALPHA) * sqr(lemi.pho.par));
 
     lems.monoterp = _species_EF_MONOS * ctm + lemi.enz_act.ef_mono * bound_max(cl, 1.0) * cti;

@@ -17,6 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "photosynthesis-FvCB.h"
 
 #include <cmath>
+#include "cr_math.h"
 #include <tuple>
 
 #include "tools/helper.h"
@@ -35,13 +36,13 @@ std::map<FvCB_Model_Consts, double> FvCB::deltaH_bernacchi = {
 // estimate the fraction of diffuse radiation; it requires hourly input
 double diffuse_fraction_hourly_f(double globrad, double extra_terr_rad, double solar_elev) {
   double glob_extra_ratio = globrad / extra_terr_rad;
-  double R = (0.847 - 1.61 * sin(solar_elev) + 1.04 * pow(sin(solar_elev), 2));
+  double R = (0.847 - 1.61 * cr::sin(solar_elev) + 1.04 * cr::pow(cr::sin(solar_elev), 2));
   double K = (1.47 - R) / 1.66;
 
   if (glob_extra_ratio <= 0.22) {
     return 1;
   } else if (glob_extra_ratio <= 0.35) {
-    return 1 - 6.4 * pow((glob_extra_ratio - 0.22), 2);
+    return 1 - 6.4 * cr::pow((glob_extra_ratio - 0.22), 2);
   } else if (glob_extra_ratio <= K) {
     return 1.47 - 1.66 * glob_extra_ratio;
   } else {
@@ -64,11 +65,11 @@ double abs_sunlit_direct_f(double I_dir_beam, double solar_elev, double LAI) {
   } else if (solar_elev == 0) {
     kb = 1000;
   } else {
-    kb = 0.5 / sin(solar_elev);
+    kb = 0.5 / cr::sin(solar_elev);
   }
 
   double sigma = 0.15; // scattering coefficient
-  return I_dir_beam * (1 - sigma) * (1 - exp(-kb * LAI));
+  return I_dir_beam * (1 - sigma) * (1 - cr::exp(-kb * LAI));
 }
 
 // diffuse radiation absorbed by sunlit leaves
@@ -82,9 +83,9 @@ double abs_sunlit_diffuse_f(double I_dif, double solar_elev, double LAI) {
   } else if (solar_elev == 0) {
     kb = 1000;
   } else {
-    kb = 0.5 / sin(solar_elev);
+    kb = 0.5 / cr::sin(solar_elev);
   }
-  return I_dif * (1 - rho_cd) * (1 - exp(-(k1_d + kb) * LAI)) * k1_d / (k1_d + kb);
+  return I_dif * (1 - rho_cd) * (1 - cr::exp(-(k1_d + kb) * LAI)) * k1_d / (k1_d + kb);
 }
 
 // scattered beam absorberd by sunlit leaves
@@ -101,15 +102,15 @@ double abs_sunlit_scattered_f(double I_dir_beam, double solar_elev, double LAI) 
     kb = 1000;
     k1_b = 1000;
   } else {
-    kb = 0.5 / sin(solar_elev);
-    k1_b = 0.46 / sin(solar_elev);
+    kb = 0.5 / cr::sin(solar_elev);
+    k1_b = 0.46 / cr::sin(solar_elev);
   }
   double rho_h = 0.041; // reflection coeff beam irradiance (horizontal leaves)
-  rho_cb = 1 - exp(2 * rho_h * kb / (1 + kb));
+  rho_cb = 1 - cr::exp(2 * rho_h * kb / (1 + kb));
   sigma = 0.15;
 
-  double line_1 = (1 - rho_cb) * (1 - exp(-(k1_b + kb) * LAI)) * k1_b / (k1_b + kb);
-  double line_2 = (1 - sigma) * (1 - exp(-2 * kb * LAI)) / 2;
+  double line_1 = (1 - rho_cb) * (1 - cr::exp(-(k1_b + kb) * LAI)) * k1_b / (k1_b + kb);
+  double line_2 = (1 - sigma) * (1 - cr::exp(-2 * kb * LAI)) / 2;
 
   return I_dir_beam * (line_1 - line_2);
 }
@@ -126,17 +127,17 @@ double Ic_f(double I_dir_beam, double I_dif, double solar_elev, double LAI) {
     kb = 1000;
     k1_b = 1000;
   } else {
-    kb = 0.5 / sin(solar_elev);
-    k1_b = 0.46 / sin(solar_elev);
+    kb = 0.5 / cr::sin(solar_elev);
+    k1_b = 0.46 / cr::sin(solar_elev);
   }
 
   double rho_h = 0.041;
-  double rho_cb = 1 - exp(2 * rho_h * kb / (1 + kb));
+  double rho_cb = 1 - cr::exp(2 * rho_h * kb / (1 + kb));
   double rho_cd = 0.036; // reflection coeff diffuse PAR
   double k1_d = 0.719;   // diffuse par extinction coeff
 
-  double Ic_dir = (1 - rho_cb) * I_dir_beam * (1 - exp(-k1_b * LAI));
-  double Ic_dif = (1 - rho_cd) * I_dif * (1 - exp(-k1_d * LAI));
+  double Ic_dir = (1 - rho_cb) * I_dir_beam * (1 - cr::exp(-k1_b * LAI));
+  double Ic_dif = (1 - rho_cd) * I_dif * (1 - cr::exp(-k1_d * LAI));
 
   return fmin((Ic_dir + Ic_dif), (I_dir_beam + I_dif));
 }
@@ -161,10 +162,10 @@ std::tuple<double, double> LAI_sunlit_shaded_f(double LAI, double solar_elev) {
   } else if (solar_elev == 0) {
     kb = 1000;
   } else {
-    kb = 0.5 / sin(solar_elev);
+    kb = 0.5 / cr::sin(solar_elev);
   }
 
-  double LAI_sunlit = (1 - exp(-kb * LAI)) / kb;
+  double LAI_sunlit = (1 - cr::exp(-kb * LAI)) / kb;
   return std::make_tuple(LAI_sunlit, (LAI - LAI_sunlit));
 }
 
@@ -176,8 +177,8 @@ std::tuple<double, double> LAI_sunlit_shaded_f(double LAI, double solar_elev) {
 // T response
 double Tresp_bernacchi_f(double c, double deltaH, double leafT) {
   double Tk = leafT + 273;
-  double R = 8.314472 * pow(10, -3); // kJ K - 1 mol - 1
-  return exp(c - deltaH / (R * Tk));
+  double R = 8.314472 * cr::pow(10, -3); // kJ K - 1 mol - 1
+  return cr::exp(c - deltaH / (R * Tk));
 }
 
 double FvCB::Vcmax_bernacchi_f(double leafT, double Vcmax_25) {
@@ -191,11 +192,11 @@ double FvCB::Jmax_bernacchi_f(double leafT, double Jmax_25) {
 double J_bernacchi_f(double Q, double leafT, double Jmax) {
   double alfa = 0.85; // total leaf absorbance
   double beta = 0.5;  // fraction of absorbed quanta reaching PSII
-  double theta_ps2 = 0.76 + 0.018 * leafT - 3.7 * pow(10, -4) * pow(leafT, 2);
-  double phi_ps2max = 0.352 + 0.022 * leafT - 3.4 * pow(10, -4) * pow(leafT, 2);
+  double theta_ps2 = 0.76 + 0.018 * leafT - 3.7 * cr::pow(10, -4) * cr::pow(leafT, 2);
+  double phi_ps2max = 0.352 + 0.022 * leafT - 3.4 * cr::pow(10, -4) * cr::pow(leafT, 2);
   double Q2 = Q * alfa * phi_ps2max * beta;
 
-  double numerator = Q2 + Jmax - sqrt(pow((Q2 + Jmax), 2) - 4 * theta_ps2 * Q2 * Jmax);
+  double numerator = Q2 + Jmax - sqrt(cr::pow((Q2 + Jmax), 2) - 4 * theta_ps2 * Q2 * Jmax);
   double denominator = 2 * theta_ps2;
   return numerator / denominator;
 }
@@ -226,10 +227,10 @@ double Ko_bernacchi_f(double leafT) {
 }
 
 double Oi_f(double leafT) {
-  double T1 = 1.3087 * pow(10, -3) * leafT;
-  double T2 = 2.5603 * pow(10, -5) * pow(leafT, 2);
-  double T3 = 2.1441 * pow(10, -7) * pow(leafT, 3);
-  return 210 * (4.7 * pow(10, -2) - T1 + T2 - T3) / (2.6934 * pow(10, -2));
+  double T1 = 1.3087 * cr::pow(10, -3) * leafT;
+  double T2 = 2.5603 * cr::pow(10, -5) * cr::pow(leafT, 2);
+  double T3 = 2.1441 * cr::pow(10, -7) * cr::pow(leafT, 3);
+  return 210 * (4.7 * cr::pow(10, -2) - T1 + T2 - T3) / (2.6934 * cr::pow(10, -2));
 }
 
 double Gamma_bernacchi_f(double leafT, double Vcmax, double Vomax) {
@@ -243,7 +244,7 @@ double Gamma_bernacchi_f(double leafT, double Vcmax, double Vomax) {
 #pragma region
 // canopy photosynthetic capacity
 double canopy_ps_capacity_f(double LAI, double Vcmax, double kn) {
-  return LAI * Vcmax * (1 - exp(-kn)) / kn;
+  return LAI * Vcmax * (1 - cr::exp(-kn)) / kn;
 }
 
 double canopy_ps_capacity_sunlit_f(double LAI, double solar_elev, double Vcmax, double kn) {
@@ -254,10 +255,10 @@ double canopy_ps_capacity_sunlit_f(double LAI, double solar_elev, double Vcmax, 
   } else if (solar_elev == 0) {
     kb = 1000;
   } else {
-    kb = 0.5 / sin(solar_elev);
+    kb = 0.5 / cr::sin(solar_elev);
   }
 
-  return LAI * Vcmax * (1 - exp(-kn - kb * LAI)) / (kn + kb * LAI);
+  return LAI * Vcmax * (1 - cr::exp(-kn - kb * LAI)) / (kn + kb * LAI);
 }
 
 double canopy_ps_capacity_shaded_f(double LAI, double solar_elev, double Vcmax, double kn) {
@@ -278,8 +279,8 @@ double gm_bernacchi_f(double leafT, double gm_25) {
 
   double Tk = leafT + 273.15;
 
-  double numerator = exp(c - deltaHa / (R * Tk));
-  double denominator = 1 + exp((deltaS * Tk - deltaHd) / (R * Tk));
+  double numerator = cr::exp(c - deltaHa / (R * Tk));
+  double denominator = 1 + cr::exp((deltaS * Tk - deltaHd) / (R * Tk));
 
   return gm_25 * numerator / denominator;
 }
@@ -358,13 +359,13 @@ Lumped_Coeffs calculate_lumped_coeffs(double x1, double x2, double fVPD, double 
       -(d + (x1 - Rd) / gm_C3 + a * (1 / gm_C3 + 1 / gb) + (g0 / gm_C3 + fVPD) * c) / m;
 
   // U
-  double U = (2 * pow(lumped_coeffs.p, 3) - 9 * lumped_coeffs.p * q + 27 * r) / 54;
+  double U = (2 * cr::pow(lumped_coeffs.p, 3) - 9 * lumped_coeffs.p * q + 27 * r) / 54;
 
   // Q
-  lumped_coeffs.Q = (pow(lumped_coeffs.p, 2) - 3 * q) / 9;
+  lumped_coeffs.Q = (cr::pow(lumped_coeffs.p, 2) - 3 * q) / 9;
 
   // psi
-  lumped_coeffs.psi = acos(U / sqrt(pow(lumped_coeffs.Q, 3)));
+  lumped_coeffs.psi = cr::acos(U / sqrt(cr::pow(lumped_coeffs.Q, 3)));
 
   return lumped_coeffs;
 }
@@ -373,15 +374,15 @@ Lumped_Coeffs calculate_lumped_coeffs(double x1, double x2, double fVPD, double 
 #pragma region
 // Cubic equation solutions
 double A1_f(Lumped_Coeffs lumped_coeffs) {
-  return -2 * sqrt(lumped_coeffs.Q) * cos(lumped_coeffs.psi / 3) - lumped_coeffs.p / 3;
+  return -2 * sqrt(lumped_coeffs.Q) * cr::cos(lumped_coeffs.psi / 3) - lumped_coeffs.p / 3;
 }
 
 double A2_f(Lumped_Coeffs lumped_coeffs) {
-  return -2 * sqrt(lumped_coeffs.Q) * cos((lumped_coeffs.psi + 2 * M_PI) / 3) - lumped_coeffs.p / 3;
+  return -2 * sqrt(lumped_coeffs.Q) * cr::cos((lumped_coeffs.psi + 2 * M_PI) / 3) - lumped_coeffs.p / 3;
 }
 
 double A3_f(Lumped_Coeffs lumped_coeffs) {
-  return -2 * sqrt(lumped_coeffs.Q) * cos((lumped_coeffs.psi + 4 * M_PI) / 3) - lumped_coeffs.p / 3;
+  return -2 * sqrt(lumped_coeffs.Q) * cr::cos((lumped_coeffs.psi + 4 * M_PI) / 3) - lumped_coeffs.p / 3;
 }
 #pragma endregion Cubic equation solutions
 
@@ -480,8 +481,8 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in,
   double hourly_diffuse_rad = in.global_rad * diffuse_fraction;
   double hourly_direct_rad = in.global_rad - hourly_diffuse_rad;
   double inst_diff_rad =
-      hourly_diffuse_rad * pow(10, 6) / 3600.0 * 4.56 * 0.45; // �mol m - 2 s - 1 (unit ground area)
-  double inst_dir_rad = hourly_direct_rad * pow(10, 6) / 3600.0 * 4.56 *
+      hourly_diffuse_rad * cr::pow(10, 6) / 3600.0 * 4.56 * 0.45; // �mol m - 2 s - 1 (unit ground area)
+  double inst_dir_rad = hourly_direct_rad * cr::pow(10, 6) / 3600.0 * 4.56 *
                         0.45; // 1 W m-2 = 4.56 �mol m-2 s-1; PAR = 0.45 * global radiation
 
   // 2. calculate Radiation absorbed by sunlit / shaded canopy
@@ -559,7 +560,7 @@ FvCB_canopy_hourly_out FvCB::FvCB_canopy_hourly_C3(FvCB_canopy_hourly_in in,
   // = 4.56 �mol m-2 s-1; PAR = 0.45 * global radiation, 0.860 = adsorberd
   // fraction in JJV model) out.shaded.rad = Ic_sh / 4.56 / 0.45 / 0.860; //W
   // m-2
-  double hourly_globrad = in.global_rad * pow(10, 6) / 3600.0; // W m - 2
+  double hourly_globrad = in.global_rad * cr::pow(10, 6) / 3600.0; // W m - 2
   out.sunlit.rad = hourly_globrad > 0 ? hourly_globrad * Ic_sun / (Ic_sun + Ic_sh) : 0.0;
   out.shaded.rad = hourly_globrad > 0 ? hourly_globrad * Ic_sh / (Ic_sun + Ic_sh) : 0.0;
 

@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include <algorithm> //for min, max
 #include <cmath>
+#include "cr_math.h"
 #include <iostream>
 
 #include "crop-module.h"
@@ -910,12 +911,12 @@ double dualKcPrecomputation(SoilMoisture *sm, double windSpeed, double tmin, dou
   // B. Rigorous Climatic Kc_max (FAO-56 Equation 72)
   // Uses native simulated crop height — no hardcoded per-stage values.
   double u2 = (windSpeed > 0.0) ? windSpeed : 2.0;
-  double eo_Tmax = 0.6108 * std::exp((17.27 * tmax) / (tmax + 237.3));
-  double eo_Tmin = 0.6108 * std::exp((17.27 * tmin) / (tmin + 237.3));
+  double eo_Tmax = 0.6108 * cr::exp((17.27 * tmax) / (tmax + 237.3));
+  double eo_Tmin = 0.6108 * cr::exp((17.27 * tmin) / (tmin + 237.3));
   double RHmin = std::max(5.0, std::min(100.0, (eo_Tmin / eo_Tmax) * 100.0));
   const double baseline = 1.2;                          // FAO-56 §6 default for most crops
   double h = std::max(0.01, cropModule->vc_CropHeight); // native simulated height [m]
-  double Kc_max = baseline + (0.04 * (u2 - 2.0) - 0.004 * (RHmin - 45.0)) * std::pow(h / 3.0, 0.3);
+  double Kc_max = baseline + (0.04 * (u2 - 2.0) - 0.004 * (RHmin - 45.0)) * cr::pow(h / 3.0, 0.3);
   Kc_max = std::max(Kc_max, Kcb + 0.05);
 
   // C. few: fraction of exposed and wetted soil (FAO-56 Eq. 74)
@@ -1243,26 +1244,26 @@ double referenceEvapotranspiration(SoilMoisture *sm, double vs_HeightNN,
                                                          // Allen et al. (1998)
   double PI = 3.14159265358979323;
 
-  vc_Declination = -23.4 * cos(2.0 * PI * ((vs_JulianDay + 10.0) / 365.0));
-  vc_DeclinationSinus = sin(vc_Declination * PI / 180.0) * sin(vs_Latitude * PI / 180.0);
-  vc_DeclinationCosinus = cos(vc_Declination * PI / 180.0) * cos(vs_Latitude * PI / 180.0);
+  vc_Declination = -23.4 * cr::cos(2.0 * PI * ((vs_JulianDay + 10.0) / 365.0));
+  vc_DeclinationSinus = cr::sin(vc_Declination * PI / 180.0) * cr::sin(vs_Latitude * PI / 180.0);
+  vc_DeclinationCosinus = cr::cos(vc_Declination * PI / 180.0) * cr::cos(vs_Latitude * PI / 180.0);
 
   double arg_AstroDayLength = vc_DeclinationSinus / vc_DeclinationCosinus;
   arg_AstroDayLength = bound(-1.0, arg_AstroDayLength,
                              1.0); // The argument of asin must be in the range of -1 to 1
-  vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * asin(arg_AstroDayLength)) / PI;
+  vc_AstronomicDayLenght = 12.0 * (PI + 2.0 * cr::asin(arg_AstroDayLength)) / PI;
 
   double arg_EffectiveDayLength =
-      (-sin(8.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+      (-cr::sin(8.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
   arg_EffectiveDayLength = bound(-1.0, arg_EffectiveDayLength, 1.0);
   // The argument of asin must be in the range of -1 to 1
-  vc_EffectiveDayLenght = 12.0 * (PI + 2.0 * asin(arg_EffectiveDayLength)) / PI;
+  vc_EffectiveDayLenght = 12.0 * (PI + 2.0 * cr::asin(arg_EffectiveDayLength)) / PI;
 
   double arg_PhotoDayLength =
-      (-sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
+      (-cr::sin(-6.0 * PI / 180.0) + vc_DeclinationSinus) / vc_DeclinationCosinus;
   arg_PhotoDayLength = bound(-1.0, arg_PhotoDayLength,
                              1.0); // The argument of asin must be in the range of -1 to 1
-  vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * asin(arg_PhotoDayLength)) / PI;
+  vc_PhotoperiodicDaylength = 12.0 * (PI + 2.0 * cr::asin(arg_PhotoDayLength)) / PI;
 
   double arg_PhotAct = min(1.0, ((vc_DeclinationSinus / vc_DeclinationCosinus) *
                                  (vc_DeclinationSinus / vc_DeclinationCosinus)));
@@ -1274,33 +1275,33 @@ double referenceEvapotranspiration(SoilMoisture *sm, double vs_HeightNN,
   if (vc_PhotActRadiationMean > 0 && vc_AstronomicDayLenght > 0) {
     vc_ClearDayRadiation =
         0.5 * 1300.0 * vc_PhotActRadiationMean *
-        exp(-0.14 / (vc_PhotActRadiationMean / (vc_AstronomicDayLenght * 3600.0)));
+        cr::exp(-0.14 / (vc_PhotActRadiationMean / (vc_AstronomicDayLenght * 3600.0)));
   }
 
   vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
-  double SC = 24.0 * 60.0 / PI * 8.20 * (1.0 + 0.033 * cos(2.0 * PI * vs_JulianDay / 365.0));
+  double SC = 24.0 * 60.0 / PI * 8.20 * (1.0 + 0.033 * cr::cos(2.0 * PI * vs_JulianDay / 365.0));
   double arg_SHA =
-      bound(-1.0, -tan(vs_Latitude * PI / 180.0) * tan(vc_Declination * PI / 180.0), 1.0);
+      bound(-1.0, -cr::tan(vs_Latitude * PI / 180.0) * cr::tan(vc_Declination * PI / 180.0), 1.0);
   // The argument of acos must be in the range of -1 to 1
-  double SHA = acos(arg_SHA);
+  double SHA = cr::acos(arg_SHA);
 
   vc_ExtraterrestrialRadiation =
-      SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * sin(SHA)) / 100.0;
+      SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * cr::sin(SHA)) / 100.0;
   // [J cm-2] --> [MJ m-2]
 
   // Calculation of atmospheric pressure
-  vm_AtmosphericPressure = 101.3 * pow(((293.0 - (0.0065 * vs_HeightNN)) / 293.0), 5.26);
+  vm_AtmosphericPressure = 101.3 * cr::pow(((293.0 - (0.0065 * vs_HeightNN)) / 293.0), 5.26);
 
   // Calculation of psychrometer constant - Luchtfeuchtigkeit
   vm_PsycrometerConstant = 0.000665 * vm_AtmosphericPressure;
 
   // Calc. of saturated water vapour pressure at daily max temperature
   vm_SaturatedVapourPressureMax =
-      0.6108 * exp((17.27 * vw_MaxAirTemperature) / (237.3 + vw_MaxAirTemperature));
+      0.6108 * cr::exp((17.27 * vw_MaxAirTemperature) / (237.3 + vw_MaxAirTemperature));
 
   // Calc. of saturated water vapour pressure at daily min temperature
   vm_SaturatedVapourPressureMin =
-      0.6108 * exp((17.27 * vw_MinAirTemperature) / (237.3 + vw_MinAirTemperature));
+      0.6108 * cr::exp((17.27 * vw_MinAirTemperature) / (237.3 + vw_MinAirTemperature));
 
   // Calculation of the saturated water vapour pressure
   vm_SaturatedVapourPressure =
@@ -1319,11 +1320,11 @@ double referenceEvapotranspiration(SoilMoisture *sm, double vs_HeightNN,
 
   // Slope of saturation water vapour pressure-to-temperature relation
   vm_SaturatedVapourPressureSlope =
-      (4098.0 * (0.6108 * exp((17.27 * vw_MeanAirTemperature) / (vw_MeanAirTemperature + 237.3)))) /
+      (4098.0 * (0.6108 * cr::exp((17.27 * vw_MeanAirTemperature) / (vw_MeanAirTemperature + 237.3)))) /
       ((vw_MeanAirTemperature + 237.3) * (vw_MeanAirTemperature + 237.3));
 
   // Calculation of wind speed in 2m height
-  vm_WindSpeed_2m = max(0.5, vw_WindSpeed * (4.87 / (log(67.8 * vw_WindSpeedHeight - 5.42))));
+  vm_WindSpeed_2m = max(0.5, vw_WindSpeed * (4.87 / (cr::log(67.8 * vw_WindSpeedHeight - 5.42))));
   // 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
 
   // Calculation of the aerodynamic resistance
@@ -1342,7 +1343,7 @@ double referenceEvapotranspiration(SoilMoisture *sm, double vs_HeightNN,
   double vc_ShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vw_GlobalRadiation;
   double vc_LongwaveRadiation =
       pc_BolzmannConstant *
-      ((pow((vw_MinAirTemperature + 273.16), 4.0) + pow((vw_MaxAirTemperature + 273.16), 4.0)) /
+      ((cr::pow((vw_MinAirTemperature + 273.16), 4.0) + cr::pow((vw_MaxAirTemperature + 273.16), 4.0)) /
        2.0) *
       (1.35 * vc_RelativeShortwaveRadiation - 0.35) * (0.34 - 0.14 * sqrt(vm_VapourPressure));
   vw_NetRadiation = vc_ShortwaveRadiation - vc_LongwaveRadiation;
@@ -1468,10 +1469,10 @@ double getDeprivationFactor(int layerNo, double deprivationDepth, double zeta,
   } else {
     double c2 = 0.0;
     double c3 = 0.0;
-    c2 = log((layerThicknessFactor + zeta * layerNo) /
+    c2 = cr::log((layerThicknessFactor + zeta * layerNo) /
              (layerThicknessFactor + zeta * (layerNo - 1)));
     c3 = zeta / (layerThicknessFactor * (zeta + 1.0));
-    deprivationFactor = (c2 - c3) / (log(zeta + 1.0) - zeta / (zeta + 1.0));
+    deprivationFactor = (c2 - c3) / (cr::log(zeta + 1.0) - zeta / (zeta + 1.0));
     return deprivationFactor;
   }
 }

@@ -38,6 +38,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "json11/json11-helper.h"
 #include "tools/algorithms.h"
 #include "tools/debug.h"
+#include "cr_math.h"
 
 using namespace monica;
 using namespace std;
@@ -942,13 +943,13 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         auto dvsPhr = monica2->cropPs.pc_intercropping_dvs_phr;
         if (cg1->vc_DevelopmentalStage < anthesisStage) {
           monica->cropPs.pc_intercropping_phRedux = monica2->cropPs.pc_intercropping_phRedux =
-              log10(cropmodule::getCurrentTotalTemperatureSum(cg1)) / dvsPhr;
+              cr::log10(cropmodule::getCurrentTotalTemperatureSum(cg1)) / dvsPhr;
         } else {
           auto tempSumAtAnthesis = cropmodule::sumStageTemperatureSums(cg1, 0, anthesisStage);
           auto totTempSum = cropmodule::sumStageTemperatureSums(cg1, 0, -1);
           monica->cropPs.pc_intercropping_phRedux = monica2->cropPs.pc_intercropping_phRedux =
-              (log10(tempSumAtAnthesis) / dvsPhr) -
-              (log10(tempSumAtAnthesis) / dvsPhr / (totTempSum - tempSumAtAnthesis) *
+              (cr::log10(tempSumAtAnthesis) / dvsPhr) -
+              (cr::log10(tempSumAtAnthesis) / dvsPhr / (totTempSum - tempSumAtAnthesis) *
                (cropmodule::getCurrentTotalTemperatureSum(cg1) - tempSumAtAnthesis));
         }
       }
