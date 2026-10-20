@@ -6,7 +6,7 @@
     "program": "$ZED_WORKTREE_ROOT/_cmake_debug_ninja/monica-run.exe",
     "args": [],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "build": "CMake Build",
+    "build": "[Windows] CMake Build",
   },
   {
     "label": "[Windows] Debug monica-zmq-server",
@@ -15,7 +15,7 @@
     "program": "$ZED_WORKTREE_ROOT/_cmake_debug_ninja/monica-zmq-server.exe",
     "args": [],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "build": "CMake Build",
+    "build": "[Windows] CMake Build",
   },
   {
     "label": "[Windows] Debug monica-capnp-server",
@@ -24,6 +24,27 @@
     "program": "$ZED_WORKTREE_ROOT/_cmake_debug_ninja/monica-capnp-server.exe",
     "args": [],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "build": "CMake Build",
+    "build": "[Windows] CMake Build",
+  },
+  // Linux: GDB from the Nix dev shell (Zed's GDB adapter needs gdb >= 14.1)
+  {
+    "label": "[Linux] Debug monica-run (Hohenfinow2 sim-min.json)",
+    "adapter": "GDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/build/monica-run",
+    "args": ["-o", "$ZED_WORKTREE_ROOT/build/sim-min-out.csv", "sim-min.json"],
+    "cwd": "$ZED_WORKTREE_ROOT/installer/Hohenfinow2",
+    "env": { "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/monica-parameters" },
+    "build": "[Linux] CMake Build",
+  },
+  {
+    "label": "[Linux] Debug monica-zmq-server",
+    "adapter": "GDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/build/monica-zmq-server",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": { "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/monica-parameters" },
+    "build": "[Linux] CMake Build",
   },
 ]

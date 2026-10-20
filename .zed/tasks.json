@@ -27,19 +27,28 @@
       "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/../monica-parameters",
     },
   },
+  // Linux: the Debug build in build/, in the Nix dev shell (flake.nix). `direnv
+  // exec .` loads it via .envrc, which also configures build/ if it isn't yet.
   {
-    "label": "[Linux] CMake Configure + Build",
-    "command": "cmake -S . -B build -G Ninja -DCMAKE_MAKE_PROGRAM='/home/berg/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja' -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE='../vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_BUILD_TYPE=Debug; cmake --build build --parallel",
+    "label": "[Linux] CMake Build",
+    "command": "direnv exec . cmake --build build",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
     "label": "[Linux] CMake Clean + Build",
-    "command": "cmake --build build --target clean; cmake --build build --parallel",
+    "command": "direnv exec . sh -c 'cmake --build build --target clean && cmake --build build'",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
   {
-    "label": "[Linux] CMake Build",
-    "command": "cmake --build build --parallel",
+    // after CMakeLists.txt or dev shell changes that confuse the existing cache
+    "label": "[Linux] CMake Reconfigure + Build",
+    "command": "direnv exec . sh -c 'cmake --fresh -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build'",
+    "cwd": "$ZED_WORKTREE_ROOT",
+  },
+  {
+    // tests/README.md; compare against another run with `pixi run compare A B`
+    "label": "[Linux] Test suites with build/monica-run",
+    "command": "direnv exec . cmake --build build --target monica-run && pixi run test --monica build/monica-run --engine linux-debug --out build/test-results",
     "cwd": "$ZED_WORKTREE_ROOT",
   },
 ]
