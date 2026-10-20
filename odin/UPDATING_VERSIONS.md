@@ -158,11 +158,10 @@ Remove an entry once the feature is ported.
 Temporarily, the converted C++ in `src/` (the transformation's intermediate,
 still a reference for open tasks) is checked the same way: the `cpp-src` job
 builds it (`nix build .#monica-cpp-src`) and `compare` checks it against the
-reference too, with its own `cpp_reference.ignore_src`. That list holds
-`hohenfinow2/sim-min-ic`: in intercropping `src/` diverges from the original
-from 1995-03-21 on (below 1%), already before cr_math - an open discrepancy of
-the transformation. The job and everything it needs are marked TEMPORARY in
-`odin.yml` and `flake.nix`; remove them once the move to Odin is complete.
+reference too, with its own `cpp_reference.ignore_src` - empty, as `src/`
+matches the original in all simulations, intercropping included. The job and
+everything it needs are marked TEMPORARY in `odin.yml` and `flake.nix`; remove
+them once the move to Odin is complete.
 
 To run the same comparison locally (Linux), from a C++ checkout at that commit:
 

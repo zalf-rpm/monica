@@ -424,25 +424,20 @@ apply_mineral_fertiliser :: proc(
 
 // C++: double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(...)
 //
-// NOTE(c++-quirk): callers of apply_possible_delayed_fertilizer below pass
-// da.vf_FertiliserMinApplication into this proc's fertiliserMaxApplication
-// parameter and da.vf_FertiliserMaxApplication into fertiliserMinApplication
-// - looks swapped by name, but it exactly undoes the same positional swap
-// this proc's own delayed-application append (further down, in
-// apply_mineral_fertiliser_via_n_min_method's caller-adjacent code) performs
-// when building a Delayed_N_Min_Application_Params from
-// (fertiliserMaxApplication, fertiliserMinApplication) in that order. Net
-// effect: correct values round-trip through the delayed-application queue:
-// the storage field *names* are misleading, but reproduced exactly since the
-// two swaps cancel out.
+// Parameter order (..., min, max, ...) and conditions as in the original C++
+// (SoilColumn::applyMineralFertiliserViaNMinMethod): below the minimum -> no
+// fertilisation; above the maximum -> apply the maximum, the rest later as
+// top dressing. The converted C++ this was ported from had min and max
+// swapped in both conditions (commit d740453), so it never fertilised less
+// than the maximum and capped everything at the minimum - fixed in both.
 apply_mineral_fertiliser_via_n_min_method :: proc(
 	sc: ^Soil_Column,
 	fertiliserPartition: p.Mineral_Fertilizer_Parameters,
 	samplingDepth: f64,
 	cropNTargetValue: f64,
 	cropNTargetValue30: f64,
-	fertiliserMaxApplication: f64,
 	fertiliserMinApplication: f64,
+	fertiliserMaxApplication: f64,
 	topDressingDelay: int,
 ) -> f64 {
 	if sc.layers[0].soil_moisture_m3 > sc.layers[0].field_capacity {
@@ -453,13 +448,8 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 				sampling_depth             = samplingDepth,
 				crop_n_target              = cropNTargetValue,
 				crop_n_target_30           = cropNTargetValue30,
-				// NOTE(c++-quirk): positions 5/6 of the C++ aggregate-init are
-				// (fertiliserMaxApplication, fertiliserMinApplication), which land
-				// on struct fields 5/6 (vf_FertiliserMinApplication,
-				// vf_FertiliserMaxApplication) - i.e. swapped relative to the field
-				// names. Reproduced exactly; see this proc's doc comment above.
-				fertilizer_min_application = fertiliserMaxApplication,
-				fertilizer_max_application = fertiliserMinApplication,
+				fertilizer_min_application = fertiliserMinApplication,
+				fertilizer_max_application = fertiliserMaxApplication,
 				top_dressing_delay         = topDressingDelay,
 			},
 		)
@@ -496,15 +486,15 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 
 	vf_FertiliserRecommendation := max(vf_FertiliserDemand, vf_FertiliserDemand30)
 
-	if vf_FertiliserRecommendation < fertiliserMaxApplication {
+	if vf_FertiliserRecommendation < fertiliserMinApplication {
 		vf_FertiliserRecommendation = 0.0
 	}
 
-	if vf_FertiliserRecommendation > fertiliserMinApplication {
-		sc.top_dressing = vf_FertiliserRecommendation - fertiliserMinApplication
+	if vf_FertiliserRecommendation > fertiliserMaxApplication {
+		sc.top_dressing = vf_FertiliserRecommendation - fertiliserMaxApplication
 		sc.top_dressing_partition = fertiliserPartition
 		sc.top_dressing_delay = topDressingDelay
-		vf_FertiliserRecommendation = fertiliserMinApplication
+		vf_FertiliserRecommendation = fertiliserMaxApplication
 	}
 
 	apply_mineral_fertiliser(sc, fertiliserPartition, vf_FertiliserRecommendation)

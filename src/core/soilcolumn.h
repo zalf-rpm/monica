@@ -286,8 +286,8 @@ double applyMineralFertiliserViaNMinMethod(SoilColumn *sc,
                                            MineralFertilizerParameters fertiliserPartition,
                                            double samplingDepth, double cropNTargetValue,
                                            double cropNTargetValue30,
-                                           double fertiliserMaxApplication,
-                                           double fertiliserMinApplication, int topDressingDelay);
+                                           double fertiliserMinApplication,
+                                           double fertiliserMaxApplication, int topDressingDelay);
 std::pair<bool, double> applyIrrigationViaTrigger(SoilColumn *sc,
                                                   const AutomaticIrrigationParameters &aips);
 void applyIrrigation(SoilColumn *sc, double amount, double nitrateConcentration);

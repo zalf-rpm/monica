@@ -292,8 +292,8 @@ monica_model_apply_mineral_fertiliser_via_n_min_method :: proc(
 		cps.samplingDepth,
 		cps.nTarget,
 		cps.nTarget30,
-		ups.max,
 		ups.min,
+		ups.max,
 		ups.delay_in_days,
 	)
 }

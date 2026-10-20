@@ -740,7 +740,7 @@ double monica::monicamodel::applyMineralFertiliserViaNMinMethod(
   auto &soilColumn = model->soilColumn;
   const NMinApplicationParameters &ups = simPs.p_NMinUserParams;
   return soilcolumn::applyMineralFertiliserViaNMinMethod(
-      soilColumn.get(), partition, cps.samplingDepth, cps.nTarget, cps.nTarget30, ups.max, ups.min,
+      soilColumn.get(), partition, cps.samplingDepth, cps.nTarget, cps.nTarget30, ups.min, ups.max,
       ups.delayInDays);
 }
 

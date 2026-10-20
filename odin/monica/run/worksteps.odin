@@ -921,7 +921,9 @@ n_demand_fertilization_apply :: proc(
 		rd < nd.depth ? rd : nd.depth,
 		nd.n_demand,
 	)
-	model.daily_sum_fertiliser += appliedAmount
+	// daily AND sum (SumNFert), as in the original C++ - the converted C++ only
+	// added to the daily value (fixed there too)
+	core.monica_model_add_daily_sum_fertiliser(model, appliedAmount)
 	nd.applied_fertilizer = true
 	// record date of application until next reinit
 	ws.date = model.current_step_date

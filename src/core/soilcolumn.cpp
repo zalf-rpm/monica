@@ -545,21 +545,21 @@ void monica::soilcolumn::applyMineralFertiliser(SoilColumn *sc, MineralFertilize
  * @param cropNTargetValue N availability required by the crop down to rooting
  * depth
  * @param cropNTargetValue30 N availability required by the crop down to 30 cm
- * @param fertiliserMaxApplication Maximal value of N that can be applied until
- * the crop will be damaged
  * @param fertiliserMinApplication Threshold value for economically reasonable
  * fertilizer application
+ * @param fertiliserMaxApplication Maximal value of N that can be applied until
+ * the crop will be damaged
  * @param topDressingDelay Number of days for which the application of surplus
  * fertilizer is delayed
  */
 double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
     SoilColumn *sc, MineralFertilizerParameters fertiliserPartition, double samplingDepth,
-    double cropNTargetValue, double cropNTargetValue30, double fertiliserMaxApplication,
-    double fertiliserMinApplication, int topDressingDelay) {
+    double cropNTargetValue, double cropNTargetValue30, double fertiliserMinApplication,
+    double fertiliserMaxApplication, int topDressingDelay) {
   if (sc->layers.at(0).vs_SoilMoisture_m3 > sc->layers.at(0).vs_FieldCapacity) {
     sc->_delayedNMinApplications.push_back({fertiliserPartition, samplingDepth, cropNTargetValue,
-                                            cropNTargetValue30, fertiliserMaxApplication,
-                                            fertiliserMinApplication, topDressingDelay});
+                                            cropNTargetValue30, fertiliserMinApplication,
+                                            fertiliserMaxApplication, topDressingDelay});
 
     debug() << "Soil too wet for fertilisation. Fertiliser event adjourned to "
                "next day."
@@ -605,20 +605,20 @@ double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(
 
   double vf_FertiliserRecommendation = max(vf_FertiliserDemand, vf_FertiliserDemand30);
 
-  if (vf_FertiliserRecommendation < fertiliserMaxApplication) {
+  if (vf_FertiliserRecommendation < fertiliserMinApplication) {
     // If the N demand of the crop is smaller than the user defined
     // minimum fertilisation then no need to fertilise
     vf_FertiliserRecommendation = 0.0;
   }
 
-  if (vf_FertiliserRecommendation > fertiliserMinApplication) {
+  if (vf_FertiliserRecommendation > fertiliserMaxApplication) {
     // If the N demand of the crop is greater than the user defined
     // maximum fertilisation then need to split so surplus fertilizer can
     // be applied after a delay time
-    sc->vf_TopDressing = vf_FertiliserRecommendation - fertiliserMinApplication;
+    sc->vf_TopDressing = vf_FertiliserRecommendation - fertiliserMaxApplication;
     sc->vf_TopDressingPartition = fertiliserPartition;
     sc->vf_TopDressingDelay = topDressingDelay;
-    vf_FertiliserRecommendation = fertiliserMinApplication;
+    vf_FertiliserRecommendation = fertiliserMaxApplication;
   }
 
   // Apply fertiliser

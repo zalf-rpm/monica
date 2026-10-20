@@ -102,7 +102,7 @@ bool workstep::apply(NDemandFertilizationData *nd, Workstep *ws, MonicaModel *mo
   debug() << workstep::to_json(nd).dump() << endl;
   double appliedAmount = soilcolumn::applyMineralFertiliserViaNDemand(
       model->soilColumn.get(), nd->partition, rd < nd->depth ? rd : nd->depth, nd->Ndemand);
-  model->dailySumFertiliser += appliedAmount;
+  monicamodel::addDailySumFertiliser(model, appliedAmount); // daily AND sum, as in the original
   nd->appliedFertilizer = true;
   // record date of application until next reinit
   ws->date = model->currentStepDate;
