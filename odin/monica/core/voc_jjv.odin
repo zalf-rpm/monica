@@ -7,6 +7,7 @@
 package core
 
 import libc "core:c/libc"
+import "../../support/cr_math"
 
 // C++: double gamma_PH(double, double, CPData)
 //
@@ -71,19 +72,19 @@ voc_jjv_gamma_EN :: proc(tempK, normTempK: f64, species: ^Voc_Species_Data) -> V
 
 	// Calculate actual bvoc emission potential from enzyme activity
 	res.en_iso =
-		libc.exp(species.CT_IS-species.HA_IS/(VOC_RGAS*tempK)) /
-		(1.0 + libc.exp((species.DS_IS*tempK-species.HD_IS)/(VOC_RGAS*tempK)))
+		cr_math.exp(species.CT_IS-species.HA_IS/(VOC_RGAS*tempK)) /
+		(1.0 + cr_math.exp((species.DS_IS*tempK-species.HD_IS)/(VOC_RGAS*tempK)))
 	res.en_mono =
-		libc.exp(species.CT_MT-species.HA_MT/(VOC_RGAS*tempK)) /
-		(1.0 + libc.exp((species.DS_MT*tempK-species.HD_MT)/(VOC_RGAS*tempK)))
+		cr_math.exp(species.CT_MT-species.HA_MT/(VOC_RGAS*tempK)) /
+		(1.0 + cr_math.exp((species.DS_MT*tempK-species.HD_MT)/(VOC_RGAS*tempK)))
 
 	// Calculate normalized bvoc emission potential from enzyme activity
 	res.ennorm_iso =
-		libc.exp(species.CT_IS-species.HA_IS/(VOC_RGAS*normTempK)) /
-		(1.0 + libc.exp((species.DS_IS*normTempK-species.HD_IS)/(VOC_RGAS*normTempK)))
+		cr_math.exp(species.CT_IS-species.HA_IS/(VOC_RGAS*normTempK)) /
+		(1.0 + cr_math.exp((species.DS_IS*normTempK-species.HD_IS)/(VOC_RGAS*normTempK)))
 	res.ennorm_mono =
-		libc.exp(species.CT_MT-species.HA_MT/(VOC_RGAS*normTempK)) /
-		(1.0 + libc.exp((species.DS_MT*normTempK-species.HD_MT)/(VOC_RGAS*normTempK)))
+		cr_math.exp(species.CT_MT-species.HA_MT/(VOC_RGAS*normTempK)) /
+		(1.0 + cr_math.exp((species.DS_MT*normTempK-species.HD_MT)/(VOC_RGAS*normTempK)))
 
 	return res
 }
@@ -109,7 +110,7 @@ voc_jjv_calc_leaf_emission :: proc(
 
 	// activity factor for Temperature (only emission from storages = light
 	// dependent fraction LDF is 0)
-	gamma_t := libc.exp(VOC_BETA * (lemi.fol.tempK - leminorm.fol.tempK))
+	gamma_t := cr_math.exp(VOC_BETA * (lemi.fol.tempK - leminorm.fol.tempK))
 
 	// Emission potential from photosynthesis (energy supply); same for
 	// isoprene and monoterpene
@@ -139,14 +140,14 @@ voc_jjv_calc_leaf_emission :: proc(
 		// Factor for temperature dependence of past days (light dependent
 		// factors, LDF), from MEGAN. Light independent factors (LIF) for
 		// isoprene = 0; for monoterpenes = gamma.t (emissions from storage)
-		EOPT_ISO = VOC_CEO_ISO * libc.exp(0.05*((lemi.fol.tempK24-297.0)+(lemi.fol.tempK240-297.0)))
-		EOPT_MONO = VOC_CEO_MONO * libc.exp(0.05*((lemi.fol.tempK24-297.0)+(lemi.fol.tempK240-297.0)))
+		EOPT_ISO = VOC_CEO_ISO * cr_math.exp(0.05*((lemi.fol.tempK24-297.0)+(lemi.fol.tempK240-297.0)))
+		EOPT_MONO = VOC_CEO_MONO * cr_math.exp(0.05*((lemi.fol.tempK24-297.0)+(lemi.fol.tempK240-297.0)))
 
 		// Factor for PPFD dependence of past days (light dependent factors,
 		// LDF), from MEGAN. We calculate explicit LIF emission for MT from
 		// storage --> no LIF/LDF coefficients needed.
 		PAR0 = 200.0*mcd.sunlitfoliagefraction24 + 50.0*(1.0-mcd.sunlitfoliagefraction24)
-		C_P = 0.0468 * libc.exp(0.0005*(lemi.pho.par24-PAR0)) * libc.pow(lemi.pho.par240, 0.6)
+		C_P = 0.0468 * cr_math.exp(0.0005*(lemi.pho.par24-PAR0)) * cr_math.pow(lemi.pho.par240, 0.6)
 	}
 
 	// "enz_act.ef_iso/mono": isoprene/monoterpene emission factor/rate

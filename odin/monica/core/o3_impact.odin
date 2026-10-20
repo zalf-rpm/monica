@@ -8,7 +8,7 @@
 // photosynthesis-FvCB/voc-guenther/voc-jjv.
 package core
 
-import libc "core:c/libc"
+import "../../support/cr_math"
 
 // C++: struct O3impact::O3_impact_params
 O3_Impact_Params :: struct {
@@ -151,7 +151,7 @@ o3_impact_leaf_senescence_reduction_Ac :: proc(
 o3_impact_water_stress_stomatal_closure :: proc(
 	upper_thr, lower_thr, Fshape, FC, WP, SWC, ET0: f64,
 ) -> f64 {
-	upper_threshold_adj := upper_thr + (0.04 * (5.0 - ET0)) * libc.log10(10.0-9.0*upper_thr)
+	upper_threshold_adj := upper_thr + (0.04 * (5.0 - ET0)) * cr_math.log10(10.0-9.0*upper_thr)
 	if upper_threshold_adj < 0 {
 		upper_threshold_adj = 0
 	} else if upper_threshold_adj > 1 {
@@ -178,7 +178,7 @@ o3_impact_water_stress_stomatal_closure :: proc(
 		Drel = (SW_depletion_f - upper_threshold_adj) / WHC_adj
 	}
 
-	return 1 - (libc.exp(Drel*Fshape) - 1.0) / (libc.exp(Fshape) - 1.0)
+	return 1 - (cr_math.exp(Drel*Fshape) - 1.0) / (cr_math.exp(Fshape) - 1.0)
 }
 
 // C++: O3_impact_out O3impact::O3_impact_hourly(O3_impact_in,

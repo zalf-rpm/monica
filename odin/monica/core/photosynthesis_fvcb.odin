@@ -24,6 +24,7 @@ package core
 
 import libc "core:c/libc"
 import tl "../../support/tools"
+import "../../support/cr_math"
 
 @(private)
 Fvcb_Model_Const :: enum {
@@ -139,13 +140,13 @@ Fvcb_Canopy_Hourly_Out :: struct {
 @(private)
 fvcb_diffuse_fraction_hourly_f :: proc(globrad, extra_terr_rad, solar_elev: f64) -> f64 {
 	glob_extra_ratio := globrad / extra_terr_rad
-	R := 0.847 - 1.61*libc.sin(solar_elev) + 1.04*libc.pow(libc.sin(solar_elev), 2)
+	R := 0.847 - 1.61*cr_math.sin(solar_elev) + 1.04*cr_math.pow(cr_math.sin(solar_elev), 2)
 	K := (1.47 - R) / 1.66
 
 	if glob_extra_ratio <= 0.22 {
 		return 1
 	} else if glob_extra_ratio <= 0.35 {
-		return 1 - 6.4*libc.pow(glob_extra_ratio-0.22, 2)
+		return 1 - 6.4*cr_math.pow(glob_extra_ratio-0.22, 2)
 	} else if glob_extra_ratio <= K {
 		return 1.47 - 1.66*glob_extra_ratio
 	} else {
@@ -163,11 +164,11 @@ fvcb_abs_sunlit_direct_f :: proc(I_dir_beam, solar_elev, LAI: f64) -> f64 {
 	} else if solar_elev == 0 {
 		kb = 1000
 	} else {
-		kb = 0.5 / libc.sin(solar_elev)
+		kb = 0.5 / cr_math.sin(solar_elev)
 	}
 
 	sigma := 0.15 // scattering coefficient
-	return I_dir_beam * (1 - sigma) * (1 - libc.exp(-kb*LAI))
+	return I_dir_beam * (1 - sigma) * (1 - cr_math.exp(-kb*LAI))
 }
 
 // diffuse radiation absorbed by sunlit leaves
@@ -182,9 +183,9 @@ fvcb_abs_sunlit_diffuse_f :: proc(I_dif, solar_elev, LAI: f64) -> f64 {
 	} else if solar_elev == 0 {
 		kb = 1000
 	} else {
-		kb = 0.5 / libc.sin(solar_elev)
+		kb = 0.5 / cr_math.sin(solar_elev)
 	}
-	return I_dif * (1 - rho_cd) * (1 - libc.exp(-(k1_d+kb)*LAI)) * k1_d / (k1_d + kb)
+	return I_dif * (1 - rho_cd) * (1 - cr_math.exp(-(k1_d+kb)*LAI)) * k1_d / (k1_d + kb)
 }
 
 // scattered beam absorbed by sunlit leaves
@@ -201,15 +202,15 @@ fvcb_abs_sunlit_scattered_f :: proc(I_dir_beam, solar_elev, LAI: f64) -> f64 {
 		kb = 1000
 		k1_b = 1000
 	} else {
-		kb = 0.5 / libc.sin(solar_elev)
-		k1_b = 0.46 / libc.sin(solar_elev)
+		kb = 0.5 / cr_math.sin(solar_elev)
+		k1_b = 0.46 / cr_math.sin(solar_elev)
 	}
 	rho_h := 0.041 // reflection coeff beam irradiance (horizontal leaves)
-	rho_cb = 1 - libc.exp(2*rho_h*kb/(1+kb))
+	rho_cb = 1 - cr_math.exp(2*rho_h*kb/(1+kb))
 	sigma = 0.15
 
-	line_1 := (1 - rho_cb) * (1 - libc.exp(-(k1_b+kb)*LAI)) * k1_b / (k1_b + kb)
-	line_2 := (1 - sigma) * (1 - libc.exp(-2*kb*LAI)) / 2
+	line_1 := (1 - rho_cb) * (1 - cr_math.exp(-(k1_b+kb)*LAI)) * k1_b / (k1_b + kb)
+	line_2 := (1 - sigma) * (1 - cr_math.exp(-2*kb*LAI)) / 2
 
 	return I_dir_beam * (line_1 - line_2)
 }
@@ -226,17 +227,17 @@ fvcb_Ic_f :: proc(I_dir_beam, I_dif, solar_elev, LAI: f64) -> f64 {
 		kb = 1000
 		k1_b = 1000
 	} else {
-		kb = 0.5 / libc.sin(solar_elev)
-		k1_b = 0.46 / libc.sin(solar_elev)
+		kb = 0.5 / cr_math.sin(solar_elev)
+		k1_b = 0.46 / cr_math.sin(solar_elev)
 	}
 
 	rho_h := 0.041
-	rho_cb := 1 - libc.exp(2*rho_h*kb/(1+kb))
+	rho_cb := 1 - cr_math.exp(2*rho_h*kb/(1+kb))
 	rho_cd := 0.036 // reflection coeff diffuse PAR
 	k1_d := 0.719 // diffuse par extinction coeff
 
-	Ic_dir := (1 - rho_cb) * I_dir_beam * (1 - libc.exp(-k1_b*LAI))
-	Ic_dif := (1 - rho_cd) * I_dif * (1 - libc.exp(-k1_d*LAI))
+	Ic_dir := (1 - rho_cb) * I_dir_beam * (1 - cr_math.exp(-k1_b*LAI))
+	Ic_dif := (1 - rho_cd) * I_dif * (1 - cr_math.exp(-k1_d*LAI))
 
 	return min(Ic_dir+Ic_dif, I_dir_beam+I_dif)
 }
@@ -269,10 +270,10 @@ fvcb_LAI_sunlit_shaded_f :: proc(LAI, solar_elev: f64) -> (LAI_sunlit: f64, LAI_
 	} else if solar_elev == 0 {
 		kb = 1000
 	} else {
-		kb = 0.5 / libc.sin(solar_elev)
+		kb = 0.5 / cr_math.sin(solar_elev)
 	}
 
-	LAI_sunlit = (1 - libc.exp(-kb*LAI)) / kb
+	LAI_sunlit = (1 - cr_math.exp(-kb*LAI)) / kb
 	return LAI_sunlit, LAI - LAI_sunlit
 }
 
@@ -280,8 +281,8 @@ fvcb_LAI_sunlit_shaded_f :: proc(LAI, solar_elev: f64) -> (LAI_sunlit: f64, LAI_
 @(private)
 fvcb_Tresp_bernacchi_f :: proc(c, deltaH, leafT: f64) -> f64 {
 	Tk := leafT + 273
-	R := 8.314472 * libc.pow(10, f64(-3)) // kJ K-1 mol-1
-	return libc.exp(c - deltaH/(R*Tk))
+	R := 8.314472 * cr_math.pow(10, f64(-3)) // kJ K-1 mol-1
+	return cr_math.exp(c - deltaH/(R*Tk))
 }
 
 // C++: double FvCB::Vcmax_bernacchi_f(double, double)
@@ -298,11 +299,11 @@ fvcb_Jmax_bernacchi_f :: proc(leafT, Jmax_25: f64) -> f64 {
 fvcb_J_bernacchi_f :: proc(Q, leafT, Jmax: f64) -> f64 {
 	alfa := 0.85 // total leaf absorbance
 	beta := 0.5 // fraction of absorbed quanta reaching PSII
-	theta_ps2 := 0.76 + 0.018*leafT - 3.7*libc.pow(10, f64(-4))*libc.pow(leafT, 2)
-	phi_ps2max := 0.352 + 0.022*leafT - 3.4*libc.pow(10, f64(-4))*libc.pow(leafT, 2)
+	theta_ps2 := 0.76 + 0.018*leafT - 3.7*cr_math.pow(10, f64(-4))*cr_math.pow(leafT, 2)
+	phi_ps2max := 0.352 + 0.022*leafT - 3.4*cr_math.pow(10, f64(-4))*cr_math.pow(leafT, 2)
 	Q2 := Q * alfa * phi_ps2max * beta
 
-	numerator := Q2 + Jmax - libc.sqrt(libc.pow(Q2+Jmax, 2)-4*theta_ps2*Q2*Jmax)
+	numerator := Q2 + Jmax - libc.sqrt(cr_math.pow(Q2+Jmax, 2)-4*theta_ps2*Q2*Jmax)
 	denominator := 2 * theta_ps2
 	return numerator / denominator
 }
@@ -342,10 +343,10 @@ fvcb_Ko_bernacchi_f :: proc(leafT: f64) -> f64 {
 
 @(private)
 fvcb_Oi_f :: proc(leafT: f64) -> f64 {
-	T1 := 1.3087 * libc.pow(10, f64(-3)) * leafT
-	T2 := 2.5603 * libc.pow(10, f64(-5)) * libc.pow(leafT, 2)
-	T3 := 2.1441 * libc.pow(10, f64(-7)) * libc.pow(leafT, 3)
-	return 210 * (4.7*libc.pow(10, f64(-2)) - T1 + T2 - T3) / (2.6934 * libc.pow(10, f64(-2)))
+	T1 := 1.3087 * cr_math.pow(10, f64(-3)) * leafT
+	T2 := 2.5603 * cr_math.pow(10, f64(-5)) * cr_math.pow(leafT, 2)
+	T3 := 2.1441 * cr_math.pow(10, f64(-7)) * cr_math.pow(leafT, 3)
+	return 210 * (4.7*cr_math.pow(10, f64(-2)) - T1 + T2 - T3) / (2.6934 * cr_math.pow(10, f64(-2)))
 }
 
 @(private)
@@ -358,7 +359,7 @@ fvcb_Gamma_bernacchi_f :: proc(leafT, Vcmax, Vomax: f64) -> f64 {
 // canopy photosynthetic capacity
 @(private)
 fvcb_canopy_ps_capacity_f :: proc(LAI, Vcmax, kn: f64) -> f64 {
-	return LAI * Vcmax * (1 - libc.exp(-kn)) / kn
+	return LAI * Vcmax * (1 - cr_math.exp(-kn)) / kn
 }
 
 @(private)
@@ -370,10 +371,10 @@ fvcb_canopy_ps_capacity_sunlit_f :: proc(LAI, solar_elev, Vcmax, kn: f64) -> f64
 	} else if solar_elev == 0 {
 		kb = 1000
 	} else {
-		kb = 0.5 / libc.sin(solar_elev)
+		kb = 0.5 / cr_math.sin(solar_elev)
 	}
 
-	return LAI * Vcmax * (1 - libc.exp(-kn-kb*LAI)) / (kn + kb*LAI)
+	return LAI * Vcmax * (1 - cr_math.exp(-kn-kb*LAI)) / (kn + kb*LAI)
 }
 
 @(private)
@@ -397,8 +398,8 @@ fvcb_gm_bernacchi_f :: proc(leafT, gm_25: f64) -> f64 {
 
 	Tk := leafT + 273.15
 
-	numerator := libc.exp(c - deltaHa/(R*Tk))
-	denominator := 1 + libc.exp((deltaS*Tk-deltaHd)/(R*Tk))
+	numerator := cr_math.exp(c - deltaHa/(R*Tk))
+	denominator := 1 + cr_math.exp((deltaS*Tk-deltaHd)/(R*Tk))
 
 	return gm_25 * numerator / denominator
 }
@@ -471,13 +472,13 @@ fvcb_calculate_lumped_coeffs :: proc(
 	lumped_coeffs.p = -(d + (x1-Rd)/gm_C3 + a*(1/gm_C3+1/gb) + (g0/gm_C3+fVPD)*c) / m
 
 	// U
-	U := (2*libc.pow(lumped_coeffs.p, 3) - 9*lumped_coeffs.p*q + 27*r) / 54
+	U := (2*cr_math.pow(lumped_coeffs.p, 3) - 9*lumped_coeffs.p*q + 27*r) / 54
 
 	// Q
-	lumped_coeffs.Q = (libc.pow(lumped_coeffs.p, 2) - 3*q) / 9
+	lumped_coeffs.Q = (cr_math.pow(lumped_coeffs.p, 2) - 3*q) / 9
 
 	// psi
-	lumped_coeffs.psi = libc.acos(U / libc.sqrt(libc.pow(lumped_coeffs.Q, 3)))
+	lumped_coeffs.psi = cr_math.acos(U / libc.sqrt(cr_math.pow(lumped_coeffs.Q, 3)))
 
 	return lumped_coeffs
 }
@@ -485,7 +486,7 @@ fvcb_calculate_lumped_coeffs :: proc(
 // Cubic equation solutions
 @(private)
 fvcb_A1_f :: proc(lc: Fvcb_Lumped_Coeffs) -> f64 {
-	return -2*libc.sqrt(lc.Q)*libc.cos(lc.psi/3) - lc.p/3
+	return -2*libc.sqrt(lc.Q)*cr_math.cos(lc.psi/3) - lc.p/3
 }
 
 // unused by FvCB_canopy_hourly_C3 (only A1_f is called) but real functions -
@@ -493,13 +494,13 @@ fvcb_A1_f :: proc(lc: Fvcb_Lumped_Coeffs) -> f64 {
 @(private)
 fvcb_A2_f :: proc(lc: Fvcb_Lumped_Coeffs) -> f64 {
 	PI :: 3.14159265358979323846
-	return -2*libc.sqrt(lc.Q)*libc.cos((lc.psi+2*PI)/3) - lc.p/3
+	return -2*libc.sqrt(lc.Q)*cr_math.cos((lc.psi+2*PI)/3) - lc.p/3
 }
 
 @(private)
 fvcb_A3_f :: proc(lc: Fvcb_Lumped_Coeffs) -> f64 {
 	PI :: 3.14159265358979323846
-	return -2*libc.sqrt(lc.Q)*libc.cos((lc.psi+4*PI)/3) - lc.p/3
+	return -2*libc.sqrt(lc.Q)*cr_math.cos((lc.psi+4*PI)/3) - lc.p/3
 }
 
 @(private)
@@ -554,8 +555,8 @@ fvcb_canopy_hourly_c3 :: proc(
 	diffuse_fraction := fvcb_diffuse_fraction_hourly_f(in_.global_rad, in_.extra_terr_rad, in_.solar_el)
 	hourly_diffuse_rad := in_.global_rad * diffuse_fraction
 	hourly_direct_rad := in_.global_rad - hourly_diffuse_rad
-	inst_diff_rad := hourly_diffuse_rad * libc.pow(10, f64(6)) / 3600.0 * 4.56 * 0.45 // umol m-2 s-1 (unit ground area)
-	inst_dir_rad := hourly_direct_rad * libc.pow(10, f64(6)) / 3600.0 * 4.56 * 0.45 // 1 W m-2 = 4.56 umol m-2 s-1; PAR = 0.45 * global radiation
+	inst_diff_rad := hourly_diffuse_rad * cr_math.pow(10, f64(6)) / 3600.0 * 4.56 * 0.45 // umol m-2 s-1 (unit ground area)
+	inst_dir_rad := hourly_direct_rad * cr_math.pow(10, f64(6)) / 3600.0 * 4.56 * 0.45 // 1 W m-2 = 4.56 umol m-2 s-1; PAR = 0.45 * global radiation
 
 	// 2. calculate Radiation absorbed by sunlit / shaded canopy
 	Ic_sun := fvcb_Ic_sun_f(inst_dir_rad, inst_diff_rad, in_.solar_el, in_.LAI) // umol m-2 s-1 (unit ground area)
@@ -610,7 +611,7 @@ fvcb_canopy_hourly_c3 :: proc(
 	out.shaded.oi = out.sunlit.oi
 	out.sunlit.comp = gamma_sun
 	out.shaded.comp = gamma_sh
-	hourly_globrad := in_.global_rad * libc.pow(10, f64(6)) / 3600.0 // W m-2
+	hourly_globrad := in_.global_rad * cr_math.pow(10, f64(6)) / 3600.0 // W m-2
 	out.sunlit.rad = hourly_globrad > 0 ? hourly_globrad*Ic_sun/(Ic_sun+Ic_sh) : 0.0
 	out.shaded.rad = hourly_globrad > 0 ? hourly_globrad*Ic_sh/(Ic_sun+Ic_sh) : 0.0
 

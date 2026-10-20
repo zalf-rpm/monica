@@ -41,6 +41,10 @@ python = ">=3.11"
 # to it automatically. On Windows pixi puts Library/bin on PATH, so
 # libzmq-mt-4_3_5.dll is found at runtime without copying it next to the .exe.
 zeromq = "4.3.5.*"
+# Build mas_cpp_misc/cr_math (tools/odinw.py ensure_cr_math) - which every
+# target links - and the Cap'n Proto shim.
+cmake = "*"
+ninja = "*"
 
 [target.linux-64.dependencies]
 # Odin shells out to `clang` to link on Linux. This also pulls in
@@ -54,6 +58,11 @@ clang = "*"
 # built against the same old, portable glibc baseline sysroot_linux-64 gives
 # the plain Odin/C binaries, instead of falling back to the system compiler.
 libstdcxx-devel_linux-64 = "*"
+
+[target.win-64.dependencies]
+# clang-cl for mas_cpp_misc/cr_math (CORE-MATH): GNU C that MSVC can't compile;
+# its CMakeLists.txt compiles it with clang-cl into MSVC-compatible objects.
+clang = "*"
 
 # Deliberately NOT depending on conda-forge's `vs2022_win-64`: its activation
 # script assumes a locally installed Visual Studio and would run on every

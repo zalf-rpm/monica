@@ -2,6 +2,8 @@
 *
 !odin
 !docker
+# CORE-MATH, built by tools/odinw.py (ensure_cr_math) from mas_cpp_misc
+!mas_cpp_misc/cr_math
 odin/.odin
 odin/.pixi
 odin/build

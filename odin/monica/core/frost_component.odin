@@ -4,6 +4,7 @@
 package core
 
 import libc "core:c/libc"
+import "../../support/cr_math"
 
 // C++: struct monica::FrostComponent
 Frost_Component :: struct {
@@ -106,7 +107,7 @@ calc_sii :: proc(mean_field_capacity: f64) -> f64 {
 
 	sii :=
 		(mean_field_capacity +
-			(1.0 + (pt_F1 * libc.pow(mean_field_capacity, pt_F2)) * mean_field_capacity)) *
+			(1.0 + (pt_F1 * cr_math.pow(mean_field_capacity, pt_F2)) * mean_field_capacity)) *
 		100.0
 	return sii
 }
@@ -118,7 +119,7 @@ calc_heat_conductivity_frozen :: proc(fc: ^Frost_Component, mean_bulk_density, s
 		((3.0 * mean_bulk_density - 1.7) * 0.001) /
 		(1.0 +
 				(11.5 - 5.0 * mean_bulk_density) *
-					libc.exp((-50.0) * libc.pow((sii / mean_bulk_density), 1.5))) *
+					cr_math.exp((-50.0) * cr_math.pow((sii / mean_bulk_density), 1.5))) *
 		86400.0 *
 		fc.time_step *
 		4.184 /
@@ -138,9 +139,9 @@ calc_heat_conductivity_unfrozen :: proc(
 		((3.0 * mean_bulk_density - 1.7) * 0.001) /
 		(1.0 +
 				(11.5 - 5.0 * mean_bulk_density) *
-					libc.exp(
+					cr_math.exp(
 						(-50.0) *
-						libc.pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5),
+						cr_math.pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5),
 					)) *
 		fc.time_step *
 		4.184 *

@@ -36,8 +36,8 @@ import clim "../../support/climate"
 import d "../../support/date"
 import p "../params"
 import "../soil"
-import libc "core:c/libc"
 import "core:slice"
+import "../../support/cr_math"
 
 // C++: struct monica::MonicaModel
 Monica_Model :: struct {
@@ -354,40 +354,40 @@ co2_for_date :: proc(year, julianDay: f64, isLeapYear: bool, rcp: p.RCP = .RCP85
 	case .RCP19:
 		co2 =
 			309.61 +
-			110.21 / (1 + libc.exp(-(0.0819 * (decimal_date - 1995.41)))) +
-			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
+			110.21 / (1 + cr_math.exp(-(0.0819 * (decimal_date - 1995.41)))) +
+			(2.5 * cr_math.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP26:
 		co2 =
 			306.23 +
-			158.52 / (1 + libc.exp(-(0.0601 * (decimal_date - 2005.77)))) +
-			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
+			158.52 / (1 + cr_math.exp(-(0.0601 * (decimal_date - 2005.77)))) +
+			(2.5 * cr_math.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP34:
 		co2 =
 			302.24 +
-			185.07 / (1 + libc.exp(-(0.0512 * (decimal_date - 2010.26)))) +
-			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
+			185.07 / (1 + cr_math.exp(-(0.0512 * (decimal_date - 2010.26)))) +
+			(2.5 * cr_math.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP45:
 		co2 =
 			292.83 +
-			348.08 / (1 + libc.exp(-(0.0349 * (decimal_date - 2036.46)))) +
-			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
+			348.08 / (1 + cr_math.exp(-(0.0349 * (decimal_date - 2036.46)))) +
+			(2.5 * cr_math.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP60:
 		co2 =
 			287.56 +
-			474.21 / (1 + libc.exp(-(0.0301 * (decimal_date - 2052.37)))) +
-			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
+			474.21 / (1 + cr_math.exp(-(0.0301 * (decimal_date - 2052.37)))) +
+			(2.5 * cr_math.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP70:
 		co2 =
 			277.25 +
-			1338.47 / (1 + libc.exp(-(0.0237 * (decimal_date - 2110.06)))) +
-			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
+			1338.47 / (1 + cr_math.exp(-(0.0237 * (decimal_date - 2110.06)))) +
+			(2.5 * cr_math.sin((decimal_date - 0.5) / 0.1592))
 	case .RCP85:
 		fallthrough
 	case:
 		co2 =
 			294.27 +
-			2361.06 / (1 + libc.exp(-(0.0287 * (decimal_date - 2120.53)))) +
-			(2.5 * libc.sin((decimal_date - 0.5) / 0.1592))
+			2361.06 / (1 + cr_math.exp(-(0.0287 * (decimal_date - 2120.53)))) +
+			(2.5 * cr_math.sin((decimal_date - 0.5) / 0.1592))
 	}
 
 	return co2
@@ -415,7 +415,7 @@ groundwater_depth_for_date :: proc(
 	mean_gw_depth_m := (max_gw_depth_m + min_gw_depth_m) / 2.0
 	gw_amplitude_m := (max_gw_depth_m - min_gw_depth_m) / 2.0
 
-	sinus := libc.sin(
+	sinus := cr_math.sin(
 		((julian_day / days * 360.0) - 90.0 - ((f64(min_gw_depth_month) * 30.0) - 15.0)) *
 		3.14159265358979 /
 		180.0,

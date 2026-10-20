@@ -10,7 +10,7 @@
 // namespace, since Odin has no nested namespaces.
 package core
 
-import libc "core:c/libc"
+import "../../support/cr_math"
 import p "../params"
 
 @(private)
@@ -54,7 +54,7 @@ nit_fpH :: proc(pHminnit, pH, pHmaxnit: f64) -> f64 {
 
 @(private)
 nit_fTgauss :: proc(t, tnitopt_gauss, scale_tnitopt: f64) -> f64 {
-	return libc.exp(-1 * libc.pow(t-tnitopt_gauss, 2) / libc.pow(scale_tnitopt, 2))
+	return cr_math.exp(-1 * cr_math.pow(t-tnitopt_gauss, 2) / cr_math.pow(scale_tnitopt, 2))
 }
 
 @(private)
@@ -108,13 +108,13 @@ denit_fNO3 :: proc(NO3, w, Kd: f64) -> f64 {
 @(private)
 denit_fT :: proc(t, tdenitopt_gauss, scale_tdenitopt: f64) -> f64 {
 	delta := t - tdenitopt_gauss
-	return libc.exp(-1 * (delta * delta) / (scale_tdenitopt * scale_tdenitopt))
+	return cr_math.exp(-1 * (delta * delta) / (scale_tdenitopt * scale_tdenitopt))
 }
 
 // water-filled pore space
 @(private)
 denit_fWFPS :: proc(wfps, wfpsc: f64) -> f64 {
-	return libc.pow((max(wfps, wfpsc)-wfpsc)/(1-wfpsc), 1.74)
+	return cr_math.pow((max(wfps, wfpsc)-wfpsc)/(1-wfpsc), 1.74)
 }
 
 // C++: double stics::vdenit(const SticsParameters&, double, double, double,

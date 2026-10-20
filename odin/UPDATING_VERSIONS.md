@@ -141,6 +141,11 @@ zeromq is the awkward one, because each path gets it from somewhere else:
   `check-pins` (the zeromq assertion) and `nix build`.
 - **`pixi.lock`** pins conda-forge, which provides the pixi path's clang,
   libstdc++ headers and the glibc-2.28 sysroot. `pixi update` moves them.
+- **`mas_cpp_misc`** (the submodule at the repo root) carries
+  `cr_math/`, the CORE-MATH sources every transcendental call goes through
+  (`CONVENTIONS.md` §1). It has no version of its own: moving the submodule
+  moves it, for this port and the C++ alike. A new function goes in on the
+  C++ side first (`mas_cpp_misc/cr_math/README.md`).
 - **`DEBIAN_VERSION`** in the `Dockerfile` sets the image's zeromq, clang,
   libstdc++ and glibc. glibc includes libm, so this one affects the numerics:
   re-run `diff_vs_cpp.sh` after changing it.

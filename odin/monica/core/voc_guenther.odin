@@ -8,6 +8,7 @@ package core
 
 import libc "core:c/libc"
 import tl "../../support/tools"
+import "../../support/cr_math"
 
 // C++: LeafEmissions calcLeafEmission(const leaf_emission_t&, double)
 //
@@ -20,13 +21,13 @@ voc_guenther_calc_leaf_emission :: proc(lemi: ^Voc_Leaf_Emission_T, _species_EF_
 	{
 		// isoprene, Guenther et al. 1999 (from Harley et al. 2004)
 		x30 := (1.0/VOC_TOPT - 1.0/(30.0+VOC_D_IN_K)) / VOC_RGAS
-		cti30 := VOC_CT2 * libc.exp(VOC_CT1*x30) / (VOC_CT2 - VOC_CT1*(1.0-libc.exp(VOC_CT2*x30)))
+		cti30 := VOC_CT2 * cr_math.exp(VOC_CT1*x30) / (VOC_CT2 - VOC_CT1*(1.0-cr_math.exp(VOC_CT2*x30)))
 
 		eopt := tl.flt_equal_zero(cti30) ? lemi.enz_act.ef_iso : (lemi.enz_act.ef_iso / cti30)
 		x := (1.0/VOC_TOPT - 1.0/lemi.fol.tempK) / VOC_RGAS
 
 		// emission scaling factor of isoprenes to temperature
-		cti := VOC_CT2 * libc.exp(VOC_CT1*x) / (VOC_CT2 - VOC_CT1*(1.0-libc.exp(VOC_CT2*x)))
+		cti := VOC_CT2 * cr_math.exp(VOC_CT1*x) / (VOC_CT2 - VOC_CT1*(1.0-cr_math.exp(VOC_CT2*x)))
 		// emission scaling factor to light
 		cl :=
 			VOC_ALPHA * VOC_CL1 * lemi.pho.par /
@@ -39,10 +40,10 @@ voc_guenther_calc_leaf_emission :: proc(lemi: ^Voc_Leaf_Emission_T, _species_EF_
 	{
 		// monoterpene, Guenther et al. (1993, 1995 (ctm), 1997 (factor 0.961,
 		// cit. in Lindfors et al. 2000))
-		ctm := libc.exp(VOC_BETA * (lemi.fol.tempK - VOC_TREF))
+		ctm := cr_math.exp(VOC_BETA * (lemi.fol.tempK - VOC_TREF))
 		cti :=
-			libc.exp(VOC_CT1*(lemi.fol.tempK-VOC_TREF)/(VOC_RGAS*VOC_TREF*lemi.fol.tempK)) /
-			(0.961 + libc.exp(VOC_CT2*(lemi.fol.tempK-VOC_TOPT)/(VOC_RGAS*VOC_TREF*lemi.fol.tempK)))
+			cr_math.exp(VOC_CT1*(lemi.fol.tempK-VOC_TREF)/(VOC_RGAS*VOC_TREF*lemi.fol.tempK)) /
+			(0.961 + cr_math.exp(VOC_CT2*(lemi.fol.tempK-VOC_TOPT)/(VOC_RGAS*VOC_TREF*lemi.fol.tempK)))
 		cl :=
 			VOC_ALPHA * VOC_CL1 * lemi.pho.par /
 			libc.sqrt(1.0 + (VOC_ALPHA*VOC_ALPHA)*(lemi.pho.par*lemi.pho.par))

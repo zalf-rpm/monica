@@ -38,6 +38,7 @@ import p "../params"
 import "../soil"
 import libc "core:c/libc"
 import "core:fmt"
+import "../../support/cr_math"
 
 STOMATA_RESISTANCE :: 100 // FAO default value [s m-1]
 
@@ -872,12 +873,12 @@ dual_kc_precomputation :: proc(
 
 	// B. Rigorous Climatic Kc_max (FAO-56 Equation 72)
 	u2 := wind_speed > 0.0 ? wind_speed : 2.0
-	eo_tmax := 0.6108 * libc.exp((17.27 * tmax) / (tmax + 237.3))
-	eo_tmin := 0.6108 * libc.exp((17.27 * tmin) / (tmin + 237.3))
+	eo_tmax := 0.6108 * cr_math.exp((17.27 * tmax) / (tmax + 237.3))
+	eo_tmin := 0.6108 * cr_math.exp((17.27 * tmin) / (tmin + 237.3))
 	rh_min := max(5.0, min(100.0, (eo_tmin / eo_tmax) * 100.0))
 	baseline := 1.2 // FAO-56 §6 default for most crops
 	h := max(0.01, sm.crop_module.crop_height) // native simulated height [m]
-	kc_max := baseline + (0.04 * (u2 - 2.0) - 0.004 * (rh_min - 45.0)) * libc.pow(h / 3.0, 0.3)
+	kc_max := baseline + (0.04 * (u2 - 2.0) - 0.004 * (rh_min - 45.0)) * cr_math.pow(h / 3.0, 0.3)
 	kc_max = max(kc_max, kcb + 0.05)
 
 	// C. few: fraction of exposed and wetted soil (FAO-56 Eq. 74)
@@ -1143,26 +1144,26 @@ reference_evapotranspiration :: proc(
 ) -> f64 {
 	pi := 3.14159265358979323
 
-	declination := -23.4 * libc.cos(2.0 * pi * ((f64(julian_day) + 10.0) / 365.0))
+	declination := -23.4 * cr_math.cos(2.0 * pi * ((f64(julian_day) + 10.0) / 365.0))
 	declination_sinus :=
-		libc.sin(declination * pi / 180.0) * libc.sin(sm.site_params.latitude * pi / 180.0)
+		cr_math.sin(declination * pi / 180.0) * cr_math.sin(sm.site_params.latitude * pi / 180.0)
 	declination_cosinus :=
-		libc.cos(declination * pi / 180.0) * libc.cos(sm.site_params.latitude * pi / 180.0)
+		cr_math.cos(declination * pi / 180.0) * cr_math.cos(sm.site_params.latitude * pi / 180.0)
 
 	arg_astro_day_length := declination_sinus / declination_cosinus
 	// The argument of asin must be in the range of -1 to 1
 	arg_astro_day_length = tl.bound(-1.0, arg_astro_day_length, 1.0)
-	astronomic_day_lenght := 12.0 * (pi + 2.0 * libc.asin(arg_astro_day_length)) / pi
+	astronomic_day_lenght := 12.0 * (pi + 2.0 * cr_math.asin(arg_astro_day_length)) / pi
 
 	arg_effective_day_length :=
-		(-libc.sin(8.0 * pi / 180.0) + declination_sinus) / declination_cosinus
+		(-cr_math.sin(8.0 * pi / 180.0) + declination_sinus) / declination_cosinus
 	arg_effective_day_length = tl.bound(-1.0, arg_effective_day_length, 1.0)
-	effective_day_lenght := 12.0 * (pi + 2.0 * libc.asin(arg_effective_day_length)) / pi
+	effective_day_lenght := 12.0 * (pi + 2.0 * cr_math.asin(arg_effective_day_length)) / pi
 
 	arg_photo_day_length :=
-		(-libc.sin(-6.0 * pi / 180.0) + declination_sinus) / declination_cosinus
+		(-cr_math.sin(-6.0 * pi / 180.0) + declination_sinus) / declination_cosinus
 	arg_photo_day_length = tl.bound(-1.0, arg_photo_day_length, 1.0)
-	photoperiodic_daylength := 12.0 * (pi + 2.0 * libc.asin(arg_photo_day_length)) / pi
+	photoperiodic_daylength := 12.0 * (pi + 2.0 * cr_math.asin(arg_photo_day_length)) / pi
 	_ = effective_day_lenght
 	_ = photoperiodic_daylength
 
@@ -1183,7 +1184,7 @@ reference_evapotranspiration :: proc(
 			0.5 *
 			1300.0 *
 			phot_act_radiation_mean *
-			libc.exp(-0.14 / (phot_act_radiation_mean / (astronomic_day_lenght * 3600.0)))
+			cr_math.exp(-0.14 / (phot_act_radiation_mean / (astronomic_day_lenght * 3600.0)))
 	}
 	// vc_OvercastDayRadiation, like vc_EffectiveDayLenght/vc_PhotoperiodicDaylength/
 	// vm_AerodynamicResistance below, is computed by the C++ but never read
@@ -1191,33 +1192,33 @@ reference_evapotranspiration :: proc(
 	overcast_day_radiation := 0.2 * clear_day_radiation
 	_ = overcast_day_radiation
 
-	sc := 24.0 * 60.0 / pi * 8.20 * (1.0 + 0.033 * libc.cos(2.0 * pi * f64(julian_day) / 365.0))
+	sc := 24.0 * 60.0 / pi * 8.20 * (1.0 + 0.033 * cr_math.cos(2.0 * pi * f64(julian_day) / 365.0))
 	arg_sha := tl.bound(
 		-1.0,
-		-libc.tan(sm.site_params.latitude * pi / 180.0) * libc.tan(declination * pi / 180.0),
+		-cr_math.tan(sm.site_params.latitude * pi / 180.0) * cr_math.tan(declination * pi / 180.0),
 		1.0,
 	)
 	// The argument of acos must be in the range of -1 to 1
-	sha := libc.acos(arg_sha)
+	sha := cr_math.acos(arg_sha)
 
 	// [J cm-2] --> [MJ m-2]
 	extraterrestrial_radiation :=
-		sc * (sha * declination_sinus + declination_cosinus * libc.sin(sha)) / 100.0
+		sc * (sha * declination_sinus + declination_cosinus * cr_math.sin(sha)) / 100.0
 
 	// Calculation of atmospheric pressure
 	atmospheric_pressure :=
-		101.3 * libc.pow(((293.0 - (0.0065 * sm.site_params.height_nn)) / 293.0), 5.26)
+		101.3 * cr_math.pow(((293.0 - (0.0065 * sm.site_params.height_nn)) / 293.0), 5.26)
 
 	// Calculation of psychrometer constant - Luftfeuchtigkeit
 	psycrometer_constant := 0.000665 * atmospheric_pressure
 
 	// Calc. of saturated water vapour pressure at daily max temperature
 	saturated_vapour_pressure_max :=
-		0.6108 * libc.exp((17.27 * max_air_temperature) / (237.3 + max_air_temperature))
+		0.6108 * cr_math.exp((17.27 * max_air_temperature) / (237.3 + max_air_temperature))
 
 	// Calc. of saturated water vapour pressure at daily min temperature
 	saturated_vapour_pressure_min :=
-		0.6108 * libc.exp((17.27 * min_air_temperature) / (237.3 + min_air_temperature))
+		0.6108 * cr_math.exp((17.27 * min_air_temperature) / (237.3 + min_air_temperature))
 
 	// Calculation of the saturated water vapour pressure
 	saturated_vapour_pressure :=
@@ -1239,12 +1240,12 @@ reference_evapotranspiration :: proc(
 	saturated_vapour_pressure_slope :=
 		(4098.0 *
 			(0.6108 *
-					libc.exp((17.27 * mean_air_temperature) / (mean_air_temperature + 237.3)))) /
+					cr_math.exp((17.27 * mean_air_temperature) / (mean_air_temperature + 237.3)))) /
 		((mean_air_temperature + 237.3) * (mean_air_temperature + 237.3))
 
 	// Calculation of wind speed in 2m height
 	// 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
-	wind_speed_2m := max(0.5, wind_speed * (4.87 / libc.log(67.8 * wind_speed_height - 5.42)))
+	wind_speed_2m := max(0.5, wind_speed * (4.87 / cr_math.log(67.8 * wind_speed_height - 5.42)))
 
 	// Calculation of the aerodynamic resistance
 	aerodynamic_resistance := 208.0 / wind_speed_2m
@@ -1261,8 +1262,8 @@ reference_evapotranspiration :: proc(
 	shortwave_radiation := (1.0 - sm.crop_mod_params.reference_albedo) * global_radiation
 	longwave_radiation :=
 		bolzmann_constant *
-		((libc.pow(min_air_temperature + 273.16, 4.0) +
-					libc.pow(max_air_temperature + 273.16, 4.0)) /
+		((cr_math.pow(min_air_temperature + 273.16, 4.0) +
+					cr_math.pow(max_air_temperature + 273.16, 4.0)) /
 				2.0) *
 		(1.35 * relative_shortwave_radiation - 0.35) *
 		(0.34 - 0.14 * libc.sqrt(vapour_pressure))
@@ -1374,12 +1375,12 @@ get_deprivation_factor :: proc(
 			(1.0 / (layer_thickness_factor * layer_thickness_factor)) * f64(2 * layer_no - 1)
 		return deprivation_factor
 	} else {
-		c2 := libc.log(
+		c2 := cr_math.log(
 			(layer_thickness_factor + zeta * f64(layer_no)) /
 			(layer_thickness_factor + zeta * f64(layer_no - 1)),
 		)
 		c3 := zeta / (layer_thickness_factor * (zeta + 1.0))
-		deprivation_factor = (c2 - c3) / (libc.log(zeta + 1.0) - zeta / (zeta + 1.0))
+		deprivation_factor = (c2 - c3) / (cr_math.log(zeta + 1.0) - zeta / (zeta + 1.0))
 		return deprivation_factor
 	}
 }

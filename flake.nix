@@ -79,6 +79,24 @@
         '';
       };
 
+      # CORE-MATH, which every transcendental call in the port goes through
+      # (odin/CONVENTIONS.md §1). mas_cpp_misc's own CMakeLists.txt, so the
+      # flags (-ffp-contract=off, FMA) are exactly the C++ build's.
+      cr-math = pkgs.clangStdenv.mkDerivation {
+        pname = "cr-math";
+        version = "mas_cpp_misc";
+        src = ./mas_cpp_misc/cr_math;
+        nativeBuildInputs = [
+          pkgs.cmake
+          pkgs.ninja
+        ];
+        cmakeFlags = [ (lib.cmakeBool "CMAKE_POSITION_INDEPENDENT_CODE" true) ];
+        # The CMake project has no install() rules.
+        installPhase = ''
+          install -Dm644 libcr_math_lib.a -t $out/lib
+        '';
+      };
+
       schemaDir = "share/monica/zalfmas_capnp_schemas";
 
       monica-odin = pkgs.clangStdenv.mkDerivation {
@@ -94,6 +112,7 @@
         buildInputs = [
           zeromq
           capnp-shim
+          cr-math
         ];
         buildPhase = ''
           runHook preBuild
@@ -108,7 +127,7 @@
         '';
         installPhase = ''
           runHook preInstall
-          install -Dm755 build/* -t $out/bin
+          install -Dm755 build/monica-* -t $out/bin
           mkdir -p $out/share/monica
           cp -r support/capnp/shim/external/mas_capnproto_schemas/zalfmas_capnp_schemas $out/${schemaDir}
           # The default schema path is relative to the exe, which doesn't hold
@@ -122,7 +141,13 @@
     in
     {
       packages.${system} = {
-        inherit odin capnproto capnp-shim monica-odin;
+        inherit
+          odin
+          capnproto
+          capnp-shim
+          cr-math
+          monica-odin
+          ;
         default = monica-odin;
       };
 

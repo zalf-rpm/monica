@@ -8,7 +8,7 @@
 package core
 
 import p "../params"
-import libc "core:c/libc"
+import "../../support/cr_math"
 
 // C++: struct monica::SnowComponent
 Snow_Component :: struct {
@@ -181,7 +181,7 @@ calc_refreeze :: proc(sc: ^Snow_Component, mean_air_temperature: f64) -> f64 {
 		if sc.liquid_water_in_snow > 0.0 {
 			refreeze =
 				sc.refreeze_p1 *
-				libc.pow(sc.refreeze_temperature - refreeze_helper, sc.refreeze_p2)
+				cr_math.pow(sc.refreeze_temperature - refreeze_helper, sc.refreeze_p2)
 		}
 		if refreeze > sc.liquid_water_in_snow {
 			refreeze = sc.liquid_water_in_snow

@@ -5,9 +5,10 @@
 # same supervisord.conf (two monica-zmq-proxy + $monica_instances
 # monica-zmq-server workers).
 #
-# Debian (glibc) rather than Alpine (musl) on purpose: the port calls the C
-# library's pow/exp/log to stay bit-identical with C++ (CONVENTIONS.md §1), and
-# musl's libm rounds differently - see Dockerfile.alpine.
+# Debian rather than Alpine: when the port still called the C library's
+# pow/exp/log, musl's libm changed the results. Since all transcendental calls
+# go through cr_math (CONVENTIONS.md §1) that no longer applies, so Alpine would
+# be an option again (git history has a Dockerfile.alpine, removed 2026-10-20).
 #
 # Build from the REPO ROOT (the context needs ../docker as well as odin/):
 #   docker build -f odin/Dockerfile -t zalfrpm/monica-odin .
@@ -46,6 +47,9 @@ RUN v=$(jq -r .capnproto.version /src/odin/versions.json) \
 COPY odin/tools/odinw.py /src/odin/tools/odinw.py
 RUN python3 /src/odin/tools/odinw.py bootstrap
 
+# CORE-MATH (mas_cpp_misc/cr_math), which every transcendental call goes
+# through; `odinw.py build` builds it into odin/build/cr_math/.
+COPY mas_cpp_misc/cr_math /src/mas_cpp_misc/cr_math
 COPY odin /src/odin
 WORKDIR /src/odin
 

@@ -1,14 +1,16 @@
 // Port of the subset of mas_cpp_misc/tools/algorithms.{h,cpp} that src/ actually
 // uses. The other ~700 lines of that file are not ported.
 //
-// Numerics note: the C++ round_to_digits computes in `long double`. On MSVC (the
-// reference build) long double == double, so f64 here is exact. See
+// Numerics note: the C++ round_to_digits computes in `double` on every platform
+// (it used `long double`, which is 80 bits with GCC on x86-64 and rounded ties
+// differently from MSVC), so f64 here matches it exactly. See
 // ../../CONVENTIONS.md §1.
 package tools
 
 import "core:math"
 import "core:strings"
 import libc "core:c/libc"
+import "../cr_math"
 
 // C++: template<typename T> T Tools::bound(T lower, T value, T upper)
 bound :: proc(lower, value, upper: $T) -> T {
@@ -34,7 +36,7 @@ round_to_digits :: proc(value: f64, digits: int) -> (f64, bool) {
 		return 0, false
 	}
 	v := value
-	factor := libc.pow(f64(10), f64(abs(digits)))
+	factor := cr_math.pow(f64(10), f64(abs(digits)))
 	if !is_finite(factor) || factor == 0 {
 		return 0, false
 	}
@@ -68,17 +70,17 @@ round :: proc(value: f64, round_to_digits_ := 0) -> f64 {
 // C++: double Tools::floor(double value, int digits, bool trailingDigits)
 floor :: proc(value: f64, digits := 0, trailing_digits := true) -> f64 {
 	if trailing_digits {
-		return math.floor(value * libc.pow(f64(10), f64(digits))) / libc.pow(f64(10), f64(digits))
+		return math.floor(value * cr_math.pow(f64(10), f64(digits))) / cr_math.pow(f64(10), f64(digits))
 	}
-	return math.floor(value / libc.pow(f64(10), f64(digits))) * libc.pow(f64(10), f64(digits))
+	return math.floor(value / cr_math.pow(f64(10), f64(digits))) * cr_math.pow(f64(10), f64(digits))
 }
 
 // C++: double Tools::ceil(double value, int digits, bool trailingDigits)
 ceil :: proc(value: f64, digits := 0, trailing_digits := true) -> f64 {
 	if trailing_digits {
-		return math.ceil(value * libc.pow(f64(10), f64(digits))) / libc.pow(f64(10), f64(digits))
+		return math.ceil(value * cr_math.pow(f64(10), f64(digits))) / cr_math.pow(f64(10), f64(digits))
 	}
-	return math.ceil(value / libc.pow(f64(10), f64(digits))) * libc.pow(f64(10), f64(digits))
+	return math.ceil(value / cr_math.pow(f64(10), f64(digits))) * cr_math.pow(f64(10), f64(digits))
 }
 
 // C++: template<typename ReturnType> ReturnType shiftDecimalPointRight(double value, uint8_t digits)
@@ -86,12 +88,12 @@ ceil :: proc(value: f64, digits := 0, trailing_digits := true) -> f64 {
 // The int specialisation. C++ double->int conversion truncates toward zero, as
 // does Odin's, so this matches.
 shift_decimal_point_right_int :: proc(value: f64, digits: u8) -> int {
-	return int(value * libc.pow(f64(10), f64(digits)))
+	return int(value * cr_math.pow(f64(10), f64(digits)))
 }
 
 // C++: template<typename ReturnType> ReturnType shiftDecimalPointLeft(double value, uint8_t digits)
 shift_decimal_point_left_int :: proc(value: f64, digits: u8) -> int {
-	return int(value / libc.pow(f64(10), f64(digits)))
+	return int(value / cr_math.pow(f64(10), f64(digits)))
 }
 
 // C++: int Tools::integerRound1stDigit(int value)
@@ -191,16 +193,16 @@ sunshine2global_radiation :: proc(
 	lat: f64,
 	as_mj_pm2_pd := true,
 ) -> f64 {
-	pi := 4.0 * libc.atan(f64(1.0))
-	dec := -23.4 * libc.cos(f64(2 * pi * f64(julian_day + 10) / 365))
-	sinld := libc.sin(f64(dec * pi / 180)) * libc.sin(f64(lat * pi / 180))
-	cosld := libc.cos(f64(dec * pi / 180)) * libc.cos(f64(lat * pi / 180))
-	dl := 12 * (pi + 2 * libc.asin(f64(sinld / cosld))) / pi
-	dle := 12 * (pi + 2 * libc.asin(f64((-libc.sin(f64(8 * pi / 180)) + sinld) / cosld))) / pi
+	pi := 4.0 * cr_math.atan(f64(1.0))
+	dec := -23.4 * cr_math.cos(f64(2 * pi * f64(julian_day + 10) / 365))
+	sinld := cr_math.sin(f64(dec * pi / 180)) * cr_math.sin(f64(lat * pi / 180))
+	cosld := cr_math.cos(f64(dec * pi / 180)) * cr_math.cos(f64(lat * pi / 180))
+	dl := 12 * (pi + 2 * cr_math.asin(f64(sinld / cosld))) / pi
+	dle := 12 * (pi + 2 * cr_math.asin(f64((-cr_math.sin(f64(8 * pi / 180)) + sinld) / cosld))) / pi
 	rdn :=
 		3600 *
 		(sinld * dl + 24 / pi * cosld * libc.sqrt(f64(1.0 - (sinld / cosld) * (sinld / cosld))))
-	drc := 1300 * rdn * libc.exp(f64(-0.14 / (rdn / (dl * 3600))))
+	drc := 1300 * rdn * cr_math.exp(f64(-0.14 / (rdn / (dl * 3600))))
 	dro := 0.2 * drc
 	dtga := sun_hours / dle * drc + (1 - sun_hours / dle) * dro
 	t := dtga / 10000.0
@@ -216,7 +218,7 @@ is_finite :: proc(v: f64) -> bool {
 // C++: double Tools::solarDeclination(int dayOfTheYear)
 solar_declination :: proc(day_of_the_year: int) -> f64 {
 	PI :: 3.14159265358979323846
-	return -0.4093 * libc.cos(2.0 * PI * (f64(day_of_the_year) + 10.0) / 365.0)
+	return -0.4093 * cr_math.cos(2.0 * PI * (f64(day_of_the_year) + 10.0) / 365.0)
 }
 
 // C++: double Tools::hourlyT(double tmin, double tmax, int h, int sunrise_h)
@@ -240,9 +242,9 @@ hourly_t :: proc(tmin, tmax: f64, h, sunrise_h: int) -> f64 {
 	}
 
 	if h < sunrise_h || h > 14 {
-		hourly_T = tavg + amp*libc.cos(PI*H_1/(10.0 + f64(sunrise_h)))
+		hourly_T = tavg + amp*cr_math.cos(PI*H_1/(10.0 + f64(sunrise_h)))
 	} else {
-		hourly_T = tavg - amp*libc.cos(PI*f64(h - sunrise_h)/(14.0 - f64(sunrise_h)))
+		hourly_T = tavg - amp*cr_math.cos(PI*f64(h - sunrise_h)/(14.0 - f64(sunrise_h)))
 	}
 
 	return hourly_T
@@ -254,13 +256,13 @@ hourly_vapor_pressure_deficit :: proc(
 	hourlyTemperature, dailyTmin, dailyTavg, dailyTmax: f64,
 ) -> f64 {
 	saturationVapourPressureHourly :=
-		0.6108 * libc.exp(17.27 * hourlyTemperature / (hourlyTemperature + 237.3))
+		0.6108 * cr_math.exp(17.27 * hourlyTemperature / (hourlyTemperature + 237.3))
 
 	dewPointTemperatureHourly :=
 		-0.0360 * dailyTavg + 0.9679*dailyTmin + 0.0072*(dailyTmax - dailyTmin) + 1.0019
 
 	actualVapourPressureHourly :=
-		0.6108 * libc.exp(17.27 * dewPointTemperatureHourly / (dewPointTemperatureHourly + 237.3))
+		0.6108 * cr_math.exp(17.27 * dewPointTemperatureHourly / (dewPointTemperatureHourly + 237.3))
 
 	return saturationVapourPressureHourly - actualVapourPressureHourly
 }
@@ -271,10 +273,10 @@ solar_elevation :: proc(hour: int, latitude: f64, dayOfTheYear: int) -> f64 {
 	lat_rad := latitude * PI / 180.0
 
 	dDecl := solar_declination(dayOfTheYear)
-	dA := libc.sin(dDecl) * libc.sin(lat_rad)
-	dB := libc.cos(dDecl) * libc.cos(lat_rad)
+	dA := cr_math.sin(dDecl) * cr_math.sin(lat_rad)
+	dB := cr_math.cos(dDecl) * cr_math.cos(lat_rad)
 	dHa := PI * (f64(hour) - 12) / 12
-	return libc.asin(dA + dB*libc.cos(dHa)) // can be -ve
+	return cr_math.asin(dA + dB*cr_math.cos(dHa)) // can be -ve
 }
 
 // C++: double Tools::hourlyRad(double globrad, double lat, int doy, int h)
@@ -283,14 +285,14 @@ hourly_rad :: proc(globrad, lat: f64, doy, h: int) -> f64 {
 	dDecl := solar_declination(doy)
 	lat_rad := lat * PI / 180.0
 
-	dA := libc.sin(dDecl) * libc.sin(lat_rad)
-	dB := libc.cos(dDecl) * libc.cos(lat_rad)
+	dA := cr_math.sin(dDecl) * cr_math.sin(lat_rad)
+	dB := cr_math.cos(dDecl) * cr_math.cos(lat_rad)
 	dAoB := dA / dB
-	dPhi := (PI * globrad / 86400.0) / (dA*libc.acos(-dAoB) + dB*libc.sqrt(1 - dAoB*dAoB))
+	dPhi := (PI * globrad / 86400.0) / (dA*cr_math.acos(-dAoB) + dB*libc.sqrt(1 - dAoB*dAoB))
 	dCoefA := -dB * dPhi
 	dCoefB := dA * dPhi
 
-	dTotrad := max((dCoefA*libc.cos(PI*f64(h)/12.0) + dCoefB) * 3600, 0.0)
+	dTotrad := max((dCoefA*cr_math.cos(PI*f64(h)/12.0) + dCoefB) * 3600, 0.0)
 
 	return dTotrad
 }

@@ -39,49 +39,55 @@ Odin's `/` and `%` on signed integers truncate toward zero, matching C/C++. `f64
 conversion truncates toward zero, matching C++. `math.round` rounds half away from zero, matching
 `std::round`.
 
-### `long double`
+### Rounding: `double`, like the C++
 
-`mas_cpp_misc/tools/algorithms.h` uses `long double` in `round_to_digits`. On MSVC (the reference
-build) `long double == double`, so `f64` is exact. On a GCC/Linux reference build it would be 80-bit
-and results could differ in the last bit — if the baseline is ever regenerated on Linux, revisit
-`tools.round`.
+`mas_cpp_misc`'s `round_to_digits` (behind `Tools::round(x, digits)`) computes in `double` on
+every platform. It used `long double`, which is 80 bits with GCC on x86-64 but 64 bits with MSVC,
+so Linux and Windows rounded ties differently (0.015 -> 0.01 vs. 0.02, seen in RelDev).
+`tools.round`'s `f64` matches it exactly.
 
-### Transcendental functions: `core:c/libc`, not `core:math`
+### Transcendental functions: `cr_math` only
 
-`core:math`'s `pow`/`log`/`log10`/`exp`/... are a pure-Odin implementation and are **not always
-bit-identical** to the C++ reference build's `<cmath>` calls (which resolve to the MSVC CRT).
-Confirmed in phase 3 (`soillayer::soilMoisturePF`, `plan-odin.md`): a `pow(pow(x, 1/m) - 1, 1/n)`
-chain diverged in the last 2 ULP against the C++ reference on a real fixture, while every other
-value in that oracle (~1,440 of them, plus the unrelated 15,978-row interpolation sweep, which
-also calls `pow`/`exp` heavily) matched exactly — so this is a real but *intermittent* risk, not a
-translation bug, and not something a differential test on a handful of inputs reliably catches.
+**Every `exp`, `log`, `log2`, `log10`, `pow`, `sin`, `cos`, `tan`, `asin`, `acos` and `atan` call
+goes through `support/cr_math`** - CORE-MATH, the same library the C++ MONICA calls (`cr::exp` ...,
+`mas_cpp_misc/cr_math`). Never `core:math`'s and never `core:c/libc`'s.
 
-**Use `core:c/libc`'s `pow`/`log`/`log10`/`exp`/`sqrt`/... instead of `core:math`'s.** They are FFI
-bindings to the platform C runtime, so on Windows they call the exact same function the C++
-reference build does, eliminating the risk entirely rather than hoping a given input doesn't hit a
-divergent case. This matters far more from phase 4 onward — `crop-module.cpp` alone is ~4,750 lines
-of agronomy arithmetic leaning on `exp`/`pow` for photosynthesis, respiration and phenology curves.
-`core:math` is still fine for the non-transcendental helpers (`math.round`, `math.floor`, `math.abs`,
-`math.PI`, comparisons, ...) — this rule is specifically about the C `<math.h>` §7.12
-trig/hyperbolic/exponential/logarithmic/power/gamma families (`pow`, `exp`/`exp2`/`expm1`, `log`/
-`log2`/`log10`/`log1p`, `sqrt`/`cbrt`/`hypot`, `sin`/`cos`/`tan`/`asin`/`acos`/`atan`/`atan2`,
-`sinh`/`cosh`/`tanh`/`asinh`/`acosh`/`atanh`, `erf`/`erfc`/`lgamma`/`tgamma`), not `round`/`floor`/
-`ceil`/`abs`-style functions.
+Why: the platform math libraries (glibc, Microsoft's UCRT) return results within about one unit
+in the last place, but for different arguments a different neighbour of the exact value - and
+`core:math` is a third, pure-Odin implementation with its own last bits. MONICA is sensitive
+enough that one last-bit difference in an `exp`/`pow` result moves harvest yields by several
+percent a few years later: C++ builds on Windows and Linux differed in 8-21% of all output values
+over 48 simulations until the switch. The same mechanism made GCC 16 builds differ from GCC 15
+(compile-time evaluation of math calls with constant arguments). CORE-MATH is *correctly
+rounded*: every call returns the double nearest to the exact result, so every platform and
+compiler gives bit-identical results. History: the port first used `core:c/libc` here, after a
+`pow(pow(x, 1/m) - 1, 1/n)` chain in `soilMoisturePF` diverged from the C++ in the last 2 ULP
+(phase 3, `plan-odin.md`) - but libc only matched the C++ on Windows, where both called the MSVC
+CRT. With `cr_math` on both sides, Odin and C++ can match on Windows and Linux.
 
-Swept the whole tree onto this rule (not just the sites a diff happened to catch): `support/tools/
-algorithms.odin` (`round_to_digits`'s `pow`, `sunshine2global_radiation`'s full trig chain),
-`support/date/date.odin` (`day_lengths`'s trig chain), `monica/soil/soil_pwp_fc_sat.odin`
-(`calcVanGenuchtenVereeckenParams`/`calcVanGenuchtenTothParams`, the two functions plan-odin.md
-checkpoint 3a deliberately left on `core:math` pending an "opportunistic swap if either is touched
-again" — this is that swap). `monica/core/soil_column.odin`'s `soilMoisturePF` was already on
-`libc.pow`/`libc.log10` from checkpoint 3a, the finding that established the rule.
+What stays: `libc.sqrt` and `libc.fabs` (IEEE 754 makes `sqrt` correctly rounded everywhere;
+`fabs` is exact), and `core:math`'s non-transcendental helpers (`math.round`, `math.floor`,
+`math.abs`, `math.PI`, ...). A function `cr_math` doesn't have yet (`atan2`, `sinh`, `exp2`, ...)
+gets added on the C++ side first (`mas_cpp_misc/cr_math/README.md`), then to
+`support/cr_math/cr_math.odin` - so both sides keep calling the same code.
 
-**Enforced, not just documented, two ways:** `bash odin/tests/check_libc_transcendentals.sh` greps
-every `*.odin` file under `odin/` for `math.<name>(` against the full §7.12 family list above and
-fails if it finds one - a quick manual check. `odin/tests/conventions_test.odin`'s
-`test_no_core_math_transcendentals` does the identical check as a real `@(test)` proc, so it runs
-automatically every time `odin test odin/tests` does (the standard command this file's own §7
-documents) instead of needing the standalone script remembered and invoked separately.
+`tools/odinw.py` builds the library from the `mas_cpp_misc` submodule into `build/cr_math/` (on
+demand in `build`/`test`, explicitly with `pixi run python tools/odinw.py cr-math`), with
+`mas_cpp_misc`'s own CMake flags: `-ffp-contract=off` and FMA instructions (`CR_MATH_FMA`, as in
+the C++ build), so the executables need an x86-64 CPU with FMA (Intel 2013+, AMD 2012+).
+
+**No FMA contraction in the port's own code.** With identical math functions, remaining
+differences can only come from code generation, e.g. LLVM fusing `a*b+c` into one rounding. Odin
+targets a generic x86-64 by default, which has no FMA instruction, so it can't; keep it that way
+(no `-microarch:native` or FMA target features for MONICA's code). FMA instructions in a binary
+must come only from `cr_math`'s objects. And keep the evaluation order of expressions identical to
+the C++ - floating-point addition and multiplication are not associative.
+
+**Enforced, not just documented:** `odin/tests/conventions_test.odin`'s
+`test_transcendentals_use_cr_math` fails on any `math.<name>(` or `libc.<name>(` (except
+`libc.sqrt`) for the C `<math.h>` §7.12 trig/hyperbolic/exponential/logarithmic/power/gamma
+families, as part of `odin test odin/tests`; `bash odin/tests/check_transcendentals.sh` is the
+same check as a quick standalone script.
 
 ## 2. Naming
 

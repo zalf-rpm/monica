@@ -18,6 +18,7 @@ import tl "../../support/tools"
 import p "../params"
 import "../soil"
 import libc "core:c/libc"
+import "../../support/cr_math"
 
 // C++: struct monica::AOM_Properties
 Aom_Properties :: struct {
@@ -171,20 +172,16 @@ soil_moisture_pf :: proc(sl: ^Soil_Layer) -> f64 {
 	if sm <= ps.thetaR {
 		matric_head = 5.0e7
 	} else {
-		// libc.pow, not core:math.pow: the C++ reference build's pow()/log10()
-		// resolve to the MSVC CRT, which is not always bit-identical to Odin's
-		// pure-Odin core:math implementation (confirmed here: this nested
-		// pow(pow(...)-1,...) chain diverged in the last 2 ULP against the
-		// reference on the Hohenfinow2 fixture, while every other of the ~1,440
-		// values in this checkpoint's oracle matched exactly). libc.pow/log10 are
-		// FFI bindings to the platform C runtime, so on Windows they call the
-		// exact same function the C++ build does. See plan-odin.md phase 3 /
-		// CONVENTIONS.md for the general rule this establishes for phases 4-6.
+		// cr_math, not core:math or libc: this nested pow(pow(...)-1,...) chain
+		// is where the port first diverged from the C++ (last 2 ULP on the
+		// Hohenfinow2 fixture, phase 3) - core:math and each platform's libm
+		// round differently. cr_math is correctly rounded, and the C++ calls
+		// the same library. See CONVENTIONS.md §1.
 		matric_head =
 			(1.0 / ps.alpha) *
-			libc.pow(libc.pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR), 1 / ps.m) - 1, 1 / ps.n)
+			cr_math.pow(cr_math.pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR), 1 / ps.m) - 1, 1 / ps.n)
 	}
-	pf := libc.log10(matric_head)
+	pf := cr_math.log10(matric_head)
 
 	// set to a "small" number when soil_moisture_m3 is close to saturation
 	// (matric_head < 1 -> log10(matric_head) < 0)

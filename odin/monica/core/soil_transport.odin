@@ -11,6 +11,7 @@ package core
 
 import p "../params"
 import libc "core:c/libc"
+import "../../support/cr_math"
 
 // C++: struct monica::SoilTransport
 Soil_Transport :: struct {
@@ -264,7 +265,7 @@ n_transport :: proc(st: ^Soil_Transport, leaching_depth_m, time_step_factor: f64
 
 		st.diffusion_coeff[i] =
 			diffusion_coeff_standard *
-			(ad * libc.exp(soil_moisture_gradient[i] * 2.0 * 5.0) / soil_moisture_gradient[i]) *
+			(ad * cr_math.exp(soil_moisture_gradient[i] * 2.0 * 5.0) / soil_moisture_gradient[i]) *
 			time_step_factor // [m2 t-1] * [t t-1]
 
 		// Dispersion coefficient, old DB

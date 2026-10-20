@@ -22,7 +22,7 @@
 package core
 
 import p "../params"
-import libc "core:c/libc"
+import "../../support/cr_math"
 
 // C++: struct monica::SoilTemperature
 Soil_Temperature :: struct {
@@ -151,7 +151,7 @@ make_soil_temperature :: proc(
 			((3.0 * (sbdi / 1000.0) - 1.7) * 0.001) /
 			(1.0 +
 					(11.5 - 5.0 * (sbdi / 1000.0)) *
-						libc.exp((-50.0) * libc.pow((smi / (sbdi / 1000.0)), 1.5))) *
+						cr_math.exp((-50.0) * cr_math.pow((smi / (sbdi / 1000.0)), 1.5))) *
 			86400.0 *
 			ts *
 			100.0 *
@@ -287,7 +287,7 @@ calc_soil_surface_temperature :: proc(
 		((soil_coverage * st.damping_factor) + ((1 - soil_coverage) * (1 - st.damping_factor)))
 
 	soil_surface_temperature :=
-		(1.0 - shading_coefficient) * (tmin + ((tmax - tmin) * libc.pow((0.03 * globrad), 0.5))) +
+		(1.0 - shading_coefficient) * (tmin + ((tmax - tmin) * cr_math.pow((0.03 * globrad), 0.5))) +
 		shading_coefficient * prev_day_soil_surface_temperature
 
 	if soil_surface_temperature < 0.0 {

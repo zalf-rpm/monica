@@ -28,6 +28,7 @@ import p "../params"
 import libc "core:c/libc"
 import "core:fmt"
 import "core:slice"
+import "../../support/cr_math"
 
 // Phase 5 checkpoint 4 adds fcCropPhotosynthesis (the largest function in
 // crop-module.cpp, ~1100 lines) plus fcGrossPrimaryProduction,
@@ -621,32 +622,32 @@ fc_radiation :: proc(cm: ^Crop_Module, julian_day, global_radiation, sunshine_ho
 	PI :: 3.14159265358979323
 
 	// Calculation of declination - old DEC
-	cm.declination = -23.4 * libc.cos(2.0 * PI * ((julian_day + 10.0) / 365.0))
+	cm.declination = -23.4 * cr_math.cos(2.0 * PI * ((julian_day + 10.0) / 365.0))
 
 	declination_sinus :=
-		libc.sin(cm.declination * PI / 180.0) * libc.sin(cm.site_params.latitude * PI / 180.0) // old SINLD
+		cr_math.sin(cm.declination * PI / 180.0) * cr_math.sin(cm.site_params.latitude * PI / 180.0) // old SINLD
 	declination_cosinus :=
-		libc.cos(cm.declination * PI / 180.0) * libc.cos(cm.site_params.latitude * PI / 180.0) // old COSLD
+		cr_math.cos(cm.declination * PI / 180.0) * cr_math.cos(cm.site_params.latitude * PI / 180.0) // old COSLD
 
 	// Calculation of the atmospheric day lenght - old DL
 	arg_astro_day_length := declination_sinus / declination_cosinus
 	arg_astro_day_length = tl.bound(-1.0, arg_astro_day_length, 1.0)
-	cm.astronomic_day_lenght = 12.0 * (PI + 2.0 * libc.asin(arg_astro_day_length)) / PI
+	cm.astronomic_day_lenght = 12.0 * (PI + 2.0 * cr_math.asin(arg_astro_day_length)) / PI
 
 	// Calculation of the effective day length - old DLE
-	edl_helper := (-libc.sin(f64(8.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
+	edl_helper := (-cr_math.sin(f64(8.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
 
 	if edl_helper < -1.0 || edl_helper > 1.0 {
 		cm.effective_day_length = 0.01
 	} else {
-		cm.effective_day_length = 12.0 * (PI + 2.0 * libc.asin(edl_helper)) / PI
+		cm.effective_day_length = 12.0 * (PI + 2.0 * cr_math.asin(edl_helper)) / PI
 	}
 
 	// old DLP
 	arg_photo_day_length :=
-		(-libc.sin(f64(-6.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
+		(-cr_math.sin(f64(-6.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
 	arg_photo_day_length = tl.bound(-1.0, arg_photo_day_length, 1.0)
-	cm.photoperiodic_daylength = 12.0 * (PI + 2.0 * libc.asin(arg_photo_day_length)) / PI
+	cm.photoperiodic_daylength = 12.0 * (PI + 2.0 * cr_math.asin(arg_photo_day_length)) / PI
 
 	// Calculation of the mean photosynthetically active radiation [J m-2] - old RDN
 	arg_phot_act := min(
@@ -665,7 +666,7 @@ fc_radiation :: proc(cm: ^Crop_Module, julian_day, global_radiation, sunshine_ho
 			0.5 *
 			1300.0 *
 			cm.phot_act_radiation_mean *
-			libc.exp(-0.14 / (cm.phot_act_radiation_mean / (cm.astronomic_day_lenght * 3600.0)))
+			cr_math.exp(-0.14 / (cm.phot_act_radiation_mean / (cm.astronomic_day_lenght * 3600.0)))
 	} else {
 		cm.clear_day_radiation = 0
 	}
@@ -680,15 +681,15 @@ fc_radiation :: proc(cm: ^Crop_Module, julian_day, global_radiation, sunshine_ho
 		60.0 /
 		PI *
 		solar_constant *
-		(1.0 + 0.033 * libc.cos(2.0 * PI * julian_day / 365.0))
+		(1.0 + 0.033 * cr_math.cos(2.0 * PI * julian_day / 365.0))
 
-	arg_solar_angle := -libc.tan(cm.site_params.latitude * PI / 180.0) * libc.tan(cm.declination * PI / 180.0)
+	arg_solar_angle := -cr_math.tan(cm.site_params.latitude * PI / 180.0) * cr_math.tan(cm.declination * PI / 180.0)
 	arg_solar_angle = tl.bound(-1.0, arg_solar_angle, 1.0)
-	sunset_solar_angle := libc.acos(arg_solar_angle)
+	sunset_solar_angle := cr_math.acos(arg_solar_angle)
 	cm.extraterrestrial_radiation =
 		sc *
 		(sunset_solar_angle * declination_sinus +
-				declination_cosinus * libc.sin(sunset_solar_angle)) // [MJ m-2]
+				declination_cosinus * cr_math.sin(sunset_solar_angle)) // [MJ m-2]
 
 	if global_radiation > 0.0 {
 		cm.global_radiation = global_radiation
@@ -852,13 +853,13 @@ wang_engel_temperature_response :: proc(t, tmin, topt, tmax, betacoeff: f64) -> 
 		return 0.0
 	}
 
-	alfa := libc.log(f64(2.0)) / libc.log((tmax - tmin) / (topt - tmin))
+	alfa := cr_math.log(f64(2.0)) / cr_math.log((tmax - tmin) / (topt - tmin))
 	numerator :=
-		2 * libc.pow(t - tmin, alfa) * libc.pow(topt - tmin, alfa) - libc.pow(t - tmin, 2 * alfa)
-	denominator := libc.pow(topt - tmin, 2 * alfa)
+		2 * cr_math.pow(t - tmin, alfa) * cr_math.pow(topt - tmin, alfa) - cr_math.pow(t - tmin, 2 * alfa)
+	denominator := cr_math.pow(topt - tmin, 2 * alfa)
 
 	// MP: beta coefficient should be 2*alfa
-	return libc.pow(numerator / denominator, betacoeff)
+	return cr_math.pow(numerator / denominator, betacoeff)
 }
 
 // C++: void monica::cropmodule::fcCropDevelopmentalStage(CropModule*, double
@@ -1089,7 +1090,7 @@ fc_crop_size :: proc(cm: ^Crop_Module, max_crop_height: f64) {
 		cm.crop_height =
 			max_crop_height /
 			(1.0 +
-					libc.exp(
+					cr_math.exp(
 						-cm.crop_params.cultivar_params.crop_height_p1 *
 						(relative_total_development_for_height -
 								cm.crop_params.cultivar_params.crop_height_p2),
@@ -1132,20 +1133,20 @@ fc_crop_green_area :: proc(
 		if cm.developmental_stage + 1 <= cm.crop_params.species_params.transition_stage_leaf_exp {
 			// Early stages leaf expansion T response
 			reference_temp_response_expansion :=
-				223.9 * libc.exp(-5.03 * libc.exp(-0.0653 * cm.crop_params.cultivar_params.early_ref_leaf_exp))
+				223.9 * cr_math.exp(-5.03 * cr_math.exp(-0.0653 * cm.crop_params.cultivar_params.early_ref_leaf_exp))
 			temp_response_expansion = min(
 				223.9 *
-				libc.exp(-5.03 * libc.exp(-0.0653 * mean_air_temperature)) /
+				cr_math.exp(-5.03 * cr_math.exp(-0.0653 * mean_air_temperature)) /
 				reference_temp_response_expansion,
 				1.3,
 			)
 		} else {
 			// leaf expansion T response
 			reference_temp_response_expansion :=
-				37.7 * libc.exp(-7.23 * libc.exp(-0.1462 * cm.crop_params.cultivar_params.ref_leaf_exp))
+				37.7 * cr_math.exp(-7.23 * cr_math.exp(-0.1462 * cm.crop_params.cultivar_params.ref_leaf_exp))
 			temp_response_expansion = min(
 				37.7 *
-				libc.exp(-7.23 * libc.exp(-0.1462 * mean_air_temperature)) /
+				cr_math.exp(-7.23 * cr_math.exp(-0.1462 * mean_air_temperature)) /
 				reference_temp_response_expansion,
 				1.3,
 			)
@@ -1172,7 +1173,7 @@ fc_crop_green_area :: proc(
 
 // C++: double monica::cropmodule::fcSoilCoverage(const CropModule*)
 fc_soil_coverage :: proc(cm: ^Crop_Module) -> f64 {
-	return 1.0 - libc.exp(-0.5 * cm.leaf_area_index)
+	return 1.0 - cr_math.exp(-0.5 * cm.leaf_area_index)
 }
 
 // C++: void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule*)
@@ -1327,8 +1328,8 @@ fc_crop_photosynthesis :: proc(
 			temp_k := mean_air_temperature + D_IN_K
 			term1 := (temp_k - TK25) / (TK25 * temp_k * RGAS)
 			term2 := libc.sqrt(temp_k / TK25)
-			cm.k_tkc = libc.exp(species_ps.aekc * term1) * term2
-			cm.k_tko = libc.exp(species_ps.aeko * term1) * term2
+			cm.k_tkc = cr_math.exp(species_ps.aekc * term1) * term2
+			cm.k_tko = cr_math.exp(species_ps.aeko * term1) * term2
 			mkc := species_ps.kc25 * cm.k_tkc // [umol mol-1]
 			cm.crop_photosynthesis_results.kc = mkc
 			mko := species_ps.ko25 * cm.k_tko // [mmol mol-1]
@@ -1348,7 +1349,7 @@ fc_crop_photosynthesis :: proc(
 					),
 				)
 			} else {
-				k_tvmax = libc.exp(species_ps.aevc * term1) * term2
+				k_tvmax = cr_math.exp(species_ps.aevc * term1) * term2
 			}
 
 			// Berechnung des Transformationsfaktors fuer pflanzenspez. AMAX bei
@@ -1492,9 +1493,9 @@ fc_crop_photosynthesis :: proc(
 	net_radiation_use_efficiency_reference :=
 		(1.0 - crop_ps.canopy_reflection_coefficient) * radiation_use_efficiency_reference
 
-	sslae := libc.sin((90.0 + cm.declination - latitude) * PI / 180.0) // = HERMES
+	sslae := cr_math.sin((90.0 + cm.declination - latitude) * PI / 180.0) // = HERMES
 
-	x := libc.log(
+	x := cr_math.log(
 		1.0 +
 		0.45 *
 			cm.clear_day_radiation /
@@ -1502,7 +1503,7 @@ fc_crop_photosynthesis :: proc(
 			net_radiation_use_efficiency /
 			(sslae * cm.assimilation_rate),
 	) // = HERMES
-	x_reference := libc.log(
+	x_reference := cr_math.log(
 		1.0 +
 		0.45 *
 			cm.clear_day_radiation /
@@ -1519,7 +1520,7 @@ fc_crop_photosynthesis :: proc(
 		x_reference /
 		(1.0 + x_reference)
 
-	y := libc.log(
+	y := cr_math.log(
 		1.0 +
 		0.55 *
 			cm.clear_day_radiation /
@@ -1527,7 +1528,7 @@ fc_crop_photosynthesis :: proc(
 			net_radiation_use_efficiency /
 			((5.0 - sslae) * cm.assimilation_rate),
 	) // = HERMES
-	y_reference := libc.log(
+	y_reference := cr_math.log(
 		1.0 +
 		0.55 *
 			cm.clear_day_radiation /
@@ -1567,22 +1568,22 @@ fc_crop_photosynthesis :: proc(
 	// function comment above) - only ever invoked with F_t1/leaf_area_index.
 	lai := cm.leaf_area_index
 	fraction_of_intercepted_radiation :=
-		1.0 - libc.exp(-cultivar_ps.light_extinction_coefficient * lai)
+		1.0 - cr_math.exp(-cultivar_ps.light_extinction_coefficient * lai)
 
 	phc3 := phch * fraction_of_intercepted_radiation
 	phc3_reference :=
 		phch_reference *
-		(1.0 - libc.exp(-cultivar_ps.light_extinction_coefficient * crop_ps.reference_leaf_area_index))
+		(1.0 - cr_math.exp(-cultivar_ps.light_extinction_coefficient * crop_ps.reference_leaf_area_index))
 
 	phc4 := cm.astronomic_day_lenght * lai * cm.assimilation_rate
 	phc4_reference :=
 		cm.astronomic_day_lenght * crop_ps.reference_leaf_area_index * assimilation_rate_reference
 
 	phcl :=
-		phc3 < phc4 ? phc3 * (1.0 - libc.exp(-phc4 / phc3)) : phc4 * (1.0 - libc.exp(-phc3 / phc4))
+		phc3 < phc4 ? phc3 * (1.0 - cr_math.exp(-phc4 / phc3)) : phc4 * (1.0 - cr_math.exp(-phc3 / phc4))
 
 	phcl_reference :=
-		phc3_reference < phc4_reference ? phc3_reference * (1.0 - libc.exp(-phc4_reference / phc3_reference)) : phc4_reference * (1.0 - libc.exp(-phc3_reference / phc4_reference))
+		phc3_reference < phc4_reference ? phc3_reference * (1.0 - cr_math.exp(-phc4_reference / phc3_reference)) : phc4_reference * (1.0 - cr_math.exp(-phc3_reference / phc4_reference))
 
 	z :=
 		cm.overcast_day_radiation /
@@ -1595,13 +1596,13 @@ fc_crop_photosynthesis :: proc(
 	pho3 := phoh * fraction_of_intercepted_radiation
 	pho3_reference :=
 		phoh *
-		(1.0 - libc.exp(-cultivar_ps.light_extinction_coefficient * crop_ps.reference_leaf_area_index))
+		(1.0 - cr_math.exp(-cultivar_ps.light_extinction_coefficient * crop_ps.reference_leaf_area_index))
 
 	phol :=
-		pho3 < phc4 ? pho3 * (1.0 - libc.exp(-phc4 / pho3)) : phc4 * (1.0 - libc.exp(-pho3 / phc4))
+		pho3 < phc4 ? pho3 * (1.0 - cr_math.exp(-phc4 / pho3)) : phc4 * (1.0 - cr_math.exp(-pho3 / phc4))
 
 	phol_reference :=
-		pho3_reference < phc4_reference ? pho3_reference * (1.0 - libc.exp(-phc4_reference / pho3_reference)) : phc4_reference * (1.0 - libc.exp(-pho3_reference / phc4_reference))
+		pho3_reference < phc4_reference ? pho3_reference * (1.0 - cr_math.exp(-phc4_reference / pho3_reference)) : phc4_reference * (1.0 - cr_math.exp(-pho3_reference / phc4_reference))
 
 	clear_day_co2_assimilation := lai < 5.0 ? phcl : phch // [J m-2]
 	overcast_day_co2_assimilation := lai < 5.0 ? phol : phoh // [J m-2]
@@ -1893,7 +1894,7 @@ fc_crop_photosynthesis :: proc(
 
 	photo_maintenance_respiration :=
 		maintenance_respiration_sum *
-		libc.pow(
+		cr_math.pow(
 			2.0,
 			(crop_ps.maintenance_respiration_parameter1 *
 				(photo_temperature - crop_ps.maintenance_respiration_parameter2)),
@@ -1902,7 +1903,7 @@ fc_crop_photosynthesis :: proc(
 
 	dark_maintenance_respiration :=
 		maintenance_respiration_sum *
-		libc.pow(
+		cr_math.pow(
 			2.0,
 			(crop_ps.maintenance_respiration_parameter1 *
 				(night_temperature - crop_ps.maintenance_respiration_parameter2)),
@@ -1927,7 +1928,7 @@ fc_crop_photosynthesis :: proc(
 	if cm.assimilates > 0.0 {
 		photo_growth_respiration =
 			growth_respiration_sum *
-			libc.pow(
+			cr_math.pow(
 				2.0,
 				(crop_ps.growth_respiration_parameter1 *
 					(photo_temperature - crop_ps.growth_respiration_parameter2)),
@@ -1950,7 +1951,7 @@ fc_crop_photosynthesis :: proc(
 	if cm.assimilates > 0.0 {
 		dark_growth_respiration =
 			growth_respiration_sum *
-			libc.pow(
+			cr_math.pow(
 				2.0,
 				(crop_ps.growth_respiration_parameter1 *
 					(photo_temperature - crop_ps.growth_respiration_parameter2)),
@@ -1974,7 +1975,7 @@ fc_crop_photosynthesis :: proc(
 	// ---------------------------------------------------------------------
 
 	// old TEFF
-	maintenance_temperature_dependency := libc.pow(2.0, (0.1 * mean_air_temperature - 2.5))
+	maintenance_temperature_dependency := cr_math.pow(2.0, (0.1 * mean_air_temperature - 2.5))
 
 	// old MAINTS
 	maintenance_respiration := 0.0
@@ -2098,13 +2099,13 @@ fc_heat_stress_impact :: proc(cm: ^Crop_Module, max_air_temperature, min_air_tem
 		// (3-4), 679-701.
 		fraction_open_flowers =
 			1.0 /
-			(1.0 + ((1.0 / 0.015) - 1.0) * libc.exp(-1.4 * f64(cm.days_after_begin_flowering)))
+			(1.0 + ((1.0 / 0.015) - 1.0) * cr_math.exp(-1.4 * f64(cm.days_after_begin_flowering)))
 		if cm.days_after_begin_flowering > 0 {
 			yesterdays_fraction_open_flowers =
 				1.0 /
 				(1.0 +
 						((1.0 / 0.015) - 1.0) *
-							libc.exp(-1.4 * f64(cm.days_after_begin_flowering - 1)))
+							cr_math.exp(-1.4 * f64(cm.days_after_begin_flowering - 1)))
 		} else {
 			yesterdays_fraction_open_flowers = 0.0
 		}
@@ -2158,25 +2159,25 @@ fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64) {
 
 	frost_dehardening := 0.0
 	double_ridge_counter := cm.current_temperature_sum[1] / cultivar_ps.stage_temperature_sum[1]
-	vrt_factor := 1.0 / (1.0 + libc.exp(80.0 * (double_ridge_counter - 0.9)))
+	vrt_factor := 1.0 / (1.0 + cr_math.exp(80.0 * (double_ridge_counter - 0.9)))
 	if (double_ridge_counter < 1.0 && crown_temperature >= threshold_induction_temperature) ||
 	   double_ridge_counter >= 1.0 {
 		frost_dehardening =
-			cultivar_ps.frost_dehardening / (1.0 + libc.exp(4.35 - 0.28 * crown_temperature))
+			cultivar_ps.frost_dehardening / (1.0 + cr_math.exp(4.35 - 0.28 * crown_temperature))
 	} else if double_ridge_counter < 1.0 &&
 	   -4.0 <= crown_temperature &&
 	   crown_temperature < threshold_induction_temperature {
 		frost_dehardening =
 			(1.0 - vrt_factor) *
 			cultivar_ps.frost_dehardening /
-			(1.0 + libc.exp(4.35 - 0.28 * crown_temperature))
+			(1.0 + cr_math.exp(4.35 - 0.28 * crown_temperature))
 	}
 
 	snow_depth_factor := 1.0
 	if soil_column.snow_depth_mm <= 125.0 {
 		snow_depth_factor = soil_column.snow_depth_mm / 125.0
 	}
-	respiration_factor := (libc.exp(0.84 + 0.051 * crown_temperature) - 2.0) / 1.85
+	respiration_factor := (cr_math.exp(0.84 + 0.051 * crown_temperature) - 2.0) / 1.85
 	respiratory_stress := cultivar_ps.respiratory_stress * respiration_factor * snow_depth_factor
 
 	cm.lt50 = lt50_old - frost_hardening + frost_dehardening + respiratory_stress
@@ -2225,7 +2226,7 @@ fc_crop_nitrogen :: proc(cm: ^Crop_Module) {
 		species_ps.n_concentration_pn *
 		(1.0 +
 				(species_ps.n_concentration_b0 *
-						libc.exp(
+						cr_math.exp(
 							-0.26 * (cm.aboveground_biomass + cm.belowground_biomass) / 1000.0,
 						))) /
 		100.0 // [kg ha-1 -> t ha-1]
@@ -2255,7 +2256,7 @@ fc_crop_nitrogen :: proc(cm: ^Crop_Module) {
 
 			// New Monica approach
 			cm.crop_n_redux =
-				1.0 - libc.exp(species_ps.minimum_n_concentration - (5.0 * crop_n_redux_helper))
+				1.0 - cr_math.exp(species_ps.minimum_n_concentration - (5.0 * crop_n_redux_helper))
 		}
 	} else {
 		cm.crop_n_redux = 1.0
@@ -2281,7 +2282,7 @@ calc_root_density_factor_and_sum :: proc(
 	root_density_factor := make([dynamic]f64, nols, allocator)
 	for i_layer := 0; i_layer < nols; i_layer += 1 {
 		if i_layer < cm.rooting_depth {
-			root_density_factor[i_layer] = libc.exp(
+			root_density_factor[i_layer] = cr_math.exp(
 				-cm.crop_params.species_params.root_form_factor * (f64(i_layer) * layer_thickness),
 			)
 		} else if i_layer < cm.rooting_zone {
@@ -2292,7 +2293,7 @@ calc_root_density_factor_and_sum :: proc(
 			// about it first"). Reproduced exactly: the division below is int/int.
 			int_div := (i_layer - cm.rooting_depth) / (cm.rooting_zone - cm.rooting_depth)
 			root_density_factor[i_layer] =
-				libc.exp(
+				cr_math.exp(
 					-cm.crop_params.species_params.root_form_factor *
 					(f64(i_layer) * layer_thickness),
 				) *
@@ -2773,16 +2774,16 @@ fc_reference_evapotranspiration :: proc(
 
 	// Calculation of atmospheric pressure
 	atmospheric_pressure :=
-		101.3 * libc.pow((293.0 - (0.0065 * cm.site_params.height_nn)) / 293.0, 5.26)
+		101.3 * cr_math.pow((293.0 - (0.0065 * cm.site_params.height_nn)) / 293.0, 5.26)
 
 	// Calculation of psychrometer constant
 	psycrometer_constant := 0.000665 * atmospheric_pressure
 
 	// Calc. of saturated water vapour pressure at daily max/min temperature
 	saturated_vapour_pressure_max :=
-		0.6108 * libc.exp((17.27 * max_air_temperature) / (237.3 + max_air_temperature))
+		0.6108 * cr_math.exp((17.27 * max_air_temperature) / (237.3 + max_air_temperature))
 	saturated_vapour_pressure_min :=
-		0.6108 * libc.exp((17.27 * min_air_temperature) / (237.3 + min_air_temperature))
+		0.6108 * cr_math.exp((17.27 * min_air_temperature) / (237.3 + min_air_temperature))
 
 	saturated_vapour_pressure :=
 		(saturated_vapour_pressure_max + saturated_vapour_pressure_min) / 2.0
@@ -2801,11 +2802,11 @@ fc_reference_evapotranspiration :: proc(
 	saturated_vapour_pressure_slope :=
 		(4098.0 *
 			(0.6108 *
-					libc.exp((17.27 * mean_air_temperature) / (mean_air_temperature + 237.3)))) /
+					cr_math.exp((17.27 * mean_air_temperature) / (mean_air_temperature + 237.3)))) /
 		((mean_air_temperature + 237.3) * (mean_air_temperature + 237.3))
 
 	// 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
-	wind_speed_2m := max(0.5, wind_speed * (4.87 / libc.log(67.8 * wind_speed_height - 5.42)))
+	wind_speed_2m := max(0.5, wind_speed * (4.87 / cr_math.log(67.8 * wind_speed_height - 5.42)))
 
 	aerodynamic_resistance := 208.0 / wind_speed_2m
 
@@ -2841,8 +2842,8 @@ fc_reference_evapotranspiration :: proc(
 	net_radiation :=
 		net_shortwave_radiation -
 		(BOLZMAN_CONSTANT *
-				(libc.pow(min_air_temperature + 273.16, 4.0) +
-						libc.pow(max_air_temperature + 273.16, 4.0)) /
+				(cr_math.pow(min_air_temperature + 273.16, 4.0) +
+						cr_math.pow(max_air_temperature + 273.16, 4.0)) /
 				2.0 *
 				(1.35 * relative_shortwave_radiation - 0.35) *
 				(0.34 - 0.14 * libc.sqrt(vapour_pressure)))
@@ -3171,7 +3172,7 @@ fc_crop_n_uptake :: proc(
 
 			diffusion_coeff[i_layer] =
 				0.000214 *
-				(tortuosity * libc.exp(soil_column.layers[i_layer].soil_moisture_m3 * 10)) /
+				(tortuosity * cr_math.exp(soil_column.layers[i_layer].soil_moisture_m3 * 10)) /
 				soil_column.layers[i_layer].soil_moisture_m3 // [m2 d-1]
 
 			// ([m2 d-1] * [m3 m-3] * [m] * ([kg m-3])=[m3 m-3])=[m m-3] -> [kg m-2]

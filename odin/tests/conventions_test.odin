@@ -4,26 +4,23 @@ import "core:os"
 import "core:strings"
 import "core:testing"
 
-// Guard for CONVENTIONS.md §1 "Transcendental functions: core:c/libc, not
-// core:math": core:math's pow/exp/log/trig/... are a pure-Odin
-// implementation and are not always bit-identical to the C++ reference
-// build's <cmath> calls (MSVC CRT) - confirmed once already in phase 3
-// (soillayer::soilMoisturePF) as a last-2-ULP divergence a differential
-// test on finitely many inputs didn't catch.
+// Guard for CONVENTIONS.md §1 "Transcendental functions: cr_math only":
+// every exp/log/pow/trig/... call goes through support/cr_math (CORE-MATH,
+// correctly rounded), never through core:math (a pure-Odin implementation)
+// or core:c/libc (the platform's libm - glibc and Microsoft's UCRT round
+// differently in the last bit, and MONICA amplifies a single last-bit
+// difference into percent-level yield differences after a few years).
 //
-// odin/tests/check_libc_transcendentals.sh already checks this same rule,
-// but as a standalone script it needs a second, easy-to-forget invocation
-// alongside `odin test odin/tests`. This wires the identical check into the
-// test suite itself, so it's enforced every time that one documented
-// command runs instead of only when someone remembers the script exists.
+// odin/tests/check_transcendentals.sh checks the same rule as a standalone
+// script; this wires it into `odin test odin/tests`, so it runs every time.
 //
 // Walks every *.odin file under odin/ (relative to CWD - `odin test
-// odin/tests` is meant to run from the repo root, same assumption every
-// odin/tests/cpp_ref/run_*.sh script already makes) and fails if any calls
-// a C <math.h> §7.12 trig/hyperbolic/exponential/logarithmic/power/gamma
-// function through core:math. core:math is still fine - and not flagged -
-// for round/floor/ceil/abs/is_nan/is_inf/comparisons/PI/etc, since those
-// aren't FFI-risk transcendentals.
+// odin/tests` runs from the repo root, see tools/odinw.py) and fails on any
+// `math.<name>(` or `libc.<name>(` for a C <math.h> §7.12 trig/hyperbolic/
+// exponential/logarithmic/power/gamma function. Not flagged: core:math's
+// round/floor/ceil/abs/PI/..., and libc.sqrt (IEEE 754 requires sqrt to be
+// correctly rounded, so every libm agrees). A name matches only as a whole
+// identifier, so a cr_math call is not mistaken for core:math's.
 //
 // Hidden directories are not descended into: only this port's own sources are
 // in scope. odin/pixi.toml's build setup puts the bootstrapped Odin compiler in
@@ -31,7 +28,7 @@ import "core:testing"
 // library legitimately calls math.atanh/math.pow/... - 1568 false positives
 // before this was skipped.
 @(test)
-test_no_core_math_transcendentals :: proc(t: ^testing.T) {
+test_transcendentals_use_cr_math :: proc(t: ^testing.T) {
 	names := []string {
 		"pow",
 		"exp",
@@ -92,23 +89,35 @@ test_no_core_math_transcendentals :: proc(t: ^testing.T) {
 		}
 		content := string(data)
 
-		for name in names {
-			needle := strings.concatenate({"math.", name, "("}, context.temp_allocator)
-			search := content
-			for {
-				rel := strings.index(search, needle)
-				if rel == -1 {
-					break
+		for pkg in ([]string{"math", "libc"}) {
+			for name in names {
+				if pkg == "libc" && name == "sqrt" {
+					continue
 				}
-				testing.expectf(
-					t,
-					false,
-					"%s: stray core:math transcendental `%s` - use core:c/libc instead (CONVENTIONS.md §1)",
-					info.fullpath,
-					needle,
-				)
-				violations += 1
-				search = search[rel + len(needle):]
+				needle := strings.concatenate({pkg, ".", name, "("}, context.temp_allocator)
+				search := content
+				offset := 0
+				for {
+					rel := strings.index(search, needle)
+					if rel == -1 {
+						break
+					}
+					at := offset + rel
+					// whole identifier only: not the tail of e.g. cr_math.pow(
+					if at == 0 || !is_ident_byte(content[at - 1]) {
+						testing.expectf(
+							t,
+							false,
+							"%s: `%s` - use cr_math.%s instead (CONVENTIONS.md §1)",
+							info.fullpath,
+							needle,
+							name,
+						)
+						violations += 1
+					}
+					search = search[rel + len(needle):]
+					offset = at + len(needle)
+				}
 			}
 		}
 	}
@@ -118,4 +127,9 @@ test_no_core_math_transcendentals :: proc(t: ^testing.T) {
 	}
 
 	testing.expect_value(t, violations, 0)
+}
+
+@(private = "file")
+is_ident_byte :: proc(c: u8) -> bool {
+	return c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
 }

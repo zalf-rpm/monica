@@ -84,6 +84,8 @@ MSVC_DIR = ROOT / "msvc"                           # portable-msvc output
 DOWNLOADS_DIR = ROOT / "downloads"                 # portable-msvc scratch/cache
 SHIM_DIR = ROOT / "support" / "capnp" / "shim_dynamic"  # Cap'n Proto C++ shim (submodule)
 VCPKG_MANIFEST_DIR = BUILD_DIR / "vcpkg-manifest"        # generated, see _write_vcpkg_manifest
+CR_MATH_SRC = REPO / "mas_cpp_misc" / "cr_math"           # CORE-MATH (submodule), see ensure_cr_math
+CR_MATH_DIR = BUILD_DIR / "cr_math"                       # where support/cr_math imports it from
 
 IS_WINDOWS = sys.platform == "win32"
 ODIN_EXE = DIST_DIR / ("odin.exe" if IS_WINDOWS else "odin")
@@ -418,8 +420,81 @@ def _capnp_shim_artifacts() -> dict:
     }
 
 
+def _cr_math_artifact() -> Path:
+    """Where support/cr_math/cr_math.odin's foreign import expects the library."""
+    return CR_MATH_DIR / ("cr_math_lib.lib" if IS_WINDOWS else "libcr_math_lib.a")
+
+
+def _cr_math_linker_flags() -> list[str]:
+    """support/cr_math imports the library as "system:cr_math_lib" off Windows:
+    a path import becomes `-l:/abs/path.a`, which not every GNU ld accepts
+    (nixpkgs' binutils doesn't). So the linker needs its directory."""
+    return [] if IS_WINDOWS else [f"-L{CR_MATH_DIR.resolve()}"]
+
+
+def ensure_cr_math(force: bool = False) -> None:
+    """Build mas_cpp_misc/cr_math (CORE-MATH) into build/cr_math/, unless it is
+    already there and newer than its sources.
+
+    Every Odin target links it - all transcendental functions go through it
+    (CONVENTIONS.md §1) - so `build` and `test` call this; unlike the Cap'n
+    Proto shim it is small and needs no vcpkg. It uses mas_cpp_misc's own
+    CMakeLists.txt, so the flags (-ffp-contract=off, CR_MATH_FMA) are exactly
+    the C++ build's. On Linux it is compiled with the same conda clang +
+    glibc-2.28 sysroot Odin links with (see _capnp_shim_toolchain for why
+    that matters); on Windows in the MSVC environment Odin links in, where
+    that CMakeLists.txt switches to clang-cl by itself (pixi supplies clang).
+    """
+    artifact = _cr_math_artifact()
+    if not (CR_MATH_SRC / "CMakeLists.txt").is_file():
+        die(
+            f"{CR_MATH_SRC} not found - cr_math comes with the mas_cpp_misc submodule.\n"
+            "  Run: git submodule update --init --recursive"
+        )
+    if not force and artifact.is_file():
+        newest_src = max(f.stat().st_mtime for f in CR_MATH_SRC.rglob("*") if f.is_file())
+        if artifact.stat().st_mtime >= newest_src:
+            return
+    if shutil.which("cmake") is None:
+        die("cmake not found on PATH (needed to build mas_cpp_misc/cr_math)")
+
+    env = odin_env()
+    cmake_dir = BUILD_DIR / "cr_math-cmake"
+    configure = [
+        "cmake", "-S", str(CR_MATH_SRC), "-B", str(cmake_dir),
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+    ]
+    if shutil.which("ninja", path=env.get("PATH")):
+        configure += ["-G", "Ninja"]
+    if not IS_WINDOWS and (tc := _capnp_shim_toolchain(env)) is not None:
+        cxx, flags = tc
+        cc = Path(cxx).with_name(Path(cxx).name.replace("clang++-", "clang-"))
+        sysroot = " ".join(f for f in flags.split() if f.startswith("--sysroot"))
+        configure += [f"-DCMAKE_C_COMPILER={cc}", f"-DCMAKE_C_FLAGS={sysroot}"]
+    print(f"==> building cr_math (CORE-MATH) from {CR_MATH_SRC}", flush=True)
+    for cmd in (configure, ["cmake", "--build", str(cmake_dir), "--config", "Release"]):
+        print(f"==> {' '.join(cmd)}", flush=True)
+        if subprocess.call(cmd, env=env) != 0:
+            die("building cr_math failed")
+    # Single- vs multi-config generators put it in different places.
+    built = next(cmake_dir.rglob(artifact.name), None)
+    if built is None:
+        die(f"cr_math built, but no {artifact.name} under {cmake_dir}")
+    CR_MATH_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(built, artifact)
+    os.utime(artifact)  # newer than the sources even if copy2 kept an older mtime
+    print(f"==> {artifact}", flush=True)
+
+
+def cmd_cr_math(ns: argparse.Namespace) -> int:
+    ensure_cr_math(force=True)
+    return 0
+
+
 def cmd_build(ns: argparse.Namespace) -> int:
     _check_pixi_zeromq()
+    ensure_cr_math()
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     ext = ".exe" if IS_WINDOWS else ""
     wanted = ns.targets or list(TARGETS)
@@ -452,6 +527,7 @@ def cmd_build(ns: argparse.Namespace) -> int:
         # opt-in so any numeric drift it might introduce is a deliberate choice.
         if ns.release:
             args.append("-o:speed")
+        linker_flags = _cr_math_linker_flags()
         if name in CAPNP_TARGETS and static_capnp:
             args.append("-define:MAS_CAPNP_DYN_STATIC_LINK=true")
         if name in CAPNP_TARGETS and not static_capnp and not IS_WINDOWS:
@@ -476,7 +552,9 @@ def cmd_build(ns: argparse.Namespace) -> int:
             # of cmake's default (system) compiler - so both sides agree on
             # the same, deliberately old and portable glibc baseline.
             shim_dir = art["dll_lib"].parent.resolve()
-            args.append(f"-extra-linker-flags:-L{shim_dir} -Wl,-rpath,\\$ORIGIN")
+            linker_flags += [f"-L{shim_dir}", "-Wl,-rpath,\\$ORIGIN"]
+        if linker_flags:
+            args.append(f"-extra-linker-flags:{' '.join(linker_flags)}")
         args += ns.odin_args
         if (rc := run_odin(args, ROOT)) != 0:
             return rc
@@ -841,9 +919,13 @@ def cmd_clean(ns: argparse.Namespace) -> int:
 
 def cmd_test(ns: argparse.Namespace) -> int:
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_cr_math()
     # cwd MUST be the repo root - see this file's module docstring.
     out = (BUILD_DIR / "tests.bin").relative_to(REPO).as_posix()
-    return run_odin(["test", "odin/tests", f"-out:{out}", *ns.odin_args], REPO)
+    args = ["test", "odin/tests", f"-out:{out}"]
+    if (flags := _cr_math_linker_flags()):
+        args.append(f"-extra-linker-flags:{' '.join(flags)}")
+    return run_odin([*args, *ns.odin_args], REPO)
 
 
 def cmd_exec(ns: argparse.Namespace) -> int:
@@ -1093,6 +1175,12 @@ def main() -> int:
         help="check that every version in versions.json exists for pixi, vcpkg, Nix and Windows",
     )
     p.set_defaults(fn=cmd_check_pins)
+
+    p = sub.add_parser(
+        "cr-math",
+        help="(re)build the CORE-MATH library from mas_cpp_misc/cr_math (build/test do it on demand)",
+    )
+    p.set_defaults(fn=cmd_cr_math)
 
     p = sub.add_parser("test", help="run the odin/tests unit suite")
     p.set_defaults(fn=cmd_test)

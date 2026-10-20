@@ -10,6 +10,7 @@ on:
     paths:
       - "odin/**"
       - "docker/**"
+      - "mas_cpp_misc"   # submodule pointer: cr_math (CORE-MATH) is built from it
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/odin.yml"
@@ -17,6 +18,7 @@ on:
     paths:
       - "odin/**"
       - "docker/**"
+      - "mas_cpp_misc"   # submodule pointer: cr_math (CORE-MATH) is built from it
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/odin.yml"
