@@ -14,5 +14,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        # the Dockerfile builds the checkout, incl. mas_cpp_misc and monica-parameters
+        submodules: recursive
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag zalfrpm/monica-cluster:$(date +%s)

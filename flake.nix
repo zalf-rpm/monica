@@ -60,7 +60,12 @@
       monica = pkgs.stdenv.mkDerivation {
         pname = "monica";
         version = self.shortRev or self.dirtyShortRev or "dev";
-        src = ./.;
+        # monica-parameters is runtime data only; leaving it out keeps a
+        # parameter change from rebuilding MONICA
+        src = pkgs.lib.fileset.toSource {
+          root = ./.;
+          fileset = pkgs.lib.fileset.difference ./. ./monica-parameters;
+        };
         nativeBuildInputs = [
           pkgs.cmake
           pkgs.ninja

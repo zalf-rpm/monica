@@ -71,9 +71,9 @@ if [ "$MAJOR" = true ] || [ "$MINOR" = true ] || [ "$PATCH" = true ] ; then
     # change file to dos format, since git bash on windows has convert crlf to lf
     unix2dos src/resource/version.h
 
-    # commit version file
+    # commit only the version file (NEW_VERSION isn't set yet at this point)
     git add src/resource/version.h
-    git commit -a -m "version ${NEW_VERSION}"
+    git commit -m "version ${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}"
     git push
 fi
 

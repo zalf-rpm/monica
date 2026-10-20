@@ -32,11 +32,6 @@ jobs:
           submodules: recursive
           path: monica
 
-      - uses: actions/checkout@v7
-        with:
-          repository: zalf-rpm/monica-parameters
-          path: monica-parameters
-
       # vcpkg's binary cache. vcpkg keys every package on its full ABI itself,
       # so a stale cache only means rebuilding what changed.
       - uses: actions/cache@v6
@@ -57,7 +52,7 @@ jobs:
         shell: bash
         working-directory: monica/installer/Hohenfinow2
         env:
-          MONICA_PARAMETERS: ${{ github.workspace }}/monica-parameters
+          MONICA_PARAMETERS: ${{ github.workspace }}/monica/monica-parameters
         run: |
           exe=../../_cmake_release/monica-run
           [ "$RUNNER_OS" = Windows ] && exe=../../_cmake_release/Release/monica-run.exe
@@ -74,11 +69,6 @@ jobs:
           submodules: recursive
           path: monica
 
-      - uses: actions/checkout@v7
-        with:
-          repository: zalf-rpm/monica-parameters
-          path: monica-parameters
-
       - uses: cachix/install-nix-action@v31.11.2
 
       - name: nix build
@@ -88,7 +78,7 @@ jobs:
       - name: Run sim-min.json
         working-directory: monica/installer/Hohenfinow2
         env:
-          MONICA_PARAMETERS: ${{ github.workspace }}/monica-parameters
+          MONICA_PARAMETERS: ${{ github.workspace }}/monica/monica-parameters
         run: |
           ../../result/bin/monica-run sim-min.json
           rows=$(wc -l < sim-min-out.csv)

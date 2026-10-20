@@ -30,10 +30,14 @@ A simulation is described by a `sim.json` (simulation settings and outputs),
 which refers to a `crop.json` (crop rotation, cultivation), a `site.json`
 (soil, location) and a climate CSV. These include shared base data from the
 [monica-parameters](https://github.com/zalf-rpm/monica-parameters) repository,
-which MONICA finds via the `MONICA_PARAMETERS` environment variable:
+which MONICA finds via the `MONICA_PARAMETERS` environment variable. It is a
+git submodule of this repository, so each MONICA version is tied to the
+parameters it was released with:
 
-    git clone https://github.com/zalf-rpm/monica-parameters.git
-    export MONICA_PARAMETERS=$PWD/monica-parameters      # Windows: set MONICA_PARAMETERS=...
+    git clone --recurse-submodules https://github.com/zalf-rpm/monica.git
+    export MONICA_PARAMETERS=$PWD/monica/monica-parameters    # Windows: set MONICA_PARAMETERS=...
+
+The Windows zip and the Docker image already contain them.
 
 Then run `monica-run` on a `sim.json`, e.g. the Hohenfinow2 example in
 `installer/Hohenfinow2` (`-o` overrides the output file set in `sim.json`):

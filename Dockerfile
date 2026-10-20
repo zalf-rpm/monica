@@ -12,16 +12,18 @@ ENV WORK_DIR=/resource
 
 RUN mkdir ${WORK_DIR}
 WORKDIR ${WORK_DIR}
-RUN git clone --recurse-submodules https://github.com/zalf-rpm/monica.git
-#RUN git clone https://github.com/zalf-rpm/mas-infrastructure.git
-RUN git clone https://github.com/zalf-rpm/monica-parameters.git
-
-RUN VCPKG_TAG=$(cat ./monica/vcpkg_tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
+# vcpkg only depends on the tag, so its layers stay cached when just the sources change
+COPY vcpkg_tag.txt ${WORK_DIR}/
+RUN VCPKG_TAG=$(cat ./vcpkg_tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
 WORKDIR ${WORK_DIR}/vcpkg
 RUN ./bootstrap-vcpkg.sh
 RUN ./vcpkg install zeromq:x64-linux
 RUN ./vcpkg install capnproto:x64-linux
 RUN ./vcpkg install libsodium:x64-linux
+
+# build what is in the build context (the checked out commit incl. submodules,
+# e.g. the tag in on-tag.yml), not a fresh clone of master
+COPY . ${WORK_DIR}/monica
 
 WORKDIR ${WORK_DIR}/monica
 RUN sh create_cmake_release.sh
@@ -31,7 +33,6 @@ RUN make
 
 FROM debian:13
 
-ENV DEBIAN_FRONTED=noninteractive
 # Update Ubuntu Software repository
 RUN apt-get update
 # install monica prerequisites
@@ -80,9 +81,9 @@ COPY --from=build-env ${EXECUTABLE_SOURCE}/common/channel ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/common/gateway-service ${monica_dir}
 COPY --from=build-env ${EXECUTABLE_SOURCE}/common/host-port-resolver-service ${monica_dir}
 
-COPY --from=build-env /resource/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
-COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
-COPY --from=build-env /resource/monica-parameters/soil/SoilCharacteristicModifier.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY --from=build-env /resource/monica/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY --from=build-env /resource/monica/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY --from=build-env /resource/monica/monica-parameters/soil/SoilCharacteristicModifier.sercapnp ${MONICA_PARAMETERS}/soil/
 
 COPY docker/start_monica_supervisor.sh /start.sh
 
@@ -90,6 +91,5 @@ RUN useradd -ms /bin/bash myuser
 USER myuser
 
 CMD ["sh", "/start.sh"]
-ENV DEBIAN_FRONTED=teletype
 
 EXPOSE ${monica_producer_port} ${monica_consumer_port} ${monica_intern_in_port} ${monica_intern_out_port}

@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "../monica-parameters"
+			"path": "monica-parameters"
 		},
 		{
 			"path": "../mas-infrastructure"

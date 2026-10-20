@@ -1,0 +1,14 @@
+# The Dockerfile builds from the build context (COPY .), so keep local build
+# output, caches and editor state out of it - a stale CMake cache in
+# _cmake_release would otherwise end up in the image build.
+**/.git
+.github
+.direnv
+.idea
+.pixi
+.vcpkg
+_cmake_*
+result
+result-*
+old
+documentation
