@@ -4,10 +4,13 @@
     python tests/compare.py results/linux results/windows
 
 Every CSV of every simulation is compared section by section ("daily",
-"crop", ...): headers and units as text, data values numerically with the
-tolerances from the suite's monica-test.toml ([compare]; exact by default).
-Prints a Markdown report - also appended to $GITHUB_STEP_SUMMARY in GitHub
-Actions - and exits with 1 if anything differs.
+"crop", ...): data values numerically with the tolerances from the suite's
+monica-test.toml ([compare]; exact by default). Columns are matched by name,
+so if two builds write different column sets (one lacks some outputs, say),
+that is reported, and the columns both write are still compared value by
+value; a column whose units differ is reported but not compared. Prints a
+Markdown report - also appended to $GITHUB_STEP_SUMMARY in GitHub Actions -
+and exits with 1 if anything differs.
 """
 from __future__ import annotations
 
@@ -90,28 +93,72 @@ def to_float(s: str) -> float | None:
         return None
 
 
+def names_list(names: list[str], limit: int = 10) -> str:
+    shown = ", ".join(f"`{n}`" for n in names[:limit])
+    return shown + (f" (+{len(names) - limit} more)" if len(names) > limit else "")
+
+
+def keyed_columns(s: Section) -> dict[tuple[str, int], tuple[int, list[str]]]:
+    """(name, occurrence) -> (column index, its units/aggregation cells).
+    Columns are matched by name, so two builds writing different column sets
+    are still compared on the columns they share."""
+    meta = [s.split(m) for m in s.meta]
+    out: dict[tuple[str, int], tuple[int, list[str]]] = {}
+    seen: dict[str, int] = {}
+    for i, name in enumerate(s.split(s.header)):
+        seen[name] = seen.get(name, -1) + 1
+        out[(name, seen[name])] = (i, [m[i] if i < len(m) else "" for m in meta])
+    return out
+
+
 def compare_sections(where: str, file: str, a: Section, b: Section,
                      tolerances: dict, report: Report) -> None:
-    if a.header != b.header or a.meta != b.meta:
-        report.structural.append(f"`{where}` {file} [{a.name}]: header or units differ")
-        return
+    label = f"`{where}` {file} [{a.name}]"
+    names_a = a.split(a.header)
+    same_layout = a.header == b.header and a.meta == b.meta
+    if same_layout:
+        columns = None  # positions match: compare cell by cell
+    else:
+        # Different column sets (e.g. one build lacks some outputs): report
+        # that - it still counts as a difference, so the exit code stays 1 -
+        # and compare the values of the columns both builds write.
+        cols_a, cols_b = keyed_columns(a), keyed_columns(b)
+        only_a = [n for (n, k) in cols_a if (n, k) not in cols_b]
+        only_b = [n for (n, k) in cols_b if (n, k) not in cols_a]
+        shared = [key for key in cols_a if key in cols_b]
+        units = [key for key in shared if cols_a[key][1] != cols_b[key][1]]
+        if only_a:
+            report.structural.append(f"{label}: columns only in A: {names_list(only_a)}")
+        if only_b:
+            report.structural.append(f"{label}: columns only in B: {names_list(only_b)}")
+        if units:
+            report.structural.append(f"{label}: units differ, not compared: "
+                                     f"{names_list([n for n, _ in units])}")
+        if not (only_a or only_b or units):
+            report.structural.append(f"{label}: same columns in a different order")
+        columns = [(n, cols_a[(n, k)][0], cols_b[(n, k)][0])
+                   for n, k in shared if (n, k) not in units]
     if len(a.rows) != len(b.rows):
-        report.structural.append(f"`{where}` {file} [{a.name}]: "
-                                 f"{len(a.rows)} vs {len(b.rows)} rows")
-    columns = a.split(a.header)
-    date = columns.index("Date") if "Date" in columns else None
+        report.structural.append(f"{label}: {len(a.rows)} vs {len(b.rows)} rows")
+    date = names_a.index("Date") if "Date" in names_a else None
     default = tolerances.get("default", {})
     for i, (row_a, row_b) in enumerate(zip(a.rows, b.rows)):
-        if row_a == row_b:
+        if columns is None and row_a == row_b:
             continue
         cells_a, cells_b = a.split(row_a), b.split(row_b)
         key = cells_a[date] if date is not None and date < len(cells_a) else f"row {i + 1}"
-        for c in range(max(len(cells_a), len(cells_b))):
-            va = cells_a[c] if c < len(cells_a) else ""
-            vb = cells_b[c] if c < len(cells_b) else ""
+        if columns is None:
+            # (column name, index in A, index in B); also covers cells
+            # beyond the header
+            pairs = [(names_a[c] if c < len(names_a) else f"#{c + 1}", c, c)
+                     for c in range(max(len(cells_a), len(cells_b)))]
+        else:
+            pairs = columns
+        for column, ca, cb in pairs:
+            va = cells_a[ca] if ca < len(cells_a) else ""
+            vb = cells_b[cb] if cb < len(cells_b) else ""
             if va == vb:
                 continue
-            column = columns[c] if c < len(columns) else f"#{c + 1}"
             fa, fb = to_float(va), to_float(vb)
             if fa is not None and fb is not None:
                 if math.isnan(fa) and math.isnan(fb):
