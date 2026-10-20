@@ -129,6 +129,29 @@ The `Dockerfile` builds your checkout (including its submodules) with the Nix
 flake. Tagged releases build and push the image automatically
 (`.github/workflows/on-tag.yml`).
 
+## Math functions, and CPUs without FMA
+
+MONICA calculates `exp`, `log`, `pow`, `sin`, `cos` etc. with the correctly
+rounded functions of [CORE-MATH](https://core-math.gitlabpages.inria.fr/)
+(`mas_cpp_misc/cr_math`), not with the platform's math library. Windows and
+Linux math libraries round some results differently in the last bit, and the
+model is sensitive enough for that to change yields by several percent over a
+few decades. With CORE-MATH the results are the same on every platform.
+
+CORE-MATH is built to use the CPU's FMA (fused multiply-add) instructions.
+With them MONICA runs within about 10% of its speed with the platform's math
+library; without them it is about 30% slower than that (muencheberg_v140 on
+Linux, 2026). **The executables (Windows, Linux, Docker) therefore need an
+x86-64 CPU with FMA**: Intel since Haswell (2013), AMD since Piledriver
+(2012). On an older CPU, or in a virtual machine that hides FMA, MONICA stops
+right away with an "illegal instruction" error. In that case build it with
+
+    cmake ... -DCR_MATH_FMA=OFF
+
+which gives exactly the same results, just slower. On Windows the CORE-MATH
+sources are compiled with `clang-cl` (pixi provides it; otherwise install
+LLVM or Visual Studio's "C++ Clang tools for Windows").
+
 # Testing
 
 `tests/` runs a set of simulation suites (Hohenfinow2, scenario repositories

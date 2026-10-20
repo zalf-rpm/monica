@@ -39,6 +39,10 @@ zip = "*"
 unzip = "*"
 tar = "*"
 
+[target.win-64.dependencies]
+# clang-cl for mas_cpp_misc's cr_math (CORE-MATH): GNU C that MSVC can't compile
+clang = "*"
+
 [target.linux-64.activation.env]
 # cxx-compiler puts gcc/g++ on PATH but no longer sets CC/CXX, so a CC/CXX
 # left in the user's environment would otherwise reach vcpkg and CMake.
