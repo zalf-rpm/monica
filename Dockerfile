@@ -1,39 +1,19 @@
-#Download base image debian 9.5
-FROM debian:13 AS build-env
+# Build stage: the Nix flake (flake.nix) builds MONICA from the build context,
+# with all libraries pinned by flake.lock and fetched prebuilt from the Nix
+# binary cache - no vcpkg, no compiler setup.
+FROM nixos/nix:2.34.9 AS build-env
 
-# Update Ubuntu Software repository
-RUN apt-get update
-# install monica prerequisites
-RUN apt-get install -y apt-utils curl unzip tar cmake pkg-config
-RUN apt-get install -y git python3 build-essential
-RUN apt-get install -y curl zip unzip tar autoconf autoconf-archive libtool automake
-
-ENV WORK_DIR=/resource
-
-RUN mkdir ${WORK_DIR}
-WORKDIR ${WORK_DIR}
-# vcpkg only depends on the tag, so its layers stay cached when just the sources change
-COPY vcpkg_tag.txt ${WORK_DIR}/
-RUN VCPKG_TAG=$(cat ./vcpkg_tag.txt) && git clone -b $VCPKG_TAG https://github.com/Microsoft/vcpkg.git
-WORKDIR ${WORK_DIR}/vcpkg
-RUN ./bootstrap-vcpkg.sh
-RUN ./vcpkg install zeromq:x64-linux
-RUN ./vcpkg install capnproto:x64-linux
-RUN ./vcpkg install libsodium:x64-linux
-
-# build what is in the build context (the checked out commit incl. submodules,
-# e.g. the tag in on-tag.yml), not a fresh clone of master
-COPY . ${WORK_DIR}/monica
-
-WORKDIR ${WORK_DIR}/monica
-RUN sh create_cmake_release.sh
-
-WORKDIR ${WORK_DIR}/monica/_cmake_release
-RUN make
+WORKDIR /src
+COPY . .
+# the executables link against the libraries in /nix/store by absolute path,
+# so their whole runtime closure is collected for the runtime stage
+RUN nix --extra-experimental-features "nix-command flakes" build --print-build-logs .#monica \
+ && mkdir /closure \
+ && cp -a $(nix-store --query --requisites result) /closure/ \
+ && cp -rL result/bin /monica-bin
 
 FROM debian:13
 
-# Update Ubuntu Software repository
 RUN apt-get update
 # install monica prerequisites
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y supervisor && \
@@ -59,8 +39,6 @@ ENV monica_intern_out_port=7788
 ENV monica_consumer_port=7777
 ENV monica_producer_port=6666
 
-ENV  EXECUTABLE_SOURCE=/resource/monica/_cmake_release
-
 COPY docker/supervisord.conf ${supervisor_conf}
 
 RUN mkdir -p $MONICA_WORK
@@ -69,21 +47,13 @@ RUN chmod -R +rx ${monica_dir}
 RUN touch /var/log/supervisord.log
 RUN chmod 777 /var/log/supervisord.log
 
-# copy executables 
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-run ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-proxy ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-zmq-server ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-server ${monica_dir}
-#COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-proxy ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/monica-capnp-fbp-component ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/daily-monica-fbp-component ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/common/channel ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/common/gateway-service ${monica_dir}
-COPY --from=build-env ${EXECUTABLE_SOURCE}/common/host-port-resolver-service ${monica_dir}
+# MONICA's runtime closure (glibc, Cap'n Proto, ZeroMQ, ...) and the executables
+COPY --from=build-env /closure /nix/store
+COPY --from=build-env /monica-bin/ ${monica_dir}/
 
-COPY --from=build-env /resource/monica/monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
-COPY --from=build-env /resource/monica/monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
-COPY --from=build-env /resource/monica/monica-parameters/soil/SoilCharacteristicModifier.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY monica-parameters/soil/CapillaryRiseRates.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY monica-parameters/soil/SoilCharacteristicData.sercapnp ${MONICA_PARAMETERS}/soil/
+COPY monica-parameters/soil/SoilCharacteristicModifier.sercapnp ${MONICA_PARAMETERS}/soil/
 
 COPY docker/start_monica_supervisor.sh /start.sh
 

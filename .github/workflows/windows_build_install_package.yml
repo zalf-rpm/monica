@@ -12,7 +12,7 @@ jobs:
     steps:
       # main repository monica
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           path: "monica"
@@ -28,7 +28,7 @@ jobs:
           echo ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
 
       - name: Checkout vcpkg
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_tag.outputs.vcpkg_tag }}
