@@ -35,6 +35,11 @@ if (NOT TARGET common_lib)
   add_subdirectory(mas_cpp_misc/common common)
 endif ()
 
+if (NOT TARGET cr_math_lib)
+  message(STATUS "target: cr_math_lib")
+  add_subdirectory(mas_cpp_misc/cr_math cr_math)
+endif ()
+
 if (NOT TARGET date_lib)
   message(STATUS "target: date_lib")
   add_subdirectory(mas_cpp_misc/tools/date tools/date)
@@ -199,6 +204,7 @@ add_library(monica_lib
         src/run/capnp-helper.h src/run/capnp-helper.cpp)
 target_link_libraries(monica_lib
         PUBLIC
+        cr_math_lib
         ${CMAKE_THREAD_LIBS_INIT}
         ${CMAKE_DL_LIBS}
         capnp_schemas_lib

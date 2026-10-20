@@ -15,6 +15,7 @@ This file is part of the MONICA model.
 Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 #include "run-monica.h"
+#include "cr_math.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -898,13 +899,13 @@ std::pair<Output, Output> monica::runMonicaIC(Env env, bool isIC) {
         auto dvsPhr = monica2->cropParameters().pc_intercropping_dvs_phr;
         if(cg1->get_DevelopmentalStage() < anthesisStage) {
           monica->cropParametersNC().pc_intercropping_phRedux =
-          monica2->cropParametersNC().pc_intercropping_phRedux = log10(cg1->getCurrentTotalTemperatureSum()) / dvsPhr;
+          monica2->cropParametersNC().pc_intercropping_phRedux = cr::log10(cg1->getCurrentTotalTemperatureSum()) / dvsPhr;
         } else {
           auto tempSumAtAnthesis = cg1->sumStageTemperatureSums(0, anthesisStage);
           auto totTempSum = cg1->sumStageTemperatureSums(0, -1);
           monica->cropParametersNC().pc_intercropping_phRedux =
-          monica2->cropParametersNC().pc_intercropping_phRedux = (log10(tempSumAtAnthesis) / dvsPhr)
-                                                                 - (log10(tempSumAtAnthesis) / dvsPhr /
+          monica2->cropParametersNC().pc_intercropping_phRedux = (cr::log10(tempSumAtAnthesis) / dvsPhr)
+                                                                 - (cr::log10(tempSumAtAnthesis) / dvsPhr /
                                                                     (totTempSum - tempSumAtAnthesis)
                                                                     * (cg1->getCurrentTotalTemperatureSum() -
                                                                        tempSumAtAnthesis));

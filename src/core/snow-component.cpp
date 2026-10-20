@@ -19,6 +19,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <algorithm> //for min, max
 #include <iostream>
 #include <cmath>
+#include "cr_math.h"
 
 #include "soilcolumn.h"
 #include "tools/debug.h"
@@ -241,7 +242,7 @@ SnowComponent::calcRefreeze(double mean_air_temperature) {
 
   if (refreeze_helper < vm_RefreezeTemperature) {
     if (vm_LiquidWaterInSnow > 0.0) {
-      refreeze = vm_RefreezeP1 * pow((vm_RefreezeTemperature - refreeze_helper), vm_RefreezeP2);
+      refreeze = vm_RefreezeP1 * cr::pow((vm_RefreezeTemperature - refreeze_helper), vm_RefreezeP2);
     }
     if (refreeze > vm_LiquidWaterInSnow) {
       refreeze = vm_LiquidWaterInSnow;

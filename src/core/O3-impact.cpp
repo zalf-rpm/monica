@@ -17,6 +17,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include  "O3-impact.h"
 
 #include <math.h>
+#include "cr_math.h"
 #include <algorithm>
 #include <iostream>
 
@@ -107,7 +108,7 @@ double leaf_senescence_reduction_Ac(double fO3l, double reldev, double GDD_flowe
 double water_stress_stomatal_closure(double upper_thr, double lower_thr, double Fshape, double FC, double WP, double SWC, double ET0)
 {
   //Raes et al., 2009.  Agronomy Journal, 101(3), 438-447
-  double upper_threshold_adj = upper_thr + (0.04 * (5.0 - ET0)) * std::log10(10.0 - 9.0 * upper_thr);
+  double upper_threshold_adj = upper_thr + (0.04 * (5.0 - ET0)) * cr::log10(10.0 - 9.0 * upper_thr);
   if (upper_threshold_adj < 0)
   {
     upper_threshold_adj = 0;
@@ -147,7 +148,7 @@ double water_stress_stomatal_closure(double upper_thr, double lower_thr, double 
     Drel = (SW_depletion_f - upper_threshold_adj) / WHC_adj;
   }
   
-  return 1 - (std::exp(Drel * Fshape) - 1.0) / (std::exp(Fshape) - 1.0);
+  return 1 - (cr::exp(Drel * Fshape) - 1.0) / (cr::exp(Fshape) - 1.0);
 }
 
 #ifdef TEST_O3_HOURLY_OUTPUT

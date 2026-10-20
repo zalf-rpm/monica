@@ -28,6 +28,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <thread>
 #include <numeric>
 #include <cmath>
+#include "cr_math.h"
 
 #include "tools/debug.h"
 #include "climate/climate-common.h"
@@ -748,17 +749,17 @@ void MonicaModel::generalStep() {
 pair<double, double> laiSunShade(double latitude, int doy, int hour, double lai) {
   //taken from Astronomy.cs Astronomy::SolarDeclination and Astronomy::SolarElevation
   double PI = 3.1415926536;
-  double solarDeclination = -0.4093 * cos(2 * PI * (doy + 10) / 365);
-  double dA = sin(solarDeclination) * sin(latitude);
-  double dB = cos(solarDeclination) * cos(latitude);
+  double solarDeclination = -0.4093 * cr::cos(2 * PI * (doy + 10) / 365);
+  double dA = cr::sin(solarDeclination) * cr::sin(latitude);
+  double dB = cr::cos(solarDeclination) * cr::cos(latitude);
   double dHa = PI * (hour - 12) / 12;
-  double phi = asin(dA + dB * cos(dHa));
+  double phi = cr::asin(dA + dB * cr::cos(dHa));
 
   //taken from Norman, J.M., 1982. Simulation of microclimates. In:
   //Hatfield, J.L., Thomason, I.J. (Eds.), Biometeorology in
   //Integrated Pest Management.Academic Press, New York,
   //pp. 65–99. Equation (14)
-  double laiSun = 2 * cos(phi) * (1 - exp(-0.5 * lai / cos(phi)));
+  double laiSun = 2 * cr::cos(phi) * (1 - cr::exp(-0.5 * lai / cr::cos(phi)));
 
   return make_pair(laiSun, lai - laiSun);
 }
@@ -895,27 +896,27 @@ double MonicaModel::CO2ForDate(const double year, const double julianDay, const 
   //old value
   double co2 = 0;
   switch (rcp) {
-  case RCP::RCP19: co2 = 309.61 + 110.21 / (1 + exp(-(0.0819 * (decimalDate - 1995.41)))) + (
-                           2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP19: co2 = 309.61 + 110.21 / (1 + cr::exp(-(0.0819 * (decimalDate - 1995.41)))) + (
+                           2.5 * cr::sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP26: co2 = 306.23 + 158.52 / (1 + exp(-(0.0601 * (decimalDate - 2005.77)))) + (
-                           2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP26: co2 = 306.23 + 158.52 / (1 + cr::exp(-(0.0601 * (decimalDate - 2005.77)))) + (
+                           2.5 * cr::sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP34: co2 = 302.24 + 185.07 / (1 + exp(-(0.0512 * (decimalDate - 2010.26)))) + (
-                           2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP34: co2 = 302.24 + 185.07 / (1 + cr::exp(-(0.0512 * (decimalDate - 2010.26)))) + (
+                           2.5 * cr::sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP45: co2 = 292.83 + 348.08 / (1 + exp(-(0.0349 * (decimalDate - 2036.46)))) + (
-                           2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP45: co2 = 292.83 + 348.08 / (1 + cr::exp(-(0.0349 * (decimalDate - 2036.46)))) + (
+                           2.5 * cr::sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP60: co2 = 287.56 + 474.21 / (1 + exp(-(0.0301 * (decimalDate - 2052.37)))) + (
-                           2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP60: co2 = 287.56 + 474.21 / (1 + cr::exp(-(0.0301 * (decimalDate - 2052.37)))) + (
+                           2.5 * cr::sin((decimalDate - 0.5) / 0.1592));
     break;
-  case RCP::RCP70: co2 = 277.25 + 1338.47 / (1 + exp(-(0.0237 * (decimalDate - 2110.06)))) + (
-                           2.5 * sin((decimalDate - 0.5) / 0.1592));
+  case RCP::RCP70: co2 = 277.25 + 1338.47 / (1 + cr::exp(-(0.0237 * (decimalDate - 2110.06)))) + (
+                           2.5 * cr::sin((decimalDate - 0.5) / 0.1592));
     break;
   case RCP::RCP85:
-  default: co2 = 294.27 + 2361.06 / (1 + exp(-(0.0287 * (decimalDate - 2120.53)))) + (
-                   2.5 * sin((decimalDate - 0.5) / 0.1592));
+  default: co2 = 294.27 + 2361.06 / (1 + cr::exp(-(0.0287 * (decimalDate - 2120.53)))) + (
+                   2.5 * cr::sin((decimalDate - 0.5) / 0.1592));
     break;
   }
 
@@ -945,7 +946,7 @@ double MonicaModel::GroundwaterDepthForDate(double maxGroundwaterDepth,
   double meanGroundwaterDepth = (maxGroundwaterDepth + minGroundwaterDepth) / 2.0;
   double groundwaterAmplitude = (maxGroundwaterDepth - minGroundwaterDepth) / 2.0;
 
-  double sinus = sin(((julianDay / days * 360.0) - 90.0 -
+  double sinus = cr::sin(((julianDay / days * 360.0) - 90.0 -
                       ((double(minGroundwaterDepthMonth) * 30.0) - 15.0)) *
                      3.14159265358979 / 180.0);
 

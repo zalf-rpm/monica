@@ -18,6 +18,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "soilcolumn.h"
 
 #include <cmath>
+#include "cr_math.h"
 #include <algorithm>
 
 /**
@@ -158,11 +159,11 @@ double SoilLayer::vs_SoilMoisture_pF() {
   auto sm = get_Vs_SoilMoisture_m3();
   double matricHead = sm <= ps.thetaR
                         ? 5.0E+7
-                        : (1.0 / ps.alpha) * (pow(pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR),
+                        : (1.0 / ps.alpha) * (cr::pow(cr::pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR),
                                                       1 / ps.m) - 1, 1 / ps.n));
-  double soilMoisture_pF = log10(matricHead);
+  double soilMoisture_pF = cr::log10(matricHead);
 
-  /* JV! set _vs_SoilMoisture_pF to "small" number in case of vs_Theta "close" to vs_ThetaS (vs_Psi < 1 -> log(vs_Psi) < 0) */
+  /* JV! set _vs_SoilMoisture_pF to "small" number in case of vs_Theta "close" to vs_ThetaS (vs_Psi < 1 -> cr::log(vs_Psi) < 0) */
   return soilMoisture_pF < 0.0 ? 5.0E-7 : soilMoisture_pF;
   //  debug() << "vs_SoilMoisture_pF: " << soilMoisture_pF << std::endl;
 }

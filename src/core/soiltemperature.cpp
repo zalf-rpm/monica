@@ -16,6 +16,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #include "soiltemperature.h"
+#include "cr_math.h"
 
 #include "monica-model.h"
 #include "tools/debug.h"
@@ -134,7 +135,7 @@ SoilTemperature::SoilTemperature(MonicaModel &mm, const SoilTemperatureModulePar
     _heatConductivity[i] =
         ((3.0 * (sbdi / 1000.0) - 1.7) * 0.001)
         / (1.0 + (11.5 - 5.0 * (sbdi / 1000.0))
-                 * exp((-50.0) * pow((smi / (sbdi / 1000.0)), 1.5)))
+                 * cr::exp((-50.0) * cr::pow((smi / (sbdi / 1000.0)), 1.5)))
         * 86400.0
         * ts  //  gives result in [days]
         * 100.0  //  gives result in [m]
@@ -354,7 +355,7 @@ double SoilTemperature::calcSoilSurfaceTemperature(
   // Soil surface temperature caluclation following Williams 1984
   double soilSurfaceTemperature =
       (1.0 - shadingCoefficient)
-      * (tmin + ((tmax - tmin) * pow((0.03 * globrad), 0.5)))
+      * (tmin + ((tmax - tmin) * cr::pow((0.03 * globrad), 0.5)))
       + shadingCoefficient * prevDaySoilSurfaceTemperature;
 
   // damping negative temperatures due to heat loss for freezing water

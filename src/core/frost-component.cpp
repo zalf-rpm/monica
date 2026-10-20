@@ -20,6 +20,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include <algorithm> //for min, max
 #include <iostream>
 #include <cmath>
+#include "cr_math.h"
 
 #include "soilcolumn.h"
 #include "tools/debug.h"
@@ -138,7 +139,7 @@ double FrostComponent::calcSii(double mean_field_capacity) {
   double pt_F1 = 13.05; // Hansson et al. 2004
   double pt_F2 = 1.06; // Hansson et al. 2004
 
-  const double sii = (mean_field_capacity + (1.0 + (pt_F1 * pow(mean_field_capacity, pt_F2)) *
+  const double sii = (mean_field_capacity + (1.0 + (pt_F1 * cr::pow(mean_field_capacity, pt_F2)) *
     mean_field_capacity)) * 100.0;
   return sii;
 }
@@ -154,7 +155,7 @@ double FrostComponent::calcSii(double mean_field_capacity) {
 double
 FrostComponent::calcHeatConductivityFrozen(double mean_bulk_density, double sii) {
   double cond_frozen = ((3.0 * mean_bulk_density - 1.7) * 0.001) / (1.0
-    + (11.5 - 5.0 * mean_bulk_density) * exp((-50.0) * pow((sii / mean_bulk_density), 1.5))) * // [cal cm-1 K-1 s-1]
+    + (11.5 - 5.0 * mean_bulk_density) * cr::exp((-50.0) * cr::pow((sii / mean_bulk_density), 1.5))) * // [cal cm-1 K-1 s-1]
     86400.0 * double(pt_TimeStep) * // [cal cm-1 K-1 d-1]
     4.184 / // [J cm-1 K-1 d-1]
     1000000.0 * 100;//  [MJ m-1 K-1 d-1]
@@ -173,7 +174,7 @@ FrostComponent::calcHeatConductivityFrozen(double mean_bulk_density, double sii)
 double
 FrostComponent::calcHeatConductivityUnfrozen(double mean_bulk_density, double mean_field_capacity) {
   double cond_unfrozen = ((3.0 * mean_bulk_density - 1.7) * 0.001) / (1.0 + (11.5 - 5.0
-    * mean_bulk_density) * exp((-50.0) * pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5)))
+    * mean_bulk_density) * cr::exp((-50.0) * cr::pow(((mean_field_capacity * 100.0) / mean_bulk_density), 1.5)))
     * double(pt_TimeStep) * // [cal cm-1 K-1 s-1]
     4.184 * // [J cm-1 K-1 s-1]
     100.0; // [W m-1 K-1]

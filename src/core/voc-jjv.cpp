@@ -34,6 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
  */
 
 #include  "voc-jjv.h"
+#include "cr_math.h"
 
 #include <iostream>
 
@@ -111,16 +112,16 @@ GammaEnRes gamma_EN(double tempK, double normTempK,
   assert(tempK > 0.0);
 
   // Calculate actual bvoc emission potential from enzyme activity 
-  res.en_iso = exp(species.CT_IS - species.HA_IS / (RGAS * tempK))
-    / (1.0 + exp((species.DS_IS * tempK - species.HD_IS) / (RGAS * tempK)));
-  res.en_mono = exp(species.CT_MT - species.HA_MT / (RGAS * tempK))
-    / (1.0 + exp((species.DS_MT * tempK - species.HD_MT) / (RGAS * tempK)));
+  res.en_iso = cr::exp(species.CT_IS - species.HA_IS / (RGAS * tempK))
+    / (1.0 + cr::exp((species.DS_IS * tempK - species.HD_IS) / (RGAS * tempK)));
+  res.en_mono = cr::exp(species.CT_MT - species.HA_MT / (RGAS * tempK))
+    / (1.0 + cr::exp((species.DS_MT * tempK - species.HD_MT) / (RGAS * tempK)));
 
   // Calculate normalized bvoc emission potential from enzyme activity 
-  res.ennorm_iso = exp(species.CT_IS - species.HA_IS / (RGAS * normTempK))
-    / (1.0 + exp((species.DS_IS * normTempK - species.HD_IS) / (RGAS * normTempK)));
-  res.ennorm_mono = exp(species.CT_MT - species.HA_MT / (RGAS * normTempK))
-    / (1.0 + exp((species.DS_MT * normTempK - species.HD_MT) / (RGAS * normTempK)));
+  res.ennorm_iso = cr::exp(species.CT_IS - species.HA_IS / (RGAS * normTempK))
+    / (1.0 + cr::exp((species.DS_IS * normTempK - species.HD_IS) / (RGAS * normTempK)));
+  res.ennorm_mono = cr::exp(species.CT_MT - species.HA_MT / (RGAS * normTempK))
+    / (1.0 + cr::exp((species.DS_MT * normTempK - species.HD_MT) / (RGAS * normTempK)));
 
   return res;
 }
@@ -138,7 +139,7 @@ LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
   double gamma_a = species.FAGE;  // older version: double const  gamma_a   = 1.0;
 
   // activity factor for Temperature (NEW: only emission from storages = light dependend fraction LDF is 0) (= Light independent fraction (of exp(betaT(nclass_in)) form))
-  double gamma_t = exp(BETA * (lemi.fol.tempK - leminorm.fol.tempK)); // fw: = 1.0 for normalized conditions, gamma_t=[15;0.6] für tempK=[0°C;35°C]
+  double gamma_t = cr::exp(BETA * (lemi.fol.tempK - leminorm.fol.tempK)); // fw: = 1.0 for normalized conditions, gamma_t=[15;0.6] für tempK=[0°C;35°C]
 
   // Emission potential from photosynthesis (energy supply); same for isoprene and monoterpene;
   // actual activity factor for photosynthesis (energy supply)
@@ -173,8 +174,8 @@ LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
   if(calculateParTempTerm) {
     //Factor for temperature dependence of past days (light dependent factors, LDF), from MEGAN (Guenther et al. 2006, 2012)
     //Light independent factors (LIF) for isoprene = 0; for monoterpenes = gamma.t (emissions from storage)
-    EOPT_ISO = CEO_ISO * exp(0.05 * ((lemi.fol.tempK24 - 297.0) + (lemi.fol.tempK240 - 297.0)));
-    EOPT_MONO = CEO_MONO * exp(0.05 * ((lemi.fol.tempK24 - 297.0) + (lemi.fol.tempK240 - 297.0)));
+    EOPT_ISO = CEO_ISO * cr::exp(0.05 * ((lemi.fol.tempK24 - 297.0) + (lemi.fol.tempK240 - 297.0)));
+    EOPT_MONO = CEO_MONO * cr::exp(0.05 * ((lemi.fol.tempK24 - 297.0) + (lemi.fol.tempK240 - 297.0)));
     //old: f_term  = 2.034 * exp( 0.05 * ((lemi.fol.tempK24 - 297.0) + (lemi.fol.tempK240 - 297.0)));
 
     //Factor for PPFD dependence of past days (light dependent factors, LDF), from MEGAN (Guenther et al. 2006, 2012)
@@ -182,7 +183,7 @@ LeafEmissions calcLeafEmission(const leaf_emission_t& lemi,
     //We calculate explicitly LIF emission for MT from storage -->  no LIF/LDF coefficients needed
     //PAR0 = 200.0 * mcd.ts_sunlitfoliagefraction_fl.at(_fl) + 50.0 * (1.0 - mcd.ts_sunlitfoliagefraction_fl.at(_fl));
     PAR0 = 200.0 * mcd.sunlitfoliagefraction24 + 50.0 * (1.0 - mcd.sunlitfoliagefraction24);
-    C_P = 0.0468 * exp(0.0005 * (lemi.pho.par24 - PAR0)) * pow(lemi.pho.par240, 0.6);
+    C_P = 0.0468 * cr::exp(0.0005 * (lemi.pho.par24 - PAR0)) * cr::pow(lemi.pho.par240, 0.6);
   }
 
   // fw: "enz_act.ef_iso/mono" (from iso/monoAct_vtfl from psim): isoprene/monoterpene emission factor/rate 

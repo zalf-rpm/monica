@@ -14,6 +14,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 */
 
 #include  "stics-nit-denit-n2o.h"
+#include "cr_math.h"
 
 #include <algorithm>
 
@@ -51,7 +52,7 @@ double fpH(double pHminnit, double pH, double pHmaxnit) {
 }
 
 double fTgauss(double t, double tnitopt_gauss, double scale_tnitopt) {
-  return exp(-1 * pow(t - tnitopt_gauss, 2) / pow(scale_tnitopt, 2));
+  return cr::exp(-1 * cr::pow(t - tnitopt_gauss, 2) / cr::pow(scale_tnitopt, 2));
 }
 
 double fTstep(double t, double tnitmin, double tnitopt, double tnitopt2, double tnitmax) {
@@ -110,12 +111,12 @@ double fNO3(double NO3, double w, double Kd) {
 
 double fT(double t, double tdenitopt_gauss, double scale_tdenitopt) {
   auto delta = t - tdenitopt_gauss;
-  return exp(-1 * (delta * delta) / (scale_tdenitopt * scale_tdenitopt));
+  return cr::exp(-1 * (delta * delta) / (scale_tdenitopt * scale_tdenitopt));
 }
 
 // water-filled pore space
 double fWFPS(double wfps, double wfpsc) {
-  return pow((std::max(wfps, wfpsc) - wfpsc) / (1 - wfpsc), 1.74);
+  return cr::pow((std::max(wfps, wfpsc) - wfpsc) / (1 - wfpsc), 1.74);
 }
 
 } // namespace denit
