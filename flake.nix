@@ -97,6 +97,54 @@
         '';
       };
 
+      # --- TEMPORARY: the converted C++ in src/ -------------------------------
+      # Built only so CI can check that it stays in sync with the original C++
+      # (master) and the Odin port, while it is still needed as a reference
+      # (e.g. for the serde transformation). Remove this block, cmake/compat/,
+      # its entry in `packages` below and the `cpp-src` job in
+      # .github/workflows/odin.yml once the move to Odin is complete.
+      monica-cpp-src = pkgs.stdenv.mkDerivation {
+        pname = "monica-cpp-src";
+        version = self.shortRev or self.dirtyShortRev or "dev";
+        # only what the C++ build reads, so Odin-only changes don't rebuild it
+        src = lib.fileset.toSource {
+          root = ./.;
+          fileset = lib.fileset.unions [
+            ./CMakeLists.txt
+            ./src
+            ./mas_cpp_misc
+          ];
+        };
+        nativeBuildInputs = [
+          pkgs.cmake
+          pkgs.ninja
+          pkgs.pkg-config
+        ];
+        buildInputs = [
+          capnproto
+          zeromq
+          pkgs.libsodium
+          pkgs.zlib
+        ];
+        cmakeFlags = [
+          (lib.cmakeFeature "CMAKE_BUILD_TYPE" "Release")
+          (lib.cmakeFeature "CMAKE_PREFIX_PATH" "${./cmake/compat}")
+        ];
+        # monica-run is all the test suites need
+        buildPhase = ''
+          runHook preBuild
+          cmake --build . --target monica-run
+          runHook postBuild
+        '';
+        installPhase = ''
+          runHook preInstall
+          install -Dm755 monica-run -t $out/bin
+          runHook postInstall
+        '';
+        meta.mainProgram = "monica-run";
+      };
+      # --- end TEMPORARY -----------------------------------------------------
+
       schemaDir = "share/monica/zalfmas_capnp_schemas";
 
       monica-odin = pkgs.clangStdenv.mkDerivation {
@@ -147,6 +195,7 @@
           capnp-shim
           cr-math
           monica-odin
+          monica-cpp-src # TEMPORARY, see above
           ;
         default = monica-odin;
       };

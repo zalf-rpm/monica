@@ -19,6 +19,9 @@ on:
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/odin.yml"
+      - "src/**"          # TEMPORARY: the converted C++ (cpp-src job)
+      - "CMakeLists.txt"
+      - "cmake/**"
   pull_request:
     paths:
       - "odin/**"
@@ -27,6 +30,9 @@ on:
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/odin.yml"
+      - "src/**"          # TEMPORARY: the converted C++ (cpp-src job)
+      - "CMakeLists.txt"
+      - "cmake/**"
   workflow_dispatch:
 
 jobs:
@@ -190,11 +196,47 @@ jobs:
       - name: Smoke test
         run: docker run --rm monica-odin:ci /run/monica/monica-zmq-server -v
 
+  # TEMPORARY: the converted C++ in src/ (the transformation's intermediate,
+  # still a reference for open tasks), checked to stay in sync with the
+  # original C++ and the Odin port. Remove this job, its comparison in
+  # `compare`, the "src/**"/CMakeLists.txt/cmake paths above, flake.nix's
+  # monica-cpp-src and cmake/compat/ once the move to Odin is complete.
+  cpp-src:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          path: monica
+
+      - name: Pinned C++ commit
+        id: ref
+        run: echo "commit=$(jq -r .cpp_reference.commit monica/odin/versions.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.ref.outputs.commit }}
+          submodules: true
+          path: cpp
+
+      - uses: cachix/install-nix-action@v31.11.2
+
+      - name: Build the converted C++ and run the suites
+        run: |
+          (cd monica && nix build .#monica-cpp-src -L)
+          python3 cpp/tests/run.py --monica monica/result/bin/monica-run \
+            --engine cpp-src --out cpp-src-results
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: suite-cpp-src
+          path: cpp-src-results
+
   # Odin (Linux, Windows) vs. the C++ reference, exactly; the report goes to
   # the job summary. Simulations of features the port lacks are skipped
   # (cpp_reference.ignore in odin/versions.json).
   compare:
-    needs: [cpp-reference, pixi]
+    needs: [cpp-reference, pixi, cpp-src]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -206,8 +248,11 @@ jobs:
       - name: Pinned C++ commit
         id: ref
         run: |
-          echo "commit=$(jq -r .cpp_reference.commit monica/odin/versions.json)" >> "$GITHUB_OUTPUT"
-          echo "ignore=$(jq -r '.cpp_reference.ignore | join(" ")' monica/odin/versions.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "commit=$(jq -r .cpp_reference.commit monica/odin/versions.json)"
+            echo "ignore=$(jq -r '.cpp_reference.ignore | join(" ")' monica/odin/versions.json)"
+            echo "ignore_src=$(jq -r '.cpp_reference.ignore_src | join(" ")' monica/odin/versions.json)"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v7
         with:
@@ -226,4 +271,7 @@ jobs:
             python3 cpp/tests/compare.py suite-cpp-reference "suite-odin-$os" \
               ${{ steps.ref.outputs.ignore && format('--ignore {0}', steps.ref.outputs.ignore) }} || status=1
           done
+          # TEMPORARY: the converted C++ (cpp-src job)
+          python3 cpp/tests/compare.py suite-cpp-reference suite-cpp-src \
+            ${{ steps.ref.outputs.ignore_src && format('--ignore {0}', steps.ref.outputs.ignore_src) }} || status=1
           exit $status
