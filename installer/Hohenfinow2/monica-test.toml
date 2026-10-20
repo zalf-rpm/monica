@@ -1,0 +1,7 @@
+# Test manifest for tests/run.py - see tests/README.md.
+# sim-ser.json isn't included: it writes its state to a hardcoded C:/tmp path.
+sims = ["sim.json", "sim+.json", "sim-min.json", "sim-min-ic.json"]
+
+[compare]
+# exact equality unless a column below says otherwise
+default = { atol = 0.0, rtol = 0.0 }

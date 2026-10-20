@@ -1,0 +1,15 @@
+# Test suites run by tests/run.py - see tests/README.md.
+#
+# Each suite is a directory with a monica-test.toml manifest (which simulations
+# to run, comparison tolerances). It is either part of this repository (`path`)
+# or a separate scenario repository pinned to a commit (`git` + `rev`), so a
+# MONICA commit always tests against the same scenarios.
+
+[[suite]]
+name = "hohenfinow2"
+path = "installer/Hohenfinow2"
+
+[[suite]]
+name = "muencheberg_v140"
+git = "https://github.com/zalf-rpm/muencheberg_v140.git"
+rev = "fc051fe4b35bcb22c38ad7dd3fc1e0a1a7ecd139"

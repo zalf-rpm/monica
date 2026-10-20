@@ -13,6 +13,11 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
 
+      # The compiler is pinned like the libraries: GCC 16 gives (slightly)
+      # different results than GCC 14/15 - the Debian Docker images and the
+      # pixi build - in some muencheberg_v140 simulations (see tests/).
+      stdenv = pkgs.gcc15Stdenv;
+
       # The pre-generated schema code (mas_cpp_misc/mas_capnproto_schemas/gen/c++)
       # refuses to compile against any Cap'n Proto but the one that generated it
       # (`#elif CAPNP_VERSION != 1005000`). 1.5.0 is also what the vcpkg baseline
@@ -57,14 +62,19 @@
         "common/storage-service"
       ];
 
-      monica = pkgs.stdenv.mkDerivation {
+      monica = stdenv.mkDerivation {
         pname = "monica";
         version = self.shortRev or self.dirtyShortRev or "dev";
-        # monica-parameters is runtime data only; leaving it out keeps a
-        # parameter change from rebuilding MONICA
+        # monica-parameters (runtime data) and tests/ aren't part of the build;
+        # leaving them out keeps changes there from rebuilding MONICA
         src = pkgs.lib.fileset.toSource {
           root = ./.;
-          fileset = pkgs.lib.fileset.difference ./. ./monica-parameters;
+          fileset = pkgs.lib.fileset.difference ./. (
+            pkgs.lib.fileset.unions [
+              ./monica-parameters
+              ./tests
+            ]
+          );
         };
         nativeBuildInputs = [
           pkgs.cmake
@@ -108,7 +118,7 @@
 
       # `nix develop`, then the usual: cmake -B _build -G Ninja && cmake --build _build
       # Same dependencies as the package, plus tooling; no vcpkg needed.
-      devShells.${system}.default = pkgs.mkShell {
+      devShells.${system}.default = pkgs.mkShell.override { inherit stdenv; } {
         inputsFrom = [ monica ];
         packages = with pkgs; [
           clang-tools # clangd, clang-format

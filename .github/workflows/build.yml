@@ -1,8 +1,8 @@
-# The two setup-free builds from the README: pixi on Linux and Windows, and
-# Nix. Each ends with a real monica-run of installer/Hohenfinow2/sim-min.json,
-# so a build that compiles but can't run (missing runtime libs, broken
-# parameters path) fails here too.
-name: Build (pixi, Nix)
+# The setup-free builds from the README - pixi on Linux and Windows, Nix, and
+# the Docker image built from it - each running the test suites
+# (tests/suites.toml). The compare job then checks that all of them give the
+# same results as the Nix build, which is what the Docker image ships.
+name: Build and test
 
 on:
   push:
@@ -26,6 +26,7 @@ jobs:
       # build.py then clones vcpkg at vcpkg_tag.txt into .vcpkg/ - the pinned
       # version, not whatever checkout the runner image happens to have.
       VCPKG_ROOT: ""
+      ENGINE: pixi-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -48,18 +49,20 @@ jobs:
         working-directory: monica
         run: pixi run build
 
-      - name: Run sim-min.json
+      - name: Test suites
         shell: bash
-        working-directory: monica/installer/Hohenfinow2
-        env:
-          MONICA_PARAMETERS: ${{ github.workspace }}/monica/monica-parameters
+        working-directory: monica
         run: |
-          exe=../../_cmake_release/monica-run
-          [ "$RUNNER_OS" = Windows ] && exe=../../_cmake_release/Release/monica-run.exe
-          "$exe" sim-min.json
-          rows=$(wc -l < sim-min-out.csv)
-          echo "sim-min-out.csv: $rows rows"
-          [ "$rows" -eq 2598 ]
+          exe=_cmake_release/monica-run
+          [ "$RUNNER_OS" = Windows ] && exe=_cmake_release/Release/monica-run.exe
+          pixi run test --monica "$exe" --engine "$ENGINE" --out ../results
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: results-${{ env.ENGINE }}
+          path: results
+          retention-days: 14
 
   nix:
     runs-on: ubuntu-latest
@@ -75,12 +78,65 @@ jobs:
         working-directory: monica
         run: nix build -L
 
-      - name: Run sim-min.json
-        working-directory: monica/installer/Hohenfinow2
+      - name: Test suites
+        working-directory: monica
+        run: python3 tests/run.py --monica result/bin/monica-run --engine nix-linux --out ../results
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: results-nix-linux
+          path: results
+          retention-days: 14
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the Dockerfile builds the checkout, incl. mas_cpp_misc and monica-parameters
+          submodules: recursive
+          path: monica
+
+      - name: Build the Docker image
+        working-directory: monica
+        run: docker build --tag monica:ci .
+
+      - name: Test suites
+        working-directory: monica
         env:
-          MONICA_PARAMETERS: ${{ github.workspace }}/monica/monica-parameters
+          MONICA_IMAGE: monica:ci
+        run: python3 tests/run.py --monica tests/docker-monica-run.sh --engine docker --out ../results
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: results-docker
+          path: results
+          retention-days: 14
+
+  compare:
+    needs: [pixi, nix, docker]
+    # also compare what there is when one of the builds failed
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tests
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: results-*
+          path: results
+
+      - name: Compare with the Nix build
         run: |
-          ../../result/bin/monica-run sim-min.json
-          rows=$(wc -l < sim-min-out.csv)
-          echo "sim-min-out.csv: $rows rows"
-          [ "$rows" -eq 2598 ]
+          ref=results/results-nix-linux
+          [ -d "$ref" ] || { echo "::error::no results from the Nix build"; exit 1; }
+          status=0
+          for r in results/results-*; do
+            [ "$r" = "$ref" ] && continue
+            python3 tests/compare.py "$ref" "$r" || status=1
+          done
+          exit $status

@@ -1,5 +1,4 @@
-[![Docker Image CI](https://github.com/zalf-rpm/monica/actions/workflows/docker-image.yml/badge.svg)](https://github.com/zalf-rpm/monica/actions/workflows/docker-image.yml)
-[![Build (pixi, Nix)](https://github.com/zalf-rpm/monica/actions/workflows/build.yml/badge.svg)](https://github.com/zalf-rpm/monica/actions/workflows/build.yml)
+[![Build and test](https://github.com/zalf-rpm/monica/actions/workflows/build.yml/badge.svg)](https://github.com/zalf-rpm/monica/actions/workflows/build.yml)
 
 # MONICA - The Model for Nitrogen and Carbon in Agro-ecosystems
 
@@ -126,9 +125,21 @@ both (`vcpkg install ...:x64-windows-static`, and add
 
     docker build -t zalfrpm/monica-cluster:<version> .
 
-Note that the `Dockerfile` builds MONICA from a fresh clone of `master` on
-GitHub, not from your local checkout. Tagged releases build and push the image
-automatically (`.github/workflows/on-tag.yml`).
+The `Dockerfile` builds your checkout (including its submodules) with the Nix
+flake. Tagged releases build and push the image automatically
+(`.github/workflows/on-tag.yml`).
+
+# Testing
+
+`tests/` runs a set of simulation suites (Hohenfinow2, scenario repositories
+like [muencheberg_v140](https://github.com/zalf-rpm/muencheberg_v140)) with a
+MONICA build and compares the outputs of different builds, e.g. Windows
+against Linux:
+
+    pixi run test --monica _cmake_release/monica-run --out results/a
+    pixi run compare results/a results/b
+
+CI does this on every push for all builds. See [tests/README.md](tests/README.md).
 
 ## Step-by-step guides
 

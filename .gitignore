@@ -226,5 +226,7 @@ _cmake_linux_release
 .vcpkg/
 result
 result-*
+# scenario repositories checked out by tests/run.py
+tests/.suites/
 # direnv (.envrc: use flake)
 .direnv/

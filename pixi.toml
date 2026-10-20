@@ -48,3 +48,5 @@ CXX = "g++"
 [tasks]
 build = { cmd = "python build.py build", description = "Configure and build MONICA (Release; -- --debug for Debug)" }
 clean = { cmd = "python build.py clean", description = "Remove the CMake build directories" }
+test = { cmd = "python tests/run.py", description = "Run the test suites (tests/suites.toml) with a monica-run: -- --monica PATH --out DIR" }
+compare = { cmd = "python tests/compare.py", description = "Compare two test result directories: -- DIR_A DIR_B" }
