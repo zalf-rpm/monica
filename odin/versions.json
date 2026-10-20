@@ -6,7 +6,8 @@
     "odin.sha256: per sys.platform, of the release asset; verify with curl -sL <url> | sha256sum.",
     "capnproto.nix_src_hash: SRI hash of the GitHub source tag; nix flake prefetch github:capnproto/capnproto/v<version>.",
     "vcpkg_baseline: a vcpkg commit whose versions database has capnproto.version (independent of ../vcpkg_tag.txt, which only the C++ build uses).",
-    "After editing: python tools/odinw.py check-pins. Procedure: UPDATING_VERSIONS.md."
+    "After editing: python tools/odinw.py check-pins. Procedure: UPDATING_VERSIONS.md.",
+    "cpp_reference: the C++ MONICA commit (zalf-rpm/monica master) whose tests/ suites CI runs and compares this port against (.github/workflows/odin.yml); it also pins those suites and monica-parameters. ignore: simulations of features the port lacks (sim-min-ic: intercropping)."
   ],
   "odin": {
     "tag": "dev-2026-08",
@@ -20,5 +21,11 @@
     "version": "1.5.0",
     "nix_src_hash": "sha256-2J3FYwPAtbahHI1y1KMqU8Gn2YlKyIW8kZIJz2Ja31w="
   },
-  "vcpkg_baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d"
+  "vcpkg_baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d",
+  "cpp_reference": {
+    "commit": "4d4961d650b697ca9e535c195c68c57f24f1579c",
+    "ignore": [
+      "hohenfinow2/sim-min-ic"
+    ]
+  }
 }

@@ -134,6 +134,35 @@ zeromq is the awkward one, because each path gets it from somewhere else:
    themselves, if the C API changed. The constants are compile-time only;
    `check-pins` warns about a mismatch but doesn't fail.
 
+## The C++ reference (`cpp_reference`)
+
+CI (`.github/workflows/odin.yml`) runs the C++ MONICA's test suites -
+Hohenfinow2 and the 48 muencheberg_v140 simulations, from `tests/` in the C++
+repository - with the Odin `monica-run` on Linux and Windows, and compares the
+results value by value against the C++ build at `cpp_reference.commit`. That
+commit also pins the suites (`tests/suites.toml`) and `monica-parameters`, so
+the comparison only changes when the pin moves. The C++ results are cached per
+commit.
+
+To move it, e.g. after a model change in the C++ `master`:
+
+1. Set `cpp_reference.commit` to the full hash of the new C++ commit.
+2. Push: the `compare` job shows what differs (job summary). Expected
+   differences mean the change still has to be ported to Odin - port it, then
+   CI is green again.
+
+`cpp_reference.ignore` lists simulations of features the port doesn't have
+(`hohenfinow2/sim-min-ic`: intercropping), passed to `compare.py --ignore`.
+Remove an entry once the feature is ported.
+
+To run the same comparison locally (Linux), from a C++ checkout at that commit:
+
+```sh
+python tests/run.py --monica <odin>/build/monica-run --engine odin --out results/odin
+python tests/run.py --monica result/bin/monica-run --engine cpp --out results/cpp   # after nix build
+python tests/compare.py results/cpp results/odin --ignore hohenfinow2/sim-min-ic
+```
+
 ## Other pins worth knowing about
 
 - **`flake.lock`** pins nixpkgs, which provides the Nix path's compilers,

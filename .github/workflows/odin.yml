@@ -3,6 +3,11 @@
 # Debian Docker image. A version bump is a PR that edits odin/versions.json -
 # see odin/UPDATING_VERSIONS.md - and this workflow is what tells you whether
 # all of them still work.
+#
+# On top, the C++ MONICA's test suites (Hohenfinow2 + 48 muencheberg_v140
+# simulations, tests/ in the C++ repo) run with the Odin monica-run on Linux
+# and Windows, and `compare` checks the results against the C++ build pinned
+# in odin/versions.json (cpp_reference) - value by value, exactly.
 name: Odin
 
 on:
@@ -25,6 +30,50 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The C++ results to compare against: the pinned C++ commit, built with Nix
+  # and run on its own suites. Cached per commit - the same commit always
+  # gives the same results.
+  cpp-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: odin/versions.json
+          sparse-checkout-cone-mode: false
+          path: monica
+
+      - name: Pinned C++ commit
+        id: ref
+        run: echo "commit=$(jq -r .cpp_reference.commit monica/odin/versions.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v6
+        id: cache
+        with:
+          path: cpp-results
+          key: cpp-reference-${{ steps.ref.outputs.commit }}
+
+      - uses: actions/checkout@v7
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          ref: ${{ steps.ref.outputs.commit }}
+          submodules: recursive
+          path: cpp
+
+      - uses: cachix/install-nix-action@v31.11.2
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Build the C++ MONICA and run its suites
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          (cd cpp && nix build -L)
+          python3 cpp/tests/run.py --monica cpp/result/bin/monica-run \
+            --engine "cpp-${{ steps.ref.outputs.commit }}" --out cpp-results
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: suite-cpp-reference
+          path: cpp-results
+
   pixi:
     strategy:
       fail-fast: false
@@ -82,6 +131,33 @@ jobs:
         working-directory: monica/odin
         run: pixi run test
 
+      # The C++ repo at the pinned commit, for its tests/ (run.py, the suite
+      # definitions) and its monica-parameters submodule.
+      - name: Pinned C++ commit
+        id: ref
+        shell: bash
+        run: echo "commit=$(jq -r .cpp_reference.commit monica/odin/versions.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.ref.outputs.commit }}
+          submodules: true
+          path: cpp
+
+      - name: Run the C++ test suites with the Odin monica-run
+        shell: bash
+        run: |
+          exe="$GITHUB_WORKSPACE/monica/odin/build/monica-run"
+          [ "$RUNNER_OS" = Windows ] && exe="$exe.exe"
+          cd monica/odin
+          pixi run python "$GITHUB_WORKSPACE/cpp/tests/run.py" --monica "$exe" \
+            --engine "odin-$RUNNER_OS" --out "$GITHUB_WORKSPACE/odin-results"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: suite-odin-${{ runner.os }}
+          path: odin-results
+
       # Windows only: the single-binary release variant (static shim). Its
       # combined lib is MSVC-only, see support/capnp/shim_dynamic/CMakeLists.txt.
       - name: Build standalone monica-capnp-server
@@ -113,3 +189,41 @@ jobs:
         run: docker build -f odin/Dockerfile -t monica-odin:ci .
       - name: Smoke test
         run: docker run --rm monica-odin:ci /run/monica/monica-zmq-server -v
+
+  # Odin (Linux, Windows) vs. the C++ reference, exactly; the report goes to
+  # the job summary. Simulations of features the port lacks are skipped
+  # (cpp_reference.ignore in odin/versions.json).
+  compare:
+    needs: [cpp-reference, pixi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: odin/versions.json
+          sparse-checkout-cone-mode: false
+          path: monica
+
+      - name: Pinned C++ commit
+        id: ref
+        run: |
+          echo "commit=$(jq -r .cpp_reference.commit monica/odin/versions.json)" >> "$GITHUB_OUTPUT"
+          echo "ignore=$(jq -r '.cpp_reference.ignore | join(" ")' monica/odin/versions.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.ref.outputs.commit }}
+          sparse-checkout: tests
+          path: cpp
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: suite-*
+
+      - name: Compare
+        run: |
+          status=0
+          for os in Linux Windows; do
+            python3 cpp/tests/compare.py suite-cpp-reference "suite-odin-$os" \
+              ${{ steps.ref.outputs.ignore && format('--ignore {0}', steps.ref.outputs.ignore) }} || status=1
+          done
+          exit $status
