@@ -30,6 +30,10 @@ report (also to the GitHub job summary in CI) listing, per column, how many
 values differ, the largest absolute and relative difference and where it first
 occurs, and exits with 1 if anything differs. It also notes when the two runs
 used different inputs (MONICA source, parameters, suite commits).
+Columns are matched by name: if the two builds write different column sets,
+that is listed, and the columns both write are still compared. `--ignore
+SUITE/SIM ...` skips simulations a build is known not to support (listed in
+the report), e.g. `hohenfinow2/sim-min-ic` for a build without intercropping.
 
 ## In CI
 

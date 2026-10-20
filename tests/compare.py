@@ -80,6 +80,7 @@ class Report:
     structural: list[str] = field(default_factory=list)
     columns: dict[tuple[str, str, str, str], ColumnDiff] = field(default_factory=dict)
     files: int = 0
+    ignored: list[str] = field(default_factory=list)  # simulations skipped on request
 
     @property
     def identical(self) -> bool:
@@ -180,7 +181,8 @@ def compare_sections(where: str, file: str, a: Section, b: Section,
                 d.first = (key, va, vb)
 
 
-def compare_runs(a: Path, b: Path, meta_a: dict, meta_b: dict) -> Report:
+def compare_runs(a: Path, b: Path, meta_a: dict, meta_b: dict,
+                 ignore: frozenset[str] = frozenset()) -> Report:
     report = Report()
     suites_b = {s["name"]: s for s in meta_b["suites"]}
     for suite in meta_a["suites"]:
@@ -192,6 +194,9 @@ def compare_runs(a: Path, b: Path, meta_a: dict, meta_b: dict) -> Report:
         for sim, result in suite["sims"].items():
             where = f"{suite['name']}/{sim}"
             result_b = sims_b.pop(sim, None)
+            if where in ignore:
+                report.ignored.append(where)
+                continue
             if result_b is None:
                 report.structural.append(f"`{where}` only in A")
                 continue
@@ -216,6 +221,9 @@ def compare_runs(a: Path, b: Path, meta_a: dict, meta_b: dict) -> Report:
                     compare_sections(where, f, secs_a[s], secs_b[s],
                                      suite.get("compare", {}), report)
         for sim in sims_b:
+            if f"{suite['name']}/{sim}" in ignore:
+                report.ignored.append(f"{suite['name']}/{sim}")
+                continue
             report.structural.append(f"`{suite['name']}/{sim}` only in B")
     for name in suites_b:
         report.structural.append(f"suite `{name}` only in B")
@@ -248,6 +256,8 @@ def markdown(meta_a: dict, meta_b: dict, report: Report) -> str:
         out += [f"> **Note:** different inputs ({', '.join(differing_inputs)}), "
                 "so differences may be expected.", ""]
 
+    if report.ignored:
+        out += [f"Not compared (--ignore): {', '.join(f'`{w}`' for w in report.ignored)}", ""]
     if report.identical:
         out.append(f"**Identical** ({report.files} output files compared).")
         return "\n".join(out) + "\n"
@@ -275,11 +285,14 @@ def main() -> None:
     p.add_argument("--summary", type=Path, default=os.environ.get("GITHUB_STEP_SUMMARY"),
                    help="also append the report to this file "
                         "(default: $GITHUB_STEP_SUMMARY)")
+    p.add_argument("--ignore", nargs="+", default=[], metavar="SUITE/SIM",
+                   help="don't compare these simulations, e.g. hohenfinow2/sim-min-ic for a "
+                        "build known to lack a feature; they are listed in the report")
     a = p.parse_args()
 
     meta_a = json.loads((a.a / "metadata.json").read_text(encoding="utf-8"))
     meta_b = json.loads((a.b / "metadata.json").read_text(encoding="utf-8"))
-    report = compare_runs(a.a, a.b, meta_a, meta_b)
+    report = compare_runs(a.a, a.b, meta_a, meta_b, frozenset(a.ignore))
     text = markdown(meta_a, meta_b, report)
     print(text)
     if a.summary:
