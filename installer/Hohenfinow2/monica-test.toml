@@ -1,6 +1,8 @@
 # Test manifest for tests/run.py - see tests/README.md.
 # sim-ser.json isn't included: it writes its state to a hardcoded C:/tmp path.
-sims = ["sim.json", "sim+.json", "sim-min.json", "sim-min-ic.json"]
+# sim-min-nmin.json: sim-min.json with the automatic N-min fertilisation and
+# NFert/SumNFert outputs - the only coverage of both outside intercropping.
+sims = ["sim.json", "sim+.json", "sim-min.json", "sim-min-ic.json", "sim-min-nmin.json"]
 
 [compare]
 # exact equality unless a column below says otherwise
