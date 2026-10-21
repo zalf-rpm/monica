@@ -122,6 +122,14 @@
           clang-tools # clangd, clang-format
           gdb
         ];
+        # Nix's compiler wrapper adds -O2 for its fortify hardening whenever no
+        # -O is given - which is the case for CMake's Debug builds (just -g), so
+        # they would silently be optimized (inlined code, <optimized out>).
+        # The package build (Release, for the Docker image) keeps it.
+        hardeningDisable = [
+          "fortify"
+          "fortify3"
+        ];
         shellHook = ''
           export CMAKE_PREFIX_PATH="${compat}''${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
         '';
