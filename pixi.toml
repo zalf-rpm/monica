@@ -1,0 +1,55 @@
+# Reproducible MONICA build on Linux and Windows, with nothing but pixi
+# preinstalled (plus Visual Studio with "Desktop development with C++" on
+# Windows - MSVC can't come from conda-forge). See build.py for how the
+# libraries are provided; Nix users can use flake.nix instead.
+#
+#   pixi run build              # Release build into _cmake_release/
+#   pixi run build -- --debug   # Debug build into _cmake_debug/
+#   pixi run build -- --reconfigure  # also rerun CMake's configure step
+#   pixi run clean
+
+[workspace]
+name = "monica"
+version = "0.1.0"
+channels = ["conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[dependencies]
+python = ">=3.11"
+cmake = ">=3.22"
+ninja = "*"
+git = "*"
+
+[target.linux-64.dependencies]
+# One compiler for both vcpkg's library builds and MONICA itself, independent
+# of whatever the host has (or, on NixOS, doesn't).
+cxx-compiler = "*"
+# plain ar/ranlib/ld: cxx-compiler only ships the x86_64-conda-linux-gnu- prefixed ones
+binutils = "*"
+make = "*"
+# libsodium is built with autotools on Linux (the C++ Dockerfile installs the same)
+autoconf = "*"
+# vcpkg's libsodium port needs its macros (since the 2026.06.24 baseline)
+autoconf-archive = "*"
+automake = "*"
+libtool = "*"
+pkg-config = "*"
+# vcpkg's bootstrap and source downloads
+curl = "*"
+zip = "*"
+unzip = "*"
+tar = "*"
+
+[target.win-64.dependencies]
+# clang-cl for mas_cpp_misc's cr_math (CORE-MATH): GNU C that MSVC can't compile
+clang = "*"
+
+[target.linux-64.activation.env]
+# cxx-compiler puts gcc/g++ on PATH but no longer sets CC/CXX, so a CC/CXX
+# left in the user's environment would otherwise reach vcpkg and CMake.
+CC = "gcc"
+CXX = "g++"
+
+[tasks]
+build = { cmd = "python build.py build", description = "Configure and build MONICA (Release; -- --debug for Debug)" }
+clean = { cmd = "python build.py clean", description = "Remove the CMake build directories" }

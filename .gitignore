@@ -221,7 +221,9 @@ _cmake_linux_release
 /installer/Hohenfinow2/monica-parameters
 /_cmake_debug_
 
-# nix build
+# pixi / vcpkg (build.py) / nix build
+.pixi/
+.vcpkg/
 result
 result-*
 # direnv (.envrc: use flake)
