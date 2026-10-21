@@ -3,29 +3,16 @@
 
   inputs.nixpkgs.url = "nixpkgs";
 
-  # mas_cpp_misc (and its nested schema submodule) are git submodules; without
-  # this a flake's source copy has them as empty directories.
+  # mas_cpp_misc (and its nested schema submodule) and, for the AMEI branch's
+  # soil temperature and evapotranspiration components, SoilTemperatureModels
+  # and EvapoTranspirationModels are git submodules; without this a flake's
+  # source copy has them as empty directories.
   inputs.self.submodules = true;
-
-  # The AMEI branch builds soil temperature and evapotranspiration components
-  # from these repos (CMakeLists.txt: AMEI_ST_COMPONENTS_DIR/AMEI_ET_COMPONENTS_DIR,
-  # by default sibling checkouts in ../). Pinned in flake.lock; bump with
-  # `nix flake update soil-temperature-models evapotranspiration-models`.
-  inputs.soil-temperature-models = {
-    url = "github:AgriculturalModelExchangeInitiative/SoilTemperatureModels";
-    flake = false;
-  };
-  inputs.evapotranspiration-models = {
-    url = "github:AgriculturalModelExchangeInitiative/EvapoTranspirationModels";
-    flake = false;
-  };
 
   outputs =
     {
       self,
       nixpkgs,
-      soil-temperature-models,
-      evapotranspiration-models,
     }:
     let
       system = "x86_64-linux";
@@ -93,8 +80,6 @@
         cmakeFlags = [
           (pkgs.lib.cmakeFeature "CMAKE_BUILD_TYPE" "Release")
           (pkgs.lib.cmakeFeature "CMAKE_PREFIX_PATH" "${compat}")
-          (pkgs.lib.cmakeFeature "AMEI_ST_COMPONENTS_DIR" "${soil-temperature-models}/Models")
-          (pkgs.lib.cmakeFeature "AMEI_ET_COMPONENTS_DIR" "${evapotranspiration-models}/Monica")
         ];
         installPhase = ''
           runHook preInstall
@@ -137,15 +122,8 @@
           "fortify"
           "fortify3"
         ];
-        # The AMEI components: the sibling checkouts CMakeLists.txt defaults to,
-        # if they exist (to work on them), else the ones pinned in flake.lock.
-        # CMakeLists.txt reads these only when configuring a fresh build dir.
         shellHook = ''
           export CMAKE_PREFIX_PATH="${compat}''${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
-          [ -d ../SoilTemperatureModels/Models ] ||
-            export AMEI_ST_COMPONENTS_DIR="${soil-temperature-models}/Models"
-          [ -d ../EvapoTranspirationModels/Monica ] ||
-            export AMEI_ET_COMPONENTS_DIR="${evapotranspiration-models}/Monica"
         '';
       };
     };

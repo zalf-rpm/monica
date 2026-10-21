@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "evapotranspiration-models": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1789551261,
-        "narHash": "sha256-SekRa2Q2R6B2OJcapMlpPk6EoEnYeXkXNwqYaM8UJHQ=",
-        "owner": "AgriculturalModelExchangeInitiative",
-        "repo": "EvapoTranspirationModels",
-        "rev": "4a176584d3ece1bebc4f11e8a5d2f5a20ffe2cd5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AgriculturalModelExchangeInitiative",
-        "repo": "EvapoTranspirationModels",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1791966044,
@@ -31,25 +15,7 @@
     },
     "root": {
       "inputs": {
-        "evapotranspiration-models": "evapotranspiration-models",
-        "nixpkgs": "nixpkgs",
-        "soil-temperature-models": "soil-temperature-models"
-      }
-    },
-    "soil-temperature-models": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1788247401,
-        "narHash": "sha256-g4Df+xHmXgIL1joY9mXuKHfnND3INyLjZv5HwLjSBGE=",
-        "owner": "AgriculturalModelExchangeInitiative",
-        "repo": "SoilTemperatureModels",
-        "rev": "1a84718d0dd923d17269765fb1c9b6da2d7af46d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AgriculturalModelExchangeInitiative",
-        "repo": "SoilTemperatureModels",
-        "type": "github"
+        "nixpkgs": "nixpkgs"
       }
     }
   },
