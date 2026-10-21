@@ -5,6 +5,7 @@
 #
 #   pixi run build              # Release build into _cmake_release/
 #   pixi run build -- --debug   # Debug build into _cmake_debug/
+#   pixi run build -- --reconfigure  # also rerun CMake's configure step
 #   pixi run clean
 
 [workspace]

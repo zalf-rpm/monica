@@ -54,7 +54,7 @@ jobs:
         working-directory: monica
         run: |
           exe=_cmake_release/monica-run
-          [ "$RUNNER_OS" = Windows ] && exe=_cmake_release/Release/monica-run.exe
+          [ "$RUNNER_OS" = Windows ] && exe=_cmake_release/monica-run.exe
           pixi run test --monica "$exe" --engine "$ENGINE" --out ../results
 
       - uses: actions/upload-artifact@v7

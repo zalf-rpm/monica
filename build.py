@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build MONICA on Linux or Windows without any manual setup - see pixi.toml.
 
-pixi supplies the tools (CMake, Ninja, Python, git, and on Linux a GCC);
+pixi supplies the tools (CMake, Ninja, Python, git, on Linux a GCC, on
+Windows clang-cl; MSVC itself is found via vswhere);
 vcpkg supplies the libraries (Cap'n Proto, ZeroMQ, libsodium) in manifest
 mode, from cmake/vcpkg/vcpkg.json. If $VCPKG_ROOT is not set, a vcpkg
 checkout at the tag in vcpkg_tag.txt is cloned into .vcpkg/ and bootstrapped
@@ -9,6 +10,7 @@ on first use.
 
     pixi run build                 # Release, into _cmake_release/
     pixi run build -- --debug      # Debug, into _cmake_debug/
+    pixi run build -- --reconfigure  # also rerun CMake's configure step
     pixi run clean
 
 Why vcpkg rather than conda-forge for the libraries: CMakeLists.txt forces
@@ -69,25 +71,61 @@ def vcpkg_root() -> Path:
     return LOCAL_VCPKG
 
 
+def msvc_env() -> dict[str, str]:
+    """The environment of an x64 developer prompt, for Ninja to find MSVC.
+    The current one if cl.exe is already on PATH, else vcvars64.bat's of the
+    newest Visual Studio with the C++ tools, as vswhere reports it."""
+    if shutil.which("cl"):
+        return dict(os.environ)
+    vswhere = (Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"))
+               / "Microsoft Visual Studio" / "Installer" / "vswhere.exe")
+    vs = vswhere.is_file() and subprocess.run(
+        [str(vswhere), "-latest", "-products", "*", "-property", "installationPath",
+         "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"],
+        capture_output=True, text=True).stdout.strip()
+    if not vs:
+        sys.exit('error: no Visual Studio with "Desktop development with C++" found')
+    vcvars = Path(vs) / "VC" / "Auxiliary" / "Build" / "vcvars64.bat"
+    print(f"==> MSVC environment from {vcvars}", flush=True)
+    out = subprocess.run(f'"{vcvars}" >nul && set', shell=True, capture_output=True, text=True)
+    if out.returncode != 0:
+        sys.exit(f"error: {vcvars} failed:\n{out.stdout}{out.stderr}")
+    return dict(line.split("=", 1) for line in out.stdout.splitlines() if "=" in line)
+
+
 def cmd_build(ns: argparse.Namespace) -> int:
     config = "Debug" if ns.debug else "Release"
     build_dir = ROOT / ("_cmake_debug" if ns.debug else "_cmake_release")
     toolchain = vcpkg_root() / "scripts" / "buildsystems" / "vcpkg.cmake"
+    # resolved before vcvars puts Visual Studio's own CMake and Ninja on PATH
+    cmake = shutil.which("cmake") or "cmake"
+    ninja = shutil.which("ninja") or "ninja"
+    # Ninja on Windows too: the Visual Studio generator compiles the files of a
+    # project one after another, and writes no compile_commands.json
+    env = msvc_env() if IS_WINDOWS else None
 
     configure = [
-        "cmake", "-S", str(ROOT), "-B", str(build_dir),
+        cmake, "-S", str(ROOT), "-B", str(build_dir), "-G", "Ninja",
+        f"-DCMAKE_MAKE_PROGRAM={ninja}",
+        f"-DCMAKE_BUILD_TYPE={config}",
         f"-DCMAKE_TOOLCHAIN_FILE={toolchain}",
         f"-DVCPKG_MANIFEST_DIR={MANIFEST_DIR}",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
     ]
     if IS_WINDOWS:
-        # CMake's default generator here is the newest Visual Studio it finds,
-        # which also locates MSVC itself - no developer prompt needed.
-        configure += ["-A", "x64", "-DVCPKG_TARGET_TRIPLET=x64-windows-static"]
-    else:
-        configure += ["-G", "Ninja", f"-DCMAKE_BUILD_TYPE={config}"]
-    run(configure)
-    run(["cmake", "--build", str(build_dir), "--config", config, "--parallel"])
-    print(f"==> binaries in {build_dir / config if IS_WINDOWS else build_dir}")
+        configure += ["-DVCPKG_TARGET_TRIPLET=x64-windows-static"]
+    cache = build_dir / "CMakeCache.txt"
+    ninja_cache = cache.is_file() and "CMAKE_GENERATOR:INTERNAL=Ninja\n" in cache.read_text()
+    if cache.is_file() and not ninja_cache:
+        # a build dir of the former Visual Studio generator; keeps vcpkg_installed/
+        configure += ["--fresh"]
+    # An existing build dir reconfigures itself when a CMakeLists.txt or the
+    # vcpkg manifest changes; configuring every time costs half a minute of
+    # vcpkg checks for a rebuild that may have nothing to do.
+    if ns.reconfigure or not ninja_cache:
+        run(configure, env=env)
+    run([cmake, "--build", str(build_dir), "--parallel"], env=env)
+    print(f"==> binaries in {build_dir}")
     return 0
 
 
@@ -104,6 +142,8 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("build", help="configure and build (Release by default)")
     p.add_argument("--debug", action="store_true", help="Debug build into _cmake_debug/")
+    p.add_argument("--reconfigure", action="store_true",
+                   help="run the CMake configure step even if the build dir is configured already")
     p.set_defaults(fn=cmd_build)
     p = sub.add_parser("clean", help="remove _cmake_release/ and _cmake_debug/")
     p.set_defaults(fn=cmd_clean)
