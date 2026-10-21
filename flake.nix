@@ -129,8 +129,23 @@
           clang-tools # clangd, clang-format
           gdb
         ];
+        # Nix's compiler wrapper adds -O2 for its fortify hardening whenever no
+        # -O is given - which is the case for CMake's Debug builds (just -g), so
+        # they would silently be optimized (inlined code, <optimized out>).
+        # The package build (Release, for the Docker image) keeps it.
+        hardeningDisable = [
+          "fortify"
+          "fortify3"
+        ];
+        # The AMEI components: the sibling checkouts CMakeLists.txt defaults to,
+        # if they exist (to work on them), else the ones pinned in flake.lock.
+        # CMakeLists.txt reads these only when configuring a fresh build dir.
         shellHook = ''
           export CMAKE_PREFIX_PATH="${compat}''${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
+          [ -d ../SoilTemperatureModels/Models ] ||
+            export AMEI_ST_COMPONENTS_DIR="${soil-temperature-models}/Models"
+          [ -d ../EvapoTranspirationModels/Monica ] ||
+            export AMEI_ET_COMPONENTS_DIR="${evapotranspiration-models}/Monica"
         '';
       };
     };
