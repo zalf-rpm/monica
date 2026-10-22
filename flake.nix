@@ -107,10 +107,31 @@
           mainProgram = "monica-run";
         };
       };
+
+      # `nix build .#monica-debug`: the same executables unoptimized and with
+      # debug symbols, e.g. for gdb where there's no dev shell. For day-to-day
+      # debugging the dev shell's incremental build in build/ is quicker.
+      monica-debug = monica.overrideAttrs (old: {
+        pname = "monica-debug";
+        # the last -D wins, so this overrides the Release above
+        cmakeFlags = old.cmakeFlags ++ [ (pkgs.lib.cmakeFeature "CMAKE_BUILD_TYPE" "Debug") ];
+        # as in the dev shell: fortify would add -O2 to the Debug build
+        hardeningDisable = [
+          "fortify"
+          "fortify3"
+        ];
+        dontStrip = true;
+        # the debug info would name the sandbox's build dir, gone after the
+        # build; point it at the source in the store instead, so gdb finds the
+        # sources (which keeps them alive as long as this package is)
+        preConfigure = ''
+          export NIX_CFLAGS_COMPILE+=" -fdebug-prefix-map=$PWD=${old.src}"
+        '';
+      });
     in
     {
       packages.${system} = {
-        inherit monica capnproto;
+        inherit monica monica-debug capnproto;
         default = monica;
       };
 
