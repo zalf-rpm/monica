@@ -8,6 +8,8 @@ message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_compile_definitions(_USE_MATH_DEFINES)
 add_compile_definitions(CAPNPROTO_SERIALIZATION_SUPPORT)
 add_compile_definitions(AMEI)
