@@ -228,3 +228,4 @@ result
 result-*
 # direnv (.envrc: use flake)
 .direnv/
+.cache/
