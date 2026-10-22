@@ -32,7 +32,7 @@
     "adapter": "GDB",
     "request": "launch",
     "program": "$ZED_WORKTREE_ROOT/build/monica-run",
-    "args": ["-o", "$ZED_WORKTREE_ROOT/build/sim-min-out.csv", "sim-min.json"],
+    "args": ["-m", "-o", "$ZED_WORKTREE_ROOT/sim-min-out.csv", "sim-min.json"],
     "cwd": "$ZED_WORKTREE_ROOT/installer/Hohenfinow2",
     "env": { "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/monica-parameters" },
     "build": "[Linux] CMake Build",
