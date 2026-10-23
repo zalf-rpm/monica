@@ -253,9 +253,15 @@ its data.
 Each phase ends with a check, as in `plan-odin.md`. R1 is checked in *every* phase:
 `diff_outputs.sh` byte-identical with no configuration.
 
-**Phase 0: generator options (PyCrop2ML).** §2.1, §2.2. Check: the 12 packages pass
-`odin check -vet` and PyCrop2ML's numeric test, and no generated file imports `core:math` for a
-`cr_math` function.
+**Phase 0: generator options (PyCrop2ML). Done 2026-10-23.** §2.1 and §2.2, documented in
+PyCrop2ML's `doc/odin-target.md`. `CYML_ODIN_MATH` selects `cr_math`; its value is the import
+path of `support/cr_math` as seen from the generated package. Allocating procs take
+`allocator := context.allocator`. Check results:
+
+* all 12 packages pass `odin check -vet`, with and without `cr_math`;
+* with `cr_math`, only `sqrt`, `floor`, `ceil`, `round`, `is_nan` and `sum` remain on `core:math`;
+* the numeric comparison against the Python reference is unchanged, also with `cr_math`: the
+  same 12 pass, and B9 fails as before.
 
 **Phase 1: the mechanism, with only MONICA's own implementation.** `Soil_Temperature_Impl` with
 the single variant `Soil_Temperature`, the dispatch `switch`, the sim.json section, the name
