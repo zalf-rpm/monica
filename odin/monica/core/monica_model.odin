@@ -47,7 +47,7 @@ Monica_Model :: struct {
 	sim_params:                      p.Simulation_Parameters,
 	groundwater_information:         p.Measured_Groundwater_Table_Information,
 	soil_column:                     Soil_Column, // main soil data structure
-	soil_temperature:                Soil_Temperature, // temperature code
+	soil_temperature:                Soil_Temperature_Impl, // temperature code; see soil_temperature_impl.odin
 	soil_moisture:                   Soil_Moisture, // moisture code
 	soil_organic:                    Soil_Organic, // organic code
 	soil_transport:                  Soil_Transport, // transport code
@@ -107,11 +107,12 @@ make_monica_model :: proc(
 		model.site_params.soil_parameters[:],
 		allocator,
 	)
-	model.soil_temperature = make_soil_temperature(
-		&model.soil_column,
-		cpp.soil_temperature_mod_params,
-		model.env_params.time_step,
-	)
+	// NOTE(deviation): the implementation is chosen by sim.json's "Modules"
+	// section (soil_temperature_impl.odin); without one it is
+	// make_soil_temperature as in the C++. run_monica has checked the name.
+	make_st, st_ok := soil_temperature_constructor(model.sim_params.modules.soil_temperature.impl)
+	assert(st_ok, "unknown Modules.SoilTemperature.impl - check_modules_config wasn't called")
+	model.soil_temperature = make_st(model, cpp, allocator)
 	model.soil_moisture = make_soil_moisture(
 		&model.soil_column,
 		&model.site_params,
@@ -788,15 +789,20 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	soil_coverage :=
 		model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0
-	soil_temperature_step(
-		&model.soil_temperature,
-		tmin,
-		tmax,
-		globrad,
-		soil_coverage,
-		model.soil_moisture.snow_component.snow_depth,
-		model.soil_moisture.frost_component.temperature_under_snow,
-	)
+	// NOTE(deviation): dispatch on the configured implementation
+	// (soil_temperature_impl.odin); MONICA's own gets exactly the C++ call.
+	switch &st in model.soil_temperature {
+	case Soil_Temperature:
+		soil_temperature_step(
+			&st,
+			tmin,
+			tmax,
+			globrad,
+			soil_coverage,
+			model.soil_moisture.snow_component.snow_depth,
+			model.soil_moisture.frost_component.temperature_under_snow,
+		)
+	}
 
 	// first try to get ReferenceEvapotranspiration from climate data
 	et0 := -1.0

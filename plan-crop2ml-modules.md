@@ -94,7 +94,8 @@ Soil_Temperature_Impl :: union #no_nil {
 }
 ```
 
-`#no_nil` makes the first variant the zero value (checked with the pinned compiler), so an
+`#no_nil` makes the first variant the zero value (checked with the pinned compiler; it needs at
+least 2 variants, so phase 1's one-variant union is a plain `union` until phase 2), so an
 unconfigured MonicaModel selects MONICA's own implementation; `make_soil_temperature` still
 initialises it as today. Dispatch in `monica_model_general_step`:
 
@@ -270,6 +271,63 @@ table with `"internal"`. No Crop2ML code yet. Checks:
 * R1: `diff_outputs.sh` byte-identical without configuration, and with `"impl": "internal"`;
 * R2: wall-clock time of the fixtures before/after, the difference within run-to-run noise
   (measure several runs; record the numbers in this file).
+
+Done 2026-10-23. Decisions:
+
+* The pinned compiler rejects `#no_nil` on a union with a single variant ("must have at least 2
+  variants"). Until phase 2 adds the first module, `Soil_Temperature_Impl` is a plain
+  `union { Soil_Temperature }` (Maybe-shaped, zero value nil). `make_monica_model` always sets
+  it. Phase 2 adds `#no_nil` together with the second variant.
+* Location (§1.7): the union, name table and dispatch are in `core`
+  (`odin/monica/core/soil_temperature_impl.odin`). The union names `Soil_Temperature`, which
+  needs `Soil_Column`, and `Monica_Model` holds the union, so a package outside `core` would
+  import `core` while `core` imports it. What doesn't depend on `core` (input/output structs,
+  bindings of generated modules) goes to `odin/monica/modules/soil_temperature/`, which `core`
+  imports. A consequence for R3: a hand-written variant that reads `Monica_Model` directly has
+  to live in `core` too. One that works on the input/output structs can be its own package.
+* sim.json: `"Modules"` arrives with the rest of sim.json in `simulationParameters` and is parsed
+  into `Simulation_Parameters.modules` (`odin/monica/params/modules_config.odin`). Shape errors
+  (not an object, unknown mode) come from the merge. Unknown impl names come from
+  `core.check_modules_config`, which `run_monica` calls before `make_monica_model`, next to the
+  soil profile guard. `SoilTemperatureDrivers` is parsed but refused until phase 3. The section
+  is only written back to JSON when it is configured.
+* Other users of `model.soil_temperature`: the automatic sowing soil temperature average and the
+  `STemp` output alias read the soil column through `soil_temperature`'s back-pointer. Both now
+  read `model.soil_column` directly, which is the same memory (§1.2). `SurfTemp`
+  (`soil_temperature.soil_surface_temperature`) stays. `reflectpath` unwraps the Maybe-shaped
+  union, and it now also traverses general unions: a field segment is looked up in the variants
+  (struct or pointer to struct, first match wins) and reads as missing while another variant is
+  active (§1.5). So phase 2's `#no_nil` doesn't break output paths. Unit-tested in
+  `tests/reflectpath_test.odin`.
+* Reference harnesses in `odin/tests/*_ref` that step `model.soil_temperature` directly use
+  `.(core.Soil_Temperature)`.
+
+Checks:
+
+* R1: `diff_outputs.sh` byte-identical (8 sections). Beyond the fixtures, the C++ repo's suites
+  (`tests/run.py`, Hohenfinow2 and 48 muencheberg_v140, 53 CSVs) are byte-identical between the
+  binaries before (566094e) and after. These include sim.json and sim+.json, which have `STemp`
+  and `SurfTemp`. With `"Modules": {"SoilTemperature": {"impl": "internal", "mode":
+  "integrated"}}` added, sim-min, sim-min-events2, sim-min-setvalue, sim, sim+ and sim-ser give
+  output byte-identical to the runs without it. Unknown impl, unknown mode, drivers and a
+  non-object section each stop the run with an error.
+* R2: `hyperfine -N`, 3 warmups, 30 runs (sim.json: 15). Two rounds, the second with the binaries
+  in reverse order. Linux x86_64, 48 cores, release build. Mean ± standard deviation in ms:
+
+  | fixture | round | before | after | after − before |
+  | --- | --- | --- | --- | --- |
+  | sim-min | 1 | 364 ± 14 | 360 ± 15 | −4 (−1.1 %) |
+  | sim-min | 2 | 349 ± 9 | 353 ± 7 | +4 (+1.1 %) |
+  | sim-min-events2 | 1 | 356 ± 17 | 358 ± 15 | +2 (+0.6 %) |
+  | sim-min-events2 | 2 | 347 ± 9 | 342 ± 7 | −5 (−1.4 %) |
+  | sim-min-setvalue | 1 | 267 ± 6 | 264 ± 6 | −3 (−1.1 %) |
+  | sim-min-setvalue | 2 | 266 ± 5 | 267 ± 4 | +1 (+0.4 %) |
+  | sim | 1 | 1975 ± 25 | 1968 ± 15 | −7 (−0.4 %) |
+  | sim | 2 | 1995 ± 32 | 2019 ± 34 | +24 (+1.2 %) |
+
+  The differences have both signs and are within one standard deviation, and the round-to-round
+  drift of the same binary (sim-min before: 364 vs 349) is larger than any of them. That is
+  run-to-run noise.
 
 **Phase 2: standalone, two modules.** Input/output structs, bindings for Monica_SoilTemp and
 DSSAT_ST_standalone, and `cmd/monica-module` (process + module name, input file in, CSV out).

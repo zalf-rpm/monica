@@ -190,7 +190,7 @@ main :: proc() {
 		soil_coverage :=
 			model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0
 		core.soil_temperature_step(
-			&model.soil_temperature,
+			&model.soil_temperature.(core.Soil_Temperature),
 			tmin,
 			tmax,
 			globrad,

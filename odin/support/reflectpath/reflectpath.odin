@@ -34,8 +34,12 @@
 //                      are resolved by name at compile time, string keys are
 //                      taken literally, integer/bool keys are parsed.
 //
-// Pointer and Maybe(T) segments are traversed automatically. A missing value
-// - nil pointer, unset Maybe, out-of-range index, absent map key - is
+// Pointer and Maybe(T) segments are traversed automatically. A field segment
+// on any other union is looked up in its variants (struct or pointer to
+// struct), first match wins, and reads as missing while another variant is
+// active. A missing value
+// - nil pointer, unset Maybe, inactive union variant, out-of-range index,
+//   absent map key - is
 // reported as `ok = false` rather than trapping, matching what every legacy
 // output lambda's `... ? ... : 0.0` ternary does.
 //
@@ -70,6 +74,7 @@ Step_Kind :: enum u8 {
 	OPEN, // ptr = data + open_index*elem_size, index supplied per resolve
 	DEREF, // ptr = ptr^        (nil -> missing)
 	UNWRAP, // Maybe(T)          (unset -> missing)
+	VARIANT, // union variant     (another variant active -> missing)
 	LEN, // terminal: yields the container's length as an int
 	MAP_KEY, // hashed lookup with a compile-time-encoded key
 	LAST, // ptr = data + (n-1)*elem_size
@@ -80,11 +85,11 @@ Step :: struct {
 	kind:       Step_Kind,
 	container:  Container, // INDEX/OPEN/LAST/FIRST/LEN
 	offset:     uintptr, // FIELD
-	index:      int, // INDEX
+	index:      int, // INDEX; VARIANT: the variant's tag value
 	elem_size:  uintptr, // INDEX/OPEN/LAST/FIRST
 	count:      int, // FIXED container length
-	tag_offset: uintptr, // UNWRAP
-	tag_size:   int, // UNWRAP
+	tag_offset: uintptr, // UNWRAP/VARIANT
+	tag_size:   int, // UNWRAP/VARIANT
 	// The type *after* this step, resolved at COMPILE time. resolve() never
 	// needs it (it is pure pointer arithmetic); it is kept for diagnostics
 	// and so callers can introspect a plan without re-walking the types.
@@ -178,7 +183,7 @@ compile :: proc(
 		// A single segment can consume more than one step: pointers and
 		// Maybes are peeled first, and an unindexed array opens a dimension
 		// and then re-applies the segment to the element type.
-		for {
+		seg_steps: for {
 			cur = peel(&steps, cur)
 			ti := runtime.type_info_base(type_info_of(cur))
 
@@ -303,6 +308,32 @@ compile :: proc(
 				)
 				cur = info.value.id
 				continue seg_loop
+
+			case runtime.Type_Info_Union:
+				// Not Maybe-shaped (peel took those): find the variant that
+				// has the field, then re-apply the segment to that variant -
+				// a pointer variant gets its DEREF from peel.
+				if info.tag_type != nil {
+					for v, i in info.variants {
+						if !variant_has_field(v, seg) {
+							continue
+						}
+						append(
+							&steps,
+							Step {
+								kind = .VARIANT,
+								// tag 0 is nil unless #no_nil
+								index = info.no_nil ? i : i + 1,
+								tag_offset = info.tag_offset,
+								tag_size = info.tag_type.size,
+								type = v.id,
+								name = seg,
+							},
+						)
+						cur = v.id
+						continue seg_steps
+					}
+				}
 			}
 
 			return plan, mkerr(
@@ -499,6 +530,13 @@ apply_step :: proc(s: ^Step, ptr: rawptr, open_index: int) -> (rawptr, bool) {
 		// only the tag test. Tag 0 is the nil variant (CONVENTIONS §5: unset
 		// must never collapse to the zero value).
 		if read_tag(rawptr(uintptr(ptr) + s.tag_offset), s.tag_size) == 0 {
+			return nil, false
+		}
+		return ptr, true
+
+	case .VARIANT:
+		// variant data is at offset 0 as for UNWRAP; only the tag tells
+		if read_tag(rawptr(uintptr(ptr) + s.tag_offset), s.tag_size) != i64(s.index) {
 			return nil, false
 		}
 		return ptr, true
@@ -724,6 +762,22 @@ peel :: proc(steps: ^[dynamic]Step, cur: typeid) -> typeid {
 		}
 		return cur
 	}
+}
+
+// Whether a union variant - a struct, or a pointer to one - has `field`.
+@(private)
+variant_has_field :: proc(v: ^runtime.Type_Info, field: string) -> bool {
+	t := runtime.type_info_base(v)
+	if ptr, is_ptr := t.variant.(runtime.Type_Info_Pointer); is_ptr {
+		if ptr.elem == nil {
+			return false
+		}
+		t = runtime.type_info_base(ptr.elem)
+	}
+	if _, is_struct := t.variant.(runtime.Type_Info_Struct); !is_struct {
+		return false
+	}
+	return reflect.struct_field_by_name(t.id, field).type != nil
 }
 
 @(private)

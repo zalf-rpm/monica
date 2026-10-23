@@ -176,7 +176,10 @@ g_alias_table := []Alias_Entry {
 	{"Sat", {"soil_column.layers.saturation", 4, .NONE, "m3 m-3"}},
 	{"SnowD", {"soil_moisture.snow_component.snow_depth", 1, .NONE, "mm"}},
 	{"SoilpH", {"soil_column.layers.0.soil_ph", 1, .NONE, ""}},
-	{"STemp", {"soil_temperature.soil_column.layers.soil_temperature", 1, .NONE, "°C"}},
+	// NOTE(deviation): the C++ path goes through soilTemperature's back-pointer
+	// to the same soil column; this one doesn't depend on which soil
+	// temperature implementation runs (plan-crop2ml-modules.md §1.2).
+	{"STemp", {"soil_column.layers.soil_temperature", 1, .NONE, "°C"}},
 	{"StomRes", {"current_crop_module.stomata_resistance", 2, .NONE, "s m-1"}},
 	{"Stone", {"soil_column.layers.soil_stone_content", 2, .NONE, "kg kg-1"}},
 	{

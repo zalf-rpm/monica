@@ -827,6 +827,15 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 		return out
 	}
 
+	// NOTE(deviation): no C++ counterpart - sim.json's "Modules" section
+	// (plan-crop2ml-modules.md §1.4). An unknown implementation is refused here,
+	// for the same reasons as the soil profile above, before make_monica_model
+	// would have to.
+	if errs := core.check_modules_config(&env.params.sim_params.modules, allocator); len(errs) > 0 {
+		out.errors = errs
+		return out
+	}
+
 	// prefer multiple crop rotations, but use a single rotation if there
 	if len(env.cropRotations) == 0 && len(env.cropRotation) > 0 {
 		append(

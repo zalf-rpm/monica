@@ -383,7 +383,11 @@ automatic_sowing_avg_soil_temp_fn :: proc(model: ^core.Monica_Model) -> f64 {
 	i := 0
 	size := core.get_layer_number_for_depth(&model.soil_column, as.soil_depth_for_averaging) + 1
 	for ; i < size; i += 1 {
-		avgSoilTemp += model.soil_temperature.soil_column.layers[i].soil_temperature
+		// C++: model->soilTemperature->soilColumn->layers.at(int(i)).vs_SoilTemperature
+		// NOTE(deviation): read from the model's soil column, which is the
+		// same column - every soil temperature implementation writes there
+		// (plan-crop2ml-modules.md §1.2), so this doesn't depend on which runs.
+		avgSoilTemp += model.soil_column.layers[i].soil_temperature
 	}
 	return avgSoilTemp / f64(i)
 }

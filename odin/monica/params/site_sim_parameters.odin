@@ -501,6 +501,7 @@ Simulation_Parameters :: struct {
 	path_to_load_serialization_file:             string,
 	no_of_previous_days_serialized_climate_data: u64,
 	dual_kc_method:                              bool, // FAO-56 Dual Kc evaporation partitioning
+	modules:                                     Modules_Config, // NOTE(deviation): sim.json "Modules", see modules_config.odin
 }
 
 // The C++ in-class initialisers
@@ -578,6 +579,8 @@ simulation_parameters_merge :: proc(sp: ^Simulation_Parameters, j: jx.Value) -> 
 		sp.dual_kc_method = true
 	}
 
+	tl.append_errors(&res, modules_config_merge(&sp.modules, jx.get(j, "Modules")))
+
 	return res
 }
 
@@ -604,7 +607,7 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 	)
 	ser_o := jx.obj(a, {"load", load_o}, {"save", save_o})
 
-	return jx.obj(
+	res := jx.obj(
 		a,
 		{"type", jx.sl("SimulationParameters")},
 		{"startDate", jx.s(start_iso, a)},
@@ -635,6 +638,12 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 		{"serializedMonicaState", ser_o},
 		{"evapotranspiration-method", jx.sl(sp.dual_kc_method ? "FAO-56-Dual" : "Penman-Monteith")},
 	)
+	if mj, ok := modules_config_to_json(&sp.modules, a); ok {
+		o := res.(jx.Object)
+		jx.obj_set(&o, "Modules", mj, a)
+		res = o
+	}
+	return res
 }
 
 // ---------------------------------------------------------------------------

@@ -44,6 +44,20 @@ Crop :: struct {
 	column: ^Column, // back-pointer, the shape soilMoisture.soilColumn has
 }
 
+// The shape of a process with swappable implementations
+// (plan-crop2ml-modules.md §1.1): the default by value, others behind pointers.
+@(private = "file")
+Own_Impl :: struct {
+	surface: f64,
+	column:  ^Column,
+}
+
+@(private = "file")
+Other_Impl :: struct {
+	surface: f64,
+	extra:   f64,
+}
+
 @(private = "file")
 Model :: struct {
 	count:   int,
@@ -54,6 +68,14 @@ Model :: struct {
 	climate: [dynamic]map[Key]f64,
 	events:  map[string]bool,
 	slice:   []f64,
+	impl:    union #no_nil {
+		Own_Impl,
+		^Other_Impl,
+	},
+	nilable: union {
+		Own_Impl,
+		^Other_Impl,
+	},
 }
 
 @(private = "file")
@@ -237,6 +259,51 @@ test_reflectpath_missing_values :: proc(t: ^testing.T) {
 	testing.expect(t, !ok)
 	_, ok = get(t, m, "column.layers.0.organs.7")
 	testing.expect(t, !ok)
+}
+
+@(test)
+test_reflectpath_unions :: proc(t: ^testing.T) {
+	m := make_model(context.temp_allocator)
+	m.impl = Own_Impl{surface = 1.5, column = &m.column}
+
+	// a field is looked up in the variants, first match wins
+	v, ok := get(t, m, "impl.surface")
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 1.5)
+	// ... and the path goes on through the variant's own pointers
+	v, ok = get(t, m, "impl.column.layers.2.nh4")
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 2.5)
+
+	// a field of an inactive variant is missing, not read from the wrong one
+	_, ok = get(t, m, "impl.extra")
+	testing.expect(t, !ok)
+
+	// a pointer variant is dereferenced; "surface" still names Own_Impl's,
+	// so it is missing now
+	other := Other_Impl{surface = 9, extra = 4.25}
+	m.impl = &other
+	v, ok = get(t, m, "impl.extra")
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 4.25)
+	_, ok = get(t, m, "impl.surface")
+	testing.expect(t, !ok)
+
+	// without #no_nil, tags are shifted by the nil state
+	_, ok = get(t, m, "nilable.surface")
+	testing.expect(t, !ok)
+	m.nilable = Own_Impl{surface = 2}
+	v, ok = get(t, m, "nilable.surface")
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 2.0)
+	m.nilable = &other
+	v, ok = get(t, m, "nilable.extra")
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 4.25)
+
+	// a field no variant has is a compile error
+	_, err := rp.compile(typeid_of(Model), "impl.nonexistent", context.temp_allocator)
+	testing.expect(t, rp.failed(err))
 }
 
 @(test)
