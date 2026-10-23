@@ -74,10 +74,10 @@ PyCrop2ML ran the units in topological order of the internal links. Upstream com
 `<Model>` elements in the composition XML. `Monica_SoilTemp`'s composition lists `SoilTemperature`
 first, so regenerated code runs the profile *before* the surface temperature (with yesterday's
 surface temperature), unlike the committed cpp2 code and MONICA's own step. It compiles and runs,
-just with different numbers. Fix now: list `NoSnowSoilSurfaceTemperature`,
-`WithSnowSoilSurfaceTemperature`, `SoilTemperature` in that order in
-`composition.SoilTemperature.xml` (correct with either PyCrop2ML version). Check the other
-packages' `<Model>` order too. Report upstream (B12 in PyCrop2ML's `plan-odin-target.md`).
+just with different numbers. **Done for Monica_SoilTemp** (SoilTemperatureModels commit 1c5cde3: `<Model>` order
+NoSnow → WithSnow → SoilTemperature, correct with either PyCrop2ML version). Still to do: check
+the other packages' `<Model>` order before regenerating them. Reported upstream (B12 in
+PyCrop2ML's `plan-odin-target.md`); whether the change was intended is still open.
 
 **A5 Model bugs (Crop2ML sources, also affect Odin).**
 `EvapoTranspirationModels/Monica/Monica_Evapotranspiration/crop2ml/algo/pyx/radiation.pyx`
