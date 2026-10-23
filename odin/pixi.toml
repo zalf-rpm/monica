@@ -78,6 +78,7 @@ capnp-shim = { cmd = "python tools/odinw.py capnp-shim", description = "Build th
 capnp-shim-static = { cmd = "python tools/odinw.py capnp-shim --static", description = "Build the Cap'n Proto shim as one combined static lib (for single-binary releases)" }
 clean = { cmd = "python tools/odinw.py clean", description = "Remove build/ and the Cap'n Proto shim's CMake build dirs" }
 build-standalone = { cmd = "python tools/odinw.py build monica-capnp-server --capnp-link static", depends-on = ["bootstrap"], description = "Build monica-capnp-server as a self-contained exe (needs capnp-shim-static first)" }
+gen-amei = { cmd = "python tools/odinw.py gen-amei", description = "Regenerate amei/<package>/ from the pinned Crop2ML packages (PyCrop2ML runs in its own pixi env)" }
 odin = { cmd = "python tools/odinw.py exec", depends-on = ["bootstrap"], description = "Run the pinned odin, e.g. pixi run odin -- version" }
 
 [target.win-64.tasks]

@@ -164,6 +164,21 @@ jobs:
           name: suite-odin-${{ runner.os }}
           path: odin-results
 
+      # Crop2ML modules (plan-crop2ml-modules.md): amei/ must be exactly what the
+      # pinned PyCrop2ML generates from the pinned Crop2ML packages, and the
+      # modules must give their generated Python's numbers (tests/check_modules.sh).
+      - name: Crop2ML modules
+        if: runner.os == 'Linux'
+        working-directory: monica/odin
+        run: |
+          pixi run gen-amei
+          if [ -n "$(git status --porcelain -- amei)" ]; then
+            git status --short -- amei
+            echo "::error::odin/amei/ differs from what 'pixi run gen-amei' generates"
+            exit 1
+          fi
+          MONICA_PARAMETERS="$GITHUB_WORKSPACE/cpp/monica-parameters" pixi run bash tests/check_modules.sh
+
       # Windows only: the single-binary release variant (static shim). Its
       # combined lib is MSVC-only, see support/capnp/shim_dynamic/CMakeLists.txt.
       - name: Build standalone monica-capnp-server

@@ -18,6 +18,7 @@
 // monica/modules/soil_temperature/, which core imports.
 package core
 
+import stm "../modules/soil_temperature"
 import p "../params"
 import "core:fmt"
 
@@ -104,4 +105,38 @@ soil_temperature_impl_names :: proc(allocator := context.allocator) -> []string 
 		names[i] = e.name
 	}
 	return names
+}
+
+// The part of a soil temperature module's Input that stays constant over a
+// run, from the model as make_monica_model left it (plus the soil moisture,
+// which only starts changing with the first step). tav/tamp are the climate
+// data's (clim.data_accessor_calc_tamp_and_tav) and left to the caller, as
+// are the daily values. Slices are allocated with `allocator`.
+soil_temperature_input_from_model :: proc(
+	model: ^Monica_Model,
+	params: p.Soil_Temperature_Module_Parameters,
+	in_: ^stm.Input,
+	allocator := context.allocator,
+) {
+	in_.latitude = model.site_params.latitude
+	in_.albedo = model.env_params.albedo
+	in_.time_step = model.env_params.time_step
+	in_.params = params
+	n := len(model.soil_column.layers)
+	in_.layer_thickness = make([]f64, n, allocator)
+	in_.bulk_density = make([]f64, n, allocator)
+	in_.saturation = make([]f64, n, allocator)
+	in_.organic_matter = make([]f64, n, allocator)
+	in_.field_capacity = make([]f64, n, allocator)
+	in_.permanent_wilting_point = make([]f64, n, allocator)
+	in_.soil_moisture = make([]f64, n, allocator)
+	for &l, i in model.soil_column.layers {
+		in_.layer_thickness[i] = l.layer_thickness_m
+		in_.bulk_density[i] = soil_bulk_density(&l)
+		in_.saturation[i] = l.saturation
+		in_.organic_matter[i] = soil_organic_matter(&l)
+		in_.field_capacity[i] = l.field_capacity
+		in_.permanent_wilting_point[i] = l.permanent_wilting_point
+		in_.soil_moisture[i] = l.soil_moisture_m3
+	}
 }

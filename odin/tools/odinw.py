@@ -86,6 +86,8 @@ SHIM_DIR = ROOT / "support" / "capnp" / "shim_dynamic"  # Cap'n Proto C++ shim (
 VCPKG_MANIFEST_DIR = BUILD_DIR / "vcpkg-manifest"        # generated, see _write_vcpkg_manifest
 CR_MATH_SRC = REPO / "mas_cpp_misc" / "cr_math"           # CORE-MATH (submodule), see ensure_cr_math
 CR_MATH_DIR = BUILD_DIR / "cr_math"                       # where support/cr_math imports it from
+CROP2ML_DIR = BUILD_DIR / "crop2ml"   # pinned PyCrop2ML + Crop2ML sources, see cmd_gen_amei
+AMEI_DIR = ROOT / "amei"              # the generated Crop2ML packages, committed
 
 IS_WINDOWS = sys.platform == "win32"
 ODIN_EXE = DIST_DIR / ("odin.exe" if IS_WINDOWS else "odin")
@@ -96,6 +98,7 @@ TARGETS = {
     "monica-zmq-proxy": "cmd/monica-zmq-proxy",
     "monica-capnp-server": "cmd/monica-capnp-server",
     "monica-capnp-fbp-component": "cmd/monica-capnp-fbp-component",
+    "monica-module": "cmd/monica-module",
 }
 
 # Targets that link the Cap'n Proto dynamic-API shim
@@ -489,6 +492,66 @@ def ensure_cr_math(force: bool = False) -> None:
 
 def cmd_cr_math(ns: argparse.Namespace) -> int:
     ensure_cr_math(force=True)
+    return 0
+
+
+def _pinned_checkout(name: str, url: str, commit: str) -> Path:
+    """A checkout of `url` at `commit` in build/crop2ml/<name>, fetched (only
+    that commit, shallow) on first use and moved when the pin changes."""
+    d = CROP2ML_DIR / name
+    def git(*a: str, check: bool = True) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(d), *a], check=check, capture_output=True, text=True)
+    if not (d / ".git").is_dir():
+        d.mkdir(parents=True, exist_ok=True)
+        git("init", "-q")
+        git("remote", "add", "origin", url)
+    have = git("rev-parse", "HEAD", check=False).stdout.strip()
+    if have != commit:
+        print(f"==> fetching {name} at {commit[:10]}", flush=True)
+        if subprocess.call(["git", "-C", str(d), "fetch", "-q", "--depth", "1", "origin", commit]) != 0:
+            die(f"fetching {url} at {commit} failed")
+        git("checkout", "-q", "--detach", "--force", "FETCH_HEAD")
+    return d
+
+
+def cmd_gen_amei(ns: argparse.Namespace) -> int:
+    """Regenerate amei/<package>/ from the Crop2ML packages pinned in
+    versions.json, with the pinned PyCrop2ML's Odin target.
+
+    PyCrop2ML runs in its own pixi environment (its pyproject.toml), so its
+    dependencies stay out of this one. The generator writes into the package
+    directory (src/<target>/, doc images), so it runs on a fresh copy, never on
+    the checkout. It also generates the Python code, which stays in
+    build/crop2ml/work/ for tools/module_reference.py.
+    """
+    pins = VERSIONS["crop2ml"]
+    pixi = os.environ.get("PIXI_EXE") or shutil.which("pixi")
+    if pixi is None:
+        die("pixi not found - PyCrop2ML runs in its own pixi environment")
+    pycropml = _pinned_checkout("PyCrop2ML", pins["pycropml"]["url"], pins["pycropml"]["commit"])
+    env = dict(os.environ)
+    # as seen from amei/<package>/
+    env["CYML_ODIN_MATH"] = "../../support/cr_math"
+    for repo, src in pins["sources"].items():
+        checkout = _pinned_checkout(repo, src["url"], src["commit"])
+        work = CROP2ML_DIR / "work" / repo
+        for pkg in src["packages"]:
+            shutil.rmtree(work / pkg, ignore_errors=True)
+            shutil.copytree(checkout / "Models" / pkg, work / pkg)
+            cmd = [pixi, "run", "--manifest-path", str(pycropml / "pyproject.toml"),
+                   "python", str(pycropml / "src" / "pycropml" / "main.py"), "-p", pkg, "odin", "py"]
+            print(f"==> {repo}/{pkg}: {' '.join(cmd[-4:])}", flush=True)
+            if subprocess.call(cmd, cwd=work, env=env) != 0:
+                die(f"generating {pkg} failed")
+            generated = work / pkg / "src" / "odin" / pkg
+            if not any(generated.glob("*.odin")):
+                die(f"no Odin code in {generated}")
+            dest = AMEI_DIR / pkg
+            shutil.rmtree(dest, ignore_errors=True)
+            dest.mkdir(parents=True)
+            for f in sorted(generated.glob("*.odin")):
+                shutil.copy2(f, dest / f.name)
+            print(f"==> {dest.relative_to(ROOT)}", flush=True)
     return 0
 
 
@@ -1181,6 +1244,12 @@ def main() -> int:
         help="(re)build the CORE-MATH library from mas_cpp_misc/cr_math (build/test do it on demand)",
     )
     p.set_defaults(fn=cmd_cr_math)
+
+    p = sub.add_parser(
+        "gen-amei",
+        help="regenerate amei/<package>/ from the Crop2ML packages pinned in versions.json",
+    )
+    p.set_defaults(fn=cmd_gen_amei)
 
     p = sub.add_parser("test", help="run the odin/tests unit suite")
     p.set_defaults(fn=cmd_test)

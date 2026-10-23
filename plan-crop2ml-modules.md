@@ -221,11 +221,12 @@ decide before phase 4 without blocking earlier phases.
 
 ### 1.7 Where the code lives
 
-* `odin/monica/modules/<process>/`: the union, dispatch, input/output structs, name table,
-  bindings. Same package as now or its own; decide in phase 1 depending on import cycles (`core`
-  would import the module packages).
-* `odin/amei/<package>/`: generated Crop2ML packages, never edited. A pixi task regenerates them
-  from the `monica_amei` submodules, and CI checks that regenerating changes nothing.
+* `odin/monica/modules/<process>/`: the input/output structs, the bindings and their name table
+  (phase 2). The union of `Monica_Model`, its dispatch and the gather are in `core` (decided in
+  phase 1: `core` imports the module packages).
+* `odin/amei/<package>/`: generated Crop2ML packages, never edited. `pixi run gen-amei`
+  regenerates them from the pinned sources (`odin/versions.json`, `crop2ml`), and CI checks that
+  regenerating changes nothing.
 * Hand-written variants: next to the bindings, in their own package each.
 
 ### 1.8 State and serialization
@@ -337,6 +338,54 @@ Checks: same numbers as the generated Python code on the same input (PyCrop2ML's
 where the Crop2ML source keeps MONICA's evaluation order and, after phase 0, uses `cr_math`;
 where it doesn't, document the difference rather than force it.
 
+Done 2026-10-23. What was built:
+
+* `pixi run gen-amei` (`odinw.py gen-amei`): fetches PyCrop2ML and SoilTemperatureModels at the
+  commits pinned in `odin/versions.json` (`crop2ml`) into `odin/build/crop2ml/`. Then it runs
+  PyCrop2ML in its own pixi environment (its `pyproject.toml`, so none of its dependencies come
+  into ours) on a copy of each listed package, targets `odin` and `py`, with
+  `CYML_ODIN_MATH=../../support/cr_math`. The Odin code goes to `odin/amei/<package>/`
+  (committed, never edited). The Python code stays in the build directory for the reference.
+  Generation is deterministic. Both packages pass `odin check -vet`. CI (Linux pixi job)
+  regenerates and fails if `amei/` changes. Instead of the `monica_amei` submodules, as §1.7 had
+  it, the sources are pinned like the other third-party versions (`UPDATING_VERSIONS.md`).
+* `odin/monica/modules/soil_temperature/` (package `soil_temperature`): `Input`/`Output` (§1.2,
+  trimmed to what the two modules read; MONICA's units), the bindings `Monica_Soil_Temp` and
+  `Dssat_St` (`init`, `step`, `destroy`), the `Module` union of their pointers, and the name
+  table. It imports `params` and the `amei` packages, not `core`. `core` imports it. The gather
+  for the per-run part (`core.soil_temperature_input_from_model`) is in
+  `core/soil_temperature_impl.odin`, ready for phase 3.
+* Binding decisions, documented in the binding files:
+  * Monica_SoilTemp: the Component's `init` (it calls only the SoilTemperature unit's, as the
+    C++ adapter did), damping factor 0.8, the constant soil moisture as in MONICA's own (§4).
+  * DSSAT: thicknesses rounded to whole cm instead of truncated (`int(0.29 * 100)` is 28),
+    `SW` set every day, albedo from MONICA's environment parameters, `TAV`/`TAMP` from
+    `clim.data_accessor_calc_tamp_and_tav` (already ported, with its last-month quirk).
+* `cmd/monica-module` (built with the others, also by Nix and Docker):
+  `run SoilTemperature <impl> <input.json> [out.csv]`, where `impl` is a module or `internal`
+  (MONICA's own `soil_temperature_step` on the same input). It also has
+  `from-sim <sim.json> <input.json>`, which writes an input file from a MONICA setup: the soil
+  after MONICA's pedotransfer functions, the initial moisture, and the climate. The input format
+  is documented in `main.odin`. Output: CSV with 17 significant digits.
+* `odin/tools/module_reference.py`: runs the generated Python on the same input, with the same
+  mapping, through PyCrop2ML's `PythonReference` (`test/cyml/odin_reference.py`), and compares
+  two CSVs (`--compare`). `--dynamic` derives a variant of an input with crop cover, snow (10 of
+  every 30 days) and daily soil moisture between the wilting point and field capacity.
+* `odin/tests/check_modules.sh` runs all of it; CI runs it on Linux.
+
+Check results (Hohenfinow2 sim-min, 1991–1997, 2557 days × 21 values, and its dynamic variant):
+
+| comparison | sim-min | dynamic variant |
+| --- | --- | --- |
+| Monica_SoilTemp vs MONICA's own (`internal`) | 53697 identical | 53697 identical |
+| Monica_SoilTemp, Odin vs generated Python | 53697 identical | 53697 identical |
+| DSSAT_ST_standalone, Odin vs generated Python | 53319 identical, 378 within 2.4e-14 | 53291 identical, 406 within 2.1e-14 |
+
+The DSSAT differences come from `cos`/`exp`/`log`: correctly rounded in Odin (CORE-MATH), libm in
+Python. Monica_SoilTemp's Crop2ML source keeps MONICA's evaluation order, so it is bit-identical
+to MONICA's own. R1: `diff_outputs.sh` and the C++ suites (53 CSVs) are byte-identical. R2:
+`monica-run` before/after: sim-min 373 ± 23 vs 371 ± 21 ms, sim 1975 ± 47 vs 1964 ± 26 ms.
+
 **Phase 3: MONICA as driver.** Gather in `monica_model_general_step`, `SoilTemperatureDrivers`,
 reflective outputs. Checks: R1, R2 unchanged. With drivers configured, MONICA's own outputs stay
 byte-identical (drivers must not change anything), and the driver outputs are close to the C++
@@ -371,9 +420,12 @@ only its package, one union entry and one table row.
   (SoilTemperatureModels 1c5cde3); check the other packages before generating them.
 * ApsimCampbell's cpp2 code in `monica_amei` was hand-edited; the Odin code is regenerated from
   the Crop2ML sources, so compare behaviour, not code.
-* Monica_SoilTemp's C++ adapter uses a constant soil moisture (`awc = 0.25`), as MONICA's own
-  soil temperature does (`soil_temperature.odin:107`), while the other modules get the actual
-  moisture per layer. Keep the constant for the phase 2/4 comparisons, then decide.
+* Monica_SoilTemp's C++ adapter uses a constant soil moisture per layer, `pwp + awc * (fc - pwp)`
+  with `awc = 0.25`. MONICA's own soil temperature uses a different constant:
+  `SoilTemperatureParameters.SoilMoisture`, 0.25 m3 m-3 in every layer (`soil_temperature.odin`,
+  `soil_moisture_const`). The other modules get the actual moisture per layer. The Odin binding
+  uses MONICA's own constant (phase 2), which makes Monica_SoilTemp bit-identical to MONICA's own
+  soil temperature. Decide in phase 4 whether integrated mode should get the actual moisture.
 * ApsimCampbell's adapter sets both Eo and Eos to the potential ET (with a `!!!` comment
   questioning it), and Simplace's sets `iRAIN = precip` "so that no snowcover will build up".
   Adapter decisions: carry them into the bindings explicitly, document them, revisit later.

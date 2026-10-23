@@ -8,7 +8,8 @@
     "vcpkg_baseline: a vcpkg commit whose versions database has capnproto.version (independent of ../vcpkg_tag.txt, which only the C++ build uses).",
     "After editing: python tools/odinw.py check-pins. Procedure: UPDATING_VERSIONS.md.",
     "cpp_reference: the C++ MONICA commit (zalf-rpm/monica master) whose tests/ suites CI runs and compares this port against (.github/workflows/odin.yml); it also pins those suites and monica-parameters. ignore: simulations of features the port lacks (sim-min-ic: intercropping).",
-    "cpp_reference.ignore_src: the same for the converted C++ in src/ (TEMPORARY, see flake.nix monica-cpp-src); empty - it matches the original in all simulations."
+    "cpp_reference.ignore_src: the same for the converted C++ in src/ (TEMPORARY, see flake.nix monica-cpp-src); empty - it matches the original in all simulations.",
+    "crop2ml: what `pixi run gen-amei` generates amei/<package>/ from - the PyCrop2ML commit (its Odin target) and, per source repo, the Crop2ML packages taken from it. CI regenerates and checks that nothing changes (plan-crop2ml-modules.md)."
   ],
   "odin": {
     "tag": "dev-2026-08",
@@ -29,5 +30,18 @@
       "hohenfinow2/sim-min-ic"
     ],
     "ignore_src": []
+  },
+  "crop2ml": {
+    "pycropml": {
+      "url": "https://github.com/zalf-rpm/PyCrop2ML.git",
+      "commit": "5ded793524769cd346408119bc4e60e866287250"
+    },
+    "sources": {
+      "SoilTemperatureModels": {
+        "url": "https://github.com/AgriculturalModelExchangeInitiative/SoilTemperatureModels.git",
+        "commit": "1c5cde3add70978010e614fa319bdf48d5cafb1e",
+        "packages": ["Monica_SoilTemp", "DSSAT_ST_standalone"]
+      }
+    }
   }
 }
