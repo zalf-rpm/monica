@@ -798,6 +798,8 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0
 	// NOTE(deviation): dispatch on the configured implementation
 	// (soil_temperature_impl.odin); MONICA's own gets exactly the C++ call.
+	snow_depth := model.soil_moisture.snow_component.snow_depth
+	temperature_under_snow := model.soil_moisture.frost_component.temperature_under_snow
 	switch &st in model.soil_temperature {
 	case Soil_Temperature:
 		soil_temperature_step(
@@ -806,22 +808,37 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 			tmax,
 			globrad,
 			soil_coverage,
-			model.soil_moisture.snow_component.snow_depth,
-			model.soil_moisture.frost_component.temperature_under_snow,
+			snow_depth,
+			temperature_under_snow,
 		)
-	}
-	// NOTE(deviation): modules configured to run alongside, on the same values
-	if len(model.modules.soil_temperature_stepping) > 0 {
-		soil_temperature_drivers_step(
+	case ^Soil_Temperature_Module:
+		soil_temperature_module_step(
 			model,
+			st,
 			int(julday),
 			tmin,
 			tavg,
 			tmax,
 			globrad,
 			soil_coverage,
-			model.soil_moisture.snow_component.snow_depth,
-			model.soil_moisture.frost_component.temperature_under_snow,
+			snow_depth,
+			temperature_under_snow,
+		)
+		soil_temperature_module_scatter(model, st)
+	}
+	// NOTE(deviation): modules configured to run alongside, on the same values
+	for d in model.modules.soil_temperature_stepping {
+		soil_temperature_module_step(
+			model,
+			d,
+			int(julday),
+			tmin,
+			tavg,
+			tmax,
+			globrad,
+			soil_coverage,
+			snow_depth,
+			temperature_under_snow,
 		)
 	}
 

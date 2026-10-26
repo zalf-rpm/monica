@@ -195,7 +195,10 @@ g_alias_table := []Alias_Entry {
 	},
 	{"Sunhours", {"climate_data.#last.sunhours", 4, .NONE, ""}},
 	{"Surface", {"soil_column.surface_water_storage", 1, .NONE, "mm"}},
-	{"SurfTemp", {"soil_temperature.soil_surface_temperature", 1, .NONE, "°C"}},
+	// NOTE(deviation): the C++ reads soilTemperature's own copy; this is the
+	// soil column's, which MONICA's own step sets to the same value and an
+	// integrated module writes too (plan-crop2ml-modules.md §1.2)
+	{"SurfTemp", {"soil_column.soil_surface_temperature", 1, .NONE, "°C"}},
 	{"Target", {"current_crop_module.target_n_concentration", 3, .NONE, "kgN ha-1"}},
 	{"Tavg", {"climate_data.#last.tavg", 4, .NONE, ""}},
 	{"TempSum", {"current_crop_module.current_total_temperature_sum", 1, .NONE, "°Cd"}},

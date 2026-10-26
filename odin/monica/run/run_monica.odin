@@ -850,9 +850,9 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 	model := core.make_monica_model(&env.params, allocator)
 	// NOTE(deviation): as the C++ AMEI branch (run-monica.cpp) for its modules
-	if len(model.modules.soil_temperature_stepping) > 0 {
+	if core.soil_temperature_modules_configured(model) {
 		tamp, tav := clim.data_accessor_calc_tamp_and_tav(&env.climateData, allocator)
-		core.soil_temperature_drivers_set_tav_tamp(model, tav, tamp)
+		core.soil_temperature_modules_set_tav_tamp(model, tav, tamp)
 	}
 	model.sim_params.start_date = clim.data_accessor_start_date(&env.climateData)
 	model.sim_params.end_date = clim.data_accessor_end_date(&env.climateData)

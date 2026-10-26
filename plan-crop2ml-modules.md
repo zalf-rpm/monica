@@ -216,9 +216,12 @@ From `site_parameters` (`number_of_layers`, `layer_thickness`). The binding size
 * ApsimCampbell: offset 2 (air and surface node);
 * SQ: no layers, the same value for every layer.
 
-Open: what exactly "a flexible amount of layers" means for the AMEI MONICA (only the count, or
-different thicknesses per layer too). Bindings only need the per-layer thickness slice, so
-decide before phase 4 without blocking earlier phases.
+Decided in phase 4: a module's layers are MONICA's layers, one to one. The count comes from
+sim.json (`NumberOfLayers`). The thickness is passed per layer (`Input.layer_thickness`), so
+bindings already handle layers of different thickness, should MONICA ever have them. A module's
+extra layers (Monica_SoilTemp's ground and bottom layer, ApsimCampbell's air and surface node)
+stay inside its binding, which maps them to MONICA's layers. There is no remapping between
+different layer grids; a module that needs its own grid would bring that mapping in its binding.
 
 ### 1.7 Where the code lives
 
@@ -445,6 +448,38 @@ Check results:
 integrated Monica_SoilTemp is close to the default run (same algorithm; see phase 2 for
 identity). The other modules run a full Hohenfinow2 simulation without NaN or bounds-check
 panics. Layers (§1.6) are decided here.
+
+Done 2026-10-26. What was built:
+
+* `Soil_Temperature_Impl :: union #no_nil { Soil_Temperature, ^Soil_Temperature_Module }`. With
+  two variants, `#no_nil` is possible; MONICA's own is the zero value. Every module of the
+  modules table is an `impl` (integrated), without a row in `core`'s table (R3).
+* `Soil_Temperature_Module` is the one struct for an integrated module and a driver (module,
+  input, output). Both are made at the same point, step through the same proc on the same daily
+  values, and share the scratch arena. Integrated, `soil_temperature_module_scatter` writes the
+  output into the soil column: the layers' `soil_temperature` and `soil_surface_temperature`,
+  which the crop module reads. MONICA's own step writes the same two.
+* `SurfTemp` now reads `soil_column.soil_surface_temperature` (NOTE(deviation); MONICA's own
+  sets it to the same value, so R1 holds). The C++ path read MONICA's own object, which an
+  integrated module doesn't have. `STemp` already read the soil column (phase 1).
+* Decisions:
+  * Layers: see §1.6, one to one.
+  * Monica_SoilTemp keeps MONICA's constant soil moisture (§4). Integrated, it then is exactly
+    MONICA's own soil temperature, as the checks show. The actual moisture would change MONICA's
+    algorithm; if wanted, that is a variant of its own, not a binding setting.
+
+Checks (`tests/check_drivers.py`, in CI through `check_modules.sh`):
+
+* R1: `diff_outputs.sh` and the C++ suites (53 CSVs) byte-identical without configuration.
+* Monica_SoilTemp integrated: sim-min, sim-min-events2, sim-min-setvalue, sim and sim+ give
+  byte-identical output (9 files), so "close to the default run" is in fact identical.
+* DSSAT_ST_standalone integrated: all five run to the end, with no panic, NaN or inf. It
+  changes the results through the feedback, e.g. sim.json's yields by up to about 10 %
+  (6677 to 5991 kg ha-1 in one year).
+* Each module integrated, with itself as a driver too: the soil column's temperatures equal the
+  driver's outputs exactly, 2557 days, so the scatter is exact.
+* R2: sim-min 373 ± 16 (phase 3) vs 348 ± 9 ms, sim 1976 ± 30 vs 1968 ± 41 ms. Integrated
+  (information only): sim 2082 ± 99 ms with Monica_SoilTemp, 2069 ± 76 ms with DSSAT.
 
 **Phase 5: the remaining soil temperature modules, then evapotranspiration.** One binding each.
 ET scatters into `soil_moisture` like the C++ adapter (`Monica_Evapotranspiration_...cpp`, about
