@@ -20,6 +20,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 #include "crop-module.h"
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 
@@ -3647,7 +3648,9 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
       (0.75 + 0.00002 * vs_HeightNN) * vc_ExtraterrestrialRadiation;
 
   double vc_RelativeShortwaveRadiation =
-      vc_ClearSkyShortwaveRadiation > 0 ? vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation : 0;
+      vc_ClearSkyShortwaveRadiation > 0
+          ? std::min(vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation, 1.0)
+          : 1.0;
 
   double vc_NetShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vc_GlobalRadiation;
 
