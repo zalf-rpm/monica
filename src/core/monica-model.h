@@ -234,6 +234,8 @@ public:
     _dssatTAV = tampTav.second;
   }
 
+  bool clearCropUponNextDay() const { return _clearCropUponNextDay; }
+
 private:
   SiteParameters _sitePs;
   EnvironmentParameters _envPs;

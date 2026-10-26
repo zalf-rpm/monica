@@ -292,7 +292,7 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   vm_SurfaceWaterStorage = soilColumn.vs_SurfaceWaterStorage;
 
   int vc_DevelopmentalStage = 0;
-  if (monica.cropGrowth()) {
+  if (monica.isCropPlanted() && !monica.clearCropUponNextDay()) {
     vc_PercentageSoilCoverage = monica.cropGrowth()->get_SoilCoverage();
     vc_KcFactor = monica.cropGrowth()->get_KcFactor();
     vc_DevelopmentalStage = static_cast<int>(monica.cropGrowth()->get_DevelopmentalStage());
