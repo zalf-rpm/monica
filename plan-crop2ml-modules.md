@@ -658,5 +658,25 @@ only its package, one union entry and one table row.
 * Monica_Evapotranspiration, the evapotranspiration unit: without a crop and with snow, it doesn't
   reset `transpiration[i]` (MONICA sets it to 0). So the state's value from the last crop day
   would be counted again. It didn't happen on Hohenfinow2 (transpiration equal on every day).
-* Monica_Evapotranspiration's ET0 with a crop is the soil moisture's formula, not the crop
-  module's (phase 5, difference 2). Decide which one MONICA should have and use it in both.
+* Monica_Evapotranspiration's ET0 with a crop (phase 5, difference 2). The unification itself
+  is essentially exact; the crop days differ for three reasons (analysis 2026-10-26, with
+  temporary experiments, not committed):
+  1. CO2 timing, every crop day, about 4e-5 relative in the stomata resistance. MONICA runs the
+     crop step before the general step, which sets the day's CO2, so the crop module's stomata
+     resistance and ET0 use the previous day's CO2. The module, in the soil moisture step, uses
+     the current day's.
+  2. The relative shortwave radiation: the module (like MONICA's soil moisture ET0) caps
+     `Rs/Rso` at 1.0, and uses 1.0 for `Rso <= 0`. The crop module doesn't cap, and uses 0.0.
+     This matters on 28 of 1961 crop days on Hohenfinow2 (clear days, mostly late winter and early
+     spring, e.g. 1992-03-05: 1.34 vs 2.29 mm). FAO-56 caps the ratio at 1.0.
+  3. Harvest days (6): MONICA skips the crop step (`clear_crop_upon_next_day`) but keeps the crop
+     until the next day, so the soil moisture step reports yesterday's crop ET0. The module
+     computes it with today's weather.
+
+  With the crop's CO2 and without the cap, the module's ET0 is bit-identical to the crop
+  module's on 1955 of 1961 crop days; the rest are the harvest days. With the CO2 alone, 34 days
+  differ: the harvest days plus the 28 capped ones, which are also the days where `ETa/ETc`
+  differed in the integrated comparison. The aerodynamic term follows the crop module (`rs/ra`);
+  MONICA's soil moisture has `(rs/208)·u2`, hence the 1e-15 without a crop. Making MONICA and the
+  module agree exactly would take changes in MONICA: set the CO2 before the crop step, cap the
+  crop module's `Rs/Rso`, and decide what the soil moisture step does on a harvest day.
