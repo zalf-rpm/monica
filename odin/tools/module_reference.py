@@ -21,6 +21,7 @@ import argparse
 import csv
 import json
 import math
+import re
 import sys
 from array import array
 from datetime import date
@@ -51,6 +52,24 @@ def daily_soil_moisture(day, layers):
 
 def julian_day(iso):
     return date.fromisoformat(iso).timetuple().tm_yday
+
+
+def daily_value(j, day, name):
+    """A daily value as monica-module reads it: the column, or its default."""
+    if name in day:
+        return day[name]
+    if name == "air_pressure":
+        return 1010.0
+    if name == "kc_factor":
+        return j.get("KcFactor", 0.0)
+    if name == "day_length":
+        raise KeyError("day_length must be a column (from-sim writes it)")
+    return 0.0
+
+
+def thickness_cm(m):
+    """soil_temperature.odin's thickness_cm"""
+    return float(int(m * 100.0 + 0.5))
 
 
 # --- the mappings, one per module: as in the Odin bindings -------------------
@@ -96,13 +115,13 @@ def monica_soiltemp(j, layers):
             "soilSurfaceTemperatureBelowSnow": day.get("temperature_under_snow", 0.0),
         }
 
-    return params, daily, ("soilSurfaceTemperature", "soilTemperature")
+    return params, daily, lambda env, n: (env["soilSurfaceTemperature"], env["soilTemperature"][:n])
 
 
 def dssat_st_standalone(j, layers):
     """monica/modules/soil_temperature/dssat_st.odin"""
     n = len(layers)
-    dlayr = [float(round(l["Thickness"] * 100.0)) for l in layers]
+    dlayr = [thickness_cm(l["Thickness"]) for l in layers]
     ds, depth = [], 0.0
     for x in dlayr:
         depth += x
@@ -123,12 +142,167 @@ def dssat_st_standalone(j, layers):
             "SW": array("d", daily_soil_moisture(day, layers)),
         }
 
-    return params, daily, ("SRFTEMP", "ST")
+    return params, daily, lambda env, n: (env["SRFTEMP"], env["ST"][:n])
 
 
+def dssat_epicst_standalone(j, layers):
+    """monica/modules/soil_temperature/dssat_epicst.odin"""
+    n = len(layers)
+    dlayr = [thickness_cm(l["Thickness"]) for l in layers]
+    ds, depth = [], 0.0
+    for x in dlayr:
+        depth += x
+        ds.append(depth)
+    params = {
+        "ISWWAT": "Y", "NL": n, "NLAYR": n,
+        "DLAYR": array("d", dlayr), "DS": array("d", ds),
+        "BD": array("d", [l["BulkDensity"] / 1000.0 for l in layers]),
+        "LL": array("d", [l["PermanentWiltingPoint"] for l in layers]),
+        "DUL": array("d", [l["FieldCapacity"] for l in layers]),
+        "SW": array("d", [l["SoilMoisture"] for l in layers]),
+    }
+
+    def daily(day):
+        v = lambda name: daily_value(j, day, name)
+        return {
+            "TMIN": day["tmin"], "TAVG": day["tavg"], "TMAX": day["tmax"], "RAIN": v("precip"),
+            "SNOW": v("snow_depth"), "DEPIR": v("irrigation"), "MULCHMASS": 0.0,
+            "BIOMAS": v("above_ground_biomass"), "TAV": j["TAV"], "TAMP": j["TAMP"],
+            "SW": array("d", daily_soil_moisture(day, layers)),
+        }
+
+    return params, daily, lambda env, n: (env["SRFTEMP"], env["ST"][:n])
+
+
+def apsim_campbell(j, layers):
+    """monica/modules/soil_temperature/apsim_campbell.odin"""
+    params = {
+        "ps": 2.63, "pom": 1.3,
+        "soilConstituentNames": ["Rocks", "OrganicMatter", "Sand", "Silt", "Clay", "Water", "Ice", "Air"],
+        "weather_Latitude": j["Latitude"],
+        "physical_Thickness": array("d", [l["Thickness"] * 1000.0 for l in layers]),
+        "physical_BD": array("d", [l["BulkDensity"] / 1000.0 for l in layers]),
+        "physical_ParticleSizeSand": array("d", [l["Sand"] * 100.0 for l in layers]),
+        "physical_ParticleSizeSilt": array("d", [l["Silt"] * 100.0 for l in layers]),
+        "physical_ParticleSizeClay": array("d", [l["Clay"] * 100.0 for l in layers]),
+        "physical_Rocks": array("d", [l["Stones"] * 100.0 for l in layers]),
+        "organic_Carbon": array("d", [l["OrganicCarbon"] * 100.0 for l in layers]),
+    }
+
+    def daily(day):
+        v = lambda name: daily_value(j, day, name)
+        potential_et = v("et0") * v("kc_factor")
+        return {
+            "weather_MinT": day["tmin"], "weather_MaxT": day["tmax"], "weather_MeanT": day["tavg"],
+            "weather_Radn": day["globrad"], "clock_Today_DayOfYear": julian_day(day["date"]),
+            "weather_Wind": v("wind"), "weather_AirPressure": v("air_pressure"),
+            "waterBalance_Eo": potential_et, "waterBalance_Eos": potential_et,
+            "waterBalance_Es": v("actual_evaporation"), "waterBalance_Salb": j["Albedo"],
+            "weather_Tav": j["TAV"], "weather_Amp": j["TAMP"],
+            "microClimate_CanopyHeight": v("crop_height") * 1000.0,
+            "waterBalance_SW": array("d", daily_soil_moisture(day, layers)),
+        }
+
+    return params, daily, lambda env, n: (env["aveSoilTemp"][1], env["aveSoilTemp"][2:2 + n])
+
+
+def bioma(j, layers, swat_surface):
+    """monica/modules/soil_temperature/bioma_parton_swat.odin, bioma_swat_swat.odin"""
+    depth = 0.0
+    for l in layers:
+        depth += l["Thickness"]
+    params = {
+        "LayerThickness": array("d", [l["Thickness"] for l in layers]),
+        "BulkDensity": array("d", [l["BulkDensity"] / 1000.0 for l in layers]),
+        "SoilProfileDepth": depth, "LagCoefficient": 0.8, "AirTemperatureAnnualAverage": j["TAV"],
+    }
+
+    def daily(day):
+        v = lambda name: daily_value(j, day, name)
+        d = {
+            "AirTemperatureMinimum": day["tmin"], "AirTemperatureMaximum": day["tmax"],
+            "GlobalSolarRadiation": day["globrad"], "AboveGroundBiomass": v("above_ground_biomass"),
+            "VolumetricWaterContent": array("d", [sm - l["PermanentWiltingPoint"]
+                                                  for sm, l in zip(daily_soil_moisture(day, layers), layers)]),
+        }
+        if swat_surface:
+            d.update({"WaterEquivalentOfSnowPack": v("snow_water_equivalent"), "Albedo": j["Albedo"]})
+        else:
+            d["DayLength"] = v("day_length")
+        return d
+
+    return params, daily, lambda env, n: (env["SurfaceSoilTemperature"], env["SoilTemperatureByLayers"][:n])
+
+
+def simplace(j, layers, first_day):
+    """monica/modules/soil_temperature/simplace.odin"""
+    n = len(layers)
+    depths, depth, bd = [], 0.0, 0.0
+    for l in layers:
+        depth += l["Thickness"]
+        depths.append(depth)
+        bd += l["BulkDensity"] / 1000.0
+    params = {
+        "cInitialAgeOfSnow": 0, "cSnowIsolationFactorA": 2.3, "cSnowIsolationFactorB": 0.22,
+        "cInitialSnowWaterContent": daily_value(j, first_day, "snow_water_equivalent"),
+        "cAlbedo": j["Albedo"], "cDampingDepth": 6.0, "cCarbonContent": layers[0]["OrganicCarbon"] * 100.0,
+        "cAverageBulkDensity": bd / float(n), "cSoilLayerDepth": array("d", depths),
+        "cAverageGroundTemperature": j["TAV"], "cFirstDayMeanTemp": first_day["tavg"],
+    }
+
+    def daily(day):
+        v = lambda name: daily_value(j, day, name)
+        water = 0.0
+        for sm, l in zip(daily_soil_moisture(day, layers), layers):
+            water += sm * 10 * l["Thickness"] * 100
+        return {
+            "iAirTemperatureMin": day["tmin"], "iAirTemperatureMax": day["tmax"],
+            "iGlobalSolarRadiation": day["globrad"], "iRAIN": v("precip"), "iLeafAreaIndex": v("lai"),
+            "iPotentialSoilEvaporation": v("et0") * j.get("KcFactor", 0.0),
+            "iSoilWaterContent": water, "iCropResidues": 0.0,
+        }
+
+    return params, daily, lambda env, n: (env["SoilSurfaceTemperature"], env["SoilTempArray"][:n])
+
+
+def sq(j, layers):
+    """monica/modules/soil_temperature/sq.odin"""
+    params = {"a": 0.5, "b": 1.81, "c": 0.49, "lambda_": 2.454}
+
+    def daily(day):
+        return {"dayLength": daily_value(j, day, "day_length"), "maxTAir": day["tmax"], "minTAir": day["tmin"],
+                "meanTAir": day["tavg"], "meanAnnualAirTemp": j["TAV"], "heatFlux": 0.0}
+
+    def extract(env, n):
+        avg = (env["minTSoil"] + env["maxTSoil"]) / 2.0
+        return avg, [avg] * n
+
+    return params, daily, extract
+
+
+def stics(j, layers, first_day):
+    """monica/modules/soil_temperature/stics.odin"""
+    params = {"layer_thick": [int(thickness_cm(l["Thickness"])) for l in layers],
+              "air_temp_day1": first_day["tavg"]}
+
+    def daily(day):
+        return {"min_temp": day["tmin"], "max_temp": day["tmax"], "min_canopy_temp": day["tmin"],
+                "max_canopy_temp": day["tmax"], "min_air_temp": day["tmin"]}
+
+    return params, daily, lambda env, n: (env["temp_profile"][0], env["layer_temp"][:n])
+
+
+# name -> (source repository, mapping(j, layers, first day))
 MODULES = {
-    "Monica_SoilTemp": ("SoilTemperatureModels", monica_soiltemp),
-    "DSSAT_ST_standalone": ("SoilTemperatureModels", dssat_st_standalone),
+    "Monica_SoilTemp": ("SoilTemperatureModels", lambda j, ls, d0: monica_soiltemp(j, ls)),
+    "DSSAT_ST_standalone": ("SoilTemperatureModels", lambda j, ls, d0: dssat_st_standalone(j, ls)),
+    "DSSAT_EPICST_standalone": ("SoilTemperatureModels", lambda j, ls, d0: dssat_epicst_standalone(j, ls)),
+    "ApsimCampbell": ("SoilTemperatureModels", lambda j, ls, d0: apsim_campbell(j, ls)),
+    "BiomaSurfacePartonSoilSWATC": ("SoilTemperatureModels", lambda j, ls, d0: bioma(j, ls, False)),
+    "BiomaSurfaceSWATSoilSWATC": ("SoilTemperatureModels", lambda j, ls, d0: bioma(j, ls, True)),
+    "Simplace_Soil_Temperature": ("SoilTemperatureModels", simplace),
+    "SQ_Soil_Temperature": ("SoilTemperatureModels", lambda j, ls, d0: sq(j, ls)),
+    "Stics_soil_temperature": ("SoilTemperatureModels", stics),
 }
 
 
@@ -144,10 +318,15 @@ def run(module, input_path, out_path):
     comp = Topology(module, package).model
 
     j, layers, days = read_input(input_path)
-    params, daily, (surface, layer_temps) = mapping(j, layers)
+    params, daily, extract = mapping(j, layers, days[0])
 
     class MappedInputs(Inputs):
-        """PyCrop2ML's deterministic inputs, overridden with the mapped ones."""
+        """PyCrop2ML's deterministic inputs, overridden with the mapped ones.
+        A parameter the binding doesn't set gets what the generated Odin's
+        make_* gives it: the metadata's default, also where that is an
+        arithmetic expression like ApsimCampbell's timestep "24.0 * 60.0 *
+        60.0", and zero, empty or "" without one. PyCrop2ML's Inputs would
+        invent a value for both."""
 
         def __init__(self, comp, values):
             self.mapped = values
@@ -157,6 +336,19 @@ def run(module, input_path, out_path):
         def value(self, var, step):
             if var.name in self.mapped:
                 return self.mapped[var.name]
+            default = str(getattr(var, "default", "") or "").strip()
+            if hasattr(var, "parametercategory") and default and var.datatype in ("DOUBLE", "INT"):
+                try:
+                    float(default)
+                except ValueError:
+                    if re.fullmatch(r"[0-9.eE+\-*/() ]+", default):
+                        v = eval(default, {"__builtins__": {}})
+                        return int(v) if var.datatype == "INT" else float(v)
+            if hasattr(var, "parametercategory") and not default:
+                dt = var.datatype
+                if dt.endswith("ARRAY") or dt.endswith("LIST"):
+                    return array("d") if dt.startswith("DOUBLE") else []
+                return {"DOUBLE": 0.0, "INT": 0, "BOOLEAN": False}.get(dt, "")
             return super().value(var, step)
 
     first = {**params, **daily(days[0])}
@@ -171,7 +363,8 @@ def run(module, input_path, out_path):
             for day in days:
                 env.update(daily(day))
                 reference.run_body(reference.model_body)
-                values = [env[surface]] + list(env[layer_temps])[:n]
+                surface, layer_temps = extract(env, n)
+                values = [surface] + list(layer_temps)
                 f.write(day["date"] + "".join("," + format(float(v), ".17g") for v in values) + "\n")
     finally:
         reference.unload()
@@ -179,26 +372,34 @@ def run(module, input_path, out_path):
 
 def dynamic(in_path, out_path):
     """A copy of a monica-module input whose days exercise what a bare-soil
-    from-sim input doesn't: a crop cover, snow (on 10 of every 30 days, as
-    tests/soil_temperature_ref does) and soil moisture changing between the
-    wilting point and field capacity. Deterministic."""
+    from-sim input doesn't: a crop (cover, biomass, height, LAI), snow (on 10
+    of every 30 days, as tests/soil_temperature_ref does), ET0, evaporation,
+    irrigation, and soil moisture changing between the wilting point and
+    field capacity. Deterministic."""
     in_path, out_path = Path(in_path), Path(out_path)
     j, layers, days = read_input(in_path)
     csv_path = out_path.with_suffix(".csv")
     j["Daily"] = csv_path.name
     out_path.write_text(json.dumps(j, indent=1))
-    cols = ["date", "tmin", "tavg", "tmax", "globrad", "soil_coverage", "snow_depth",
-            "temperature_under_snow"] + [f"soil_moisture_{k + 1}" for k in range(len(layers))]
+    kept = [c for c in days[0] if c != "date" and not c.startswith("soil_moisture_")]
+    synthetic = ["soil_coverage", "above_ground_biomass", "crop_height", "lai", "snow_depth",
+                 "snow_water_equivalent", "temperature_under_snow", "et0", "actual_evaporation", "irrigation"]
+    kept = [c for c in kept if c not in synthetic]
+    cols = ["date"] + kept + synthetic + [f"soil_moisture_{k + 1}" for k in range(len(layers))]
+    g = lambda x: format(x, ".17g")
     with open(csv_path, "w", newline="") as f:
         f.write(",".join(cols) + "\n")
         for i, day in enumerate(days):
-            doy = julian_day(day["date"])
-            row = [day["date"]] + [format(day[c], ".17g") for c in ("tmin", "tavg", "tmax", "globrad")]
-            row += [format(0.45 * (1.0 - math.cos(2.0 * math.pi * doy / 365.0)), ".17g"),
-                    "50" if i % 30 < 10 else "0", format(-2.0 - i % 5, ".17g")]
+            season = 0.5 * (1.0 - math.cos(2.0 * math.pi * julian_day(day["date"]) / 365.0))
+            snow = 50.0 if i % 30 < 10 else 0.0
+            et0 = 1.0 + 3.0 * season
+            row = [day["date"]] + [g(day[c]) for c in kept]
+            row += [g(0.9 * season), g(8000.0 * season), g(season), g(5.0 * season), g(snow), g(0.3 * snow),
+                    g(-2.0 - i % 5), g(et0), g(0.5 * et0 * (1.0 - 0.9 * season)),
+                    "10" if i % 15 == 0 and season > 0.5 else "0"]
             for k, l in enumerate(layers):
                 pwp, fc = l["PermanentWiltingPoint"], l["FieldCapacity"]
-                row.append(format(pwp + (fc - pwp) * (0.5 + 0.4 * math.sin(0.05 * i + k)), ".17g"))
+                row.append(g(pwp + (fc - pwp) * (0.5 + 0.4 * math.sin(0.05 * i + k))))
             f.write(",".join(row) + "\n")
 
 

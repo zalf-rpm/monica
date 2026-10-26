@@ -538,6 +538,10 @@ def cmd_gen_amei(ns: argparse.Namespace) -> int:
         for pkg in src["packages"]:
             shutil.rmtree(work / pkg, ignore_errors=True)
             shutil.copytree(checkout / "Models" / pkg, work / pkg)
+            # the repository's own generated code: it may be stale, and a file
+            # the generator doesn't write anymore would survive next to its output
+            for target in ("odin", "py"):
+                shutil.rmtree(work / pkg / "src" / target, ignore_errors=True)
             cmd = [pixi, "run", "--manifest-path", str(pycropml / "pyproject.toml"),
                    "python", str(pycropml / "src" / "pycropml" / "main.py"), "-p", pkg, "odin", "py"]
             print(f"==> {repo}/{pkg}: {' '.join(cmd[-4:])}", flush=True)

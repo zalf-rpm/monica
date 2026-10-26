@@ -65,8 +65,8 @@ compiler gives bit-identical results. History: the port first used `core:c/libc`
 (phase 3, `plan-odin.md`) - but libc only matched the C++ on Windows, where both called the MSVC
 CRT. With `cr_math` on both sides, Odin and C++ can match on Windows and Linux.
 
-What stays: `libc.sqrt` and `libc.fabs` (IEEE 754 makes `sqrt` correctly rounded everywhere;
-`fabs` is exact), and `core:math`'s non-transcendental helpers (`math.round`, `math.floor`,
+What stays: `libc.sqrt`, `math.sqrt` and `libc.fabs` (IEEE 754 makes `sqrt` correctly rounded
+everywhere, and `core:math`'s is the intrinsic, the CPU's instruction; `fabs` is exact), and `core:math`'s non-transcendental helpers (`math.round`, `math.floor`,
 `math.abs`, `math.PI`, ...). A function `cr_math` doesn't have yet (`atan2`, `sinh`, `exp2`, ...)
 gets added on the C++ side first (`mas_cpp_misc/cr_math/README.md`), then to
 `support/cr_math/cr_math.odin` - so both sides keep calling the same code.
@@ -85,7 +85,7 @@ the C++ - floating-point addition and multiplication are not associative.
 
 **Enforced, not just documented:** `odin/tests/conventions_test.odin`'s
 `test_transcendentals_use_cr_math` fails on any `math.<name>(` or `libc.<name>(` (except
-`libc.sqrt`) for the C `<math.h>` §7.12 trig/hyperbolic/exponential/logarithmic/power/gamma
+`sqrt`) for the C `<math.h>` §7.12 trig/hyperbolic/exponential/logarithmic/power/gamma
 families, as part of `odin test odin/tests`; `bash odin/tests/check_transcendentals.sh` is the
 same check as a quick standalone script.
 

@@ -8,7 +8,8 @@
 // cmd/monica-module's.
 //
 // A new module is a binding file like monica_soiltemp.odin, one entry in the
-// Module union and one row in the name table below (R3).
+// Module union, one row in the name table and a case in the three switches
+// below (R3).
 package soil_temperature
 
 import p "../../params"
@@ -22,22 +23,46 @@ Input :: struct {
 	tav:                     f64, // annual average air temperature [°C]
 	tamp:                    f64, // amplitude of the monthly average air temperatures [°C]
 	time_step:               f64, // [d]
+	kc_factor_bare_soil:     f64, // MONICA's soil moisture parameter KcFactor
 	params:                  p.Soil_Temperature_Module_Parameters, // MONICA's own
 	layer_thickness:         []f64, // [m]
 	bulk_density:            []f64, // [kg m-3]
 	saturation:              []f64, // [m3 m-3]
 	organic_matter:          []f64, // [kg kg-1]
+	organic_carbon:          []f64, // [kg kg-1]
+	sand:                    []f64, // [kg kg-1]
+	clay:                    []f64, // [kg kg-1]
+	silt:                    []f64, // [kg kg-1]
+	stones:                  []f64, // [m3 m-3]
 	field_capacity:          []f64, // [m3 m-3]
 	permanent_wilting_point: []f64, // [m3 m-3]
 
-	// daily
-	julian_day:              int, // day of the year, 1-366
-	tmin, tavg, tmax:        f64, // [°C]
-	globrad:                 f64, // [MJ m-2 d-1]
-	soil_coverage:           f64, // [0-1]
-	snow_depth:              f64, // [mm]
-	temperature_under_snow:  f64, // [°C]
-	soil_moisture:           []f64, // per layer [m3 m-3]
+	using daily:             Daily,
+	soil_moisture:           []f64, // per layer, daily [m3 m-3]
+}
+
+// The daily part of Input. MONICA's values are those before the day's soil
+// moisture step (evaporation, ET0, snow: the previous day's), as in the C++
+// AMEI adapters.
+Daily :: struct {
+	julian_day:             int, // day of the year, 1-366
+	tmin, tavg, tmax:       f64, // [°C]
+	globrad:                f64, // [MJ m-2 d-1]
+	precip:                 f64, // [mm]
+	irrigation:             f64, // [mm]
+	wind:                   f64, // [m s-1]
+	air_pressure:           f64, // as in the climate data, 1010 if it has none (C++ AMEI adapter)
+	day_length:             f64, // [h] the climate's, or the astronomic one
+	et0:                    f64, // reference evapotranspiration [mm]
+	kc_factor:              f64, // MONICA's current Kc (the crop's, or KcFactor)
+	actual_evaporation:     f64, // [mm]
+	soil_coverage:          f64, // [0-1]
+	snow_depth:             f64, // [mm]
+	snow_water_equivalent:  f64, // [mm]
+	temperature_under_snow: f64, // [°C]
+	above_ground_biomass:   f64, // [kg ha-1]
+	crop_height:            f64, // [m]
+	lai:                    f64, // [m2 m-2]
 }
 
 Output :: struct {
@@ -56,6 +81,13 @@ destroy_output :: proc(o: ^Output, allocator := context.allocator) {
 Module :: union {
 	^Monica_Soil_Temp,
 	^Dssat_St,
+	^Dssat_Epicst,
+	^Apsim_Campbell,
+	^Bioma_Parton_Swat,
+	^Bioma_Swat_Swat,
+	^Simplace,
+	^Sq,
+	^Stics,
 }
 
 Module_Entry :: struct {
@@ -67,6 +99,13 @@ Module_Entry :: struct {
 modules := [?]Module_Entry {
 	{"Monica_SoilTemp", make_monica_soil_temp},
 	{"DSSAT_ST_standalone", make_dssat_st},
+	{"DSSAT_EPICST_standalone", make_dssat_epicst},
+	{"ApsimCampbell", make_apsim_campbell},
+	{"BiomaSurfacePartonSoilSWATC", make_bioma_parton_swat},
+	{"BiomaSurfaceSWATSoilSWATC", make_bioma_swat_swat},
+	{"Simplace_Soil_Temperature", make_simplace},
+	{"SQ_Soil_Temperature", make_sq},
+	{"Stics_soil_temperature", make_stics},
 }
 
 find_module :: proc(name: string) -> (Module_Entry, bool) {
@@ -82,21 +121,55 @@ find_module :: proc(name: string) -> (Module_Entry, bool) {
 // those of the first day: the modules' init reads them, as in the C++ AMEI
 // adapters, which call init right before the first step.
 module_init :: proc(m: Module, in_: ^Input, allocator := context.allocator) -> (err: string) {
+	if len(in_.layer_thickness) == 0 {
+		return "soil temperature module: no soil layers"
+	}
 	switch b in m {
 	case ^Monica_Soil_Temp:
-		return monica_soil_temp_init(b, in_, allocator)
+		monica_soil_temp_init(b, in_, allocator)
 	case ^Dssat_St:
-		return dssat_st_init(b, in_, allocator)
+		dssat_st_init(b, in_, allocator)
+	case ^Dssat_Epicst:
+		dssat_epicst_init(b, in_, allocator)
+	case ^Apsim_Campbell:
+		apsim_campbell_init(b, in_, allocator)
+	case ^Bioma_Parton_Swat:
+		bioma_parton_swat_init(b, in_, allocator)
+	case ^Bioma_Swat_Swat:
+		bioma_swat_swat_init(b, in_, allocator)
+	case ^Simplace:
+		simplace_init(b, in_, allocator)
+	case ^Sq:
+		sq_init(b, in_, allocator)
+	case ^Stics:
+		stics_init(b, in_, allocator)
 	}
 	return ""
 }
 
+// `allocator` is for the step's temporaries. A module that sizes state
+// arrays lazily in its first step (ApsimCampbell) gets them from the
+// allocator of that step, so callers pass a lasting one for the first step.
 module_step :: proc(m: Module, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	switch b in m {
 	case ^Monica_Soil_Temp:
 		monica_soil_temp_step(b, in_, out, allocator)
 	case ^Dssat_St:
 		dssat_st_step(b, in_, out, allocator)
+	case ^Dssat_Epicst:
+		dssat_epicst_step(b, in_, out, allocator)
+	case ^Apsim_Campbell:
+		apsim_campbell_step(b, in_, out, allocator)
+	case ^Bioma_Parton_Swat:
+		bioma_parton_swat_step(b, in_, out, allocator)
+	case ^Bioma_Swat_Swat:
+		bioma_swat_swat_step(b, in_, out, allocator)
+	case ^Simplace:
+		simplace_step(b, in_, out, allocator)
+	case ^Sq:
+		sq_step(b, in_, out, allocator)
+	case ^Stics:
+		stics_step(b, in_, out, allocator)
 	}
 }
 
@@ -106,5 +179,26 @@ module_destroy :: proc(m: Module, allocator := context.allocator) {
 		destroy_monica_soil_temp(b, allocator)
 	case ^Dssat_St:
 		destroy_dssat_st(b, allocator)
+	case ^Dssat_Epicst:
+		destroy_dssat_epicst(b, allocator)
+	case ^Apsim_Campbell:
+		destroy_apsim_campbell(b, allocator)
+	case ^Bioma_Parton_Swat:
+		destroy_bioma_parton_swat(b, allocator)
+	case ^Bioma_Swat_Swat:
+		destroy_bioma_swat_swat(b, allocator)
+	case ^Simplace:
+		destroy_simplace(b, allocator)
+	case ^Sq:
+		destroy_sq(b, allocator)
+	case ^Stics:
+		destroy_stics(b, allocator)
 	}
+}
+
+// Whole centimetres, rounded; the C++ AMEI adapters truncated
+// (int(0.29 * 100) is 28).
+@(private)
+thickness_cm :: proc(m: f64) -> f64 {
+	return f64(int(m * 100.0 + 0.5))
 }

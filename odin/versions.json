@@ -34,13 +34,23 @@
   "crop2ml": {
     "pycropml": {
       "url": "https://github.com/zalf-rpm/PyCrop2ML.git",
-      "commit": "5ded793524769cd346408119bc4e60e866287250"
+      "commit": "5e70e285d3cbeb89368d3295af02d03a9c9aa06b"
     },
     "sources": {
       "SoilTemperatureModels": {
         "url": "https://github.com/AgriculturalModelExchangeInitiative/SoilTemperatureModels.git",
         "commit": "1c5cde3add70978010e614fa319bdf48d5cafb1e",
-        "packages": ["Monica_SoilTemp", "DSSAT_ST_standalone"]
+        "packages": [
+          "Monica_SoilTemp",
+          "DSSAT_ST_standalone",
+          "DSSAT_EPICST_standalone",
+          "ApsimCampbell",
+          "BiomaSurfacePartonSoilSWATC",
+          "BiomaSurfaceSWATSoilSWATC",
+          "Simplace_Soil_Temperature",
+          "SQ_Soil_Temperature",
+          "Stics_soil_temperature"
+        ]
       }
     }
   }

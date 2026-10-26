@@ -18,8 +18,9 @@ import "core:testing"
 // odin/tests` runs from the repo root, see tools/odinw.py) and fails on any
 // `math.<name>(` or `libc.<name>(` for a C <math.h> §7.12 trig/hyperbolic/
 // exponential/logarithmic/power/gamma function. Not flagged: core:math's
-// round/floor/ceil/abs/PI/..., and libc.sqrt (IEEE 754 requires sqrt to be
-// correctly rounded, so every libm agrees). A name matches only as a whole
+// round/floor/ceil/abs/PI/..., and libc.sqrt and math.sqrt (IEEE 754 requires
+// sqrt to be correctly rounded, so every libm agrees; core:math's is the
+// intrinsic, the CPU's sqrt instruction). A name matches only as a whole
 // identifier, so a cr_math call is not mistaken for core:math's.
 //
 // Hidden directories are not descended into: only this port's own sources are
@@ -73,7 +74,8 @@ test_transcendentals_use_cr_math :: proc(t: ^testing.T) {
 			continue
 		}
 		if info.type == .Directory {
-			if strings.has_prefix(info.name, ".") {
+			// build/: scratch, e.g. gen-amei's working copies (build/crop2ml)
+			if strings.has_prefix(info.name, ".") || info.fullpath == "odin/build" {
 				os.walker_skip_dir(&w)
 			}
 			continue
@@ -91,7 +93,7 @@ test_transcendentals_use_cr_math :: proc(t: ^testing.T) {
 
 		for pkg in ([]string{"math", "libc"}) {
 			for name in names {
-				if pkg == "libc" && name == "sqrt" {
+				if name == "sqrt" {
 					continue
 				}
 				needle := strings.concatenate({pkg, ".", name, "("}, context.temp_allocator)

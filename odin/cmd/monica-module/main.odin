@@ -21,20 +21,23 @@
 //   {
 //     "Latitude": 52.8, "Albedo": 0.23, "TimeStep": 1,
 //     "TAV": 8.9, "TAMP": 18.6,             // annual average / amplitude of monthly averages [°C]
+//     "KcFactor": 0.4,                      // MONICA's soil moisture parameter (bare soil)
 //     "SoilTemperatureParameters": {...},   // MONICA's, optional
 //     "Layers": [{"Thickness": 0.1,         // [m]
 //                 "BulkDensity": 1500,      // [kg m-3]
 //                 "Saturation": 0.4, "FieldCapacity": 0.2,
-//                 "PermanentWiltingPoint": 0.05, "SoilMoisture": 0.15,  // [m3 m-3]
-//                 "OrganicMatter": 0.013}], // [kg kg-1]
+//                 "PermanentWiltingPoint": 0.05, "SoilMoisture": 0.15, "Stones": 0,  // [m3 m-3]
+//                 "OrganicMatter": 0.013, "OrganicCarbon": 0.008,
+//                 "Sand": 0.6, "Clay": 0.1, "Silt": 0.3}],  // [kg kg-1]
 //     "Daily": "input.csv"                  // relative to the input file
 //   }
 //
 // The daily CSV has a header row; columns by name: date (ISO), tmin, tavg,
-// tmax [°C], globrad [MJ m-2 d-1], and optionally soil_coverage [0-1],
-// snow_depth [mm], temperature_under_snow [°C] (default 0) and
-// soil_moisture_1 ... soil_moisture_<n> [m3 m-3] (default: the layers'
-// SoilMoisture).
+// tmax [°C], globrad [MJ m-2 d-1], and optionally every other field of
+// monica/modules/soil_temperature's Daily (precip, wind, et0, snow_depth, lai,
+// ...; default 0, except day_length: the astronomic one, air_pressure: 1010,
+// kc_factor: KcFactor - as MONICA's gather has them) and soil_moisture_1 ...
+// soil_moisture_<n> [m3 m-3] (default: the layers' SoilMoisture).
 package monica_module
 
 import "../../monica/core"
@@ -49,6 +52,7 @@ import "core:bufio"
 import "core:fmt"
 import "core:io"
 import "core:os"
+import "core:reflect"
 import "core:strconv"
 import "core:strings"
 
@@ -89,13 +93,9 @@ main :: proc() {
 
 // One day of the daily CSV.
 Day :: struct {
-	date:                   d.Date,
-	tmin, tavg, tmax:       f64,
-	globrad:                f64,
-	soil_coverage:          f64,
-	snow_depth:             f64,
-	temperature_under_snow: f64,
-	soil_moisture:          []f64, // nil: the layers' SoilMoisture
+	date:          d.Date,
+	daily:         stm.Daily,
+	soil_moisture: []f64, // nil: the layers' SoilMoisture
 }
 
 run_soil_temperature :: proc(impl, input_path, out_path: string) -> (err: string) {
@@ -130,12 +130,7 @@ run_soil_temperature :: proc(impl, input_path, out_path: string) -> (err: string
 
 	out := stm.make_output(n)
 	set_day :: proc(in_: ^stm.Input, day: ^Day, static_moisture: []f64) {
-		in_.julian_day = int(d.julian_day(day.date))
-		in_.tmin, in_.tavg, in_.tmax = day.tmin, day.tavg, day.tmax
-		in_.globrad = day.globrad
-		in_.soil_coverage = day.soil_coverage
-		in_.snow_depth = day.snow_depth
-		in_.temperature_under_snow = day.temperature_under_snow
+		in_.daily = day.daily
 		in_.soil_moisture = day.soil_moisture != nil ? day.soil_moisture : static_moisture
 	}
 
@@ -221,6 +216,7 @@ read_input :: proc(path: string) -> (in_: stm.Input, days: []Day, err: string) {
 	in_.tav = jx.double_value(j, "TAV")
 	in_.tamp = jx.double_value(j, "TAMP")
 	in_.time_step = jx.double_value_key_d(j, "TimeStep", 1.0)
+	in_.kc_factor_bare_soil = jx.double_value(j, "KcFactor")
 	in_.params = p.make_soil_temperature_module_parameters()
 	if jx.is_object(jx.get(j, "SoilTemperatureParameters")) {
 		_ = p.soil_temperature_module_parameters_merge(&in_.params, jx.get(j, "SoilTemperatureParameters"))
@@ -234,6 +230,11 @@ read_input :: proc(path: string) -> (in_: stm.Input, days: []Day, err: string) {
 	in_.bulk_density = make([]f64, n)
 	in_.saturation = make([]f64, n)
 	in_.organic_matter = make([]f64, n)
+	in_.organic_carbon = make([]f64, n)
+	in_.sand = make([]f64, n)
+	in_.clay = make([]f64, n)
+	in_.silt = make([]f64, n)
+	in_.stones = make([]f64, n)
 	in_.field_capacity = make([]f64, n)
 	in_.permanent_wilting_point = make([]f64, n)
 	in_.soil_moisture = make([]f64, n)
@@ -242,6 +243,11 @@ read_input :: proc(path: string) -> (in_: stm.Input, days: []Day, err: string) {
 		in_.bulk_density[i] = jx.double_value(l, "BulkDensity")
 		in_.saturation[i] = jx.double_value(l, "Saturation")
 		in_.organic_matter[i] = jx.double_value(l, "OrganicMatter")
+		in_.organic_carbon[i] = jx.double_value(l, "OrganicCarbon")
+		in_.sand[i] = jx.double_value(l, "Sand")
+		in_.clay[i] = jx.double_value(l, "Clay")
+		in_.silt[i] = jx.double_value(l, "Silt")
+		in_.stones[i] = jx.double_value(l, "Stones")
 		in_.field_capacity[i] = jx.double_value(l, "FieldCapacity")
 		in_.permanent_wilting_point[i] = jx.double_value(l, "PermanentWiltingPoint")
 		in_.soil_moisture[i] = jx.double_value(l, "SoilMoisture")
@@ -251,11 +257,18 @@ read_input :: proc(path: string) -> (in_: stm.Input, days: []Day, err: string) {
 		dir, _ := tl.split_path_to_file(path)
 		daily = strings.concatenate({dir, daily})
 	}
-	days, err = read_daily(daily, n)
+	days, err = read_daily(daily, n, in_.latitude, in_.kc_factor_bare_soil)
 	return
 }
 
-read_daily :: proc(path: string, no_of_layers: int) -> (days: []Day, err: string) {
+read_daily :: proc(
+	path: string,
+	no_of_layers: int,
+	latitude, kc_factor: f64,
+) -> (
+	days: []Day,
+	err: string,
+) {
 	data, rerr := os.read_entire_file(path, context.allocator)
 	if rerr != nil {
 		return nil, fmt.aprintf("can't read %s: %v", path, rerr)
@@ -311,13 +324,23 @@ read_daily :: proc(path: string, no_of_layers: int) -> (days: []Day, err: string
 			day.date = d.from_iso_date_string(strings.trim_space(fields[col["date"]]))
 		}
 		ok = ok && d.is_valid(day.date)
-		day.tmin = num(fields, col, "tmin", &ok)
-		day.tavg = num(fields, col, "tavg", &ok)
-		day.tmax = num(fields, col, "tmax", &ok)
-		day.globrad = num(fields, col, "globrad", &ok)
-		day.soil_coverage = num(fields, col, "soil_coverage", &ok)
-		day.snow_depth = num(fields, col, "snow_depth", &ok)
-		day.temperature_under_snow = num(fields, col, "temperature_under_snow", &ok)
+		dy := &day.daily
+		dy.julian_day = int(d.julian_day(day.date))
+		// every f64 field of Daily, by name
+		for f in reflect.struct_fields_zipped(stm.Daily) {
+			if f.type.id == f64 {
+				(^f64)(uintptr(dy) + f.offset)^ = num(fields, col, f.name, &ok)
+			}
+		}
+		if "day_length" not_in col {
+			dy.day_length = d.day_lengths(latitude, f64(dy.julian_day)).astronomic_day_length
+		}
+		if "air_pressure" not_in col {
+			dy.air_pressure = 1010
+		}
+		if "kc_factor" not_in col {
+			dy.kc_factor = kc_factor
+		}
 		if sm_cols != nil {
 			day.soil_moisture = make([]f64, no_of_layers)
 			for c, i in sm_cols {
@@ -390,6 +413,11 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 				{"BulkDensity", jx.f(in_.bulk_density[i])},
 				{"Saturation", jx.f(in_.saturation[i])},
 				{"OrganicMatter", jx.f(in_.organic_matter[i])},
+				{"OrganicCarbon", jx.f(in_.organic_carbon[i])},
+				{"Sand", jx.f(in_.sand[i])},
+				{"Clay", jx.f(in_.clay[i])},
+				{"Silt", jx.f(in_.silt[i])},
+				{"Stones", jx.f(in_.stones[i])},
 				{"FieldCapacity", jx.f(in_.field_capacity[i])},
 				{"PermanentWiltingPoint", jx.f(in_.permanent_wilting_point[i])},
 				{"SoilMoisture", jx.f(in_.soil_moisture[i])},
@@ -403,6 +431,7 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 		{"TimeStep", jx.f(in_.time_step)},
 		{"TAV", jx.f(in_.tav)},
 		{"TAMP", jx.f(in_.tamp)},
+		{"KcFactor", jx.f(in_.kc_factor_bare_soil)},
 		{"SoilTemperatureParameters", p.soil_temperature_module_parameters_to_json(&in_.params, a)},
 		{"Layers", jx.arr(a, ..layers[:])},
 		{"Daily", jx.s(csv_name, a)},
@@ -412,15 +441,30 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 	}
 
 	b := strings.builder_make(a)
-	strings.write_string(&b, "date,tmin,tavg,tmax,globrad\n")
+	// day_length, air_pressure and kc_factor as core.soil_temperature_daily
+	// has them; the daily Kc is MONICA's bare soil one without a crop
+	strings.write_string(&b, "date,tmin,tavg,tmax,globrad,precip,wind,day_length,air_pressure,kc_factor\n")
 	buf: [64]byte
+	write :: proc(b: ^strings.Builder, buf: []byte, v: f64) {
+		s := strconv.write_float(buf, v, 'g', 17, 64)
+		strings.write_string(b, ",")
+		strings.write_string(b, s[0] == '+' ? s[1:] : s)
+	}
+	has_daylength := clim.data_accessor_has_available_climate_data(da, .daylength)
+	has_airpress := clim.data_accessor_has_available_climate_data(da, .airpress)
 	for i in 0 ..< clim.data_accessor_no_of_steps_possible(da) {
-		strings.write_string(&b, d.to_iso_date_string(clim.data_accessor_date_for_step(da, i), "", a))
-		for acd in ([]clim.ACD{.tmin, .tavg, .tmax, .globrad}) {
-			s := strconv.write_float(buf[:], clim.data_accessor_data_for_timestep(da, acd, i), 'g', 17, 64)
-			strings.write_string(&b, ",")
-			strings.write_string(&b, s[0] == '+' ? s[1:] : s)
+		date := clim.data_accessor_date_for_step(da, i)
+		strings.write_string(&b, d.to_iso_date_string(date, "", a))
+		for acd in ([]clim.ACD{.tmin, .tavg, .tmax, .globrad, .precip, .wind}) {
+			write(&b, buf[:], clim.data_accessor_data_for_timestep(da, acd, i))
 		}
+		write(
+			&b,
+			buf[:],
+			has_daylength ? clim.data_accessor_data_for_timestep(da, .daylength, i) : d.day_lengths(in_.latitude, f64(d.julian_day(date))).astronomic_day_length,
+		)
+		write(&b, buf[:], has_airpress ? clim.data_accessor_data_for_timestep(da, .airpress, i) : 1010)
+		write(&b, buf[:], in_.kc_factor_bare_soil)
 		strings.write_string(&b, "\n")
 	}
 	if werr := os.write_entire_file(csv_path, transmute([]byte)strings.to_string(b)); werr != nil {

@@ -6,12 +6,10 @@
 // bulk density kg m-3 -> g cm-3, thicknesses and depths m -> cm, the soil
 // moisture (SW, a parameter of the module) set anew every day, MONICA's
 // environment albedo as the soil albedo. One difference: the adapter
-// truncated the thicknesses to whole cm (int(m * 100)), which turns e.g.
-// 0.29 m into 28 cm; they are rounded here.
+// truncated the thicknesses to whole cm; they are rounded here (thickness_cm).
 package soil_temperature
 
 import dst "../../../amei/DSSAT_ST_standalone"
-import "core:math"
 
 Dssat_St :: struct {
 	c:            dst.Stemp_Component,
@@ -33,14 +31,14 @@ destroy_dssat_st :: proc(b: ^Dssat_St, allocator := context.allocator) {
 	dst.destroy_stemp_component(&b.c)
 	dst.destroy_stemp_state(&b.s)
 	dst.destroy_stemp_state(&b.s1)
+	dst.destroy_stemp_rate(&b.r)
+	dst.destroy_stemp_auxiliary(&b.a)
+	dst.destroy_stemp_exogenous(&b.ex)
 	free(b)
 }
 
-dssat_st_init :: proc(b: ^Dssat_St, in_: ^Input, allocator := context.allocator) -> (err: string) {
+dssat_st_init :: proc(b: ^Dssat_St, in_: ^Input, allocator := context.allocator) {
 	n := len(in_.layer_thickness)
-	if n == 0 {
-		return "DSSAT_ST_standalone: no soil layers"
-	}
 	b.no_of_layers = n
 	c := &b.c
 	dst.stemp_component_set_iswwat(c, "Y")
@@ -54,7 +52,7 @@ dssat_st_init :: proc(b: ^Dssat_St, in_: ^Input, allocator := context.allocator)
 	bd := make([]f64, n, context.temp_allocator)
 	depth := 0.0
 	for i in 0 ..< n {
-		dlayr[i] = math.round(in_.layer_thickness[i] * 100.0) // m -> cm
+		dlayr[i] = thickness_cm(in_.layer_thickness[i])
 		depth += dlayr[i]
 		ds[i] = depth
 		bd[i] = in_.bulk_density[i] / 1000.0 // kg m-3 -> g cm-3
@@ -68,7 +66,6 @@ dssat_st_init :: proc(b: ^Dssat_St, in_: ^Input, allocator := context.allocator)
 
 	dssat_st_exogenous(b, in_)
 	dst.stemp_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
-	return ""
 }
 
 dssat_st_step :: proc(b: ^Dssat_St, in_: ^Input, out: ^Output, allocator := context.allocator) {

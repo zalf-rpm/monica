@@ -35,10 +35,15 @@ from pathlib import Path
 ODIN = Path(__file__).resolve().parent.parent
 H2 = ODIN.parent / "installer" / "Hohenfinow2"
 FIXTURES = ["sim-min", "sim-min-events2", "sim-min-setvalue", "sim", "sim+"]
-MODULES = ["Monica_SoilTemp", "DSSAT_ST_standalone"]
+MODULES = ["Monica_SoilTemp", "DSSAT_ST_standalone", "DSSAT_EPICST_standalone", "ApsimCampbell",
+           "BiomaSurfacePartonSoilSWATC", "BiomaSurfaceSWATSoilSWATC", "Simplace_Soil_Temperature",
+           "SQ_Soil_Temperature", "Stics_soil_temperature"]
 DRIVERS = "modules.soil_temperature_drivers"
-DAILY_INPUTS = ["julian_day", "tmin", "tavg", "tmax", "globrad", "soil_coverage", "snow_depth",
-                "temperature_under_snow"]
+# monica/modules/soil_temperature's Daily, julian_day first
+DAILY_INPUTS = ["julian_day", "tmin", "tavg", "tmax", "globrad", "precip", "irrigation", "wind",
+                "air_pressure", "day_length", "et0", "kc_factor", "actual_evaporation", "soil_coverage",
+                "snow_depth", "snow_water_equivalent", "temperature_under_snow", "above_ground_biomass",
+                "crop_height", "lai"]
 
 failures = []
 
@@ -106,7 +111,7 @@ def driver_sim(work, name="drivers", modules=None, drivers=MODULES):
         cols += [{"path": f"{DRIVERS}.{m}.output.layer_temperature", "name": f"{m}.T", "layers": layers},
                  {"path": f"{DRIVERS}.{m}.output.soil_surface_temperature", "name": f"{m}.Surf"},
                  {"path": f"{DRIVERS}.{m}.input.soil_moisture", "name": f"{m}.SM", "layers": layers}]
-        cols += [{"path": f"{DRIVERS}.{m}.input.{n}", "name": f"{m}.{n}"} for n in DAILY_INPUTS]
+        cols += [{"path": f"{DRIVERS}.{m}.input.daily.{n}", "name": f"{m}.{n}"} for n in DAILY_INPUTS]
     if "DSSAT_ST_standalone" in drivers:
         cols.append({"path": f"{DRIVERS}.DSSAT_ST_standalone.module.Dssat_St.s.srftemp", "name": "DSSAT.raw"})
         cols += [{"path": f"{DRIVERS}.DSSAT_ST_standalone.input.{n}", "name": f"input.{n}"}
@@ -145,8 +150,7 @@ def drivers_against_monica_and_standalone(monica_run, monica_module, work):
     for m in MODULES:
         p = f"{m}."
         with open(work / f"standalone-{m}.csv", "w", newline="") as f:
-            f.write("date,tmin,tavg,tmax,globrad,soil_coverage,snow_depth,temperature_under_snow,"
-                    + ",".join(f"soil_moisture_{i}" for i in range(1, n + 1)) + "\n")
+            f.write(",".join(["date"] + DAILY_INPUTS[1:] + [f"soil_moisture_{i}" for i in range(1, n + 1)]) + "\n")
             for r in days:
                 f.write(",".join([r["Date"]] + [r[p + c] for c in DAILY_INPUTS[1:]]
                                  + columns(r, p + "SM", n)) + "\n")

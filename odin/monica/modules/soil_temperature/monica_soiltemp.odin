@@ -35,20 +35,14 @@ destroy_monica_soil_temp :: proc(b: ^Monica_Soil_Temp, allocator := context.allo
 	mst.destroy_soil_temperature_comp_component(&b.c)
 	mst.destroy_soil_temperature_comp_state(&b.s)
 	mst.destroy_soil_temperature_comp_state(&b.s1)
+	mst.destroy_soil_temperature_comp_rate(&b.r)
+	mst.destroy_soil_temperature_comp_auxiliary(&b.a)
+	mst.destroy_soil_temperature_comp_exogenous(&b.ex)
 	free(b)
 }
 
-monica_soil_temp_init :: proc(
-	b: ^Monica_Soil_Temp,
-	in_: ^Input,
-	allocator := context.allocator,
-) -> (
-	err: string,
-) {
+monica_soil_temp_init :: proc(b: ^Monica_Soil_Temp, in_: ^Input, allocator := context.allocator) {
 	n := len(in_.layer_thickness)
-	if n == 0 {
-		return "Monica_SoilTemp: no soil layers"
-	}
 	b.no_of_layers = n
 	c := &b.c
 	ps := &in_.params
@@ -86,7 +80,6 @@ monica_soil_temp_init :: proc(
 
 	monica_soil_temp_exogenous(b, in_)
 	mst.soil_temperature_comp_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
-	return ""
 }
 
 monica_soil_temp_step :: proc(

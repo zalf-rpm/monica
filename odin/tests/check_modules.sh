@@ -20,7 +20,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export MONICA_PARAMETERS="${MONICA_PARAMETERS:-$HOME/GitHub/monica-parameters}"
 PIXI="${PIXI_EXE:-pixi}"
 PYCROPML_ENV=(--manifest-path build/crop2ml/PyCrop2ML/pyproject.toml)
-MODULES="Monica_SoilTemp DSSAT_ST_standalone"
+MODULES="Monica_SoilTemp DSSAT_ST_standalone DSSAT_EPICST_standalone ApsimCampbell
+  BiomaSurfacePartonSoilSWATC BiomaSurfaceSWATSoilSWATC Simplace_Soil_Temperature SQ_Soil_Temperature
+  Stics_soil_temperature"
 W=build/check-modules
 EXE=build/monica-module
 [ "${OS:-}" = Windows_NT ] && EXE=$EXE.exe

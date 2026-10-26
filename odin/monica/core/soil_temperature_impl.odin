@@ -18,6 +18,8 @@
 // monica/modules/soil_temperature/, which core imports.
 package core
 
+import clim "../../support/climate"
+import d "../../support/date"
 import stm "../modules/soil_temperature"
 import p "../params"
 import "base:runtime"
@@ -160,19 +162,25 @@ soil_temperature_impl_names :: proc(allocator := context.allocator) -> []string 
 // are the daily values. Slices are allocated with `allocator`.
 soil_temperature_input_from_model :: proc(
 	model: ^Monica_Model,
-	params: p.Soil_Temperature_Module_Parameters,
+	cpp: ^p.Central_Parameter_Provider,
 	in_: ^stm.Input,
 	allocator := context.allocator,
 ) {
 	in_.latitude = model.site_params.latitude
 	in_.albedo = model.env_params.albedo
 	in_.time_step = model.env_params.time_step
-	in_.params = params
+	in_.kc_factor_bare_soil = cpp.soil_moisture_mod_params.kc_factor
+	in_.params = cpp.soil_temperature_mod_params
 	n := len(model.soil_column.layers)
 	in_.layer_thickness = make([]f64, n, allocator)
 	in_.bulk_density = make([]f64, n, allocator)
 	in_.saturation = make([]f64, n, allocator)
 	in_.organic_matter = make([]f64, n, allocator)
+	in_.organic_carbon = make([]f64, n, allocator)
+	in_.sand = make([]f64, n, allocator)
+	in_.clay = make([]f64, n, allocator)
+	in_.silt = make([]f64, n, allocator)
+	in_.stones = make([]f64, n, allocator)
 	in_.field_capacity = make([]f64, n, allocator)
 	in_.permanent_wilting_point = make([]f64, n, allocator)
 	in_.soil_moisture = make([]f64, n, allocator)
@@ -181,10 +189,59 @@ soil_temperature_input_from_model :: proc(
 		in_.bulk_density[i] = soil_bulk_density(&l)
 		in_.saturation[i] = l.saturation
 		in_.organic_matter[i] = soil_organic_matter(&l)
+		in_.organic_carbon[i] = soil_organic_carbon(&l)
+		in_.sand[i] = l.soil_sand_content
+		in_.clay[i] = l.soil_clay_content
+		in_.silt[i] = soil_silt_content(&l)
+		in_.stones[i] = l.soil_stone_content
 		in_.field_capacity[i] = l.field_capacity
 		in_.permanent_wilting_point[i] = l.permanent_wilting_point
 		in_.soil_moisture[i] = l.soil_moisture_m3
 	}
+}
+
+Soil_Temperature_Daily :: stm.Daily
+
+// The day's values for the modules, as MONICA has them when its own soil
+// temperature steps (monica_model_general_step): before the day's soil
+// moisture step, so evaporation, ET0 and the snow are the previous day's, as
+// in the C++ AMEI adapters.
+soil_temperature_daily :: proc(
+	model: ^Monica_Model,
+	julian_day: int,
+	climate: map[clim.ACD]f64,
+	soil_coverage: f64,
+) -> (
+	day: stm.Daily,
+) {
+	day.julian_day = julian_day
+	day.tmin = climate[.tmin]
+	day.tavg = climate[.tavg]
+	day.tmax = climate[.tmax]
+	day.globrad = climate[.globrad]
+	day.precip = climate[.precip]
+	day.wind = climate[.wind]
+	day.air_pressure = climate[.airpress] or_else 1010 // as the C++ AMEI adapter
+	if dl, ok := climate[.daylength]; ok {
+		day.day_length = dl
+	} else {
+		day.day_length = d.day_lengths(model.site_params.latitude, f64(julian_day)).astronomic_day_length
+	}
+	day.irrigation = model.daily_sum_irrigation_water
+	sm := &model.soil_moisture
+	day.et0 = sm.reference_evapotranspiration
+	day.kc_factor = sm.kc_factor
+	day.actual_evaporation = sm.actual_evaporation
+	day.soil_coverage = soil_coverage
+	day.snow_depth = sm.snow_component.snow_depth
+	day.snow_water_equivalent = sm.snow_component.frozen_water_in_snow + sm.snow_component.liquid_water_in_snow
+	day.temperature_under_snow = sm.frost_component.temperature_under_snow
+	if cm := model.current_crop_module; cm != nil {
+		day.above_ground_biomass = cm.aboveground_biomass
+		day.crop_height = cm.crop_height
+		day.lai = cm.leaf_area_index
+	}
+	return
 }
 
 // ---------------------------------------------------------------------------
@@ -240,7 +297,7 @@ make_soil_temperature_module :: proc(
 	m := new(Soil_Temperature_Module, allocator)
 	m.name = name
 	m.module = entry.make(allocator)
-	soil_temperature_input_from_model(model, cpp.soil_temperature_mod_params, &m.input, allocator)
+	soil_temperature_input_from_model(model, cpp, &m.input, allocator)
 	m.output = stm.make_output(len(m.input.layer_thickness), allocator)
 	return m
 }
@@ -281,25 +338,12 @@ soil_temperature_modules_set_tav_tamp :: proc(model: ^Monica_Model, tav, tamp: f
 	}
 }
 
-// One day of a module, with exactly the values MONICA's own soil temperature
-// gets that day (monica_model_general_step). The soil moisture is the
-// column's at that point - before today's soil moisture step, as in the C++
-// AMEI adapters.
-soil_temperature_module_step :: proc(
-	model: ^Monica_Model,
-	m: ^Soil_Temperature_Module,
-	julian_day: int,
-	tmin, tavg, tmax, globrad: f64,
-	soil_coverage, snow_depth, temperature_under_snow: f64,
-) {
+// One day of a module, on the day's values (soil_temperature_daily) and the
+// soil column's moisture.
+soil_temperature_module_step :: proc(model: ^Monica_Model, m: ^Soil_Temperature_Module, day: ^stm.Daily) {
 	ms := &model.modules
 	in_ := &m.input
-	in_.julian_day = julian_day
-	in_.tmin, in_.tavg, in_.tmax = tmin, tavg, tmax
-	in_.globrad = globrad
-	in_.soil_coverage = soil_coverage
-	in_.snow_depth = snow_depth
-	in_.temperature_under_snow = temperature_under_snow
+	in_.daily = day^
 	for &l, i in model.soil_column.layers {
 		in_.soil_moisture[i] = l.soil_moisture_m3
 	}
@@ -307,6 +351,10 @@ soil_temperature_module_step :: proc(
 		err := stm.module_init(m.module, in_, ms.allocator)
 		assert(err == "", err) // only fails without layers, which run_monica refuses
 		m.initialized = true
+		// the first step with the model's allocator: a module that sizes state
+		// arrays there (ApsimCampbell) must not get them from the scratch
+		stm.module_step(m.module, in_, &m.output, ms.allocator)
+		return
 	}
 	stm.module_step(m.module, in_, &m.output, mem.dynamic_arena_allocator(&ms.scratch))
 	mem.dynamic_arena_reset(&ms.scratch)

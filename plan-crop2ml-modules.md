@@ -486,6 +486,72 @@ ET scatters into `soil_moisture` like the C++ adapter (`Monica_Evapotranspiratio
 lines 96–118). That adapter syncs state both ways and its commit says it is "not yet working
 correctly", so it comes last.
 
+Soil temperature done 2026-10-26. What was built:
+
+* PyCrop2ML pin moved to 5e70e28 (B12 fixed upstream), which leaves Monica_SoilTemp and
+  DSSAT_ST_standalone unchanged. Seven more packages from SoilTemperatureModels: all nine with a
+  C++ AMEI adapter. Not included: BiomaSurfacePartonSoilSWATHourlyPartonC (B9) and
+  campbell_SoilTemp (no adapter). All pass `odin check -vet`.
+* `gen-amei` now deletes the source repository's `src/odin` and `src/py` from its working copy
+  before generating. Stics' committed Python had a stale `soil_tempComponent.py` with a different
+  unit order next to the generated `Soil_tempComponent.py`, and the reference picked either.
+* `Input` has the per-run fields the new modules need: organic carbon, sand, clay, silt, stones and
+  the bare-soil `KcFactor`. The daily values are grouped as `Daily` (precipitation, irrigation,
+  wind, air pressure, day length, ET0, current Kc, actual evaporation, snow depth and water
+  equivalent, crop biomass, height and LAI), and `core.soil_temperature_daily` gathers them once
+  per day for all modules. Timing as in the C++ adapters: before the day's soil moisture step.
+* One binding file per module, after its C++ adapter. Deviations, documented in each file:
+  * thicknesses in cm are rounded, not truncated (`thickness_cm`; DSSAT, EPIC, Stics);
+  * ApsimCampbell: canopy height in mm (the adapter passed metres), soil albedo from MONICA (the
+    adapter left it at 0);
+  * Bioma: the adapter's "volumetric water content" = moisture − wilting point is kept.
+* Each module's first step runs with the model's allocator, the following ones with the scratch.
+  ApsimCampbell sizes state arrays lazily in its first step, so they would otherwise sit in
+  memory that is reset after the day.
+* `tools/module_reference.py` has a mapping per module. Parameters the binding doesn't set get
+  what the generated Odin's `make_*` gives them: the default, also when it is an arithmetic
+  expression (ApsimCampbell's `timestep = 24.0 * 60.0 * 60.0`), otherwise zero or empty.
+  PyCrop2ML's `Inputs` (in `odin_reference.py`) invents values in both cases, so ApsimCampbell's
+  Python ran with a time step of 1 s. Worth fixing there too.
+* `math.sqrt` is allowed besides `libc.sqrt` (CONVENTIONS.md §1): `core:math`'s is the intrinsic,
+  IEEE-correctly rounded, and the generated code uses it. The convention checks skip `odin/build/`.
+
+Check results (`tests/check_modules.sh`, CI):
+
+| module | Odin vs Python, sim-min | dynamic variant |
+| --- | --- | --- |
+| Monica_SoilTemp | identical | identical |
+| DSSAT_ST_standalone | ≤ 2.4e-14 | ≤ 2.1e-14 |
+| DSSAT_EPICST_standalone | ≤ 4.7e-14 | ≤ 4.5e-14 |
+| ApsimCampbell | ≤ 6.2e-15 | ≤ 2.9e-15 |
+| BiomaSurfacePartonSoilSWATC | identical | ≤ 8.4e-16 |
+| BiomaSurfaceSWATSoilSWATC | identical | ≤ 1.5e-15 |
+| Simplace_Soil_Temperature | identical | ≤ 1.7e-16 |
+| SQ_Soil_Temperature | identical | identical |
+| Stics_soil_temperature | ≤ 2.4e-15 | ≤ 2.4e-15 |
+
+(relative; the differences are `cr_math` vs libm). As drivers, all nine give exactly what they
+give standalone on the inputs they received. Integrated, all nine run sim-min, sim-min-events2,
+sim-min-setvalue, sim and sim+ without NaN or inf, and the soil column equals the module's
+output exactly. R1: `diff_outputs.sh` and the C++ suites byte-identical. R2: sim-min 366 ± 10
+(phase 4) vs 362 ± 12 ms, sim 2068 ± 69 vs 2025 ± 72 ms. Integrated, sim.json takes about 2 s
+with every module except ApsimCampbell (3.3 s: its internal sub-daily iterations).
+
+Against the C++ AMEI build, integrated on bare soil (sim-min without crops), 2557 days × 20
+layers, largest absolute difference:
+
+| module | layers [°C] | surface [°C] | why |
+| --- | --- | --- | --- |
+| DSSAT_ST_standalone | 0.018 | 0.00005 | the AMEI branch's soil moisture (phase 3) |
+| DSSAT_EPICST_standalone | 0.017 | 0.00005 | same |
+| BiomaSurfacePartonSoilSWATC | 0.010 | 0.0001 | same |
+| BiomaSurfaceSWATSoilSWATC | 0.0096 | 0.0001 | same |
+| Simplace_Soil_Temperature | 0.059 | 0.0026 | same, via the profile's water |
+| SQ_Soil_Temperature | 0.00005 | 0.00005 | – |
+| Stics_soil_temperature | 0.0001 | 1.07 | C++'s `AMEI_..._SurfTemp` reports `canopy_temp_avg`, not the `temp_profile[0]` its adapter writes into the soil column |
+| Monica_SoilTemp | 3.5 | 0.0001 | the C++ binary predates the unit order fix, and its adapter's constant moisture differs (§4) |
+| ApsimCampbell | 3.5 | 4.7 | soil albedo 0 in C++ (with 0 here too: 2.1 / 3.0), the rest the hand-edited C++ code (§4) |
+
 **Phase 6: a second process as a module (optional, proves R3).** E.g. move evapotranspiration's
 internal code behind its own union like soil temperature in phase 1, then write a small
 hand-written variant as the "PhD student" test case. Check: R1, R2, and that the variant needed
@@ -499,9 +565,7 @@ only its package, one union entry and one table row.
   a result stays unassigned with the default input (B10/B11 in `plan-odin-target.md`). In Odin
   it silently becomes 0.0.
 * BiomaSurfacePartonSoilSWATHourlyPartonC can't run (B9).
-* Unit order in compositions: upstream PyCrop2ML now runs units in the order of the `<Model>`
-  elements, not by dependency (B12, reported, open). Monica_SoilTemp is reordered
-  (SoilTemperatureModels 1c5cde3); check the other packages before generating them.
+* Unit order in compositions (B12): fixed upstream (PyCrop2ML 4683b96, pinned from phase 5).
 * ApsimCampbell's cpp2 code in `monica_amei` was hand-edited; the Odin code is regenerated from
   the Crop2ML sources, so compare behaviour, not code.
 * Monica_SoilTemp's C++ adapter uses a constant soil moisture per layer, `pwp + awc * (fc - pwp)`
@@ -513,3 +577,10 @@ only its package, one union entry and one table row.
 * ApsimCampbell's adapter sets both Eo and Eos to the potential ET (with a `!!!` comment
   questioning it), and Simplace's sets `iRAIN = precip` "so that no snowcover will build up".
   Adapter decisions: carry them into the bindings explicitly, document them, revisit later.
+* Stics_soil_temperature: from about 50 cm down, every layer has the same temperature, which
+  follows the season without damping or lag. So in summer the deep layers are warmer than the
+  surface (Hohenfinow2, 15 July 1992: 18.7 °C at 50–200 cm, 15.6 °C at the surface). The
+  generated Python and the C++ AMEI build agree, so it is the module's behaviour with MONICA's
+  20 × 10 cm profile, not a binding error. Check against STICS.
+* Simplace_Soil_Temperature declares `cInitialSnowWaterContent` in percent; the module computes
+  with mm, which is what the adapter and the binding pass.
