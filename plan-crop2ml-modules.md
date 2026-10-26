@@ -552,6 +552,77 @@ layers, largest absolute difference:
 | Monica_SoilTemp | 3.5 | 0.0001 | the C++ binary predates the unit order fix, and its adapter's constant moisture differs (§4) |
 | ApsimCampbell | 3.5 | 4.7 | soil albedo 0 in C++ (with 0 here too: 2.1 / 3.0), the rest the hand-edited C++ code (§4) |
 
+Evapotranspiration, 2026-10-26, on branch `crop2ml-et` (the soil temperature part is on
+`simplify_copilot`).
+
+Assessment first. In the C++ AMEI branch the module replaces exactly one call:
+`SoilMoisture::fm_Evapotranspiration` inside the soil moisture step, after infiltration and
+percolation, before the capillary rise. Unlike soil temperature, it changes MONICA's state (soil
+moisture, surface water) and needs crop values (transpiration, remaining ET, intercepted
+evaporation, gross photosynthesis). The two packages:
+
+* Monica_Evapotranspiration: MONICA's soil-moisture ET, split into 11 Crop2ML units (radiation,
+  vapour pressures, net radiation, stomata resistance, ET0, external ET0 and vapour pressure,
+  potential ET, the evaporation/transpiration step). Compared with the port (= C++ master) it has
+  three deliberate differences:
+  1. `eReducer1` uses the current soil moisture, after infiltration. The C++ AMEI branch changed
+     MONICA's own code the same way ("was wrong as within soil moisture vm_SoilMoisture got
+     already updated"). Master, and so the port, still reads the moisture of the start of the day.
+  2. ET0 is "unified": with a crop it is computed with the soil moisture's formula and the crop's
+     stomata resistance. MONICA instead takes the crop module's ET0, whose formula differs: no
+     cap of the relative shortwave radiation at 1, and its own extraterrestrial radiation.
+  3. The aerodynamic term is written `rs / ra`, where MONICA has `(rs / 208) * u2`, which differs
+     in the last bits.
+
+  It has no FAO-56 dual Kc, which the port added later.
+* Monica_AMEI_potential_Evapotranspiration only computes ET0 and the potential ET, from
+  intermediates (vapour pressures, net radiation, stomata resistance) that MONICA has only as
+  local variables, in two places. Its C++ adapter sets only the vapour pressure and, integrated,
+  replaces the whole `fm_Evapotranspiration` while only setting ET0. Then evaporation and
+  transpiration never leave the soil water. It also takes the crop's ET0 only *with* an external
+  ET0, which looks inverted. Not usable integrated; no binding yet (as a driver it would need
+  MONICA to keep those intermediates).
+
+What was built:
+
+* `"Modules": {"Evapotranspiration": {"impl": ...}, "EvapotranspirationDrivers": [...]}`.
+  `check_modules_config` checks the names, refuses modules that can't be integrated (the table's
+  `integrated` flag), and refuses an integrated module together with
+  `"evapotranspiration-method": "FAO-56-Dual"`.
+* `odin/monica/modules/evapotranspiration/`: `Input` (site, MONICA's soil moisture and crop module
+  parameters, layers; `Daily`; the soil moisture and the crop's transpiration per layer) and
+  `Output` (ET0, potential ET, net radiation, evaporation from the surface, actual E/T/ET, surface
+  water, soil moisture and E/T/ET per layer). Binding `monica_et.odin` after the adapter. It also
+  sets what the adapter left at 0: CO2, the crop's gross photosynthesis and carboxylation pathway,
+  stomata alpha/beta, and the fixed stomata resistance without a crop (100 s m-1).
+* `core/evapotranspiration_impl.odin`. `Soil_Moisture.modules` is nil without configuration, and
+  then `soil_moisture_step` calls MONICA's own `evapotranspiration` unchanged (R1). Otherwise
+  `evapotranspiration_with_modules` gathers the input at that point (a snapshot of soil moisture
+  and surface water), runs the integrated module and scatters its output (soil column moisture,
+  surface water, ET0, net radiation, E/T/ET with their layers), or MONICA's own; then the drivers
+  run on the same snapshot. The scratch arena and first-step rule are shared with the soil
+  temperature modules.
+
+Check results (Hohenfinow2 sim-min, 2557 days):
+
+* As a driver, against MONICA's own (17 digits): transpiration equal (2540 days identical, rest
+  ≤ 3e-5 mm, with a crop: the remaining-ET path); evaporation from surface water equal; ET0
+  without a crop within 1.8e-15; soil evaporation different on about 700 days by up to 3.15 mm.
+  With the C++ AMEI branch's `eReducer1` patched into MONICA's own (a one-off experiment, not
+  committed), soil evaporation is equal within 9e-16. ET0 with a crop differs by up to 1.22 mm
+  (difference 2).
+* Integrated, against MONICA's default: everything runs, the yields within about 0.2 % (e.g.
+  7589 vs 7600 kg ha-1). Against MONICA with the patched `eReducer1`: 34 of 48651 output numbers
+  differ, all of them `ETa/ETc`, the only output that uses the reported ET0. So the integrated
+  module is MONICA's own ET plus differences 1 and 2.
+* `tests/check_drivers.py`: ET drivers change nothing (5 sims byte-identical); integrated, all 5
+  run without NaN or inf; integrated with itself as a driver, MONICA's E/T/ET0 (and layers) equal
+  the module's exactly.
+* R1: `diff_outputs.sh` and the C++ suites byte-identical. R2: sim-min 357 ± 8 vs 354 ± 8 ms, sim
+  2005 ± 24 vs 2011 ± 21 ms; integrated ET sim 1985 ± 19 ms.
+* Not done: a Python reference for the ET packages (`module_reference.py`). The comparison
+  against MONICA's own code above is the stronger check here.
+
 **Phase 6: a second process as a module (optional, proves R3).** E.g. move evapotranspiration's
 internal code behind its own union like soil temperature in phase 1, then write a small
 hand-written variant as the "PhD student" test case. Check: R1, R2, and that the variant needed
@@ -584,3 +655,8 @@ only its package, one union entry and one table row.
   20 × 10 cm profile, not a binding error. Check against STICS.
 * Simplace_Soil_Temperature declares `cInitialSnowWaterContent` in percent; the module computes
   with mm, which is what the adapter and the binding pass.
+* Monica_Evapotranspiration, the evapotranspiration unit: without a crop and with snow, it doesn't
+  reset `transpiration[i]` (MONICA sets it to 0). So the state's value from the last crop day
+  would be counted again. It didn't happen on Hohenfinow2 (transpiration equal on every day).
+* Monica_Evapotranspiration's ET0 with a crop is the soil moisture's formula, not the crop
+  module's (phase 5, difference 2). Decide which one MONICA should have and use it in both.

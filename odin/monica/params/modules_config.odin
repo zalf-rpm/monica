@@ -4,7 +4,9 @@
 //
 //   "Modules": {
 //     "SoilTemperature": {"impl": "internal", "mode": "integrated"},
-//     "SoilTemperatureDrivers": []
+//     "SoilTemperatureDrivers": [],
+//     "Evapotranspiration": {"impl": "internal"},
+//     "EvapotranspirationDrivers": []
 //   }
 //
 // Absent means MONICA's own implementations, exactly as without this section.
@@ -24,9 +26,11 @@ Module_Config :: struct {
 }
 
 Modules_Config :: struct {
-	soil_temperature:         Module_Config,
+	soil_temperature:           Module_Config,
 	// modules run alongside MONICA's own implementation, only reported (§1.4)
-	soil_temperature_drivers: [dynamic]string,
+	soil_temperature_drivers:   [dynamic]string,
+	evapotranspiration:         Module_Config,
+	evapotranspiration_drivers: [dynamic]string,
 }
 
 // The names every process's table accepts for MONICA's own implementation and
@@ -37,8 +41,13 @@ MODULE_MODE_INTEGRATED :: "integrated"
 // True if nothing but MONICA's own implementations is configured, the
 // situation in which "Modules" must not change a single output byte (R1).
 modules_config_is_default :: proc(mc: ^Modules_Config) -> bool {
-	impl := mc.soil_temperature.impl
-	return (impl == "" || impl == MODULE_IMPL_INTERNAL) && len(mc.soil_temperature_drivers) == 0
+	internal :: proc(impl: string) -> bool {return impl == "" || impl == MODULE_IMPL_INTERNAL}
+	return(
+		internal(mc.soil_temperature.impl) &&
+		len(mc.soil_temperature_drivers) == 0 &&
+		internal(mc.evapotranspiration.impl) &&
+		len(mc.evapotranspiration_drivers) == 0
+	)
 }
 
 modules_config_merge :: proc(mc: ^Modules_Config, j: jx.Value) -> tl.Errors {
@@ -51,11 +60,23 @@ modules_config_merge :: proc(mc: ^Modules_Config, j: jx.Value) -> tl.Errors {
 		return res
 	}
 	tl.append_errors(&res, module_config_merge(&mc.soil_temperature, jx.get(j, "SoilTemperature"), "SoilTemperature"))
-	drivers := jx.get(j, "SoilTemperatureDrivers")
-	if !jx.is_null(drivers) && !jx.is_array(drivers) {
-		tl.append_error(&res, "Modules.SoilTemperatureDrivers: expected an array of module names")
+	tl.append_errors(&res, drivers_merge(&mc.soil_temperature_drivers, j, "SoilTemperatureDrivers"))
+	tl.append_errors(
+		&res,
+		module_config_merge(&mc.evapotranspiration, jx.get(j, "Evapotranspiration"), "Evapotranspiration"),
+	)
+	tl.append_errors(&res, drivers_merge(&mc.evapotranspiration_drivers, j, "EvapotranspirationDrivers"))
+	return res
+}
+
+@(private = "file")
+drivers_merge :: proc(drivers: ^[dynamic]string, j: jx.Value, key: string) -> tl.Errors {
+	res: tl.Errors
+	v := jx.get(j, key)
+	if !jx.is_null(v) && !jx.is_array(v) {
+		tl.append_errorf(&res, "Modules.%s: expected an array of module names", key)
 	} else {
-		jx.set_string_vector(&mc.soil_temperature_drivers, j, "SoilTemperatureDrivers")
+		jx.set_string_vector(drivers, j, key)
 	}
 	return res
 }
@@ -87,20 +108,28 @@ module_config_merge :: proc(mc: ^Module_Config, j: jx.Value, process: string) ->
 // Written only when something is configured, so that an unconfigured env's
 // JSON stays what it was before "Modules" existed.
 modules_config_to_json :: proc(mc: ^Modules_Config, a: Allocator) -> (jx.Value, bool) {
-	if mc.soil_temperature == {} && len(mc.soil_temperature_drivers) == 0 {
+	if mc.soil_temperature == {} &&
+	   len(mc.soil_temperature_drivers) == 0 &&
+	   mc.evapotranspiration == {} &&
+	   len(mc.evapotranspiration_drivers) == 0 {
 		return nil, false
 	}
-	drivers := make([dynamic]jx.Value, 0, len(mc.soil_temperature_drivers), a)
-	for name in mc.soil_temperature_drivers {
-		append(&drivers, jx.s(name, a))
+	names :: proc(ns: [dynamic]string, a: Allocator) -> jx.Value {
+		vs := make([dynamic]jx.Value, 0, len(ns), a)
+		for n in ns {
+			append(&vs, jx.s(n, a))
+		}
+		return jx.arr(a, ..vs[:])
+	}
+	config :: proc(c: Module_Config, a: Allocator) -> jx.Value {
+		return jx.obj(a, {"impl", jx.s(c.impl, a)}, {"mode", jx.s(c.mode, a)})
 	}
 	return jx.obj(
 			a,
-			{
-				"SoilTemperature",
-				jx.obj(a, {"impl", jx.s(mc.soil_temperature.impl, a)}, {"mode", jx.s(mc.soil_temperature.mode, a)}),
-			},
-			{"SoilTemperatureDrivers", jx.arr(a, ..drivers[:])},
+			{"SoilTemperature", config(mc.soil_temperature, a)},
+			{"SoilTemperatureDrivers", names(mc.soil_temperature_drivers, a)},
+			{"Evapotranspiration", config(mc.evapotranspiration, a)},
+			{"EvapotranspirationDrivers", names(mc.evapotranspiration_drivers, a)},
 		),
 		true
 }

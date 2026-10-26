@@ -90,8 +90,13 @@ soil_temperature_constructor :: proc(name: string) -> (Soil_Temperature_Construc
 // Checks the names in sim.json's "Modules" section against the name tables;
 // returns the problems, empty if the configuration can run. run_monica calls
 // this before make_monica_model, which assumes a valid configuration.
-check_modules_config :: proc(mc: ^p.Modules_Config, allocator := context.allocator) -> [dynamic]string {
+check_modules_config :: proc(
+	mc: ^p.Modules_Config,
+	dual_kc_method := false,
+	allocator := context.allocator,
+) -> [dynamic]string {
 	errs := make([dynamic]string, allocator)
+	check_evapotranspiration_config(mc, dual_kc_method, &errs, allocator)
 	if _, ok := soil_temperature_constructor(mc.soil_temperature.impl); !ok {
 		append(
 			&errs,
@@ -266,6 +271,12 @@ Modules :: struct {
 	soil_temperature_drivers:  map[string]^Soil_Temperature_Module,
 	// the same drivers in the order of sim.json, for a deterministic step
 	soil_temperature_stepping: [dynamic]^Soil_Temperature_Module,
+	// evapotranspiration (evapotranspiration_impl.odin): the module replacing
+	// MONICA's own, nil for MONICA's own, and the drivers as above
+	evapotranspiration:        ^Evapotranspiration_Module,
+	evapotranspiration_drivers: map[string]^Evapotranspiration_Module,
+	evapotranspiration_stepping: [dynamic]^Evapotranspiration_Module,
+	model:                     ^Monica_Model, // for the evapotranspiration gather
 	allocator:                 runtime.Allocator, // the model's; nil: no modules
 	// The modules' temporaries during a step, reset after it. Not the
 	// model's allocator: under a server's per-call arena every temporary
@@ -275,7 +286,7 @@ Modules :: struct {
 	scratch:                   mem.Dynamic_Arena,
 }
 
-@(private = "file")
+@(private)
 modules_init :: proc(ms: ^Modules, allocator: runtime.Allocator) {
 	if ms.allocator.procedure == nil {
 		ms.allocator = allocator
@@ -322,9 +333,10 @@ make_soil_temperature_drivers :: proc(
 	}
 }
 
-// Whether any module runs - the integrated one or drivers.
+// Whether any soil temperature module runs - the integrated one or drivers.
 soil_temperature_modules_configured :: proc(model: ^Monica_Model) -> bool {
-	return model.modules.allocator.procedure != nil
+	_, integrated := model.soil_temperature.(^Soil_Temperature_Module)
+	return integrated || len(model.modules.soil_temperature_stepping) > 0
 }
 
 // The climate's tav/tamp (clim.data_accessor_calc_tamp_and_tav), as the C++

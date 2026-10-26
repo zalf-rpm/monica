@@ -19,6 +19,9 @@
 3. Integrated, every module together with itself as a driver (both get the
    same inputs every day): the soil column's temperatures - what the rest of
    MONICA reads - are exactly the driver's.
+4. The same for the evapotranspiration modules: drivers change nothing,
+   integrated they run everything, and MONICA's soil moisture outputs are
+   exactly the module's.
 
 Needs MONICA_PARAMETERS. Standard library only.
 """
@@ -39,6 +42,12 @@ MODULES = ["Monica_SoilTemp", "DSSAT_ST_standalone", "DSSAT_EPICST_standalone", 
            "BiomaSurfacePartonSoilSWATC", "BiomaSurfaceSWATSoilSWATC", "Simplace_Soil_Temperature",
            "SQ_Soil_Temperature", "Stics_soil_temperature"]
 DRIVERS = "modules.soil_temperature_drivers"
+ET_MODULES = ["Monica_Evapotranspiration"]
+ET_DRIVERS = "modules.evapotranspiration_drivers"
+ET_SCALARS = ["reference_evapotranspiration", "net_radiation", "evaporated_from_surface", "actual_evaporation",
+              "actual_transpiration", "actual_evapotranspiration"]
+ET_LAYERS = ["evaporation", "transpiration", "evapotranspiration"]
+
 # monica/modules/soil_temperature's Daily, julian_day first
 DAILY_INPUTS = ["julian_day", "tmin", "tavg", "tmax", "globrad", "precip", "irrigation", "wind",
                 "air_pressure", "day_length", "et0", "kc_factor", "actual_evaporation", "soil_coverage",
@@ -177,6 +186,44 @@ def integrated(monica_run, work):
         check(same, f"{m} integrated: soil column == its driver's output, {len(days)} days")
 
 
+def evapotranspiration(monica_run, work):
+    print("== evapotranspiration modules")
+    plain = {k: v for k, v in run_variant(monica_run, work, "plain", None).items()}
+    outs = run_variant(monica_run, work, "et-drivers", {"EvapotranspirationDrivers": ET_MODULES})
+    same = outs.keys() == plain.keys() and all(outs[k] == plain[k] for k in plain)
+    check(same, f"drivers: {len(plain)} outputs of {', '.join(FIXTURES)} byte-identical")
+    for m in ET_MODULES:
+        outs = run_variant(monica_run, work, f"et-integrated-{m}", {"Evapotranspiration": {"impl": m}})
+        bad = [k for k, v in outs.items() if re.search(rb"\b(-?nan|-?inf)\b", v, re.I)]
+        check(outs.keys() == plain.keys() and not bad,
+              f"{m} integrated: {', '.join(FIXTURES)} run, no NaN/inf" + (f" (in {bad})" if bad else ""))
+
+        name = f"et-integrated-{m}-driver"
+        j = json.loads((H2 / "sim-min.json").read_text())
+        for key in ("crop.json", "site.json", "climate.csv"):
+            j[key] = str(H2 / j[key])
+        j["Modules"] = {"Evapotranspiration": {"impl": m}, "EvapotranspirationDrivers": [m]}
+        out = j["output"]
+        out["file-name"] = f"{name}.csv"
+        out["path-to-output"] = "./"
+        out["csv-options"] = {**out.get("csv-options", {}), "precision": 17, "include-units-row": False}
+        cols = ["Date"]
+        for v in ET_SCALARS:
+            cols += [{"path": f"soil_moisture.{v}", "name": v},
+                     {"path": f"{ET_DRIVERS}.{m}.output.{v}", "name": f"m.{v}"}]
+        for v in ET_LAYERS:
+            cols += [{"path": f"soil_moisture.{v}", "name": v, "layers": [1, 20]},
+                     {"path": f"{ET_DRIVERS}.{m}.output.{v}", "name": f"m.{v}", "layers": [1, 20]}]
+        out["events"] = ["daily", cols]
+        (work / f"{name}.json").write_text(json.dumps(j, indent=1))
+        run([monica_run, f"{name}.json"], work)
+        days = read_section(work / f"{name}.csv")
+        same = len(days) > 0 and all(
+            all(r[v] == r[f"m.{v}"] for v in ET_SCALARS)
+            and all(columns(r, v, 20) == columns(r, f"m.{v}", 20) for v in ET_LAYERS) for r in days)
+        check(same, f"{m} integrated: MONICA's evaporation/transpiration/ET0 == the module's, {len(days)} days")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--monica-run", required=True, type=Path)
@@ -190,6 +237,7 @@ def main():
     changes_nothing(ns.monica_run.resolve(), work)
     drivers_against_monica_and_standalone(ns.monica_run.resolve(), ns.monica_module.resolve(), work)
     integrated(ns.monica_run.resolve(), work)
+    evapotranspiration(ns.monica_run.resolve(), work)
     print("== FAIL" if failures else "== PASS")
     return 1 if failures else 0
 

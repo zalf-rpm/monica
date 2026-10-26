@@ -40,6 +40,7 @@
       "SoilTemperatureModels": {
         "url": "https://github.com/AgriculturalModelExchangeInitiative/SoilTemperatureModels.git",
         "commit": "1c5cde3add70978010e614fa319bdf48d5cafb1e",
+        "path": "Models",
         "packages": [
           "Monica_SoilTemp",
           "DSSAT_ST_standalone",
@@ -51,6 +52,12 @@
           "SQ_Soil_Temperature",
           "Stics_soil_temperature"
         ]
+      },
+      "EvapoTranspirationModels": {
+        "url": "https://github.com/AgriculturalModelExchangeInitiative/EvapoTranspirationModels.git",
+        "commit": "4a176584d3ece1bebc4f11e8a5d2f5a20ffe2cd5",
+        "path": "Monica",
+        "packages": ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration"]
       }
     }
   }

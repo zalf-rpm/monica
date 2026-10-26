@@ -152,6 +152,9 @@ make_monica_model :: proc(
 	// package-level global rather than a captured closure.
 	g_current_model = model
 
+	// NOTE(deviation): evapotranspiration modules; nothing without sim.json
+	// "Modules" (evapotranspiration_impl.odin)
+	make_evapotranspiration_modules(model, cpp, allocator)
 
 	return model
 }

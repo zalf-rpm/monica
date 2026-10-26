@@ -44,6 +44,9 @@ STOMATA_RESISTANCE :: 100 // FAO default value [s m-1]
 
 // C++: struct monica::SoilMoisture
 Soil_Moisture :: struct {
+	// NOTE(deviation): the evapotranspiration modules, nil without
+	// (evapotranspiration_impl.odin)
+	modules:                      ^Modules,
 	evaporated_from_surface:      f64,
 	soil_column:                  ^Soil_Column,
 	site_params:                  ^p.Site_Parameters,
@@ -253,22 +256,42 @@ soil_moisture_step :: proc(
 		backwater_replenishment(sm)
 	}
 
-	evapotranspiration(
-		sm,
-		max_air_temp_deg_c,
-		min_air_temp_deg_c,
-		relative_humidity_perc,
-		avg_air_temp_deg_c,
-		wind_speed_m_per_s,
-		wind_speed_height_m,
-		global_radiation_mj_per_m2,
-		precipitation_mm,
-		dev_stage,
-		julian_day,
-		reference_evapotranspiration_mm,
-		dual_kc_method,
-		daily_sum_irrigation_water_mm,
-	)
+	// NOTE(deviation): evapotranspiration modules (evapotranspiration_impl.odin)
+	if sm.modules == nil {
+		evapotranspiration(
+			sm,
+			max_air_temp_deg_c,
+			min_air_temp_deg_c,
+			relative_humidity_perc,
+			avg_air_temp_deg_c,
+			wind_speed_m_per_s,
+			wind_speed_height_m,
+			global_radiation_mj_per_m2,
+			precipitation_mm,
+			dev_stage,
+			julian_day,
+			reference_evapotranspiration_mm,
+			dual_kc_method,
+			daily_sum_irrigation_water_mm,
+		)
+	} else {
+		evapotranspiration_with_modules(
+			sm,
+			max_air_temp_deg_c,
+			min_air_temp_deg_c,
+			relative_humidity_perc,
+			avg_air_temp_deg_c,
+			wind_speed_m_per_s,
+			wind_speed_height_m,
+			global_radiation_mj_per_m2,
+			precipitation_mm,
+			dev_stage,
+			julian_day,
+			reference_evapotranspiration_mm,
+			dual_kc_method,
+			daily_sum_irrigation_water_mm,
+		)
+	}
 
 	capillary_rise(sm)
 }

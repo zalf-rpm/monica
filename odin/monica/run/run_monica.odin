@@ -831,7 +831,11 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	// (plan-crop2ml-modules.md §1.4). An unknown implementation is refused here,
 	// for the same reasons as the soil profile above, before make_monica_model
 	// would have to.
-	if errs := core.check_modules_config(&env.params.sim_params.modules, allocator); len(errs) > 0 {
+	if errs := core.check_modules_config(
+		&env.params.sim_params.modules,
+		env.params.sim_params.dual_kc_method,
+		allocator,
+	); len(errs) > 0 {
 		out.errors = errs
 		return out
 	}
