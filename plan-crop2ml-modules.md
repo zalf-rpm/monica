@@ -200,9 +200,10 @@ columns, or a documented `"ModuleInputs"` section in sim.json.
 
 With `plan-reflective-outputs.md`, results are reachable by path: the integrated result through
 the existing soil column paths, driver results under e.g.
-`modules.soilTemperatureDrivers.DSSAT_ST_standalone.output.soil_surface_temperature`, and raw
-generated state under `....state.st`. An unconfigured module's path resolves to "not found"
-instead of dereferencing nil.
+`modules.soil_temperature_drivers.DSSAT_ST_standalone.output.soil_surface_temperature`, their
+inputs under `....input.<field>`, and raw generated state under e.g.
+`....module.Dssat_St.s.srftemp` (a union segment naming a variant's type selects it). An
+unconfigured module's path resolves to "not found" instead of dereferencing nil.
 
 ### 1.6 Layers
 
@@ -391,6 +392,54 @@ reflective outputs. Checks: R1, R2 unchanged. With drivers configured, MONICA's 
 byte-identical (drivers must not change anything), and the driver outputs are close to the C++
 AMEI sensitivity build on Hohenfinow2. Last-bit differences are expected: the C++ generated code
 uses `std::exp` etc., not `cr::`.
+
+Done 2026-10-26. What was built:
+
+* `Monica_Model.modules` (`core/soil_temperature_impl.odin`): one `Soil_Temperature_Driver` per
+  `SoilTemperatureDrivers` entry (module, input, output). They sit in a map by name, for output
+  paths, and in a list in sim.json order, for stepping. `check_modules_config` checks the names
+  and refuses duplicates.
+* Gather: the per-run input (`soil_temperature_input_from_model`) right after MONICA's own soil
+  temperature is made. Not later: `make_soil_organic` moves part of the organic carbon into its
+  pools, which changes the organic matter MONICA's own soil temperature has already read.
+  Gathering at the end of `make_monica_model` gave a different heat capacity, about 1 %.
+  `from-sim` gathers at the same point (it configures a driver). `run_monica` sets `tav`/`tamp`
+  from the climate (`clim.data_accessor_calc_tamp_and_tav`), only when drivers exist. The daily
+  input is gathered in `monica_model_general_step` right after MONICA's own step: the same values
+  it got, and the soil moisture before today's moisture step, as in the C++ adapters. The init
+  runs on the first step, as in the C++ adapters.
+* Memory: module steps allocate temporaries. They go to a `mem.Dynamic_Arena` in `Modules`,
+  reset after each day's drivers, because under a server's per-call arena they would otherwise
+  pile up for the whole run. The bindings' state arrays are sized in init with the model's
+  allocator, and resizing keeps that allocator. The generated steps of both packages only
+  allocate locals (checked).
+* `reflectpath`: a segment naming a union variant's type selects that variant, for raw module
+  state when several variants share a field name.
+* `output.csv-options.precision` (significant digits, default 6, which is the C++ formatting and
+  stays byte-identical): 17 for checks that compare values exactly. NOTE(deviation), not in the
+  C++.
+* `odin/tests/check_drivers.py`, run by `tests/check_modules.sh` (so in CI).
+
+Check results:
+
+* R1: `diff_outputs.sh` and the C++ suites (53 CSVs) byte-identical without configuration.
+* Drivers change nothing: sim-min, sim-min-events2 and sim-min-setvalue give byte-identical CSVs
+  with both modules as drivers.
+* sim-min with 17-digit output, 2557 days (316 with snow, 1961 with crop cover): the Monica_SoilTemp
+  driver equals MONICA's own soil temperature exactly, in every layer and at the surface. Both
+  drivers equal `monica-module` run standalone on the inputs they got (reported through
+  `....input.*`), exactly. The raw state path gives the output's value.
+* Against the C++ AMEI build. The sensitivity build takes its inputs from `customData` constants,
+  not from MONICA, so I compared the C++ *integrated* DSSAT instead, on bare soil (sim-min without
+  crops). There nothing feeds back: MONICA's water and snow balance don't read soil temperature,
+  and the C++ AMEI moisture is identical with and without DSSAT. Surface temperature: equal within
+  the 6 printed digits. Layers: up to 0.018 °C apart. That gap comes entirely from the AMEI
+  branch's MONICA, whose soil moisture differs from master's by up to 0.036 m3 m-3; Odin's equals
+  C++ master's exactly. Odin's DSSAT run standalone on the AMEI branch's moisture (the previous
+  day's, as the adapter sees it) is within 0.00025 °C of the C++ AMEI DSSAT. That is the
+  precision of the available outputs: moisture printed with 4 decimals, temperatures with 6.
+* R2 (`hyperfine`, phase 2 vs phase 3 binary): sim-min 362 ± 8 vs 364 ± 8 ms, sim
+  2066 ± 41 vs 2054 ± 34 ms. With both drivers configured: sim 2078 ± 53 ms.
 
 **Phase 4: integrated.** Scatter into the soil column, MONICA's own step not run. Checks:
 integrated Monica_SoilTemp is close to the default run (same algorithm; see phase 2 for

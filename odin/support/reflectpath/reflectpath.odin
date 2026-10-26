@@ -34,10 +34,11 @@
 //                      are resolved by name at compile time, string keys are
 //                      taken literally, integer/bool keys are parsed.
 //
-// Pointer and Maybe(T) segments are traversed automatically. A field segment
-// on any other union is looked up in its variants (struct or pointer to
-// struct), first match wins, and reads as missing while another variant is
-// active. A missing value
+// Pointer and Maybe(T) segments are traversed automatically. On any other
+// union, a segment naming a variant's type (Dssat_St for ^Dssat_St) selects
+// that variant; a field segment is looked up in the variants (struct or
+// pointer to struct), first match wins. Either reads as missing while another
+// variant is active. A missing value
 // - nil pointer, unset Maybe, inactive union variant, out-of-range index,
 //   absent map key - is
 // reported as `ok = false` rather than trapping, matching what every legacy
@@ -314,6 +315,24 @@ compile :: proc(
 				// has the field, then re-apply the segment to that variant -
 				// a pointer variant gets its DEREF from peel.
 				if info.tag_type != nil {
+					for v, i in info.variants {
+						if variant_type_name(v) != seg {
+							continue
+						}
+						append(
+							&steps,
+							Step {
+								kind = .VARIANT,
+								index = info.no_nil ? i : i + 1,
+								tag_offset = info.tag_offset,
+								tag_size = info.tag_type.size,
+								type = v.id,
+								name = seg,
+							},
+						)
+						cur = v.id
+						continue seg_loop
+					}
 					for v, i in info.variants {
 						if !variant_has_field(v, seg) {
 							continue
@@ -762,6 +781,19 @@ peel :: proc(steps: ^[dynamic]Step, cur: typeid) -> typeid {
 		}
 		return cur
 	}
+}
+
+// A union variant's type name, of the pointed-to type for a pointer variant.
+@(private)
+variant_type_name :: proc(v: ^runtime.Type_Info) -> string {
+	t := v
+	if ptr, is_ptr := t.variant.(runtime.Type_Info_Pointer); is_ptr && ptr.elem != nil {
+		t = ptr.elem
+	}
+	if named, is_named := t.variant.(runtime.Type_Info_Named); is_named {
+		return named.name
+	}
+	return ""
 }
 
 // Whether a union variant - a struct, or a pointer to one - has `field`.

@@ -304,6 +304,20 @@ test_reflectpath_unions :: proc(t: ^testing.T) {
 	// a field no variant has is a compile error
 	_, err := rp.compile(typeid_of(Model), "impl.nonexistent", context.temp_allocator)
 	testing.expect(t, rp.failed(err))
+
+	// a variant's type name selects it, also where the first match wouldn't
+	m.impl = &other
+	v, ok = get(t, m, "impl.Other_Impl.surface")
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 9.0)
+	_, ok = get(t, m, "impl.Own_Impl.surface")
+	testing.expect(t, !ok)
+	m.impl = Own_Impl{surface = 1.5}
+	v, ok = get(t, m, "impl.Own_Impl.surface")
+	testing.expect(t, ok)
+	testing.expect_value(t, v, 1.5)
+	_, ok = get(t, m, "impl.Other_Impl.surface")
+	testing.expect(t, !ok)
 }
 
 @(test)

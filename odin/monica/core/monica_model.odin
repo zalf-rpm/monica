@@ -80,6 +80,7 @@ Monica_Model :: struct {
 	atmospheric_o3_concentration:    f64,
 	groundwater_depth_m:             f64,
 	cultivation_method_count:        int,
+	modules:                         Modules, // NOTE(deviation): modules run alongside, see soil_temperature_impl.odin
 }
 
 // C++: kj::Own<MonicaModel> monica::makeMonicaModel(const CentralParameterProvider&)
@@ -113,6 +114,11 @@ make_monica_model :: proc(
 	make_st, st_ok := soil_temperature_constructor(model.sim_params.modules.soil_temperature.impl)
 	assert(st_ok, "unknown Modules.SoilTemperature.impl - check_modules_config wasn't called")
 	model.soil_temperature = make_st(model, cpp, allocator)
+	// NOTE(deviation): modules run alongside; nothing without sim.json
+	// "Modules". Here, not later: they read the soil column as MONICA's own
+	// soil temperature just did - make_soil_organic below moves part of the
+	// organic carbon into its pools, which changes the organic matter.
+	make_soil_temperature_drivers(model, cpp, allocator)
 	model.soil_moisture = make_soil_moisture(
 		&model.soil_column,
 		&model.site_params,
@@ -145,6 +151,7 @@ make_monica_model :: proc(
 	// monica_model_fire_event_cb's doc comment below for why this is a
 	// package-level global rather than a captured closure.
 	g_current_model = model
+
 
 	return model
 }
@@ -796,6 +803,20 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		soil_temperature_step(
 			&st,
 			tmin,
+			tmax,
+			globrad,
+			soil_coverage,
+			model.soil_moisture.snow_component.snow_depth,
+			model.soil_moisture.frost_component.temperature_under_snow,
+		)
+	}
+	// NOTE(deviation): modules configured to run alongside, on the same values
+	if len(model.modules.soil_temperature_stepping) > 0 {
+		soil_temperature_drivers_step(
+			model,
+			int(julday),
+			tmin,
+			tavg,
 			tmax,
 			globrad,
 			soil_coverage,

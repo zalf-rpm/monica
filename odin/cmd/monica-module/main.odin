@@ -12,9 +12,9 @@
 // the same input.
 //
 // `from-sim` writes an input file from a MONICA sim.json (with its crop.json,
-// site.json and climate), as MONICA sees the site on its first day: the soil
-// profile after MONICA's pedotransfer functions, the initial soil moisture,
-// the climate. Next to it, <input>.csv with the daily values.
+// site.json and climate), as MONICA's own soil temperature sees the site: the
+// soil profile after MONICA's pedotransfer functions, the initial soil
+// moisture, the climate. Next to it, <input>.csv with the daily values.
 //
 // The input file, in MONICA's units:
 //
@@ -369,9 +369,12 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 		return "the sim has no soil profile"
 	}
 
+	// The input a driver gets: gathered where MONICA's own soil temperature
+	// reads the soil column, which make_monica_model alone knows.
+	env.params.sim_params.modules.soil_temperature_drivers = make([dynamic]string, a)
+	append(&env.params.sim_params.modules.soil_temperature_drivers, stm.modules[0].name)
 	model := core.make_monica_model(&env.params, a)
-	in_: stm.Input
-	core.soil_temperature_input_from_model(model, env.params.soil_temperature_mod_params, &in_, a)
+	in_ := model.modules.soil_temperature_stepping[0].input
 	da := &env.climateData
 	in_.tamp, in_.tav = clim.data_accessor_calc_tamp_and_tav(da, a)
 

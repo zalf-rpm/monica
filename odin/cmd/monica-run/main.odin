@@ -251,6 +251,12 @@ main :: proc() {
 	includeHeaderRow := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-header-row"))
 	includeUnitsRow := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-units-row"))
 	includeAggRows := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-aggregation-rows"))
+	// NOTE(deviation): not in the C++ - significant digits of the numbers,
+	// default 6 as the C++ writes them (see mio.write_json_scalar)
+	precision := 6
+	if pv := jx.get_path(sim_v, "output", "csv-options", "precision"); jx.is_number(pv) {
+		precision = clamp(jx.int_value_of(pv), 1, 17)
+	}
 
 	if writeMultipleOutputFiles {
 		filename := jx.string_value(jx.get(sim_v, "output"), "file-name")
@@ -307,9 +313,9 @@ main :: proc() {
 
 			mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
 			if returnObjOutputs {
-				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep)
+				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep, precision)
 			} else {
-				mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
+				mio.write_output(w, section.outputIds[:], section.results[:], csvSep, precision)
 			}
 
 			bufio.writer_flush(&bw)
@@ -346,9 +352,9 @@ main :: proc() {
 			io.write_string(w, "\"\r\n")
 			mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
 			if returnObjOutputs {
-				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep)
+				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep, precision)
 			} else {
-				mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
+				mio.write_output(w, section.outputIds[:], section.results[:], csvSep, precision)
 			}
 			io.write_string(w, "\r\n")
 		}

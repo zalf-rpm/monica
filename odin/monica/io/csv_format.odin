@@ -20,6 +20,7 @@ package monica_io
 
 import "core:fmt"
 import "core:io"
+import "core:strconv"
 import "core:strings"
 import jx "../../support/jsonx"
 
@@ -127,11 +128,20 @@ write_output_header_rows :: proc(
 // ("" for the last column/element). The C++ quotes against csvSep in both
 // cases (escapeTokens = "\n\"" + csvSep); deciding by `trailing` instead left
 // a last-column string containing the separator unquoted.
+//
+// NOTE(deviation): `precision` (significant digits) is sim.json's
+// output.csv-options.precision, not in the C++. The default 6 keeps the
+// C++'s formatting above; 17 makes every number round-trip, for checks that
+// compare values exactly.
 @(private)
-write_json_scalar :: proc(w: io.Writer, v: jx.Value, csvSep, trailing: string) {
+write_json_scalar :: proc(w: io.Writer, v: jx.Value, csvSep, trailing: string, precision := 6) {
 	switch {
-	case jx.is_number(v):
+	case jx.is_number(v) && precision == 6:
 		fmt.wprintf(w, "%.6g", jx.number_value(v))
+	case jx.is_number(v):
+		buf: [64]byte
+		s := strconv.write_float(buf[:], jx.number_value(v), 'g', precision, 64)
+		io.write_string(w, s[0] == '+' ? s[1:] : s)
 	case jx.is_string(v):
 		s := jx.string_value_of(v)
 		if needs_quote(s, csvSep) {
@@ -150,7 +160,13 @@ write_json_scalar :: proc(w: io.Writer, v: jx.Value, csvSep, trailing: string) {
 }
 
 // C++: void monica::writeOutput(ostream&, const vector<OId>&, const vector<J11Array>&, string)
-write_output :: proc(w: io.Writer, outputIds: []OId, values: [][dynamic]jx.Value, csvSep: string) {
+write_output :: proc(
+	w: io.Writer,
+	outputIds: []OId,
+	values: [][dynamic]jx.Value,
+	csvSep: string,
+	precision := 6,
+) {
 	if len(values) == 0 {
 		return
 	}
@@ -166,11 +182,11 @@ write_output :: proc(w: io.Writer, outputIds: []OId, values: [][dynamic]jx.Value
 				jSize := len(items)
 				for jv, jvi in items {
 					csvSep__ := jvi + 1 == jSize ? "" : csvSep
-					write_json_scalar(w, jv, csvSep, csvSep__)
+					write_json_scalar(w, jv, csvSep, csvSep__, precision)
 				}
 				io.write_string(w, csvSep_)
 			} else {
-				write_json_scalar(w, j, csvSep, csvSep_)
+				write_json_scalar(w, j, csvSep, csvSep_, precision)
 			}
 		}
 		io.write_string(w, "\r\n")
@@ -183,7 +199,13 @@ write_output :: proc(w: io.Writer, outputIds: []OId, values: [][dynamic]jx.Value
 // NOTE(c++-quirk): an output id missing from a row's object writes nothing at
 // all - not even its separator - so that row's later columns shift left.
 // Reproduced.
-write_output_obj :: proc(w: io.Writer, outputIds: []OId, values: []jx.Value, csvSep: string) {
+write_output_obj :: proc(
+	w: io.Writer,
+	outputIds: []OId,
+	values: []jx.Value,
+	csvSep: string,
+	precision := 6,
+) {
 	oidsSize := len(outputIds)
 	for o in values {
 		obj := jx.object_items(o)
@@ -198,11 +220,11 @@ write_output_obj :: proc(w: io.Writer, outputIds: []OId, values: []jx.Value, csv
 				jSize := len(items)
 				for jv, jvi in items {
 					csvSep__ := jvi + 1 == jSize ? "" : csvSep
-					write_json_scalar(w, jv, csvSep, csvSep__)
+					write_json_scalar(w, jv, csvSep, csvSep__, precision)
 				}
 				io.write_string(w, csvSep_)
 			} else {
-				write_json_scalar(w, j, csvSep, csvSep_)
+				write_json_scalar(w, j, csvSep, csvSep_, precision)
 			}
 		}
 		io.write_string(w, "\r\n")
