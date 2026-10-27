@@ -20,7 +20,9 @@
    same inputs every day): the soil column's temperatures - what the rest of
    MONICA reads - are exactly the driver's.
 4. The same for the evapotranspiration modules: drivers change nothing,
-   integrated they run everything, and MONICA's soil moisture outputs are
+   Monica_Evapotranspiration integrated changes nothing either (MONICA's own
+   ET, extracted into Crop2ML units - identical since C++ master 445fa61c and
+   EvapoTranspirationModels b65ec8c), and MONICA's soil moisture outputs are
    exactly the module's.
 
 Needs MONICA_PARAMETERS. Standard library only.
@@ -194,9 +196,8 @@ def evapotranspiration(monica_run, work):
     check(same, f"drivers: {len(plain)} outputs of {', '.join(FIXTURES)} byte-identical")
     for m in ET_MODULES:
         outs = run_variant(monica_run, work, f"et-integrated-{m}", {"Evapotranspiration": {"impl": m}})
-        bad = [k for k, v in outs.items() if re.search(rb"\b(-?nan|-?inf)\b", v, re.I)]
-        check(outs.keys() == plain.keys() and not bad,
-              f"{m} integrated: {', '.join(FIXTURES)} run, no NaN/inf" + (f" (in {bad})" if bad else ""))
+        same = outs.keys() == plain.keys() and all(outs[k] == plain[k] for k in plain)
+        check(same, f"{m} integrated: {len(plain)} outputs of {', '.join(FIXTURES)} byte-identical")
 
         name = f"et-integrated-{m}-driver"
         j = json.loads((H2 / "sim-min.json").read_text())

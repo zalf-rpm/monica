@@ -28,6 +28,8 @@ Input :: struct {
 	stomata_conductance_alpha:        f64, // MONICA's crop module parameters
 	saturation_beta:                  f64,
 	layer_thickness:                  []f64, // [m]
+	// daily too: MONICA's own reads them from the soil column every day, and
+	// a SetValue workstep can change them
 	permanent_wilting_point:          []f64, // [m3 m-3]
 	field_capacity:                   []f64, // [m3 m-3]
 

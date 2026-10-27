@@ -824,6 +824,33 @@ void monica::monicamodel::applyTillage(MonicaModel *model, double depth) {
 void monica::monicamodel::step(MonicaModel *model) {
   auto &clearCropUponNextDay = model->clearCropUponNextDay;
   auto &intercropping = model->intercropping;
+  auto &envPs = model->envPs;
+  auto &vw_AtmosphericCO2Concentration = model->vw_AtmosphericCO2Concentration;
+
+  // first, try to get daily CO2 concentration from climate data
+  // (here and not in generalStep, so that the ET0 calculations in cropModule
+  // and soilMoisture see the same, current day's value)
+  auto date = model->currentStepDate;
+  const auto &dailyClimate = model->climateData.back();
+  auto co2it = dailyClimate.find(Climate::co2);
+  if (co2it != dailyClimate.end()) {
+    vw_AtmosphericCO2Concentration = co2it->second;
+  } else {
+    // try to get yearly values from UserEnvironmentParameters
+    auto co2sit = envPs.p_AtmosphericCO2s.find(date.year());
+    if (co2sit != envPs.p_AtmosphericCO2s.end()) {
+      vw_AtmosphericCO2Concentration = co2sit->second;
+      // potentially use MONICA algorithm to calculate CO2 concentration
+    } else if (int(envPs.p_AtmosphericCO2) <= 0) {
+      vw_AtmosphericCO2Concentration = monicamodel::CO2ForDate(date, envPs.rcp);
+      // if everything fails value in UserEnvironmentParameters for the whole
+      // simulation
+    } else {
+      vw_AtmosphericCO2Concentration = envPs.p_AtmosphericCO2;
+    }
+  }
+
+
   if (model->currentCropModule && !clearCropUponNextDay) {
     monicamodel::cropStep(model);
   } else if (intercropping.isAsync()) {
@@ -899,25 +926,6 @@ void monica::monicamodel::generalStep(MonicaModel *model) {
                             : monicamodel::groundwaterDepthForDate(
                                   envPs.p_MaxGroundwaterDepth, envPs.p_MinGroundwaterDepth,
                                   envPs.p_MinGroundwaterDepthMonth, julday, leapYear);
-
-  // first try to get CO2 concentration from climate data
-  auto co2it = dailyClimate.find(Climate::co2);
-  if (co2it != dailyClimate.end()) {
-    vw_AtmosphericCO2Concentration = co2it->second;
-  } else {
-    // try to get yearly values from UserEnvironmentParameters
-    auto co2sit = envPs.p_AtmosphericCO2s.find(date.year());
-    if (co2sit != envPs.p_AtmosphericCO2s.end()) {
-      vw_AtmosphericCO2Concentration = co2sit->second;
-      // potentially use MONICA algorithm to calculate CO2 concentration
-    } else if (int(envPs.p_AtmosphericCO2) <= 0) {
-      vw_AtmosphericCO2Concentration = monicamodel::CO2ForDate(date, envPs.rcp);
-      // if everything fails value in UserEnvironmentParameters for the whole
-      // simulation
-    } else {
-      vw_AtmosphericCO2Concentration = envPs.p_AtmosphericCO2;
-    }
-  }
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad <<
   //  endl;

@@ -358,7 +358,7 @@ evapotranspiration_calculate_model :: proc(m: ^Evapotranspiration, s: ^Et_State,
 		evaporation_from_surface = false
 		if s.surface_water_storage > 0.0 {
 			evaporation_from_surface = true
-			a.potential_evapotranspiration = a.potential_evapotranspiration * 1.1 / ex.kc_factor
+			a.potential_evapotranspiration = a.potential_evapotranspiration * (1.1 / ex.kc_factor)
 			if ex.has_snow_cover {
 				s.evaporated_from_surface = 0.0
 			} else if s.surface_water_storage < a.potential_evapotranspiration {
@@ -370,7 +370,7 @@ evapotranspiration_calculate_model :: proc(m: ^Evapotranspiration, s: ^Et_State,
 				s.evaporated_from_surface = a.potential_evapotranspiration
 				a.potential_evapotranspiration = 0.0
 			}
-			a.potential_evapotranspiration = a.potential_evapotranspiration * ex.kc_factor / 1.1
+			a.potential_evapotranspiration = a.potential_evapotranspiration * (ex.kc_factor / 1.1)
 		}
 		if a.potential_evapotranspiration > 0.0 {
 			for i = 0; i < m.no_of_soil_layers; i += 1 {
@@ -406,8 +406,8 @@ evapotranspiration_calculate_model :: proc(m: ^Evapotranspiration, s: ^Et_State,
 						s.evaporation[i] = 0.0
 					} else {
 						s.evaporation[i] = a.potential_evapotranspiration * e_reducer
-						s.transpiration[i] = 0.0
 					}
+					s.transpiration[i] = 0.0
 				}
 				s.evapotranspiration[i] = s.evaporation[i] + s.transpiration[i]
 				s.soil_moisture[i] = s.soil_moisture[i] - s.evapotranspiration[i] / 1000.0 / m.layer_thickness[i]

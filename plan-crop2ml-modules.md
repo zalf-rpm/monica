@@ -623,6 +623,45 @@ Check results (Hohenfinow2 sim-min, 2557 days):
 * Not done: a Python reference for the ET packages (`module_reference.py`). The comparison
   against MONICA's own code above is the stronger check here.
 
+Resolved 2026-10-27: MONICA and the module are now identical. Fixes, decided by the user:
+
+* In MONICA (C++ master 6efe4ecd, 24ba974a, 445fa61c; the Odin port, and the converted C++ in
+  `src/`, on this branch):
+  1. `eReducer1` uses the current soil moisture (C++ `vm_SoilMoisture`), not the soil column's,
+     which is only written back at the end of the step. The Odin port's `soil_moisture_day_start`
+     copy is gone.
+  2. CO2 is set in `step()`, before the crop step, so the crop module and the soil moisture see
+     the same day's value.
+  3. The crop module's `Rs/Rso` is capped at 1.0 (1.0 for `Rso <= 0`), as in the soil moisture's
+     ET0 and FAO-56.
+  4. The soil moisture step ignores a crop marked `clearCropUponNextDay` (harvested, removed the
+     next day).
+  5. The soil moisture's ET0 computes the extraterrestrial radiation with the solar constant
+     0.082 and the aerodynamic term as `rs / ra`, as the crop module does. Same formulas,
+     identical bits.
+* In the Crop2ML source (EvapoTranspirationModels b65ec8c): MONICA's grouping
+  `pet * (1.1 / kc)` and `pet * (kc / 1.1)`, and `transpiration[i] = 0` also with snow
+  without a crop.
+* In the binding: wilting point and field capacity refreshed every day, as MONICA's own reads
+  them. `sim-min-setvalue` changes the wilting point with a SetValue workstep.
+
+Results: C++ master 445fa61c, the Odin port and the converted C++ give identical results in all
+C++ suites (52 outputs; `src/` also `sim-min-ic`, 54). In the Odin port, Monica_Evapotranspiration
+integrated is byte-identical to MONICA's own ET in all 52, and in the five `check_drivers.py`
+fixtures (now a CI check). The fixes change MONICA's results: all 52 outputs differ from before.
+`cpp_reference` moved to 445fa61c.
+
+The C++ AMEI branch has fixes 1–4 (its own commits). Its own ET and its module differ there only
+in `ETa/ETc` once its adapter also ignores the harvested crop (tested, not committed). The rest is
+the adapter not passing gross photosynthesis, carboxylation pathway and CO2; the crop module has
+no getters for the first two. The C++ AMEI branch as a whole can't be compared with master: the
+branches diverged in January.
+
+Soil properties gathered once: the soil temperature modules read bulk density, wilting point,
+field capacity, texture and organic matter at the start, as MONICA's own soil temperature and
+the C++ adapters do. A SetValue on them (or MONICA's changing organic matter) doesn't reach them.
+Revisit if that matters for one of them.
+
 **Phase 6: a second process as a module (optional, proves R3).** E.g. move evapotranspiration's
 internal code behind its own union like soil temperature in phase 1, then write a small
 hand-written variant as the "PhD student" test case. Check: R1, R2, and that the variant needed
@@ -655,10 +694,10 @@ only its package, one union entry and one table row.
   20 × 10 cm profile, not a binding error. Check against STICS.
 * Simplace_Soil_Temperature declares `cInitialSnowWaterContent` in percent; the module computes
   with mm, which is what the adapter and the binding pass.
-* Monica_Evapotranspiration, the evapotranspiration unit: without a crop and with snow, it doesn't
+* (Fixed in b65ec8c.) Monica_Evapotranspiration, the evapotranspiration unit: without a crop and with snow, it doesn't
   reset `transpiration[i]` (MONICA sets it to 0). So the state's value from the last crop day
   would be counted again. It didn't happen on Hohenfinow2 (transpiration equal on every day).
-* Monica_Evapotranspiration's ET0 with a crop (phase 5, difference 2). The unification itself
+* (Resolved 2026-10-27, see phase 5.) Monica_Evapotranspiration's ET0 with a crop (phase 5, difference 2). The unification itself
   is essentially exact; the crop days differ for three reasons (analysis 2026-10-26, with
   temporary experiments, not committed):
   1. CO2 timing, every crop day, about 4e-5 relative in the stomata resistance. MONICA runs the

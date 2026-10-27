@@ -76,6 +76,12 @@ monica_et_init :: proc(b: ^Monica_Et, in_: ^Input, allocator := context.allocato
 monica_et_step :: proc(b: ^Monica_Et, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	monica_et_inputs(b, in_)
 	n := b.no_of_layers
+	// wilting point and field capacity as MONICA has them today; into the
+	// unit's arrays directly, the setters would copy (one more "layer", as in init)
+	pwp, fc := b.c.evapotranspiration.permanent_wilting_point[:], b.c.evapotranspiration.field_capacity[:]
+	copy(pwp[:n], in_.permanent_wilting_point)
+	copy(fc[:n], in_.field_capacity)
+	pwp[n], fc[n] = in_.permanent_wilting_point[n - 1], in_.field_capacity[n - 1]
 	// the state MONICA has before the step
 	copy(b.s.soil_moisture[:n], in_.soil_moisture)
 	b.s.soil_moisture[n] = in_.soil_moisture[n - 1]

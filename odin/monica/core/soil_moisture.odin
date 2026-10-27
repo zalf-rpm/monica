@@ -84,14 +84,6 @@ Soil_Moisture :: struct {
 	reference_evapotranspiration: f64,
 	residual_evapotranspiration:  [dynamic]f64,
 	soil_moisture_below_m3_m3:    f64,
-	// C++-quirk-preserving snapshot (see get_e_reducer_1): soil_column.layers
-	// used to only be written back to at the end of the day, so getEReducer1's
-	// direct soil_column read saw the PREVIOUS day's moisture, not today's
-	// in-progress infiltration/percolation. Since infiltration/percolation/
-	// capillary_rise now mutate soil_column.layers directly (no separate
-	// scratch copy), this snapshot - taken once at the top of the day, before
-	// infiltration - reproduces that lag explicitly.
-	soil_moisture_day_start:      [dynamic]f64,
 	soil_moisture_crit:           f64,
 	soil_moisture_deficit:        f64,
 	pore_volume_below_m3_m3:      f64,
@@ -149,7 +141,6 @@ make_soil_moisture :: proc(
 	resize(&sm.heat_conductivity, no_of_mois_layers)
 	resize(&sm.percolation_rate, no_of_mois_layers)
 	resize(&sm.residual_evapotranspiration, no_of_mois_layers)
-	resize(&sm.soil_moisture_day_start, sm.no_of_soil_layers)
 	resize(&sm.transpiration, no_of_mois_layers)
 
 	sm.layer_thickness_m = layer_thickness
@@ -190,12 +181,12 @@ soil_moisture_step :: proc(
 	reference_evapotranspiration_mm: f64,
 	dual_kc_method: bool = false,
 	daily_sum_irrigation_water_mm: f64 = 0.0,
+	crop_cleared := false, // the crop is harvested, gone tomorrow (Monica_Model.clear_crop_upon_next_day)
 ) {
 	sc := sm.soil_column
 
 	for i in 0 ..< sm.no_of_soil_layers {
 		sc.layers[i].soil_water_flux = 0.0
-		sm.soil_moisture_day_start[i] = sc.layers[i].soil_moisture_m3
 	}
 
 	sm.soil_moisture_below_m3_m3 = sc.layers[sm.no_of_soil_layers - 1].soil_moisture_m3
@@ -206,7 +197,9 @@ soil_moisture_step :: proc(
 
 	dev_stage := 0
 	// C++: `sm->monica.currentCropModule.get()` - see the package comment.
-	if sm.crop_module != nil {
+	// C++: if (monica.isCropPlanted() && !monica.clearCropUponNextDay()): a
+	// harvested crop, whose step no longer runs, is no crop here
+	if sm.crop_module != nil && !crop_cleared {
 		sm.soil_coverage_percent = sm.crop_module.soil_coverage
 		sm.kc_factor = sm.crop_module.kc_factor
 		dev_stage = sm.crop_module.developmental_stage
@@ -1215,7 +1208,9 @@ reference_evapotranspiration :: proc(
 	overcast_day_radiation := 0.2 * clear_day_radiation
 	_ = overcast_day_radiation
 
-	sc := 24.0 * 60.0 / pi * 8.20 * (1.0 + 0.033 * cr_math.cos(2.0 * pi * f64(julian_day) / 365.0))
+	// C++: written as in the crop module's radiation, so both give the same bits
+	solar_constant := 0.082
+	sc := 24.0 * 60.0 / pi * solar_constant * (1.0 + 0.033 * cr_math.cos(2.0 * pi * f64(julian_day) / 365.0))
 	arg_sha := tl.bound(
 		-1.0,
 		-cr_math.tan(sm.site_params.latitude * pi / 180.0) * cr_math.tan(declination * pi / 180.0),
@@ -1226,7 +1221,7 @@ reference_evapotranspiration :: proc(
 
 	// [J cm-2] --> [MJ m-2]
 	extraterrestrial_radiation :=
-		sc * (sha * declination_sinus + declination_cosinus * cr_math.sin(sha)) / 100.0
+		sc * (sha * declination_sinus + declination_cosinus * cr_math.sin(sha)) // [MJ m-2]
 
 	// Calculation of atmospheric pressure
 	atmospheric_pressure :=
@@ -1272,7 +1267,6 @@ reference_evapotranspiration :: proc(
 
 	// Calculation of the aerodynamic resistance
 	aerodynamic_resistance := 208.0 / wind_speed_2m
-	_ = aerodynamic_resistance
 
 	surface_resistance := STOMATA_RESISTANCE / 1.44
 
@@ -1300,7 +1294,7 @@ reference_evapotranspiration :: proc(
 					wind_speed_2m *
 					saturation_deficit)) /
 		(saturated_vapour_pressure_slope +
-				psycrometer_constant * (1.0 + (surface_resistance / 208.0) * wind_speed_2m))
+				psycrometer_constant * (1.0 + (surface_resistance / aerodynamic_resistance)))
 
 	if ref_evapotranspiration < 0.0 {
 		ref_evapotranspiration = 0.0
@@ -1318,10 +1312,11 @@ get_e_reducer_1 :: proc(
 ) -> f64 {
 	e_reduction_factor: f64
 	evaporation_reduction_method := 1
-	// C++-quirk (see soil_moisture_day_start's field comment): this reads
-	// today's moisture as of the START of the day, before infiltration/
-	// percolation/capillary_rise.
-	soil_moisture_m3 := sm.soil_moisture_day_start[i_layer]
+	// C++: vm_SoilMoisture[i_Layer] - the current moisture, after the day's
+	// infiltration and percolation. C++ used to read the soil column here,
+	// which it only writes back at the end of the step, so it saw the
+	// moisture of the start of the day (fixed in C++ master and AMEI).
+	soil_moisture_m3 := sm.soil_column.layers[i_layer].soil_moisture_m3
 	pwp := sm.soil_column.layers[i_layer].permanent_wilting_point
 	fk := sm.soil_column.layers[i_layer].field_capacity
 	relative_evaporable_water: f64

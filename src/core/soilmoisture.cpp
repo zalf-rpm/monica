@@ -154,7 +154,8 @@ void step(SoilMoisture *sm, double vs_GroundwaterDepth, double vw_Precipitation,
   double vc_CropHeight = 0.0;
   int vc_DevelopmentalStage = 0;
 
-  if (sm->monica.currentCropModule.get()) {
+  // a harvested crop (removed the next day) doesn't take part anymore
+  if (sm->monica.currentCropModule.get() && !sm->monica.clearCropUponNextDay) {
     vc_CropPlanted = true;
     sm->vc_PercentageSoilCoverage = sm->monica.currentCropModule.get()->vc_SoilCoverage;
     sm->vc_KcFactor = sm->monica.currentCropModule.get()->vc_KcFactor;
@@ -1279,15 +1280,16 @@ double referenceEvapotranspiration(SoilMoisture *sm, double vs_HeightNN,
   }
 
   vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
-  double SC = 24.0 * 60.0 / PI * 8.20 * (1.0 + 0.033 * cr::cos(2.0 * PI * vs_JulianDay / 365.0));
+  // written as in the crop module's radiation, so both give the same bits
+  double pc_SolarConstant = 0.082;
+  double SC = 24.0 * 60.0 / PI * pc_SolarConstant * (1.0 + 0.033 * cr::cos(2.0 * PI * vs_JulianDay / 365.0));
   double arg_SHA =
       bound(-1.0, -cr::tan(vs_Latitude * PI / 180.0) * cr::tan(vc_Declination * PI / 180.0), 1.0);
   // The argument of acos must be in the range of -1 to 1
   double SHA = cr::acos(arg_SHA);
 
   vc_ExtraterrestrialRadiation =
-      SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * cr::sin(SHA)) / 100.0;
-  // [J cm-2] --> [MJ m-2]
+      SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * cr::sin(SHA)); // [MJ m-2]
 
   // Calculation of atmospheric pressure
   vm_AtmosphericPressure = 101.3 * cr::pow(((293.0 - (0.0065 * vs_HeightNN)) / 293.0), 5.26);
@@ -1355,7 +1357,7 @@ double referenceEvapotranspiration(SoilMoisture *sm, double vs_HeightNN,
        (vm_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0)) * vm_WindSpeed_2m *
         vm_SaturationDeficit)) /
       (vm_SaturatedVapourPressureSlope +
-       vm_PsycrometerConstant * (1.0 + (vm_SurfaceResistance / 208.0) * vm_WindSpeed_2m));
+       vm_PsycrometerConstant * (1.0 + (vm_SurfaceResistance / vm_AerodynamicResistance)));
 
   if (vm_ReferenceEvapotranspiration < 0.0) {
     vm_ReferenceEvapotranspiration = 0.0;
@@ -1377,7 +1379,9 @@ double getEReducer1(const SoilMoisture *sm, int i_Layer, double vm_PercentageSoi
                     double vm_ReferenceEvapotranspiration) {
   double vm_EReductionFactor;
   int vm_EvaporationReductionMethod = 1;
-  double vm_SoilMoisture_m3 = sm->soilColumn.layers[i_Layer].vs_SoilMoisture_m3;
+  // the current moisture, as the rest of the step (not the soil column's, which
+  // is only written back at the end of the step)
+  double vm_SoilMoisture_m3 = sm->vm_SoilMoisture[i_Layer];
   double vm_PWP = sm->soilColumn.layers[i_Layer].vs_PermanentWiltingPoint;
   double vm_FK = sm->soilColumn.layers[i_Layer].vs_FieldCapacity;
   double vm_RelativeEvaporableWater;

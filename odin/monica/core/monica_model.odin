@@ -707,6 +707,24 @@ monica_model_incorporate_current_crop :: proc(
 
 // C++: void monica::monicamodel::step(MonicaModel*)
 monica_model_step :: proc(model: ^Monica_Model, allocator := context.allocator) {
+	// C++: moved here from generalStep, so that the crop module's ET0 and the
+	// soil moisture's see the same day's CO2
+	date := model.current_step_date
+	dailyClimate := model.climate_data[len(model.climate_data) - 1]
+	// first try to get CO2 concentration from climate data
+	if co2v, ok := dailyClimate[.co2]; ok {
+		model.atmospheric_co2_concentration = co2v
+	} else if co2s, ok2 := model.env_params.atmospheric_CO2s[d.year(date)]; ok2 {
+		// try to get yearly values from UserEnvironmentParameters
+		model.atmospheric_co2_concentration = co2s
+		// potentially use MONICA algorithm to calculate CO2 concentration
+	} else if int(model.env_params.atmospheric_CO2) <= 0 {
+		model.atmospheric_co2_concentration = co2_for_date_from_date(date, model.env_params.rcp)
+		// if everything fails value in UserEnvironmentParameters for the whole simulation
+	} else {
+		model.atmospheric_co2_concentration = model.env_params.atmospheric_CO2
+	}
+
 	if model.current_crop_module != nil && !model.clear_crop_upon_next_day {
 		monica_model_crop_step(model, allocator)
 	}
@@ -756,20 +774,6 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 			f64(julday),
 			leapYear,
 		)
-	}
-
-	// first try to get CO2 concentration from climate data
-	if co2v, ok := dailyClimate[.co2]; ok {
-		model.atmospheric_co2_concentration = co2v
-	} else if co2s, ok2 := model.env_params.atmospheric_CO2s[d.year(date)]; ok2 {
-		// try to get yearly values from UserEnvironmentParameters
-		model.atmospheric_co2_concentration = co2s
-		// potentially use MONICA algorithm to calculate CO2 concentration
-	} else if int(model.env_params.atmospheric_CO2) <= 0 {
-		model.atmospheric_co2_concentration = co2_for_date_from_date(date, model.env_params.rcp)
-		// if everything fails value in UserEnvironmentParameters for the whole simulation
-	} else {
-		model.atmospheric_co2_concentration = model.env_params.atmospheric_CO2
 	}
 
 	delete_aom_pool(&model.soil_column)
@@ -845,6 +849,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		int(julday),
 		et0,
 		model.sim_params.dual_kc_method,
+		crop_cleared = model.clear_crop_upon_next_day,
 	)
 
 	soil_organic_step(&model.soil_organic, tavg, precip, wind)

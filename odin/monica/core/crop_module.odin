@@ -2832,8 +2832,9 @@ fc_reference_evapotranspiration :: proc(
 	clear_sky_shortwave_radiation :=
 		(0.75 + 0.00002 * cm.site_params.height_nn) * cm.extraterrestrial_radiation
 
+	// C++: capped at 1.0, as the soil moisture's ET0 and FAO-56 have it
 	relative_shortwave_radiation :=
-		clear_sky_shortwave_radiation > 0 ? cm.global_radiation / clear_sky_shortwave_radiation : 0.0
+		clear_sky_shortwave_radiation > 0 ? min(cm.global_radiation / clear_sky_shortwave_radiation, 1.0) : 1.0
 
 	// crop_ps.reference_albedo: FAO green grass reference albedo, Allen et al. 1998
 	net_shortwave_radiation := (1.0 - crop_ps.reference_albedo) * cm.global_radiation

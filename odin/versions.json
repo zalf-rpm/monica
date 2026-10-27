@@ -25,7 +25,7 @@
   },
   "vcpkg_baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d",
   "cpp_reference": {
-    "commit": "6af4f7888422736a8ecd1b9b2eec91b8b8e6eac9",
+    "commit": "445fa61c3e6b595bffa519d13fa00a522c753233",
     "ignore": [
       "hohenfinow2/sim-min-ic"
     ],
@@ -55,7 +55,7 @@
       },
       "EvapoTranspirationModels": {
         "url": "https://github.com/AgriculturalModelExchangeInitiative/EvapoTranspirationModels.git",
-        "commit": "4a176584d3ece1bebc4f11e8a5d2f5a20ffe2cd5",
+        "commit": "b65ec8cfba96b415ddac73f0e50f38bc7d9db873",
         "path": "Monica",
         "packages": ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration"]
       }

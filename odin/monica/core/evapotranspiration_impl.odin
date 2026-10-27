@@ -144,6 +144,8 @@ evapotranspiration_with_modules :: proc(
 		m.input.daily = day^
 		for &l, i in sc.layers {
 			m.input.soil_moisture[i] = l.soil_moisture_m3
+			m.input.permanent_wilting_point[i] = l.permanent_wilting_point
+			m.input.field_capacity[i] = l.field_capacity
 		}
 		if cm != nil {
 			copy(m.input.crop_transpiration, cm.transpiration[:])
