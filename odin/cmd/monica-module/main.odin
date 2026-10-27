@@ -170,16 +170,14 @@ run_soil_temperature :: proc(impl, input_path, out_path: string) -> (err: string
 	if !ok {
 		return fmt.aprintf("unknown impl %q", impl)
 	}
-	m := entry.make()
-	defer stm.module_destroy(m)
+	m := entry.make(context.allocator)
+	defer entry.destroy(m, context.allocator)
 	for &day, i in days {
 		set_day(&in_, &day, static_moisture)
 		if i == 0 {
-			if ierr := stm.module_init(m, &in_); ierr != "" {
-				return ierr
-			}
+			entry.init(m, &in_, context.allocator) // read_input refuses an input without layers
 		}
-		stm.module_step(m, &in_, &out)
+		entry.step(m, &in_, &out, context.allocator)
 		write_row(w, day.date, &out)
 		free_all(context.temp_allocator)
 	}

@@ -25,6 +25,7 @@ import "core:mem"
 
 Evapotranspiration_Module :: struct {
 	name:        string,
+	entry:       etm.Module_Entry, // its table row: init, step, destroy
 	module:      etm.Module,
 	input:       etm.Input,
 	output:      etm.Output,
@@ -72,6 +73,7 @@ make_evapotranspiration_module :: proc(
 	assert(ok, "unknown evapotranspiration module - check_modules_config wasn't called")
 	m := new(Evapotranspiration_Module, allocator)
 	m.name = name
+	m.entry = entry
 	m.module = entry.make(allocator)
 	in_ := &m.input
 	in_.latitude = model.site_params.latitude
@@ -204,13 +206,12 @@ evapotranspiration_with_modules :: proc(
 @(private = "file")
 evapotranspiration_module_step :: proc(ms: ^Modules, m: ^Evapotranspiration_Module) {
 	if !m.initialized {
-		err := etm.module_init(m.module, &m.input, ms.allocator)
-		assert(err == "", err)
+		m.entry.init(m.module, &m.input, ms.allocator)
 		m.initialized = true
-		etm.module_step(m.module, &m.input, &m.output, ms.allocator) // see soil_temperature_module_step
+		m.entry.step(m.module, &m.input, &m.output, ms.allocator) // see soil_temperature_module_step
 		return
 	}
-	etm.module_step(m.module, &m.input, &m.output, mem.dynamic_arena_allocator(&ms.scratch))
+	m.entry.step(m.module, &m.input, &m.output, mem.dynamic_arena_allocator(&ms.scratch))
 	mem.dynamic_arena_reset(&ms.scratch)
 }
 

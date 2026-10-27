@@ -685,6 +685,52 @@ internal code behind its own union like soil temperature in phase 1, then write 
 hand-written variant as the "PhD student" test case. Check: R1, R2, and that the variant needed
 only its package, one union entry and one table row.
 
+R3 in the code, 2026-10-27 (before the PhD variant itself). Until then, a new module needed its
+file, a union entry, a table row and a case in each of the three `switch`es (`module_init`,
+`module_step`, `module_destroy`) of its process's package. A forgotten case wasn't a compile error
+either: Odin doesn't require a type `switch` to be exhaustive. Now the table row carries the
+procedures:
+
+```odin
+Module_Entry :: struct {
+	name:    string,
+	make:    proc(allocator: Allocator) -> Module,
+	init:    proc(m: Module, in_: ^Input, allocator: Allocator),
+	step:    proc(m: Module, in_: ^Input, out: ^Output, allocator: Allocator),
+	destroy: proc(m: Module, allocator: Allocator),
+}
+```
+
+Each binding file ends with its row as a constant, with one-line wrappers that assert the
+binding's own variant and call its named, typed procedures:
+
+```odin
+dssat_st_entry :: Module_Entry {
+	name    = "DSSAT_ST_standalone",
+	make    = make_dssat_st,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {dssat_st_init(m.(^Dssat_St), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {dssat_st_step(m.(^Dssat_St), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_dssat_st(m.(^Dssat_St), a)},
+}
+```
+
+The switches are gone; a module instance keeps its row and calls `m.entry.step(...)`. A new
+module is its file plus one line in the union and one in `modules` (R3), for soil temperature and
+evapotranspiration alike. The union stays: output paths reach a module's state through its type
+(`module.Dssat_St.s.srftemp`). `tests/modules_test.odin` takes over the checks the switches
+didn't do: every row has all procedures, names are unique, there is one row per union variant,
+and each row makes its own variant (a missing row and a nil `step` were both caught, tried).
+
+R2: optimized (`-o:speed`), table and switch dispatch are the same within noise, with and without
+modules (two rounds each, 1220–1290 ms on sim.json). sim.json with integrated DSSAT and ET plus
+two drivers takes no longer than without modules. Unoptimized, the new binary is 1–3 % slower,
+also without any module configured, where none of the changed code runs: code layout of a
+slightly larger binary, not the dispatch.
+
+Still open in phase 6: the hand-written "PhD student" variant, and evapotranspiration's own
+implementation behind a union like soil temperature's (today a nil `Modules.evapotranspiration`
+means MONICA's own).
+
 ---
 
 ## 4. Known issues in the modules (fix in the Crop2ML packages, not in bindings)

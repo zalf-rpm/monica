@@ -19,7 +19,7 @@ Stics :: struct {
 	no_of_layers: int,
 }
 
-make_stics :: proc(allocator := context.allocator) -> Module {
+make_stics :: proc(allocator: Allocator) -> Module {
 	b := new(Stics, allocator)
 	b.c = stics.make_soil_temp_component(allocator)
 	return b
@@ -64,4 +64,13 @@ stics_exogenous :: proc(b: ^Stics, in_: ^Input) {
 	b.ex.min_canopy_temp = in_.tmin
 	b.ex.max_canopy_temp = in_.tmax
 	b.ex.min_air_temp = in_.tmin
+}
+
+// The table row (soil_temperature.odin's `modules`)
+stics_entry :: Module_Entry {
+	name    = "Stics_soil_temperature",
+	make    = make_stics,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {stics_init(m.(^Stics), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {stics_step(m.(^Stics), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_stics(m.(^Stics), a)},
 }

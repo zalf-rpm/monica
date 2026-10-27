@@ -24,7 +24,7 @@ Monica_Soil_Temp :: struct {
 	no_of_layers:  int,
 }
 
-make_monica_soil_temp :: proc(allocator := context.allocator) -> Module {
+make_monica_soil_temp :: proc(allocator: Allocator) -> Module {
 	b := new(Monica_Soil_Temp, allocator)
 	b.c = mst.make_soil_temperature_comp_component(allocator)
 	return b
@@ -103,4 +103,13 @@ monica_soil_temp_exogenous :: proc(b: ^Monica_Soil_Temp, in_: ^Input) {
 	// MONICA's own: if snow_depth > 0, the temperature under the snow
 	b.ex.has_snow_cover = in_.snow_depth > 0.0
 	b.ex.soil_surface_temperature_below_snow = in_.temperature_under_snow
+}
+
+// The table row (soil_temperature.odin's `modules`)
+monica_soil_temp_entry :: Module_Entry {
+	name    = "Monica_SoilTemp",
+	make    = make_monica_soil_temp,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {monica_soil_temp_init(m.(^Monica_Soil_Temp), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {monica_soil_temp_step(m.(^Monica_Soil_Temp), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_monica_soil_temp(m.(^Monica_Soil_Temp), a)},
 }

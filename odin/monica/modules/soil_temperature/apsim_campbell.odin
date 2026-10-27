@@ -28,7 +28,7 @@ Apsim_Campbell :: struct {
 	no_of_layers: int,
 }
 
-make_apsim_campbell :: proc(allocator := context.allocator) -> Module {
+make_apsim_campbell :: proc(allocator: Allocator) -> Module {
 	b := new(Apsim_Campbell, allocator)
 	b.c = apsim.make_soiltemp_component(allocator)
 	return b
@@ -115,4 +115,13 @@ apsim_campbell_exogenous :: proc(b: ^Apsim_Campbell, in_: ^Input) {
 	ex.weather_amp = in_.tamp
 	ex.micro_climate_canopy_height = in_.crop_height * 1000.0 // m -> mm
 	copy(ex.water_balance_sw[:], in_.soil_moisture)
+}
+
+// The table row (soil_temperature.odin's `modules`)
+apsim_campbell_entry :: Module_Entry {
+	name    = "ApsimCampbell",
+	make    = make_apsim_campbell,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {apsim_campbell_init(m.(^Apsim_Campbell), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {apsim_campbell_step(m.(^Apsim_Campbell), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_apsim_campbell(m.(^Apsim_Campbell), a)},
 }

@@ -20,7 +20,7 @@ Bioma_Swat_Swat :: struct {
 	no_of_layers: int,
 }
 
-make_bioma_swat_swat :: proc(allocator := context.allocator) -> Module {
+make_bioma_swat_swat :: proc(allocator: Allocator) -> Module {
 	b := new(Bioma_Swat_Swat, allocator)
 	b.c = bss.make_surface_swat_soil_swatc_component(allocator)
 	return b
@@ -76,4 +76,13 @@ bioma_swat_swat_exogenous :: proc(b: ^Bioma_Swat_Swat, in_: ^Input) {
 	for &w, i in b.ex.volumetric_water_content {
 		w = in_.soil_moisture[i] - in_.permanent_wilting_point[i]
 	}
+}
+
+// The table row (soil_temperature.odin's `modules`)
+bioma_swat_swat_entry :: Module_Entry {
+	name    = "BiomaSurfaceSWATSoilSWATC",
+	make    = make_bioma_swat_swat,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {bioma_swat_swat_init(m.(^Bioma_Swat_Swat), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {bioma_swat_swat_step(m.(^Bioma_Swat_Swat), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_bioma_swat_swat(m.(^Bioma_Swat_Swat), a)},
 }

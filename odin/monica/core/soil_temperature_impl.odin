@@ -258,6 +258,7 @@ soil_temperature_daily :: proc(
 
 Soil_Temperature_Module :: struct {
 	name:        string,
+	entry:       stm.Module_Entry, // its table row: init, step, destroy
 	module:      stm.Module,
 	input:       stm.Input,
 	output:      stm.Output,
@@ -307,6 +308,7 @@ make_soil_temperature_module :: proc(
 	modules_init(&model.modules, allocator)
 	m := new(Soil_Temperature_Module, allocator)
 	m.name = name
+	m.entry = entry
 	m.module = entry.make(allocator)
 	soil_temperature_input_from_model(model, cpp, &m.input, allocator)
 	m.output = stm.make_output(len(m.input.layer_thickness), allocator)
@@ -360,15 +362,14 @@ soil_temperature_module_step :: proc(model: ^Monica_Model, m: ^Soil_Temperature_
 		in_.soil_moisture[i] = l.soil_moisture_m3
 	}
 	if !m.initialized {
-		err := stm.module_init(m.module, in_, ms.allocator)
-		assert(err == "", err) // only fails without layers, which run_monica refuses
+		m.entry.init(m.module, in_, ms.allocator) // run_monica refuses a run without soil layers
 		m.initialized = true
 		// the first step with the model's allocator: a module that sizes state
 		// arrays there (ApsimCampbell) must not get them from the scratch
-		stm.module_step(m.module, in_, &m.output, ms.allocator)
+		m.entry.step(m.module, in_, &m.output, ms.allocator)
 		return
 	}
-	stm.module_step(m.module, in_, &m.output, mem.dynamic_arena_allocator(&ms.scratch))
+	m.entry.step(m.module, in_, &m.output, mem.dynamic_arena_allocator(&ms.scratch))
 	mem.dynamic_arena_reset(&ms.scratch)
 }
 

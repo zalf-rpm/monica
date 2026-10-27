@@ -20,7 +20,7 @@ Dssat_St :: struct {
 	no_of_layers: int,
 }
 
-make_dssat_st :: proc(allocator := context.allocator) -> Module {
+make_dssat_st :: proc(allocator: Allocator) -> Module {
 	b := new(Dssat_St, allocator)
 	b.c = dst.make_stemp_component(allocator)
 	return b
@@ -85,4 +85,13 @@ dssat_st_exogenous :: proc(b: ^Dssat_St, in_: ^Input) {
 	b.ex.tmax = in_.tmax
 	b.ex.tav = in_.tav
 	b.ex.tamp = in_.tamp
+}
+
+// The table row (soil_temperature.odin's `modules`)
+dssat_st_entry :: Module_Entry {
+	name    = "DSSAT_ST_standalone",
+	make    = make_dssat_st,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {dssat_st_init(m.(^Dssat_St), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {dssat_st_step(m.(^Dssat_St), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_dssat_st(m.(^Dssat_St), a)},
 }

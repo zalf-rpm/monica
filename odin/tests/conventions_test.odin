@@ -75,7 +75,7 @@ test_transcendentals_use_cr_math :: proc(t: ^testing.T) {
 		}
 		if info.type == .Directory {
 			// build/: scratch, e.g. gen-amei's working copies (build/crop2ml)
-			if strings.has_prefix(info.name, ".") || info.fullpath == "odin/build" {
+			if strings.has_prefix(info.name, ".") || strings.has_suffix(info.fullpath, "odin/build") {
 				os.walker_skip_dir(&w)
 			}
 			continue

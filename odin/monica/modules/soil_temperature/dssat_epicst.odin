@@ -19,7 +19,7 @@ Dssat_Epicst :: struct {
 	no_of_layers: int,
 }
 
-make_dssat_epicst :: proc(allocator := context.allocator) -> Module {
+make_dssat_epicst :: proc(allocator: Allocator) -> Module {
 	b := new(Dssat_Epicst, allocator)
 	b.c = epic.make_stemp_epic_component(allocator)
 	return b
@@ -85,4 +85,13 @@ dssat_epicst_exogenous :: proc(b: ^Dssat_Epicst, in_: ^Input) {
 	b.ex.biomas = in_.above_ground_biomass
 	b.ex.tav = in_.tav
 	b.ex.tamp = in_.tamp
+}
+
+// The table row (soil_temperature.odin's `modules`)
+dssat_epicst_entry :: Module_Entry {
+	name    = "DSSAT_EPICST_standalone",
+	make    = make_dssat_epicst,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {dssat_epicst_init(m.(^Dssat_Epicst), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {dssat_epicst_step(m.(^Dssat_Epicst), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_dssat_epicst(m.(^Dssat_Epicst), a)},
 }

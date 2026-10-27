@@ -26,7 +26,7 @@ Monica_Et :: struct {
 	no_of_layers: int,
 }
 
-make_monica_et :: proc(allocator := context.allocator) -> Module {
+make_monica_et :: proc(allocator: Allocator) -> Module {
 	b := new(Monica_Et, allocator)
 	b.c = et.make_et_component(allocator)
 	return b
@@ -129,4 +129,14 @@ monica_et_inputs :: proc(b: ^Monica_Et, in_: ^Input) {
 	a.external_vapor_pressure = in_.external_vapor_pressure
 	a.calc_stomata_resistance = in_.developmental_stage > 0
 	a.gross_photosynthesis_reference_mol = in_.gross_photosynthesis_reference_mol
+}
+
+// The table row (evapotranspiration.odin's `modules`)
+monica_et_entry :: Module_Entry {
+	name    = "Monica_Evapotranspiration",
+	make    = make_monica_et,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {monica_et_init(m.(^Monica_Et), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {monica_et_step(m.(^Monica_Et), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_monica_et(m.(^Monica_Et), a)},
+	integrated = true,
 }

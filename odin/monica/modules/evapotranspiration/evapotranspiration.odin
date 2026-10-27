@@ -13,7 +13,14 @@
 // radiation, stomata resistance) that MONICA only has as locals, in two
 // different places (soil moisture without a crop, the crop module with one),
 // so it has no binding yet.
+//
+// A new module (R3): as in monica/modules/soil_temperature, its file with a
+// constant Module_Entry at the end, plus one line each in Module and `modules`.
 package evapotranspiration
+
+import "base:runtime"
+
+Allocator :: runtime.Allocator
 
 // What the evapotranspiration modules read, in MONICA's units. Layers are top
 // down, one per MONICA layer.
@@ -92,15 +99,27 @@ Module :: union {
 	^Monica_Et,
 }
 
+// A module's table row, as in monica/modules/soil_temperature.
 Module_Entry :: struct {
-	name:       string, // as in sim.json and the Crop2ML package
-	make:       proc(allocator := context.allocator) -> Module,
+	name:    string, // as in sim.json and the Crop2ML package
+	make:    proc(allocator: Allocator) -> Module,
+	// in_'s daily values are those of the first day: the modules' init reads
+	// them, as in the C++ AMEI adapters, which call init right before the
+	// first step
+	init:    proc(m: Module, in_: ^Input, allocator: Allocator),
+	// `allocator` is for the step's temporaries. A module that sizes state
+	// arrays lazily in its first step (ApsimCampbell) gets them from the
+	// allocator of that step, so callers pass a lasting one for the first step.
+	step:    proc(m: Module, in_: ^Input, out: ^Output, allocator: Allocator),
+	destroy: proc(m: Module, allocator: Allocator),
 	// whether it can replace MONICA's own (computes everything Output has)
 	integrated: bool,
 }
 
 @(rodata)
-modules := [?]Module_Entry{{"Monica_Evapotranspiration", make_monica_et, true}}
+modules := [?]Module_Entry {
+	monica_et_entry,
+}
 
 find_module :: proc(name: string) -> (Module_Entry, bool) {
 	for e in modules {
@@ -111,27 +130,3 @@ find_module :: proc(name: string) -> (Module_Entry, bool) {
 	return {}, false
 }
 
-module_init :: proc(m: Module, in_: ^Input, allocator := context.allocator) -> (err: string) {
-	if len(in_.layer_thickness) == 0 {
-		return "evapotranspiration module: no soil layers"
-	}
-	switch b in m {
-	case ^Monica_Et:
-		monica_et_init(b, in_, allocator)
-	}
-	return ""
-}
-
-module_step :: proc(m: Module, in_: ^Input, out: ^Output, allocator := context.allocator) {
-	switch b in m {
-	case ^Monica_Et:
-		monica_et_step(b, in_, out, allocator)
-	}
-}
-
-module_destroy :: proc(m: Module, allocator := context.allocator) {
-	switch b in m {
-	case ^Monica_Et:
-		destroy_monica_et(b, allocator)
-	}
-}

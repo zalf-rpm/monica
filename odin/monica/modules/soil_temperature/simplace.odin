@@ -26,7 +26,7 @@ Simplace :: struct {
 	no_of_layers: int,
 }
 
-make_simplace :: proc(allocator := context.allocator) -> Module {
+make_simplace :: proc(allocator: Allocator) -> Module {
 	b := new(Simplace, allocator)
 	b.c = simp.make_soil_temperature_component(allocator)
 	return b
@@ -92,4 +92,13 @@ simplace_exogenous :: proc(b: ^Simplace, in_: ^Input) {
 	}
 	ex.i_soil_water_content = water
 	ex.i_crop_residues = 0
+}
+
+// The table row (soil_temperature.odin's `modules`)
+simplace_entry :: Module_Entry {
+	name    = "Simplace_Soil_Temperature",
+	make    = make_simplace,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {simplace_init(m.(^Simplace), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {simplace_step(m.(^Simplace), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_simplace(m.(^Simplace), a)},
 }

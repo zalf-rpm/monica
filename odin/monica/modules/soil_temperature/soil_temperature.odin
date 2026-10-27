@@ -7,12 +7,15 @@
 // model is core's job (soil_temperature_impl.odin), reading one from a file
 // cmd/monica-module's.
 //
-// A new module is a binding file like monica_soiltemp.odin, one entry in the
-// Module union, one row in the name table and a case in the three switches
-// below (R3).
+// A new module (R3) is a file like monica_soiltemp.odin - its struct, its
+// make/init/step/destroy and a constant Module_Entry, the table row, at its
+// end - plus one line in the Module union and one in `modules` below.
 package soil_temperature
 
 import p "../../params"
+import "base:runtime"
+
+Allocator :: runtime.Allocator
 
 // What the soil temperature modules read, in MONICA's units. Bindings convert
 // to what their module expects. Layers are top down, one per MONICA layer.
@@ -78,6 +81,8 @@ destroy_output :: proc(o: ^Output, allocator := context.allocator) {
 	delete(o.layer_temperature, allocator)
 }
 
+// One variant per module. The union, not a plain pointer, so that output paths
+// can reach a module's own state by its type (e.g. module.Dssat_St.s.srftemp).
 Module :: union {
 	^Monica_Soil_Temp,
 	^Dssat_St,
@@ -90,22 +95,33 @@ Module :: union {
 	^Stics,
 }
 
+// A module's table row: its name and what MONICA calls. Each procedure gets the
+// Module made by `make` and asserts its own variant (m.(^Dssat_St)).
 Module_Entry :: struct {
-	name: string, // as in sim.json and the Crop2ML package
-	make: proc(allocator := context.allocator) -> Module,
+	name:    string, // as in sim.json and the Crop2ML package
+	make:    proc(allocator: Allocator) -> Module,
+	// in_'s daily values are those of the first day: the modules' init reads
+	// them, as in the C++ AMEI adapters, which call init right before the
+	// first step
+	init:    proc(m: Module, in_: ^Input, allocator: Allocator),
+	// `allocator` is for the step's temporaries. A module that sizes state
+	// arrays lazily in its first step (ApsimCampbell) gets them from the
+	// allocator of that step, so callers pass a lasting one for the first step.
+	step:    proc(m: Module, in_: ^Input, out: ^Output, allocator: Allocator),
+	destroy: proc(m: Module, allocator: Allocator),
 }
 
 @(rodata)
 modules := [?]Module_Entry {
-	{"Monica_SoilTemp", make_monica_soil_temp},
-	{"DSSAT_ST_standalone", make_dssat_st},
-	{"DSSAT_EPICST_standalone", make_dssat_epicst},
-	{"ApsimCampbell", make_apsim_campbell},
-	{"BiomaSurfacePartonSoilSWATC", make_bioma_parton_swat},
-	{"BiomaSurfaceSWATSoilSWATC", make_bioma_swat_swat},
-	{"Simplace_Soil_Temperature", make_simplace},
-	{"SQ_Soil_Temperature", make_sq},
-	{"Stics_soil_temperature", make_stics},
+	monica_soil_temp_entry,
+	dssat_st_entry,
+	dssat_epicst_entry,
+	apsim_campbell_entry,
+	bioma_parton_swat_entry,
+	bioma_swat_swat_entry,
+	simplace_entry,
+	sq_entry,
+	stics_entry,
 }
 
 find_module :: proc(name: string) -> (Module_Entry, bool) {
@@ -115,85 +131,6 @@ find_module :: proc(name: string) -> (Module_Entry, bool) {
 		}
 	}
 	return {}, false
-}
-
-// Sizes and initialises the module for in_'s layers. in_'s daily values are
-// those of the first day: the modules' init reads them, as in the C++ AMEI
-// adapters, which call init right before the first step.
-module_init :: proc(m: Module, in_: ^Input, allocator := context.allocator) -> (err: string) {
-	if len(in_.layer_thickness) == 0 {
-		return "soil temperature module: no soil layers"
-	}
-	switch b in m {
-	case ^Monica_Soil_Temp:
-		monica_soil_temp_init(b, in_, allocator)
-	case ^Dssat_St:
-		dssat_st_init(b, in_, allocator)
-	case ^Dssat_Epicst:
-		dssat_epicst_init(b, in_, allocator)
-	case ^Apsim_Campbell:
-		apsim_campbell_init(b, in_, allocator)
-	case ^Bioma_Parton_Swat:
-		bioma_parton_swat_init(b, in_, allocator)
-	case ^Bioma_Swat_Swat:
-		bioma_swat_swat_init(b, in_, allocator)
-	case ^Simplace:
-		simplace_init(b, in_, allocator)
-	case ^Sq:
-		sq_init(b, in_, allocator)
-	case ^Stics:
-		stics_init(b, in_, allocator)
-	}
-	return ""
-}
-
-// `allocator` is for the step's temporaries. A module that sizes state
-// arrays lazily in its first step (ApsimCampbell) gets them from the
-// allocator of that step, so callers pass a lasting one for the first step.
-module_step :: proc(m: Module, in_: ^Input, out: ^Output, allocator := context.allocator) {
-	switch b in m {
-	case ^Monica_Soil_Temp:
-		monica_soil_temp_step(b, in_, out, allocator)
-	case ^Dssat_St:
-		dssat_st_step(b, in_, out, allocator)
-	case ^Dssat_Epicst:
-		dssat_epicst_step(b, in_, out, allocator)
-	case ^Apsim_Campbell:
-		apsim_campbell_step(b, in_, out, allocator)
-	case ^Bioma_Parton_Swat:
-		bioma_parton_swat_step(b, in_, out, allocator)
-	case ^Bioma_Swat_Swat:
-		bioma_swat_swat_step(b, in_, out, allocator)
-	case ^Simplace:
-		simplace_step(b, in_, out, allocator)
-	case ^Sq:
-		sq_step(b, in_, out, allocator)
-	case ^Stics:
-		stics_step(b, in_, out, allocator)
-	}
-}
-
-module_destroy :: proc(m: Module, allocator := context.allocator) {
-	switch b in m {
-	case ^Monica_Soil_Temp:
-		destroy_monica_soil_temp(b, allocator)
-	case ^Dssat_St:
-		destroy_dssat_st(b, allocator)
-	case ^Dssat_Epicst:
-		destroy_dssat_epicst(b, allocator)
-	case ^Apsim_Campbell:
-		destroy_apsim_campbell(b, allocator)
-	case ^Bioma_Parton_Swat:
-		destroy_bioma_parton_swat(b, allocator)
-	case ^Bioma_Swat_Swat:
-		destroy_bioma_swat_swat(b, allocator)
-	case ^Simplace:
-		destroy_simplace(b, allocator)
-	case ^Sq:
-		destroy_sq(b, allocator)
-	case ^Stics:
-		destroy_stics(b, allocator)
-	}
 }
 
 // Whole centimetres, rounded; the C++ AMEI adapters truncated

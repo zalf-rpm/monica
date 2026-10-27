@@ -18,7 +18,7 @@ Sq :: struct {
 	ex:    sq.Soil_Temperature_Exogenous,
 }
 
-make_sq :: proc(allocator := context.allocator) -> Module {
+make_sq :: proc(allocator: Allocator) -> Module {
 	b := new(Sq, allocator)
 	b.c = sq.make_soil_temperature_component(allocator)
 	return b
@@ -63,4 +63,13 @@ sq_exogenous :: proc(b: ^Sq, in_: ^Input) {
 	b.ex.mean_t_air = in_.tavg
 	b.ex.mean_annual_air_temp = in_.tav
 	b.r.heat_flux = 0
+}
+
+// The table row (soil_temperature.odin's `modules`)
+sq_entry :: Module_Entry {
+	name    = "SQ_Soil_Temperature",
+	make    = make_sq,
+	init    = proc(m: Module, in_: ^Input, a: Allocator) {sq_init(m.(^Sq), in_, a)},
+	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {sq_step(m.(^Sq), in_, out, a)},
+	destroy = proc(m: Module, a: Allocator) {destroy_sq(m.(^Sq), a)},
 }
