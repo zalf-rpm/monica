@@ -39,7 +39,7 @@
     "sources": {
       "SoilTemperatureModels": {
         "url": "https://github.com/AgriculturalModelExchangeInitiative/SoilTemperatureModels.git",
-        "commit": "1c5cde3add70978010e614fa319bdf48d5cafb1e",
+        "commit": "a41686b02e42776f5a5e7fb3e259742e795e2c86",
         "path": "Models",
         "packages": [
           "Monica_SoilTemp",
@@ -55,7 +55,7 @@
       },
       "EvapoTranspirationModels": {
         "url": "https://github.com/AgriculturalModelExchangeInitiative/EvapoTranspirationModels.git",
-        "commit": "b65ec8cfba96b415ddac73f0e50f38bc7d9db873",
+        "commit": "84a97ba662c5f8b43514144b2b8317b09b0c96eb",
         "path": "Monica",
         "packages": ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration"]
       }
