@@ -1049,13 +1049,14 @@ double SoilMoisture::referenceEvapotranspiration(double vs_HeightNN, double vw_M
   }
 
   //double vc_OvercastDayRadiation = 0.2 * vc_ClearDayRadiation;
-  double SC = 24.0 * 60.0 / M_PI * 8.20 * (1.0 + 0.033 * cos(2.0 * M_PI * vs_JulianDay / 365.0));
+  // written as in the crop module's radiation, so both give the same bits
+  double pc_SolarConstant = 0.082;
+  double SC = 24.0 * 60.0 / M_PI * pc_SolarConstant * (1.0 + 0.033 * cos(2.0 * M_PI * vs_JulianDay / 365.0));
   double arg_SHA = bound(-1.0, -tan(vs_Latitude * M_PI / 180.0) * tan(vc_Declination * M_PI / 180.0),
                          1.0); //The argument of acos must be in the range of -1 to 1
   double SHA = acos(arg_SHA);
 
-  double vc_ExtraterrestrialRadiation = SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * sin(SHA)) / 100.0;
-  // [J cm-2] --> [MJ m-2]
+  double vc_ExtraterrestrialRadiation = SC * (SHA * vc_DeclinationSinus + vc_DeclinationCosinus * sin(SHA)); // [MJ m-2]
 
   // Calculation of atmospheric pressure //[kPA]
   double vm_AtmosphericPressure = 101.3 * pow(((293.0 - (0.0065 * vs_HeightNN)) / 293.0), 5.26);
@@ -1129,8 +1130,7 @@ double SoilMoisture::referenceEvapotranspiration(double vs_HeightNN, double vw_M
                                            + (vm_PsycrometerConstant * (900.0 / (vw_MeanAirTemperature + 273.0))
                                               * vm_WindSpeed_2m * vm_SaturationDeficit))
                                           / (vm_SaturatedVapourPressureSlope + vm_PsycrometerConstant
-                                             * (1.0 + (vm_SurfaceResistance / 208.0) *
-                                                vm_WindSpeed_2m));
+                                             * (1.0 + (vm_SurfaceResistance / vm_AerodynamicResistance)));
 
   if (vm_ReferenceEvapotranspiration < 0.0) {
     vm_ReferenceEvapotranspiration = 0.0;
