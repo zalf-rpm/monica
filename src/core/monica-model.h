@@ -79,6 +79,8 @@ public:
 
   bool isCropPlanted() const { return _currentCropModule; }
 
+  bool clearCropUponNextDay() const { return _clearCropUponNextDay; }
+
   void harvestCurrentCrop(bool exported, const Harvest::Spec& spec,
                           Harvest::OptCarbonManagementData optCarbMgmtData = Harvest::OptCarbonManagementData(),
                           int incorporateIntoLayerIndex = 0);

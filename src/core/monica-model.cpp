@@ -637,7 +637,29 @@ void MonicaModel::applyTillage(double depth) {
 }
 
 void MonicaModel::step() {
-  if (isCropPlanted() && !_clearCropUponNextDay) {
+  // first, try to get daily CO2 concentration from climate data
+  // (here and not in generalStep, so that the ET0 calculations in cropModule
+  // and soilMoisture see the same, current day's value)
+  auto date = currentStepDate();
+  auto climateData = currentStepClimateData();
+  auto co2it = climateData.find(Climate::co2);
+  if (co2it != climateData.end()) {
+    vw_AtmosphericCO2Concentration = co2it->second;
+  } else {
+    // try to get yearly values from UserEnvironmentParameters
+    auto co2sit = _envPs.p_AtmosphericCO2s.find(date.year());
+    if (co2sit != _envPs.p_AtmosphericCO2s.end()) {
+      vw_AtmosphericCO2Concentration = co2sit->second;
+      // potentially use MONICA algorithm to calculate CO2 concentration
+    } else if (int(_envPs.p_AtmosphericCO2) <= 0) {
+      vw_AtmosphericCO2Concentration = CO2ForDate(date, _envPs.rcp);
+      // if everything fails value in UserEnvironmentParameters for the whole simulation
+    } else {
+      vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
+    }
+  }
+
+  if (isCropPlanted() && !clearCropUponNextDay()) {
     cropStep();
   } else if (_intercropping.isAsync()) {
     // tell other side that there is currently no crop
@@ -691,24 +713,6 @@ void MonicaModel::generalStep() {
                                                     _envPs.p_MinGroundwaterDepthMonth,
                                                     julday,
                                                     leapYear);
-
-  // first try to get CO2 concentration from climate data
-  auto co2it = climateData.find(Climate::co2);
-  if (co2it != climateData.end()) {
-    vw_AtmosphericCO2Concentration = co2it->second;
-  } else {
-    // try to get yearly values from UserEnvironmentParameters
-    auto co2sit = _envPs.p_AtmosphericCO2s.find(date.year());
-    if (co2sit != _envPs.p_AtmosphericCO2s.end()) {
-      vw_AtmosphericCO2Concentration = co2sit->second;
-      // potentially use MONICA algorithm to calculate CO2 concentration
-    } else if (int(_envPs.p_AtmosphericCO2) <= 0) {
-      vw_AtmosphericCO2Concentration = CO2ForDate(date, _envPs.rcp);
-      // if everything fails value in UserEnvironmentParameters for the whole simulation
-    } else {
-      vw_AtmosphericCO2Concentration = _envPs.p_AtmosphericCO2;
-    }
-  }
 
   //  debug << "step: " << stepNo << " p: " << precip << " gr: " << globrad << endl;
 

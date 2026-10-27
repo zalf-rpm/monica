@@ -292,7 +292,8 @@ void SoilMoisture::step(double vs_GroundwaterDepth,
   double vc_CropHeight = 0.0;
   int vc_DevelopmentalStage = 0;
 
-  if (monica.cropGrowth()) {
+  // a harvested crop (removed the next day) doesn't take part anymore
+  if (monica.isCropPlanted() && !monica.clearCropUponNextDay()) {
     vc_CropPlanted = true;
     vc_PercentageSoilCoverage = monica.cropGrowth()->get_SoilCoverage();
     vc_KcFactor = monica.cropGrowth()->get_KcFactor();
@@ -1356,7 +1357,10 @@ double SoilMoisture::get_EReducer_1(int i_Layer,
                                     double vm_ReferenceEvapotranspiration) {
   double vm_EReductionFactor;
   int vm_EvaporationReductionMethod = 1;
-  double vm_SoilMoisture_m3 = soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
+  // soilColumn[layerIndex].get_Vs_SoilMoisture_m3());
+  //-> was wrong as within soil moisture vm_SoilMoisture got already updated
+  double vm_SoilMoisture_m3 =
+      vm_SoilMoisture[i_Layer]; // soilColumn[i_Layer].get_Vs_SoilMoisture_m3();
   double vm_PWP = soilColumn[i_Layer].vs_PermanentWiltingPoint();
   double vm_FK = soilColumn[i_Layer].vs_FieldCapacity();
   double vm_RelativeEvaporableWater;
