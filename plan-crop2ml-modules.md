@@ -157,6 +157,19 @@ The field list is the union of what the C++ adapters read; trim it with the firs
 buffers are allocated once in `init` and reused every day, never allocated per step (R2). About
 10 per-layer values for 20 layers is well under a microsecond per day.
 
+**Per run or daily?** The bindings read a module's soil properties (bulk density, wilting point,
+field capacity, texture, organic carbon/matter, ...) once, when the module is made, as MONICA's
+own soil temperature and the C++ AMEI adapters do. That is correct as long as these properties
+don't change during a run. In C++ MONICA they didn't: only four values had setters (soil moisture
+among them), so the soil was effectively an immutable input. The Odin port can change any field
+by path (SetValue), and MONICA itself changes some over time (organic matter). Rule: an input that
+SetValue or the model itself can change during a run has to be gathered daily, like the soil
+moisture. The evapotranspiration binding does this for wilting point and field capacity, because
+MONICA's own ET reads them every day (`sim-min-setvalue` changes the wilting point). The soil
+temperature modules don't yet. Open question: taken to the end, almost every state can change,
+and little would be left to initialise once. For now: per run, with this rule applied where a
+real case needs it.
+
 ### 1.3 One binding per generated module
 
 A binding holds the generated Component and its five structs, and has `init(b, input)`,
@@ -657,10 +670,15 @@ the adapter not passing gross photosynthesis, carboxylation pathway and CO2; the
 no getters for the first two. The C++ AMEI branch as a whole can't be compared with master: the
 branches diverged in January.
 
-Soil properties gathered once: the soil temperature modules read bulk density, wilting point,
-field capacity, texture and organic matter at the start, as MONICA's own soil temperature and
-the C++ adapters do. A SetValue on them (or MONICA's changing organic matter) doesn't reach them.
-Revisit if that matters for one of them.
+Soil properties gathered once (soil temperature modules): see §1.2, "Per run or daily?".
+
+C++ AMEI adapter, 2026-10-27: the adapter ignores the harvested crop (user), and, with new public
+getters `CropModule::get_GrossPhotosynthesisReference_mol()` and `get_CarboxylationPathway()`, it
+passes gross photosynthesis, carboxylation pathway, CO2, stomata alpha and saturation beta.
+Afterwards C++ AMEI's own ET and its module agree on every number of sim-min. On sim.json they
+agree after regenerating the cpp2 code from EvapoTranspirationModels b65ec8c and applying fix 5
+(both tested by patching, not committed; uncommitted in `monica_amei`: the getters and the
+adapter).
 
 **Phase 6: a second process as a module (optional, proves R3).** E.g. move evapotranspiration's
 internal code behind its own union like soil temperature in phase 1, then write a small
