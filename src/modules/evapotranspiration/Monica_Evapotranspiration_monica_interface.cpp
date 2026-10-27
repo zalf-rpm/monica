@@ -30,6 +30,9 @@ void MonicaInterface::init(const monica::CentralParameterProvider& cpp) {
   etComp.setevaporation_zeta(cpp.userSoilMoistureParameters.pm_EvaporationZeta);
   etComp.setmaximum_evaporation_impact_depth(cpp.userSoilMoistureParameters.pm_MaximumEvaporationImpactDepth);
   etComp.setreference_albedo(cpp.userCropParameters.pc_ReferenceAlbedo);
+  // for the stomata resistance with a crop, as in the crop module's ET0
+  etComp.setstomata_conductance_alpha(cpp.userCropParameters.pc_StomataConductanceAlpha);
+  etComp.setsaturation_beta(cpp.userCropParameters.pc_SaturationBeta);
   //etComp.setstomata_resistance(100);
   //etComp.setevaporation_reduction_method(1);
   etComp.setxsa_critical_soil_moisture(cpp.userSoilMoistureParameters.pm_XSACriticalSoilMoisture);
@@ -77,8 +80,11 @@ void MonicaInterface::run() {
   etExo.wind_speed_height = _monica->environmentParameters().p_WindSpeedHeight;
   etExo.julian_day = _monica->currentStepDate().julianDay();
 
-  if (_monica->cropGrowth()) {
+  etExo.atmospheric_co2_concentration = _monica->get_AtmosphericCO2Concentration();
+  if (_monica->isCropPlanted() && !_monica->clearCropUponNextDay()) {
     const auto devStage = _monica->cropGrowth()->get_DevelopmentalStage();
+    etComp.setcarboxylation_pathway(_monica->cropGrowth()->get_CarboxylationPathway());
+    etAux.gross_photosynthesis_reference_mol = _monica->cropGrowth()->get_GrossPhotosynthesisReference_mol();
     etAux.calc_stomata_resistance = _monica->cropGrowth() && devStage > 0;
     etExo.developmental_stage = static_cast<int>(devStage);
     etExo.crop_transpiration = _monica->cropGrowth()->get_Transpiration();

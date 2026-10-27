@@ -202,6 +202,10 @@ public:
 
   double get_GrossPhotosynthesisRate() const;
 
+  double get_GrossPhotosynthesisReference_mol() const { return vc_GrossPhotosynthesisReference_mol; }
+
+  int get_CarboxylationPathway() const { return pc_CarboxylationPathway; }
+
   double get_GrossPhotosynthesisHaRate() const;
 
   double get_AssimilationRate() const;
