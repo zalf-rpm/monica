@@ -161,14 +161,14 @@ Soil_Temperature_Module_Parameters :: struct {
 	n_tau:                         f64,
 	initial_surface_temperature:   f64,
 	base_temperature:              f64,
-	quartz_raw_density:            f64,
-	density_air:                   f64,
-	density_water:                 f64,
-	density_humus:                 f64,
-	specific_heat_capacity_air:    f64,
-	specific_heat_capacity_quartz: f64,
-	specific_heat_capacity_water:  f64,
-	specific_heat_capacity_humus:  f64,
+	quartz_raw_density:            f64 `unit:"kg/m3"`,
+	density_air:                   f64 `unit:"kg/m3"`,
+	density_water:                 f64 `unit:"kg/m3"`,
+	density_humus:                 f64 `unit:"kg/m3"`,
+	specific_heat_capacity_air:    f64 `unit:"J/(kg*K)"`,
+	specific_heat_capacity_quartz: f64 `unit:"J/(kg*K)"`,
+	specific_heat_capacity_water:  f64 `unit:"J/(kg*K)"`,
+	specific_heat_capacity_humus:  f64 `unit:"J/(kg*K)"`,
 	soil_albedo:                   f64,
 	soil_moisture:                 f64, // C++ default 0.25
 }
@@ -288,31 +288,31 @@ Stics_Parameters :: struct {
 	hoptn:                  f64,
 	ph_min_nit:             f64,
 	ph_max_nit:             f64,
-	nh4_min:                f64, // [mg NH4-N/kg soil]
+	nh4_min:                f64 `unit:"mg NH4-N/kg soil"`,
 	ph_min_den:             f64,
 	ph_max_den:             f64,
 	wfpsc:                  f64,
-	tdenitopt_gauss:        f64, // [°C]
-	scale_tdenitopt:        f64, // [°C]
-	kd:                     f64, // [mg NO3-N/L]
-	k_desat:                f64, // [1/day]
-	fnx:                    f64, // [1/day]
-	vnitmax:                f64, // [mg NH4-N/kg soil/day]
-	kamm:                   f64, // [mg NH4-N/L]
-	tnitmin:                f64, // [°C]
-	tnitopt:                f64, // [°C]
-	tnitop2:                f64, // [°C]
-	tnitmax:                f64, // [°C]
-	tnitopt_gauss:          f64, // [°C]
-	scale_tnitopt:          f64, // [°C]
+	tdenitopt_gauss:        f64 `unit:"°C"`,
+	scale_tdenitopt:        f64 `unit:"°C"`,
+	kd:                     f64 `unit:"mg NO3-N/L"`,
+	k_desat:                f64 `unit:"1/day"`,
+	fnx:                    f64 `unit:"1/day"`,
+	vnitmax:                f64 `unit:"mg NH4-N/kg soil/day"`,
+	kamm:                   f64 `unit:"mg NH4-N/L"`,
+	tnitmin:                f64 `unit:"°C"`,
+	tnitopt:                f64 `unit:"°C"`,
+	tnitop2:                f64 `unit:"°C"`,
+	tnitmax:                f64 `unit:"°C"`,
+	tnitopt_gauss:          f64 `unit:"°C"`,
+	scale_tnitopt:          f64 `unit:"°C"`,
 	rationit:               f64,
-	cmin_pdenit:            f64, // [% [0-100]]
-	cmax_pdenit:            f64, // [% [0-100]]
-	min_pdenit:             f64, // [mg N/Kg soil/day]
-	max_pdenit:             f64, // [mg N/kg soil/day]
+	cmin_pdenit:            f64 `unit:"% [0-100]"`,
+	cmax_pdenit:            f64 `unit:"% [0-100]"`,
+	min_pdenit:             f64 `unit:"mg N/Kg soil/day"`,
+	max_pdenit:             f64 `unit:"mg N/kg soil/day"`,
 	ratiodenit:             f64,
-	profdenit:              f64, // [cm]
-	vpotdenit:              f64, // [kg N/ha/day]
+	profdenit:              f64 `unit:"cm"`,
+	vpotdenit:              f64 `unit:"kg N/ha/day"`,
 }
 
 // The C++ in-class initialisers
@@ -460,13 +460,13 @@ stics_parameters_to_json :: proc(sp: ^Stics_Parameters, a: Allocator) -> jx.Valu
 
 // C++: struct monica::SoilOrganicModuleParameters
 Soil_Organic_Module_Parameters :: struct {
-	som_slow_dec_coeff_standard:            f64,
-	som_fast_dec_coeff_standard:            f64,
-	smb_slow_maint_rate_standard:           f64,
-	smb_fast_maint_rate_standard:           f64,
-	smb_slow_death_rate_standard:           f64,
-	smb_fast_death_rate_standard:           f64,
-	smb_utilization_efficiency:             f64,
+	som_slow_dec_coeff_standard:            f64 `unit:"d-1"`,
+	som_fast_dec_coeff_standard:            f64 `unit:"d-1"`,
+	smb_slow_maint_rate_standard:           f64 `unit:"d-1"`,
+	smb_fast_maint_rate_standard:           f64 `unit:"d-1"`,
+	smb_slow_death_rate_standard:           f64 `unit:"d-1"`,
+	smb_fast_death_rate_standard:           f64 `unit:"d-1"`,
+	smb_utilization_efficiency:             f64 `unit:"0-1"`,
 	som_slow_utilization_efficiency:        f64,
 	som_fast_utilization_efficiency:        f64,
 	aom_slow_utilization_efficiency:        f64,
@@ -478,16 +478,16 @@ Soil_Organic_Module_Parameters :: struct {
 	part_som_to_smb_slow:                   f64,
 	part_som_to_smb_fast:                   f64,
 	cn_ratio_smb:                           f64,
-	limit_clay_effect:                      f64,
+	limit_clay_effect:                      f64 `unit:"kg kg-1"`,
 	q_ten_factor:                           f64,
-	temp_dec_optimal:                       f64,
-	moisture_dec_optimal:                   f64,
-	ammonia_oxidation_rate_coeff_standard:  f64,
-	nitrite_oxidation_rate_coeff_standard:  f64,
-	transport_rate_coeff:                   f64,
-	spec_anaerob_denitrification:           f64,
-	immobilisation_rate_coeff_no3:          f64,
-	immobilisation_rate_coeff_nh4:          f64,
+	temp_dec_optimal:                       f64 `unit:"°C"`,
+	moisture_dec_optimal:                   f64 `unit:"0-1"`,
+	ammonia_oxidation_rate_coeff_standard:  f64 `unit:"d-1"`,
+	nitrite_oxidation_rate_coeff_standard:  f64 `unit:"d-1"`,
+	transport_rate_coeff:                   f64 `unit:"d-1"`,
+	spec_anaerob_denitrification:           f64 `unit:"g gas-N g CO2-C-1"`,
+	immobilisation_rate_coeff_no3:          f64 `unit:"d-1"`,
+	immobilisation_rate_coeff_nh4:          f64 `unit:"d-1"`,
 	denit1:                                 f64,
 	denit2:                                 f64,
 	denit3:                                 f64,
@@ -495,9 +495,9 @@ Soil_Organic_Module_Parameters :: struct {
 	activation_energy:                      f64,
 	hydrolysis_p1:                          f64,
 	hydrolysis_p2:                          f64,
-	atmospheric_resistance:                 f64,
-	n2o_production_rate:                    f64,
-	inhibitor_nh3:                          f64,
+	atmospheric_resistance:                 f64 `unit:"s m-1"`,
+	n2o_production_rate:                    f64 `unit:"d-1"`,
+	inhibitor_nh3:                          f64 `unit:"kg N m-3"`,
 	max_mineralisation_depth:               f64,
 	__enable_kaiteew_TempOnDecompostion__:  bool,
 	__enable_kaiteew_MoistOnDecompostion__: bool,

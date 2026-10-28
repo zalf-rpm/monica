@@ -23,9 +23,9 @@ import "core:strings"
 Mineral_Fertilizer_Parameters :: struct {
 	id:       string,
 	name:     string,
-	carbamid: f64, // [%]
-	nh4:      f64, // [%]
-	no3:      f64, // [%]
+	carbamid: f64 `unit:"0-1"`,
+	nh4:      f64 `unit:"0-1"`,
+	no3:      f64 `unit:"0-1"`,
 }
 
 // C++: Errors mineralfertilizerparameters::merge(...)
@@ -105,8 +105,8 @@ nmin_application_parameters_to_json :: proc(
 
 // C++: struct monica::IrrigationParameters
 Irrigation_Parameters :: struct {
-	nitrate_concentration: f64, // [mg dm-3]
-	sulfate_concentration: f64, // [mg dm-3]
+	nitrate_concentration: f64 `unit:"mg dm-3"`,
+	sulfate_concentration: f64 `unit:"mg dm-3"`,
 	is_drip_irrigation:    bool,
 	fw:                    f64, // fraction of wetted soil surface [0-1]
 }
@@ -323,14 +323,14 @@ get_groundwater_information :: proc(
 // name at the point of use, via soil.pwp_fc_sat_method_from_name.
 Site_Parameters :: struct {
 	latitude:                                f64, // ZALF latitude
-	slope:                                   f64, // [m m-1]
-	height_nn:                               f64, // [m]
-	groundwater_depth:                       f64, // [m]
+	slope:                                   f64 `unit:"m m-1"`,
+	height_nn:                               f64 `unit:"m"`,
+	groundwater_depth:                       f64 `unit:"m"`,
 	soil_cn_ratio:                           f64,
 	drainage_coeff:                          f64,
-	n_deposition:                            f64, // [kg N ha-1 y-1]
-	max_effective_rooting_depth:             f64, // [m]
-	impenetrable_layer_depth:                f64, // [m]
+	n_deposition:                            f64 `unit:"kg N ha-1 y-1"`,
+	max_effective_rooting_depth:             f64 `unit:"m"`,
+	impenetrable_layer_depth:                f64 `unit:"m"`,
 	soil_specific_humus_balance_correction:  f64, // humus equivalents
 	bare_soil_kc_factor:                     f64,
 	number_of_layers:                        int,
@@ -658,7 +658,7 @@ Crop_Module_Parameters :: struct {
 	maintenance_respiration_parameter1:                     f64,
 	maintenance_respiration_parameter2:                     f64,
 	minimum_n_concentration_root:                           f64,
-	minimum_available_n:                                    f64, // [kg m-2]
+	minimum_available_n:                                    f64 `unit:"kg m-2"`,
 	reference_albedo:                                       f64,
 	stomata_conductance_alpha:                              f64,
 	saturation_beta:                                        f64,

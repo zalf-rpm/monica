@@ -290,8 +290,10 @@ quantity (flags, categories). Don't repeat the unit in the comment.
 Legacy output names keep the unit of the output table (`build_output.odin`, `output_paths.odin`),
 so existing outputs stay byte-identical; some of those are wrong (e.g. `RootWaUptak` in
 `KgN ha-1`), the tags aren't. `tests/output_units_calc_test.odin` checks that every field behind a
-legacy alias and every field of the modules' `Input`/`Output` structs has a tag. Not tagged yet:
-most fields outside those. The generated Crop2ML packages (`odin/amei/`) get theirs from the
+legacy alias and every field of the modules' `Input`/`Output` structs has a tag. The parameter
+structs (`monica/params`) carry the units documented in `monica-parameters` (`[value, "unit"]`)
+or in the C++ header `monica-parameters.h` - 84 of 287 numeric fields; the rest, mostly crop species
+and cultivar parameters, have no documented unit yet. Not tagged yet either: most other fields. The generated Crop2ML packages (`odin/amei/`) get theirs from the
 XML (`plan-crop2ml-modules.md` §2).
 
 An object-form output column may override the unit (`"unit"`) and transform the value

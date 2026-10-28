@@ -143,20 +143,20 @@ nmin_crop_parameters_to_json :: proc(ncp: ^NMin_Crop_Parameters, a: Allocator) -
 
 // C++: struct monica::OrganicMatterParameters
 Organic_Matter_Parameters :: struct {
-	aom_dry_matter_content:      f64, // [kg DM kg FM-1]
-	aom_nh4_content:             f64, // [kg N kg DM-1]
-	aom_no3_content:             f64, // [kg N kg DM-1]
-	aom_carbamid_content:        f64, // [kg N kg DM-1]
-	corg_content:                f64, // [kg C kg DM-1]
-	aom_slow_dec_coeff_standard: f64,
-	aom_fast_dec_coeff_standard: f64,
-	part_aom_to_aom_slow:        f64,
-	part_aom_to_aom_fast:        f64,
+	aom_dry_matter_content:      f64 `unit:"kg DM kg FM-1"`,
+	aom_nh4_content:             f64 `unit:"kg N kg DM-1"`,
+	aom_no3_content:             f64 `unit:"kg N kg DM-1"`,
+	aom_carbamid_content:        f64 `unit:"kg N kg DM-1"`,
+	corg_content:                f64 `unit:"kg C kg DM-1"`,
+	aom_slow_dec_coeff_standard: f64 `unit:"d-1"`,
+	aom_fast_dec_coeff_standard: f64 `unit:"d-1"`,
+	part_aom_to_aom_slow:        f64 `unit:"kg kg-1"`,
+	part_aom_to_aom_fast:        f64 `unit:"kg kg-1"`,
 	cn_ratio_aom_slow:           f64,
 	cn_ratio_aom_fast:           f64,
-	part_aom_slow_to_smb_slow:   f64,
-	part_aom_slow_to_smb_fast:   f64,
-	n_concentration:             f64,
+	part_aom_slow_to_smb_slow:   f64 `unit:"kg kg-1"`,
+	part_aom_slow_to_smb_fast:   f64 `unit:"kg kg-1"`,
+	n_concentration:             f64 `unit:"kg N kg DM-1"`,
 }
 // all C++ defaults are 0.0, so the Odin zero value matches
 

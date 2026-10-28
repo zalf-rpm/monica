@@ -92,6 +92,9 @@ test_output_units :: proc(t: ^testing.T) {
 		{`"climate_data.#last.globrad"`, "MJ m-2"},
 		{`"soil_column.layers.#len"`, "1"},
 		{`"soil_moisture.groundwater_added"`, ""}, // no tag yet
+		// parameters: units from monica-parameters and the C++ header
+		{`"site_params.n_deposition"`, "kg N ha-1 y-1"},
+		{`"crop_mod_params.minimum_available_n"`, "kg m-2"},
 		// legacy names keep the output table's unit (byte-identical output)
 		{`"Mois"`, "m3 m-3"},
 		{`"Tavg"`, ""},

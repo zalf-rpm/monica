@@ -46,7 +46,7 @@ Species_Parameters :: struct {
 	target_n30:                                  f64,
 	max_n_uptake_param:                          f64,
 	root_distribution_param:                     f64,
-	plant_density:                               int, // [plants m-2]
+	plant_density:                               int `unit:"plants m-2"`,
 	root_growth_lag:                             f64,
 	minimum_temperature_root_growth:             f64,
 	initial_rooting_depth:                       f64,
@@ -66,7 +66,7 @@ Species_Parameters :: struct {
 	aevc:                                        f64, // activation energy for photosynthesis (J mol-1)
 	kc25:                                        f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
 	ko25:                                        f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
-	transition_stage_leaf_exp:                   int, // [1-7]
+	transition_stage_leaf_exp:                   int `unit:""`,
 	dormancy_start_doy:                          int, // start dormancy of perennial crops at that DOY (0 = unset)
 	dormancy_end_doy:                            int, // end dormancy, start accumulating temperature sums (0 = unset)
 }
@@ -274,27 +274,27 @@ Cultivar_Parameters :: struct {
 	perennial:                         bool,
 	max_assimilation_rate:             f64, // old MAXAMAX
 	light_extinction_coefficient:      f64,
-	max_crop_height:                   f64,
+	max_crop_height:                   f64 `unit:"m"`,
 	residue_n_ratio:                   f64,
 	lt50_cultivar:                     f64,
 	crop_height_p1:                    f64,
 	crop_height_p2:                    f64,
-	crop_specific_max_rooting_depth:   f64, // old WUMAXPF [m]
+	crop_specific_max_rooting_depth:   f64 `unit:"m"`, // old WUMAXPF
 	assimilate_partitioning_coeff:     [dynamic][dynamic]f64, // old PRO
 	organ_senescence_rate:             [dynamic][dynamic]f64, // old DEAD
-	base_daylength:                    [dynamic]f64, // old DLBAS
-	optimum_temperature:               [dynamic]f64,
-	daylength_requirement:             [dynamic]f64, // old DEC
+	base_daylength:                    [dynamic]f64 `unit:"h"`, // old DLBAS
+	optimum_temperature:               [dynamic]f64 `unit:"°C"`,
+	daylength_requirement:             [dynamic]f64 `unit:"h"`, // old DEC
 	drought_stress_threshold:          [dynamic]f64, // old DRYswell
-	specific_leaf_area:                [dynamic]f64, // old LAIFKT [ha kg-1]
-	stage_kc_factor:                   [dynamic]f64, // old Kc
-	stage_temperature_sum:             [dynamic]f64, // old TSUM
+	specific_leaf_area:                [dynamic]f64 `unit:"ha kg-1"`, // old LAIFKT
+	stage_kc_factor:                   [dynamic]f64 `unit:"1"`, // old Kc
+	stage_temperature_sum:             [dynamic]f64 `unit:"°C d"`, // old TSUM
 	vernalisation_requirement:         [dynamic]f64, // old VSCHWELL
 	heat_sum_irrigation_start:         f64,
 	heat_sum_irrigation_end:           f64,
-	critical_temperature_heat_stress:  f64,
-	begin_sensitive_phase_heat_stress: f64,
-	end_sensitive_phase_heat_stress:   f64,
+	critical_temperature_heat_stress:  f64 `unit:"°C"`,
+	begin_sensitive_phase_heat_stress: f64 `unit:"°C d"`,
+	end_sensitive_phase_heat_stress:   f64 `unit:"°C d"`,
 	frost_hardening:                   f64,
 	frost_dehardening:                 f64,
 	low_temperature_exposure:          f64,

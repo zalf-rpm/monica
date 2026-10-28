@@ -100,7 +100,7 @@ Crop_Module :: struct {
 	crop_n_redux:                            f64 `unit:"0-1"`, //! old REDUK
 	crop_water_uptake:                       [dynamic]f64, //! old TP
 	current_temperature_sum:                 [dynamic]f64, //! old SUM
-	current_total_temperature_sum:           f64 `unit:"°Cd"`, //! old FP
+	current_total_temperature_sum:           f64 `unit:"°C d"`, //! old FP
 	current_total_temperature_sum_root:      f64,
 	daylength_factor:                        f64 `unit:"0-1"`, //! old DAYL
 	days_after_begin_flowering:              int,
