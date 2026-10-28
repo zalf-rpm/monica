@@ -13,15 +13,15 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: None
 //             * ShortDescription: Determines soil temperature by layer test encore
 Stemp_Epic :: struct {
-	nl: int, // Number of soil layers [dimensionless]
-	iswwat: string, // Water simulation control switch (Y or N) [dimensionless]
-	bd: [dynamic]f64, // Bulk density, soil layer NL [g [soil] / cm3 [soil]]
-	dlayr: [dynamic]f64, // Thickness of soil layer NL [cm]
-	ds: [dynamic]f64, // Cumulative depth in soil layer NL [cm]
-	dul: [dynamic]f64, // Volumetric soil water content at Drained Upper Limit in soil layer L [cm3[water]/cm3[soil]]
-	ll: [dynamic]f64, // Volumetric soil water content in soil layer NL at lower limit [cm3 [water] / cm3 [soil]]
-	nlayr: int, // Actual number of soil layers [dimensionless]
-	sw: [dynamic]f64, // Volumetric soil water content in layer NL [cm3 [water] / cm3 [soil]]
+	nl: int `unit:"dimensionless"`, // Number of soil layers
+	iswwat: string `unit:"dimensionless"`, // Water simulation control switch (Y or N)
+	bd: [dynamic]f64 `unit:"g [soil] / cm3 [soil]"`, // Bulk density, soil layer NL
+	dlayr: [dynamic]f64 `unit:"cm"`, // Thickness of soil layer NL
+	ds: [dynamic]f64 `unit:"cm"`, // Cumulative depth in soil layer NL
+	dul: [dynamic]f64 `unit:"cm3[water]/cm3[soil]"`, // Volumetric soil water content at Drained Upper Limit in soil layer L
+	ll: [dynamic]f64 `unit:"cm3 [water] / cm3 [soil]"`, // Volumetric soil water content in soil layer NL at lower limit
+	nlayr: int `unit:"dimensionless"`, // Actual number of soil layers
+	sw: [dynamic]f64 `unit:"cm3 [water] / cm3 [soil]"`, // Volumetric soil water content in layer NL
 }
 
 make_stemp_epic :: proc(allocator := context.allocator) -> (m: Stemp_Epic) {

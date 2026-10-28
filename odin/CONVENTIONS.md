@@ -288,7 +288,8 @@ Legacy output names keep the unit of the output table (`build_output.odin`, `out
 so existing outputs stay byte-identical; some of those are wrong (e.g. `RootWaUptak` in
 `KgN ha-1`), the tags aren't. `tests/output_units_calc_test.odin` checks that every field behind a
 legacy alias and every field of the modules' `Input`/`Output` structs has a tag. Not tagged yet:
-most fields outside those, and the generated Crop2ML packages (`plan-crop2ml-modules.md` §2).
+most fields outside those. The generated Crop2ML packages (`odin/amei/`) get theirs from the
+XML (`plan-crop2ml-modules.md` §2).
 
 An object-form output column may override the unit (`"unit"`) and transform the value
 (`"calc"`, `monica/io/output_calc.odin`); a `"calc"` without `"unit"` prints no unit.

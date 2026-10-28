@@ -12,26 +12,26 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: None
 //             * ShortDescription: Calculates the soil temperature at all soil layers
 Soil_Temperature :: struct {
-	no_of_soil_layers: int, // noOfSoilLayers [dimensionless]
-	no_of_temp_layers: int, // noOfTempLayers=noOfSoilLayers+2 [dimensionless]
-	no_of_temp_layers_plus1: int, // for matrixSecondaryDiagonal [dimensionless]
-	time_step: f64, // timeStep [dimensionless]
-	soil_moisture_const: [dynamic]f64, // constant soilmoisture during the model run [m**3/m**3]
-	base_temp: f64, // baseTemperature [°C]
-	initial_surface_temp: f64, // initialSurfaceTemperature [°C]
-	density_air: f64, // DensityAir [kg/m**3]
-	specific_heat_capacity_air: f64, // SpecificHeatCapacityAir [J/kg/K]
-	density_humus: f64, // DensityHumus [kg/m**3]
-	specific_heat_capacity_humus: f64, // SpecificHeatCapacityHumus [J/kg/K]
-	density_water: f64, // DensityWater [kg/m**3]
-	specific_heat_capacity_water: f64, // SpecificHeatCapacityWater [J/kg/K]
-	quartz_raw_density: f64, // QuartzRawDensity [kg/m**3]
-	specific_heat_capacity_quartz: f64, // SpecificHeatCapacityQuartz [J/kg/K]
-	n_tau: f64, // NTau [?]
-	layer_thickness: [dynamic]f64, // layerThickness [m]
-	soil_bulk_density: [dynamic]f64, // bulkDensity [kg/m**3]
-	saturation: [dynamic]f64, // saturation [m**3/m**3]
-	soil_organic_matter: [dynamic]f64, // soilOrganicMatter [m**3/m**3]
+	no_of_soil_layers: int `unit:"dimensionless"`, // noOfSoilLayers
+	no_of_temp_layers: int `unit:"dimensionless"`, // noOfTempLayers=noOfSoilLayers+2
+	no_of_temp_layers_plus1: int `unit:"dimensionless"`, // for matrixSecondaryDiagonal
+	time_step: f64 `unit:"dimensionless"`, // timeStep
+	soil_moisture_const: [dynamic]f64 `unit:"m**3/m**3"`, // constant soilmoisture during the model run
+	base_temp: f64 `unit:"°C"`, // baseTemperature
+	initial_surface_temp: f64 `unit:"°C"`, // initialSurfaceTemperature
+	density_air: f64 `unit:"kg/m**3"`, // DensityAir
+	specific_heat_capacity_air: f64 `unit:"J/kg/K"`, // SpecificHeatCapacityAir
+	density_humus: f64 `unit:"kg/m**3"`, // DensityHumus
+	specific_heat_capacity_humus: f64 `unit:"J/kg/K"`, // SpecificHeatCapacityHumus
+	density_water: f64 `unit:"kg/m**3"`, // DensityWater
+	specific_heat_capacity_water: f64 `unit:"J/kg/K"`, // SpecificHeatCapacityWater
+	quartz_raw_density: f64 `unit:"kg/m**3"`, // QuartzRawDensity
+	specific_heat_capacity_quartz: f64 `unit:"J/kg/K"`, // SpecificHeatCapacityQuartz
+	n_tau: f64 `unit:"?"`, // NTau
+	layer_thickness: [dynamic]f64 `unit:"m"`, // layerThickness
+	soil_bulk_density: [dynamic]f64 `unit:"kg/m**3"`, // bulkDensity
+	saturation: [dynamic]f64 `unit:"m**3/m**3"`, // saturation
+	soil_organic_matter: [dynamic]f64 `unit:"m**3/m**3"`, // soilOrganicMatter
 }
 
 make_soil_temperature :: proc(allocator := context.allocator) -> (m: Soil_Temperature) {

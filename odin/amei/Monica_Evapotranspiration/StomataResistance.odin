@@ -11,9 +11,9 @@ package monica_evapotranspiration
 //
 //             * ShortDescription: Calculates the MONICA reference evapotranspiration
 Stomata_Resistance :: struct {
-	saturation_beta: f64, // Original: Yu et al. 2001; beta = 3.5
-	stomata_conductance_alpha: f64, // Original: Yu et al. 2001; alpha = 0.06 mol/m2/s [mmol/m2/s]
-	carboxylation_pathway: int, // Is it a C3 (=1) or C4 (=2) crop. (0 = no crop) [dimensionless]
+	saturation_beta: f64 `unit:""`, // Original: Yu et al. 2001; beta = 3.5
+	stomata_conductance_alpha: f64 `unit:"mmol/m2/s"`, // Original: Yu et al. 2001; alpha = 0.06 mol/m2/s
+	carboxylation_pathway: int `unit:"dimensionless"`, // Is it a C3 (=1) or C4 (=2) crop. (0 = no crop)
 }
 
 make_stomata_resistance :: proc(allocator := context.allocator) -> (m: Stomata_Resistance) {

@@ -12,15 +12,15 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: None
 //             * ShortDescription: Calculates the MONICA evapotranspiration
 Evapotranspiration :: struct {
-	evaporation_zeta: f64, // shape factor [dimensionless]
-	maximum_evaporation_impact_depth: f64, // maximumEvaporationImpactDepth [dm]
-	evaporation_reduction_method: int, // THESEUS (0) or HERMES (1) evaporation reduction method [dimensionless]
-	xsa_critical_soil_moisture: f64, // XSACriticalSoilMoisture [m3/m3]
-	no_of_soil_layers: int, // number of soil layers [dimensionless]
-	no_of_soil_moisture_layers: int, // number of soil layers + 1 [dimensionless]
-	layer_thickness: [dynamic]f64, // layer thickness array [m]
-	permanent_wilting_point: [dynamic]f64, // permanent wilting point array [m3/m3]
-	field_capacity: [dynamic]f64, // field capacity array [m3/m3]
+	evaporation_zeta: f64 `unit:"dimensionless"`, // shape factor
+	maximum_evaporation_impact_depth: f64 `unit:"dm"`, // maximumEvaporationImpactDepth
+	evaporation_reduction_method: int `unit:"dimensionless"`, // THESEUS (0) or HERMES (1) evaporation reduction method
+	xsa_critical_soil_moisture: f64 `unit:"m3/m3"`, // XSACriticalSoilMoisture
+	no_of_soil_layers: int `unit:"dimensionless"`, // number of soil layers
+	no_of_soil_moisture_layers: int `unit:"dimensionless"`, // number of soil layers + 1
+	layer_thickness: [dynamic]f64 `unit:"m"`, // layer thickness array
+	permanent_wilting_point: [dynamic]f64 `unit:"m3/m3"`, // permanent wilting point array
+	field_capacity: [dynamic]f64 `unit:"m3/m3"`, // field capacity array
 }
 
 make_evapotranspiration :: proc(allocator := context.allocator) -> (m: Evapotranspiration) {

@@ -14,8 +14,8 @@ import cr_math "../../support/cr_math"
 //
 //             * ShortDescription: None
 Net_Radiation :: struct {
-	height_nn: f64, // height above sea level [m]
-	reference_albedo: f64, // reference albedo [dimensionless]
+	height_nn: f64 `unit:"m"`, // height above sea level
+	reference_albedo: f64 `unit:"dimensionless"`, // reference albedo
 }
 
 make_net_radiation :: proc(allocator := context.allocator) -> (m: Net_Radiation) {

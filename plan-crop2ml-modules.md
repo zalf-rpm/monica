@@ -264,11 +264,11 @@ its data.
    `cr_math.log(x) / cr_math.log(base)`.
 2. **Allocator.** `make_*` and `init` take `allocator := context.allocator`, like the procs here.
 3. Package names come from directory names; import with an alias. No change needed.
-4. **Units as struct tags (not done yet).** Output paths print a field's `unit` tag
-   (`odin/CONVENTIONS.md` §9a). The Crop2ML XML declares a unit for every input, state and
-   output, so the generator could write it onto the struct fields (`srftemp: f64 `unit:"°C"``).
-   Until then, paths into a module's own state (`....module.Dssat_St.s.srftemp`) have no unit;
-   the hand-written `Input`/`Output` structs in `odin/monica/modules/*` are tagged.
+4. **Units as struct tags (done, PyCrop2ML e3e0194).** Output paths print a field's `unit` tag
+   (`odin/CONVENTIONS.md` §9a), so the generator writes each variable's unit from the Crop2ML
+   XML onto its field (`srftemp: f64 `unit:"degC"``) instead of into the comment, verbatim. The
+   packages spell units inconsistently (`degC`, `°C`, `oC`, `Â°C`, om-1.8 URIs such as
+   `http://www.wurvoc.org/vocabularies/om-1.8/degree_Celsius`); fix those in the packages (§4).
 
 ---
 

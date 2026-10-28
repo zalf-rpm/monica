@@ -12,9 +12,9 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: Calculate Soil temperature on a hourly basis.Parton, W.J. and Logan, J.A., 1981. A model for diurnal variation in soil and air temperature. Agric. Meteorol., 23: 205-216
 //             * ShortDescription: None
 Calculate_Hourly_Soil_Temperature :: struct {
-	b: f64, // Delay between sunrise and time when minimum temperature is reached [Hour]
-	a: f64, // Delay between sunset and time when maximum temperature is reached [Hour]
-	c: f64, // Nighttime temperature coefficient [Dpmensionless]
+	b: f64 `unit:"Hour"`, // Delay between sunrise and time when minimum temperature is reached
+	a: f64 `unit:"Hour"`, // Delay between sunset and time when maximum temperature is reached
+	c: f64 `unit:"Dpmensionless"`, // Nighttime temperature coefficient
 }
 
 make_calculate_hourly_soil_temperature :: proc(allocator := context.allocator) -> (m: Calculate_Hourly_Soil_Temperature) {

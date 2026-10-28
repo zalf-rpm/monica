@@ -9,7 +9,7 @@ package monica_amei_potential_evapotranspiration
 //             * ExtendedDescription: None
 //             * ShortDescription: Calculates the MONICA potential evapotranspiration
 Potential_Evapotranspiration :: struct {
-	potential_evapotranspiration_cap: f64, // cap ET0 to this value [mm]
+	potential_evapotranspiration_cap: f64 `unit:"mm"`, // cap ET0 to this value
 }
 
 make_potential_evapotranspiration :: proc(allocator := context.allocator) -> (m: Potential_Evapotranspiration) {

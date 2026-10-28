@@ -12,11 +12,11 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: Strategy for the calculation of soil temperature with SWAT method. Reference: Neitsch,S.L., Arnold, J.G., Kiniry, J.R., Williams, J.R., King, K.W. Soil and Water Assessment Tool. Theoretical documentation. Version 2000. http://swatmodel.tamu.edu/media/1290/swat2000theory.pdf
 //             * ShortDescription: Strategy for the calculation of soil temperature with SWAT method
 Soil_Temperature_Swat :: struct {
-	layer_thickness: [dynamic]f64, // Soil layer thickness [m]
-	lag_coefficient: f64, // Lag coefficient that controls the influence of the previous day's temperature on the current day's temperature [dimensionless]
-	air_temperature_annual_average: f64, // Annual average air temperature [degC]
-	bulk_density: [dynamic]f64, // Bulk density [t m-3]
-	soil_profile_depth: f64, // Soil profile depth [m]
+	layer_thickness: [dynamic]f64 `unit:"m"`, // Soil layer thickness
+	lag_coefficient: f64 `unit:"dimensionless"`, // Lag coefficient that controls the influence of the previous day's temperature on the current day's temperature
+	air_temperature_annual_average: f64 `unit:"degC"`, // Annual average air temperature
+	bulk_density: [dynamic]f64 `unit:"t m-3"`, // Bulk density
+	soil_profile_depth: f64 `unit:"m"`, // Soil profile depth
 }
 
 make_soil_temperature_swat :: proc(allocator := context.allocator) -> (m: Soil_Temperature_Swat) {

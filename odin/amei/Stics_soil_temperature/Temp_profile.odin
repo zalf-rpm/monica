@@ -13,8 +13,8 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: None
 //             * ShortDescription: None
 Temp_Profile :: struct {
-	air_temp_day1: f64, // Mean temperature on first day [degC]
-	layer_thick: [dynamic]int, // layers thickness [cm]
+	air_temp_day1: f64 `unit:"degC"`, // Mean temperature on first day
+	layer_thick: [dynamic]int `unit:"cm"`, // layers thickness
 }
 
 make_temp_profile :: proc(allocator := context.allocator) -> (m: Temp_Profile) {

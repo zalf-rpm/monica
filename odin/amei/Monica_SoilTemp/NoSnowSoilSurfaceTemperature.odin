@@ -11,7 +11,7 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: None
 //             * ShortDescription: It calculates the soil surface temperature without snow cover
 No_Snow_Soil_Surface_Temperature :: struct {
-	damping_factor: f64, // dampingFactor [dimensionless]
+	damping_factor: f64 `unit:"dimensionless"`, // dampingFactor
 }
 
 make_no_snow_soil_surface_temperature :: proc(allocator := context.allocator) -> (m: No_Snow_Soil_Surface_Temperature) {

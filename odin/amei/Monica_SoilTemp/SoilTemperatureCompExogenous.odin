@@ -1,12 +1,12 @@
 package monica_soiltemp
 
 Soil_Temperature_Comp_Exogenous :: struct {
-	tmin: f64, // the days min air temperature [°C]
-	tmax: f64, // the days max air temperature [°C]
-	globrad: f64, // the days global radiation [MJ/m**2/d]
-	soil_coverage: f64, // soilCoverage [dimensionless]
-	soil_surface_temperature_below_snow: f64, // soilSurfaceTemperature below snow cover [°C]
-	has_snow_cover: bool, // is soil covered by snow [dimensionless]
+	tmin: f64 `unit:"°C"`, // the days min air temperature
+	tmax: f64 `unit:"°C"`, // the days max air temperature
+	globrad: f64 `unit:"MJ/m**2/d"`, // the days global radiation
+	soil_coverage: f64 `unit:"dimensionless"`, // soilCoverage
+	soil_surface_temperature_below_snow: f64 `unit:"°C"`, // soilSurfaceTemperature below snow cover
+	has_snow_cover: bool `unit:"dimensionless"`, // is soil covered by snow
 }
 
 destroy_soil_temperature_comp_exogenous :: proc(x: ^Soil_Temperature_Comp_Exogenous) {

@@ -17,7 +17,7 @@ import cr_math "../../support/cr_math"
 //
 //             * ShortDescription: Calculates the MONICA reference evapotranspiration
 Radiation :: struct {
-	latitude: f64, // latitude [degree]
+	latitude: f64 `unit:"degree"`, // latitude
 }
 
 make_radiation :: proc(allocator := context.allocator) -> (m: Radiation) {

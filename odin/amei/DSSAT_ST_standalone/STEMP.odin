@@ -12,17 +12,17 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: None
 //             * ShortDescription: Determines soil temperature by layer
 Stemp :: struct {
-	nl: int, // Number of soil layers [dimensionless]
-	iswwat: string, // Water simulation control switch [dimensionless]
-	bd: [dynamic]f64, // Bulk density, soil layer NL [g [soil] / cm3 [soil]]
-	dlayr: [dynamic]f64, // Thickness of soil layer L [cm]
-	ds: [dynamic]f64, // Cumulative depth in soil layer L [cm]
-	dul: [dynamic]f64, // Volumetric soil water content at Drained Upper Limit in soil layer L [cm3[water]/cm3[soil]]
-	ll: [dynamic]f64, // Volumetric soil water content in soil layer L at lower limit [cm3 [water] / cm3 [soil]]
-	nlayr: int, // Actual number of soil layers [dimensionless]
-	msalb: f64, // Soil albedo with mulch and soil water effects [dimensionless]
-	sw: [dynamic]f64, // Volumetric soil water content in layer L [cm3 [water] / cm3 [soil]]
-	xlat: f64, // Latitude [degC]
+	nl: int `unit:"dimensionless"`, // Number of soil layers
+	iswwat: string `unit:"dimensionless"`, // Water simulation control switch
+	bd: [dynamic]f64 `unit:"g [soil] / cm3 [soil]"`, // Bulk density, soil layer NL
+	dlayr: [dynamic]f64 `unit:"cm"`, // Thickness of soil layer L
+	ds: [dynamic]f64 `unit:"cm"`, // Cumulative depth in soil layer L
+	dul: [dynamic]f64 `unit:"cm3[water]/cm3[soil]"`, // Volumetric soil water content at Drained Upper Limit in soil layer L
+	ll: [dynamic]f64 `unit:"cm3 [water] / cm3 [soil]"`, // Volumetric soil water content in soil layer L at lower limit
+	nlayr: int `unit:"dimensionless"`, // Actual number of soil layers
+	msalb: f64 `unit:"dimensionless"`, // Soil albedo with mulch and soil water effects
+	sw: [dynamic]f64 `unit:"cm3 [water] / cm3 [soil]"`, // Volumetric soil water content in layer L
+	xlat: f64 `unit:"degC"`, // Latitude
 }
 
 make_stemp :: proc(allocator := context.allocator) -> (m: Stemp) {

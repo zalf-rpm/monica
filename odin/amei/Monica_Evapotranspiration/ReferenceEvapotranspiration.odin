@@ -19,7 +19,7 @@ import cr_math "../../support/cr_math"
 //
 //             * ShortDescription: Calculates the MONICA reference evapotranspiration
 Reference_Evapotranspiration :: struct {
-	height_nn: f64, // height above sea level [m]
+	height_nn: f64 `unit:"m"`, // height above sea level
 }
 
 make_reference_evapotranspiration :: proc(allocator := context.allocator) -> (m: Reference_Evapotranspiration) {

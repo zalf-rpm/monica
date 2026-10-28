@@ -12,11 +12,11 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: as given in the documentation
 //             * ShortDescription: None
 Stm_Psim_Calculator :: struct {
-	c_soil_layer_depth: [dynamic]f64, // Depth of soil layer [http://www.wurvoc.org/vocabularies/om-1.8/metre]
-	c_first_day_mean_temp: f64, // Mean air temperature on first day [http://www.wurvoc.org/vocabularies/om-1.8/degree_Celsius]
-	c_avt: f64, // Constant Temperature of deepest soil layer - use long term mean air temperature [http://www.wurvoc.org/vocabularies/om-1.8/degree_Celsius]
-	c_abd: f64, // Mean bulk density [http://www.wurvoc.org/vocabularies/om-1.8/tonne_per_cubic_metre]
-	c_damping_depth: f64, // Initial value for damping depth of soil [http://www.wurvoc.org/vocabularies/om-1.8/metre]
+	c_soil_layer_depth: [dynamic]f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/metre"`, // Depth of soil layer
+	c_first_day_mean_temp: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/degree_Celsius"`, // Mean air temperature on first day
+	c_avt: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/degree_Celsius"`, // Constant Temperature of deepest soil layer - use long term mean air temperature
+	c_abd: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/tonne_per_cubic_metre"`, // Mean bulk density
+	c_damping_depth: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/metre"`, // Initial value for damping depth of soil
 }
 
 make_stm_psim_calculator :: proc(allocator := context.allocator) -> (m: Stm_Psim_Calculator) {

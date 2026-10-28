@@ -1,16 +1,16 @@
 package dssat_epicst_standalone
 
 Stemp_Epic_Exogenous :: struct {
-	tav: f64, // Average annual soil temperature, used with TAMP to calculate soil temperature. [degC]
-	rain: f64, // daily rainfall [mm]
-	biomas: f64, // Biomass [kg/ha]
-	snow: f64, // Snow cover [mm]
-	tavg: f64, // Average daily temperature [degC]
-	depir: f64, // Depth of irrigation [mm]
-	mulchmass: f64, // Mulch Mass [kg/ha]
-	tmax: f64, // Maximum daily temperature [degC]
-	tmin: f64, // Minimum Temperature [degC]
-	tamp: f64, // Annual amplitude of the average air temperature [degC]
+	tav: f64 `unit:"degC"`, // Average annual soil temperature, used with TAMP to calculate soil temperature.
+	rain: f64 `unit:"mm"`, // daily rainfall
+	biomas: f64 `unit:"kg/ha"`, // Biomass
+	snow: f64 `unit:"mm"`, // Snow cover
+	tavg: f64 `unit:"degC"`, // Average daily temperature
+	depir: f64 `unit:"mm"`, // Depth of irrigation
+	mulchmass: f64 `unit:"kg/ha"`, // Mulch Mass
+	tmax: f64 `unit:"degC"`, // Maximum daily temperature
+	tmin: f64 `unit:"degC"`, // Minimum Temperature
+	tamp: f64 `unit:"degC"`, // Annual amplitude of the average air temperature
 }
 
 destroy_stemp_epic_exogenous :: proc(x: ^Stemp_Epic_Exogenous) {

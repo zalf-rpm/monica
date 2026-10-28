@@ -12,7 +12,7 @@ import "core:slice"
 //             * ExtendedDescription: None
 //             * ShortDescription: None
 Layers_Temp :: struct {
-	layer_thick: [dynamic]int, // layers thickness [cm]
+	layer_thick: [dynamic]int `unit:"cm"`, // layers thickness
 }
 
 make_layers_temp :: proc(allocator := context.allocator) -> (m: Layers_Temp) {

@@ -13,36 +13,36 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription:  Soil Temperature
 //             * ShortDescription: Heat flux and temperatures over the surface and soil profile (based on Campbell, 1985)
 Soil_Temperature :: struct {
-	weather_latitude: f64, // Latitude [deg]
-	physical_thickness: [dynamic]f64, // Soil layer thickness [mm]
-	physical_bd: [dynamic]f64, // Bulk density [g/cc]
-	ps: f64, // ps
-	p_initial_values: [dynamic]f64, // Initial soil temperature [oC]
-	depth_to_constant_temperature: f64, // Soil depth to constant temperature [mm]
-	timestep: f64, // Internal time-step (minutes) [minutes]
-	latent_heat_of_vapourisation: f64, // Latent heat of vapourisation for water [miJ/kg]
-	stefan_boltzmann_constant: f64, // The Stefan-Boltzmann constant [W/m2/K4]
-	air_node: int, // The index of the node in the atmosphere (aboveground)
-	surface_node: int, // The index of the node on the soil surface (depth = 0)
-	topsoil_node: int, // The index of the first node within the soil (top layer)
-	num_phantom_nodes: int, // The number of phantom nodes below the soil profile
-	constant_boundary_layer_conductance: f64, // Boundary layer conductance, if constant [K/W]
-	num_iterations_for_boundary_layer_conductance: int, // Number of iterations to calculate atmosphere boundary layer conductance
-	default_time_of_maximum_temperature: f64, // Time of maximum temperature [minutes]
-	default_instrument_height: f64, // Default instrument height [m]
-	bare_soil_roughness: f64, // Roughness element height of bare soil [mm]
-	node_depth: [dynamic]f64, // Depths of nodes [mm]
-	therm_cond_par1: [dynamic]f64, // Parameter 1 for computing thermal conductivity of soil solids
-	therm_cond_par2: [dynamic]f64, // Parameter 2 for computing thermal conductivity of soil solids
-	therm_cond_par3: [dynamic]f64, // Parameter 3 for computing thermal conductivity of soil solids
-	therm_cond_par4: [dynamic]f64, // Parameter 4 for computing thermal conductivity of soil solids
-	pom: f64, // Particle density of organic matter [Mg/m3]
-	soil_roughness_height: f64, // Height of soil roughness [mm]
-	nu: f64, // Forward/backward differencing coefficient [0-1]
-	boundar_layer_conductance_source: string, // Flag whether boundary layer conductance is calculated or gotten from inpu
-	net_radiation_source: string, // Flag whether net radiation is calculated or gotten from input [m]
-	missing_value: f64, // missing value [m]
-	soil_constituent_names: [dynamic]string, // soilConstituentNames [m]
+	weather_latitude: f64 `unit:"deg"`, // Latitude
+	physical_thickness: [dynamic]f64 `unit:"mm"`, // Soil layer thickness
+	physical_bd: [dynamic]f64 `unit:"g/cc"`, // Bulk density
+	ps: f64 `unit:""`, // ps
+	p_initial_values: [dynamic]f64 `unit:"oC"`, // Initial soil temperature
+	depth_to_constant_temperature: f64 `unit:"mm"`, // Soil depth to constant temperature
+	timestep: f64 `unit:"minutes"`, // Internal time-step (minutes)
+	latent_heat_of_vapourisation: f64 `unit:"miJ/kg"`, // Latent heat of vapourisation for water
+	stefan_boltzmann_constant: f64 `unit:"W/m2/K4"`, // The Stefan-Boltzmann constant
+	air_node: int `unit:""`, // The index of the node in the atmosphere (aboveground)
+	surface_node: int `unit:""`, // The index of the node on the soil surface (depth = 0)
+	topsoil_node: int `unit:""`, // The index of the first node within the soil (top layer)
+	num_phantom_nodes: int `unit:""`, // The number of phantom nodes below the soil profile
+	constant_boundary_layer_conductance: f64 `unit:"K/W"`, // Boundary layer conductance, if constant
+	num_iterations_for_boundary_layer_conductance: int `unit:""`, // Number of iterations to calculate atmosphere boundary layer conductance
+	default_time_of_maximum_temperature: f64 `unit:"minutes"`, // Time of maximum temperature
+	default_instrument_height: f64 `unit:"m"`, // Default instrument height
+	bare_soil_roughness: f64 `unit:"mm"`, // Roughness element height of bare soil
+	node_depth: [dynamic]f64 `unit:"mm"`, // Depths of nodes
+	therm_cond_par1: [dynamic]f64 `unit:""`, // Parameter 1 for computing thermal conductivity of soil solids
+	therm_cond_par2: [dynamic]f64 `unit:""`, // Parameter 2 for computing thermal conductivity of soil solids
+	therm_cond_par3: [dynamic]f64 `unit:""`, // Parameter 3 for computing thermal conductivity of soil solids
+	therm_cond_par4: [dynamic]f64 `unit:""`, // Parameter 4 for computing thermal conductivity of soil solids
+	pom: f64 `unit:"Mg/m3"`, // Particle density of organic matter
+	soil_roughness_height: f64 `unit:"mm"`, // Height of soil roughness
+	nu: f64 `unit:"0-1"`, // Forward/backward differencing coefficient
+	boundar_layer_conductance_source: string `unit:""`, // Flag whether boundary layer conductance is calculated or gotten from inpu
+	net_radiation_source: string `unit:"m"`, // Flag whether net radiation is calculated or gotten from input
+	missing_value: f64 `unit:"m"`, // missing value
+	soil_constituent_names: [dynamic]string `unit:"m"`, // soilConstituentNames
 }
 
 make_soil_temperature :: proc(allocator := context.allocator) -> (m: Soil_Temperature) {

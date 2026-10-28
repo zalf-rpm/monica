@@ -12,12 +12,12 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: as given in the documentation
 //             * ShortDescription: None
 Snow_Cover_Calculator :: struct {
-	c_carbon_content: f64, // Carbon content of upper soil layer [http://www.wurvoc.org/vocabularies/om-1.8/percent]
-	c_initial_age_of_snow: int, // Initial age of snow [http://www.wurvoc.org/vocabularies/om-1.8/percent]
-	c_initial_snow_water_content: f64, // Initial snow water content [http://www.wurvoc.org/vocabularies/om-1.8/percent]
-	albedo: f64, // Albedo [http://www.wurvoc.org/vocabularies/om-1.8/one]
-	c_snow_isolation_factor_a: f64, // Static part of the snow isolation index calculation [http://www.wurvoc.org/vocabularies/om-1.8/one]
-	c_snow_isolation_factor_b: f64, // Dynamic part of the snow isolation index calculation [http://www.wurvoc.org/vocabularies/om-1.8/one]
+	c_carbon_content: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/percent"`, // Carbon content of upper soil layer
+	c_initial_age_of_snow: int `unit:"http://www.wurvoc.org/vocabularies/om-1.8/percent"`, // Initial age of snow
+	c_initial_snow_water_content: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/percent"`, // Initial snow water content
+	albedo: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/one"`, // Albedo
+	c_snow_isolation_factor_a: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/one"`, // Static part of the snow isolation index calculation
+	c_snow_isolation_factor_b: f64 `unit:"http://www.wurvoc.org/vocabularies/om-1.8/one"`, // Dynamic part of the snow isolation index calculation
 }
 
 make_snow_cover_calculator :: proc(allocator := context.allocator) -> (m: Snow_Cover_Calculator) {

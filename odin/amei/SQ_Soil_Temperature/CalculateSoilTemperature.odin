@@ -11,7 +11,7 @@ import cr_math "../../support/cr_math"
 //             * ExtendedDescription: Calculation of minimum and maximum Soil temperature, Further used in shoot temperature estimate.
 //             * ShortDescription: None
 Calculate_Soil_Temperature :: struct {
-	lambda_: f64, // Latente heat of water vaporization at 20Â°C [MJ.kg-1]
+	lambda_: f64 `unit:"MJ.kg-1"`, // Latente heat of water vaporization at 20Â°C
 }
 
 make_calculate_soil_temperature :: proc(allocator := context.allocator) -> (m: Calculate_Soil_Temperature) {

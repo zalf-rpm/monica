@@ -1,15 +1,15 @@
 package monica_evapotranspiration
 
 Et_State :: struct {
-	surface_water_storage: f64, // Simulates a virtual layer that contains the surface water [mm]
-	evaporated_from_surface: f64, // evaporated_from_surface [mm]
-	actual_evaporation: f64, // actual evaporation [mm]
-	actual_transpiration: f64, // actual transpiration [mm]
-	soil_moisture: [dynamic]f64, // soil moisture array [m3/m3]
-	evaporation: [dynamic]f64, // evaporation array [mm]
-	transpiration: [dynamic]f64, // transpiration array [mm]
-	evapotranspiration: [dynamic]f64, // evapotranspiration array [mm]
-	actual_evapotranspiration: f64, // actual evapotranspiration [mm]
+	surface_water_storage: f64 `unit:"mm"`, // Simulates a virtual layer that contains the surface water
+	evaporated_from_surface: f64 `unit:"mm"`, // evaporated_from_surface
+	actual_evaporation: f64 `unit:"mm"`, // actual evaporation
+	actual_transpiration: f64 `unit:"mm"`, // actual transpiration
+	soil_moisture: [dynamic]f64 `unit:"m3/m3"`, // soil moisture array
+	evaporation: [dynamic]f64 `unit:"mm"`, // evaporation array
+	transpiration: [dynamic]f64 `unit:"mm"`, // transpiration array
+	evapotranspiration: [dynamic]f64 `unit:"mm"`, // evapotranspiration array
+	actual_evapotranspiration: f64 `unit:"mm"`, // actual evapotranspiration
 }
 
 destroy_et_state :: proc(x: ^Et_State) {

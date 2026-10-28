@@ -34,7 +34,7 @@
   "crop2ml": {
     "pycropml": {
       "url": "https://github.com/zalf-rpm/PyCrop2ML.git",
-      "commit": "5e70e285d3cbeb89368d3295af02d03a9c9aa06b"
+      "commit": "e3e0194bce6dab783544ddd3e826e8575ed21804"
     },
     "sources": {
       "SoilTemperatureModels": {
