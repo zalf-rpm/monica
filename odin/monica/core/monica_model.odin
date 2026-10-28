@@ -714,7 +714,7 @@ monica_model_step :: proc(model: ^Monica_Model, allocator := context.allocator) 
 	// first try to get CO2 concentration from climate data
 	if co2v, ok := daily_climate[.co2]; ok {
 		model.atmospheric_co2_concentration = co2v
-	} else if co2s, ok2 := model.env_params.atmospheric_co2_s[d.year(date)]; ok2 {
+	} else if co2s, ok2 := model.env_params.atmospheric_co2s[d.year(date)]; ok2 {
 		// try to get yearly values from UserEnvironmentParameters
 		model.atmospheric_co2_concentration = co2s
 		// potentially use MONICA algorithm to calculate CO2 concentration

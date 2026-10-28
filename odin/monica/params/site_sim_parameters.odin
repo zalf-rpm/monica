@@ -863,7 +863,7 @@ Environment_Parameters :: struct {
 	albedo:                      f64,
 	rcp:                         RCP,
 	atmospheric_co2:             f64,
-	atmospheric_co2_s:           map[int]f64,
+	atmospheric_co2s:           map[int]f64,
 	atmospheric_o3:              f64,
 	atmospheric_o3s:             map[int]f64,
 	wind_speed_height_m:         f64,
@@ -993,13 +993,13 @@ environment_parameters_merge :: proc(
 
 	jx.set_double_value(&ep.atmospheric_co2, j, "AtmosphericCO2")
 	if jx.is_object(jx.get(j, "AtmosphericCO2s")) {
-		clear(&ep.atmospheric_co2_s)
-		if ep.atmospheric_co2_s == nil {
-			ep.atmospheric_co2_s = make(map[int]f64, a)
+		clear(&ep.atmospheric_co2s)
+		if ep.atmospheric_co2s == nil {
+			ep.atmospheric_co2s = make(map[int]f64, a)
 		}
 		for k, v in jx.object_items(jx.get(j, "AtmosphericCO2s")) {
 			if year, ok := strconv.parse_int(k); ok {
-				ep.atmospheric_co2_s[year] = jx.number_value(v)
+				ep.atmospheric_co2s[year] = jx.number_value(v)
 			}
 		}
 	}
@@ -1043,7 +1043,7 @@ environment_parameters_to_json :: proc(ep: ^Environment_Parameters, a: Allocator
 		{"Albedo", jx.f(ep.albedo)},
 		{"rcp", jx.sl(rcp_2_str(ep.rcp))},
 		{"AtmosphericCO2", jx.f(ep.atmospheric_co2)},
-		{"AtmosphericCO2s", year_map_to_json(ep.atmospheric_co2_s, a)},
+		{"AtmosphericCO2s", year_map_to_json(ep.atmospheric_co2s, a)},
 		{"AtmosphericO3", jx.f(ep.atmospheric_o3)},
 		{"AtmosphericO3s", year_map_to_json(ep.atmospheric_o3s, a)},
 		{"WindSpeedHeight", jx.f(ep.wind_speed_height_m)},

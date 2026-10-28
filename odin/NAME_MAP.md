@@ -1183,7 +1183,7 @@ own. Only the exceptions are listed. `vm_SurfaceWaterStorage`,
 | C++ | Odin |
 | --- | --- |
 | `atmospheric_CO2` | `atmospheric_co2` |
-| `atmospheric_CO2s` | `atmospheric_co2_s` |
+| `atmospheric_CO2s` | `atmospheric_co2s` |
 | `atmospheric_O3` | `atmospheric_o3` |
 | `atmospheric_O3s` | `atmospheric_o3s` |
 
