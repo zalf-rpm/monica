@@ -71,6 +71,9 @@ OId :: struct {
 	plan:          ^rp.Path_Plan, // nil for lambda-backed oids
 	roundToDigits: int, // -1 = do not round
 	castTo:        OId_Cast,
+	// the object form's "calc" (output_calc.odin), applied per day before
+	// roundToDigits/castTo; empty for a plain read
+	calc:          []Calc_Step,
 }
 
 // C++ in-class defaults: id{-1}, layerAggOp{NONE}, timeAggOp{AVG},

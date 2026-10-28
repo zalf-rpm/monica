@@ -264,6 +264,11 @@ its data.
    `cr_math.log(x) / cr_math.log(base)`.
 2. **Allocator.** `make_*` and `init` take `allocator := context.allocator`, like the procs here.
 3. Package names come from directory names; import with an alias. No change needed.
+4. **Units as struct tags (not done yet).** Output paths print a field's `unit` tag
+   (`odin/CONVENTIONS.md` §9a). The Crop2ML XML declares a unit for every input, state and
+   output, so the generator could write it onto the struct fields (`srftemp: f64 `unit:"°C"``).
+   Until then, paths into a module's own state (`....module.Dssat_St.s.srftemp`) have no unit;
+   the hand-written `Input`/`Output` structs in `odin/monica/modules/*` are tagged.
 
 ---
 

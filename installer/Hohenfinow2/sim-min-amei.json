@@ -1,0 +1,151 @@
+{
+  "_comment": [
+    "sim-min.json plus the swappable processes (plan-crop2ml-modules.md, Odin MONICA only).",
+    "Modules.<Process>: {impl, mode} picks the implementation MONICA uses; impl 'internal'",
+    "(or no entry) is MONICA's own, mode 'integrated' is the only mode so far.",
+    "Modules.<Process>Drivers: modules run alongside on the same inputs, only reported",
+    "under modules.<process>_drivers.<name>.{output,input,module}.",
+    "SoilTemperature modules: Monica_SoilTemp, DSSAT_ST_standalone, DSSAT_EPICST_standalone,",
+    "ApsimCampbell, BiomaSurfacePartonSoilSWATC, BiomaSurfaceSWATSoilSWATC,",
+    "Simplace_Soil_Temperature, SQ_Soil_Temperature, Stics_soil_temperature.",
+    "Evapotranspiration modules: Monica_Evapotranspiration (not with FAO-56-Dual).",
+    "Output columns given by path get the field's unit; 'unit' overrides it. 'calc' applies",
+    "steps [op, operand] or [op] left to right; an operand is a number or another output.",
+    "Operators: + - * / ^ % min max < <= > >= == != (1 or 0), neg abs sqrt exp ln log10 floor ceil."
+  ],
+  "crop.json": "crop-min.json",
+  "site.json": "site-min.json",
+  "climate.csv": "climate-min.csv",
+  "climate.csv-options": {
+    "no-of-climate-file-header-lines": 2,
+    "csv-separator": ","
+  },
+  "debug?": false,
+  "include-file-base-path": "${MONICA_PARAMETERS}",
+  "Modules": {
+    "SoilTemperature": { "impl": "DSSAT_ST_standalone", "mode": "integrated" },
+    "SoilTemperatureDrivers": [
+      "Monica_SoilTemp",
+      "DSSAT_ST_standalone",
+      "ApsimCampbell"
+    ],
+    "Evapotranspiration": { "impl": "internal" },
+    "EvapotranspirationDrivers": ["Monica_Evapotranspiration"]
+  },
+  "output": {
+    "write-file?": true,
+    "path-to-output": "./",
+    "file-name": "sim-min-amei-out.csv",
+    "csv-options": {
+      "include-header-row": true,
+      "include-units-row": true,
+      "include-aggregation-rows": false,
+      "csv-separator": ","
+    },
+    "events": [
+      "daily",
+      [
+        "Date",
+        "Crop",
+        "Tavg",
+        { "path": "soil_column.soil_surface_temperature", "name": "SurfTemp" },
+        {
+          "path": "soil_column.layers.soil_temperature",
+          "name": "STemp",
+          "layers": [1, 3]
+        },
+        {
+          "path": "modules.soil_temperature_drivers.Monica_SoilTemp.output.soil_surface_temperature",
+          "name": "Monica_SoilTemp.Surf"
+        },
+        {
+          "path": "modules.soil_temperature_drivers.Monica_SoilTemp.output.layer_temperature",
+          "name": "Monica_SoilTemp.STemp",
+          "layers": [1, 3]
+        },
+        {
+          "path": "modules.soil_temperature_drivers.DSSAT_ST_standalone.output.soil_surface_temperature",
+          "name": "DSSAT.Surf"
+        },
+        {
+          "path": "modules.soil_temperature_drivers.DSSAT_ST_standalone.module.Dssat_St.s.srftemp",
+          "name": "DSSAT.srftemp"
+        },
+        {
+          "path": "modules.soil_temperature_drivers.DSSAT_ST_standalone.input.tav",
+          "name": "DSSAT.TAV"
+        },
+        {
+          "path": "modules.soil_temperature_drivers.DSSAT_ST_standalone.input.soil_moisture",
+          "name": "DSSAT.SM",
+          "layers": [1, 3]
+        },
+        {
+          "path": "modules.soil_temperature_drivers.ApsimCampbell.output.soil_surface_temperature",
+          "name": "ApsimCampbell.Surf"
+        },
+        {
+          "path": "modules.soil_temperature_drivers.DSSAT_ST_standalone.output.soil_surface_temperature",
+          "name": "DSSAT-Monica.Surf",
+          "unit": "K",
+          "calc": ["-", "modules.soil_temperature_drivers.Monica_SoilTemp.output.soil_surface_temperature"]
+        },
+        { "path": "soil_moisture.reference_evapotranspiration", "name": "ET0" },
+        {
+          "path": "modules.evapotranspiration_drivers.Monica_Evapotranspiration.output.reference_evapotranspiration",
+          "name": "MonicaET.ET0"
+        },
+        { "path": "soil_moisture.actual_evapotranspiration", "name": "ETa" },
+        {
+          "path": "modules.evapotranspiration_drivers.Monica_Evapotranspiration.output.actual_evapotranspiration",
+          "name": "MonicaET.ETa"
+        },
+        {
+          "path": "soil_moisture.actual_evapotranspiration",
+          "name": "ETa/ET0",
+          "unit": "1",
+          "round": 3,
+          "calc": ["/", "soil_moisture.reference_evapotranspiration"]
+        }
+      ],
+      "yearly",
+      [
+        "Year",
+        {
+          "path": "climate_data.#last.tmax",
+          "name": "HotDays",
+          "unit": "d",
+          "calc": [">=", 30],
+          "agg": "SUM"
+        },
+        { "path": "soil_moisture.actual_evapotranspiration", "name": "ETa", "agg": "SUM" },
+        {
+          "path": "soil_column.layers.soil_temperature",
+          "name": "STemp0-30K",
+          "unit": "K",
+          "layers": [1, 3, "AVG"],
+          "calc": ["+", 273.15],
+          "round": 2,
+          "agg": "AVG"
+        }
+      ]
+    ]
+  },
+  "UseSecondaryYields": true,
+  "NitrogenResponseOn": true,
+  "WaterDeficitResponseOn": true,
+  "EmergenceMoistureControlOn": false,
+  "EmergenceFloodingControlOn": false,
+  "UseNMinMineralFertilisingMethod": false,
+  "NMinUserParams": {
+    "min": 40,
+    "max": 120,
+    "delayInDays": 10
+  },
+  "NMinFertiliserPartition": [
+    "include-from-file",
+    "mineral-fertilisers/AN.json"
+  ],
+  "JulianDayAutomaticFertilising": 89,
+  "UseAutomaticIrrigation": false
+}

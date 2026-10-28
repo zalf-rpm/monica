@@ -59,6 +59,50 @@ ACD :: enum int {
 	last        = 33,
 }
 
+// Not in the C++: the unit of each element of a day's climate data, for
+// outputs that read it by path (climate_data.#last.tavg). The enum's
+// counterpart of a field's `unit` tag (support/reflectpath); an enumerated
+// array, so a new element doesn't compile without one. From the climate
+// service's schema (mas_capnproto_schemas climate.capnp, Element), per day,
+// except where MONICA reads an element differently (o3, vaporpress).
+@(rodata)
+ACD_UNITS := [ACD]string {
+	.day         = "",
+	.month       = "",
+	.year        = "",
+	.tmin        = "°C",
+	.tavg        = "°C",
+	.tmax        = "°C",
+	.precip      = "mm",
+	.precipOrig  = "mm",
+	.globrad     = "MJ m-2",
+	.wind        = "m s-1",
+	.sunhours    = "h",
+	.cloudamount = "%",
+	.relhumid    = "%",
+	.airpress    = "hPa",
+	.vaporpress  = "kPa", // as MONICA's evapotranspiration reads it
+	.isoDate     = "",
+	.deDate      = "",
+	.co2         = "ppm",
+	.o3          = "ppb", // atmospheric_o3_concentration's
+	.et0         = "mm",
+	.skip        = "",
+	.patternDate = "",
+	.x1          = "",
+	.x2          = "",
+	.x3          = "",
+	.x4          = "",
+	.x5          = "",
+	.x6          = "",
+	.x7          = "",
+	.x8          = "",
+	.x9          = "",
+	.x10         = "",
+	.daylength   = "h",
+	.last        = "",
+}
+
 // C++: unsigned int Climate::availableClimateDataSize()
 available_climate_data_size :: proc() -> int {
 	return int(ACD.last) + 1

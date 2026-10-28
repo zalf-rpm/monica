@@ -21,56 +21,56 @@ Allocator :: runtime.Allocator
 // to what their module expects. Layers are top down, one per MONICA layer.
 Input :: struct {
 	// site and parameters, constant over a run
-	latitude:                f64, // [deg]
-	albedo:                  f64, // [0-1] MONICA's environment albedo
-	tav:                     f64, // annual average air temperature [°C]
-	tamp:                    f64, // amplitude of the monthly average air temperatures [°C]
-	time_step:               f64, // [d]
-	kc_factor_bare_soil:     f64, // MONICA's soil moisture parameter KcFactor
+	latitude:                f64 `unit:"deg"`,
+	albedo:                  f64 `unit:"0-1"`, // MONICA's environment albedo
+	tav:                     f64 `unit:"°C"`, // annual average air temperature
+	tamp:                    f64 `unit:"°C"`, // amplitude of the monthly average air temperatures
+	time_step:               f64 `unit:"d"`,
+	kc_factor_bare_soil:     f64 `unit:"1"`, // MONICA's soil moisture parameter KcFactor
 	params:                  p.Soil_Temperature_Module_Parameters, // MONICA's own
-	layer_thickness:         []f64, // [m]
-	bulk_density:            []f64, // [kg m-3]
-	saturation:              []f64, // [m3 m-3]
-	organic_matter:          []f64, // [kg kg-1]
-	organic_carbon:          []f64, // [kg kg-1]
-	sand:                    []f64, // [kg kg-1]
-	clay:                    []f64, // [kg kg-1]
-	silt:                    []f64, // [kg kg-1]
-	stones:                  []f64, // [m3 m-3]
-	field_capacity:          []f64, // [m3 m-3]
-	permanent_wilting_point: []f64, // [m3 m-3]
+	layer_thickness:         []f64 `unit:"m"`,
+	bulk_density:            []f64 `unit:"kg m-3"`,
+	saturation:              []f64 `unit:"m3 m-3"`,
+	organic_matter:          []f64 `unit:"kg kg-1"`,
+	organic_carbon:          []f64 `unit:"kg kg-1"`,
+	sand:                    []f64 `unit:"kg kg-1"`,
+	clay:                    []f64 `unit:"kg kg-1"`,
+	silt:                    []f64 `unit:"kg kg-1"`,
+	stones:                  []f64 `unit:"m3 m-3"`,
+	field_capacity:          []f64 `unit:"m3 m-3"`,
+	permanent_wilting_point: []f64 `unit:"m3 m-3"`,
 
 	using daily:             Daily,
-	soil_moisture:           []f64, // per layer, daily [m3 m-3]
+	soil_moisture:           []f64 `unit:"m3 m-3"`, // per layer, daily
 }
 
 // The daily part of Input. MONICA's values are those before the day's soil
 // moisture step (evaporation, ET0, snow: the previous day's), as in the C++
 // AMEI adapters.
 Daily :: struct {
-	julian_day:             int, // day of the year, 1-366
-	tmin, tavg, tmax:       f64, // [°C]
-	globrad:                f64, // [MJ m-2 d-1]
-	precip:                 f64, // [mm]
-	irrigation:             f64, // [mm]
-	wind:                   f64, // [m s-1]
-	air_pressure:           f64, // as in the climate data, 1010 if it has none (C++ AMEI adapter)
-	day_length:             f64, // [h] the climate's, or the astronomic one
-	et0:                    f64, // reference evapotranspiration [mm]
-	kc_factor:              f64, // MONICA's current Kc (the crop's, or KcFactor)
-	actual_evaporation:     f64, // [mm]
-	soil_coverage:          f64, // [0-1]
-	snow_depth:             f64, // [mm]
-	snow_water_equivalent:  f64, // [mm]
-	temperature_under_snow: f64, // [°C]
-	above_ground_biomass:   f64, // [kg ha-1]
-	crop_height:            f64, // [m]
-	lai:                    f64, // [m2 m-2]
+	julian_day:             int `unit:"d"`, // day of the year, 1-366
+	tmin, tavg, tmax:       f64 `unit:"°C"`,
+	globrad:                f64 `unit:"MJ m-2 d-1"`,
+	precip:                 f64 `unit:"mm"`,
+	irrigation:             f64 `unit:"mm"`,
+	wind:                   f64 `unit:"m s-1"`,
+	air_pressure:           f64 `unit:"hPa"`, // as in the climate data, 1010 if it has none (C++ AMEI adapter)
+	day_length:             f64 `unit:"h"`, // the climate's, or the astronomic one
+	et0:                    f64 `unit:"mm"`, // reference evapotranspiration
+	kc_factor:              f64 `unit:"1"`, // MONICA's current Kc (the crop's, or KcFactor)
+	actual_evaporation:     f64 `unit:"mm"`,
+	soil_coverage:          f64 `unit:"0-1"`,
+	snow_depth:             f64 `unit:"mm"`,
+	snow_water_equivalent:  f64 `unit:"mm"`,
+	temperature_under_snow: f64 `unit:"°C"`,
+	above_ground_biomass:   f64 `unit:"kg ha-1"`,
+	crop_height:            f64 `unit:"m"`,
+	lai:                    f64 `unit:"m2 m-2"`,
 }
 
 Output :: struct {
-	soil_surface_temperature: f64, // [°C]
-	layer_temperature:        []f64, // per MONICA layer [°C]
+	soil_surface_temperature: f64 `unit:"°C"`,
+	layer_temperature:        []f64 `unit:"°C"`, // per MONICA layer
 }
 
 make_output :: proc(no_of_layers: int, allocator := context.allocator) -> Output {

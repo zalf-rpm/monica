@@ -54,18 +54,18 @@ Monica_Model :: struct {
 	current_crop_module:             ^Crop_Module, // crop code for possibly planted crop; nil if none
 
 	// store applied fertiliser during one production process
-	sum_fertiliser:                  f64, // mineral N
-	sum_org_fertiliser:              f64, // organic N
+	sum_fertiliser:                  f64 `unit:"kgN ha-1"`, // mineral N
+	sum_org_fertiliser:              f64 `unit:"kgN ha-1"`, // organic N
 
 	// stores the daily sum of applied fertiliser
-	daily_sum_fertiliser:            f64, // mineral N
-	daily_sum_org_fertiliser:        f64, // organic N
+	daily_sum_fertiliser:            f64 `unit:"kgN ha-1"`, // mineral N
+	daily_sum_org_fertiliser:        f64 `unit:"kgN ha-1"`, // organic N
 	daily_sum_organic_fertilizer_dm: f64,
 	sum_organic_fertilizer_dm:       f64,
-	humus_balance_carry_over:        f64,
-	daily_sum_irrigation_water:      f64,
-	opt_carbon_exported_residues:    f64,
-	opt_carbon_returned_residues:    f64,
+	humus_balance_carry_over:        f64 `unit:"Heq-NRW ha-1"`,
+	daily_sum_irrigation_water:      f64 `unit:"mm"`,
+	opt_carbon_exported_residues:    f64 `unit:"kgDM ha-1"`,
+	opt_carbon_returned_residues:    f64 `unit:"kgDM ha-1"`,
 	current_step_date:               d.Date,
 	climate_data:                    [dynamic]map[clim.ACD]f64,
 	current_events:                  map[string]bool,
@@ -76,10 +76,10 @@ Monica_Model :: struct {
 	accu_water_stress:               f64,
 	accu_heat_stress:                f64,
 	accu_oxygen_stress:              f64,
-	atmospheric_co2_concentration:   f64,
-	atmospheric_o3_concentration:    f64,
-	groundwater_depth_m:             f64,
-	cultivation_method_count:        int,
+	atmospheric_co2_concentration:   f64 `unit:"ppm"`,
+	atmospheric_o3_concentration:    f64 `unit:"ppb"`,
+	groundwater_depth_m:             f64 `unit:"m"`,
+	cultivation_method_count:        int `unit:"1"`,
 	modules:                         Modules, // NOTE(deviation): modules run alongside, see soil_temperature_impl.odin
 }
 

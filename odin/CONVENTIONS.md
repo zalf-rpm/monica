@@ -267,3 +267,28 @@ sim.json asks for, and `test_every_alias_is_a_cpp_output_name` fails if one stop
 pointer or an unset `Maybe` yields *missing*, which the output layer turns into `0.0` - that is
 the C++ `... ? ... : 0.0` ternary, not a violation of §5; §5 still governs everything that reads
 a `Maybe` in model code.
+
+## 9a. Units: a `unit` tag on the field
+
+A field's unit is a struct tag on its declaration, so it changes together with the field:
+
+```odin
+actual_evaporation: f64 `unit:"mm"`,
+layer_temperature:  []f64 `unit:"°C"`, // each element
+```
+
+`support/reflectpath` reads the tag of the last field a path names, once when the path is
+compiled, and the output prints it in the units row (`output."csv-options"."include-units-row"`).
+A day's climate data is a map, not fields: its units are `climate.ACD_UNITS`, next to the `ACD`
+enum. Write units like MONICA's output table (`"kgN ha-1"`, `"m3 m-3"`, `"mm"` for a day's amount),
+`"0-1"` for fractions, `"1"` for other dimensionless numbers, and `unit:""` for what is no
+quantity (flags, categories). Don't repeat the unit in the comment.
+
+Legacy output names keep the unit of the output table (`build_output.odin`, `output_paths.odin`),
+so existing outputs stay byte-identical; some of those are wrong (e.g. `RootWaUptak` in
+`KgN ha-1`), the tags aren't. `tests/output_units_calc_test.odin` checks that every field behind a
+legacy alias and every field of the modules' `Input`/`Output` structs has a tag. Not tagged yet:
+most fields outside those, and the generated Crop2ML packages (`plan-crop2ml-modules.md` §2).
+
+An object-form output column may override the unit (`"unit"`) and transform the value
+(`"calc"`, `monica/io/output_calc.odin`); a `"calc"` without `"unit"` prints no unit.

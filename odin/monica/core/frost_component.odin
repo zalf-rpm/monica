@@ -9,10 +9,10 @@ import "../../support/cr_math"
 // C++: struct monica::FrostComponent
 Frost_Component :: struct {
 	soil_column:                          ^Soil_Column,
-	frost_depth:                          f64,
+	frost_depth:                          f64 `unit:"m"`,
 	accumulated_frost_depth:              f64,
 	negative_degree_days:                 f64, // negative degree-days under snow
-	thaw_depth:                           f64,
+	thaw_depth:                           f64 `unit:"m"`,
 	frost_days:                           int,
 	lambda_redux:                         [dynamic]f64, // reduction factor for Lambda []
 	temperature_under_snow:               f64,

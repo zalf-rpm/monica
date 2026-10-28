@@ -184,8 +184,8 @@ Voc_Emissions :: struct {
 	speciesId_2_isoprene_emission:    map[int]f64, // [umol m-2Ground ts-1] isoprene emissions per timestep and plant
 	speciesId_2_monoterpene_emission: map[int]f64, // [umol m-2Ground ts-1] monoterpene emissions per timestep and plant
 
-	isoprene_emission:    f64, // [umol m-2Ground ts-1] isoprene emissions per timestep
-	monoterpene_emission: f64, // [umol m-2Ground ts-1] monoterpene emissions per timestep
+	isoprene_emission:    f64 `unit:"umol m-2Ground d-1"`, // [umol m-2Ground ts-1] isoprene emissions per timestep
+	monoterpene_emission: f64 `unit:"umol m-2Ground d-1"`, // [umol m-2Ground ts-1] monoterpene emissions per timestep
 }
 
 // C++: Voc::Emissions::operator+=(const Emissions&)

@@ -45,6 +45,7 @@ import rp "../../support/reflectpath"
 import tl "../../support/tools"
 import core "../core"
 import p "../params"
+import "core:fmt"
 import "core:strings"
 
 // C++: struct monica::OutputMetadata
@@ -402,14 +403,20 @@ oid_split2 :: proc(name: string, allocator: jx.Allocator) -> (n0: string, n1: st
 
 // Not in the C++: the object form of an output spec.
 //
-// A raw path carries no unit and no display name, and the positional slots of
-// the array form ([name, layers, timeAgg]) are all taken - so metadata needs
-// somewhere to live:
+// A raw path carries no display name, and the positional slots of the array
+// form ([name, layers, timeAgg]) are all taken - so metadata needs somewhere
+// to live:
 //
 //   { "path": "soilMoisture.actual_evaporation", "name": "ActEvap",
 //     "unit": "mm", "round": 3 }
 //   { "path": "soilColumn.layers.vs_SoilNH4", "unit": "kgN m-3", "round": 6,
 //     "layers": [1, 6, "AVG"], "agg": "SUM" }
+//   { "path": "soil_moisture.actual_evapotranspiration", "name": "ETa_m",
+//     "unit": "m", "calc": ["/", 1000] }
+//
+// "unit" defaults to the unit of the path's field (its `unit` tag, see
+// reflectpath), except with a "calc" (output_calc.odin), which may change
+// it: then the column has no unit unless "unit" gives one.
 //
 // Purely additive: parseOutputIds already ignores anything that is not a
 // string or an array.
@@ -436,7 +443,6 @@ oid_from_object :: proc(idj: jx.Value, allocator: jx.Allocator) -> (oid: OId, ok
 	} else {
 		oid.name = oid.path
 	}
-	oid.unit = jx.string_value_of(jx.get(idj, "unit"))
 	if roundj := jx.get(idj, "round"); jx.is_number(roundj) {
 		oid.roundToDigits = jx.int_value_of(roundj)
 	}
@@ -451,6 +457,16 @@ oid_from_object :: proc(idj: jx.Value, allocator: jx.Allocator) -> (oid: OId, ok
 	}
 	if op := oid_aggregation_op([]jx.Value{jx.get(idj, "agg")}, 0); op != .UNDEFINED_OP {
 		oid.timeAggOp = op
+	}
+	if calcj := jx.get(idj, "calc"); !jx.is_null(calcj) {
+		if msg := oid_parse_calc(&oid, calcj, allocator); msg != "" {
+			fmt.eprintfln("parse_output_ids: ignoring output %q - %s", path, msg)
+			return oid, false
+		}
+		oid.unit = ""
+	}
+	if unitj := jx.get(idj, "unit"); jx.is_string(unitj) {
+		oid.unit = jx.string_value_of(unitj)
 	}
 	oid.jsonInput = jx.dump(idj, allocator)
 	return oid, true

@@ -51,6 +51,18 @@
 //     order. Keyed access only - the same reason trace.odin refuses to walk
 //     maps.
 //   - #len must be the last segment.
+//
+// Units: a field's unit is its `unit` struct tag, on the declaration itself,
+//
+//   actual_evaporation: f64 `unit:"mm"`,
+//
+// so that it changes together with the field. A plan carries the tag of the
+// last field its path names: an index, an open dimension or a map key after
+// it keep that unit (the elements of `layer_temperature: []f64 `unit:"°C"``
+// are °C), and #len is "1". Read once in `compile`, never in `resolve`.
+// Conventions for the values: plain SI-like text as in MONICA's output table
+// ("kgN ha-1", "m3 m-3"), "0-1" for fractions, "1" for other dimensionless
+// numbers, "" for what has no unit (categories, ids, flags).
 package reflectpath
 
 import "base:intrinsics"
@@ -96,6 +108,7 @@ Step :: struct {
 	// and so callers can introspect a plan without re-walking the types.
 	type:       typeid,
 	key:        []byte, // MAP_KEY: the key's raw bytes, encoded at compile time
+	key_type:   typeid, // MAP_KEY
 	map_info:   ^runtime.Map_Info, // MAP_KEY
 	name:       string, // diagnostics only; points into Path_Plan.src
 }
@@ -106,6 +119,11 @@ Path_Plan :: struct {
 	leaf:        typeid,
 	open_step:   int, // index of the OPEN step, -1 if the path is scalar
 	src:         string, // the path, owned by the plan
+	// The `unit` struct tag of the last field the path names (see "Units"
+	// below), "" if it has none. `has_unit` tells an explicit `unit:""` from
+	// no tag at all.
+	unit:        string,
+	has_unit:    bool,
 	// Backing store for a #len result, so `resolve` can hand back an `any`
 	// that points at real memory rather than at one of its own locals. This
 	// is why resolve takes ^Path_Plan and not Path_Plan.
@@ -203,6 +221,8 @@ compile :: proc(
 						},
 					)
 					cur = typeid_of(int)
+					// a count, whatever the elements' unit
+					plan.unit, plan.has_unit = "1", true
 					terminated = true
 					continue seg_loop
 				case seg == "#last", seg == "#first":
@@ -279,6 +299,7 @@ compile :: proc(
 					&steps,
 					Step{kind = .FIELD, offset = f.offset, type = f.type.id, name = seg},
 				)
+				plan.unit, plan.has_unit = reflect.struct_tag_lookup(f.tag, "unit")
 				cur = f.type.id
 				continue seg_loop
 
@@ -302,6 +323,7 @@ compile :: proc(
 					Step {
 						kind = .MAP_KEY,
 						key = key,
+						key_type = info.key.id,
 						map_info = info.map_info,
 						type = info.value.id,
 						name = seg,

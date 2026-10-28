@@ -13,19 +13,19 @@ import "../../support/cr_math"
 // C++: struct monica::SnowComponent
 Snow_Component :: struct {
 	soil_column:                             ^Soil_Column,
-	snow_density:                            f64, // [kg dm-3]
-	snow_depth:                              f64, // [mm]
-	frozen_water_in_snow:                    f64, // [mm]
-	liquid_water_in_snow:                    f64, // [mm]
-	water_to_infiltrate:                     f64, // [mm]
-	max_snow_depth:                          f64, // [mm]
-	accumulated_snow_depth:                  f64, // [mm]
-	snowmelt_temperature:                    f64,
+	snow_density:                            f64 `unit:"kg dm-3"`,
+	snow_depth:                              f64 `unit:"mm"`,
+	frozen_water_in_snow:                    f64 `unit:"mm"`,
+	liquid_water_in_snow:                    f64 `unit:"mm"`,
+	water_to_infiltrate:                     f64 `unit:"mm"`,
+	max_snow_depth:                          f64 `unit:"mm"`,
+	accumulated_snow_depth:                  f64 `unit:"mm"`,
+	snowmelt_temperature:                    f64 `unit:"°C"`,
 	snow_accumulation_threshold_temperature: f64,
 	temperature_limit_for_liquid_water:      f64,
 	correction_rain:                         f64,
 	correction_snow:                         f64,
-	refreeze_temperature:                    f64,
+	refreeze_temperature:                    f64 `unit:"°C"`,
 	refreeze_p1:                             f64,
 	refreeze_p2:                             f64,
 	new_snow_density_min:                    f64,

@@ -20,11 +20,11 @@ Soil_Transport :: struct {
 	site_params:          ^p.Site_Parameters,
 	env_params:           ^p.Environment_Parameters,
 	crop_mod_params:      ^p.Crop_Module_Parameters,
-	convection:           [dynamic]f64,
+	convection:           [dynamic]f64 `unit:"kgN m-3 d-1"`,
 	diffusion_coeff:      [dynamic]f64,
 	dispersion:           [dynamic]f64,
 	dispersion_coeff:     [dynamic]f64,
-	leaching_at_boundary: f64,
+	leaching_at_boundary: f64 `unit:"kgN ha-1"`,
 	n_uptake_from_layer:  [dynamic]f64,
 	pore_water_velocity:  [dynamic]f64,
 	// vs_SoilMineralNContent: [dynamic]f64, // never resized - dead field in the C++ too (only touched by dropped (de)serialize)
@@ -32,7 +32,7 @@ Soil_Transport :: struct {
 	soil_no3_aq:          [dynamic]f64,
 	time_step:            f64,
 	total_dispersion:     [dynamic]f64,
-	percolation_rate:     [dynamic]f64,
+	percolation_rate:     [dynamic]f64 `unit:"mm d-1"`,
 	crop_module:          ^Crop_Module,
 }
 

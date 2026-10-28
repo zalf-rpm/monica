@@ -12,6 +12,7 @@
 //     than forked.
 package monica_io
 
+import clim "../../support/climate"
 import jx "../../support/jsonx"
 import rp "../../support/reflectpath"
 import tl "../../support/tools"
@@ -293,7 +294,30 @@ oid_bind_path :: proc(
 	p^ = plan
 	oid.path = p.src
 	oid.plan = p
+	oid.unit = path_unit(p)
 	return rp.Compile_Error{}
+}
+
+// The unit of what `plan` reads: the `unit` tag of its last field
+// (reflectpath's "Units"), or for a day's climate data
+// (climate_data.#last.tavg), whose values are map entries rather than
+// fields, the element's from climate.ACD_UNITS.
+@(private)
+path_unit :: proc(plan: ^rp.Path_Plan) -> string {
+	#reverse for s in plan.steps {
+		#partial switch s.kind {
+		case .FIELD:
+			return plan.unit
+		case .MAP_KEY:
+			if s.key_type == typeid_of(clim.ACD) && len(s.key) == size_of(clim.ACD) {
+				acd := (^clim.ACD)(raw_data(s.key))^
+				if acd >= min(clim.ACD) && acd <= max(clim.ACD) {
+					return clim.ACD_UNITS[acd]
+				}
+			}
+		}
+	}
+	return plan.unit
 }
 
 // The daily read for a reflection-backed oid - the counterpart of
@@ -338,6 +362,12 @@ resolve_oid_value :: proc(
 // Is there any way to read this oid?
 @(require_results)
 oid_has_getter :: proc(oid: OId) -> bool {
+	if len(oid.calc) > 0 {
+		// its operands were checked when the calc was parsed
+		base := oid
+		base.calc = nil
+		return oid_has_getter(base)
+	}
 	if oid.plan != nil {
 		return true
 	}
@@ -354,6 +384,9 @@ oid_get_value :: proc(
 	jx.Value,
 	bool,
 ) {
+	if len(oid.calc) > 0 {
+		return calc_oid_value(model, oid, allocator)
+	}
 	if oid.plan != nil {
 		return resolve_oid_value(model, oid, allocator), true
 	}
@@ -372,6 +405,9 @@ oid_get_value :: proc(
 // writable number now is.
 @(require_results)
 oid_has_setter :: proc(oid: OId) -> bool {
+	if len(oid.calc) > 0 {
+		return false // a computed value, not a field
+	}
 	if oid.plan != nil && rp.is_writable(oid.plan) {
 		return true
 	}
@@ -398,6 +434,9 @@ oid_set_value :: proc(
 	value: jx.Value,
 	allocator := context.allocator,
 ) -> bool {
+	if len(oid.calc) > 0 {
+		return false
+	}
 	if oid.plan != nil && rp.is_writable(oid.plan) {
 		if oid.plan.open_step >= 0 {
 			// the layer/organ range and the scalar-fills-every-layer rule are

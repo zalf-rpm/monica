@@ -26,64 +26,64 @@ Allocator :: runtime.Allocator
 // down, one per MONICA layer.
 Input :: struct {
 	// site and parameters, constant over a run
-	latitude:                         f64, // [deg]
-	height_nn:                        f64, // [m]
-	reference_albedo:                 f64, // MONICA's crop module parameter
-	evaporation_zeta:                 f64, // MONICA's soil moisture parameters ...
-	maximum_evaporation_impact_depth: f64, // [layers]
-	xsa_critical_soil_moisture:       f64,
-	stomata_conductance_alpha:        f64, // MONICA's crop module parameters
-	saturation_beta:                  f64,
-	layer_thickness:                  []f64, // [m]
+	latitude:                         f64 `unit:"deg"`,
+	height_nn:                        f64 `unit:"m"`,
+	reference_albedo:                 f64 `unit:"0-1"`, // MONICA's crop module parameter
+	evaporation_zeta:                 f64 `unit:"1"`, // MONICA's soil moisture parameters ...
+	maximum_evaporation_impact_depth: f64 `unit:"layer#"`,
+	xsa_critical_soil_moisture:       f64 `unit:"1"`,
+	stomata_conductance_alpha:        f64 `unit:"1"`, // MONICA's crop module parameters
+	saturation_beta:                  f64 `unit:"1"`,
+	layer_thickness:                  []f64 `unit:"m"`,
 	// daily too: MONICA's own reads them from the soil column every day, and
 	// a SetValue workstep can change them
-	permanent_wilting_point:          []f64, // [m3 m-3]
-	field_capacity:                   []f64, // [m3 m-3]
+	permanent_wilting_point:          []f64 `unit:"m3 m-3"`,
+	field_capacity:                   []f64 `unit:"m3 m-3"`,
 
 	using daily:                      Daily,
-	soil_moisture:                    []f64, // per layer, before the step [m3 m-3]
-	crop_transpiration:               []f64, // per layer, the crop's [mm]
+	soil_moisture:                    []f64 `unit:"m3 m-3"`, // per layer, before the step
+	crop_transpiration:               []f64 `unit:"mm"`, // per layer, the crop's
 }
 
 // The daily part of Input: what MONICA's own evapotranspiration has when it
 // runs.
 Daily :: struct {
-	julian_day:                         int,
-	tmin, tavg, tmax:                   f64, // [°C]
-	globrad:                            f64, // [MJ m-2 d-1]
-	relative_humidity:                  f64, // [0-1], <= 0 without one in the climate data
-	wind:                               f64, // [m s-1]
-	wind_speed_height:                  f64, // [m]
-	has_external_et0:                   bool,
-	external_et0:                       f64, // the climate data's ET0 [mm]
-	has_external_vapor_pressure:        bool,
-	external_vapor_pressure:            f64, // the climate data's [kPa]
-	co2:                                f64, // [ppm]
-	developmental_stage:                int, // the crop's, 0 without one
-	carboxylation_pathway:              int, // the crop's
-	crop_remaining_evapotranspiration:  f64, // [mm]
-	crop_evaporated_from_intercept:     f64, // [mm]
-	gross_photosynthesis_reference_mol: f64,
-	soil_coverage:                      f64, // [0-1]
-	kc_factor:                          f64, // MONICA's current Kc
-	snow_depth:                         f64, // [mm]
-	surface_water_storage:              f64, // before the step [mm]
+	julian_day:                         int `unit:"d"`,
+	tmin, tavg, tmax:                   f64 `unit:"°C"`,
+	globrad:                            f64 `unit:"MJ m-2 d-1"`,
+	relative_humidity:                  f64 `unit:"0-1"`, // [0-1], <= 0 without one in the climate data
+	wind:                               f64 `unit:"m s-1"`,
+	wind_speed_height:                  f64 `unit:"m"`,
+	has_external_et0:                   bool `unit:""`,
+	external_et0:                       f64 `unit:"mm"`, // the climate data's ET0
+	has_external_vapor_pressure:        bool `unit:""`,
+	external_vapor_pressure:            f64 `unit:"kPa"`, // the climate data's
+	co2:                                f64 `unit:"ppm"`,
+	developmental_stage:                int `unit:""`, // the crop's, 0 without one
+	carboxylation_pathway:              int `unit:""`, // the crop's
+	crop_remaining_evapotranspiration:  f64 `unit:"mm"`,
+	crop_evaporated_from_intercept:     f64 `unit:"mm"`,
+	gross_photosynthesis_reference_mol: f64 `unit:"µmol m-2 s-1"`,
+	soil_coverage:                      f64 `unit:"0-1"`,
+	kc_factor:                          f64 `unit:"1"`, // MONICA's current Kc
+	snow_depth:                         f64 `unit:"mm"`,
+	surface_water_storage:              f64 `unit:"mm"`, // before the step
 }
 
 // What MONICA's own evapotranspiration produces.
 Output :: struct {
-	reference_evapotranspiration: f64, // [mm]
-	potential_evapotranspiration: f64, // [mm]
-	net_radiation:                f64, // [MJ m-2]
-	evaporated_from_surface:      f64, // [mm]
-	actual_evaporation:           f64, // [mm]
-	actual_transpiration:         f64, // [mm]
-	actual_evapotranspiration:    f64, // [mm]
-	surface_water_storage:        f64, // after the step [mm]
-	soil_moisture:                []f64, // per layer, after the step [m3 m-3]
-	evaporation:                  []f64, // per layer [mm]
-	transpiration:                []f64, // per layer [mm]
-	evapotranspiration:           []f64, // per layer [mm]
+	reference_evapotranspiration: f64 `unit:"mm"`,
+	potential_evapotranspiration: f64 `unit:"mm"`,
+	net_radiation:                f64 `unit:"MJ m-2"`,
+	evaporated_from_surface:      f64 `unit:"mm"`,
+	actual_evaporation:           f64 `unit:"mm"`,
+	actual_transpiration:         f64 `unit:"mm"`,
+	actual_evapotranspiration:    f64 `unit:"mm"`,
+	surface_water_storage:        f64 `unit:"mm"`, // after the step
+	soil_moisture:                []f64 `unit:"m3 m-3"`, // per layer, after the step
+	evaporation:                  []f64 `unit:"mm"`, // per layer
+	transpiration:                []f64 `unit:"mm"`, // per layer
+	evapotranspiration:           []f64 `unit:"mm"`, // per layer
 }
 
 make_output :: proc(no_of_layers: int, allocator := context.allocator) -> Output {

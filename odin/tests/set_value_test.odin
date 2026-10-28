@@ -111,18 +111,17 @@ test_apply_primitive_calc_op_array_array_is_boolean :: proc(t: ^testing.T) {
 	testing.expect_value(t, len(jx.array_items(v)), 1)
 }
 
-// One proc on purpose: build_primitive_calc_expression reaches
-// parse_output_ids, which lazily builds build_output_table's and the alias
-// table's package-global maps. `odin test` runs test procs on 48 threads, so
-// two procs racing that one-time init is a real data race - keeping every
-// caller in a single proc keeps it single-threaded without adding a mutex to
-// production code that monica-run only ever calls single-threaded.
+// build_primitive_calc_expression reaches parse_output_ids, which lazily
+// builds build_output_table's and the alias table's package-global maps.
+// `odin test` runs test procs on 48 threads, so two procs racing that
+// one-time init is a real data race - every test that parses outputs holds
+// output_tables_lock (output_units_calc_test.odin) instead of adding a mutex
+// to production code that monica-run only ever calls single-threaded.
 @(test)
 test_build_primitive_calc_expression :: proc(t: ^testing.T) {
 	ta := context.temp_allocator
-	// the two globals are built lazily on first use and would otherwise be
-	// reported as a leak by the test runner's tracking allocator
-	defer mio.destroy_output_tables()
+	lock_output_tables()
+	defer unlock_output_tables()
 
 	// oid op number - the common read-modify-write shape
 	e := mio.build_primitive_calc_expression([]jx.Value{jx.sl("Kc"), jx.sl("*"), jx.f(2)}, ta)

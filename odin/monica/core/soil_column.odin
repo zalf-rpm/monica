@@ -22,8 +22,8 @@ import "../../support/cr_math"
 
 // C++: struct monica::AOM_Properties
 Aom_Properties :: struct {
-	aom_slow:                      f64, // C in slowly decomposing AOM pool [kgC m-3]
-	aom_fast:                      f64, // C in rapidly decomposing AOM pool [kgC m-3]
+	aom_slow:                      f64 `unit:"kgC m-3"`, // C in slowly decomposing AOM pool
+	aom_fast:                      f64 `unit:"kgC m-3"`, // C in rapidly decomposing AOM pool
 	aom_slow_dec_rate_to_smb_slow: f64,
 	aom_slow_dec_rate_to_smb_fast: f64,
 	aom_fast_dec_rate_to_smb_slow: f64,
@@ -34,8 +34,8 @@ Aom_Properties :: struct {
 	aom_fast_dec_coeff_standard:   f64,
 	part_aom_slow_to_smb_slow:     f64,
 	part_aom_slow_to_smb_fast:     f64,
-	cn_ratio_aom_slow:             f64,
-	cn_ratio_aom_fast:             f64,
+	cn_ratio_aom_slow:             f64 `unit:"1"`,
+	cn_ratio_aom_fast:             f64 `unit:"1"`,
 	days_after_application:        int,
 	aom_dry_matter_content:        f64,
 	aom_nh4_content:               f64,
@@ -59,39 +59,39 @@ make_aom_properties :: proc() -> Aom_Properties {
 // C++: struct monica::SoilLayer (formerly composed via `Soil::SoilParameters
 // sps;`, flattened directly - see the C++ comment at soilcolumn.h:139)
 Soil_Layer :: struct {
-	layer_thickness_m:        f64, // [m]
-	soil_water_flux:          f64, // water flux at the upper boundary [l m-2]
+	layer_thickness_m:        f64 `unit:"m"`,
+	soil_water_flux:          f64 `unit:"mm"`, // water flux at the upper boundary [l m-2]
 	vo_AOM_Pool:              [dynamic]Aom_Properties,
-	som_slow:                 f64, // [kg C m-3]
-	som_fast:                 f64, // [kg C m-3]
-	smb_slow:                 f64, // [kg C m-3]
-	smb_fast:                 f64, // [kg C m-3]
-	soil_carbamid:            f64, // [kg Carbamide-N m-3]
-	soil_nh4:                 f64, // [kg NH4-N m-3]
-	soil_no2:                 f64, // [kg NO2-N m-3]
-	soil_no3:                 f64, // [kg NO3-N m-3]
+	som_slow:                 f64 `unit:"kgC m-3"`,
+	som_fast:                 f64 `unit:"kgC m-3"`,
+	smb_slow:                 f64 `unit:"kgC m-3"`,
+	smb_fast:                 f64 `unit:"kgC m-3"`,
+	soil_carbamid:            f64 `unit:"kgN m-3"`,
+	soil_nh4:                 f64 `unit:"kgN m-3"`,
+	soil_no2:                 f64 `unit:"kgN m-3"`,
+	soil_no3:                 f64 `unit:"kgN m-3"`,
 	soil_frozen:              bool,
-	soil_sand_content:        f64,
-	soil_clay_content:        f64,
-	soil_ph:                  f64,
-	soil_stone_content:       f64,
-	lambda:                   f64,
-	field_capacity:           f64,
-	saturation:               f64,
-	permanent_wilting_point:  f64,
+	soil_sand_content:        f64 `unit:"kg kg-1"`,
+	soil_clay_content:        f64 `unit:"kg kg-1"`,
+	soil_ph:                  f64 `unit:"1"`,
+	soil_stone_content:       f64 `unit:"m3 m-3"`,
+	lambda:                   f64 `unit:"1"`,
+	field_capacity:           f64 `unit:"m3 m-3"`,
+	saturation:               f64 `unit:"m3 m-3"`,
+	permanent_wilting_point:  f64 `unit:"m3 m-3"`,
 	soil_texture:             string,
-	soil_ammonium:            f64,
-	soil_nitrate:             f64,
+	soil_ammonium:            f64 `unit:"kgN m-3"`,
+	soil_nitrate:             f64 `unit:"kgN m-3"`,
 	soil_cn_ratio:            f64,
 	soil_moisture_percent_fc: f64,
 	// Raw/override values; -1 means "unset" and the resolved value has to be
 	// computed via the corresponding soil_xyz() proc below.
-	soil_raw_density:         f64,
-	soil_bulk_density:        f64,
-	soil_organic_carbon:      f64,
-	soil_organic_matter:      f64,
-	soil_moisture_m3:         f64, // [m3 m-3]
-	soil_temperature:         f64, // [degC]
+	soil_raw_density:         f64 `unit:"kg m-3"`,
+	soil_bulk_density:        f64 `unit:"kg m-3"`,
+	soil_organic_carbon:      f64 `unit:"kg kg-1"`,
+	soil_organic_matter:      f64 `unit:"kg kg-1"`,
+	soil_moisture_m3:         f64 `unit:"m3 m-3"`,
+	soil_temperature:         f64 `unit:"°C"`,
 }
 
 // C++ in-class initialisers
@@ -244,12 +244,12 @@ Delayed_N_Min_Application_Params :: struct {
 // C++: struct monica::SoilColumn
 Soil_Column :: struct {
 	layers:                      [dynamic]Soil_Layer,
-	surface_water_storage:       f64, // [mm]
+	surface_water_storage:       f64 `unit:"mm"`,
 	// vs_InterceptionStorage:    f64, // [mm]
 	groundwater_table_layer_idx: int,
-	flux_at_lower_boundary:      f64,
-	crop_n_uptake:               f64, // [kg m-2]
-	soil_surface_temperature:    f64,
+	flux_at_lower_boundary:      f64 `unit:"mm"`,
+	crop_n_uptake:               f64 `unit:"kgN m-2"`,
+	soil_surface_temperature:    f64 `unit:"°C"`,
 	snow_depth_mm:               f64,
 	max_mineralisation_depth_m:  f64,
 	number_of_organic_layers:    int,
