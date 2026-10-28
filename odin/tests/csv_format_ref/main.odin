@@ -22,49 +22,49 @@ main :: proc() {
 
 	ids := make([dynamic]mio.OId, 0)
 
-	dateId := mio.make_default_oid()
-	dateId.name = "Date"
-	dateId.unit = ""
-	dateId.jsonInput = "\"Date\""
-	append(&ids, dateId)
+	date_id := mio.make_default_oid()
+	date_id.name = "Date"
+	date_id.unit = ""
+	date_id.json_input = "\"Date\""
+	append(&ids, date_id)
 
-	yieldId := mio.make_default_oid()
-	yieldId.name = "Yield"
-	yieldId.unit = "kgDM ha-1"
-	yieldId.jsonInput = "\"Yield\""
-	append(&ids, yieldId)
+	yield_id := mio.make_default_oid()
+	yield_id.name = "Yield"
+	yield_id.unit = "kgDM ha-1"
+	yield_id.json_input = "\"Yield\""
+	append(&ids, yield_id)
 
-	orgBiomId := mio.make_default_oid()
-	orgBiomId.name = "OrgBiom"
-	orgBiomId.unit = "kgDM ha-1"
-	orgBiomId.jsonInput = "[\"OrgBiom\", \"LEAF\"]"
-	orgBiomId.organ = .LEAF
-	append(&ids, orgBiomId)
+	org_biom_id := mio.make_default_oid()
+	org_biom_id.name = "OrgBiom"
+	org_biom_id.unit = "kgDM ha-1"
+	org_biom_id.json_input = "[\"OrgBiom\", \"LEAF\"]"
+	org_biom_id.organ = .LEAF
+	append(&ids, org_biom_id)
 
-	moisRangeId := mio.make_default_oid()
-	moisRangeId.name = "Mois"
-	moisRangeId.unit = "m3 m-3"
-	moisRangeId.jsonInput = "[\"Mois\", [1, 3]]"
-	moisRangeId.fromLayer = 0
-	moisRangeId.toLayer = 2
-	moisRangeId.layerAggOp = .NONE
-	append(&ids, moisRangeId)
+	mois_range_id := mio.make_default_oid()
+	mois_range_id.name = "Mois"
+	mois_range_id.unit = "m3 m-3"
+	mois_range_id.json_input = "[\"Mois\", [1, 3]]"
+	mois_range_id.from_layer = 0
+	mois_range_id.to_layer = 2
+	mois_range_id.layer_agg_op = .NONE
+	append(&ids, mois_range_id)
 
-	moisAvgId := mio.make_default_oid()
-	moisAvgId.name = "Mois"
-	moisAvgId.unit = "m3 m-3"
-	moisAvgId.jsonInput = "[\"Mois\", [1, 3, \"AVG\"]]"
-	moisAvgId.fromLayer = 0
-	moisAvgId.toLayer = 2
-	moisAvgId.layerAggOp = .AVG
-	append(&ids, moisAvgId)
+	mois_avg_id := mio.make_default_oid()
+	mois_avg_id.name = "Mois"
+	mois_avg_id.unit = "m3 m-3"
+	mois_avg_id.json_input = "[\"Mois\", [1, 3, \"AVG\"]]"
+	mois_avg_id.from_layer = 0
+	mois_avg_id.to_layer = 2
+	mois_avg_id.layer_agg_op = .AVG
+	append(&ids, mois_avg_id)
 
-	cropId := mio.make_default_oid()
-	cropId.name = "Crop"
-	cropId.unit = ""
-	cropId.jsonInput = "\"Crop\""
-	cropId.displayName = "Crop, with, commas"
-	append(&ids, cropId)
+	crop_id := mio.make_default_oid()
+	crop_id.name = "Crop"
+	crop_id.unit = ""
+	crop_id.json_input = "\"Crop\""
+	crop_id.display_name = "Crop, with, commas"
+	append(&ids, crop_id)
 
 	marker(w, "== header, csvSep=,")
 	mio.write_output_header_rows(w, ids[:], ",", true, true, true)

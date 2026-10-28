@@ -203,7 +203,7 @@ handle_env_message :: proc(
 ) -> mio.Output {
 	out: mio.Output
 	custom_id := jx.get(msg_json, "customId")
-	out.customId = custom_id
+	out.custom_id = custom_id
 	is_no_data_pass_through := jx.is_object(custom_id) && jx.bool_value_of(jx.get(custom_id, "nodata"))
 
 	if is_no_data_pass_through {
@@ -224,7 +224,7 @@ handle_env_message :: proc(
 	eda: tl.EResult(clim.Data_Accessor)
 	eda.allocator = allocator
 
-	if !clim.data_accessor_is_valid(&env.climateData) {
+	if !clim.data_accessor_is_valid(&env.climate_data) {
 		csv_opts := clim.make_csv_via_header_options()
 		_ = clim.csv_via_header_options_merge(&csv_opts, jx.get(msg_json, "csvViaHeaderOptions"), allocator)
 
@@ -240,12 +240,12 @@ handle_env_message :: proc(
 	}
 
 	if tl.success(eda.errs) {
-		if !clim.data_accessor_is_valid(&env.climateData) {
-			env.climateData = eda.result
+		if !clim.data_accessor_is_valid(&env.climate_data) {
+			env.climate_data = eda.result
 		}
-		env.debugMode = started_server_in_debug_mode && env.debugMode
+		env.debug_mode = started_server_in_debug_mode && env.debug_mode
 		out = run_monica(&env, allocator)
-		out.customId = custom_id
+		out.custom_id = custom_id
 	}
 	// C++: out.errors = eda.errors; - appended rather than assigned, because
 	// run_monica can now put an error there itself (the empty-soil-profile guard;

@@ -106,14 +106,14 @@ main :: proc() {
 	args := os.args
 
 	// C++: MonicaCapnpServerMain's members plus RestorableServiceMain's.
-	startedServerInDebugMode := false
+	started_server_in_debug_mode := false
 	name := ""
 	description := ""
 	host := DEF_HOST
 	port := DEF_PORT
-	outputSturdyRefs := false
+	output_sturdy_refs := false
 	srt := "" // C++: MonicaCapnpServerMain::srt, the -t/--srt fixed token
-	serviceAsBootstrap := false
+	service_as_bootstrap := false
 
 	schema_root := os.get_env(SCHEMA_DIR_ENV, context.allocator)
 
@@ -139,7 +139,7 @@ main :: proc() {
 
 		switch {
 		case arg == "-d" || arg == "--debug":
-			startedServerInDebugMode = true
+			started_server_in_debug_mode = true
 		case (arg == "-n" || arg == "--name") && has_value:
 			i += 1
 			name = args[i]
@@ -156,9 +156,9 @@ main :: proc() {
 			i += 1
 			srt = args[i]
 		case arg == "--output_srs":
-			outputSturdyRefs = true
+			output_sturdy_refs = true
 		case arg == "--serve-as-bootstrap":
-			serviceAsBootstrap = true
+			service_as_bootstrap = true
 		case arg == "--schemas" && has_value:
 			i += 1
 			schema_root = args[i]
@@ -191,12 +191,12 @@ main :: proc() {
 
 	// C++: auto ownedRunMonica = kj::heap<RunMonica>(startedServerInDebugMode);
 	//      if (name.size() > 0) runMonica->setName(name);
-	runMonica := mcapnp.make_run_monica(startedServerInDebugMode, schema)
+	run_monica := mcapnp.make_run_monica(started_server_in_debug_mode, schema)
 	if len(name) > 0 {
-		runMonica._name = name
+		run_monica.name = name
 	}
 	if len(description) > 0 {
-		runMonica._description = description
+		run_monica.description = description
 	}
 
 	// C++: MonicaEnvInstance::Client runMonicaClient = kj::mv(ownedRunMonica);
@@ -209,7 +209,7 @@ main :: proc() {
 		schema.root,
 		"EnvInstance",
 		mcapnp.handle_call,
-		runMonica,
+		run_monica,
 	)
 	if !host_ok {
 		fmt.eprintfln("%s: could not host EnvInstance: %s", APP_NAME, host_err)
@@ -222,7 +222,7 @@ main :: proc() {
 	// behaviour instead.
 	restorer: ^mcapnp.Restorer
 	bootstrap := client
-	if !serviceAsBootstrap {
+	if !service_as_bootstrap {
 		restorer = mcapnp.make_restorer(schema, host)
 		bootstrap, host_err, host_ok = capnp_dyn.host(
 			schema.persistence,
@@ -250,22 +250,22 @@ main :: proc() {
 	//
 	// The port has to be known first (--port 0 asks the OS to pick one), which is
 	// what the C++'s Restorer::setPort does after the bind resolves.
-	monicaSR := ""
+	monica_sr := ""
 	if restorer != nil {
 		mcapnp.restorer_set_port(restorer, capnp_dyn.server_port(server))
 		sr_err: string
 		sr_ok: bool
-		_, monicaSR, sr_err, sr_ok = mcapnp.restorer_save_str(restorer, client, srt)
+		_, monica_sr, sr_err, sr_ok = mcapnp.restorer_save_str(restorer, client, srt)
 		if !sr_ok {
 			fmt.eprintfln("%s: could not register the MONICA sturdy ref: %s", APP_NAME, sr_err)
 			os.exit(1)
 		}
 	} else {
 		// No Restorer, so no token: the bootstrap address IS the reference.
-		monicaSR = fmt.aprintf("capnp://%s:%d", host, capnp_dyn.server_port(server))
+		monica_sr = fmt.aprintf("capnp://%s:%d", host, capnp_dyn.server_port(server))
 	}
-	if outputSturdyRefs && len(monicaSR) > 0 {
-		fmt.printfln("monicaSR=%s", monicaSR)
+	if output_sturdy_refs && len(monica_sr) > 0 {
+		fmt.printfln("monicaSR=%s", monica_sr)
 	}
 
 	// C++: kj::NEVER_DONE.wait(ioContext.waitScope) - the shim runs the event loop

@@ -396,7 +396,7 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 	append(&env.params.sim_params.modules.soil_temperature_drivers, stm.modules[0].name)
 	model := core.make_monica_model(&env.params, a)
 	in_ := model.modules.soil_temperature_stepping[0].input
-	da := &env.climateData
+	da := &env.climate_data
 	in_.tamp, in_.tav = clim.data_accessor_calc_tamp_and_tav(da, a)
 
 	csv_path := strings.concatenate({strings.trim_suffix(input_path, ".json"), ".csv"}, a)

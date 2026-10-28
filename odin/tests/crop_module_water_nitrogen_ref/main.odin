@@ -24,13 +24,13 @@ ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
 noop_fire_event :: proc(event: string) {}
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {}
+noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
 
 // Odin `proc` values can't capture - see checkpoint 5's file comment.
 g_soil_moisture: ^core.Soil_Moisture
 
-real_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avgAirTemp)
+real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
+	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
 }
 
 @(private)
@@ -79,83 +79,83 @@ dump_crop_module_water_nitrogen :: proc(t: ^tr.Tracer, path: string, cm: ^core.C
 // fc_crop_water_uptake/fc_crop_n_uptake.
 day_step :: proc(
 	cm: ^core.Crop_Module,
-	meanAirTemperature, maxAirTemperature, minAirTemperature: f64,
-	globalRadiation, sunshineHours: f64,
-	currentDate: d.Date,
-	frostKillOn: bool,
-	relativeHumidity, windSpeed, windSpeedHeight, grossPrecipitation: f64,
+	mean_air_temperature, max_air_temperature, min_air_temperature: f64,
+	global_radiation, sunshine_hours: f64,
+	current_date: d.Date,
+	frost_kill_on: bool,
+	relativeHumidity, wind_speed, wind_speed_height, gross_precipitation: f64,
 	allocator := context.allocator,
 ) {
-	pc_BaseDaylength := cm.crop_params.cultivar_params.base_daylength
-	pc_CriticalOxygenContent := cm.crop_params.species_params.critical_oxygen_content
-	pc_DaylengthRequirement := cm.crop_params.cultivar_params.daylength_requirement
-	pc_MaxCropHeight := cm.crop_params.cultivar_params.max_crop_height
-	pc_Perennial := cm.crop_params.cultivar_params.perennial
-	pc_SpecificLeafArea := cm.crop_params.cultivar_params.specific_leaf_area
-	pc_StageKcFactor := cm.crop_params.cultivar_params.stage_kc_factor
-	pc_StageTemperatureSum := cm.crop_params.cultivar_params.stage_temperature_sum
-	pc_VernalisationRequirement := cm.crop_params.cultivar_params.vernalisation_requirement
-	speciesPs := &cm.crop_params.species_params
-	soilColumn := cm.soil_column
+	base_daylength := cm.crop_params.cultivar_params.base_daylength
+	critical_oxygen_content := cm.crop_params.species_params.critical_oxygen_content
+	daylength_requirement := cm.crop_params.cultivar_params.daylength_requirement
+	max_crop_height := cm.crop_params.cultivar_params.max_crop_height
+	perennial := cm.crop_params.cultivar_params.perennial
+	specific_leaf_area := cm.crop_params.cultivar_params.specific_leaf_area
+	stage_kc_factor := cm.crop_params.cultivar_params.stage_kc_factor
+	stage_temperature_sum := cm.crop_params.cultivar_params.stage_temperature_sum
+	vernalisation_requirement := cm.crop_params.cultivar_params.vernalisation_requirement
+	species_ps := &cm.crop_params.species_params
+	soil_column := cm.soil_column
 
-	vs_JulianDay := int(d.julian_day(currentDate))
+	julian_day := int(d.julian_day(current_date))
 
-	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
+	core.fc_radiation(cm, f64(julian_day), global_radiation, sunshine_hours)
 
 	cm.oxygen_deficit = core.fc_oxygen_deficiency(
 		cm,
-		pc_CriticalOxygenContent[cm.developmental_stage],
+		critical_oxygen_content[cm.developmental_stage],
 	)
 
-	old_DevelopmentalStage := cm.developmental_stage
+	old_developmental_stage := cm.developmental_stage
 
 	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
-		if speciesPs.dormancy_end_doy == 0 {
-			cm.perennial_crop_dormancy_period_end_date = currentDate
+		if species_ps.dormancy_end_doy == 0 {
+			cm.perennial_crop_dormancy_period_end_date = current_date
 		} else {
 			cm.perennial_crop_dormancy_period_end_date = d.add(
 				d.make_date(
 					1,
 					1,
-					u16(d.year(currentDate)),
+					u16(d.year(current_date)),
 					false,
 					false,
 					d.DEFAULT_USE_LEAP_YEARS,
 				),
-				u64(speciesPs.dormancy_end_doy - 1),
+				u64(species_ps.dormancy_end_doy - 1),
 			)
 		}
 	}
-	if !pc_Perennial || d.ge(currentDate, cm.perennial_crop_dormancy_period_end_date) {
+	if !perennial || d.ge(current_date, cm.perennial_crop_dormancy_period_end_date) {
 		core.fc_crop_developmental_stage(
 			cm,
-			meanAirTemperature,
+			mean_air_temperature,
 			cm.soil_column.layers[0].soil_moisture_m3,
 			cm.soil_column.layers[0].field_capacity,
 			cm.soil_column.layers[0].permanent_wilting_point,
-			currentDate,
+			current_date,
 		)
 	}
 
-	if core.is_anthesis_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
-		cm.anthesis_day = vs_JulianDay
-	} else if core.is_maturity_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
-		cm.maturity_day = vs_JulianDay
+	if core.is_anthesis_day(cm, old_developmental_stage, cm.developmental_stage) {
+		cm.anthesis_day = julian_day
+	} else if core.is_maturity_day(cm, old_developmental_stage, cm.developmental_stage) {
+		cm.maturity_day = julian_day
 		cm.maturity_reached = true
 	}
 
 	cm.daylength_factor = core.fc_daylength_factor(
 		cm,
-		pc_DaylengthRequirement[cm.developmental_stage],
+		daylength_requirement[cm.developmental_stage],
 		cm.effective_day_length,
 		cm.photoperiodic_daylength,
-		pc_BaseDaylength[cm.developmental_stage],
+		base_daylength[cm.developmental_stage],
 	)
 
 	cm.vernalisation_factor, cm.vernalisation_days = core.fc_vernalisation_factor(
 		cm,
-		meanAirTemperature,
-		pc_VernalisationRequirement[cm.developmental_stage],
+		mean_air_temperature,
+		vernalisation_requirement[cm.developmental_stage],
 		cm.vernalisation_days,
 	)
 
@@ -170,27 +170,27 @@ day_step :: proc(
 	} else {
 		cm.kc_factor = core.fc_kc_factor(
 			cm,
-			pc_StageTemperatureSum[cm.developmental_stage],
+			stage_temperature_sum[cm.developmental_stage],
 			cm.current_temperature_sum[cm.developmental_stage],
-			pc_StageKcFactor[cm.developmental_stage],
-			pc_StageKcFactor[cm.developmental_stage - 1],
+			stage_kc_factor[cm.developmental_stage],
+			stage_kc_factor[cm.developmental_stage - 1],
 		)
 	}
 
 	if cm.developmental_stage > 0 {
-		maxCropHeight := pc_MaxCropHeight
+		max_crop_height := max_crop_height
 
-		core.fc_crop_size(cm, maxCropHeight)
+		core.fc_crop_size(cm, max_crop_height)
 
 		core.fc_crop_green_area(
 			cm,
-			meanAirTemperature,
+			mean_air_temperature,
 			cm.organ_growth_increment[core.Organ_Leaf],
 			cm.organ_senescence_increment[core.Organ_Leaf],
-			pc_SpecificLeafArea[cm.developmental_stage - 1],
-			pc_SpecificLeafArea[cm.developmental_stage],
-			pc_SpecificLeafArea[1],
-			pc_StageTemperatureSum[cm.developmental_stage],
+			specific_leaf_area[cm.developmental_stage - 1],
+			specific_leaf_area[cm.developmental_stage],
+			specific_leaf_area[1],
+			stage_temperature_sum[cm.developmental_stage],
 			cm.current_temperature_sum[cm.developmental_stage],
 		)
 
@@ -198,55 +198,55 @@ day_step :: proc(
 
 		core.fc_crop_photosynthesis(
 			cm,
-			meanAirTemperature,
-			maxAirTemperature,
-			minAirTemperature,
+			mean_air_temperature,
+			max_air_temperature,
+			min_air_temperature,
 			ATM_CO2,
 			ATM_O3,
-			currentDate,
+			current_date,
 		)
 
-		core.fc_heat_stress_impact(cm, maxAirTemperature, minAirTemperature)
+		core.fc_heat_stress_impact(cm, max_air_temperature, min_air_temperature)
 
-		if frostKillOn {
-			core.fc_frost_kill(cm, maxAirTemperature, minAirTemperature)
+		if frost_kill_on {
+			core.fc_frost_kill(cm, max_air_temperature, min_air_temperature)
 		}
 
 		core.fc_drought_impact_on_fertility(cm)
 
 		core.fc_crop_nitrogen(cm)
 
-		core.fc_crop_dry_matter(cm, meanAirTemperature, allocator)
+		core.fc_crop_dry_matter(cm, mean_air_temperature, allocator)
 
 		// climate-min.csv has no et0 column, so this is always the live
 		// branch (referenceEvapotranspiration < 0)
-		referenceEvapotranspiration := -1.0
-		if referenceEvapotranspiration < 0 {
+		reference_evapotranspiration := -1.0
+		if reference_evapotranspiration < 0 {
 			cm.reference_evapotranspiration = core.fc_reference_evapotranspiration(
 				cm,
-				maxAirTemperature,
-				minAirTemperature,
+				max_air_temperature,
+				min_air_temperature,
 				relativeHumidity,
-				meanAirTemperature,
-				windSpeed,
-				windSpeedHeight,
+				mean_air_temperature,
+				wind_speed,
+				wind_speed_height,
 				ATM_CO2,
 			)
 		} else {
-			cm.reference_evapotranspiration = referenceEvapotranspiration
+			cm.reference_evapotranspiration = reference_evapotranspiration
 		}
 
 		core.fc_crop_water_uptake(
 			cm,
-			soilColumn.groundwater_table_layer_idx,
-			grossPrecipitation,
+			soil_column.groundwater_table_layer_idx,
+			gross_precipitation,
 			cm.current_total_temperature_sum,
 			cm.total_temperature_sum,
 		)
 
 		core.fc_crop_n_uptake(
 			cm,
-			soilColumn.groundwater_table_layer_idx,
+			soil_column.groundwater_table_layer_idx,
 			cm.current_total_temperature_sum,
 			cm.total_temperature_sum,
 		)
@@ -426,7 +426,7 @@ main :: proc() {
 		current_date := clim.data_accessor_date_for_step(&da, day)
 		julday := clim.data_accessor_julian_day_for_step(&da, day)
 
-		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
+		groundwater_depth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0 // climate-min.csv has no et0 column
 
 		core.soil_temperature_step(
@@ -440,7 +440,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&sm,
-			vs_GroundwaterDepth,
+			groundwater_depth,
 			precip,
 			tmax,
 			tmin,

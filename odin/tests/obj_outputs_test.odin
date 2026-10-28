@@ -13,7 +13,7 @@ import jx "../support/jsonx"
 
 @(private = "file")
 oid :: proc(name: string, agg: mio.OId_Op, display := "") -> mio.OId {
-	return mio.OId{name = name, displayName = display, timeAggOp = agg, organ = .UNDEFINED_ORGAN}
+	return mio.OId{name = name, display_name = display, time_agg_op = agg, organ = .UNDEFINED_ORGAN}
 }
 
 @(private = "file")
@@ -29,34 +29,34 @@ test_aggregate_results_obj :: proc(t: ^testing.T) {
 	context.allocator = ta
 
 	sd: run.Store_Data
-	append(&sd.outputIds, oid("Yield", .SUM), oid("Date", .LAST), oid("Stage", .AVG, "Phase"))
-	append(&sd.intermediateResults, column(jx.f(1), jx.f(2), jx.f(3)))
-	append(&sd.intermediateResults, column(jx.sl("1992-01-01"), jx.sl("1992-12-31")))
-	append(&sd.intermediateResults, column())
+	append(&sd.output_ids, oid("Yield", .SUM), oid("Date", .LAST), oid("Stage", .AVG, "Phase"))
+	append(&sd.intermediate_results, column(jx.f(1), jx.f(2), jx.f(3)))
+	append(&sd.intermediate_results, column(jx.sl("1992-01-01"), jx.sl("1992-12-31")))
+	append(&sd.intermediate_results, column())
 
 	run.store_data_aggregate_results_obj(&sd, ta)
-	testing.expect_value(t, len(sd.resultsObj), 1)
-	row := jx.object_items(sd.resultsObj[0])
+	testing.expect_value(t, len(sd.results_obj), 1)
+	row := jx.object_items(sd.results_obj[0])
 	testing.expect_value(t, jx.number_value(row["Yield"]), 6.0)
 	testing.expect_value(t, jx.string_value_of(row["Date"]), "1992-12-31")
 	// an empty column contributes no key at all (not a null)
 	_, has_phase := row["Phase"]
 	testing.expect(t, !has_phase)
 	// and the aggregated columns were consumed
-	testing.expect_value(t, len(sd.intermediateResults[0]), 0)
+	testing.expect_value(t, len(sd.intermediate_results[0]), 0)
 	// the array form stays untouched
 	testing.expect_value(t, len(sd.results), 0)
 
 	// NOTE(c++-quirk) pin: aggregating again with every column empty still
 	// appends a row - an empty object - unlike the array form.
 	run.store_data_aggregate_results_obj(&sd, ta)
-	testing.expect_value(t, len(sd.resultsObj), 2)
-	testing.expect_value(t, len(jx.object_items(sd.resultsObj[1])), 0)
+	testing.expect_value(t, len(sd.results_obj), 2)
+	testing.expect_value(t, len(jx.object_items(sd.results_obj[1])), 0)
 
 	// no intermediate results at all (at-event-only sections): no row
 	empty: run.Store_Data
 	run.store_data_aggregate_results_obj(&empty, ta)
-	testing.expect_value(t, len(empty.resultsObj), 0)
+	testing.expect_value(t, len(empty.results_obj), 0)
 }
 
 @(test)
@@ -98,8 +98,8 @@ test_output_to_json_obj_rows :: proc(t: ^testing.T) {
 
 	out: mio.Output
 	d: mio.Output_Data
-	d.origSpec = "\"crop\""
-	append(&d.resultsObj, jx.Value(row))
+	d.orig_spec = "\"crop\""
+	append(&d.results_obj, jx.Value(row))
 	append(&out.data, d)
 
 	j := mio.output_to_json(&out, ta)

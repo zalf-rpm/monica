@@ -6,7 +6,7 @@ import tl "../support/tools"
 // Ground truth: a 1:1 port of the round/roundShiftedInt assertions from
 // Tools::testRoundFloorCeil() in mas_cpp_misc/tools/algorithms.cpp.
 @(test)
-test_round_cpp_testRoundFloorCeil :: proc(t: ^testing.T) {
+test_round_cpp_test_round_floor_ceil :: proc(t: ^testing.T) {
 	testing.expect_value(t, tl.round(1.5), 2.0)
 	testing.expect_value(t, tl.round(1.4), 1.0)
 	testing.expect_value(t, tl.round(2.0), 2.0)

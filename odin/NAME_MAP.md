@@ -11,6 +11,13 @@ you" for anyone diffing against the C++ source or a C++ trace dump.
 Each table covers one C++ struct. Add a new table here whenever a struct's
 fields get renamed away from their C++ spelling.
 
+The tables from `HarvestData::Spec::Value` to the end come from the second pass
+(2026-10-28), which renamed every remaining C++-style struct field, local, parameter and
+procedure: snake_case, C++ prefixes (`vs_`, `vo_`, `po_`, ...) and leading underscores dropped,
+scientific symbols lowercased (`EF_ISO` -> `ef_iso`, `LAI` -> `lai`). Kept: the
+`__enable_..._fix__` feature flags, named after their JSON keys. Tables headed "(port-only)" have no
+C++ struct; their left column is the port's previous name. Locals and parameters aren't listed.
+
 The trace-diff oracle itself does NOT need this file: every `_ref` test's
 `tr.dump(t, "struct.OldCppName", cm.new_odin_name)` call already hardcodes
 the C++-matching label as a separate string literal (see trace.odin's "the
@@ -252,8 +259,9 @@ Not renamed this round: `incorporation`, `noVolatilization` (plain camelCase, no
 | `vs_SoilWaterFlux` | `soil_water_flux` |
 | `vs_SOM_Fast` | `som_fast` |
 | `vs_SOM_Slow` | `som_slow` |
+| `vo_AOM_Pool` | `aom_pool` |
 
-Not renamed this round: `vo_AOM_Pool` (`vo_` prefix, not `vs_`).
+`vo_AOM_Pool` was renamed in the second pass (2026-10-28).
 
 ## `monica::FrostComponent` -> `core.Frost_Component` (odin/monica/core/frost_component.odin)
 
@@ -942,3 +950,345 @@ own. Only the exceptions are listed. `vm_SurfaceWaterStorage`,
 | C++ (`soilmoisture.h`) | Odin |
 | --- | --- |
 | `vc_PercentageSoilCoverage` | `soil_coverage_percent` |
+
+## `monica::RunMonica` -> `capnp.Run_Monica` (odin/monica/capnp/run_monica_capnp.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `_startedServerInDebugMode` | `started_server_in_debug_mode` |
+| `_id` | `id` |
+| `_name` | `name` |
+| `_description` | `description` |
+| `pathToSoilDir` | `path_to_soil_dir` |
+
+## (port-only) -> `capnp.Run_Call` (odin/monica/capnp/run_monica_capnp.odin)
+
+| previous Odin name | Odin |
+| --- | --- |
+| `envJson` | `env_json` |
+| `dataT` | `data_t` |
+
+## `HarvestData::Spec::Value` -> `core.Harvest_Spec_Value` (odin/monica/core/monica_model.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `exportPercentage` | `export_percentage` |
+
+## `HarvestData::Spec` -> `core.Harvest_Spec` (odin/monica/core/monica_model.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `organ2specVal` | `organ_to_spec_val` |
+
+## `HarvestData::OptCarbonManagementData` -> `core.Harvest_Opt_Carbon_Management_Data` (odin/monica/core/monica_model.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `optCarbonConservation` | `opt_carbon_conservation` |
+| `cropImpactOnHumusBalance` | `crop_impact_on_humus_balance` |
+| `maxResidueRecoverFraction` | `max_residue_recover_fraction` |
+| `cropUsage` | `crop_usage` |
+| `residueHeq` | `residue_heq` |
+| `organicFertilizerHeq` | `organic_fertilizer_heq` |
+
+## `O3impact::O3_impact_params` -> `core.O3_Impact_Params` (odin/monica/core/o3_impact.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `Fshape_stomatal` | `fshape_stomatal` |
+
+## `O3impact::O3_impact_in` -> `core.O3_Impact_In` (odin/monica/core/o3_impact.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `FC` | `fc` |
+| `WP` | `wp` |
+| `SWC` | `swc` |
+| `ET0` | `et0` |
+| `O3a` | `o3a` |
+| `GDD_flo` | `gdd_flo` |
+| `GDD_mat` | `gdd_mat` |
+| `fO3s_d_prev` | `f_o3s_d_prev` |
+| `sum_O3_up` | `sum_o3_up` |
+
+## `O3impact::O3_impact_out` -> `core.O3_Impact_Out` (odin/monica/core/o3_impact.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `hourly_O3_up` | `hourly_o3_up` |
+| `fO3s_d` | `f_o3s_d` |
+| `fO3l` | `f_o3l` |
+| `fLS` | `f_ls` |
+| `WS_st_clos` | `ws_st_clos` |
+
+## `FvCB::FvCB_canopy_hourly_params` -> `core.Fvcb_Canopy_Hourly_Params` (odin/monica/core/photosynthesis_fvcb.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `Vcmax_25` | `vcmax_25` |
+
+## `FvCB::FvCB_canopy_hourly_in` -> `core.Fvcb_Canopy_Hourly_In` (odin/monica/core/photosynthesis_fvcb.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `LAI` | `lai` |
+| `VPD` | `vpd` |
+| `Ca` | `ca` |
+
+## `FvCB::FvCB_leaf_fraction` -> `core.Fvcb_Leaf_Fraction` (odin/monica/core/photosynthesis_fvcb.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `LAI` | `lai` |
+| `vcMax` | `vc_max` |
+| `jMax` | `j_max` |
+
+## (port-only) -> `core.Fvcb_Lumped_Coeffs` (odin/monica/core/photosynthesis_fvcb.odin)
+
+| previous Odin name | Odin |
+| --- | --- |
+| `Q` | `q` |
+
+## `Voc::CPData` -> `core.Voc_Cp_Data` (odin/monica/core/voc_common.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `vcMax` | `vc_max` |
+| `jMax` | `j_max` |
+
+## `Voc::SpeciesData` -> `core.Voc_Species_Data` (odin/monica/core/voc_common.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `EF_MONOS` | `ef_monos` |
+| `EF_MONO` | `ef_mono` |
+| `EF_ISO` | `ef_iso` |
+| `THETA` | `theta` |
+| `FAGE` | `fage` |
+| `CT_IS` | `ct_is` |
+| `CT_MT` | `ct_mt` |
+| `HA_IS` | `ha_is` |
+| `HA_MT` | `ha_mt` |
+| `DS_IS` | `ds_is` |
+| `DS_MT` | `ds_mt` |
+| `HD_IS` | `hd_is` |
+| `HD_MT` | `hd_mt` |
+| `HDJ` | `hdj` |
+| `SDJ` | `sdj` |
+| `KC25` | `kc25` |
+| `KO25` | `ko25` |
+| `VCMAX25` | `vcmax25` |
+| `QJVC` | `qjvc` |
+| `AEKC` | `aekc` |
+| `AEKO` | `aeko` |
+| `AEJM` | `aejm` |
+| `AEVC` | `aevc` |
+| `SLAMIN` | `slamin` |
+| `SCALE_I` | `scale_i` |
+| `SCALE_M` | `scale_m` |
+| `mFol` | `m_fol` |
+
+## `Voc::MicroClimateData` -> `core.Voc_Micro_Climate_Data` (odin/monica/core/voc_common.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `tFol` | `t_fol` |
+| `tFol24` | `t_fol24` |
+| `tFol240` | `t_fol240` |
+
+## `Voc::Emissions` -> `core.Voc_Emissions` (odin/monica/core/voc_common.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `speciesId_2_isoprene_emission` | `species_id_to_isoprene_emission` |
+| `speciesId_2_monoterpene_emission` | `species_id_to_monoterpene_emission` |
+
+## `Voc::foliage_t` -> `core.Voc_Foliage_T` (odin/monica/core/voc_common.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `tempK` | `temp_k` |
+| `tempK24` | `temp_k24` |
+| `tempK240` | `temp_k240` |
+
+## `monica::OId` -> `io.OId` (odin/monica/io/output.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `displayName` | `display_name` |
+| `jsonInput` | `json_input` |
+| `layerAggOp` | `layer_agg_op` |
+| `timeAggOp` | `time_agg_op` |
+| `fromLayer` | `from_layer` |
+| `toLayer` | `to_layer` |
+| `roundToDigits` | `round_to_digits` |
+| `castTo` | `cast_to` |
+
+## `Output::Data` -> `io.Output_Data` (odin/monica/io/output.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `origSpec` | `orig_spec` |
+| `outputIds` | `output_ids` |
+| `resultsObj` | `results_obj` |
+
+## `monica::Output` -> `io.Output` (odin/monica/io/output.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `customId` | `custom_id` |
+
+## `monica::SticsParameters` -> `params.Stics_Parameters` (odin/monica/params/module_parameters.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `pHminnit` | `ph_min_nit` |
+| `pHmaxnit` | `ph_max_nit` |
+| `pHminden` | `ph_min_den` |
+| `pHmaxden` | `ph_max_den` |
+| `Kd` | `kd` |
+| `Kamm` | `kamm` |
+
+## `monica::YieldComponent` -> `params.Yield_Component` (odin/monica/params/organic_parameters.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `organId` | `organ_id` |
+| `yieldPercentage` | `yield_percentage` |
+| `yieldDryMatter` | `yield_dry_matter` |
+
+## `monica::AutomaticHarvestParameters` -> `params.Automatic_Harvest_Parameters` (odin/monica/params/organic_parameters.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `_harvestTime` | `harvest_time` |
+| `_latestHarvestDOY` | `latest_harvest_doy` |
+
+## `monica::NMinCropParameters` -> `params.NMin_Crop_Parameters` (odin/monica/params/organic_parameters.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `samplingDepth` | `sampling_depth` |
+| `nTarget` | `n_target` |
+| `nTarget30` | `n_target30` |
+
+## `monica::CropResidueParameters` -> `params.Crop_Residue_Parameters` (odin/monica/params/organic_parameters.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `residueType` | `residue_type` |
+
+## `monica::EnvironmentParameters` -> `params.Environment_Parameters` (odin/monica/params/site_sim_parameters.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `atmospheric_CO2` | `atmospheric_co2` |
+| `atmospheric_CO2s` | `atmospheric_co2_s` |
+| `atmospheric_O3` | `atmospheric_o3` |
+| `atmospheric_O3s` | `atmospheric_o3s` |
+
+## `monica::CropRotation` -> `run.Crop_Rotation` (odin/monica/run/run_monica.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `cropRotation` | `crop_rotation` |
+
+## `monica::Env` -> `run.Env` (odin/monica/run/run_monica.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `climateData` | `climate_data` |
+| `cropRotation` | `crop_rotation` |
+| `cropRotations` | `crop_rotations` |
+| `customId` | `custom_id` |
+| `debugMode` | `debug_mode` |
+
+## (port-only) -> `run.Spec_Expr` (odin/monica/run/run_monica.odin)
+
+| previous Odin name | Odin |
+| --- | --- |
+| `eventName` | `event_name` |
+
+## `monica::Spec` -> `run.Spec` (odin/monica/run/run_monica.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `origSpec` | `orig_spec` |
+
+## `monica::StoreData` -> `run.Store_Data` (odin/monica/run/run_monica.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `withinEventStartEndRange` | `within_event_start_end_range` |
+| `withinEventFromToRange` | `within_event_from_to_range` |
+| `outputIds` | `output_ids` |
+| `intermediateResults` | `intermediate_results` |
+| `resultsObj` | `results_obj` |
+
+## `Soil::SoilParameters` -> `soil.Soil_Parameters` (odin/monica/soil/soil_parameters.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `vs_SoilSandContent` | `soil_sand_content` |
+| `vs_SoilClayContent` | `soil_clay_content` |
+| `vs_SoilpH` | `soil_ph` |
+| `vs_SoilStoneContent` | `soil_stone_content` |
+| `vs_Lambda` | `lambda` |
+| `vs_FieldCapacity` | `field_capacity` |
+| `vs_Saturation` | `saturation` |
+| `vs_PermanentWiltingPoint` | `permanent_wilting_point` |
+| `vs_SoilTexture` | `soil_texture` |
+| `vs_SoilAmmonium` | `soil_ammonium` |
+| `vs_SoilNitrate` | `soil_nitrate` |
+| `vs_Soil_CN_Ratio` | `soil_cn_ratio` |
+| `vs_SoilMoisturePercentFC` | `soil_moisture_percent_fc` |
+| `_vs_SoilRawDensity` | `soil_raw_density` |
+| `_vs_SoilBulkDensity` | `soil_bulk_density` |
+| `_vs_SoilOrganicCarbon` | `soil_organic_carbon` |
+| `_vs_SoilOrganicMatter` | `soil_organic_matter` |
+
+## `Soil::VanGenuchtenParams` -> `soil.Van_Genuchten_Params` (odin/monica/soil/soil_pwp_fc_sat.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `thetaR` | `theta_r` |
+| `thetaS` | `theta_s` |
+| `volumetricWaterContentAtMatricHead` | `volumetric_water_content_at_matric_head` |
+
+## `Climate::DataAccessor` -> `climate.Data_Accessor` (odin/support/climate/climate_common.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `_startDate` | `start_date` |
+| `_endDate` | `end_date` |
+| `_data` | `data` |
+| `_acd2dataIndex` | `acd_to_data_index` |
+| `_fromStep` | `from_step` |
+| `_numberOfSteps` | `number_of_steps` |
+| `_tamp` | `tamp` |
+| `_tav` | `tav` |
+
+## `Climate::CSVViaHeaderOptions` -> `climate.Csv_Via_Header_Options` (odin/support/climate/climate_file_io.odin)
+
+| C++ | Odin |
+| --- | --- |
+| `startDate` | `start_date` |
+| `endDate` | `end_date` |
+| `noOfHeaderLines` | `no_of_header_lines` |
+| `lineNoOfHeaderLine` | `line_no_of_header_line` |
+| `lineNoOfDataStart` | `line_no_of_data_start` |
+| `lineNoOfDataEnd` | `line_no_of_data_end` |
+| `headerName2ACDName` | `header_name_to_acd_name` |
+| `convertFn` | `convert_fn` |
+| `datePattern` | `date_pattern` |
+
+## `Tools::Date` -> `date.Date` (odin/support/date/date.odin)
+
+The C++ keeps these as `_useLeapYears`/`_isRelative` and a DIM table pointer; the left column is
+the port's previous name.
+
+| previous Odin name | Odin |
+| --- | --- |
+| `_no_leap_years` | `no_leap_years` |
+| `_common_year_dim` | `common_year_dim` |
+| `_is_relative` | `is_relative` |

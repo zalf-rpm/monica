@@ -146,12 +146,12 @@ main :: proc() {
 
 		// synthetic, deterministic groundwater depth sequence - identical on
 		// both sides, not produced by any not-yet-ported orchestration code.
-		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
+		groundwater_depth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0 // climate-min.csv has no et0 column
 
 		core.soil_moisture_step(
 			&sm,
-			vs_GroundwaterDepth,
+			groundwater_depth,
 			precip,
 			tmax,
 			tmin,

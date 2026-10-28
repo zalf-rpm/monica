@@ -232,69 +232,69 @@ hourly_t :: proc(tmin, tmax: f64, h, sunrise_h: int) -> f64 {
 	PI :: 3.14159265358979323846
 	tavg := (tmin + tmax) / 2
 	amp := (tmax - tmin) / 2
-	H_1: f64
-	hourly_T: f64
+	h_1: f64
+	hourly_temp: f64
 
 	if h < sunrise_h {
-		H_1 = f64(h) + 10.0
+		h_1 = f64(h) + 10.0
 	} else if h > 14 {
-		H_1 = f64(h) - 14.0
+		h_1 = f64(h) - 14.0
 	}
 
 	if h < sunrise_h || h > 14 {
-		hourly_T = tavg + amp*cr_math.cos(PI*H_1/(10.0 + f64(sunrise_h)))
+		hourly_temp = tavg + amp*cr_math.cos(PI*h_1/(10.0 + f64(sunrise_h)))
 	} else {
-		hourly_T = tavg - amp*cr_math.cos(PI*f64(h - sunrise_h)/(14.0 - f64(sunrise_h)))
+		hourly_temp = tavg - amp*cr_math.cos(PI*f64(h - sunrise_h)/(14.0 - f64(sunrise_h)))
 	}
 
-	return hourly_T
+	return hourly_temp
 }
 
 // C++: double Tools::hourlyVaporPressureDeficit(double hourlyTemperature,
 // double dailyTmin, double dailyTavg, double dailyTmax)
 hourly_vapor_pressure_deficit :: proc(
-	hourlyTemperature, dailyTmin, dailyTavg, dailyTmax: f64,
+	hourly_temperature, daily_tmin, daily_tavg, daily_tmax: f64,
 ) -> f64 {
-	saturationVapourPressureHourly :=
-		0.6108 * cr_math.exp(17.27 * hourlyTemperature / (hourlyTemperature + 237.3))
+	saturation_vapour_pressure_hourly :=
+		0.6108 * cr_math.exp(17.27 * hourly_temperature / (hourly_temperature + 237.3))
 
-	dewPointTemperatureHourly :=
-		-0.0360 * dailyTavg + 0.9679*dailyTmin + 0.0072*(dailyTmax - dailyTmin) + 1.0019
+	dew_point_temperature_hourly :=
+		-0.0360 * daily_tavg + 0.9679*daily_tmin + 0.0072*(daily_tmax - daily_tmin) + 1.0019
 
-	actualVapourPressureHourly :=
-		0.6108 * cr_math.exp(17.27 * dewPointTemperatureHourly / (dewPointTemperatureHourly + 237.3))
+	actual_vapour_pressure_hourly :=
+		0.6108 * cr_math.exp(17.27 * dew_point_temperature_hourly / (dew_point_temperature_hourly + 237.3))
 
-	return saturationVapourPressureHourly - actualVapourPressureHourly
+	return saturation_vapour_pressure_hourly - actual_vapour_pressure_hourly
 }
 
 // C++: double Tools::solarElevation(int hour, double latitude, int dayOfTheYear)
-solar_elevation :: proc(hour: int, latitude: f64, dayOfTheYear: int) -> f64 {
+solar_elevation :: proc(hour: int, latitude: f64, day_of_the_year: int) -> f64 {
 	PI :: 3.14159265358979323846
 	lat_rad := latitude * PI / 180.0
 
-	dDecl := solar_declination(dayOfTheYear)
-	dA := cr_math.sin(dDecl) * cr_math.sin(lat_rad)
-	dB := cr_math.cos(dDecl) * cr_math.cos(lat_rad)
-	dHa := PI * (f64(hour) - 12) / 12
-	return cr_math.asin(dA + dB*cr_math.cos(dHa)) // can be -ve
+	d_decl := solar_declination(day_of_the_year)
+	d_a := cr_math.sin(d_decl) * cr_math.sin(lat_rad)
+	d_b := cr_math.cos(d_decl) * cr_math.cos(lat_rad)
+	d_ha := PI * (f64(hour) - 12) / 12
+	return cr_math.asin(d_a + d_b*cr_math.cos(d_ha)) // can be -ve
 }
 
 // C++: double Tools::hourlyRad(double globrad, double lat, int doy, int h)
 hourly_rad :: proc(globrad, lat: f64, doy, h: int) -> f64 {
 	PI :: 3.14159265358979323846
-	dDecl := solar_declination(doy)
+	d_decl := solar_declination(doy)
 	lat_rad := lat * PI / 180.0
 
-	dA := cr_math.sin(dDecl) * cr_math.sin(lat_rad)
-	dB := cr_math.cos(dDecl) * cr_math.cos(lat_rad)
-	dAoB := dA / dB
-	dPhi := (PI * globrad / 86400.0) / (dA*cr_math.acos(-dAoB) + dB*libc.sqrt(1 - dAoB*dAoB))
-	dCoefA := -dB * dPhi
-	dCoefB := dA * dPhi
+	d_a := cr_math.sin(d_decl) * cr_math.sin(lat_rad)
+	d_b := cr_math.cos(d_decl) * cr_math.cos(lat_rad)
+	d_a_over_b := d_a / d_b
+	d_phi := (PI * globrad / 86400.0) / (d_a*cr_math.acos(-d_a_over_b) + d_b*libc.sqrt(1 - d_a_over_b*d_a_over_b))
+	d_coef_a := -d_b * d_phi
+	d_coef_b := d_a * d_phi
 
-	dTotrad := max((dCoefA*cr_math.cos(PI*f64(h)/12.0) + dCoefB) * 3600, 0.0)
+	d_totrad := max((d_coef_a*cr_math.cos(PI*f64(h)/12.0) + d_coef_b) * 3600, 0.0)
 
-	return dTotrad
+	return d_totrad
 }
 
 // C++: template<typename T> bool Tools::flt_equal_eps(T, T, T eps =

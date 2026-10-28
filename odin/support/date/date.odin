@@ -35,17 +35,17 @@ LDIM := [13]u8{0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 // explicit initialiser. Always go through the procedures below rather than
 // reading these two fields.
 Date :: struct {
-	d:                u8,
-	m:                u8,
-	y:                u16,
-	_no_leap_years:   bool, // == !useLeapYears
-	_common_year_dim: bool, // == the selected days-in-month table is the NON-leap one
-	_is_relative:     bool,
+	d:               u8,
+	m:               u8,
+	y:               u16,
+	no_leap_years:   bool, // == !useLeapYears
+	common_year_dim: bool, // == the selected days-in-month table is the NON-leap one
+	is_relative:     bool,
 }
 
 // C++: bool useLeapYears() const
 use_leap_years :: proc(d: Date) -> bool {
-	return !d._no_leap_years
+	return !d.no_leap_years
 }
 
 // C++: bool isValid() const { return _d > 0; }
@@ -55,12 +55,12 @@ is_valid :: proc(d: Date) -> bool {
 
 // C++: bool isRelativeDate() const
 is_relative_date :: proc(d: Date) -> bool {
-	return d._is_relative
+	return d.is_relative
 }
 
 // C++: bool isAbsoluteDate() const
 is_absolute_date :: proc(d: Date) -> bool {
-	return !d._is_relative
+	return !d.is_relative
 }
 
 // C++: uint8_t day() / month() / int year()
@@ -90,7 +90,7 @@ days_in_month :: proc(d: Date, month_: u8 = 0) -> u8 {
 	if m > 12 {
 		return 0
 	}
-	return d._common_year_dim ? DIM[m] : LDIM[m]
+	return d.common_year_dim ? DIM[m] : LDIM[m]
 }
 
 // C++: static uint8_t daysInMonth(uint16_t year, uint8_t month, bool useLeapYears)
@@ -112,11 +112,11 @@ make_date :: proc(
 		d              = day_,
 		m              = month_,
 		y              = year_,
-		_no_leap_years = !use_leap,
-		_is_relative   = is_relative,
+		no_leap_years = !use_leap,
+		is_relative   = is_relative,
 	}
 	// C++: _daysInMonth = isLeapYear() && _useLeapYears ? _ldim() : _dim();
-	d._common_year_dim = !(year_is_leap(year_) && use_leap)
+	d.common_year_dim = !(year_is_leap(year_) && use_leap)
 
 	dim := days_in_month(d, month_)
 	if create_valid_date {
@@ -141,10 +141,10 @@ make_date :: proc(
 // C++: Date::Date(bool useLeapYears) - the default constructor
 make_default_date :: proc(use_leap := DEFAULT_USE_LEAP_YEARS) -> Date {
 	d := Date {
-		_no_leap_years = !use_leap,
+		no_leap_years = !use_leap,
 	}
 	// _y is 0, which passes the leap-year test
-	d._common_year_dim = !(year_is_leap(0) && use_leap)
+	d.common_year_dim = !(year_is_leap(0) && use_leap)
 	return d
 }
 
@@ -190,9 +190,9 @@ make_date_from_iso_string :: proc(s: string, use_leap := DEFAULT_USE_LEAP_YEARS)
 		d              = parsed.d,
 		m              = parsed.m,
 		y              = parsed.y,
-		_no_leap_years = !use_leap,
+		no_leap_years = !use_leap,
 	}
-	d._common_year_dim = !(is_leap_year(d) && use_leap)
+	d.common_year_dim = !(is_leap_year(d) && use_leap)
 	return d
 }
 
@@ -285,7 +285,7 @@ lt :: proc(a, b: Date) -> bool {
 //
 // Note this DOES compare isRelativeDate, while operator< does not.
 eq :: proc(a, b: Date) -> bool {
-	return year(a) == year(b) && a.m == b.m && a.d == b.d && a._is_relative == b._is_relative
+	return year(a) == year(b) && a.m == b.m && a.d == b.d && a.is_relative == b.is_relative
 }
 
 ne :: proc(a, b: Date) -> bool {return !eq(a, b)}
@@ -364,15 +364,15 @@ with_added_years :: proc(d: Date, years: int) -> Date {
 // NOTE(c++-quirk): unlike the constructor, this ignores isLeapYear() and picks
 // the leap table purely from the flag. Reproduced.
 set_use_leap_years :: proc(d: ^Date, use_leap: bool) {
-	d._no_leap_years = !use_leap
-	d._common_year_dim = !use_leap
+	d.no_leap_years = !use_leap
+	d.common_year_dim = !use_leap
 }
 
 // C++: Date Date::operator+(uint64_t days) const
 add :: proc(d: Date, days: u64) -> Date {
 	cd := d
 	ds := days
-	is_rel := cd._is_relative
+	is_rel := cd.is_relative
 
 	for {
 		// C++ computes this in int and truncates to uint8_t
@@ -396,7 +396,7 @@ add :: proc(d: Date, days: u64) -> Date {
 sub :: proc(d: Date, days: u64) -> Date {
 	cd := d
 	ds := days
-	is_rel := cd._is_relative
+	is_rel := cd.is_relative
 
 	for {
 		if u64(cd.d) <= ds {

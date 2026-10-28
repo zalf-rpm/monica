@@ -56,64 +56,64 @@ pwp_fc_sat_method_from_name :: proc(name: string) -> (Pwp_Fc_Sat_Method, bool) {
 // C++: struct Soil::SoilParameters (data members only - see the package comment
 // for calculateAndSetPwpFcSat)
 Soil_Parameters :: struct {
-	vs_SoilSandContent:       f64, // [kg kg-1]
-	vs_SoilClayContent:       f64, // [kg kg-1] (Ton)
-	vs_SoilpH:                f64,
-	vs_SoilStoneContent:      f64, // [m3 m-3]
-	vs_Lambda:                f64,
-	vs_FieldCapacity:         f64, // [m3 m-3]
-	vs_Saturation:            f64, // [m3 m-3]
-	vs_PermanentWiltingPoint: f64, // [m3 m-3]
-	vs_SoilTexture:           string,
-	vs_SoilAmmonium:          f64, // [kg NH4-N m-3]
-	vs_SoilNitrate:           f64, // [kg NO3-N m-3]
-	vs_Soil_CN_Ratio:         f64,
-	vs_SoilMoisturePercentFC: f64,
+	soil_sand_content:        f64, // [kg kg-1]
+	soil_clay_content:        f64, // [kg kg-1] (Ton)
+	soil_ph:                  f64,
+	soil_stone_content:       f64, // [m3 m-3]
+	lambda:                   f64,
+	field_capacity:           f64, // [m3 m-3]
+	saturation:               f64, // [m3 m-3]
+	permanent_wilting_point:  f64, // [m3 m-3]
+	soil_texture:             string,
+	soil_ammonium:            f64, // [kg NH4-N m-3]
+	soil_nitrate:             f64, // [kg NO3-N m-3]
+	soil_cn_ratio:            f64,
+	soil_moisture_percent_fc: f64,
 
-	thickness: f64, // layer thickness in m
+	thickness:                f64, // layer thickness in m
 
 	// Raw/override values; -1 means "unset" and the resolved value has to be
 	// computed via the corresponding soil_xyz() proc below (e.g. from the other
 	// value + clay content, or from organic carbon<->matter conversion). Read/
 	// write the override directly if that's really what's needed, otherwise use
 	// the resolved getter.
-	_vs_SoilRawDensity:    f64, // [kg m-3]
-	_vs_SoilBulkDensity:   f64, // [kg m-3]
-	_vs_SoilOrganicCarbon: f64, // [kg kg-1]
-	_vs_SoilOrganicMatter: f64, // [kg kg-1]
+	soil_raw_density:         f64, // [kg m-3]
+	soil_bulk_density:        f64, // [kg m-3]
+	soil_organic_carbon:      f64, // [kg kg-1]
+	soil_organic_matter:      f64, // [kg kg-1]
 }
 
 // C++ in-class initialisers
 make_soil_parameters :: proc() -> Soil_Parameters {
 	return Soil_Parameters {
-		vs_SoilSandContent = -1.0,
-		vs_SoilClayContent = -1.0,
-		vs_SoilpH = 6.9,
-		vs_Lambda = -1.0,
-		vs_FieldCapacity = -1.0,
-		vs_Saturation = -1.0,
-		vs_PermanentWiltingPoint = -1.0,
-		vs_SoilAmmonium = 0.0005,
-		vs_SoilNitrate = 0.005,
-		vs_Soil_CN_Ratio = 10.0,
-		vs_SoilMoisturePercentFC = 100.0,
-		_vs_SoilRawDensity = -1.0,
-		_vs_SoilBulkDensity = -1.0,
-		_vs_SoilOrganicCarbon = -1.0,
-		_vs_SoilOrganicMatter = -1.0,
+		soil_sand_content = -1.0,
+		soil_clay_content = -1.0,
+		soil_ph = 6.9,
+		lambda = -1.0,
+		field_capacity = -1.0,
+		saturation = -1.0,
+		permanent_wilting_point = -1.0,
+		soil_ammonium = 0.0005,
+		soil_nitrate = 0.005,
+		soil_cn_ratio = 10.0,
+		soil_moisture_percent_fc = 100.0,
+		soil_raw_density = -1.0,
+		soil_bulk_density = -1.0,
+		soil_organic_carbon = -1.0,
+		soil_organic_matter = -1.0,
 	}
 }
 
 // C++: Errors Soil::noSetPwpFcSat(SoilParameters*, int)
 no_set_pwp_fc_sat :: proc(sp: ^Soil_Parameters) -> tl.Errors {
 	errors: tl.Errors
-	if sp.vs_FieldCapacity < 0 {
+	if sp.field_capacity < 0 {
 		tl.append_error(&errors, "Field capacity not set!")
 	}
-	if sp.vs_Saturation < 0 {
+	if sp.saturation < 0 {
 		tl.append_error(&errors, "Saturation not set!")
 	}
-	if sp.vs_PermanentWiltingPoint < 0 {
+	if sp.permanent_wilting_point < 0 {
 		tl.append_error(&errors, "Permanent wilting point not set!")
 	}
 	return errors
@@ -121,39 +121,39 @@ no_set_pwp_fc_sat :: proc(sp: ^Soil_Parameters) -> tl.Errors {
 
 // C++: double soilparameters::soilSiltContent(const SoilParameters*) - (Schluff)
 soil_silt_content :: proc(sp: ^Soil_Parameters) -> f64 {
-	return 1.0 - sp.vs_SoilSandContent - sp.vs_SoilClayContent
+	return 1.0 - sp.soil_sand_content - sp.soil_clay_content
 }
 
 // C++: double soilparameters::soilRawDensity(const SoilParameters*)
 soil_raw_density :: proc(sp: ^Soil_Parameters) -> f64 {
-	if sp._vs_SoilRawDensity < 0 {
-		return ((sp._vs_SoilBulkDensity / 1000.0) - (0.009 * 100.0 * sp.vs_SoilClayContent)) * 1000.0
+	if sp.soil_raw_density < 0 {
+		return ((sp.soil_bulk_density / 1000.0) - (0.009 * 100.0 * sp.soil_clay_content)) * 1000.0
 	}
-	return sp._vs_SoilRawDensity
+	return sp.soil_raw_density
 }
 
 // C++: double soilparameters::soilBulkDensity(const SoilParameters*)
 soil_bulk_density :: proc(sp: ^Soil_Parameters) -> f64 {
-	if sp._vs_SoilBulkDensity < 0 {
-		return ((sp._vs_SoilRawDensity / 1000.0) + (0.009 * 100.0 * sp.vs_SoilClayContent)) * 1000.0
+	if sp.soil_bulk_density < 0 {
+		return ((sp.soil_raw_density / 1000.0) + (0.009 * 100.0 * sp.soil_clay_content)) * 1000.0
 	}
-	return sp._vs_SoilBulkDensity
+	return sp.soil_bulk_density
 }
 
 // C++: double soilparameters::soilOrganicCarbon(const SoilParameters*)
 soil_organic_carbon :: proc(sp: ^Soil_Parameters) -> f64 {
-	if sp._vs_SoilOrganicCarbon < 0 {
-		return sp._vs_SoilOrganicMatter * PO_SOM_TO_C
+	if sp.soil_organic_carbon < 0 {
+		return sp.soil_organic_matter * PO_SOM_TO_C
 	}
-	return sp._vs_SoilOrganicCarbon
+	return sp.soil_organic_carbon
 }
 
 // C++: double soilparameters::soilOrganicMatter(const SoilParameters*)
 soil_organic_matter :: proc(sp: ^Soil_Parameters) -> f64 {
-	if sp._vs_SoilOrganicMatter < 0 {
-		return sp._vs_SoilOrganicCarbon / PO_SOM_TO_C
+	if sp.soil_organic_matter < 0 {
+		return sp.soil_organic_carbon / PO_SOM_TO_C
 	}
-	return sp._vs_SoilOrganicMatter
+	return sp.soil_organic_matter
 }
 
 // C++: bool soilparameters::isValid(const SoilParameters*)
@@ -162,31 +162,31 @@ soil_organic_matter :: proc(sp: ^Soil_Parameters) -> f64 {
 // stream); not reproduced, it's not part of any oracle's output.
 soil_parameters_is_valid :: proc(sp: ^Soil_Parameters) -> bool {
 	is_valid := true
-	if sp.vs_FieldCapacity < 0 {
+	if sp.field_capacity < 0 {
 		is_valid = false
 	}
-	if sp.vs_Saturation < 0 {
+	if sp.saturation < 0 {
 		is_valid = false
 	}
-	if sp.vs_PermanentWiltingPoint < 0 {
+	if sp.permanent_wilting_point < 0 {
 		is_valid = false
 	}
-	if sp.vs_SoilSandContent < 0 {
+	if sp.soil_sand_content < 0 {
 		is_valid = false
 	}
-	if sp.vs_SoilClayContent < 0 {
+	if sp.soil_clay_content < 0 {
 		is_valid = false
 	}
-	if sp.vs_SoilpH < 0 {
+	if sp.soil_ph < 0 {
 		is_valid = false
 	}
-	if sp.vs_SoilStoneContent < 0 {
+	if sp.soil_stone_content < 0 {
 		is_valid = false
 	}
-	if sp.vs_Saturation < 0 {
+	if sp.saturation < 0 {
 		is_valid = false
 	}
-	if sp.vs_PermanentWiltingPoint < 0 {
+	if sp.permanent_wilting_point < 0 {
 		is_valid = false
 	}
 	return is_valid
@@ -206,181 +206,181 @@ soil_parameters_merge :: proc(
 ) -> tl.Errors {
 	es: tl.Errors
 
-	jx.set_double_value(&sp.vs_SoilSandContent, j, "Sand", jx.transform_if_percent(j, "Sand"))
-	jx.set_double_value(&sp.vs_SoilClayContent, j, "Clay", jx.transform_if_percent(j, "Clay"))
-	jx.set_double_value(&sp.vs_SoilpH, j, "pH")
+	jx.set_double_value(&sp.soil_sand_content, j, "Sand", jx.transform_if_percent(j, "Sand"))
+	jx.set_double_value(&sp.soil_clay_content, j, "Clay", jx.transform_if_percent(j, "Clay"))
+	jx.set_double_value(&sp.soil_ph, j, "pH")
 	jx.set_double_value(
-		&sp.vs_SoilStoneContent,
+		&sp.soil_stone_content,
 		j,
 		"Sceleton",
 		jx.transform_if_percent(j, "Sceleton"),
 	)
-	jx.set_double_value(&sp.vs_Lambda, j, "Lambda")
+	jx.set_double_value(&sp.lambda, j, "Lambda")
 	jx.set_double_value(
-		&sp.vs_FieldCapacity,
+		&sp.field_capacity,
 		j,
 		"FieldCapacity",
 		jx.transform_if_percent(j, "FieldCapacity"),
 	)
 	jx.set_double_value(
-		&sp.vs_Saturation,
+		&sp.saturation,
 		j,
 		"PoreVolume",
 		jx.transform_if_percent(j, "PoreVolume"),
 	)
 	jx.set_double_value(
-		&sp.vs_PermanentWiltingPoint,
+		&sp.permanent_wilting_point,
 		j,
 		"PermanentWiltingPoint",
 		jx.transform_if_percent(j, "PermanentWiltingPoint"),
 	)
-	jx.set_string_value(&sp.vs_SoilTexture, j, "KA5TextureClass")
-	jx.set_double_value(&sp.vs_SoilAmmonium, j, "SoilAmmonium")
-	jx.set_double_value(&sp.vs_SoilNitrate, j, "SoilNitrate")
-	jx.set_double_value(&sp.vs_Soil_CN_Ratio, j, "CN")
-	jx.set_double_value(&sp.vs_SoilMoisturePercentFC, j, "SoilMoisturePercentFC")
-	jx.set_double_value(&sp._vs_SoilRawDensity, j, "SoilRawDensity")
-	jx.set_double_value(&sp._vs_SoilBulkDensity, j, "SoilBulkDensity")
+	jx.set_string_value(&sp.soil_texture, j, "KA5TextureClass")
+	jx.set_double_value(&sp.soil_ammonium, j, "SoilAmmonium")
+	jx.set_double_value(&sp.soil_nitrate, j, "SoilNitrate")
+	jx.set_double_value(&sp.soil_cn_ratio, j, "CN")
+	jx.set_double_value(&sp.soil_moisture_percent_fc, j, "SoilMoisturePercentFC")
+	jx.set_double_value(&sp.soil_raw_density, j, "SoilRawDensity")
+	jx.set_double_value(&sp.soil_bulk_density, j, "SoilBulkDensity")
 	// unconditional /100, unlike the transformIfPercent-guarded fields above
-	jx.set_double_value(&sp._vs_SoilOrganicCarbon, j, "SoilOrganicCarbon", .PERCENT)
+	jx.set_double_value(&sp.soil_organic_carbon, j, "SoilOrganicCarbon", .PERCENT)
 	jx.set_double_value(
-		&sp._vs_SoilOrganicMatter,
+		&sp.soil_organic_matter,
 		j,
 		"SoilOrganicMatter",
 		jx.transform_if_percent(j, "SoilOrganicMatter"),
 	)
 
-	st := sp.vs_SoilTexture
+	st := sp.soil_texture
 	// use internally just uppercase chars
-	sp.vs_SoilTexture = strings.to_upper(sp.vs_SoilTexture, allocator)
+	sp.soil_texture = strings.to_upper(sp.soil_texture, allocator)
 
-	if sp.vs_SoilSandContent < 0 && len(sp.vs_SoilTexture) > 0 {
-		res := ka5_texture_2_sand(sp.vs_SoilTexture, allocator)
+	if sp.soil_sand_content < 0 && len(sp.soil_texture) > 0 {
+		res := ka5_texture_2_sand(sp.soil_texture, allocator)
 		if tl.success(res.errs) {
-			sp.vs_SoilSandContent = res.result
+			sp.soil_sand_content = res.result
 		} else {
 			tl.append_errors(&es, res.errs)
 		}
 	}
 
-	if sp.vs_SoilClayContent < 0 && len(sp.vs_SoilTexture) > 0 {
-		res := ka5_texture_2_clay(sp.vs_SoilTexture, allocator)
+	if sp.soil_clay_content < 0 && len(sp.soil_texture) > 0 {
+		res := ka5_texture_2_clay(sp.soil_texture, allocator)
 		if tl.success(res.errs) {
-			sp.vs_SoilClayContent = res.result
+			sp.soil_clay_content = res.result
 		} else {
 			tl.append_errors(&es, res.errs)
 		}
 	}
 
-	if sp.vs_SoilClayContent >= 0 && sp.vs_SoilSandContent >= 0 && len(sp.vs_SoilTexture) == 0 {
-		sp.vs_SoilTexture = sand_and_clay_2_ka5_texture(sp.vs_SoilSandContent, sp.vs_SoilClayContent)
+	if sp.soil_clay_content >= 0 && sp.soil_sand_content >= 0 && len(sp.soil_texture) == 0 {
+		sp.soil_texture = sand_and_clay_2_ka5_texture(sp.soil_sand_content, sp.soil_clay_content)
 	}
 
 	// restrict sceleton to 80%, else FC, PWP and SAT could be calculated too low,
 	// so that the water transport algorithm gets unstable
-	if sp.vs_SoilStoneContent > 0 {
-		sp.vs_SoilStoneContent = min(sp.vs_SoilStoneContent, 0.8)
+	if sp.soil_stone_content > 0 {
+		sp.soil_stone_content = min(sp.soil_stone_content, 0.8)
 	}
 
 	tl.append_errors(&es, apply_pwp_fc_sat_method(method, sp, layer_no, path_to_soil_dir, allocator))
 
 	// restrict FC, PWP and SAT else the water transport algorithm gets instable
-	if sp.vs_FieldCapacity < 0.05 {
+	if sp.field_capacity < 0.05 {
 		tl.append_warningf(
 			&es,
 			"Field capacity is too low (%g%%). Is being set to 5%%.",
-			sp.vs_FieldCapacity * 100,
+			sp.field_capacity * 100,
 		)
-		sp.vs_FieldCapacity = 0.05
+		sp.field_capacity = 0.05
 	}
-	if sp.vs_PermanentWiltingPoint < 0.01 {
+	if sp.permanent_wilting_point < 0.01 {
 		tl.append_warningf(
 			&es,
 			"Permanent wilting point is too low (%g%%). Is being set to 1%%.",
-			sp.vs_PermanentWiltingPoint * 100,
+			sp.permanent_wilting_point * 100,
 		)
-		sp.vs_PermanentWiltingPoint = 0.01
+		sp.permanent_wilting_point = 0.01
 	}
-	if sp.vs_Saturation < 0.1 {
+	if sp.saturation < 0.1 {
 		tl.append_warningf(
 			&es,
 			"Saturation is too low (%g%%). Is being set to 10%%.",
-			sp.vs_Saturation * 100,
+			sp.saturation * 100,
 		)
-		sp.vs_Saturation = 0.1
+		sp.saturation = 0.1
 	}
 
-	if sp.vs_Lambda < 0 && sp.vs_SoilSandContent > 0 && sp.vs_SoilClayContent > 0 {
-		sp.vs_Lambda = sand_and_clay_2_lambda(sp.vs_SoilSandContent, sp.vs_SoilClayContent)
+	if sp.lambda < 0 && sp.soil_sand_content > 0 && sp.soil_clay_content > 0 {
+		sp.lambda = sand_and_clay_2_lambda(sp.soil_sand_content, sp.soil_clay_content)
 	}
 
-	if len(sp.vs_SoilTexture) > 0 {
-		r := ka5_texture_2_sand(sp.vs_SoilTexture, allocator)
+	if len(sp.soil_texture) > 0 {
+		r := ka5_texture_2_sand(sp.soil_texture, allocator)
 		if tl.failure(r.errs) {
 			tl.append_errorf(&es, "KA5TextureClass (%s) is unknown.", st)
 		}
 	}
-	if sp.vs_SoilClayContent < 0 || sp.vs_SoilClayContent > 1.0 {
-		tl.append_errorf(&es, "Clay content (%g) is out of bounds [0, 1].", sp.vs_SoilClayContent)
+	if sp.soil_clay_content < 0 || sp.soil_clay_content > 1.0 {
+		tl.append_errorf(&es, "Clay content (%g) is out of bounds [0, 1].", sp.soil_clay_content)
 	}
-	if sp.vs_SoilpH < 0 || sp.vs_SoilpH > 14 {
-		tl.append_errorf(&es, "pH value (%g) is out of bounds [0, 14].", sp.vs_SoilpH)
+	if sp.soil_ph < 0 || sp.soil_ph > 14 {
+		tl.append_errorf(&es, "pH value (%g) is out of bounds [0, 14].", sp.soil_ph)
 	}
-	if sp.vs_SoilStoneContent < 0 || sp.vs_SoilStoneContent > 1.0 {
+	if sp.soil_stone_content < 0 || sp.soil_stone_content > 1.0 {
 		tl.append_errorf(
 			&es,
 			"Sceleton (%g) is out of bounds [0, 1].",
-			sp.vs_SoilStoneContent,
+			sp.soil_stone_content,
 		)
 	}
-	if sp.vs_FieldCapacity < 0 || sp.vs_FieldCapacity > 1.0 {
-		tl.append_errorf(&es, "FieldCapacity (%g) is out of bounds [0, 1].", sp.vs_FieldCapacity)
+	if sp.field_capacity < 0 || sp.field_capacity > 1.0 {
+		tl.append_errorf(&es, "FieldCapacity (%g) is out of bounds [0, 1].", sp.field_capacity)
 	}
-	if sp.vs_Saturation < 0 || sp.vs_Saturation > 1.0 {
-		tl.append_errorf(&es, "PoreVolume (%g) is out of bounds [0, 1].", sp.vs_Saturation)
+	if sp.saturation < 0 || sp.saturation > 1.0 {
+		tl.append_errorf(&es, "PoreVolume (%g) is out of bounds [0, 1].", sp.saturation)
 	}
-	if sp.vs_PermanentWiltingPoint < 0 || sp.vs_PermanentWiltingPoint > 1.0 {
+	if sp.permanent_wilting_point < 0 || sp.permanent_wilting_point > 1.0 {
 		tl.append_errorf(
 			&es,
 			"PermanentWiltingPoint (%g) is out of bounds [0, 1].",
-			sp.vs_PermanentWiltingPoint,
+			sp.permanent_wilting_point,
 		)
 	}
-	if sp.vs_SoilMoisturePercentFC < 0 || sp.vs_SoilMoisturePercentFC > 100 {
+	if sp.soil_moisture_percent_fc < 0 || sp.soil_moisture_percent_fc > 100 {
 		tl.append_errorf(
 			&es,
 			"SoilMoisturePercentFC (%g) is out of bounds [0, 100].",
-			sp.vs_SoilMoisturePercentFC,
+			sp.soil_moisture_percent_fc,
 		)
 	}
-	if sp._vs_SoilBulkDensity < 0 && (sp._vs_SoilRawDensity < 0 || sp._vs_SoilRawDensity > 2000) {
+	if sp.soil_bulk_density < 0 && (sp.soil_raw_density < 0 || sp.soil_raw_density > 2000) {
 		tl.append_warningf(
 			&es,
 			"SoilRawDensity (%g) is out of bounds [0, 2000].",
-			sp._vs_SoilRawDensity,
+			sp.soil_raw_density,
 		)
 	}
-	if sp._vs_SoilRawDensity < 0 && (sp._vs_SoilBulkDensity < 0 || sp._vs_SoilBulkDensity > 2000) {
+	if sp.soil_raw_density < 0 && (sp.soil_bulk_density < 0 || sp.soil_bulk_density > 2000) {
 		tl.append_warningf(
 			&es,
 			"SoilBulkDensity (%g) is out of bounds [0, 2000].",
-			sp._vs_SoilBulkDensity,
+			sp.soil_bulk_density,
 		)
 	}
-	if sp._vs_SoilOrganicMatter < 0 &&
-	   (sp._vs_SoilOrganicCarbon < 0 || sp._vs_SoilOrganicCarbon > 1.0) {
+	if sp.soil_organic_matter < 0 &&
+	   (sp.soil_organic_carbon < 0 || sp.soil_organic_carbon > 1.0) {
 		tl.append_errorf(
 			&es,
 			"SoilOrganicCarbon content (%g) is out of bounds [0, 1].",
-			sp._vs_SoilOrganicCarbon,
+			sp.soil_organic_carbon,
 		)
 	}
-	if sp._vs_SoilOrganicCarbon < 0 &&
-	   (sp._vs_SoilOrganicMatter < 0 || sp._vs_SoilOrganicMatter > 1.0) {
+	if sp.soil_organic_carbon < 0 &&
+	   (sp.soil_organic_matter < 0 || sp.soil_organic_matter > 1.0) {
 		tl.append_errorf(
 			&es,
 			"SoilOrganicMatter content (%g) is out of bounds [0, 1].",
-			sp._vs_SoilOrganicMatter,
+			sp.soil_organic_matter,
 		)
 	}
 
@@ -392,23 +392,23 @@ soil_parameters_to_json :: proc(sp: ^Soil_Parameters, a: Allocator) -> jx.Value 
 	return jx.obj(
 		a,
 		{"type", jx.sl("SoilParameters")},
-		{"Sand", jx.vu(sp.vs_SoilSandContent, "% [0-1]", a)},
-		{"Clay", jx.vu(sp.vs_SoilClayContent, "% [0-1]", a)},
-		{"pH", jx.f(sp.vs_SoilpH)},
-		{"Sceleton", jx.vu(sp.vs_SoilStoneContent, "vol% [0-1] (m3 m-3)", a)},
-		{"Lambda", jx.f(sp.vs_Lambda)},
-		{"FieldCapacity", jx.vu(sp.vs_FieldCapacity, "vol% [0-1] (m3 m-3)", a)},
-		{"PoreVolume", jx.vu(sp.vs_Saturation, "vol% [0-1] (m3 m-3)", a)},
-		{"PermanentWiltingPoint", jx.vu(sp.vs_PermanentWiltingPoint, "vol% [0-1] (m3 m-3)", a)},
-		{"KA5TextureClass", jx.s(sp.vs_SoilTexture, a)},
-		{"SoilAmmonium", jx.vu(sp.vs_SoilAmmonium, "kg NH4-N m-3", a)},
-		{"SoilNitrate", jx.vu(sp.vs_SoilNitrate, "kg NO3-N m-3", a)},
-		{"CN", jx.f(sp.vs_Soil_CN_Ratio)},
-		{"SoilRawDensity", jx.vu(sp._vs_SoilRawDensity, "kg m-3", a)},
-		{"SoilBulkDensity", jx.vu(sp._vs_SoilBulkDensity, "kg m-3", a)},
-		{"SoilOrganicCarbon", jx.vu(sp._vs_SoilOrganicCarbon * 100.0, "mass% [0-100]", a)},
-		{"SoilOrganicMatter", jx.vu(sp._vs_SoilOrganicMatter, "mass% [0-1]", a)},
-		{"SoilMoisturePercentFC", jx.vu(sp.vs_SoilMoisturePercentFC, "% [0-100]", a)},
+		{"Sand", jx.vu(sp.soil_sand_content, "% [0-1]", a)},
+		{"Clay", jx.vu(sp.soil_clay_content, "% [0-1]", a)},
+		{"pH", jx.f(sp.soil_ph)},
+		{"Sceleton", jx.vu(sp.soil_stone_content, "vol% [0-1] (m3 m-3)", a)},
+		{"Lambda", jx.f(sp.lambda)},
+		{"FieldCapacity", jx.vu(sp.field_capacity, "vol% [0-1] (m3 m-3)", a)},
+		{"PoreVolume", jx.vu(sp.saturation, "vol% [0-1] (m3 m-3)", a)},
+		{"PermanentWiltingPoint", jx.vu(sp.permanent_wilting_point, "vol% [0-1] (m3 m-3)", a)},
+		{"KA5TextureClass", jx.s(sp.soil_texture, a)},
+		{"SoilAmmonium", jx.vu(sp.soil_ammonium, "kg NH4-N m-3", a)},
+		{"SoilNitrate", jx.vu(sp.soil_nitrate, "kg NO3-N m-3", a)},
+		{"CN", jx.f(sp.soil_cn_ratio)},
+		{"SoilRawDensity", jx.vu(sp.soil_raw_density, "kg m-3", a)},
+		{"SoilBulkDensity", jx.vu(sp.soil_bulk_density, "kg m-3", a)},
+		{"SoilOrganicCarbon", jx.vu(sp.soil_organic_carbon * 100.0, "mass% [0-100]", a)},
+		{"SoilOrganicMatter", jx.vu(sp.soil_organic_matter, "mass% [0-1]", a)},
+		{"SoilMoisturePercentFC", jx.vu(sp.soil_moisture_percent_fc, "% [0-100]", a)},
 	)
 }
 

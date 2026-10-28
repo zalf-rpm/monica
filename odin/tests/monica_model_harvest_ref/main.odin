@@ -24,16 +24,16 @@ g_soil_moisture: ^core.Soil_Moisture
 g_soil_organic: ^core.Soil_Organic
 g_residue_params: ^p.Organic_Matter_Parameters
 
-real_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avgAirTemp)
+real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
+	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
 }
 
-real_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {
+real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {
 	core.soil_organic_add_organic_matter(
 		g_soil_organic,
 		g_residue_params,
 		layer2amount,
-		nConcentration,
+		n_concentration,
 	)
 }
 
@@ -68,7 +68,7 @@ dump_soil_organic_top3 :: proc(t: ^tr.Tracer, path: string, so: ^core.Soil_Organ
 		tr.dump(
 			&(t^),
 			strings.concatenate({p2, ".vo_AOM_Pool.size"}),
-			len(so.soil_column.layers[i].vo_AOM_Pool),
+			len(so.soil_column.layers[i].aom_pool),
 		)
 	}
 }
@@ -223,7 +223,7 @@ main :: proc() {
 		current_date := clim.data_accessor_date_for_step(&da, day)
 		julday := clim.data_accessor_julian_day_for_step(&da, day)
 
-		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
+		groundwater_depth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0
 
 		core.soil_temperature_step(
@@ -237,7 +237,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&model.soil_moisture,
-			vs_GroundwaterDepth,
+			groundwater_depth,
 			precip,
 			tmax,
 			tmin,
@@ -282,8 +282,8 @@ main :: proc() {
 	{
 		spec: core.Harvest_Spec
 		ocmd := core.Harvest_Opt_Carbon_Management_Data {
-			maxResidueRecoverFraction = 1,
-			cropUsage                 = .Biomass_Production,
+			max_residue_recover_fraction = 1,
+			crop_usage                 = .Biomass_Production,
 		}
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
@@ -295,12 +295,12 @@ main :: proc() {
 	{
 		spec: core.Harvest_Spec
 		ocmd := core.Harvest_Opt_Carbon_Management_Data {
-			optCarbonConservation     = true,
-			cropImpactOnHumusBalance  = 100.0,
-			maxResidueRecoverFraction = 0.8,
-			residueHeq                = 20.0,
-			organicFertilizerHeq      = 15.0,
-			cropUsage                 = .Biomass_Production,
+			opt_carbon_conservation     = true,
+			crop_impact_on_humus_balance  = 100.0,
+			max_residue_recover_fraction = 0.8,
+			residue_heq                = 20.0,
+			organic_fertilizer_heq      = 15.0,
+			crop_usage                 = .Biomass_Production,
 		}
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 1, a)
 	}
@@ -312,12 +312,12 @@ main :: proc() {
 	{
 		spec: core.Harvest_Spec
 		ocmd := core.Harvest_Opt_Carbon_Management_Data {
-			optCarbonConservation     = true,
-			cropImpactOnHumusBalance  = 100.0,
-			maxResidueRecoverFraction = 0.8,
-			residueHeq                = 20.0,
-			organicFertilizerHeq      = 15.0,
-			cropUsage                 = .Green_Manure,
+			opt_carbon_conservation     = true,
+			crop_impact_on_humus_balance  = 100.0,
+			max_residue_recover_fraction = 0.8,
+			residue_heq                = 20.0,
+			organic_fertilizer_heq      = 15.0,
+			crop_usage                 = .Green_Manure,
 		}
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
@@ -328,18 +328,18 @@ main :: proc() {
 	tr.set_day(&t, 3)
 	{
 		spec: core.Harvest_Spec
-		spec.organ2specVal = make(map[int]core.Harvest_Spec_Value, 0, a)
-		spec.organ2specVal[1] = core.Harvest_Spec_Value {
-			exportPercentage = 70.0,
+		spec.organ_to_spec_val = make(map[int]core.Harvest_Spec_Value, 0, a)
+		spec.organ_to_spec_val[1] = core.Harvest_Spec_Value {
+			export_percentage = 70.0,
 			incorporate      = true,
 		}
-		spec.organ2specVal[3] = core.Harvest_Spec_Value {
-			exportPercentage = 90.0,
+		spec.organ_to_spec_val[3] = core.Harvest_Spec_Value {
+			export_percentage = 90.0,
 			incorporate      = false,
 		}
 		ocmd := core.Harvest_Opt_Carbon_Management_Data {
-			maxResidueRecoverFraction = 1,
-			cropUsage                 = .Biomass_Production,
+			max_residue_recover_fraction = 1,
+			crop_usage                 = .Biomass_Production,
 		}
 		core.monica_model_harvest_current_crop(model, true, spec, ocmd, 0, a)
 	}
@@ -351,8 +351,8 @@ main :: proc() {
 	{
 		spec: core.Harvest_Spec
 		ocmd := core.Harvest_Opt_Carbon_Management_Data {
-			maxResidueRecoverFraction = 1,
-			cropUsage                 = .Biomass_Production,
+			max_residue_recover_fraction = 1,
+			crop_usage                 = .Biomass_Production,
 		}
 		core.monica_model_harvest_current_crop(model, false, spec, ocmd, 0, a)
 	}

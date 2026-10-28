@@ -64,19 +64,19 @@ Header_Convert_Spec :: struct {
 
 // C++: struct Climate::CSVViaHeaderOptions : public Tools::Json11Serializable
 Csv_Via_Header_Options :: struct {
-	separator:          string,
-	startDate:          d.Date,
-	endDate:            d.Date,
-	noOfHeaderLines:    int,
-	lineNoOfHeaderLine: int,
-	lineNoOfDataStart:  int,
-	lineNoOfDataEnd:    int,
-	latitude:           f64,
-	header:             [dynamic]string,
-	headerName2ACDName: map[string]string,
-	convert:            map[string]Header_Convert_Spec,
-	convertFn:          map[ACD]Csv_Convert,
-	datePattern:        string,
+	separator:               string,
+	start_date:              d.Date,
+	end_date:                d.Date,
+	no_of_header_lines:      int,
+	line_no_of_header_line:  int,
+	line_no_of_data_start:   int,
+	line_no_of_data_end:     int,
+	latitude:                f64,
+	header:                  [dynamic]string,
+	header_name_to_acd_name: map[string]string,
+	convert:                 map[string]Header_Convert_Spec,
+	convert_fn:              map[ACD]Csv_Convert,
+	date_pattern:            string,
 }
 
 // C++ in-class initialisers: separator(","), noOfHeaderLines{1},
@@ -84,10 +84,10 @@ Csv_Via_Header_Options :: struct {
 make_csv_via_header_options :: proc() -> Csv_Via_Header_Options {
 	return Csv_Via_Header_Options {
 		separator = ",",
-		noOfHeaderLines = 1,
-		lineNoOfHeaderLine = -1,
-		lineNoOfDataStart = -2,
-		lineNoOfDataEnd = -1,
+		no_of_header_lines = 1,
+		line_no_of_header_line = -1,
+		line_no_of_data_start = -2,
+		line_no_of_data_end = -1,
 	}
 }
 
@@ -114,46 +114,46 @@ csv_via_header_options_merge :: proc(
 			items := jx.array_items(v)
 			if jx.string_value_of(items[0]) == "pattern-date" {
 				header_names[k] = jx.string_value_of(items[0])
-				o.datePattern = jx.string_value_of(items[1])
+				o.date_pattern = jx.string_value_of(items[1])
 			}
 		} else {
 			header_names[k] = jx.string_value_of(v)
 		}
 	}
-	o.headerName2ACDName = header_names
+	o.header_name_to_acd_name = header_names
 	jx.set_string_value_d(&o.separator, j, "csv-separator", ",")
 
-	jx.set_iso_date_value(&o.startDate, j, "start-date")
-	jx.set_iso_date_value(&o.endDate, j, "end-date")
+	jx.set_iso_date_value(&o.start_date, j, "start-date")
+	jx.set_iso_date_value(&o.end_date, j, "end-date")
 
 	jx.set_double_value(&o.latitude, j, "latitude")
 
-	o.lineNoOfDataStart = jx.int_value_key_d(j, "line-no-of-data-start", o.lineNoOfDataStart)
+	o.line_no_of_data_start = jx.int_value_key_d(j, "line-no-of-data-start", o.line_no_of_data_start)
 
 	jx.set_string_vector(&o.header, j, "header")
 	if len(o.header) == 0 {
-		o.noOfHeaderLines = jx.int_value_key_d(
+		o.no_of_header_lines = jx.int_value_key_d(
 			j,
 			"no-of-climate-file-header-lines",
-			o.noOfHeaderLines,
+			o.no_of_header_lines,
 		)
-		o.lineNoOfHeaderLine = jx.int_value_key_d(j, "line-no-of-header-line", o.lineNoOfHeaderLine)
-		if o.lineNoOfHeaderLine < 0 {
-			o.lineNoOfHeaderLine = 1
+		o.line_no_of_header_line = jx.int_value_key_d(j, "line-no-of-header-line", o.line_no_of_header_line)
+		if o.line_no_of_header_line < 0 {
+			o.line_no_of_header_line = 1
 		}
-		if o.lineNoOfDataStart < 0 {
-			o.lineNoOfDataStart = o.lineNoOfHeaderLine + o.noOfHeaderLines
+		if o.line_no_of_data_start < 0 {
+			o.line_no_of_data_start = o.line_no_of_header_line + o.no_of_header_lines
 		}
 	} else {
-		o.lineNoOfHeaderLine = -1
-		if o.lineNoOfDataStart < 0 {
-			o.lineNoOfDataStart = 1
+		o.line_no_of_header_line = -1
+		if o.line_no_of_data_start < 0 {
+			o.line_no_of_data_start = 1
 		}
 	}
 
-	o.lineNoOfDataEnd = jx.int_value_key_d(j, "line-no-of-data-end", o.lineNoOfDataEnd)
-	if o.lineNoOfDataEnd > 0 && o.lineNoOfDataEnd < o.lineNoOfDataStart {
-		o.lineNoOfDataEnd = -1
+	o.line_no_of_data_end = jx.int_value_key_d(j, "line-no-of-data-end", o.line_no_of_data_end)
+	if o.line_no_of_data_end > 0 && o.line_no_of_data_end < o.line_no_of_data_start {
+		o.line_no_of_data_end = -1
 	}
 
 	return tl.Errors{}
@@ -166,7 +166,7 @@ csv_via_header_options_merge :: proc(
 // is nothing to reproduce: the "convert" key is simply never emitted).
 csv_via_header_options_to_json :: proc(o: ^Csv_Via_Header_Options, a: Allocator) -> jx.Value {
 	header_names := make(jx.Object, 0, a)
-	for k, v in o.headerName2ACDName {
+	for k, v in o.header_name_to_acd_name {
 		if spec, ok := o.convert[k]; ok {
 			header_names[strings.clone(k, a)] = jx.arr(a, jx.s(v, a), jx.s(spec.op, a), jx.f(spec.value))
 		} else {
@@ -174,8 +174,8 @@ csv_via_header_options_to_json :: proc(o: ^Csv_Via_Header_Options, a: Allocator)
 		}
 	}
 
-	start_iso := d.to_iso_date_string(o.startDate, "", a)
-	end_iso := d.to_iso_date_string(o.endDate, "", a)
+	start_iso := d.to_iso_date_string(o.start_date, "", a)
+	end_iso := d.to_iso_date_string(o.end_date, "", a)
 
 	return jx.obj(
 		a,
@@ -183,10 +183,10 @@ csv_via_header_options_to_json :: proc(o: ^Csv_Via_Header_Options, a: Allocator)
 		{"csv-separator", jx.s(o.separator, a)},
 		{"start-date", jx.s(start_iso, a)},
 		{"end-date", jx.s(end_iso, a)},
-		{"no-of-climate-file-header-lines", jx.i(o.noOfHeaderLines)},
-		{"line-no-of-header-line", jx.i(o.lineNoOfHeaderLine)},
-		{"line-no-of-data-start", jx.i(o.lineNoOfDataStart)},
-		{"line-no-of-data-end", jx.i(o.lineNoOfDataEnd)},
+		{"no-of-climate-file-header-lines", jx.i(o.no_of_header_lines)},
+		{"line-no-of-header-line", jx.i(o.line_no_of_header_line)},
+		{"line-no-of-data-start", jx.i(o.line_no_of_data_start)},
+		{"line-no-of-data-end", jx.i(o.line_no_of_data_end)},
 		{"header-to-acd-names", jx.Value(header_names)},
 		{"latitude", jx.f(o.latitude)},
 		{"header", prim_arr_string(o.header[:], a)},
@@ -206,9 +206,9 @@ read_climate_data_from_csv_lines_via_headers :: proc(
 	header := make([dynamic]ACD, 0, allocator)
 	s := ""
 
-	if options.noOfHeaderLines > 0 || len(options.header) > 0 {
-		if options.lineNoOfHeaderLine >= 1 && options.lineNoOfHeaderLine <= len(lines) {
-			s = lines[options.lineNoOfHeaderLine - 1]
+	if options.no_of_header_lines > 0 || len(options.header) > 0 {
+		if options.line_no_of_header_line >= 1 && options.line_no_of_header_line <= len(lines) {
+			s = lines[options.line_no_of_header_line - 1]
 		}
 
 		r: [dynamic]string
@@ -235,7 +235,7 @@ read_climate_data_from_csv_lines_via_headers :: proc(
 		n2acd := name2acd(allocator)
 		for col_name in r {
 			tcn := tl.trim(col_name, " \t\f\v\n\r", allocator)
-			repl_col_name := tcn in options.headerName2ACDName ? options.headerName2ACDName[tcn] : ""
+			repl_col_name := tcn in options.header_name_to_acd_name ? options.header_name_to_acd_name[tcn] : ""
 			lookup_name := len(repl_col_name) == 0 ? tcn : repl_col_name
 			acd_found, found := n2acd[lookup_name]
 			append(&header, found ? acd_found : ACD.skip)
@@ -248,18 +248,18 @@ read_climate_data_from_csv_lines_via_headers :: proc(
 					// above, which uses .find() and falls back to `skip`.
 					// Reproduced: this second lookup defaults to .day, not .skip.
 					acd_for_convert := found ? acd_found : ACD.day
-					if options.convertFn == nil {
-						options.convertFn = make(map[ACD]Csv_Convert, allocator)
+					if options.convert_fn == nil {
+						options.convert_fn = make(map[ACD]Csv_Convert, allocator)
 					}
 					switch spec.op {
 					case "*":
-						options.convertFn[acd_for_convert] = Csv_Convert{.MUL, spec.value}
+						options.convert_fn[acd_for_convert] = Csv_Convert{.MUL, spec.value}
 					case "/":
-						options.convertFn[acd_for_convert] = Csv_Convert{.DIV, spec.value}
+						options.convert_fn[acd_for_convert] = Csv_Convert{.DIV, spec.value}
 					case "+":
-						options.convertFn[acd_for_convert] = Csv_Convert{.ADD, spec.value}
+						options.convert_fn[acd_for_convert] = Csv_Convert{.ADD, spec.value}
 					case "-":
-						options.convertFn[acd_for_convert] = Csv_Convert{.SUB, spec.value}
+						options.convert_fn[acd_for_convert] = Csv_Convert{.SUB, spec.value}
 					}
 				}
 			}
@@ -329,9 +329,9 @@ read_climate_data_from_csv_lines :: proc(
 	res.allocator = allocator
 
 	separator := options.separator
-	start_date := options.startDate
-	end_date := options.endDate
-	convert := options.convertFn
+	start_date := options.start_date
+	end_date := options.end_date
+	convert := options.convert_fn
 
 	is_start_date_valid := d.is_valid(start_date)
 	is_end_date_valid := d.is_valid(end_date)
@@ -343,11 +343,11 @@ read_climate_data_from_csv_lines :: proc(
 
 	line_no := 1
 	for s in lines {
-		if line_no < options.lineNoOfDataStart {
+		if line_no < options.line_no_of_data_start {
 			line_no += 1
 			continue
 		}
-		if options.lineNoOfDataEnd > 0 && line_no > options.lineNoOfDataEnd {
+		if options.line_no_of_data_end > 0 && line_no > options.line_no_of_data_end {
 			break
 		}
 		line_no += 1
@@ -401,7 +401,7 @@ read_climate_data_from_csv_lines :: proc(
 			case .isoDate:
 				date = d.from_iso_date_string(field)
 			case .patternDate:
-				date = d.from_pattern_date_string(field, options.datePattern, allocator = allocator)
+				date = d.from_pattern_date_string(field, options.date_pattern, allocator = allocator)
 			case .deDate:
 				dmy := tl.split_string(field, ".", true, allocator)
 				if len(dmy) == 3 {
@@ -635,14 +635,14 @@ read_climate_data_from_csv_files_via_headers :: proc(
 		}
 	}
 
-	if d.is_valid(options.startDate) && d.is_valid(options.endDate) {
-		no_of_days := d.diff(options.endDate, options.startDate) + 1
+	if d.is_valid(options.start_date) && d.is_valid(options.end_date) {
+		no_of_days := d.diff(options.end_date, options.start_date) + 1
 		if data_accessor_no_of_steps_possible(&final_da) < no_of_days {
 			tl.append_errorf(
 				&res,
 				"Read time-series data between %s and %s (%d days) is incomplete. There are just %d days in read dataset.",
-				d.to_iso_date_string(options.startDate, "", allocator),
-				d.to_iso_date_string(options.endDate, "", allocator),
+				d.to_iso_date_string(options.start_date, "", allocator),
+				d.to_iso_date_string(options.end_date, "", allocator),
 				no_of_days,
 				data_accessor_no_of_steps_possible(&final_da),
 			)

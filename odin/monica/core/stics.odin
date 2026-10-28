@@ -43,27 +43,27 @@ stepwise_linear_function4 :: proc(
 }
 
 @(private)
-nit_fNH4 :: proc(NH4, nh4_min, w, Kamm: f64) -> f64 {
-	return max(0.0, NH4-nh4_min) / (max(0.0, NH4-nh4_min) + (w * Kamm))
+nit_f_nh4 :: proc(nh4, nh4_min, w, kamm: f64) -> f64 {
+	return max(0.0, nh4-nh4_min) / (max(0.0, nh4-nh4_min) + (w * kamm))
 }
 
 @(private)
-nit_fpH :: proc(pHminnit, pH, pHmaxnit: f64) -> f64 {
-	return stepwise_linear_function3(pH, pHminnit, pHmaxnit)
+nit_f_ph :: proc(ph_min_nit, ph, ph_max_nit: f64) -> f64 {
+	return stepwise_linear_function3(ph, ph_min_nit, ph_max_nit)
 }
 
 @(private)
-nit_fTgauss :: proc(t, tnitopt_gauss, scale_tnitopt: f64) -> f64 {
+nit_f_tgauss :: proc(t, tnitopt_gauss, scale_tnitopt: f64) -> f64 {
 	return cr_math.exp(-1 * cr_math.pow(t-tnitopt_gauss, 2) / cr_math.pow(scale_tnitopt, 2))
 }
 
 @(private)
-nit_fTstep :: proc(t, tnitmin, tnitopt, tnitopt2, tnitmax: f64) -> f64 {
+nit_f_tstep :: proc(t, tnitmin, tnitopt, tnitopt2, tnitmax: f64) -> f64 {
 	return max(0.0, stepwise_linear_function4(t, tnitmin, tnitopt, tnitopt2, tnitmax))
 }
 
 @(private)
-nit_fWFPS :: proc(wfps, hminn, hoptn, fc, sat: f64) -> f64 {
+nit_f_wfps :: proc(wfps, hminn, hoptn, fc, sat: f64) -> f64 {
 	return stepwise_linear_function4(wfps, hminn*fc/sat, hoptn*fc/sat, fc/sat, sat/sat)
 }
 
@@ -76,44 +76,44 @@ nit_fWFPS :: proc(wfps, hminn, hoptn, fc, sat: f64) -> f64 {
 // [m3-water/m3-soil], sat = saturation [m3-water/m3-soil].
 stics_vnit :: proc(
 	ps: ^p.Stics_Parameters,
-	NH4, pH, soilT, wfps, soilWaterContent, fc, sat: f64,
+	nh4, ph, soil_t, wfps, soil_water_content, fc, sat: f64,
 ) -> f64 {
 	vnitpot := 0.0
-	fNH4res := 0.0
+	f_nh4_res := 0.0
 	switch ps.code_vnit {
 	case 1:
-		vnitpot = ps.fnx * max(0.0, NH4-ps.nh4_min)
-		fNH4res = 1
+		vnitpot = ps.fnx * max(0.0, nh4-ps.nh4_min)
+		f_nh4_res = 1
 	case 2:
 		vnitpot = ps.vnitmax
-		fNH4res = nit_fNH4(NH4, ps.nh4_min, soilWaterContent, ps.Kamm)
+		f_nh4_res = nit_f_nh4(nh4, ps.nh4_min, soil_water_content, ps.kamm)
 	}
 
-	fTres := 0.0
+	f_tres := 0.0
 	switch ps.code_tnit {
 	case 1:
-		fTres = nit_fTstep(soilT, ps.tnitmin, ps.tnitopt, ps.tnitop2, ps.tnitmax)
+		f_tres = nit_f_tstep(soil_t, ps.tnitmin, ps.tnitopt, ps.tnitop2, ps.tnitmax)
 	case 2:
-		fTres = nit_fTgauss(soilT, ps.tnitopt_gauss, ps.scale_tnitopt)
+		f_tres = nit_f_tgauss(soil_t, ps.tnitopt_gauss, ps.scale_tnitopt)
 	}
 
-	return vnitpot * fNH4res * nit_fpH(ps.pHminnit, pH, ps.pHmaxnit) * fTres * nit_fWFPS(wfps, ps.hminn, ps.hoptn, fc, sat)
+	return vnitpot * f_nh4_res * nit_f_ph(ps.ph_min_nit, ph, ps.ph_max_nit) * f_tres * nit_f_wfps(wfps, ps.hminn, ps.hoptn, fc, sat)
 }
 
 @(private)
-denit_fNO3 :: proc(NO3, w, Kd: f64) -> f64 {
-	return NO3 / (NO3 + (w * Kd))
+denit_f_no3 :: proc(no3, w, kd: f64) -> f64 {
+	return no3 / (no3 + (w * kd))
 }
 
 @(private)
-denit_fT :: proc(t, tdenitopt_gauss, scale_tdenitopt: f64) -> f64 {
+denit_f_t :: proc(t, tdenitopt_gauss, scale_tdenitopt: f64) -> f64 {
 	delta := t - tdenitopt_gauss
 	return cr_math.exp(-1 * (delta * delta) / (scale_tdenitopt * scale_tdenitopt))
 }
 
 // water-filled pore space
 @(private)
-denit_fWFPS :: proc(wfps, wfpsc: f64) -> f64 {
+denit_f_wfps :: proc(wfps, wfpsc: f64) -> f64 {
 	return cr_math.pow((max(wfps, wfpsc)-wfpsc)/(1-wfpsc), 1.74)
 }
 
@@ -121,7 +121,7 @@ denit_fWFPS :: proc(wfps, wfpsc: f64) -> f64 {
 //        double, double)
 //
 // denitrification [mg-N/kg-soil/day].
-stics_vdenit :: proc(ps: ^p.Stics_Parameters, corg, NO3, soilT, wfps, soilWaterContent: f64) -> f64 {
+stics_vdenit :: proc(ps: ^p.Stics_Parameters, corg, no3, soil_t, wfps, soil_water_content: f64) -> f64 {
 	vdenitpot := 0.0
 	switch ps.code_pdenit {
 	case 1:
@@ -130,28 +130,28 @@ stics_vdenit :: proc(ps: ^p.Stics_Parameters, corg, NO3, soilT, wfps, soilWaterC
 		vdenitpot = stepwise_linear_function3(corg, ps.cmin_pdenit, ps.cmax_pdenit, ps.min_pdenit, ps.max_pdenit)
 	}
 
-	return vdenitpot * denit_fNO3(NO3, soilWaterContent, ps.Kd) * denit_fT(soilT, ps.tdenitopt_gauss, ps.scale_tdenitopt) * denit_fWFPS(wfps, ps.wfpsc)
+	return vdenitpot * denit_f_no3(no3, soil_water_content, ps.kd) * denit_f_t(soil_t, ps.tdenitopt_gauss, ps.scale_tdenitopt) * denit_f_wfps(wfps, ps.wfpsc)
 }
 
 @(private)
-n2o_fpH :: proc(pH, pHminden, pHmaxden: f64) -> f64 {
-	return stepwise_linear_function3(pH, pHminden, pHmaxden, 1.0, 0.0)
+n2o_f_ph :: proc(ph, ph_min_den, ph_max_den: f64) -> f64 {
+	return stepwise_linear_function3(ph, ph_min_den, ph_max_den, 1.0, 0.0)
 }
 
 @(private)
-n2o_fWFPS :: proc(wfps, wfpsc: f64) -> f64 {
+n2o_f_wfps :: proc(wfps, wfpsc: f64) -> f64 {
 	return 1.0 - (wfps-wfpsc)/(1.0-wfpsc)
 }
 
 @(private)
-n2o_rcor :: proc(wfpsc, pH, pHminden, pHmaxden: f64) -> f64 {
-	rest := n2o_fpH(pH, pHminden, pHmaxden)
-	return rest / n2o_fWFPS(0.815, wfpsc)
+n2o_rcor :: proc(wfpsc, ph, ph_min_den, ph_max_den: f64) -> f64 {
+	rest := n2o_f_ph(ph, ph_min_den, ph_max_den)
+	return rest / n2o_f_wfps(0.815, wfpsc)
 }
 
 @(private)
-n2o_fNO3 :: proc(NO3: f64) -> f64 {
-	return NO3 / (NO3 + 1)
+n2o_f_no3 :: proc(no3: f64) -> f64 {
+	return no3 / (no3 + 1)
 }
 
 // C++: stics::NitDenitN2O stics::N2O(const SticsParameters&, double, double,
@@ -159,7 +159,7 @@ n2o_fNO3 :: proc(NO3: f64) -> f64 {
 //
 // N2O emissions [mg-N2O-N/kg-soil/day]. vnit [mg-n/kg-soil/day], vdenit
 // [mg-N/kg-soil/day]. Returns (N2Onit, N2Odenit).
-stics_n2o :: proc(ps: ^p.Stics_Parameters, NO3, wfps, pH, vnit, vdenit: f64) -> (f64, f64) {
+stics_n2o :: proc(ps: ^p.Stics_Parameters, no3, wfps, ph, vnit, vdenit: f64) -> (f64, f64) {
 	z := 0.0
 	switch ps.code_rationit {
 	case 1:
@@ -173,13 +173,13 @@ stics_n2o :: proc(ps: ^p.Stics_Parameters, NO3, wfps, pH, vnit, vdenit: f64) -> 
 	case 1:
 		r = ps.ratiodenit
 	case 2:
-		r = n2o_rcor(ps.wfpsc, pH, ps.pHminden, ps.pHmaxden) * n2o_fWFPS(wfps, ps.wfpsc) * n2o_fNO3(NO3)
+		r = n2o_rcor(ps.wfpsc, ph, ps.ph_min_den, ps.ph_max_den) * n2o_f_wfps(wfps, ps.wfpsc) * n2o_f_no3(no3)
 	}
 
-	N2Onit := z * vnit
-	N2Odenit := r * vdenit
+	n2o_nit := z * vnit
+	n2o_denit := r * vdenit
 
-	return N2Onit, N2Odenit
+	return n2o_nit, n2o_denit
 }
 
 // C++: stics::NitDenitN2O stics::N2O(const SticsParameters&, double, double,
@@ -187,12 +187,12 @@ stics_n2o :: proc(ps: ^p.Stics_Parameters, NO3, wfps, pH, vnit, vdenit: f64) -> 
 //        convenience overload that computes vnit/vdenit itself)
 stics_n2o_full :: proc(
 	ps: ^p.Stics_Parameters,
-	corg, NO3, soilT, wfps, soilWaterContent, NH4, pH, fc, sat: f64,
+	corg, no3, soil_t, wfps, soil_water_content, nh4, ph, fc, sat: f64,
 ) -> (
 	f64,
 	f64,
 ) {
-	nit := stics_vnit(ps, NH4, pH, soilT, wfps, soilWaterContent, fc, sat)
-	denit := stics_vdenit(ps, corg, NO3, soilT, wfps, soilWaterContent)
-	return stics_n2o(ps, NO3, wfps, pH, nit, denit)
+	nit := stics_vnit(ps, nh4, ph, soil_t, wfps, soil_water_content, fc, sat)
+	denit := stics_vdenit(ps, corg, no3, soil_t, wfps, soil_water_content)
+	return stics_n2o(ps, no3, wfps, ph, nit, denit)
 }

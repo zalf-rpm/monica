@@ -49,13 +49,13 @@ main :: proc() {
 		for rd in raw_densities {
 			for om in organic_matters {
 				sp := soil.make_soil_parameters()
-				sp.vs_SoilTexture = tex
-				sp.vs_SoilStoneContent = 0.1
-				sp._vs_SoilRawDensity = rd
-				sp._vs_SoilOrganicMatter = om
-				sp.vs_FieldCapacity = -1
-				sp.vs_Saturation = -1
-				sp.vs_PermanentWiltingPoint = -1
+				sp.soil_texture = tex
+				sp.soil_stone_content = 0.1
+				sp.soil_raw_density = rd
+				sp.soil_organic_matter = om
+				sp.field_capacity = -1
+				sp.saturation = -1
+				sp.permanent_wilting_point = -1
 				e := soil.update_unset_pwp_fc_sat_from_ka5_texture_class(path_to_soil_dir, &sp, a)
 				fmt.printf(
 					"KA5\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
@@ -63,9 +63,9 @@ main :: proc() {
 					g(rd, a),
 					g(om, a),
 					tl.success(e) ? 1 : 0,
-					g(sp.vs_FieldCapacity, a),
-					g(sp.vs_Saturation, a),
-					g(sp.vs_PermanentWiltingPoint, a),
+					g(sp.field_capacity, a),
+					g(sp.saturation, a),
+					g(sp.permanent_wilting_point, a),
 				)
 			}
 		}
@@ -75,22 +75,22 @@ main :: proc() {
 		clays_for_fallback := []f64{0.05, 0.15, 0.3}
 		for clay in clays_for_fallback {
 			sp := soil.make_soil_parameters()
-			sp.vs_SoilTexture = "LS2"
-			sp.vs_SoilClayContent = clay
-			sp.vs_SoilStoneContent = 0.0
-			sp._vs_SoilBulkDensity = 1500
-			sp._vs_SoilOrganicCarbon = 0.01
-			sp.vs_FieldCapacity = -1
-			sp.vs_Saturation = -1
-			sp.vs_PermanentWiltingPoint = -1
+			sp.soil_texture = "LS2"
+			sp.soil_clay_content = clay
+			sp.soil_stone_content = 0.0
+			sp.soil_bulk_density = 1500
+			sp.soil_organic_carbon = 0.01
+			sp.field_capacity = -1
+			sp.saturation = -1
+			sp.permanent_wilting_point = -1
 			e := soil.update_unset_pwp_fc_sat_from_ka5_texture_class(path_to_soil_dir, &sp, a)
 			fmt.printf(
 				"KA5FB\t%s\t%d\t%s\t%s\t%s\n",
 				g(clay, a),
 				tl.success(e) ? 1 : 0,
-				g(sp.vs_FieldCapacity, a),
-				g(sp.vs_Saturation, a),
-				g(sp.vs_PermanentWiltingPoint, a),
+				g(sp.field_capacity, a),
+				g(sp.saturation, a),
+				g(sp.permanent_wilting_point, a),
 			)
 		}
 	}
@@ -112,14 +112,14 @@ main :: proc() {
 					for stone in stones {
 						{
 							sp := soil.make_soil_parameters()
-							sp.vs_SoilSandContent = sand
-							sp.vs_SoilClayContent = clay
-							sp.vs_SoilStoneContent = stone
-							sp._vs_SoilBulkDensity = bd
-							sp._vs_SoilOrganicCarbon = oc
-							sp.vs_FieldCapacity = -1
-							sp.vs_Saturation = -1
-							sp.vs_PermanentWiltingPoint = -1
+							sp.soil_sand_content = sand
+							sp.soil_clay_content = clay
+							sp.soil_stone_content = stone
+							sp.soil_bulk_density = bd
+							sp.soil_organic_carbon = oc
+							sp.field_capacity = -1
+							sp.saturation = -1
+							sp.permanent_wilting_point = -1
 							e := soil.update_unset_pwp_fc_sat_from_van_genuchten_vereecken(&sp)
 							fmt.printf(
 								"VGV\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
@@ -129,21 +129,21 @@ main :: proc() {
 								g(oc, a),
 								g(stone, a),
 								tl.success(e) ? 1 : 0,
-								g(sp.vs_FieldCapacity, a),
-								g(sp.vs_Saturation, a),
-								g(sp.vs_PermanentWiltingPoint, a),
+								g(sp.field_capacity, a),
+								g(sp.saturation, a),
+								g(sp.permanent_wilting_point, a),
 							)
 						}
 						for layer_no in layer_nos {
 							sp := soil.make_soil_parameters()
-							sp.vs_SoilSandContent = sand
-							sp.vs_SoilClayContent = clay
-							sp.vs_SoilStoneContent = stone
-							sp._vs_SoilBulkDensity = bd
-							sp._vs_SoilOrganicCarbon = oc
-							sp.vs_FieldCapacity = -1
-							sp.vs_Saturation = -1
-							sp.vs_PermanentWiltingPoint = -1
+							sp.soil_sand_content = sand
+							sp.soil_clay_content = clay
+							sp.soil_stone_content = stone
+							sp.soil_bulk_density = bd
+							sp.soil_organic_carbon = oc
+							sp.field_capacity = -1
+							sp.saturation = -1
+							sp.permanent_wilting_point = -1
 							e := soil.update_unset_pwp_fc_sat_from_van_genuchten_toth(&sp, layer_no)
 							fmt.printf(
 								"VGT\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\n",
@@ -154,21 +154,21 @@ main :: proc() {
 								g(stone, a),
 								layer_no,
 								tl.success(e) ? 1 : 0,
-								g(sp.vs_FieldCapacity, a),
-								g(sp.vs_Saturation, a),
-								g(sp.vs_PermanentWiltingPoint, a),
+								g(sp.field_capacity, a),
+								g(sp.saturation, a),
+								g(sp.permanent_wilting_point, a),
 							)
 						}
 						{
 							sp := soil.make_soil_parameters()
-							sp.vs_SoilSandContent = sand
-							sp.vs_SoilClayContent = clay
-							sp.vs_SoilStoneContent = stone
-							sp._vs_SoilBulkDensity = bd
-							sp._vs_SoilOrganicCarbon = oc
-							sp.vs_FieldCapacity = -1
-							sp.vs_Saturation = -1
-							sp.vs_PermanentWiltingPoint = -1
+							sp.soil_sand_content = sand
+							sp.soil_clay_content = clay
+							sp.soil_stone_content = stone
+							sp.soil_bulk_density = bd
+							sp.soil_organic_carbon = oc
+							sp.field_capacity = -1
+							sp.saturation = -1
+							sp.permanent_wilting_point = -1
 							e := soil.update_unset_pwp_fc_sat_from_toth(&sp)
 							fmt.printf(
 								"TOTH\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
@@ -178,9 +178,9 @@ main :: proc() {
 								g(oc, a),
 								g(stone, a),
 								tl.success(e) ? 1 : 0,
-								g(sp.vs_FieldCapacity, a),
-								g(sp.vs_Saturation, a),
-								g(sp.vs_PermanentWiltingPoint, a),
+								g(sp.field_capacity, a),
+								g(sp.saturation, a),
+								g(sp.permanent_wilting_point, a),
 							)
 						}
 					}
@@ -206,81 +206,81 @@ main :: proc() {
 
 			{
 				sp := soil.make_soil_parameters()
-				sp.vs_SoilTexture = "LS2"
-				sp.vs_SoilStoneContent = 0.1
-				sp._vs_SoilRawDensity = 1500
-				sp._vs_SoilOrganicMatter = 0.03
-				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
-				sp.vs_Saturation = sat_set ? sat_preset : -1
-				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				sp.soil_texture = "LS2"
+				sp.soil_stone_content = 0.1
+				sp.soil_raw_density = 1500
+				sp.soil_organic_matter = 0.03
+				sp.field_capacity = fc_set ? fc_preset : -1
+				sp.saturation = sat_set ? sat_preset : -1
+				sp.permanent_wilting_point = pwp_set ? pwp_preset : -1
 				e := soil.update_unset_pwp_fc_sat_from_ka5_texture_class(path_to_soil_dir, &sp, a)
 				fmt.printf(
 					"KA5SENT\t%d\t%d\t%s\t%s\t%s\n",
 					mask,
 					tl.success(e) ? 1 : 0,
-					g(sp.vs_FieldCapacity, a),
-					g(sp.vs_Saturation, a),
-					g(sp.vs_PermanentWiltingPoint, a),
+					g(sp.field_capacity, a),
+					g(sp.saturation, a),
+					g(sp.permanent_wilting_point, a),
 				)
 			}
 			{
 				sp := soil.make_soil_parameters()
-				sp.vs_SoilSandContent = 0.3
-				sp.vs_SoilClayContent = 0.15
-				sp.vs_SoilStoneContent = 0.1
-				sp._vs_SoilBulkDensity = 1500
-				sp._vs_SoilOrganicCarbon = 0.01
-				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
-				sp.vs_Saturation = sat_set ? sat_preset : -1
-				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				sp.soil_sand_content = 0.3
+				sp.soil_clay_content = 0.15
+				sp.soil_stone_content = 0.1
+				sp.soil_bulk_density = 1500
+				sp.soil_organic_carbon = 0.01
+				sp.field_capacity = fc_set ? fc_preset : -1
+				sp.saturation = sat_set ? sat_preset : -1
+				sp.permanent_wilting_point = pwp_set ? pwp_preset : -1
 				e := soil.update_unset_pwp_fc_sat_from_van_genuchten_vereecken(&sp)
 				fmt.printf(
 					"VGVSENT\t%d\t%d\t%s\t%s\t%s\n",
 					mask,
 					tl.success(e) ? 1 : 0,
-					g(sp.vs_FieldCapacity, a),
-					g(sp.vs_Saturation, a),
-					g(sp.vs_PermanentWiltingPoint, a),
+					g(sp.field_capacity, a),
+					g(sp.saturation, a),
+					g(sp.permanent_wilting_point, a),
 				)
 			}
 			{
 				sp := soil.make_soil_parameters()
-				sp.vs_SoilSandContent = 0.3
-				sp.vs_SoilClayContent = 0.15
-				sp.vs_SoilStoneContent = 0.1
-				sp._vs_SoilBulkDensity = 1500
-				sp._vs_SoilOrganicCarbon = 0.01
-				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
-				sp.vs_Saturation = sat_set ? sat_preset : -1
-				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				sp.soil_sand_content = 0.3
+				sp.soil_clay_content = 0.15
+				sp.soil_stone_content = 0.1
+				sp.soil_bulk_density = 1500
+				sp.soil_organic_carbon = 0.01
+				sp.field_capacity = fc_set ? fc_preset : -1
+				sp.saturation = sat_set ? sat_preset : -1
+				sp.permanent_wilting_point = pwp_set ? pwp_preset : -1
 				e := soil.update_unset_pwp_fc_sat_from_van_genuchten_toth(&sp, 1)
 				fmt.printf(
 					"VGTSENT\t%d\t%d\t%s\t%s\t%s\n",
 					mask,
 					tl.success(e) ? 1 : 0,
-					g(sp.vs_FieldCapacity, a),
-					g(sp.vs_Saturation, a),
-					g(sp.vs_PermanentWiltingPoint, a),
+					g(sp.field_capacity, a),
+					g(sp.saturation, a),
+					g(sp.permanent_wilting_point, a),
 				)
 			}
 			{
 				sp := soil.make_soil_parameters()
-				sp.vs_SoilSandContent = 0.3
-				sp.vs_SoilClayContent = 0.15
-				sp.vs_SoilStoneContent = 0.1
-				sp._vs_SoilBulkDensity = 1500
-				sp._vs_SoilOrganicCarbon = 0.01
-				sp.vs_FieldCapacity = fc_set ? fc_preset : -1
-				sp.vs_Saturation = sat_set ? sat_preset : -1
-				sp.vs_PermanentWiltingPoint = pwp_set ? pwp_preset : -1
+				sp.soil_sand_content = 0.3
+				sp.soil_clay_content = 0.15
+				sp.soil_stone_content = 0.1
+				sp.soil_bulk_density = 1500
+				sp.soil_organic_carbon = 0.01
+				sp.field_capacity = fc_set ? fc_preset : -1
+				sp.saturation = sat_set ? sat_preset : -1
+				sp.permanent_wilting_point = pwp_set ? pwp_preset : -1
 				e := soil.update_unset_pwp_fc_sat_from_toth(&sp)
 				fmt.printf(
 					"TOTHSENT\t%d\t%d\t%s\t%s\t%s\n",
 					mask,
 					tl.success(e) ? 1 : 0,
-					g(sp.vs_FieldCapacity, a),
-					g(sp.vs_Saturation, a),
-					g(sp.vs_PermanentWiltingPoint, a),
+					g(sp.field_capacity, a),
+					g(sp.saturation, a),
+					g(sp.permanent_wilting_point, a),
 				)
 			}
 		}

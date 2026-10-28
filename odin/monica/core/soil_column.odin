@@ -61,7 +61,7 @@ make_aom_properties :: proc() -> Aom_Properties {
 Soil_Layer :: struct {
 	layer_thickness_m:        f64 `unit:"m"`,
 	soil_water_flux:          f64 `unit:"mm"`, // water flux at the upper boundary [l m-2]
-	vo_AOM_Pool:              [dynamic]Aom_Properties,
+	aom_pool:                 [dynamic]Aom_Properties,
 	som_slow:                 f64 `unit:"kgC m-3"`,
 	som_fast:                 f64 `unit:"kgC m-3"`,
 	smb_slow:                 f64 `unit:"kgC m-3"`,
@@ -127,29 +127,29 @@ make_default_soil_layer :: proc(allocator := context.allocator) -> Soil_Layer {
 // field) - it keeps make_default_soil_layer's 0.001 in-class default, exactly
 // like the C++ (which default-constructs `SoilLayer sl;` and never touches
 // sl.soil_no2 in this function body).
-make_soil_layer :: proc(vs_layer_thickness: f64, sps: ^soil.Soil_Parameters) -> Soil_Layer {
+make_soil_layer :: proc(layer_thickness: f64, sps: ^soil.Soil_Parameters) -> Soil_Layer {
 	sl := make_default_soil_layer()
-	sl.layer_thickness_m = vs_layer_thickness
-	sl.soil_nh4 = sps.vs_SoilAmmonium
-	sl.soil_no3 = sps.vs_SoilNitrate
-	sl.soil_sand_content = sps.vs_SoilSandContent
-	sl.soil_clay_content = sps.vs_SoilClayContent
-	sl.soil_ph = sps.vs_SoilpH
-	sl.soil_stone_content = sps.vs_SoilStoneContent
-	sl.lambda = sps.vs_Lambda
-	sl.field_capacity = sps.vs_FieldCapacity
-	sl.saturation = sps.vs_Saturation
-	sl.permanent_wilting_point = sps.vs_PermanentWiltingPoint
-	sl.soil_texture = sps.vs_SoilTexture
-	sl.soil_ammonium = sps.vs_SoilAmmonium
-	sl.soil_nitrate = sps.vs_SoilNitrate
-	sl.soil_cn_ratio = sps.vs_Soil_CN_Ratio
-	sl.soil_moisture_percent_fc = sps.vs_SoilMoisturePercentFC
-	sl.soil_raw_density = sps._vs_SoilRawDensity
-	sl.soil_bulk_density = sps._vs_SoilBulkDensity
-	sl.soil_organic_carbon = sps._vs_SoilOrganicCarbon
-	sl.soil_organic_matter = sps._vs_SoilOrganicMatter
-	sl.soil_moisture_m3 = sps.vs_FieldCapacity * sps.vs_SoilMoisturePercentFC / 100.0
+	sl.layer_thickness_m = layer_thickness
+	sl.soil_nh4 = sps.soil_ammonium
+	sl.soil_no3 = sps.soil_nitrate
+	sl.soil_sand_content = sps.soil_sand_content
+	sl.soil_clay_content = sps.soil_clay_content
+	sl.soil_ph = sps.soil_ph
+	sl.soil_stone_content = sps.soil_stone_content
+	sl.lambda = sps.lambda
+	sl.field_capacity = sps.field_capacity
+	sl.saturation = sps.saturation
+	sl.permanent_wilting_point = sps.permanent_wilting_point
+	sl.soil_texture = sps.soil_texture
+	sl.soil_ammonium = sps.soil_ammonium
+	sl.soil_nitrate = sps.soil_nitrate
+	sl.soil_cn_ratio = sps.soil_cn_ratio
+	sl.soil_moisture_percent_fc = sps.soil_moisture_percent_fc
+	sl.soil_raw_density = sps.soil_raw_density
+	sl.soil_bulk_density = sps.soil_bulk_density
+	sl.soil_organic_carbon = sps.soil_organic_carbon
+	sl.soil_organic_matter = sps.soil_organic_matter
+	sl.soil_moisture_m3 = sps.field_capacity * sps.soil_moisture_percent_fc / 100.0
 	return sl
 }
 
@@ -169,7 +169,7 @@ soil_moisture_pf :: proc(sl: ^Soil_Layer) -> f64 {
 
 	sm := sl.soil_moisture_m3
 	matric_head: f64
-	if sm <= ps.thetaR {
+	if sm <= ps.theta_r {
 		matric_head = 5.0e7
 	} else {
 		// cr_math, not core:math or libc: this nested pow(pow(...)-1,...) chain
@@ -179,7 +179,7 @@ soil_moisture_pf :: proc(sl: ^Soil_Layer) -> f64 {
 		// the same library. See CONVENTIONS.md §1.
 		matric_head =
 			(1.0 / ps.alpha) *
-			cr_math.pow(cr_math.pow((ps.thetaS - ps.thetaR) / (sm - ps.thetaR), 1 / ps.m) - 1, 1 / ps.n)
+			cr_math.pow(cr_math.pow((ps.theta_s - ps.theta_r) / (sm - ps.theta_r), 1 / ps.m) - 1, 1 / ps.n)
 	}
 	pf := cr_math.log10(matric_head)
 
@@ -388,22 +388,22 @@ clear_top_dressing_params :: proc(sc: ^Soil_Column) {
 // a given pool is negligible, the pool is dropped from every organic layer's
 // vo_AOM_Pool list.
 delete_aom_pool :: proc(sc: ^Soil_Column) {
-	i_AOMPool := 0
-	for i_AOMPool < len(sc.layers[0].vo_AOM_Pool) {
-		vo_SumAOM_Slow := 0.0
-		vo_SumAOM_Fast := 0.0
+	i_aom_pool := 0
+	for i_aom_pool < len(sc.layers[0].aom_pool) {
+		sum_aom_slow := 0.0
+		sum_aom_fast := 0.0
 
-		for i_Layer := 0; i_Layer < sc.number_of_organic_layers; i_Layer += 1 {
-			vo_SumAOM_Slow += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].aom_slow
-			vo_SumAOM_Fast += sc.layers[i_Layer].vo_AOM_Pool[i_AOMPool].aom_fast
+		for i_layer := 0; i_layer < sc.number_of_organic_layers; i_layer += 1 {
+			sum_aom_slow += sc.layers[i_layer].aom_pool[i_aom_pool].aom_slow
+			sum_aom_fast += sc.layers[i_layer].aom_pool[i_aom_pool].aom_fast
 		}
 
-		if (vo_SumAOM_Slow + vo_SumAOM_Fast) < 0.00001 {
-			for i_Layer := 0; i_Layer < sc.number_of_organic_layers; i_Layer += 1 {
-				ordered_remove(&sc.layers[i_Layer].vo_AOM_Pool, i_AOMPool)
+		if (sum_aom_slow + sum_aom_fast) < 0.00001 {
+			for i_layer := 0; i_layer < sc.number_of_organic_layers; i_layer += 1 {
+				ordered_remove(&sc.layers[i_layer].aom_pool, i_aom_pool)
 			}
 		} else {
-			i_AOMPool += 1
+			i_aom_pool += 1
 		}
 	}
 }
@@ -416,10 +416,10 @@ apply_mineral_fertiliser :: proc(
 	amount: f64,
 ) {
 	// [kg N ha-1 -> kg m-3]
-	kgHaTokgm3 := 10000.0 * sc.layers[0].layer_thickness_m
-	sc.layers[0].soil_no3 += amount * fp.no3 / kgHaTokgm3
-	sc.layers[0].soil_nh4 += amount * fp.nh4 / kgHaTokgm3
-	sc.layers[0].soil_carbamid += amount * fp.carbamid / kgHaTokgm3
+	kg_ha_to_kg_m3 := 10000.0 * sc.layers[0].layer_thickness_m
+	sc.layers[0].soil_no3 += amount * fp.no3 / kg_ha_to_kg_m3
+	sc.layers[0].soil_nh4 += amount * fp.nh4 / kg_ha_to_kg_m3
+	sc.layers[0].soil_carbamid += amount * fp.carbamid / kg_ha_to_kg_m3
 }
 
 // C++: double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(...)
@@ -432,106 +432,106 @@ apply_mineral_fertiliser :: proc(
 // than the maximum and capped everything at the minimum - fixed in both.
 apply_mineral_fertiliser_via_n_min_method :: proc(
 	sc: ^Soil_Column,
-	fertiliserPartition: p.Mineral_Fertilizer_Parameters,
-	samplingDepth: f64,
-	cropNTargetValue: f64,
-	cropNTargetValue30: f64,
-	fertiliserMinApplication: f64,
-	fertiliserMaxApplication: f64,
-	topDressingDelay: int,
+	fertiliser_partition: p.Mineral_Fertilizer_Parameters,
+	sampling_depth: f64,
+	crop_n_target_value: f64,
+	crop_n_target_value30: f64,
+	fertiliser_min_application: f64,
+	fertiliser_max_application: f64,
+	top_dressing_delay: int,
 ) -> f64 {
 	if sc.layers[0].soil_moisture_m3 > sc.layers[0].field_capacity {
 		append(
 			&sc.delayed_n_min_applications,
 			Delayed_N_Min_Application_Params {
-				fp                         = fertiliserPartition,
-				sampling_depth             = samplingDepth,
-				crop_n_target              = cropNTargetValue,
-				crop_n_target_30           = cropNTargetValue30,
-				fertilizer_min_application = fertiliserMinApplication,
-				fertilizer_max_application = fertiliserMaxApplication,
-				top_dressing_delay         = topDressingDelay,
+				fp                         = fertiliser_partition,
+				sampling_depth             = sampling_depth,
+				crop_n_target              = crop_n_target_value,
+				crop_n_target_30           = crop_n_target_value30,
+				fertilizer_min_application = fertiliser_min_application,
+				fertilizer_max_application = fertiliser_max_application,
+				top_dressing_delay         = top_dressing_delay,
 			},
 		)
 		return 0.0
 	}
 
-	vf_Layer30cm := get_layer_number_for_depth(sc, 0.3)
-	layerSamplingDepth := get_layer_number_for_depth(sc, samplingDepth)
+	layer30cm := get_layer_number_for_depth(sc, 0.3)
+	layer_sampling_depth := get_layer_number_for_depth(sc, sampling_depth)
 
-	vf_SoilNO3Sum := 0.0
-	vf_SoilNH4Sum := 0.0
-	for i_Layer := 0; i_Layer < layerSamplingDepth; i_Layer += 1 {
-		vf_SoilNO3Sum += sc.layers[i_Layer].soil_no3
-		vf_SoilNH4Sum += sc.layers[i_Layer].soil_nh4
+	soil_no3_sum := 0.0
+	soil_nh4_sum := 0.0
+	for i_layer := 0; i_layer < layer_sampling_depth; i_layer += 1 {
+		soil_no3_sum += sc.layers[i_layer].soil_no3
+		soil_nh4_sum += sc.layers[i_layer].soil_nh4
 	}
 
-	vf_SoilNO3Sum30 := 0.0
-	vf_SoilNH4Sum30 := 0.0
-	for i_Layer := 0; i_Layer < vf_Layer30cm; i_Layer += 1 {
-		vf_SoilNO3Sum30 += sc.layers[i_Layer].soil_no3
-		vf_SoilNH4Sum30 += sc.layers[i_Layer].soil_nh4
+	soil_no3_sum30 := 0.0
+	soil_nh4_sum30 := 0.0
+	for i_layer := 0; i_layer < layer30cm; i_layer += 1 {
+		soil_no3_sum30 += sc.layers[i_layer].soil_no3
+		soil_nh4_sum30 += sc.layers[i_layer].soil_nh4
 	}
 
 	// Converts [kg N ha-1] to [kg N m-3]
-	vf_CropNTargetValue := cropNTargetValue / 10000.0 / sc.layers[0].layer_thickness_m
-	vf_CropNTargetValue30 := cropNTargetValue30 / 10000.0 / sc.layers[0].layer_thickness_m
+	crop_n_target_vol := crop_n_target_value / 10000.0 / sc.layers[0].layer_thickness_m
+	crop_n_target_vol30 := crop_n_target_value30 / 10000.0 / sc.layers[0].layer_thickness_m
 
-	vf_FertiliserDemandVol := vf_CropNTargetValue - (vf_SoilNO3Sum + vf_SoilNH4Sum)
-	vf_FertiliserDemandVol30 := vf_CropNTargetValue30 - (vf_SoilNO3Sum30 + vf_SoilNH4Sum30)
+	fertiliser_demand_vol := crop_n_target_vol - (soil_no3_sum + soil_nh4_sum)
+	fertiliser_demand_vol30 := crop_n_target_vol30 - (soil_no3_sum30 + soil_nh4_sum30)
 
 	// Converts fertiliser demand back from [kg N m-3] to [kg N ha-1]
-	vf_FertiliserDemand := vf_FertiliserDemandVol * 10000.0 * sc.layers[0].layer_thickness_m
-	vf_FertiliserDemand30 := vf_FertiliserDemandVol30 * 10000.0 * sc.layers[0].layer_thickness_m
+	fertiliser_demand := fertiliser_demand_vol * 10000.0 * sc.layers[0].layer_thickness_m
+	fertiliser_demand30 := fertiliser_demand_vol30 * 10000.0 * sc.layers[0].layer_thickness_m
 
-	vf_FertiliserRecommendation := max(vf_FertiliserDemand, vf_FertiliserDemand30)
+	fertiliser_recommendation := max(fertiliser_demand, fertiliser_demand30)
 
-	if vf_FertiliserRecommendation < fertiliserMinApplication {
-		vf_FertiliserRecommendation = 0.0
+	if fertiliser_recommendation < fertiliser_min_application {
+		fertiliser_recommendation = 0.0
 	}
 
-	if vf_FertiliserRecommendation > fertiliserMaxApplication {
-		sc.top_dressing = vf_FertiliserRecommendation - fertiliserMaxApplication
-		sc.top_dressing_partition = fertiliserPartition
-		sc.top_dressing_delay = topDressingDelay
-		vf_FertiliserRecommendation = fertiliserMaxApplication
+	if fertiliser_recommendation > fertiliser_max_application {
+		sc.top_dressing = fertiliser_recommendation - fertiliser_max_application
+		sc.top_dressing_partition = fertiliser_partition
+		sc.top_dressing_delay = top_dressing_delay
+		fertiliser_recommendation = fertiliser_max_application
 	}
 
-	apply_mineral_fertiliser(sc, fertiliserPartition, vf_FertiliserRecommendation)
+	apply_mineral_fertiliser(sc, fertiliser_partition, fertiliser_recommendation)
 
-	return vf_FertiliserRecommendation
+	return fertiliser_recommendation
 }
 
 // C++: double monica::soilcolumn::applyMineralFertiliserViaNDemand(...)
 apply_mineral_fertiliser_via_n_demand :: proc(
 	sc: ^Soil_Column,
 	fp: p.Mineral_Fertilizer_Parameters,
-	demandDepth: f64,
-	NdemandKgHa: f64,
+	demand_depth: f64,
+	ndemand_kg_ha: f64,
 ) -> f64 {
-	sumSoilNkgHa := 0.0
-	depthCm := 0
+	sum_soil_nkg_ha := 0.0
+	depth_cm := 0
 	i := 0
 	for &layer in sc.layers {
-		layerSize := layer.layer_thickness_m
-		depthCm += int(layerSize * 100.0)
+		layer_size := layer.layer_thickness_m
+		depth_cm += int(layer_size * 100.0)
 
 		// convert [kg N m-3] to [kg N ha-1]
-		sumSoilNkgHa += (sc.layers[i].soil_no3 + sc.layers[i].soil_nh4) * 10000.0 * layerSize
+		sum_soil_nkg_ha += (sc.layers[i].soil_no3 + sc.layers[i].soil_nh4) * 10000.0 * layer_size
 
-		if depthCm >= int(demandDepth * 100) {
+		if depth_cm >= int(demand_depth * 100) {
 			break
 		}
 
 		i += 1
 	}
 
-	fertilizerRecommendation := max(0.0, NdemandKgHa - sumSoilNkgHa)
-	if fertilizerRecommendation > 0 {
-		apply_mineral_fertiliser(sc, fp, fertilizerRecommendation)
+	fertilizer_recommendation := max(0.0, ndemand_kg_ha - sum_soil_nkg_ha)
+	if fertilizer_recommendation > 0 {
+		apply_mineral_fertiliser(sc, fp, fertilizer_recommendation)
 	}
 
-	return fertilizerRecommendation
+	return fertilizer_recommendation
 }
 
 // C++: double monica::soilcolumn::applyPossibleDelayedFerilizer(SoilColumn*)
@@ -601,73 +601,73 @@ apply_irrigation_via_trigger :: proc(
 		return false, 0
 	}
 
-	actPAW := 0.0 // actualPlantAvailableWater
-	maxPAW := 0.0 // maxPlantAvailableWater
-	layerDepthM := 0.0
-	for i := 0; i < len(sc.layers) && layerDepthM < aips.critical_moisture_depth_m; i += 1 {
+	act_paw := 0.0 // actualPlantAvailableWater
+	max_paw := 0.0 // maxPlantAvailableWater
+	layer_depth_m := 0.0
+	for i := 0; i < len(sc.layers) && layer_depth_m < aips.critical_moisture_depth_m; i += 1 {
 		li := &sc.layers[i]
 		smi := li.soil_moisture_m3
 		fci := li.field_capacity
 		pwpi := li.permanent_wilting_point
 		lti := li.layer_thickness_m
 
-		actPAW += (smi - pwpi) * lti * 1000.0 // [mm]
-		maxPAW += (fci - pwpi) * lti * 1000.0 // [mm]
+		act_paw += (smi - pwpi) * lti * 1000.0 // [mm]
+		max_paw += (fci - pwpi) * lti * 1000.0 // [mm]
 
-		layerDepthM += lti
+		layer_depth_m += lti
 	}
-	if tl.flt_equal_zero(maxPAW) {
+	if tl.flt_equal_zero(max_paw) {
 		return false, 0
 	}
-	fractPAW := actPAW / maxPAW
-	if fractPAW <= aips.threshold {
-		addedIrrigationWater := 0.0
+	fract_paw := act_paw / max_paw
+	if fract_paw <= aips.threshold {
+		added_irrigation_water := 0.0
 		if aips.amount > 0.0 {
 			apply_irrigation(sc, aips.amount, aips.nitrate_concentration)
-			addedIrrigationWater = aips.amount
+			added_irrigation_water = aips.amount
 		} else if aips.percent_nfc > 0.0 {
-			layerDepthM = 0.0
-			for i := 0; i < len(sc.layers) && layerDepthM < aips.critical_moisture_depth_m; i += 1 {
+			layer_depth_m = 0.0
+			for i := 0; i < len(sc.layers) && layer_depth_m < aips.critical_moisture_depth_m; i += 1 {
 				li := &sc.layers[i]
 				smi := li.soil_moisture_m3
 				fci := li.field_capacity
 				pwpi := li.permanent_wilting_point
 				lti := li.layer_thickness_m
 
-				percentNFCi := (fci - pwpi) * aips.percent_nfc / 100.0
+				percent_nfc_i := (fci - pwpi) * aips.percent_nfc / 100.0
 				pawi := smi - pwpi
-				addedIrrigationWaterAtLayer := max(0.0, percentNFCi - pawi)
-				addedIrrigationWater += addedIrrigationWaterAtLayer
-				li.soil_moisture_m3 = percentNFCi + pwpi
+				added_irrigation_water_at_layer := max(0.0, percent_nfc_i - pawi)
+				added_irrigation_water += added_irrigation_water_at_layer
+				li.soil_moisture_m3 = percent_nfc_i + pwpi
 				// [kg m-3] = [mg dm-3] * [dm3 m-2] / [m]
-				nitrateAddedViaIrrigation :=
+				nitrate_added_via_irrigation :=
 					aips.nitrate_concentration *
-					addedIrrigationWaterAtLayer /
+					added_irrigation_water_at_layer /
 					li.layer_thickness_m /
 					1000000.0
-				li.soil_no3 += nitrateAddedViaIrrigation
+				li.soil_no3 += nitrate_added_via_irrigation
 
-				layerDepthM += lti
+				layer_depth_m += lti
 			}
 		} else {
 			return false, 0
 		}
 
-		return true, addedIrrigationWater
+		return true, added_irrigation_water
 	}
 
 	return false, 0
 }
 
 // C++: void monica::soilcolumn::applyIrrigation(SoilColumn*, double, double)
-apply_irrigation :: proc(sc: ^Soil_Column, amount: f64, nitrateConcentration: f64 = 0) {
+apply_irrigation :: proc(sc: ^Soil_Column, amount: f64, nitrate_concentration: f64 = 0) {
 	// Adding irrigation water amount to surface water storage
 	sc.surface_water_storage += amount // [mm]
-	nitrateAddedViaIrrigation :=
-		nitrateConcentration * amount / sc.layers[0].layer_thickness_m / 1000000.0 // -> //[kg m-3]// [mg dm-3]//[dm3 m-2]// [m]
+	nitrate_added_via_irrigation :=
+		nitrate_concentration * amount / sc.layers[0].layer_thickness_m / 1000000.0 // -> //[kg m-3]// [mg dm-3]//[dm3 m-2]// [m]
 
 	// adding N from irrigation water to top soil nitrate pool
-	sc.layers[0].soil_no3 += nitrateAddedViaIrrigation
+	sc.layers[0].soil_no3 += nitrate_added_via_irrigation
 }
 
 // C++: void monica::soilcolumn::applyTillage(SoilColumn*, double)
@@ -680,7 +680,7 @@ apply_tillage :: proc(sc: ^Soil_Column, depth: f64) {
 	// C++ local var is named soil_organic_carbon too; renamed vs_soc here only
 	// to avoid shadowing the soil_organic_carbon(sl) resolved-getter proc this
 	// same package already defines (C++ has separate namespaces for the two).
-	vs_soc := 0.0
+	soc := 0.0
 	soil_temperature := 0.0
 	soil_moisture := 0.0
 	som_slow := 0.0
@@ -693,7 +693,7 @@ apply_tillage :: proc(sc: ^Soil_Column, depth: f64) {
 	no3 := 0.0
 
 	for i := 0; i < layer_index; i += 1 {
-		vs_soc += soil_organic_carbon(&sc.layers[i])
+		soc += soil_organic_carbon(&sc.layers[i])
 		soil_temperature += sc.layers[i].soil_temperature
 		soil_moisture += sc.layers[i].soil_moisture_m3
 		som_slow += sc.layers[i].som_slow
@@ -708,7 +708,7 @@ apply_tillage :: proc(sc: ^Soil_Column, depth: f64) {
 
 	li := f64(layer_index)
 
-	vs_soc /= li
+	soc /= li
 	soil_temperature /= li
 	soil_moisture /= li
 	som_slow /= li
@@ -721,7 +721,7 @@ apply_tillage :: proc(sc: ^Soil_Column, depth: f64) {
 	no3 /= li
 
 	for i := 0; i < layer_index; i += 1 {
-		sc.layers[i].soil_organic_carbon = vs_soc
+		sc.layers[i].soil_organic_carbon = soc
 		sc.layers[i].soil_temperature = soil_temperature
 		sc.layers[i].soil_moisture_m3 = soil_moisture
 		sc.layers[i].som_slow = som_slow

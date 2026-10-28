@@ -22,8 +22,8 @@ import "core:strconv"
 import "core:strings"
 
 noop_fire_event :: proc(event: string) {}
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {}
-noop_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {return 0.0, 0.0}
+noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
+noop_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {return 0.0, 0.0}
 
 @(private)
 jn :: proc(path, name: string) -> string {
@@ -85,80 +85,80 @@ dump_crop_module_phenology :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_M
 // crop_module_phenology_ref_main.cpp's phenology_day_step.
 phenology_day_step :: proc(
 	cm: ^core.Crop_Module,
-	meanAirTemperature, globalRadiation, sunshineHours: f64,
-	currentDate: d.Date,
-	julianDayOverride: int = -1,
+	mean_air_temperature, global_radiation, sunshine_hours: f64,
+	current_date: d.Date,
+	julian_day_override: int = -1,
 ) {
-	pc_BaseDaylength := cm.crop_params.cultivar_params.base_daylength
-	pc_CriticalOxygenContent := cm.crop_params.species_params.critical_oxygen_content
-	pc_DaylengthRequirement := cm.crop_params.cultivar_params.daylength_requirement
-	pc_MaxCropHeight := cm.crop_params.cultivar_params.max_crop_height
-	pc_Perennial := cm.crop_params.cultivar_params.perennial
-	pc_SpecificLeafArea := cm.crop_params.cultivar_params.specific_leaf_area
-	pc_StageKcFactor := cm.crop_params.cultivar_params.stage_kc_factor
-	pc_StageTemperatureSum := cm.crop_params.cultivar_params.stage_temperature_sum
-	pc_VernalisationRequirement := cm.crop_params.cultivar_params.vernalisation_requirement
-	speciesPs := &cm.crop_params.species_params
+	base_daylength := cm.crop_params.cultivar_params.base_daylength
+	critical_oxygen_content := cm.crop_params.species_params.critical_oxygen_content
+	daylength_requirement := cm.crop_params.cultivar_params.daylength_requirement
+	max_crop_height := cm.crop_params.cultivar_params.max_crop_height
+	perennial := cm.crop_params.cultivar_params.perennial
+	specific_leaf_area := cm.crop_params.cultivar_params.specific_leaf_area
+	stage_kc_factor := cm.crop_params.cultivar_params.stage_kc_factor
+	stage_temperature_sum := cm.crop_params.cultivar_params.stage_temperature_sum
+	vernalisation_requirement := cm.crop_params.cultivar_params.vernalisation_requirement
+	species_ps := &cm.crop_params.species_params
 
-	vs_JulianDay := julianDayOverride >= 0 ? julianDayOverride : int(d.julian_day(currentDate))
+	julian_day := julian_day_override >= 0 ? julian_day_override : int(d.julian_day(current_date))
 
-	core.fc_radiation(cm, f64(vs_JulianDay), globalRadiation, sunshineHours)
+	core.fc_radiation(cm, f64(julian_day), global_radiation, sunshine_hours)
 
 	cm.oxygen_deficit = core.fc_oxygen_deficiency(
 		cm,
-		pc_CriticalOxygenContent[cm.developmental_stage],
+		critical_oxygen_content[cm.developmental_stage],
 	)
 
-	old_DevelopmentalStage := cm.developmental_stage
+	old_developmental_stage := cm.developmental_stage
 
 	// start accumulating temperature sums only after dormancy
 	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
-		if speciesPs.dormancy_end_doy == 0 {
-			cm.perennial_crop_dormancy_period_end_date = currentDate
+		if species_ps.dormancy_end_doy == 0 {
+			cm.perennial_crop_dormancy_period_end_date = current_date
 		} else {
 			cm.perennial_crop_dormancy_period_end_date = d.add(
 				d.make_date(
 					1,
 					1,
-					u16(d.year(currentDate)),
+					u16(d.year(current_date)),
 					false,
 					false,
 					d.DEFAULT_USE_LEAP_YEARS,
 				),
-				u64(speciesPs.dormancy_end_doy - 1),
+				u64(species_ps.dormancy_end_doy - 1),
 			)
 		}
 	}
-	if !pc_Perennial || d.ge(currentDate, cm.perennial_crop_dormancy_period_end_date) {
+	if !perennial || d.ge(current_date, cm.perennial_crop_dormancy_period_end_date) {
 		core.fc_crop_developmental_stage(
 			cm,
-			meanAirTemperature,
+			mean_air_temperature,
 			cm.soil_column.layers[0].soil_moisture_m3,
 			cm.soil_column.layers[0].field_capacity,
 			cm.soil_column.layers[0].permanent_wilting_point,
-			currentDate,
+			current_date,
 		)
 	}
 
-	if core.is_anthesis_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
-		cm.anthesis_day = vs_JulianDay
-	} else if core.is_maturity_day(cm, old_DevelopmentalStage, cm.developmental_stage) {
-		cm.maturity_day = vs_JulianDay
+	if core.is_anthesis_day(cm, old_developmental_stage, cm.developmental_stage) {
+		cm.anthesis_day = julian_day
+	} else if core.is_maturity_day(cm, old_developmental_stage, cm.developmental_stage) {
+		cm.maturity_day = julian_day
 		cm.maturity_reached = true
 	}
 
 	cm.daylength_factor = core.fc_daylength_factor(
 		cm,
-		pc_DaylengthRequirement[cm.developmental_stage],
+		daylength_requirement[cm.developmental_stage],
 		cm.effective_day_length,
 		cm.photoperiodic_daylength,
-		pc_BaseDaylength[cm.developmental_stage],
+		base_daylength[cm.developmental_stage],
 	)
 
 	cm.vernalisation_factor, cm.vernalisation_days = core.fc_vernalisation_factor(
 		cm,
-		meanAirTemperature,
-		pc_VernalisationRequirement[cm.developmental_stage],
+		mean_air_temperature,
+		vernalisation_requirement[cm.developmental_stage],
 		cm.vernalisation_days,
 	)
 
@@ -173,27 +173,27 @@ phenology_day_step :: proc(
 	} else {
 		cm.kc_factor = core.fc_kc_factor(
 			cm,
-			pc_StageTemperatureSum[cm.developmental_stage],
+			stage_temperature_sum[cm.developmental_stage],
 			cm.current_temperature_sum[cm.developmental_stage],
-			pc_StageKcFactor[cm.developmental_stage],
-			pc_StageKcFactor[cm.developmental_stage - 1],
+			stage_kc_factor[cm.developmental_stage],
+			stage_kc_factor[cm.developmental_stage - 1],
 		)
 	}
 
 	if cm.developmental_stage > 0 {
-		maxCropHeight := pc_MaxCropHeight
+		max_crop_height := max_crop_height
 
-		core.fc_crop_size(cm, maxCropHeight)
+		core.fc_crop_size(cm, max_crop_height)
 
 		core.fc_crop_green_area(
 			cm,
-			meanAirTemperature,
+			mean_air_temperature,
 			cm.organ_growth_increment[core.Organ_Leaf],
 			cm.organ_senescence_increment[core.Organ_Leaf],
-			pc_SpecificLeafArea[cm.developmental_stage - 1],
-			pc_SpecificLeafArea[cm.developmental_stage],
-			pc_SpecificLeafArea[1],
-			pc_StageTemperatureSum[cm.developmental_stage],
+			specific_leaf_area[cm.developmental_stage - 1],
+			specific_leaf_area[cm.developmental_stage],
+			specific_leaf_area[1],
+			stage_temperature_sum[cm.developmental_stage],
 			cm.current_temperature_sum[cm.developmental_stage],
 		)
 
@@ -415,8 +415,8 @@ main :: proc() {
 		cm.crop_params.cultivar_params.cultivar_id = "synthetic-season-1"
 
 		Day :: struct {
-			meanAirTemperature, globalRadiation, sunshineHours: f64,
-			julianDay:                                          int,
+			mean_air_temperature, global_radiation, sunshine_hours: f64,
+			julian_day:                                             int,
 		}
 		days := []Day {
 			{-2.0, 8.0, 0.0, 1},
@@ -445,14 +445,14 @@ main :: proc() {
 			// rises above pc_BaseTemperature[0]=0 partway through
 			cm.soil_column.layers[0].soil_temperature = -3.0 + f64(day)
 
-			current_date := d.make_date(u8(day_data.julianDay), 1, 2000, false, false, true)
+			current_date := d.make_date(u8(day_data.julian_day), 1, 2000, false, false, true)
 			phenology_day_step(
 				&cm,
-				day_data.meanAirTemperature,
-				day_data.globalRadiation,
-				day_data.sunshineHours,
+				day_data.mean_air_temperature,
+				day_data.global_radiation,
+				day_data.sunshine_hours,
 				current_date,
-				day_data.julianDay,
+				day_data.julian_day,
 			)
 
 			tr.set_day(&t, day)

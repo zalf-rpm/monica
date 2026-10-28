@@ -12,14 +12,14 @@ import tl "../../support/tools"
 
 // C++: struct monica::YieldComponent
 Yield_Component :: struct {
-	organId:         int,
-	yieldPercentage: f64,
-	yieldDryMatter:  f64,
+	organ_id:         int,
+	yield_percentage: f64,
+	yield_dry_matter: f64,
 }
 
 // C++ default: organId{-1}
 make_yield_component :: proc() -> Yield_Component {
-	return Yield_Component{organId = -1}
+	return Yield_Component{organ_id = -1}
 }
 
 // C++: Errors yieldcomponent::merge(YieldComponent*, Json)
@@ -27,9 +27,9 @@ make_yield_component :: proc() -> Yield_Component {
 // Note: unlike every other merge in this file, this one does NOT call
 // defaultMerge, and it always returns an empty Errors.
 yield_component_merge :: proc(yc: ^Yield_Component, j: jx.Value) -> tl.Errors {
-	jx.set_int_value(&yc.organId, j, "organId")
-	jx.set_double_value(&yc.yieldPercentage, j, "yieldPercentage")
-	jx.set_double_value(&yc.yieldDryMatter, j, "yieldDryMatter")
+	jx.set_int_value(&yc.organ_id, j, "organId")
+	jx.set_double_value(&yc.yield_percentage, j, "yieldPercentage")
+	jx.set_double_value(&yc.yield_dry_matter, j, "yieldDryMatter")
 
 	res: tl.Errors
 	return res
@@ -40,9 +40,9 @@ yield_component_to_json :: proc(yc: ^Yield_Component, a: Allocator) -> jx.Value 
 	return jx.obj(
 		a,
 		{"type", jx.sl("YieldComponent")},
-		{"organId", jx.i(yc.organId)},
-		{"yieldPercentage", jx.f(yc.yieldPercentage)},
-		{"yieldDryMatter", jx.f(yc.yieldDryMatter)},
+		{"organId", jx.i(yc.organ_id)},
+		{"yieldPercentage", jx.f(yc.yield_percentage)},
+		{"yieldDryMatter", jx.f(yc.yield_dry_matter)},
 	)
 }
 
@@ -58,13 +58,13 @@ Harvest_Time :: enum {
 
 // C++: struct monica::AutomaticHarvestParameters
 Automatic_Harvest_Parameters :: struct {
-	_harvestTime:      Harvest_Time,
-	_latestHarvestDOY: int,
+	harvest_time:       Harvest_Time,
+	latest_harvest_doy: int,
 }
 
 // C++ defaults: _harvestTime{unknown}, _latestHarvestDOY{-1}
 make_automatic_harvest_parameters :: proc() -> Automatic_Harvest_Parameters {
-	return Automatic_Harvest_Parameters{_harvestTime = .unknown, _latestHarvestDOY = -1}
+	return Automatic_Harvest_Parameters{harvest_time = .unknown, latest_harvest_doy = -1}
 }
 
 // C++: Errors automaticharvestparameters::merge(...)
@@ -80,9 +80,9 @@ automatic_harvest_parameters_merge :: proc(
 	ht := -1
 	jx.set_int_value(&ht, j, "harvestTime")
 	if ht > -1 {
-		ahp._harvestTime = Harvest_Time(ht)
+		ahp.harvest_time = Harvest_Time(ht)
 	}
-	jx.set_int_value(&ahp._latestHarvestDOY, j, "latestHarvestDOY")
+	jx.set_int_value(&ahp.latest_harvest_doy, j, "latestHarvestDOY")
 
 	return res
 }
@@ -99,8 +99,8 @@ automatic_harvest_parameters_to_json :: proc(
 ) -> jx.Value {
 	return jx.obj(
 		a,
-		{"harvestTime", jx.i(int(ahp._harvestTime))},
-		{"latestHavestDOY", jx.i(ahp._latestHarvestDOY)},
+		{"harvestTime", jx.i(int(ahp.harvest_time))},
+		{"latestHavestDOY", jx.i(ahp.latest_harvest_doy)},
 	)
 }
 
@@ -110,18 +110,18 @@ automatic_harvest_parameters_to_json :: proc(
 
 // C++: struct monica::NMinCropParameters
 NMin_Crop_Parameters :: struct {
-	samplingDepth: f64,
-	nTarget:       f64,
-	nTarget30:     f64,
+	sampling_depth: f64,
+	n_target:       f64,
+	n_target30:     f64,
 }
 
 // C++: Errors nmincropparameters::merge(...)
 nmin_crop_parameters_merge :: proc(ncp: ^NMin_Crop_Parameters, j: jx.Value) -> tl.Errors {
 	res := default_merge(ncp, j, nmin_crop_parameters_merge)
 
-	jx.set_double_value(&ncp.samplingDepth, j, "samplingDepth")
-	jx.set_double_value(&ncp.nTarget, j, "nTarget")
-	jx.set_double_value(&ncp.nTarget30, j, "nTarget30")
+	jx.set_double_value(&ncp.sampling_depth, j, "samplingDepth")
+	jx.set_double_value(&ncp.n_target, j, "nTarget")
+	jx.set_double_value(&ncp.n_target30, j, "nTarget30")
 
 	return res
 }
@@ -131,9 +131,9 @@ nmin_crop_parameters_to_json :: proc(ncp: ^NMin_Crop_Parameters, a: Allocator) -
 	return jx.obj(
 		a,
 		{"type", jx.sl("NMinCropParameters")},
-		{"samplingDepth", jx.f(ncp.samplingDepth)},
-		{"nTarget", jx.f(ncp.nTarget)},
-		{"nTarget30", jx.f(ncp.nTarget30)},
+		{"samplingDepth", jx.f(ncp.sampling_depth)},
+		{"nTarget", jx.f(ncp.n_target)},
+		{"nTarget30", jx.f(ncp.n_target30)},
 	)
 }
 
@@ -354,9 +354,9 @@ organic_fertilizer_parameters_to_json :: proc(
 
 // C++: struct monica::CropResidueParameters : public OrganicMatterParameters
 Crop_Residue_Parameters :: struct {
-	using base:  Organic_Matter_Parameters,
-	species:     string,
-	residueType: string,
+	using base:   Organic_Matter_Parameters,
+	species:      string,
+	residue_type: string,
 }
 
 // C++: Errors cropresidueparameters::merge(...)
@@ -365,7 +365,7 @@ crop_residue_parameters_merge :: proc(crp: ^Crop_Residue_Parameters, j: jx.Value
 
 	tl.append_errors(&res, organic_matter_parameters_merge(&crp.base, j))
 	jx.set_string_value(&crp.species, j, "species")
-	jx.set_string_value(&crp.residueType, j, "residueType")
+	jx.set_string_value(&crp.residue_type, j, "residueType")
 
 	return res
 }
@@ -375,6 +375,6 @@ crop_residue_parameters_to_json :: proc(crp: ^Crop_Residue_Parameters, a: Alloca
 	o := organic_matter_parameters_to_json_object(&crp.base, a)
 	jx.obj_set(&o, "type", jx.sl("CropResidueParameters"), a)
 	jx.obj_set(&o, "species", jx.s(crp.species, a), a)
-	jx.obj_set(&o, "residueType", jx.s(crp.residueType, a), a)
+	jx.obj_set(&o, "residueType", jx.s(crp.residue_type, a), a)
 	return jx.Value(o)
 }

@@ -128,14 +128,14 @@ main :: proc() {
 	args := os.args
 
 	// C++: FBPMain's members
-	portInfosReaderSr := ""
-	monicaSr := ""
-	fromAttr := ""
-	toAttr := ""
-	envInSr := ""
-	configInSr := ""
-	resultOutSr := ""
-	outputJsonDefaultConfig := false
+	port_infos_reader_sr := ""
+	monica_sr := ""
+	from_attr := ""
+	to_attr := ""
+	env_in_sr := ""
+	config_in_sr := ""
+	result_out_sr := ""
+	output_json_default_config := false
 	schema_root := os.get_env(SCHEMA_DIR_ENV, context.allocator)
 
 	i := 1
@@ -144,16 +144,16 @@ main :: proc() {
 		has_value := i + 1 < len(args)
 		switch {
 		case arg == "-O" || arg == "--output_json_default_config":
-			outputJsonDefaultConfig = true
+			output_json_default_config = true
 		case arg == "--env_in_sr" && has_value:
 			i += 1
-			envInSr = args[i]
+			env_in_sr = args[i]
 		case arg == "--config_in_sr" && has_value:
 			i += 1
-			configInSr = args[i]
+			config_in_sr = args[i]
 		case arg == "--result_out_sr" && has_value:
 			i += 1
-			resultOutSr = args[i]
+			result_out_sr = args[i]
 		case (arg == "-n" || arg == "--name") && has_value:
 			i += 1 // accepted and ignored, as in the C++ (it never reads `name`)
 		case (arg == "-l" || arg == "--log_level") && has_value:
@@ -172,13 +172,13 @@ main :: proc() {
 			os.exit(1)
 		case:
 			// C++: .expectOptionalArg("port_infos_reader_SR", ...)
-			portInfosReaderSr = arg
+			port_infos_reader_sr = arg
 		}
 		i += 1
 	}
 
 	// C++: if (outputJsonDefaultConfig) { cout << DEFAULT_CONFIG << endl; return true; }
-	if outputJsonDefaultConfig {
+	if output_json_default_config {
 		fmt.println(DEFAULT_CONFIG)
 		os.exit(0)
 	}
@@ -202,28 +202,28 @@ main :: proc() {
 	defer fbp.port_connector_close(&ports)
 
 	// C++: the portInfosReaderSr / individual-SR branch
-	if len(portInfosReaderSr) > 0 {
+	if len(port_infos_reader_sr) > 0 {
 		if err, ok := fbp.port_connector_connect_from_port_infos(
 			&ports,
-			portInfosReaderSr,
+			port_infos_reader_sr,
 			{PORT_CONFIG, PORT_ENV},
 			{PORT_RESULT},
 		); !ok {
 			fmt.eprintfln("%s: could not connect from port infos: %s", APP_NAME, err)
 			os.exit(1)
 		}
-	} else if len(envInSr) > 0 && len(resultOutSr) > 0 {
-		if err, ok := fbp.port_connector_connect_sr(&ports, PORT_ENV, envInSr, .In); !ok {
+	} else if len(env_in_sr) > 0 && len(result_out_sr) > 0 {
+		if err, ok := fbp.port_connector_connect_sr(&ports, PORT_ENV, env_in_sr, .In); !ok {
 			fmt.eprintfln("%s: could not connect the env IN port: %s", APP_NAME, err)
 			os.exit(1)
 		}
-		if len(configInSr) > 0 {
-			if err, ok := fbp.port_connector_connect_sr(&ports, PORT_CONFIG, configInSr, .In); !ok {
+		if len(config_in_sr) > 0 {
+			if err, ok := fbp.port_connector_connect_sr(&ports, PORT_CONFIG, config_in_sr, .In); !ok {
 				fmt.eprintfln("%s: could not connect the conf IN port: %s", APP_NAME, err)
 				os.exit(1)
 			}
 		}
-		if err, ok := fbp.port_connector_connect_sr(&ports, PORT_RESULT, resultOutSr, .Out); !ok {
+		if err, ok := fbp.port_connector_connect_sr(&ports, PORT_RESULT, result_out_sr, .Out); !ok {
 			fmt.eprintfln("%s: could not connect the result OUT port: %s", APP_NAME, err)
 			os.exit(1)
 		}
@@ -241,17 +241,17 @@ main :: proc() {
 	// NOTE(c++-quirk): the C++ reads "fromAttr"/"toAttr" here but its own
 	// DEFAULT_CONFIG documents "from_attr"/"to_attr", so the documented spelling
 	// never takes effect. Both are accepted rather than reproducing that.
-	fromAttr = first_string(config, "fromAttr", "from_attr")
-	toAttr = first_string(config, "toAttr", "to_attr")
-	monicaSr = first_string(config, "monica_sr")
+	from_attr = first_string(config, "fromAttr", "from_attr")
+	to_attr = first_string(config, "toAttr", "to_attr")
+	monica_sr = first_string(config, "monica_sr")
 
 	// C++: MonicaEnvInstance::Client runMonicaClient - remote or local
 	monica: Monica
 	monica_conn: fbp.Sr_Connection
-	if len(monicaSr) > 0 {
-		c, err, ok := fbp.connect_sturdy_ref(monicaSr, fbp_schema, monica_schema.model, "EnvInstance")
+	if len(monica_sr) > 0 {
+		c, err, ok := fbp.connect_sturdy_ref(monica_sr, fbp_schema, monica_schema.model, "EnvInstance")
 		if !ok {
-			fmt.eprintfln("%s: could not connect to MONICA at '%s': %s", APP_NAME, monicaSr, err)
+			fmt.eprintfln("%s: could not connect to MONICA at '%s': %s", APP_NAME, monica_sr, err)
 			os.exit(1)
 		}
 		monica_conn = c
@@ -263,7 +263,7 @@ main :: proc() {
 	}
 	defer if monica_conn.conn != nil {fbp.sr_connection_close(monica_conn)}
 
-	run_loop(&ports, monica, fbp_schema, monica_schema, fromAttr, toAttr)
+	run_loop(&ports, monica, fbp_schema, monica_schema, from_attr, to_attr)
 
 	// C++: ports.closeOutPorts();
 	fbp.port_connector_close_out_ports(&ports)
@@ -313,8 +313,8 @@ run_loop :: proc(
 	monica: Monica,
 	schema: fbp.Schema_Paths,
 	monica_schema: mcapnp.Schema_Paths,
-	fromAttr: string,
-	toAttr: string,
+	from_attr: string,
+	to_attr: string,
 ) {
 	for fbp.port_connector_in_connected(ports, PORT_ENV) &&
 	    fbp.port_connector_out_connected(ports, PORT_RESULT) {
@@ -343,7 +343,7 @@ run_loop :: proc(
 		// C++: auto attr = getIPAttr(inIp, fromAttr);
 		//      auto env = attr.orDefault(inIp.getContent()).getAs<Env>();
 		env_value, has_env := capnp_dyn.Value(nil), false
-		if v, found := fbp.ip_get_attr(in_ip, fromAttr); found {
+		if v, found := fbp.ip_get_attr(in_ip, from_attr); found {
 			env_value, has_env = v, true
 		} else if v, found := capnp_dyn.field_get(in_ip, "content"); found {
 			env_value, has_env = v, true
@@ -371,7 +371,7 @@ run_loop :: proc(
 		if !produced {
 			continue
 		}
-		write_result(ports, in_ip, result_json, toAttr, schema)
+		write_result(ports, in_ip, result_json, to_attr, schema)
 	}
 }
 
@@ -450,15 +450,15 @@ write_result :: proc(
 	ports: ^fbp.Port_Connector,
 	in_ip: []capnp_dyn.Field,
 	result_json: string,
-	toAttr: string,
+	to_attr: string,
 	schema: fbp.Schema_Paths,
 ) {
 	out_ip := make([dynamic]capnp_dyn.Field, 0, 2, context.temp_allocator)
 	// C++: if (kj::size(toAttr) == 0) outIp.initContent().setAs<capnp::Text>(resJsonStr);
-	if len(toAttr) == 0 {
+	if len(to_attr) == 0 {
 		append(&out_ip, capnp_dyn.Field{name = "content", value = result_json})
 	}
-	if attrs, has := fbp.ip_copy_and_set_attrs(in_ip, toAttr, result_json, context.temp_allocator);
+	if attrs, has := fbp.ip_copy_and_set_attrs(in_ip, to_attr, result_json, context.temp_allocator);
 	   has {
 		append(&out_ip, capnp_dyn.Field{name = "attributes", value = attrs})
 	}

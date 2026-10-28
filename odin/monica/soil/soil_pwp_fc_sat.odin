@@ -19,12 +19,12 @@ import tl "../../support/tools"
 
 // C++: struct Soil::VanGenuchtenParams
 Van_Genuchten_Params :: struct {
-	thetaR:                              f64,
-	thetaS:                              f64,
-	alpha:                               f64,
-	m:                                   f64,
-	n:                                   f64,
-	volumetricWaterContentAtMatricHead:  f64,
+	theta_r:                                 f64,
+	theta_s:                                 f64,
+	alpha:                                   f64,
+	m:                                       f64,
+	n:                                       f64,
+	volumetric_water_content_at_matric_head: f64,
 }
 
 // C++: struct FcSatPwp (anonymous namespace)
@@ -281,30 +281,30 @@ fc_sat_pwp_from_van_genuchten_vereecken :: proc(
 
 	// Van Genuchten retention curve to calculate volumetric water content at
 	// moisture equivalent (Field capacity definition KA5)
-	fc_pF := 2.1
+	fc_pf := 2.1
 	if sand_frac > 0.48 && sand_frac <= 0.9 && clay_frac <= 0.12 {
-		fc_pF = 2.1 - (0.476 * (sand_frac - 0.48))
+		fc_pf = 2.1 - (0.476 * (sand_frac - 0.48))
 	} else if sand_frac > 0.9 && clay_frac <= 0.05 {
-		fc_pF = 1.9
+		fc_pf = 1.9
 	} else if clay_frac > 0.45 {
-		fc_pF = 2.5
+		fc_pf = 2.5
 	} else if clay_frac > 0.30 && sand_frac < 0.2 {
-		fc_pF = 2.4
+		fc_pf = 2.4
 	} else if clay_frac > 0.35 {
-		fc_pF = 2.3
+		fc_pf = 2.3
 	} else if clay_frac > 0.25 && sand_frac < 0.1 {
-		fc_pF = 2.3
+		fc_pf = 2.3
 	} else if clay_frac > 0.17 && sand_frac > 0.68 {
-		fc_pF = 2.2
+		fc_pf = 2.2
 	} else if clay_frac > 0.17 && sand_frac < 0.33 {
-		fc_pF = 2.2
+		fc_pf = 2.2
 	} else if clay_frac > 0.08 && sand_frac < 0.27 {
-		fc_pF = 2.2
+		fc_pf = 2.2
 	} else if clay_frac > 0.25 && sand_frac < 0.25 {
-		fc_pF = 2.2
+		fc_pf = 2.2
 	}
 
-	matric_head := cr_math.pow(10.0, fc_pF)
+	matric_head := cr_math.pow(10.0, fc_pf)
 
 	vgps := calc_van_genuchten_vereecken_params(
 		res.pwp,
@@ -316,7 +316,7 @@ fc_sat_pwp_from_van_genuchten_vereecken :: proc(
 		stone_frac,
 		matric_head,
 	)
-	res.fc = vgps.volumetricWaterContentAtMatricHead
+	res.fc = vgps.volumetric_water_content_at_matric_head
 	return res
 }
 
@@ -339,8 +339,8 @@ fc_sat_pwp_from_van_genuchten_toth :: proc(
 		stone_frac,
 		fc_matric_head,
 	)
-	res.sat = fc_vgps.thetaS
-	res.fc = fc_vgps.volumetricWaterContentAtMatricHead
+	res.sat = fc_vgps.theta_s
+	res.fc = fc_vgps.volumetric_water_content_at_matric_head
 
 	pwp_matric_head := -15000.0
 	pwp_vgps := calc_van_genuchten_toth_params(
@@ -352,11 +352,11 @@ fc_sat_pwp_from_van_genuchten_toth :: proc(
 		stone_frac,
 		pwp_matric_head,
 	)
-	res.pwp = pwp_vgps.volumetricWaterContentAtMatricHead
+	res.pwp = pwp_vgps.volumetric_water_content_at_matric_head
 
 	// safeguard (thetaR is the same for both calls - only depends on sand_frac)
-	if res.pwp <= pwp_vgps.thetaR {
-		res.pwp = fc_vgps.thetaR + 0.01
+	if res.pwp <= pwp_vgps.theta_r {
+		res.pwp = fc_vgps.theta_r + 0.01
 	}
 
 	return res
@@ -400,16 +400,16 @@ update_unset_pwp_fc_sat_from_ka5_texture_class :: proc(
 	sp: ^Soil_Parameters,
 	allocator := context.allocator,
 ) -> tl.Errors {
-	if len(sp.vs_SoilTexture) == 0 {
+	if len(sp.soil_texture) == 0 {
 		return tl.make_errors_from_error("No soil texture defined!", allocator)
 	}
 
 	// we only need to update something, if any of the values is not already set
-	if sp.vs_FieldCapacity < 0 || sp.vs_Saturation < 0 || sp.vs_PermanentWiltingPoint < 0 {
+	if sp.field_capacity < 0 || sp.saturation < 0 || sp.permanent_wilting_point < 0 {
 		res := fc_sat_pwp_from_ka5_texture_class(
 			path_to_soil_dir,
-			sp.vs_SoilTexture,
-			sp.vs_SoilStoneContent,
+			sp.soil_texture,
+			sp.soil_stone_content,
 			soil_raw_density(sp),
 			soil_organic_matter(sp),
 			allocator,
@@ -417,14 +417,14 @@ update_unset_pwp_fc_sat_from_ka5_texture_class :: proc(
 		if tl.failure(res.errs) {
 			return res.errs
 		}
-		if sp.vs_FieldCapacity < 0 {
-			sp.vs_FieldCapacity = res.result.fc
+		if sp.field_capacity < 0 {
+			sp.field_capacity = res.result.fc
 		}
-		if sp.vs_Saturation < 0 {
-			sp.vs_Saturation = res.result.sat
+		if sp.saturation < 0 {
+			sp.saturation = res.result.sat
 		}
-		if sp.vs_PermanentWiltingPoint < 0 {
-			sp.vs_PermanentWiltingPoint = res.result.pwp
+		if sp.permanent_wilting_point < 0 {
+			sp.permanent_wilting_point = res.result.pwp
 		}
 	}
 	return tl.Errors{}
@@ -439,9 +439,9 @@ calc_van_genuchten_vereecken_params :: proc(
 	matric_head: f64 = -1,
 ) -> Van_Genuchten_Params {
 	res: Van_Genuchten_Params
-	res.volumetricWaterContentAtMatricHead = -1 // C++ in-class initialiser default
-	res.thetaR = pwp
-	res.thetaS = sat
+	res.volumetric_water_content_at_matric_head = -1 // C++ in-class initialiser default
+	res.theta_r = pwp
+	res.theta_s = sat
 	res.alpha = cr_math.exp(
 		-2.486 + 2.5 * sand_frac - 35.1 * organic_carbon_frac -
 		2.617 * (bulk_density_kg_per_m3 / 1000.0) -
@@ -452,9 +452,9 @@ calc_van_genuchten_vereecken_params :: proc(
 	res.n = cr_math.exp(0.053 - 0.9 * sand_frac - 1.3 * clay_frac + 1.5 * cr_math.pow(sand_frac, 2.0))
 
 	if stone_frac >= 0 {
-		res.volumetricWaterContentAtMatricHead =
-			(res.thetaR +
-					((res.thetaS - res.thetaR) /
+		res.volumetric_water_content_at_matric_head =
+			(res.theta_r +
+					((res.theta_s - res.theta_r) /
 							(cr_math.pow(1.0 + cr_math.pow(res.alpha * matric_head, res.n), res.m)))) *
 			(1.0 - stone_frac)
 	}
@@ -477,11 +477,11 @@ calc_van_genuchten_toth_params :: proc(
 	soil_bulk_density_g_per_cm3 := bulk_density_kg_per_m3 / 1000
 
 	if sand_content_perc >= 20 {
-		res.thetaR = 0.041
+		res.theta_r = 0.041
 	} else if sand_content_perc < 20 {
-		res.thetaR = 0.179
+		res.theta_r = 0.179
 	}
-	res.thetaS =
+	res.theta_s =
 		0.8308 - 0.28217 * soil_bulk_density_g_per_cm3 + 0.0002728 * clay_content_perc +
 		0.000187 * silt_content_perc
 
@@ -507,9 +507,9 @@ calc_van_genuchten_toth_params :: proc(
 
 	// Van Genuchten Toth retention curve to calculate volumetric water content at
 	// moisture equivalent, Field capacity and wilting point
-	res.volumetricWaterContentAtMatricHead =
-		(res.thetaR +
-				((res.thetaS - res.thetaR) /
+	res.volumetric_water_content_at_matric_head =
+		(res.theta_r +
+				((res.theta_s - res.theta_r) /
 						(cr_math.pow(
 									1.0 + cr_math.pow(res.alpha * abs(matric_head), res.n),
 									res.m,
@@ -529,22 +529,22 @@ calc_van_genuchten_toth_params :: proc(
 //
 // The int (layer number) parameter is unused in the C++ too.
 update_unset_pwp_fc_sat_from_van_genuchten_vereecken :: proc(sp: ^Soil_Parameters) -> tl.Errors {
-	if sp.vs_FieldCapacity < 0 || sp.vs_Saturation < 0 || sp.vs_PermanentWiltingPoint < 0 {
+	if sp.field_capacity < 0 || sp.saturation < 0 || sp.permanent_wilting_point < 0 {
 		res := fc_sat_pwp_from_van_genuchten_vereecken(
-			sp.vs_SoilSandContent,
-			sp.vs_SoilClayContent,
-			sp.vs_SoilStoneContent,
+			sp.soil_sand_content,
+			sp.soil_clay_content,
+			sp.soil_stone_content,
 			soil_bulk_density(sp),
 			soil_organic_carbon(sp),
 		)
-		if sp.vs_FieldCapacity < 0 {
-			sp.vs_FieldCapacity = res.fc
+		if sp.field_capacity < 0 {
+			sp.field_capacity = res.fc
 		}
-		if sp.vs_Saturation < 0 {
-			sp.vs_Saturation = res.sat
+		if sp.saturation < 0 {
+			sp.saturation = res.sat
 		}
-		if sp.vs_PermanentWiltingPoint < 0 {
-			sp.vs_PermanentWiltingPoint = res.pwp
+		if sp.permanent_wilting_point < 0 {
+			sp.permanent_wilting_point = res.pwp
 		}
 	}
 	return tl.Errors{}
@@ -555,23 +555,23 @@ update_unset_pwp_fc_sat_from_van_genuchten_toth :: proc(
 	sp: ^Soil_Parameters,
 	layer_no: int = 0,
 ) -> tl.Errors {
-	if sp.vs_FieldCapacity < 0 || sp.vs_Saturation < 0 || sp.vs_PermanentWiltingPoint < 0 {
+	if sp.field_capacity < 0 || sp.saturation < 0 || sp.permanent_wilting_point < 0 {
 		res := fc_sat_pwp_from_van_genuchten_toth(
 			layer_no <= 3,
-			sp.vs_SoilSandContent,
-			sp.vs_SoilClayContent,
-			sp.vs_SoilStoneContent,
+			sp.soil_sand_content,
+			sp.soil_clay_content,
+			sp.soil_stone_content,
 			soil_bulk_density(sp),
 			soil_organic_carbon(sp),
 		)
-		if sp.vs_FieldCapacity < 0 {
-			sp.vs_FieldCapacity = res.fc
+		if sp.field_capacity < 0 {
+			sp.field_capacity = res.fc
 		}
-		if sp.vs_Saturation < 0 {
-			sp.vs_Saturation = res.sat
+		if sp.saturation < 0 {
+			sp.saturation = res.sat
 		}
-		if sp.vs_PermanentWiltingPoint < 0 {
-			sp.vs_PermanentWiltingPoint = res.pwp
+		if sp.permanent_wilting_point < 0 {
+			sp.permanent_wilting_point = res.pwp
 		}
 	}
 	return tl.Errors{}
@@ -581,22 +581,22 @@ update_unset_pwp_fc_sat_from_van_genuchten_toth :: proc(
 //
 // The int (layer number) parameter is unused in the C++ too.
 update_unset_pwp_fc_sat_from_toth :: proc(sp: ^Soil_Parameters) -> tl.Errors {
-	if sp.vs_FieldCapacity < 0 || sp.vs_Saturation < 0 || sp.vs_PermanentWiltingPoint < 0 {
+	if sp.field_capacity < 0 || sp.saturation < 0 || sp.permanent_wilting_point < 0 {
 		res := fc_sat_pwp_from_toth(
-			sp.vs_SoilSandContent,
-			sp.vs_SoilClayContent,
-			sp.vs_SoilStoneContent,
+			sp.soil_sand_content,
+			sp.soil_clay_content,
+			sp.soil_stone_content,
 			soil_bulk_density(sp),
 			soil_organic_carbon(sp),
 		)
-		if sp.vs_FieldCapacity < 0 {
-			sp.vs_FieldCapacity = res.fc
+		if sp.field_capacity < 0 {
+			sp.field_capacity = res.fc
 		}
-		if sp.vs_Saturation < 0 {
-			sp.vs_Saturation = res.sat
+		if sp.saturation < 0 {
+			sp.saturation = res.sat
 		}
-		if sp.vs_PermanentWiltingPoint < 0 {
-			sp.vs_PermanentWiltingPoint = res.pwp
+		if sp.permanent_wilting_point < 0 {
+			sp.permanent_wilting_point = res.pwp
 		}
 	}
 	return tl.Errors{}

@@ -297,14 +297,14 @@ measured_groundwater_table_information_to_json :: proc(
 //        getGroundwaterInformation(const MeasuredGroundwaterTableInformation*, Tools::Date)
 get_groundwater_information :: proc(
 	gwi: ^Measured_Groundwater_Table_Information,
-	gwDate: d.Date,
+	gw_date: d.Date,
 	allocator := context.allocator,
 ) -> (
 	available: bool,
 	depth: f64,
 ) {
 	if gwi.groundwater_information_available && len(gwi.groundwater_info) > 0 {
-		key := d.to_iso_date_string(gwDate, "", allocator)
+		key := d.to_iso_date_string(gw_date, "", allocator)
 		if v, ok := gwi.groundwater_info[key]; ok {
 			return true, v
 		}
@@ -862,10 +862,10 @@ RCP :: enum {
 Environment_Parameters :: struct {
 	albedo:                      f64,
 	rcp:                         RCP,
-	atmospheric_CO2:             f64,
-	atmospheric_CO2s:            map[int]f64,
-	atmospheric_O3:              f64,
-	atmospheric_O3s:             map[int]f64,
+	atmospheric_co2:             f64,
+	atmospheric_co2_s:           map[int]f64,
+	atmospheric_o3:              f64,
+	atmospheric_o3s:             map[int]f64,
 	wind_speed_height_m:         f64,
 	leaching_depth_m:            f64,
 	time_step:                   f64,
@@ -991,27 +991,27 @@ environment_parameters_merge :: proc(
 		}
 	}
 
-	jx.set_double_value(&ep.atmospheric_CO2, j, "AtmosphericCO2")
+	jx.set_double_value(&ep.atmospheric_co2, j, "AtmosphericCO2")
 	if jx.is_object(jx.get(j, "AtmosphericCO2s")) {
-		clear(&ep.atmospheric_CO2s)
-		if ep.atmospheric_CO2s == nil {
-			ep.atmospheric_CO2s = make(map[int]f64, a)
+		clear(&ep.atmospheric_co2_s)
+		if ep.atmospheric_co2_s == nil {
+			ep.atmospheric_co2_s = make(map[int]f64, a)
 		}
 		for k, v in jx.object_items(jx.get(j, "AtmosphericCO2s")) {
 			if year, ok := strconv.parse_int(k); ok {
-				ep.atmospheric_CO2s[year] = jx.number_value(v)
+				ep.atmospheric_co2_s[year] = jx.number_value(v)
 			}
 		}
 	}
-	jx.set_double_value(&ep.atmospheric_O3, j, "AtmosphericO3")
+	jx.set_double_value(&ep.atmospheric_o3, j, "AtmosphericO3")
 	if jx.is_object(jx.get(j, "AtmosphericO3s")) {
-		clear(&ep.atmospheric_O3s)
-		if ep.atmospheric_O3s == nil {
-			ep.atmospheric_O3s = make(map[int]f64, a)
+		clear(&ep.atmospheric_o3s)
+		if ep.atmospheric_o3s == nil {
+			ep.atmospheric_o3s = make(map[int]f64, a)
 		}
 		for k, v in jx.object_items(jx.get(j, "AtmosphericO3s")) {
 			if year, ok := strconv.parse_int(k); ok {
-				ep.atmospheric_O3s[year] = jx.number_value(v)
+				ep.atmospheric_o3s[year] = jx.number_value(v)
 			}
 		}
 	}
@@ -1042,10 +1042,10 @@ environment_parameters_to_json :: proc(ep: ^Environment_Parameters, a: Allocator
 		{"type", jx.sl("EnvironmentParameters")},
 		{"Albedo", jx.f(ep.albedo)},
 		{"rcp", jx.sl(rcp_2_str(ep.rcp))},
-		{"AtmosphericCO2", jx.f(ep.atmospheric_CO2)},
-		{"AtmosphericCO2s", year_map_to_json(ep.atmospheric_CO2s, a)},
-		{"AtmosphericO3", jx.f(ep.atmospheric_O3)},
-		{"AtmosphericO3s", year_map_to_json(ep.atmospheric_O3s, a)},
+		{"AtmosphericCO2", jx.f(ep.atmospheric_co2)},
+		{"AtmosphericCO2s", year_map_to_json(ep.atmospheric_co2_s, a)},
+		{"AtmosphericO3", jx.f(ep.atmospheric_o3)},
+		{"AtmosphericO3s", year_map_to_json(ep.atmospheric_o3s, a)},
 		{"WindSpeedHeight", jx.f(ep.wind_speed_height_m)},
 		{"LeachingDepth", jx.f(ep.leaching_depth_m)},
 		{"timeStep", jx.f(ep.time_step)},

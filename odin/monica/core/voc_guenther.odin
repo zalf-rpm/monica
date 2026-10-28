@@ -16,7 +16,7 @@ import "../../support/cr_math"
 // inlined directly (x*x / val>max?max:val) - both are one-line, used only
 // here in the whole port, not worth a shared helper.
 @(private)
-voc_guenther_calc_leaf_emission :: proc(lemi: ^Voc_Leaf_Emission_T, _species_EF_MONOS: f64) -> Voc_Leaf_Emissions {
+voc_guenther_calc_leaf_emission :: proc(lemi: ^Voc_Leaf_Emission_T, species_ef_monos: f64) -> Voc_Leaf_Emissions {
 	lems: Voc_Leaf_Emissions
 	{
 		// isoprene, Guenther et al. 1999 (from Harley et al. 2004)
@@ -24,7 +24,7 @@ voc_guenther_calc_leaf_emission :: proc(lemi: ^Voc_Leaf_Emission_T, _species_EF_
 		cti30 := VOC_CT2 * cr_math.exp(VOC_CT1*x30) / (VOC_CT2 - VOC_CT1*(1.0-cr_math.exp(VOC_CT2*x30)))
 
 		eopt := tl.flt_equal_zero(cti30) ? lemi.enz_act.ef_iso : (lemi.enz_act.ef_iso / cti30)
-		x := (1.0/VOC_TOPT - 1.0/lemi.fol.tempK) / VOC_RGAS
+		x := (1.0/VOC_TOPT - 1.0/lemi.fol.temp_k) / VOC_RGAS
 
 		// emission scaling factor of isoprenes to temperature
 		cti := VOC_CT2 * cr_math.exp(VOC_CT1*x) / (VOC_CT2 - VOC_CT1*(1.0-cr_math.exp(VOC_CT2*x)))
@@ -40,16 +40,16 @@ voc_guenther_calc_leaf_emission :: proc(lemi: ^Voc_Leaf_Emission_T, _species_EF_
 	{
 		// monoterpene, Guenther et al. (1993, 1995 (ctm), 1997 (factor 0.961,
 		// cit. in Lindfors et al. 2000))
-		ctm := cr_math.exp(VOC_BETA * (lemi.fol.tempK - VOC_TREF))
+		ctm := cr_math.exp(VOC_BETA * (lemi.fol.temp_k - VOC_TREF))
 		cti :=
-			cr_math.exp(VOC_CT1*(lemi.fol.tempK-VOC_TREF)/(VOC_RGAS*VOC_TREF*lemi.fol.tempK)) /
-			(0.961 + cr_math.exp(VOC_CT2*(lemi.fol.tempK-VOC_TOPT)/(VOC_RGAS*VOC_TREF*lemi.fol.tempK)))
+			cr_math.exp(VOC_CT1*(lemi.fol.temp_k-VOC_TREF)/(VOC_RGAS*VOC_TREF*lemi.fol.temp_k)) /
+			(0.961 + cr_math.exp(VOC_CT2*(lemi.fol.temp_k-VOC_TOPT)/(VOC_RGAS*VOC_TREF*lemi.fol.temp_k)))
 		cl :=
 			VOC_ALPHA * VOC_CL1 * lemi.pho.par /
 			libc.sqrt(1.0 + (VOC_ALPHA*VOC_ALPHA)*(lemi.pho.par*lemi.pho.par))
 
 		cl_bounded := cl > 1.0 ? 1.0 : cl
-		lems.monoterp = _species_EF_MONOS*ctm + lemi.enz_act.ef_mono*cl_bounded*cti
+		lems.monoterp = species_ef_monos*ctm + lemi.enz_act.ef_mono*cl_bounded*cti
 	}
 
 	return lems
@@ -60,46 +60,46 @@ voc_guenther_calc_leaf_emission :: proc(lemi: ^Voc_Leaf_Emission_T, _species_EF_
 voc_guenther_emissions_multiple_species :: proc(
 	sds: []Voc_Species_Data,
 	mcd: ^Voc_Micro_Climate_Data,
-	dayFraction: f64 = 1.0,
+	day_fraction: f64 = 1.0,
 	allocator := context.allocator,
 ) -> Voc_Emissions {
 	ems: Voc_Emissions
-	ems.speciesId_2_isoprene_emission = make(map[int]f64, allocator)
-	ems.speciesId_2_monoterpene_emission = make(map[int]f64, allocator)
+	ems.species_id_to_isoprene_emission = make(map[int]f64, allocator)
+	ems.species_id_to_monoterpene_emission = make(map[int]f64, allocator)
 
-	tslength := f64(VOC_SEC_IN_DAY) * dayFraction
+	tslength := f64(VOC_SEC_IN_DAY) * day_fraction
 
 	for species in sds {
-		if species.mFol > 0.0 {
+		if species.m_fol > 0.0 {
 			lemi: Voc_Leaf_Emission_T
 
 			// conversion of enzyme activity (umol m-2 s-1) in emission factor
 			// (ugC g-1 h-1); specific leaf weight (g m-2)
 			lsw := VOC_G_IN_KG / species.sla
-			lemi.enz_act.ef_iso = species.EF_ISO
-			lemi.enz_act.ef_mono = species.EF_MONO
+			lemi.enz_act.ef_iso = species.ef_iso
+			lemi.enz_act.ef_mono = species.ef_mono
 
 			// conversion of microclimate variables
 			lemi.pho.par = mcd.rad * VOC_FPAR * VOC_W_IN_UMOL // par [umol m-2 s-1 pa-radiation] = rad_fl [W m-2 global radiation] * 0.45 * 4.57
-			lemi.fol.tempK = mcd.tFol + VOC_D_IN_K
+			lemi.fol.temp_k = mcd.t_fol + VOC_D_IN_K
 
 			// emission in dependence on light and temperature, weighted over
 			// canopy layers
-			lems := voc_guenther_calc_leaf_emission(&lemi, species.EF_MONOS)
+			lems := voc_guenther_calc_leaf_emission(&lemi, species.ef_monos)
 
 			// conversion from (ugC g-1 h-1) to (umol m-2 s-1) and weighting with
 			// leaf area and time
-			C1 := (lsw / (f64(VOC_SEC_IN_HR) * VOC_MC)) * species.lai * tslength
-			ts_isoprene_em := (1.0 / VOC_C_ISO) * C1 * lems.isoprene
-			ts_monoterpene_em := (1.0 / VOC_C_MONO) * C1 * lems.monoterp
+			c1 := (lsw / (f64(VOC_SEC_IN_HR) * VOC_MC)) * species.lai * tslength
+			ts_isoprene_em := (1.0 / VOC_C_ISO) * c1 * lems.isoprene
+			ts_monoterpene_em := (1.0 / VOC_C_MONO) * c1 * lems.monoterp
 
-			ems.speciesId_2_isoprene_emission[species.id] = ts_isoprene_em
+			ems.species_id_to_isoprene_emission[species.id] = ts_isoprene_em
 			ems.isoprene_emission += ts_isoprene_em
-			ems.speciesId_2_monoterpene_emission[species.id] = ts_monoterpene_em
+			ems.species_id_to_monoterpene_emission[species.id] = ts_monoterpene_em
 			ems.monoterpene_emission += ts_monoterpene_em
 		} else {
-			ems.speciesId_2_isoprene_emission[species.id] = 0.0
-			ems.speciesId_2_monoterpene_emission[species.id] = 0.0
+			ems.species_id_to_isoprene_emission[species.id] = 0.0
+			ems.species_id_to_monoterpene_emission[species.id] = 0.0
 		}
 	}
 
@@ -111,9 +111,9 @@ voc_guenther_emissions_multiple_species :: proc(
 voc_guenther_emissions :: proc(
 	species: Voc_Species_Data,
 	mcd: ^Voc_Micro_Climate_Data,
-	dayFraction: f64 = 1.0,
+	day_fraction: f64 = 1.0,
 	allocator := context.allocator,
 ) -> Voc_Emissions {
 	sds := []Voc_Species_Data{species}
-	return voc_guenther_emissions_multiple_species(sds, mcd, dayFraction, allocator)
+	return voc_guenther_emissions_multiple_species(sds, mcd, day_fraction, allocator)
 }

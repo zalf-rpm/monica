@@ -60,8 +60,8 @@ g_alias_table := []Alias_Entry {
 	{"Act_Trans", {"current_crop_module.actual_transpiration", 1, .NONE, "mm"}},
 	{"ActNup", {"current_crop_module.total_n_uptake", 2, .NONE, "kgN ha-1"}},
 	{"ActTraDef", {"current_crop_module.actual_transpiration_deficit", 2, .NONE, "0;1"}},
-	{"AOM_Fast", {"soil_column.layers.vo_AOM_Pool.0.aom_fast", 5, .NONE, ""}},
-	{"AOM_Slow", {"soil_column.layers.vo_AOM_Pool.0.aom_slow", 5, .NONE, ""}},
+	{"AOM_Fast", {"soil_column.layers.aom_pool.0.aom_fast", 5, .NONE, ""}},
+	{"AOM_Slow", {"soil_column.layers.aom_pool.0.aom_slow", 5, .NONE, ""}},
 	{"Ass", {"current_crop_module.assimilates", 2, .NONE, "kgDM ha-1"}},
 	{"AtmCO2", {"atmospheric_co2_concentration", 0, .NONE, "ppm"}},
 	{"AtmO3", {"atmospheric_o3_concentration", 0, .NONE, "ppb"}},
@@ -70,7 +70,7 @@ g_alias_table := []Alias_Entry {
 	{"Carb", {"soil_column.layers.soil_carbamid", 4, .NONE, "kgN m-3"}},
 	{"Clay", {"soil_column.layers.soil_clay_content", 2, .NONE, "kg kg-1"}},
 	{"CM-count", {"cultivation_method_count", -1, .NONE, ""}},
-	{"CN_Ratio_AOM_Fast", {"soil_column.layers.vo_AOM_Pool.0.cn_ratio_aom_fast", 5, .NONE, ""}},
+	{"CN_Ratio_AOM_Fast", {"soil_column.layers.aom_pool.0.cn_ratio_aom_fast", 5, .NONE, ""}},
 	{"CritN", {"current_crop_module.critical_n_concentration", 5, .NONE, "kgN ha-1"}},
 	{"DaylF", {"current_crop_module.daylength_factor", 2, .NONE, "0;1"}},
 	{"ET0", {"soil_moisture.reference_evapotranspiration", 1, .NONE, "mm"}},
@@ -147,7 +147,7 @@ g_alias_table := []Alias_Entry {
 	{"NO3", {"soil_column.layers.soil_no3", 6, .NONE, "kgN m-3"}},
 	{"NO3conv", {"soil_transport.convection", 8, .NONE, ""}},
 	{"NO3disp", {"soil_transport.dispersion", 8, .NONE, ""}},
-	{"noOfAOMPools", {"soil_column.layers.0.vo_AOM_Pool.#len", -1, .INT, ""}},
+	{"noOfAOMPools", {"soil_column.layers.0.aom_pool.#len", -1, .INT, ""}},
 	{"NOrgFert", {"daily_sum_org_fertiliser", 1, .NONE, "kgN ha-1"}},
 	{"NPP", {"current_crop_module.net_primary_production", 5, .NONE, "kgC ha-1"}},
 	{"O3-long-damage", {"current_crop_module.o3_long_term_damage", 2, .NONE, "unitless"}},
@@ -335,7 +335,7 @@ resolve_oid_value :: proc(
 	allocator := context.allocator,
 ) -> jx.Value {
 	if oid.plan.open_step >= 0 {
-		return get_complex_values(model, oid, nil, oid.roundToDigits, allocator)
+		return get_complex_values(model, oid, nil, oid.round_to_digits, allocator)
 	}
 
 	// A missing value - nil currentCropModule, unset Maybe, absent map key -
@@ -344,10 +344,10 @@ resolve_oid_value :: proc(
 	if !ok {
 		v = 0.0
 	}
-	if oid.castTo == .INT {
+	if oid.cast_to == .INT {
 		return jx.i(int(v))
 	}
-	return jx.f(round_or_not(v, oid.roundToDigits))
+	return jx.f(round_or_not(v, oid.round_to_digits))
 }
 
 // ---------------------------------------------------------------------------

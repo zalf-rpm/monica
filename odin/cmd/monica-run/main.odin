@@ -54,8 +54,8 @@ print_help :: proc() {
 }
 
 @(private)
-sanitize_section_filename :: proc(origSpec: string, allocator := context.allocator) -> string {
-	s, _ := strings.replace_all(origSpec, "\"", "", allocator)
+sanitize_section_filename :: proc(orig_spec: string, allocator := context.allocator) -> string {
+	s, _ := strings.replace_all(orig_spec, "\"", "", allocator)
 	s, _ = strings.replace_all(s, "*", "_star_", allocator)
 	s, _ = strings.replace_all(s, "?", "_qm_", allocator)
 	s, _ = strings.replace_all(s, "|", "_bar_", allocator)
@@ -69,14 +69,14 @@ main :: proc() {
 	args := os.args
 
 	debug := false
-	debugSet := false
-	startDate := ""
-	endDate := ""
-	pathToOutput := ""
-	pathToOutputFile := ""
-	pathToOutputDir := "."
-	writeMultipleOutputFiles := false
-	pathToSimJson := "./sim.json"
+	debug_set := false
+	start_date := ""
+	end_date := ""
+	path_to_output := ""
+	path_to_output_file := ""
+	path_to_output_dir := "."
+	write_multiple_output_files := false
+	path_to_sim_json := "./sim.json"
 	crop := ""
 	site := ""
 	climate := ""
@@ -92,21 +92,21 @@ main :: proc() {
 		switch {
 		case arg == "-d" || arg == "--debug":
 			debug = true
-			debugSet = true
+			debug_set = true
 		case (arg == "-sd" || arg == "--start-date") && i + 1 < len(args):
 			i += 1
-			startDate = args[i]
+			start_date = args[i]
 		case (arg == "-ed" || arg == "--end-date") && i + 1 < len(args):
 			i += 1
-			endDate = args[i]
+			end_date = args[i]
 		case (arg == "-op" || arg == "--path-to-output") && i + 1 < len(args):
 			i += 1
-			pathToOutput = args[i]
+			path_to_output = args[i]
 		case (arg == "-o" || arg == "--path-to-output-file") && i + 1 < len(args):
 			i += 1
-			pathToOutputFile = args[i]
+			path_to_output_file = args[i]
 		case (arg == "-m" || arg == "--write-multiple-output-files"):
-			writeMultipleOutputFiles = true
+			write_multiple_output_files = true
 		case (arg == "-c" || arg == "--path-to-crop") && i + 1 < len(args):
 			i += 1
 			crop = args[i]
@@ -123,16 +123,16 @@ main :: proc() {
 			fmt.printfln("%s version %s", APP_NAME, VERSION)
 			os.exit(0)
 		case:
-			pathToSimJson = arg
+			path_to_sim_json = arg
 		}
 		i += 1
 	}
 
 	a := context.allocator
 
-	path_of_sim_json, _ := tl.split_path_to_file(pathToSimJson, a)
+	path_of_sim_json, _ := tl.split_path_to_file(path_to_sim_json, a)
 
-	simr := jx.read_and_parse_json_file(pathToSimJson, a)
+	simr := jx.read_and_parse_json_file(path_to_sim_json, a)
 	if tl.failure(simr.errs) {
 		tl.print_possible_errors(simr.errs)
 	}
@@ -148,23 +148,23 @@ main :: proc() {
 	for k, v in jx.object_items(jx.get(jx.Value(simm), "climate.csv-options")) {
 		csvos[strings.clone(k, a)] = v
 	}
-	if startDate != "" {
-		csvos[strings.clone("start-date", a)] = jx.s(startDate, a)
+	if start_date != "" {
+		csvos[strings.clone("start-date", a)] = jx.s(start_date, a)
 	}
-	if endDate != "" {
-		csvos[strings.clone("end-date", a)] = jx.s(endDate, a)
+	if end_date != "" {
+		csvos[strings.clone("end-date", a)] = jx.s(end_date, a)
 	}
 	simm[strings.clone("climate.csv-options", a)] = jx.Value(csvos)
 
-	if debugSet {
+	if debug_set {
 		simm[strings.clone("debug?", a)] = jx.b(debug)
 	}
 
-	if pathToOutput != "" {
-		simm[strings.clone("path-to-output", a)] = jx.s(pathToOutput, a)
+	if path_to_output != "" {
+		simm[strings.clone("path-to-output", a)] = jx.s(path_to_output, a)
 	}
 
-	simm[strings.clone("sim.json", a)] = jx.s(pathToSimJson, a)
+	simm[strings.clone("sim.json", a)] = jx.s(path_to_sim_json, a)
 
 	if crop != "" {
 		simm[strings.clone("crop.json", a)] = jx.s(crop, a)
@@ -219,14 +219,14 @@ main :: proc() {
 	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
 
 	env: run.Env
-	mergeErrs := run.env_merge(&env, env_json, path_to_soil_dir, a)
-	tl.print_possible_errors(mergeErrs)
-	if tl.failure(mergeErrs) {
+	merge_errs := run.env_merge(&env, env_json, path_to_soil_dir, a)
+	tl.print_possible_errors(merge_errs)
+	if tl.failure(merge_errs) {
 		os.exit(1)
 	}
 
 	out := run.run_monica(&env, a)
-	returnObjOutputs := run.env_return_obj_outputs(&env)
+	return_obj_outputs := run.env_return_obj_outputs(&env)
 
 	// NOTE(deviation): the C++ main ignores runMonica's Output.errors, because
 	// there runMonica never sets any. run_monica.odin's empty-soil-profile guard
@@ -239,18 +239,18 @@ main :: proc() {
 		os.exit(1)
 	}
 
-	if pathToOutputFile == "" && jx.bool_value_of(jx.get_path(sim_v, "output", "write-file?")) {
-		pathToOutputDir = tl.fix_system_separator(jx.string_value(jx.get(sim_v, "output"), "path-to-output"), a)
-		pathToOutputFile = tl.fix_system_separator(
-			strings.concatenate({pathToOutputDir, "/", jx.string_value(jx.get(sim_v, "output"), "file-name")}, a),
+	if path_to_output_file == "" && jx.bool_value_of(jx.get_path(sim_v, "output", "write-file?")) {
+		path_to_output_dir = tl.fix_system_separator(jx.string_value(jx.get(sim_v, "output"), "path-to-output"), a)
+		path_to_output_file = tl.fix_system_separator(
+			strings.concatenate({path_to_output_dir, "/", jx.string_value(jx.get(sim_v, "output"), "file-name")}, a),
 			a,
 		)
 	}
 
-	csvSep := jx.string_value(jx.get_path(sim_v, "output", "csv-options"), "csv-separator")
-	includeHeaderRow := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-header-row"))
-	includeUnitsRow := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-units-row"))
-	includeAggRows := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-aggregation-rows"))
+	csv_sep := jx.string_value(jx.get_path(sim_v, "output", "csv-options"), "csv-separator")
+	include_header_row := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-header-row"))
+	include_units_row := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-units-row"))
+	include_agg_rows := jx.bool_value_of(jx.get_path(sim_v, "output", "csv-options", "include-aggregation-rows"))
 	// NOTE(deviation): not in the C++ - significant digits of the numbers,
 	// default 6 as the C++ writes them (see mio.write_json_scalar)
 	precision := 6
@@ -258,110 +258,110 @@ main :: proc() {
 		precision = clamp(jx.int_value_of(pv), 1, 17)
 	}
 
-	if writeMultipleOutputFiles {
+	if write_multiple_output_files {
 		filename := jx.string_value(jx.get(sim_v, "output"), "file-name")
-		filenameWithoutExt := filename
-		if pathToOutputFile != "" {
-			path, fn := tl.split_path_to_file(pathToOutputFile, a)
+		filename_without_ext := filename
+		if path_to_output_file != "" {
+			path, fn := tl.split_path_to_file(path_to_output_file, a)
 			if len(path) > 0 {
 				trimmed := strings.trim_suffix(path, "/")
 				trimmed = strings.trim_suffix(trimmed, "\\")
-				pathToOutputDir = strings.clone(trimmed, a)
+				path_to_output_dir = strings.clone(trimmed, a)
 			}
 			filename = fn
 		}
 		if dot := strings.last_index(filename, "."); dot != -1 {
-			filenameWithoutExt = filename[:dot]
+			filename_without_ext = filename[:dot]
 		}
 
-		writeOutputFile := true
-		if pathToOutputDir != "" && !tl.ensure_dir_exists(pathToOutputDir, a) {
-			fmt.eprintfln("Error failed to create path: '%s'.", pathToOutputDir)
-			writeOutputFile = false
+		write_output_file := true
+		if path_to_output_dir != "" && !tl.ensure_dir_exists(path_to_output_dir, a) {
+			fmt.eprintfln("Error failed to create path: '%s'.", path_to_output_dir)
+			write_output_file = false
 		}
 
 		for section in out.data {
-			sanitized := sanitize_section_filename(section.origSpec, a)
+			sanitized := sanitize_section_filename(section.orig_spec, a)
 
-			usingFile := false
+			using_file := false
 			fout: ^os.File
-			if writeOutputFile {
-				sectionPath := tl.fix_system_separator(
-					strings.concatenate({pathToOutputDir, "/", filenameWithoutExt, "_section_", sanitized, ".csv"}, a),
+			if write_output_file {
+				section_path := tl.fix_system_separator(
+					strings.concatenate({path_to_output_dir, "/", filename_without_ext, "_section_", sanitized, ".csv"}, a),
 					a,
 				)
 				ferr: os.Error
-				fout, ferr = os.open(sectionPath, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
+				fout, ferr = os.open(section_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 				if ferr != nil {
-					fmt.eprintfln("Error while opening output file \"%s\"", sectionPath)
+					fmt.eprintfln("Error while opening output file \"%s\"", section_path)
 				} else {
-					usingFile = true
+					using_file = true
 				}
 			}
 
 			// buffered: sim-min-out_section_daily.csv alone is thousands of rows -
 			// unbuffered os.File writes were one write() syscall per cell.
 			bw: bufio.Writer
-			bufio.writer_init(&bw, usingFile ? os.to_stream(fout) : os.to_stream(os.stdout), 1 << 16, a)
+			bufio.writer_init(&bw, using_file ? os.to_stream(fout) : os.to_stream(os.stdout), 1 << 16, a)
 			w := bufio.writer_to_stream(&bw)
 
-			if !usingFile {
+			if !using_file {
 				io.write_string(w, "\"")
 				io.write_string(w, sanitized)
 				io.write_string(w, "\"\r\n")
 			}
 
-			mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
-			if returnObjOutputs {
-				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep, precision)
+			mio.write_output_header_rows(w, section.output_ids[:], csv_sep, include_header_row, include_units_row, include_agg_rows)
+			if return_obj_outputs {
+				mio.write_output_obj(w, section.output_ids[:], section.results_obj[:], csv_sep, precision)
 			} else {
-				mio.write_output(w, section.outputIds[:], section.results[:], csvSep, precision)
+				mio.write_output(w, section.output_ids[:], section.results[:], csv_sep, precision)
 			}
 
 			bufio.writer_flush(&bw)
 			bufio.writer_destroy(&bw)
-			if usingFile {
+			if using_file {
 				os.close(fout)
 			}
 		}
 	} else {
-		writeOutputFile := pathToOutputFile != ""
+		write_output_file := path_to_output_file != ""
 		fout: ^os.File
-		if writeOutputFile {
-			path, _ := tl.split_path_to_file(pathToOutputFile, a)
+		if write_output_file {
+			path, _ := tl.split_path_to_file(path_to_output_file, a)
 			if !tl.ensure_dir_exists(path, a) {
 				fmt.eprintfln("Error failed to create path: '%s'.", path)
 			}
 			ferr: os.Error
-			fout, ferr = os.open(pathToOutputFile, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
+			fout, ferr = os.open(path_to_output_file, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 			if ferr != nil {
-				fmt.eprintfln("Error while opening output file \"%s\"", pathToOutputFile)
-				writeOutputFile = false
+				fmt.eprintfln("Error while opening output file \"%s\"", path_to_output_file)
+				write_output_file = false
 			}
 		}
 
 		// buffered: sim-min-out.csv alone is thousands of rows - unbuffered
 		// os.File writes were one write() syscall per cell.
 		bw: bufio.Writer
-		bufio.writer_init(&bw, writeOutputFile ? os.to_stream(fout) : os.to_stream(os.stdout), 1 << 16, a)
+		bufio.writer_init(&bw, write_output_file ? os.to_stream(fout) : os.to_stream(os.stdout), 1 << 16, a)
 		w := bufio.writer_to_stream(&bw)
 
 		for section in out.data {
 			io.write_string(w, "\"")
-			io.write_string(w, sanitize_section_filename(section.origSpec, a))
+			io.write_string(w, sanitize_section_filename(section.orig_spec, a))
 			io.write_string(w, "\"\r\n")
-			mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
-			if returnObjOutputs {
-				mio.write_output_obj(w, section.outputIds[:], section.resultsObj[:], csvSep, precision)
+			mio.write_output_header_rows(w, section.output_ids[:], csv_sep, include_header_row, include_units_row, include_agg_rows)
+			if return_obj_outputs {
+				mio.write_output_obj(w, section.output_ids[:], section.results_obj[:], csv_sep, precision)
 			} else {
-				mio.write_output(w, section.outputIds[:], section.results[:], csvSep, precision)
+				mio.write_output(w, section.output_ids[:], section.results[:], csv_sep, precision)
 			}
 			io.write_string(w, "\r\n")
 		}
 
 		bufio.writer_flush(&bw)
 		bufio.writer_destroy(&bw)
-		if writeOutputFile {
+		if write_output_file {
 			os.close(fout)
 		}
 	}

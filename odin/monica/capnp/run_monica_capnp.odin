@@ -76,16 +76,16 @@ make_schema_paths :: proc(root: string, allocator := context.allocator) -> Schem
 // data on the OBJECT, which two overlapping run() calls would trample; here they
 // live on the per-call Run_Call instead.
 Run_Monica :: struct {
-	_startedServerInDebugMode: bool,
-	_id:                       string,
-	_name:                     string,
-	_description:              string,
+	started_server_in_debug_mode: bool,
+	id:                           string,
+	name:                         string,
+	description:                  string,
 
 	// Not in the C++: the schema paths (there, the generated code carries the
 	// schema) and the dispatch lock described on run_call_finish.
-	schema:                    Schema_Paths,
-	pathToSoilDir:             string,
-	lock:                      sync.Mutex,
+	schema:                       Schema_Paths,
+	path_to_soil_dir:             string,
+	lock:                         sync.Mutex,
 }
 
 // C++: RunMonica::RunMonica(bool startedServerInDebugMode, Restorer*)
@@ -95,16 +95,16 @@ make_run_monica :: proc(
 	allocator := context.allocator,
 ) -> ^Run_Monica {
 	rm := new(Run_Monica, allocator)
-	rm._startedServerInDebugMode = started_server_in_debug_mode
+	rm.started_server_in_debug_mode = started_server_in_debug_mode
 	// C++: _id = kj::str(sole::uuid4().str());
-	rm._id = uuid.to_string(uuid.generate_v4(), allocator)
+	rm.id = uuid.to_string(uuid.generate_v4(), allocator)
 	// C++: _name = kj::str("Monica capnp server");
-	rm._name = "Monica capnp server"
-	rm._description = ""
+	rm.name = "Monica capnp server"
+	rm.description = ""
 	rm.schema = schema
 	// C++ resolves this inside the run lambda on every call; hoisted because it
 	// cannot change between calls.
-	rm.pathToSoilDir = tl.fix_system_separator(
+	rm.path_to_soil_dir = tl.fix_system_separator(
 		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", allocator),
 		allocator,
 	)
@@ -116,15 +116,15 @@ run_monica_info :: proc(rm: ^Run_Monica, allocator := context.allocator) -> []ca
 	fields := make([]capnp_dyn.Field, 3, allocator)
 	fields[0] = {
 		name  = "id",
-		value = rm._id,
+		value = rm.id,
 	}
 	fields[1] = {
 		name  = "name",
-		value = rm._name,
+		value = rm.name,
 	}
 	fields[2] = {
 		name  = "description",
-		value = rm._description,
+		value = rm.description,
 	}
 	return fields
 }
@@ -147,7 +147,7 @@ Run_Call :: struct {
 	allocator:    runtime.Allocator,
 
 	// Decided up front, before any sub-call is issued.
-	envJson:      jx.Value,
+	env_json:     jx.Value,
 	rest_error:   string, // non-empty: respond with make_output(rest_error), no run
 	ts:           capnp_dyn.Capability, // nil when env.timeSeries was absent
 	profile:      capnp_dyn.Capability, // nil when env.soilProfile was absent
@@ -160,7 +160,7 @@ Run_Call :: struct {
 	// C++: RunMonica::_da / _soilLayers, filled in by the gather promises.
 	range_fields: []capnp_dyn.Field,
 	header:       []capnp_dyn.Value,
-	dataT:        []capnp_dyn.Value,
+	data_t:       []capnp_dyn.Value,
 	soil_layers:  jx.Value,
 }
 
@@ -264,7 +264,7 @@ run_monica_run :: proc(
 			// more informative and cannot change an otherwise-successful run.
 			call.rest_error = pr.errs.errors[0]
 		} else {
-			call.envJson = pr.result
+			call.env_json = pr.result
 		}
 	}
 
@@ -379,7 +379,7 @@ run_call_continue :: proc(user_data: rawptr, pending: capnp_dyn.Pending_Call) {
 		}
 	case .DataT:
 		if v, got := capnp_dyn.field_get(fields, "data"); got {
-			call.dataT, _ = v.([]capnp_dyn.Value)
+			call.data_t, _ = v.([]capnp_dyn.Value)
 		}
 	case .SoilProfile:
 		// C++: fromCapnpSoilProfile's .then() body.
@@ -426,7 +426,7 @@ run_call_finish :: proc(call: ^Run_Call) {
 		// C++: fromCapnpData(Date(sd), Date(ed), header, data) inside
 		// dataAccessorFromTimeSeries' innermost .then().
 		da: clim.Data_Accessor
-		if call.range_fields != nil && call.header != nil && call.dataT != nil {
+		if call.range_fields != nil && call.header != nil && call.data_t != nil {
 			sd, has_sd := capnp_dyn.field_get(call.range_fields, "startDate")
 			ed, has_ed := capnp_dyn.field_get(call.range_fields, "endDate")
 			sd_fields, sd_ok := sd.([]capnp_dyn.Field)
@@ -436,7 +436,7 @@ run_call_finish :: proc(call: ^Run_Call) {
 					date_from_capnp(sd_fields),
 					date_from_capnp(ed_fields),
 					call.header,
-					call.dataT,
+					call.data_t,
 					call.allocator,
 				)
 			}
@@ -449,7 +449,7 @@ run_call_finish :: proc(call: ^Run_Call) {
 		// its SECOND request; see run.reset_caches' own comment. Under rm.lock,
 		// since the cache is process-global.
 		run.reset_caches()
-		out = run_monica_env(call.rm, call.envJson, da, call.soil_layers, call.allocator)
+		out = run_monica_env(call.rm, call.env_json, da, call.soil_layers, call.allocator)
 		sync.mutex_unlock(&call.rm.lock)
 	}
 
@@ -516,7 +516,7 @@ run_call_destroy :: proc(call: ^Run_Call) {
 // returning early. Porting each on its own is CONVENTIONS.md section 1.
 run_monica_env :: proc(
 	rm: ^Run_Monica,
-	envJson: jx.Value,
+	env_json: jx.Value,
 	da: clim.Data_Accessor,
 	soil_layers: jx.Value, // C++: J11Array soilLayers; a nil Value when absent
 	allocator := context.allocator,
@@ -526,7 +526,7 @@ run_monica_env :: proc(
 	// C++ installs env.params.siteParameters.calculateAndSetPwpFcSatFunctions here;
 	// in this port those are selected inside central_parameter_provider_merge from
 	// path_to_soil_dir, so passing the directory to env_merge is the equivalent.
-	errors := run.env_merge(&env, envJson, rm.pathToSoilDir, allocator)
+	errors := run.env_merge(&env, env_json, rm.path_to_soil_dir, allocator)
 
 	// C++: if (!soilLayers.empty()) { erase "Soil profile is empty!"; append
 	//        siteparameters::merge(..., {{"SoilProfileParameters", soilLayers}}) }
@@ -542,7 +542,7 @@ run_monica_env :: proc(
 			p.site_parameters_merge(
 				&env.params.site_params,
 				jx.obj(allocator, {"SoilProfileParameters", soil_layers}),
-				rm.pathToSoilDir,
+				rm.path_to_soil_dir,
 				allocator,
 			),
 		)
@@ -557,18 +557,18 @@ run_monica_env :: proc(
 	da := da
 	if clim.data_accessor_is_valid(&da) {
 		eda.result = da
-	} else if !clim.data_accessor_is_valid(&env.climateData) {
+	} else if !clim.data_accessor_is_valid(&env.climate_data) {
 		// C++ reads env.climateCSV / env.pathsToClimateCSV, both dropped from this
 		// port's Env - so read them straight off the incoming JSON, exactly as
 		// run/serve_zmq.odin does and for the same reason (see its file header).
 		csv_opts := clim.make_csv_via_header_options()
 		_ = clim.csv_via_header_options_merge(
 			&csv_opts,
-			jx.get(envJson, "csvViaHeaderOptions"),
+			jx.get(env_json, "csvViaHeaderOptions"),
 			allocator,
 		)
 
-		climate_csv := jx.string_value_of(jx.get(envJson, "climateCSV"))
+		climate_csv := jx.string_value_of(jx.get(env_json, "climateCSV"))
 		if climate_csv != "" {
 			eda = clim.read_climate_data_from_csv_string_via_headers(
 				climate_csv,
@@ -576,7 +576,7 @@ run_monica_env :: proc(
 				allocator,
 			)
 		} else {
-			paths := extract_paths_to_climate_csv(jx.get(envJson, "pathToClimateCSV"), allocator)
+			paths := extract_paths_to_climate_csv(jx.get(env_json, "pathToClimateCSV"), allocator)
 			if len(paths) > 0 {
 				eda = clim.read_climate_data_from_csv_files_via_headers(
 					paths[:],
@@ -589,14 +589,14 @@ run_monica_env :: proc(
 
 	if tl.success(eda.errs) {
 		if clim.data_accessor_is_valid(&eda.result) {
-			env.climateData = eda.result
+			env.climate_data = eda.result
 		}
-		env.debugMode = rm._startedServerInDebugMode && env.debugMode
+		env.debug_mode = rm.started_server_in_debug_mode && env.debug_mode
 		// C++ also installs env.params.userSoilMoistureParameters.getCapillaryRiseRate
 		// here; this port reads the capillary-rise table directly instead.
 		out = run.run_monica(&env, allocator)
 	} else {
-		out.customId = env.customId
+		out.custom_id = env.custom_id
 	}
 	// C++: out.errors = eda.errors; - appended rather than assigned, because
 	// run_monica can now put an error there itself (the empty-soil-profile guard;
@@ -734,16 +734,16 @@ data_accessor_from_time_series :: proc(
 	if v, got := capnp_dyn.field_get(header_res, "header"); got {
 		header, _ = v.([]capnp_dyn.Value)
 	}
-	dataT: []capnp_dyn.Value
+	data_t: []capnp_dyn.Value
 	if v, got := capnp_dyn.field_get(data_res, "data"); got {
-		dataT, _ = v.([]capnp_dyn.Value)
+		data_t, _ = v.([]capnp_dyn.Value)
 	}
 
 	return from_capnp_data(
 		date_from_capnp(sd_fields),
 		date_from_capnp(ed_fields),
 		header,
-		dataT,
+		data_t,
 		allocator,
 	)
 }

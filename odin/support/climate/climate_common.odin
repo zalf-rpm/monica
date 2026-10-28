@@ -164,27 +164,27 @@ name2acd :: proc(allocator := context.allocator) -> map[string]ACD {
 // second DataAccessor into it); revisit with the phase 4-6 trace-diff oracle
 // if a later fixture needs genuinely shared mutation semantics.
 Data_Accessor :: struct {
-	_startDate:     d.Date,
-	_endDate:       d.Date,
-	_data:          [dynamic][dynamic]f64,
+	start_date:        d.Date,
+	end_date:          d.Date,
+	data:              [dynamic][dynamic]f64,
 	// offsets to actual available climate data enum numbers; -1 = absent
-	_acd2dataIndex: [dynamic]i16,
-	_fromStep:      int,
-	_numberOfSteps: int,
-	_tamp:          f64,
-	_tav:           f64,
+	acd_to_data_index: [dynamic]i16,
+	from_step:         int,
+	number_of_steps:   int,
+	tamp:              f64,
+	tav:               f64,
 }
 
 // C++: DataAccessor::DataAccessor()
 make_data_accessor :: proc(allocator := context.allocator) -> Data_Accessor {
 	da: Data_Accessor
-	da._data = make([dynamic][dynamic]f64, 0, allocator)
-	da._acd2dataIndex = make([dynamic]i16, available_climate_data_size(), allocator)
-	for i in 0 ..< len(da._acd2dataIndex) {
-		da._acd2dataIndex[i] = -1
+	da.data = make([dynamic][dynamic]f64, 0, allocator)
+	da.acd_to_data_index = make([dynamic]i16, available_climate_data_size(), allocator)
+	for i in 0 ..< len(da.acd_to_data_index) {
+		da.acd_to_data_index[i] = -1
 	}
-	da._tamp = -9999
-	da._tav = -9999
+	da.tamp = -9999
+	da.tav = -9999
 	return da
 }
 
@@ -194,8 +194,8 @@ make_data_accessor_range :: proc(
 	allocator := context.allocator,
 ) -> Data_Accessor {
 	da := make_data_accessor(allocator)
-	da._startDate = start_date
-	da._endDate = end_date
+	da.start_date = start_date
+	da.end_date = end_date
 	return da
 }
 
@@ -206,20 +206,20 @@ data_accessor_is_valid :: proc(da: ^Data_Accessor) -> bool {
 
 // C++: size_t DataAccessor::noOfStepsPossible() const
 data_accessor_no_of_steps_possible :: proc(da: ^Data_Accessor) -> int {
-	return da._numberOfSteps
+	return da.number_of_steps
 }
 
 data_accessor_start_date :: proc(da: ^Data_Accessor) -> d.Date {
-	return da._startDate
+	return da.start_date
 }
 
 data_accessor_end_date :: proc(da: ^Data_Accessor) -> d.Date {
-	return da._endDate
+	return da.end_date
 }
 
 // C++: Tools::Date DataAccessor::dateForStep(size_t) const
 data_accessor_date_for_step :: proc(da: ^Data_Accessor, step_no: int) -> d.Date {
-	return d.add(da._startDate, u64(step_no))
+	return d.add(da.start_date, u64(step_no))
 }
 
 // C++: unsigned int DataAccessor::julianDayForStep(size_t) const
@@ -229,7 +229,7 @@ data_accessor_julian_day_for_step :: proc(da: ^Data_Accessor, step_no: int) -> i
 
 // C++: bool DataAccessor::hasAvailableClimateData(ACD) const
 data_accessor_has_available_climate_data :: proc(da: ^Data_Accessor, acd: ACD) -> bool {
-	return da._acd2dataIndex[int(acd)] >= 0
+	return da.acd_to_data_index[int(acd)] >= 0
 }
 
 // C++: double DataAccessor::dataForTimestep(ACD, size_t, double def) const
@@ -239,8 +239,8 @@ data_accessor_data_for_timestep :: proc(
 	step_no: int,
 	def: f64 = 0.0,
 ) -> f64 {
-	cache_index := da._acd2dataIndex[int(acd)]
-	return cache_index < 0 ? def : da._data[cache_index][da._fromStep + step_no]
+	cache_index := da.acd_to_data_index[int(acd)]
+	return cache_index < 0 ? def : da.data[cache_index][da.from_step + step_no]
 }
 
 // C++: Tools::Maybe<double> DataAccessor::dataForTimestepM(ACD, size_t) const
@@ -249,11 +249,11 @@ data_accessor_data_for_timestep_m :: proc(
 	acd: ACD,
 	step_no: int,
 ) -> Maybe(f64) {
-	cache_index := da._acd2dataIndex[int(acd)]
+	cache_index := da.acd_to_data_index[int(acd)]
 	if cache_index < 0 {
 		return nil
 	}
-	return da._data[cache_index][da._fromStep + step_no]
+	return da.data[cache_index][da.from_step + step_no]
 }
 
 // C++: std::map<ACD, double> DataAccessor::allDataForStep(size_t, double) const
@@ -264,7 +264,7 @@ data_accessor_all_data_for_step :: proc(
 	allocator := context.allocator,
 ) -> map[ACD]f64 {
 	m := make(map[ACD]f64, allocator)
-	for k in 0 ..< len(da._acd2dataIndex) {
+	for k in 0 ..< len(da.acd_to_data_index) {
 		acd := ACD(k)
 		mv := data_accessor_data_for_timestep_m(da, acd, step_no)
 		if v, ok := mv.?; ok {
@@ -289,13 +289,13 @@ data_accessor_data_as_vector :: proc(
 	acd: ACD,
 	allocator := context.allocator,
 ) -> [dynamic]f64 {
-	cache_index := da._acd2dataIndex[int(acd)]
+	cache_index := da.acd_to_data_index[int(acd)]
 	if cache_index < 0 {
 		return make([dynamic]f64, 0, allocator)
 	}
-	src := da._data[cache_index]
-	out := make([dynamic]f64, 0, da._numberOfSteps, allocator)
-	for i in da._fromStep ..< da._fromStep + da._numberOfSteps {
+	src := da.data[cache_index]
+	out := make([dynamic]f64, 0, da.number_of_steps, allocator)
+	for i in da.from_step ..< da.from_step + da.number_of_steps {
 		append(&out, src[i])
 	}
 	return out
@@ -318,10 +318,10 @@ data_accessor_clone_for_range :: proc(
 		return Data_Accessor{}
 	}
 	clone := da^
-	clone._fromStep += from_step
-	clone._numberOfSteps = number_of_steps
-	clone._startDate = d.add(clone._startDate, u64(clone._fromStep))
-	clone._endDate = d.add(clone._startDate, u64(number_of_steps) - 1)
+	clone.from_step += from_step
+	clone.number_of_steps = number_of_steps
+	clone.start_date = d.add(clone.start_date, u64(clone.from_step))
+	clone.end_date = d.add(clone.start_date, u64(number_of_steps) - 1)
 	return clone
 }
 
@@ -339,9 +339,9 @@ data_accessor_add_climate_data :: proc(
 ) {
 	row := make([dynamic]f64, 0, len(data), allocator)
 	append(&row, ..data)
-	append(&da._data, row)
-	da._acd2dataIndex[int(acd)] = i16(len(da._data) - 1)
-	da._numberOfSteps = len(da._data) == 0 ? 0 : len(da._data[0])
+	append(&da.data, row)
+	da.acd_to_data_index[int(acd)] = i16(len(da.data) - 1)
+	da.number_of_steps = len(da.data) == 0 ? 0 : len(da.data[0])
 }
 
 // C++: void DataAccessor::mergeClimateData(DataAccessor, bool)
@@ -356,87 +356,87 @@ data_accessor_merge_climate_data :: proc(
 		return
 	}
 
-	if len(da._data) == 0 {
+	if len(da.data) == 0 {
 		da^ = other
 		return
 	}
 
-	if d.gt(da._startDate, d.add(other._endDate, 1)) ||
-	   d.lt(da._endDate, d.sub(other._startDate, 1)) {
+	if d.gt(da.start_date, d.add(other.end_date, 1)) ||
+	   d.lt(da.end_date, d.sub(other.start_date, 1)) {
 		// C++ prints a warning to stdout and leaves the data unchanged; that
 		// stdout side effect isn't part of any oracle's JSON output, so it is
 		// not reproduced here.
 		return
-	} else if d.eq(da._startDate, d.add(other._endDate, 1)) {
+	} else if d.eq(da.start_date, d.add(other.end_date, 1)) {
 		// insert all of other's data before this' data
-		for i in 0 ..< len(da._acd2dataIndex) {
-			index := da._acd2dataIndex[i]
+		for i in 0 ..< len(da.acd_to_data_index) {
+			index := da.acd_to_data_index[i]
 			if index < 0 {
 				continue
 			}
-			odai := other._data[index]
-			merged := make([dynamic]f64, 0, len(odai) + len(da._data[index]), allocator)
+			odai := other.data[index]
+			merged := make([dynamic]f64, 0, len(odai) + len(da.data[index]), allocator)
 			append(&merged, ..odai[:])
-			append(&merged, ..da._data[index][:])
-			da._data[index] = merged
+			append(&merged, ..da.data[index][:])
+			da.data[index] = merged
 		}
-		da._startDate = other._startDate
-		da._numberOfSteps = len(da._data) == 0 ? 0 : len(da._data[0])
-	} else if d.eq(d.add(da._endDate, 1), other._startDate) {
+		da.start_date = other.start_date
+		da.number_of_steps = len(da.data) == 0 ? 0 : len(da.data[0])
+	} else if d.eq(d.add(da.end_date, 1), other.start_date) {
 		// insert all of other's data after this' data
-		for i in 0 ..< len(da._acd2dataIndex) {
-			index := da._acd2dataIndex[i]
+		for i in 0 ..< len(da.acd_to_data_index) {
+			index := da.acd_to_data_index[i]
 			if index < 0 {
 				continue
 			}
-			odai := other._data[index]
-			append(&da._data[index], ..odai[:])
+			odai := other.data[index]
+			append(&da.data[index], ..odai[:])
 		}
-		da._endDate = other._endDate
-		da._numberOfSteps = len(da._data) == 0 ? 0 : len(da._data[0])
-	} else if d.ge(da._startDate, other._startDate) && d.le(da._endDate, other._endDate) {
+		da.end_date = other.end_date
+		da.number_of_steps = len(da.data) == 0 ? 0 : len(da.data[0])
+	} else if d.ge(da.start_date, other.start_date) && d.le(da.end_date, other.end_date) {
 		// all of this' data will be overwritten
 		da^ = other
 		return
 	} else {
-		prepend_count := d.diff(da._startDate, other._startDate)
-		append_count := d.diff(other._endDate, da._endDate)
+		prepend_count := d.diff(da.start_date, other.start_date)
+		append_count := d.diff(other.end_date, da.end_date)
 
-		for i in 0 ..< len(da._acd2dataIndex) {
-			index := da._acd2dataIndex[i]
+		for i in 0 ..< len(da.acd_to_data_index) {
+			index := da.acd_to_data_index[i]
 			if index < 0 {
 				continue
 			}
-			odai := other._data[index]
+			odai := other.data[index]
 
 			if prepend_count > 0 {
 				prefix := make([dynamic]f64, 0, prepend_count, allocator)
 				append(&prefix, ..odai[:prepend_count])
-				append(&prefix, ..da._data[index][:])
-				da._data[index] = prefix
+				append(&prefix, ..da.data[index][:])
+				da.data[index] = prefix
 			}
 
 			if replace_overlapping_data {
 				dii := abs_int(prepend_count)
 				odaii := prepend_count < 0 ? 0 : prepend_count
-				for dii < len(da._data[index]) && odaii < len(odai) {
-					da._data[index][dii] = odai[odaii]
+				for dii < len(da.data[index]) && odaii < len(odai) {
+					da.data[index][dii] = odai[odaii]
 					dii += 1
 					odaii += 1
 				}
 			}
 
 			if append_count > 0 {
-				append(&da._data[index], ..odai[len(odai) - append_count:])
+				append(&da.data[index], ..odai[len(odai) - append_count:])
 			}
 		}
 		if prepend_count > 0 {
-			da._startDate = other._startDate
+			da.start_date = other.start_date
 		}
 		if append_count > 0 {
-			da._endDate = other._endDate
+			da.end_date = other.end_date
 		}
-		da._numberOfSteps = len(da._data) == 0 ? 0 : len(da._data[0])
+		da.number_of_steps = len(da.data) == 0 ? 0 : len(da.data[0])
 	}
 }
 
@@ -447,13 +447,13 @@ data_accessor_add_or_replace_climate_data :: proc(
 	data: []f64,
 	allocator := context.allocator,
 ) {
-	index := da._acd2dataIndex[int(acd)]
+	index := da.acd_to_data_index[int(acd)]
 	if index < 0 {
 		data_accessor_add_climate_data(da, acd, data, allocator)
 	} else {
 		row := make([dynamic]f64, 0, len(data), allocator)
 		append(&row, ..data)
-		da._data[index] = row
+		da.data[index] = row
 	}
 }
 
@@ -465,22 +465,22 @@ data_accessor_get_tamp_and_tav :: proc(
 	f64,
 	f64,
 ) {
-	if int(da._tamp) == -9999 || int(da._tav) == -9999 {
+	if int(da.tamp) == -9999 || int(da.tav) == -9999 {
 		tamp, tav := data_accessor_calc_tamp_and_tav(da, allocator)
-		if int(da._tamp) == -9999 {
-			da._tamp = tamp
+		if int(da.tamp) == -9999 {
+			da.tamp = tamp
 		}
-		if int(da._tav) == -9999 {
-			da._tav = tav
+		if int(da.tav) == -9999 {
+			da.tav = tav
 		}
 	}
-	return da._tamp, da._tav
+	return da.tamp, da.tav
 }
 
 // C++: void DataAccessor::setTAMPandTAV(double, double)
 data_accessor_set_tamp_and_tav :: proc(da: ^Data_Accessor, tamp, tav: f64) {
-	da._tamp = tamp
-	da._tav = tav
+	da.tamp = tamp
+	da.tav = tav
 }
 
 // C++: pair<double,double> DataAccessor::calcTAMPandTAV() const
@@ -562,11 +562,11 @@ data_accessor_merge :: proc(
 		}
 	}
 
-	jx.set_iso_date_value(&da._startDate, j, "startDate")
-	jx.set_iso_date_value(&da._endDate, j, "endDate")
+	jx.set_iso_date_value(&da.start_date, j, "startDate")
+	jx.set_iso_date_value(&da.end_date, j, "endDate")
 
-	jx.set_double_value(&da._tamp, j, "tamp")
-	jx.set_double_value(&da._tav, j, "tav")
+	jx.set_double_value(&da.tamp, j, "tamp")
+	jx.set_double_value(&da.tav, j, "tav")
 
 	return res
 }
@@ -574,7 +574,7 @@ data_accessor_merge :: proc(
 // C++: json11::Json DataAccessor::to_json() const
 data_accessor_to_json :: proc(da: ^Data_Accessor, a: Allocator) -> jx.Value {
 	data := make(jx.Object, 0, a)
-	for idx, acd_no in da._acd2dataIndex {
+	for idx, acd_no in da.acd_to_data_index {
 		if idx >= 0 {
 			buf: [12]byte
 			key := strconv.write_int(buf[:], i64(acd_no), 10)
@@ -583,8 +583,8 @@ data_accessor_to_json :: proc(da: ^Data_Accessor, a: Allocator) -> jx.Value {
 		}
 	}
 
-	start_iso := d.to_iso_date_string(da._startDate, "", a)
-	end_iso := d.to_iso_date_string(da._endDate, "", a)
+	start_iso := d.to_iso_date_string(da.start_date, "", a)
+	end_iso := d.to_iso_date_string(da.end_date, "", a)
 
 	return jx.obj(
 		a,
@@ -592,8 +592,8 @@ data_accessor_to_json :: proc(da: ^Data_Accessor, a: Allocator) -> jx.Value {
 		{"data", jx.Value(data)},
 		{"startDate", jx.s(start_iso, a)},
 		{"endDate", jx.s(end_iso, a)},
-		{"tamp", jx.f(da._tamp)},
-		{"tav", jx.f(da._tav)},
+		{"tamp", jx.f(da.tamp)},
+		{"tav", jx.f(da.tav)},
 	)
 }
 

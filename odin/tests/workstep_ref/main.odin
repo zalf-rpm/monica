@@ -393,7 +393,7 @@ main :: proc() {
 		daily_map[.relhumid] = relhumid
 		append(&model.climate_data, daily_map)
 
-		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
+		groundwater_depth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0
 
 		core.soil_temperature_step(
@@ -407,7 +407,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&model.soil_moisture,
-			vs_GroundwaterDepth,
+			groundwater_depth,
 			precip,
 			tmax,
 			tmin,

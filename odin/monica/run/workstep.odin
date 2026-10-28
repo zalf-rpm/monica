@@ -291,29 +291,29 @@ new_workstep :: proc(allocator := context.allocator) -> ^Workstep {
 // C++: std::pair<Date,bool> workstep::makeInitAbsDate(Date, Date, bool, bool)
 make_init_abs_date :: proc(
 	date: d.Date,
-	initDate: d.Date,
-	addYear: bool,
-	forceInitYear: bool = false,
+	init_date: d.Date,
+	add_year: bool,
+	force_init_year: bool = false,
 ) -> (
-	absDate: d.Date,
-	addedYear: bool,
+	abs_date: d.Date,
+	added_year: bool,
 ) {
 	if d.is_absolute_date(date) {
 		return date, false
 	}
 
-	absDate = d.to_absolute_date(date, u16(d.year(initDate)))
-	if !forceInitYear && (addYear || d.lt(absDate, initDate)) {
-		addedYear = true
-		d.add_years(&absDate, 1)
+	abs_date = d.to_absolute_date(date, u16(d.year(init_date)))
+	if !force_init_year && (add_year || d.lt(abs_date, init_date)) {
+		added_year = true
+		d.add_years(&abs_date, 1)
 	}
 
-	return absDate, addedYear
+	return abs_date, added_year
 }
 
 // C++: int workstep::organIdFromName(const string&, Tools::Errors&)
-organ_id_from_name :: proc(organName: string, err: ^tl.Errors) -> int {
-	os := tl.to_lower(organName)
+organ_id_from_name :: proc(organ_name: string, err: ^tl.Errors) -> int {
+	os := tl.to_lower(organ_name)
 	switch os {
 	case "root":
 		return 0
@@ -333,8 +333,8 @@ organ_id_from_name :: proc(organName: string, err: ^tl.Errors) -> int {
 }
 
 // C++: string workstep::organNameFromId(int)
-organ_name_from_id :: proc(organId: int) -> string {
-	switch organId {
+organ_name_from_id :: proc(organ_id: int) -> string {
+	switch organ_id {
 	case 0:
 		return "Root"
 	case 1:
@@ -352,12 +352,12 @@ organ_name_from_id :: proc(organId: int) -> string {
 }
 
 // C++: bool workstep::isSoilMoistureOk(MonicaModel*, double, double)
-is_soil_moisture_ok :: proc(model: ^core.Monica_Model, minPercentASW, maxPercentASW: f64) -> bool {
+is_soil_moisture_ok :: proc(model: ^core.Monica_Model, min_percent_asw, max_percent_asw: f64) -> bool {
 	pwp := model.soil_column.layers[0].permanent_wilting_point
 	sm := max(0.0, model.soil_column.layers[0].soil_moisture_m3 - pwp)
 	asw := model.soil_column.layers[0].field_capacity - pwp
-	currentPercentASW := sm / asw * 100.0
-	return minPercentASW <= currentPercentASW && currentPercentASW <= maxPercentASW
+	current_percent_asw := sm / asw * 100.0
+	return min_percent_asw <= current_percent_asw && current_percent_asw <= max_percent_asw
 }
 
 // C++: bool workstep::isPrecipitationOk(const vector<map<ACD,double>>&,
@@ -367,19 +367,19 @@ is_soil_moisture_ok :: proc(model: ^core.Monica_Model, minPercentASW, maxPercent
 // unclamped `climateData.rbegin(), climateData.rbegin() + 3` - reproduced
 // as-is; both sides only ever call this well past day 3 of a real run.
 is_precipitation_ok :: proc(
-	climateData: [dynamic]map[clim.ACD]f64,
-	max3dayPrecipSum: f64,
-	maxCurrentDayPrecipSum: f64,
+	climate_data: [dynamic]map[clim.ACD]f64,
+	max3day_precip_sum: f64,
+	max_current_day_precip_sum: f64,
 ) -> bool {
-	n := len(climateData)
+	n := len(climate_data)
 	psum3d := 0.0
 	for i := n - 1; i >= n - 3; i -= 1 {
-		if v, ok := climateData[i][.precip]; ok {
+		if v, ok := climate_data[i][.precip]; ok {
 			psum3d += v
 		}
 	}
-	currentp := climateData[n - 1][.precip]
-	return psum3d <= max3dayPrecipSum && currentp <= maxCurrentDayPrecipSum
+	currentp := climate_data[n - 1][.precip]
+	return psum3d <= max3day_precip_sum && currentp <= max_current_day_precip_sum
 }
 
 // C++: Errors workstep::mergeCommon(Workstep*, json11::Json)
@@ -428,13 +428,13 @@ workstep_condition_common :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> b
 workstep_reinit_common :: proc(
 	ws: ^Workstep,
 	date: d.Date,
-	addYear: bool = false,
-	forceInitYear: bool = false,
+	add_year: bool = false,
+	force_init_year: bool = false,
 ) -> bool {
-	addedYear := false
+	added_year := false
 
 	if d.is_valid(ws.date) {
-		ws.abs_date, addedYear = make_init_abs_date(ws.date, date, addYear, forceInitYear)
+		ws.abs_date, added_year = make_init_abs_date(ws.date, date, add_year, force_init_year)
 	} else {
 		ws.abs_date = d.Date{}
 	}
@@ -443,7 +443,7 @@ workstep_reinit_common :: proc(
 	ws.days_after_event_count = 0
 	ws.days_after_event_count_activated = false
 
-	return addedYear
+	return added_year
 }
 
 // ---------------------------------------------------------------------------
@@ -627,16 +627,16 @@ workstep_apply :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> bool {
 
 // C++: bool workstep::applyWithPossibleCondition(Workstep*, MonicaModel*)
 workstep_apply_with_possible_condition :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> bool {
-	workstepFinished := false
+	workstep_finished := false
 	if workstep_is_active(ws) {
 		if is_dynamic_workstep(ws) {
-			workstepFinished = workstep_condition(ws, model) ? workstep_apply(ws, model) : false
+			workstep_finished = workstep_condition(ws, model) ? workstep_apply(ws, model) : false
 		} else {
-			workstepFinished = workstep_apply(ws, model)
+			workstep_finished = workstep_apply(ws, model)
 		}
-		ws.is_active = !workstepFinished
+		ws.is_active = !workstep_finished
 	}
-	return workstepFinished
+	return workstep_finished
 }
 
 // C++: bool workstep::condition(Workstep*, MonicaModel*)
@@ -659,32 +659,32 @@ workstep_condition :: proc(ws: ^Workstep, model: ^core.Monica_Model) -> bool {
 workstep_reinit :: proc(
 	ws: ^Workstep,
 	date: d.Date,
-	addYear: bool = false,
-	forceInitYear: bool = false,
+	add_year: bool = false,
+	force_init_year: bool = false,
 ) -> bool {
 	#partial switch workstep_type(ws) {
 	case .Automatic_Sowing:
-		return automatic_sowing_reinit(&ws.data.(Automatic_Sowing_Data), ws, date, addYear, forceInitYear)
+		return automatic_sowing_reinit(&ws.data.(Automatic_Sowing_Data), ws, date, add_year, force_init_year)
 	case .Automatic_Harvest:
-		return automatic_harvest_reinit(&ws.data.(Automatic_Harvest_Data), ws, date, addYear, forceInitYear)
+		return automatic_harvest_reinit(&ws.data.(Automatic_Harvest_Data), ws, date, add_year, force_init_year)
 	case .N_Demand_Fertilization:
 		return n_demand_fertilization_reinit(
 			&ws.data.(N_Demand_Fertilization_Data),
 			ws,
 			date,
-			addYear,
-			forceInitYear,
+			add_year,
+			force_init_year,
 		)
 	case .Automatic_Irrigation:
 		return automatic_irrigation_reinit(
 			&ws.data.(Automatic_Irrigation_Data),
 			ws,
 			date,
-			addYear,
-			forceInitYear,
+			add_year,
+			force_init_year,
 		)
 	case:
-		return workstep_reinit_common(ws, date, addYear, forceInitYear)
+		return workstep_reinit_common(ws, date, add_year, force_init_year)
 	}
 }
 
@@ -695,13 +695,13 @@ workstep_reinit :: proc(
 // have no "empty" sentinel value the way std::function does.
 workstep_register_daily_function :: proc(
 	ws: ^Workstep,
-	getDailyValues: proc() -> [dynamic]f64,
+	get_daily_values: proc() -> [dynamic]f64,
 ) -> (
 	proc(_: ^core.Monica_Model) -> f64,
 	bool,
 ) {
 	if workstep_type(ws) == .Automatic_Sowing {
-		return automatic_sowing_register_daily_function(&ws.data.(Automatic_Sowing_Data), getDailyValues)
+		return automatic_sowing_register_daily_function(&ws.data.(Automatic_Sowing_Data), get_daily_values)
 	}
 	return nil, false
 }

@@ -176,9 +176,9 @@ sowing_apply :: proc(
 				model,
 				model.sim_params.n_min_fertiliser_partition,
 				p.NMin_Crop_Parameters {
-					samplingDepth = s.crop_params.species_params.sampling_depth,
-					nTarget = s.crop_params.species_params.target_n_sampling_depth,
-					nTarget30 = s.crop_params.species_params.target_n30,
+					sampling_depth = s.crop_params.species_params.sampling_depth,
+					n_target = s.crop_params.species_params.target_n_sampling_depth,
+					n_target30 = s.crop_params.species_params.target_n30,
 				},
 			)
 			core.monica_model_add_daily_sum_fertiliser(model, fert_amount)
@@ -250,13 +250,13 @@ transplant_apply :: proc(
 ) -> bool {
 	sowing_apply(&t.sowing, ws, model, allocator)
 
-	cropModule := model.current_crop_module
-	if cropModule == nil {
+	crop_module := model.current_crop_module
+	if crop_module == nil {
 		return false
 	}
 
 	core.force_transplant_state(
-		cropModule,
+		crop_module,
 		t.initial_gdd,
 		t.init_lai,
 		t.initial_stage,
@@ -267,7 +267,7 @@ transplant_apply :: proc(
 	)
 
 	if model.sim_params.dual_kc_method {
-		cropModule.kcb_ini = t.initial_kcb
+		crop_module.kcb_ini = t.initial_kcb
 	}
 	model.current_events["Transplant"] = true
 
@@ -295,20 +295,20 @@ make_transplant_workstep :: proc(j: jx.Value, allocator := context.allocator) ->
 //        anonymous-namespace helper in automatic-sowing.cpp
 @(private)
 is_soil_temperature_ok :: proc(
-	soilTemps: [dynamic]f64,
-	windowDays: int,
-	targetAvgSoilTemp: f64,
+	soil_temps: [dynamic]f64,
+	window_days: int,
+	target_avg_soil_temp: f64,
 ) -> bool {
-	if len(soilTemps) == 0 {
+	if len(soil_temps) == 0 {
 		return false
 	}
 	sum := 0.0
-	size := len(soilTemps)
-	for i := size - 1; i >= 0 && i >= size - windowDays; i -= 1 {
-		sum += soilTemps[i]
+	size := len(soil_temps)
+	for i := size - 1; i >= 0 && i >= size - window_days; i -= 1 {
+		sum += soil_temps[i]
 	}
-	avg := sum / f64(size > windowDays ? windowDays : size)
-	return avg >= targetAvgSoilTemp
+	avg := sum / f64(size > window_days ? window_days : size)
+	return avg >= target_avg_soil_temp
 }
 
 // C++: Errors workstep::merge(AutomaticSowingData*, json11::Json)
@@ -330,11 +330,11 @@ automatic_sowing_merge :: proc(
 	jx.set_double_value(&as.temp_sum_above_base_temp, j, "temp-sum-above-base-temp")
 	jx.set_double_value(&as.base_temp, j, "base-temp")
 
-	avgSoilTemp := jx.get(j, "avg-soil-temp")
-	if jx.is_object(avgSoilTemp) {
-		jx.set_double_value(&as.soil_depth_for_averaging, avgSoilTemp, "depth")
-		jx.set_int_value(&as.days_in_soil_temp_window, avgSoilTemp, "days")
-		jx.set_double_value(&as.sowing_if_above_avg_soil_temp, avgSoilTemp, "Tavg")
+	avg_soil_temp := jx.get(j, "avg-soil-temp")
+	if jx.is_object(avg_soil_temp) {
+		jx.set_double_value(&as.soil_depth_for_averaging, avg_soil_temp, "depth")
+		jx.set_int_value(&as.days_in_soil_temp_window, avg_soil_temp, "days")
+		jx.set_double_value(&as.sowing_if_above_avg_soil_temp, avg_soil_temp, "Tavg")
 		as.check_for_soil_temperature =
 			as.soil_depth_for_averaging > 0 &&
 			as.days_in_soil_temp_window > 0 &&
@@ -351,8 +351,8 @@ automatic_sowing_apply :: proc(
 	model: ^core.Monica_Model,
 	allocator := context.allocator,
 ) -> bool {
-	currentDate := model.current_step_date
-	as.sowing_date = currentDate
+	current_date := model.current_step_date
+	as.sowing_date = current_date
 
 	sowing_apply(&as.sowing, ws, model, allocator)
 	model.current_events["AutomaticSowing"] = true
@@ -379,7 +379,7 @@ g_current_automatic_sowing: ^Automatic_Sowing_Data
 @(private)
 automatic_sowing_avg_soil_temp_fn :: proc(model: ^core.Monica_Model) -> f64 {
 	as := g_current_automatic_sowing
-	avgSoilTemp := 0.0
+	avg_soil_temp := 0.0
 	i := 0
 	size := core.get_layer_number_for_depth(&model.soil_column, as.soil_depth_for_averaging) + 1
 	for ; i < size; i += 1 {
@@ -387,16 +387,16 @@ automatic_sowing_avg_soil_temp_fn :: proc(model: ^core.Monica_Model) -> f64 {
 		// NOTE(deviation): read from the model's soil column, which is the
 		// same column - every soil temperature implementation writes there
 		// (plan-crop2ml-modules.md §1.2), so this doesn't depend on which runs.
-		avgSoilTemp += model.soil_column.layers[i].soil_temperature
+		avg_soil_temp += model.soil_column.layers[i].soil_temperature
 	}
-	return avgSoilTemp / f64(i)
+	return avg_soil_temp / f64(i)
 }
 
 // C++: std::function<double(MonicaModel*)> workstep::registerDailyFunction(
 //        AutomaticSowingData*, std::function<vector<double>&()>)
 automatic_sowing_register_daily_function :: proc(
 	as: ^Automatic_Sowing_Data,
-	getDailyValues: proc() -> [dynamic]f64,
+	get_daily_values: proc() -> [dynamic]f64,
 ) -> (
 	proc(_: ^core.Monica_Model) -> f64,
 	bool,
@@ -404,7 +404,7 @@ automatic_sowing_register_daily_function :: proc(
 	if !as.check_for_soil_temperature {
 		return nil, false
 	}
-	as.get_avg_soil_temps = getDailyValues
+	as.get_avg_soil_temps = get_daily_values
 	g_current_automatic_sowing = as
 	return automatic_sowing_avg_soil_temp_fn, true
 }
@@ -415,15 +415,15 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 		return false
 	}
 
-	currentDate := model.current_step_date
+	current_date := model.current_step_date
 
-	if !as.in_sowing_range && d.lt(currentDate, as.abs_earliest_date) {
+	if !as.in_sowing_range && d.lt(current_date, as.abs_earliest_date) {
 		return false
 	} else {
 		as.in_sowing_range = true
 	}
 
-	if as.in_sowing_range && d.ge(currentDate, as.abs_latest_date) {
+	if as.in_sowing_range && d.ge(current_date, as.abs_latest_date) {
 		return true
 	}
 
@@ -439,10 +439,10 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 	}
 
 	cd := model.climate_data
-	currentCd := cd[len(cd) - 1]
+	current_cd := cd[len(cd) - 1]
 
-	avg :: proc(cd: [dynamic]map[clim.ACD]f64, acd: clim.ACD, daysInTempWindow: int) -> f64 {
-		n := min(len(cd), daysInTempWindow)
+	avg :: proc(cd: [dynamic]map[clim.ACD]f64, acd: clim.ACD, days_in_temp_window: int) -> f64 {
+		n := min(len(cd), days_in_temp_window)
 		sum := 0.0
 		for i := len(cd) - 1; i >= len(cd) - n; i -= 1 {
 			if v, ok := cd[i][acd]; ok {
@@ -453,18 +453,18 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 	}
 
 	// check temperature
-	Tok := false
+	tok := false
 	if as.crop_params.cultivar_params.winter_crop {
-		avgTavg := avg(cd, .tavg, as.days_in_temp_window)
-		Tok = avgTavg <= as.min_temp_threshold
+		avg_tavg := avg(cd, .tavg, as.days_in_temp_window)
+		tok = avg_tavg <= as.min_temp_threshold
 	} else {
-		avgTmin := avg(cd, .tmin, as.days_in_temp_window)
-		avgTminOk := avgTmin >= as.min_temp_threshold
-		TminOk := currentCd[.tmin] >= as.min_temp_threshold
-		Tok = avgTminOk && TminOk
+		avg_tmin := avg(cd, .tmin, as.days_in_temp_window)
+		avg_tmin_ok := avg_tmin >= as.min_temp_threshold
+		tmin_ok := current_cd[.tmin] >= as.min_temp_threshold
+		tok = avg_tmin_ok && tmin_ok
 	}
 
-	if !Tok {
+	if !tok {
 		return false
 	}
 
@@ -479,14 +479,14 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 	}
 
 	// check temperature sum
-	baseTemp := as.base_temp
-	tempSum := 0.0
+	base_temp := as.base_temp
+	temp_sum := 0.0
 	for m in cd {
 		if v, ok := m[.tavg]; ok {
-			tempSum += max(0.0, v - baseTemp)
+			temp_sum += max(0.0, v - base_temp)
 		}
 	}
-	if tempSum < as.temp_sum_above_base_temp {
+	if temp_sum < as.temp_sum_above_base_temp {
 		return false
 	}
 
@@ -498,10 +498,10 @@ automatic_sowing_reinit :: proc(
 	as: ^Automatic_Sowing_Data,
 	ws: ^Workstep,
 	date: d.Date,
-	addYear: bool = false,
-	forceInitYear: bool = false,
+	add_year: bool = false,
+	force_init_year: bool = false,
 ) -> bool {
-	_ = workstep_reinit_common(ws, date, addYear)
+	_ = workstep_reinit_common(ws, date, add_year)
 
 	as.crop_seeded = false
 	as.in_sowing_range = false
@@ -511,18 +511,18 @@ automatic_sowing_reinit :: proc(
 	// init first the latest date, if the latest date stays in current year, so
 	// has to stay the earliest date (thus force current year) if there is a
 	// forced current (init) year, this will force both dates to this year
-	addedYear1: bool
-	as.abs_latest_date, addedYear1 = make_init_abs_date(as.latest_date, date, addYear, forceInitYear)
-	addedYear2: bool
-	as.abs_earliest_date, addedYear2 = make_init_abs_date(
+	added_year1: bool
+	as.abs_latest_date, added_year1 = make_init_abs_date(as.latest_date, date, add_year, force_init_year)
+	added_year2: bool
+	as.abs_earliest_date, added_year2 = make_init_abs_date(
 		as.earliest_date,
 		date,
-		addYear,
-		forceInitYear || !addedYear1,
+		add_year,
+		force_init_year || !added_year1,
 	)
-	_ = addedYear2
+	_ = added_year2
 
-	return addedYear1 // || addedYear2
+	return added_year1 // || addedYear2
 }
 
 // C++: Workstep monica::makeAutomaticSowingWorkstep(json11::Json)
@@ -550,38 +550,38 @@ harvest_merge :: proc(h: ^Harvest_Data, j: jx.Value, allocator := context.alloca
 	jx.set_int_value(&h.incorporate_into_layer_no, j, "incorporateIntoLayerNo")
 	h.incorporate_into_layer_no = max(1, h.incorporate_into_layer_no)
 	jx.set_bool_value(&h.exported, j, "exported")
-	jx.set_bool_value(&h.opt_carb_mgmt_data.optCarbonConservation, j, "opt-carbon-conservation")
+	jx.set_bool_value(&h.opt_carb_mgmt_data.opt_carbon_conservation, j, "opt-carbon-conservation")
 	jx.set_double_value(
-		&h.opt_carb_mgmt_data.cropImpactOnHumusBalance,
+		&h.opt_carb_mgmt_data.crop_impact_on_humus_balance,
 		j,
 		"crop-impact-on-humus-balance",
 	)
 	cu := jx.string_value(j, "crop-usage")
 	if cu == "green-manure" {
-		h.opt_carb_mgmt_data.cropUsage = .Green_Manure
+		h.opt_carb_mgmt_data.crop_usage = .Green_Manure
 	} else {
-		h.opt_carb_mgmt_data.cropUsage = .Biomass_Production
+		h.opt_carb_mgmt_data.crop_usage = .Biomass_Production
 	}
-	jx.set_double_value(&h.opt_carb_mgmt_data.residueHeq, j, "residue-heq")
-	jx.set_double_value(&h.opt_carb_mgmt_data.organicFertilizerHeq, j, "organic-fertilizer-heq")
+	jx.set_double_value(&h.opt_carb_mgmt_data.residue_heq, j, "residue-heq")
+	jx.set_double_value(&h.opt_carb_mgmt_data.organic_fertilizer_heq, j, "organic-fertilizer-heq")
 	jx.set_double_value(
-		&h.opt_carb_mgmt_data.maxResidueRecoverFraction,
+		&h.opt_carb_mgmt_data.max_residue_recover_fraction,
 		j,
 		"max-residue-recover-fraction",
 	)
 
-	for organName in ([]string{"leaf", "shoot", "fruit", "struct", "sugar"}) {
+	for organ_name in ([]string{"leaf", "shoot", "fruit", "struct", "sugar"}) {
 		for k, v in jx.object_items(j) {
-			if tl.to_lower(k, allocator) == organName && jx.is_object(v) {
+			if tl.to_lower(k, allocator) == organ_name && jx.is_object(v) {
 				sv := core.Harvest_Spec_Value {
-					exportPercentage = 100.0,
+					export_percentage = 100.0,
 					incorporate      = true,
 				}
-				jx.set_double_value(&sv.exportPercentage, v, "export")
-				if h.spec.organ2specVal == nil {
-					h.spec.organ2specVal = make(map[int]core.Harvest_Spec_Value, 0, allocator)
+				jx.set_double_value(&sv.export_percentage, v, "export")
+				if h.spec.organ_to_spec_val == nil {
+					h.spec.organ_to_spec_val = make(map[int]core.Harvest_Spec_Value, 0, allocator)
 				}
-				h.spec.organ2specVal[organ_id_from_name(k, &res)] = sv
+				h.spec.organ_to_spec_val[organ_id_from_name(k, &res)] = sv
 			}
 		}
 	}
@@ -619,7 +619,7 @@ make_harvest_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^W
 	ws.data = Harvest_Data {
 		exported = true,
 		incorporate_into_layer_no = 1,
-		opt_carb_mgmt_data = {maxResidueRecoverFraction = 1, cropUsage = .Biomass_Production},
+		opt_carb_mgmt_data = {max_residue_recover_fraction = 1, crop_usage = .Biomass_Production},
 	}
 	res := workstep_merge_common(ws, j)
 	tl.append_errors(&res, harvest_merge(&ws.data.(Harvest_Data), j, allocator))
@@ -669,12 +669,12 @@ automatic_harvest_condition :: proc(
 	ah: ^Automatic_Harvest_Data,
 	model: ^core.Monica_Model,
 ) -> bool {
-	conditionMet := false
+	condition_met := false
 
 	cg := model.current_crop_module
 	// got a crop and not yet harvested
 	if cg != nil && !ah.crop_harvested {
-		conditionMet =
+		condition_met =
 			d.ge(model.current_step_date, ah.abs_latest_date) ||
 			(ah.harvest_time == "maturity" &&
 					core.maturity_reached(cg) &&
@@ -686,7 +686,7 @@ automatic_harvest_condition :: proc(
 					)) // check precipitation
 	}
 
-	return conditionMet
+	return condition_met
 }
 
 // C++: bool workstep::reinit(AutomaticHarvestData*, Workstep*, Date, bool, bool)
@@ -694,18 +694,18 @@ automatic_harvest_reinit :: proc(
 	ah: ^Automatic_Harvest_Data,
 	ws: ^Workstep,
 	date: d.Date,
-	addYear: bool = false,
-	forceInitYear: bool = false,
+	add_year: bool = false,
+	force_init_year: bool = false,
 ) -> bool {
-	_ = workstep_reinit_common(ws, date, addYear)
+	_ = workstep_reinit_common(ws, date, add_year)
 
 	ah.crop_harvested = false
 	ws.date = d.Date{}
 
-	addedYear: bool
-	ah.abs_latest_date, addedYear = make_init_abs_date(ah.latest_date, date, addYear, forceInitYear)
+	added_year: bool
+	ah.abs_latest_date, added_year = make_init_abs_date(ah.latest_date, date, add_year, force_init_year)
 
-	return addedYear
+	return added_year
 }
 
 // C++: Workstep monica::makeAutomaticHarvestWorkstep(json11::Json)
@@ -722,8 +722,8 @@ make_automatic_harvest_workstep :: proc(j: jx.Value, allocator := context.alloca
 		ahd.harvest.exported = true
 		ahd.harvest.incorporate_into_layer_no = 1
 		ahd.harvest.opt_carb_mgmt_data = {
-			maxResidueRecoverFraction = 1,
-			cropUsage                 = .Biomass_Production,
+			max_residue_recover_fraction = 1,
+			crop_usage                 = .Biomass_Production,
 		}
 	}
 	res := workstep_merge_common(ws, j)
@@ -919,7 +919,7 @@ n_demand_fertilization_apply :: proc(
 	workstep_apply_common(ws, model)
 
 	rd := model.current_crop_module.rooting_depth_m
-	appliedAmount := core.apply_mineral_fertiliser_via_n_demand(
+	applied_amount := core.apply_mineral_fertiliser_via_n_demand(
 		&model.soil_column,
 		nd.partition,
 		rd < nd.depth ? rd : nd.depth,
@@ -927,7 +927,7 @@ n_demand_fertilization_apply :: proc(
 	)
 	// daily AND sum (SumNFert), as in the original C++ - the converted C++ only
 	// added to the daily value (fixed there too)
-	core.monica_model_add_daily_sum_fertiliser(model, appliedAmount)
+	core.monica_model_add_daily_sum_fertiliser(model, applied_amount)
 	nd.applied_fertilizer = true
 	// record date of application until next reinit
 	ws.date = model.current_step_date
@@ -942,15 +942,15 @@ n_demand_fertilization_condition :: proc(
 	ws: ^Workstep,
 	model: ^core.Monica_Model,
 ) -> bool {
-	conditionMet := false
+	condition_met := false
 
 	cg := model.current_crop_module
 	if cg != nil && !nd.applied_fertilizer {
-		currStage := cg.developmental_stage + 1
-		conditionMet = d.is_valid(ws.date) || currStage == nd.stage // reached the requested stage
+		curr_stage := cg.developmental_stage + 1
+		condition_met = d.is_valid(ws.date) || curr_stage == nd.stage // reached the requested stage
 	}
 
-	return conditionMet
+	return condition_met
 }
 
 // C++: bool workstep::reinit(NDemandFertilizationData*, Workstep*, Date, bool, bool)
@@ -958,11 +958,11 @@ n_demand_fertilization_reinit :: proc(
 	nd: ^N_Demand_Fertilization_Data,
 	ws: ^Workstep,
 	date: d.Date,
-	addYear: bool = false,
-	forceInitYear: bool = false,
+	add_year: bool = false,
+	force_init_year: bool = false,
 ) -> bool {
 	ws.date = nd.initial_date
-	_ = workstep_reinit_common(ws, date, addYear, forceInitYear)
+	_ = workstep_reinit_common(ws, date, add_year, force_init_year)
 	nd.applied_fertilizer = false
 
 	// NOTE: original NDemandFertilization::reinit computes addedYear but
@@ -1156,14 +1156,14 @@ automatic_irrigation_apply :: proc(
 		return true
 	}
 
-	irrigationTriggered, irrigationAmount := core.apply_irrigation_via_trigger(
+	irrigation_triggered, irrigation_amount := core.apply_irrigation_via_trigger(
 		&model.soil_column,
 		&ai.params,
 	)
-	if irrigationTriggered {
+	if irrigation_triggered {
 		model.current_events["AutomaticIrrigation"] = true
-		model.soil_organic.irrigation_amount += irrigationAmount
-		core.monica_model_add_daily_sum_irrigation_water(model, irrigationAmount)
+		model.soil_organic.irrigation_amount += irrigation_amount
+		core.monica_model_add_daily_sum_irrigation_water(model, irrigation_amount)
 	}
 
 	return false
@@ -1179,40 +1179,40 @@ automatic_irrigation_condition :: proc(
 	}
 
 	// meet the correct date range
-	dateConditionMet := true
+	date_condition_met := true
 	date := model.current_step_date
 	if d.is_valid(ai.abs_start_date) && d.is_valid(ai.abs_end_date) {
-		dateConditionMet = d.ge(date, ai.abs_start_date) && d.le(date, ai.abs_end_date)
+		date_condition_met = d.ge(date, ai.abs_start_date) && d.le(date, ai.abs_end_date)
 		if d.gt(date, ai.abs_end_date) {
 			ai.done = true
 		}
 	} else if d.is_valid(ai.abs_start_date) {
-		dateConditionMet = d.ge(date, ai.abs_start_date)
+		date_condition_met = d.ge(date, ai.abs_start_date)
 	} else if d.is_valid(ai.abs_end_date) {
-		dateConditionMet = d.le(date, ai.abs_end_date)
+		date_condition_met = d.le(date, ai.abs_end_date)
 		if d.gt(date, ai.abs_end_date) {
 			ai.done = true
 		}
 	}
-	if !dateConditionMet {
+	if !date_condition_met {
 		return ai.done
 	}
 
 	// meet the correct crop stage
-	cropConditionMet := dateConditionMet
+	crop_condition_met := date_condition_met
 	cg := model.current_crop_module
 	if cg != nil && ai.irrigate_crop {
 		ai.crop_planted = true
 		stage := cg.developmental_stage
 		if ai.start_stage > -1 && ai.end_stage > -1 {
-			cropConditionMet = stage >= ai.start_stage && stage <= ai.end_stage
+			crop_condition_met = stage >= ai.start_stage && stage <= ai.end_stage
 			if stage > ai.end_stage {
 				ai.done = true
 			}
 		} else if ai.start_stage > -1 {
-			cropConditionMet = stage >= ai.start_stage
+			crop_condition_met = stage >= ai.start_stage
 		} else if ai.end_stage > -1 {
-			cropConditionMet = stage <= ai.end_stage
+			crop_condition_met = stage <= ai.end_stage
 			if stage > ai.end_stage {
 				ai.done = true
 			}
@@ -1220,12 +1220,12 @@ automatic_irrigation_condition :: proc(
 	} else if ai.crop_planted {
 		ai.done = true
 		ai.crop_planted = false
-		cropConditionMet = false
+		crop_condition_met = false
 	} else {
-		cropConditionMet = false
+		crop_condition_met = false
 	}
 
-	return ai.done || cropConditionMet
+	return ai.done || crop_condition_met
 }
 
 // C++: bool workstep::reinit(AutomaticIrrigationData*, Workstep*, Date, bool, bool)
@@ -1233,30 +1233,30 @@ automatic_irrigation_reinit :: proc(
 	ai: ^Automatic_Irrigation_Data,
 	ws: ^Workstep,
 	date: d.Date,
-	addYear: bool = false,
-	forceInitYear: bool = false,
+	add_year: bool = false,
+	force_init_year: bool = false,
 ) -> bool {
-	_ = workstep_reinit_common(ws, date, addYear)
+	_ = workstep_reinit_common(ws, date, add_year)
 	ws.date = d.Date{}
 
-	startAddedYear: bool
-	ai.abs_start_date, startAddedYear = make_init_abs_date(
+	start_added_year: bool
+	ai.abs_start_date, start_added_year = make_init_abs_date(
 		ai.params.start_date,
 		date,
-		addYear,
-		forceInitYear,
+		add_year,
+		force_init_year,
 	)
-	stopAddedYear: bool
-	ai.abs_end_date, stopAddedYear = make_init_abs_date(
+	stop_added_year: bool
+	ai.abs_end_date, stop_added_year = make_init_abs_date(
 		ai.params.end_date,
 		date,
-		addYear,
-		forceInitYear,
+		add_year,
+		force_init_year,
 	)
-	_ = stopAddedYear
+	_ = stop_added_year
 	ai.done = false
 
-	return startAddedYear
+	return start_added_year
 }
 
 // C++: Workstep monica::makeAutomaticIrrigationWorkstep(json11::Json)

@@ -76,21 +76,21 @@ main :: proc() {
 	out := run.run_monica(&env, a)
 
 	output_opts := jx.get_path(sim_v, "output", "csv-options")
-	csvSep := jx.string_value_of(jx.get(output_opts, "csv-separator"))
-	includeHeaderRow := jx.bool_value_of(jx.get(output_opts, "include-header-row"))
-	includeUnitsRow := jx.bool_value_of(jx.get(output_opts, "include-units-row"))
-	includeAggRows := jx.bool_value_of(jx.get(output_opts, "include-aggregation-rows"))
+	csv_sep := jx.string_value_of(jx.get(output_opts, "csv-separator"))
+	include_header_row := jx.bool_value_of(jx.get(output_opts, "include-header-row"))
+	include_units_row := jx.bool_value_of(jx.get(output_opts, "include-units-row"))
+	include_agg_rows := jx.bool_value_of(jx.get(output_opts, "include-aggregation-rows"))
 
 	w := os.to_stream(os.stdout)
 	for section in out.data {
-		sanitized, _ := strings.replace_all(section.origSpec, "\"", "", a)
+		sanitized, _ := strings.replace_all(section.orig_spec, "\"", "", a)
 		// C++'s cout, redirected to a file on Windows, is in text mode, so the
 		// '\n' after "== section: ..." also becomes \r\n there - matched
 		// explicitly since io.Writer never does that OS-level translation.
 		io.write_string(w, "== section: ")
 		io.write_string(w, sanitized)
 		io.write_string(w, "\r\n")
-		mio.write_output_header_rows(w, section.outputIds[:], csvSep, includeHeaderRow, includeUnitsRow, includeAggRows)
-		mio.write_output(w, section.outputIds[:], section.results[:], csvSep)
+		mio.write_output_header_rows(w, section.output_ids[:], csv_sep, include_header_row, include_units_row, include_agg_rows)
+		mio.write_output(w, section.output_ids[:], section.results[:], csv_sep)
 	}
 }

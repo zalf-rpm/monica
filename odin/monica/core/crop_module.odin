@@ -1358,7 +1358,7 @@ fc_crop_photosynthesis :: proc(
 			amax_factor_reference := crop_ps.reference_max_assimilation_rate / 34.668
 			// old vcmax
 			vcmax := 98.0 * amax_factor * k_tvmax
-			cm.crop_photosynthesis_results.vcMax = vcmax
+			cm.crop_photosynthesis_results.vc_max = vcmax
 			vcmax_reference := 98.0 * amax_factor_reference * k_tvmax
 
 			oi :=
@@ -1665,23 +1665,23 @@ fc_crop_photosynthesis :: proc(
 			fvcb_in.leaf_temp = hourly_temp
 			fvcb_in.global_rad = hourly_globrads[h]
 			fvcb_in.extra_terr_rad = hourly_extrarad[h]
-			fvcb_in.LAI = lai
+			fvcb_in.lai = lai
 			fvcb_in.solar_el = tl.solar_elevation(h, latitude, julian_day)
-			fvcb_in.VPD = tl.hourly_vapor_pressure_deficit(
+			fvcb_in.vpd = tl.hourly_vapor_pressure_deficit(
 				hourly_temp,
 				min_air_temperature,
 				mean_air_temperature,
 				max_air_temperature,
 			)
-			fvcb_in.Ca = atmospheric_co2_concentration
+			fvcb_in.ca = atmospheric_co2_concentration
 
 			hps := make_fvcb_canopy_hourly_params()
-			hps.Vcmax_25 = species_ps.vcmax25 * cm.o3_short_term_damage * cm.o3_senescence
+			hps.vcmax_25 = species_ps.vcmax25 * cm.o3_short_term_damage * cm.o3_senescence
 
 			fvcb_res := fvcb_canopy_hourly_c3(fvcb_in, hps)
 
-			cm.sunlit_leaf_area_index[h] = fvcb_res.sunlit.LAI
-			cm.shaded_leaf_area_index[h] = fvcb_res.shaded.LAI
+			cm.sunlit_leaf_area_index[h] = fvcb_res.sunlit.lai
+			cm.shaded_leaf_area_index[h] = fvcb_res.shaded.lai
 
 			// [umol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
 			daily_gp += fvcb_res.canopy_gross_photos * 44.0 / 100.0 / 1000.0
@@ -1704,34 +1704,34 @@ fc_crop_photosynthesis :: proc(
 
 				// weighted average gs and conversion from unit ground area
 				// to unit leaf area
-				lai_sun_weight := fvcb_res.sunlit.LAI / (fvcb_res.sunlit.LAI + fvcb_res.shaded.LAI)
+				lai_sun_weight := fvcb_res.sunlit.lai / (fvcb_res.sunlit.lai + fvcb_res.shaded.lai)
 				lai_sh_weight := 1 - lai_sun_weight
-				avg_leaf_gs := lai_sh_weight * fvcb_res.shaded.gs / fvcb_res.shaded.LAI
-				if fvcb_res.sunlit.LAI > 0 {
-					avg_leaf_gs += lai_sun_weight * fvcb_res.sunlit.gs / fvcb_res.sunlit.LAI
+				avg_leaf_gs := lai_sh_weight * fvcb_res.shaded.gs / fvcb_res.shaded.lai
+				if fvcb_res.sunlit.lai > 0 {
+					avg_leaf_gs += lai_sun_weight * fvcb_res.sunlit.gs / fvcb_res.sunlit.lai
 				}
 
 				o3_in: O3_Impact_In
-				o3_in.FC = fc / f64(root_depth + 1) // field capacity, m3 m-3, avg in the rooted zone
-				o3_in.WP = wp / f64(root_depth + 1) // wilting point, m3 m-3
-				o3_in.SWC = swc / f64(root_depth + 1) // soil water content, m3 m-3
-				o3_in.ET0 = cm.reference_evapotranspiration
-				o3_in.O3a = atmospheric_o3_concentration
+				o3_in.fc = fc / f64(root_depth + 1) // field capacity, m3 m-3, avg in the rooted zone
+				o3_in.wp = wp / f64(root_depth + 1) // wilting point, m3 m-3
+				o3_in.swc = swc / f64(root_depth + 1) // soil water content, m3 m-3
+				o3_in.et0 = cm.reference_evapotranspiration
+				o3_in.o3a = atmospheric_o3_concentration
 				o3_in.gs = avg_leaf_gs
 				o3_in.h = h
 				o3_in.reldev = cm.relative_total_development
-				o3_in.GDD_flo = cm.temperature_sum_to_flowering
-				o3_in.GDD_mat = cm.total_temperature_sum
-				o3_in.fO3s_d_prev = cm.o3_short_term_damage
-				o3_in.sum_O3_up = cm.o3_sum_uptake
+				o3_in.gdd_flo = cm.temperature_sum_to_flowering
+				o3_in.gdd_mat = cm.total_temperature_sum
+				o3_in.f_o3s_d_prev = cm.o3_short_term_damage
+				o3_in.sum_o3_up = cm.o3_sum_uptake
 
 				o3_res := o3_impact_hourly(o3_in, o3_par, water_deficit_response_on)
 
-				cm.o3_short_term_damage = o3_res.fO3s_d
-				cm.o3_long_term_damage = o3_res.fO3l
-				cm.o3_senescence = o3_res.fLS
-				cm.o3_sum_uptake += o3_res.hourly_O3_up
-				cm.o3_w_stomatal_closure = o3_res.WS_st_clos
+				cm.o3_short_term_damage = o3_res.f_o3s_d
+				cm.o3_long_term_damage = o3_res.f_o3l
+				cm.o3_senescence = o3_res.f_ls
+				cm.o3_sum_uptake += o3_res.hourly_o3_up
+				cm.o3_w_stomatal_closure = o3_res.ws_st_clos
 			}
 
 			// calculate VOC emissions
@@ -1766,49 +1766,49 @@ fc_crop_photosynthesis :: proc(
 				rad240_sum += v
 			}
 			mcd.rad240 = rad240_sum / (cm.full240 ? f64(len(cm.rad240)) : f64(cm.index240 + 1))
-			mcd.tFol = fvcb_in.leaf_temp
+			mcd.t_fol = fvcb_in.leaf_temp
 			tfol24_sum := 0.0
 			for v in cm.tfol24 {
 				tfol24_sum += v
 			}
-			mcd.tFol24 = tfol24_sum / (cm.full24 ? f64(len(cm.tfol24)) : f64(cm.index24 + 1))
+			mcd.t_fol24 = tfol24_sum / (cm.full24 ? f64(len(cm.tfol24)) : f64(cm.index24 + 1))
 			tfol240_sum := 0.0
 			for v in cm.tfol240 {
 				tfol240_sum += v
 			}
-			mcd.tFol240 = tfol240_sum / (cm.full240 ? f64(len(cm.tfol240)) : f64(cm.index240 + 1))
+			mcd.t_fol240 = tfol240_sum / (cm.full240 ? f64(len(cm.tfol240)) : f64(cm.index240 + 1))
 			mcd.co2concentration = atmospheric_co2_concentration
 
 			species: Voc_Species_Data
 			species.lai = lai
-			species.mFol = cm.organ_green_biomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
+			species.m_fol = cm.organ_green_biomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
 			species.sla =
-				species.mFol > 0 ? species.lai / species.mFol : specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
+				species.m_fol > 0 ? species.lai / species.m_fol : specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
 
-			species.EF_MONO = species_ps.ef_mono
-			species.EF_MONOS = species_ps.ef_monos
-			species.EF_ISO = species_ps.ef_iso
-			species.VCMAX25 = species_ps.vcmax25
-			species.AEKC = species_ps.aekc
-			species.AEKO = species_ps.aeko
-			species.AEVC = species_ps.aevc
-			species.KC25 = species_ps.kc25
+			species.ef_mono = species_ps.ef_mono
+			species.ef_monos = species_ps.ef_monos
+			species.ef_iso = species_ps.ef_iso
+			species.vcmax25 = species_ps.vcmax25
+			species.aekc = species_ps.aekc
+			species.aeko = species_ps.aeko
+			species.aevc = species_ps.aevc
+			species.kc25 = species_ps.kc25
 
 			ges := voc_guenther_emissions(species, &mcd, 1.0 / 24.0, allocator)
 			voc_emissions_add(&cm.guenther_emissions, &ges, allocator)
 
-			sun_lai := fvcb_res.sunlit.LAI
-			sh_lai := fvcb_res.shaded.LAI
+			sun_lai := fvcb_res.sunlit.lai
+			sh_lai := fvcb_res.shaded.lai
 			leaf_fractions := []Fvcb_Leaf_Fraction{fvcb_res.sunlit, fvcb_res.shaded}
 			for lf in leaf_fractions {
-				species.lai = lf.LAI
-				species.mFol =
+				species.lai = lf.lai
+				species.m_fol =
 					cm.organ_green_biomass[Organ_Leaf] /
 					(100.0 * 100.0) *
-					lf.LAI /
+					lf.lai /
 					(sun_lai + sh_lai) // kg/ha -> kg/m2
 				species.sla =
-					species.mFol > 0 ? species.lai / species.mFol : specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
+					species.m_fol > 0 ? species.lai / species.m_fol : specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
 
 				mcd.rad = lf.rad // W m-2 global incident
 
@@ -1816,12 +1816,12 @@ fc_crop_photosynthesis :: proc(
 				cm.crop_photosynthesis_results.ko = lf.ko * 1000
 				cm.crop_photosynthesis_results.oi = lf.oi * 1000
 				cm.crop_photosynthesis_results.ci = lf.ci
-				cm.crop_photosynthesis_results.vcMax =
-					fvcb_Vcmax_bernacchi_f(mcd.tFol, species_ps.vcmax25) *
+				cm.crop_photosynthesis_results.vc_max =
+					fvcb_vcmax_bernacchi_f(mcd.t_fol, species_ps.vcmax25) *
 					cm.crop_n_redux *
 					cm.transpiration_deficit
-				cm.crop_photosynthesis_results.jMax =
-					fvcb_Jmax_bernacchi_f(mcd.tFol, 120) *
+				cm.crop_photosynthesis_results.j_max =
+					fvcb_jmax_bernacchi_f(mcd.t_fol, 120) *
 					cm.crop_n_redux *
 					cm.transpiration_deficit
 				cm.crop_photosynthesis_results.jj = lf.jj
@@ -2020,17 +2020,17 @@ calculate_voc_emissions :: proc(
 
 	species: Voc_Species_Data
 	species.lai = cm.leaf_area_index
-	species.mFol = cm.organ_biomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
+	species.m_fol = cm.organ_biomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
 	species.sla = cm.crop_params.cultivar_params.specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
 
-	species.EF_MONO = species_ps.ef_mono
-	species.EF_MONOS = species_ps.ef_monos
-	species.EF_ISO = species_ps.ef_iso
-	species.VCMAX25 = species_ps.vcmax25
-	species.AEKC = species_ps.aekc
-	species.AEKO = species_ps.aeko
-	species.AEVC = species_ps.aevc
-	species.KC25 = species_ps.kc25
+	species.ef_mono = species_ps.ef_mono
+	species.ef_monos = species_ps.ef_monos
+	species.ef_iso = species_ps.ef_iso
+	species.vcmax25 = species_ps.vcmax25
+	species.aekc = species_ps.aekc
+	species.aeko = species_ps.aeko
+	species.aevc = species_ps.aevc
+	species.kc25 = species_ps.kc25
 
 	cm.guenther_emissions = voc_guenther_emissions(species, mcd, 1.0, allocator)
 	cm.jjv_emissions = voc_jjv_emissions(
@@ -2479,8 +2479,8 @@ fc_crop_dry_matter :: proc(
 											stage_temperature_sum[cm.developmental_stage]))) *
 					cm.crop_n_redux // [kg CH2O ha-1]
 
-				_mobilization_from_storage := true
-				if _mobilization_from_storage {
+				use_mobilization_from_storage := true
+				if use_mobilization_from_storage {
 					if i_organ != cm.storage_organ {
 						cm.organ_growth_increment[i_organ] +=
 							mobilization_from_storage *
@@ -2879,8 +2879,8 @@ fc_crop_water_uptake :: proc(
 	cm: ^Crop_Module,
 	groundwater_table_layer_idx: int,
 	gross_precipitation: f64,
-	_current_total_temperature_sum: f64,
-	_total_temperature_sum: f64,
+	current_total_temperature_sum: f64,
+	total_temperature_sum: f64,
 ) {
 	soil_column := cm.soil_column
 	max_effective_rooting_depth := cm.site_params.max_effective_rooting_depth
@@ -3126,8 +3126,8 @@ fc_crop_water_uptake :: proc(
 fc_crop_n_uptake :: proc(
 	cm: ^Crop_Module,
 	groundwater_table: int,
-	_current_total_temperature_sum: f64,
-	_total_temperature_sum: f64,
+	current_total_temperature_sum: f64,
+	total_temperature_sum: f64,
 ) {
 	crop_ps := cm.mod_params
 	soil_column := cm.soil_column
@@ -3790,7 +3790,7 @@ organ_ids_for_primary_yield :: proc(
 ) -> map[int]bool {
 	ids := make(map[int]bool, 0, allocator)
 	for yc in cm.crop_params.cultivar_params.organ_ids_for_primary_yield {
-		ids[yc.organId] = true
+		ids[yc.organ_id] = true
 	}
 	return ids
 }
@@ -3800,7 +3800,7 @@ organ_ids_for_primary_yield :: proc(
 calculate_crop_yield :: proc(ycs: [dynamic]p.Yield_Component, bmv: [dynamic]f64) -> f64 {
 	yield := 0.0
 	for yc in ycs {
-		yield += bmv[yc.organId - 1] * yc.yieldPercentage
+		yield += bmv[yc.organ_id - 1] * yc.yield_percentage
 	}
 	return yield
 }
@@ -4004,8 +4004,8 @@ apply_cutting :: proc(
 	organs := organs
 	if len(organs) == 0 {
 		for yc in cm.crop_params.cultivar_params.organ_ids_for_cutting {
-			organs[yc.organId - 1] = Cutting_Value {
-				value = yc.yieldPercentage,
+			organs[yc.organ_id - 1] = Cutting_Value {
+				value = yc.yield_percentage,
 			}
 		}
 	}

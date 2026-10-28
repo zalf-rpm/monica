@@ -102,12 +102,12 @@ get_mean_field_capacity :: proc(fc: ^Frost_Component) -> f64 {
 
 // C++: double monica::frostcomponent::calcSii(double)
 calc_sii :: proc(mean_field_capacity: f64) -> f64 {
-	pt_F1 := 13.05 // Hansson et al. 2004
-	pt_F2 := 1.06 // Hansson et al. 2004
+	f1 := 13.05 // Hansson et al. 2004
+	f2 := 1.06 // Hansson et al. 2004
 
 	sii :=
 		(mean_field_capacity +
-			(1.0 + (pt_F1 * cr_math.pow(mean_field_capacity, pt_F2)) * mean_field_capacity)) *
+			(1.0 + (f1 * cr_math.pow(mean_field_capacity, f2)) * mean_field_capacity)) *
 		100.0
 	return sii
 }

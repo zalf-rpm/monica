@@ -34,17 +34,17 @@ import "core:strings"
 
 // C++: struct monica::CropRotation
 Crop_Rotation :: struct {
-	start:        d.Date,
-	end:          d.Date,
-	cropRotation: [dynamic]Cultivation_Method,
+	start:         d.Date,
+	end:           d.Date,
+	crop_rotation: [dynamic]Cultivation_Method,
 }
 
 // C++: CropRotation monica::makeCropRotation(Date, Date, vector<CultivationMethod>)
 make_crop_rotation :: proc(
 	start, end: d.Date,
-	cropRotation: [dynamic]Cultivation_Method,
+	crop_rotation: [dynamic]Cultivation_Method,
 ) -> Crop_Rotation {
-	return Crop_Rotation{start = start, end = end, cropRotation = cropRotation}
+	return Crop_Rotation{start = start, end = end, crop_rotation = crop_rotation}
 }
 
 // C++: Errors monica::extractAndStore(const Json&, vector<CultivationMethod>&) [private]
@@ -94,7 +94,7 @@ crop_rotation_merge :: proc(
 	jx.set_iso_date_value(&cr.end, j, "end")
 	tl.append_errors(
 		&es,
-		extract_and_store(jx.get(j, "cropRotation"), &cr.cropRotation, allocator),
+		extract_and_store(jx.get(j, "cropRotation"), &cr.crop_rotation, allocator),
 	)
 	return es
 }
@@ -105,21 +105,21 @@ crop_rotation_merge :: proc(
 
 // C++: struct monica::Env - see the file header comment for what's dropped.
 Env :: struct {
-	climateData:   clim.Data_Accessor,
-	cropRotation:  [dynamic]Cultivation_Method,
-	cropRotations: [dynamic]Crop_Rotation,
-	events:        jx.Value,
-	outputs:       jx.Value,
-	customId:      jx.Value,
-	params:        p.Central_Parameter_Provider,
-	debugMode:     bool,
+	climate_data:   clim.Data_Accessor,
+	crop_rotation:  [dynamic]Cultivation_Method,
+	crop_rotations: [dynamic]Crop_Rotation,
+	events:         jx.Value,
+	outputs:        jx.Value,
+	custom_id:      jx.Value,
+	params:         p.Central_Parameter_Provider,
+	debug_mode:     bool,
 }
 
 // C++: Env monica::makeEnv(CentralParameterProvider&&)
 make_env :: proc(cpp: p.Central_Parameter_Provider, allocator := context.allocator) -> Env {
 	env: Env
 	env.params = cpp
-	env.climateData = clim.make_data_accessor(allocator)
+	env.climate_data = clim.make_data_accessor(allocator)
 	return env
 }
 
@@ -152,10 +152,10 @@ env_merge :: proc(
 		),
 	)
 
-	env.climateData = clim.make_data_accessor(allocator)
+	env.climate_data = clim.make_data_accessor(allocator)
 	tl.append_errors(
 		&res,
-		clim.data_accessor_merge(&env.climateData, jx.get(j, "climateData"), allocator),
+		clim.data_accessor_merge(&env.climate_data, jx.get(j, "climateData"), allocator),
 	)
 
 	env.events = jx.get(j, "events")
@@ -163,20 +163,20 @@ env_merge :: proc(
 
 	tl.append_errors(
 		&res,
-		extract_and_store(jx.get(j, "cropRotation"), &env.cropRotation, allocator),
+		extract_and_store(jx.get(j, "cropRotation"), &env.crop_rotation, allocator),
 	)
 	tl.append_errors(
 		&res,
 		extract_and_store_crop_rotations(
 			jx.get(j, "cropRotations"),
-			&env.cropRotations,
+			&env.crop_rotations,
 			allocator,
 		),
 	)
 
-	jx.set_bool_value(&env.debugMode, j, "debugMode")
+	jx.set_bool_value(&env.debug_mode, j, "debugMode")
 
-	env.customId = jx.get(j, "customId")
+	env.custom_id = jx.get(j, "customId")
 
 	return res
 }
@@ -213,11 +213,11 @@ Spec_Expr_Kind :: enum {
 // redirect calls through - the captured data has to live somewhere, and a
 // plain struct is the direct Odin equivalent.
 Spec_Expr :: struct {
-	kind:      Spec_Expr_Kind,
-	day:       Maybe(int),
-	month:     Maybe(int),
-	year:      Maybe(int),
-	eventName: string,
+	kind:       Spec_Expr_Kind,
+	day:        Maybe(int),
+	month:      Maybe(int),
+	year:       Maybe(int),
+	event_name: string,
 }
 
 spec_expr_is_set :: proc(e: Spec_Expr) -> bool {
@@ -226,13 +226,13 @@ spec_expr_is_set :: proc(e: Spec_Expr) -> bool {
 
 // C++: struct monica::Spec
 Spec :: struct {
-	origSpec: jx.Value,
-	startf:   Spec_Expr,
-	endf:     Spec_Expr,
-	fromf:    Spec_Expr,
-	tof:      Spec_Expr,
-	atf:      Spec_Expr,
-	whilef:   Spec_Expr,
+	orig_spec: jx.Value,
+	startf:    Spec_Expr,
+	endf:      Spec_Expr,
+	fromf:     Spec_Expr,
+	tof:       Spec_Expr,
+	atf:       Spec_Expr,
+	whilef:    Spec_Expr,
 }
 
 // C++: Spec monica::makeSpec(Json)
@@ -292,7 +292,7 @@ spec_create_expression_func :: proc(j: jx.Value) -> Spec_Expr {
 				day := parse_date_component(s[2])
 				return Spec_Expr{kind = .DATE, day = day, month = month, year = year}
 			} else { 	// treat all other strings as potential workstep event
-				return Spec_Expr{kind = .EVENT, eventName = jts}
+				return Spec_Expr{kind = .EVENT, event_name = jts}
 			}
 		}
 	}
@@ -322,7 +322,7 @@ spec_expr_eval :: proc(e: Spec_Expr, model: ^core.Monica_Model) -> bool {
 		date := d.make_date(day, month, u16(year), false, true)
 		return d.eq(date, cd)
 	case .EVENT:
-		_, ok := model.current_events[e.eventName]
+		_, ok := model.current_events[e.event_name]
 		return ok
 	case .NONE:
 	}
@@ -335,26 +335,26 @@ spec_expr_eval :: proc(e: Spec_Expr, model: ^core.Monica_Model) -> bool {
 
 // C++: struct monica::StoreData
 Store_Data :: struct {
-	withinEventStartEndRange: Maybe(bool),
-	withinEventFromToRange:   Maybe(bool),
-	spec:                     Spec,
-	outputIds:                [dynamic]mio.OId,
-	intermediateResults:      [dynamic][dynamic]jx.Value,
-	results:                  [dynamic][dynamic]jx.Value,
-	resultsObj:               [dynamic]jx.Value,
+	within_event_start_end_range: Maybe(bool),
+	within_event_from_to_range:   Maybe(bool),
+	spec:                         Spec,
+	output_ids:                   [dynamic]mio.OId,
+	intermediate_results:         [dynamic][dynamic]jx.Value,
+	results:                      [dynamic][dynamic]jx.Value,
+	results_obj:                  [dynamic]jx.Value,
 }
 
 // C++: void storeResults(const vector<OId>&, vector<J11Array>&, const MonicaModel&) [private]
 @(private)
 store_results :: proc(
-	outputIds: []mio.OId,
+	output_ids: []mio.OId,
 	results: ^[dynamic][dynamic]jx.Value,
 	model: ^core.Monica_Model,
 ) {
-	if len(results^) < len(outputIds) {
-		resize(results, len(outputIds))
+	if len(results^) < len(output_ids) {
+		resize(results, len(output_ids))
 	}
-	for oid, i in outputIds {
+	for oid, i in output_ids {
 		// Reflection-backed oids (an alias or a raw path in sim.json) resolve
 		// their value by walking a plan compiled at setup; everything else is
 		// still a registered lambda. oid_get_value picks
@@ -369,13 +369,13 @@ store_results :: proc(
 // C++: void storeResultsObj(const vector<OId>&, vector<J11Object>&, const MonicaModel&) [private]
 @(private)
 store_results_obj :: proc(
-	outputIds: []mio.OId,
+	output_ids: []mio.OId,
 	results: ^[dynamic]jx.Value,
 	model: ^core.Monica_Model,
 	allocator := context.allocator,
 ) {
 	result := make(jx.Object, allocator)
-	for &oid in outputIds {
+	for &oid in output_ids {
 		if v, ok := mio.oid_get_value(model, oid); ok {
 			jx.obj_set(&result, mio.oid_output_name(&oid, context.temp_allocator), v, allocator)
 		}
@@ -385,18 +385,18 @@ store_results_obj :: proc(
 
 // C++: void monica::store_data_aggregate_results(StoreData*)
 store_data_aggregate_results :: proc(sd: ^Store_Data, allocator := context.allocator) {
-	if len(sd.intermediateResults) == 0 {
+	if len(sd.intermediate_results) == 0 {
 		return
 	}
-	if len(sd.results) < len(sd.intermediateResults) {
-		resize(&sd.results, len(sd.intermediateResults))
+	if len(sd.results) < len(sd.intermediate_results) {
+		resize(&sd.results, len(sd.intermediate_results))
 	}
 
-	for oid, i in sd.outputIds {
-		ivs := sd.intermediateResults[i]
+	for oid, i in sd.output_ids {
+		ivs := sd.intermediate_results[i]
 		if len(ivs) > 0 {
 			if jx.is_string(ivs[0]) {
-				switch oid.timeAggOp {
+				switch oid.time_agg_op {
 				case .FIRST:
 					append(&sd.results[i], ivs[0])
 				case .LAST:
@@ -405,9 +405,9 @@ store_data_aggregate_results :: proc(sd: ^Store_Data, allocator := context.alloc
 					append(&sd.results[i], ivs[0])
 				}
 			} else {
-				append(&sd.results[i], mio.apply_oid_op_json(oid.timeAggOp, ivs[:], allocator))
+				append(&sd.results[i], mio.apply_oid_op_json(oid.time_agg_op, ivs[:], allocator))
 			}
-			clear(&sd.intermediateResults[i])
+			clear(&sd.intermediate_results[i])
 		}
 	}
 }
@@ -422,17 +422,17 @@ store_data_aggregate_results :: proc(sd: ^Store_Data, allocator := context.alloc
 // row ({}) to every while / from-to section whose last range was already
 // aggregated, which the array path doesn't. Reproduced.
 store_data_aggregate_results_obj :: proc(sd: ^Store_Data, allocator := context.allocator) {
-	if len(sd.intermediateResults) == 0 {
+	if len(sd.intermediate_results) == 0 {
 		return
 	}
 
 	result := make(jx.Object, allocator)
-	for &oid, i in sd.outputIds {
-		ivs := sd.intermediateResults[i]
+	for &oid, i in sd.output_ids {
+		ivs := sd.intermediate_results[i]
 		if len(ivs) > 0 {
 			name := mio.oid_output_name(&oid, context.temp_allocator)
 			if jx.is_string(ivs[0]) {
-				switch oid.timeAggOp {
+				switch oid.time_agg_op {
 				case .FIRST:
 					jx.obj_set(&result, name, ivs[0], allocator)
 				case .LAST:
@@ -441,12 +441,12 @@ store_data_aggregate_results_obj :: proc(sd: ^Store_Data, allocator := context.a
 					jx.obj_set(&result, name, ivs[0], allocator)
 				}
 			} else {
-				jx.obj_set(&result, name, mio.apply_oid_op_json(oid.timeAggOp, ivs[:], allocator), allocator)
+				jx.obj_set(&result, name, mio.apply_oid_op_json(oid.time_agg_op, ivs[:], allocator), allocator)
 			}
-			clear(&sd.intermediateResults[i])
+			clear(&sd.intermediate_results[i])
 		}
 	}
-	append(&sd.resultsObj, jx.Value(result))
+	append(&sd.results_obj, jx.Value(result))
 }
 
 @(private)
@@ -475,16 +475,16 @@ maybe_bool_value :: proc(m: Maybe(bool)) -> bool {
 store_data_store_results_if_spec_applies :: proc(
 	sd: ^Store_Data,
 	model: ^core.Monica_Model,
-	storeObjOutputs := false,
+	store_obj_outputs := false,
 ) {
 	spec := &sd.spec
-	isCurrentlyEndEvent := false
+	is_currently_end_event := false
 
 	// check for possible start event (if one exists at all; enter only if false)
-	if maybe_bool_is_nothing(sd.withinEventStartEndRange) ||
-	   !maybe_bool_value(sd.withinEventStartEndRange) {
+	if maybe_bool_is_nothing(sd.within_event_start_end_range) ||
+	   !maybe_bool_value(sd.within_event_start_end_range) {
 		if spec_expr_is_set(spec.startf) {
-			sd.withinEventStartEndRange = spec_expr_eval(spec.startf, model)
+			sd.within_event_start_end_range = spec_expr_eval(spec.startf, model)
 		}
 	}
 
@@ -493,60 +493,60 @@ store_data_store_results_if_spec_applies :: proc(
 	//
 	// NOTE(c++-quirk): `isNothing() || isValue()` is a tautology for any
 	// Maybe(bool) - reproduced as-is rather than simplified to `true`.
-	if maybe_bool_is_nothing(sd.withinEventStartEndRange) ||
-	   maybe_bool_is_value(sd.withinEventStartEndRange) {
+	if maybe_bool_is_nothing(sd.within_event_start_end_range) ||
+	   maybe_bool_is_value(sd.within_event_start_end_range) {
 		if spec_expr_is_set(spec.endf) {
-			isCurrentlyEndEvent = spec_expr_eval(spec.endf, model)
+			is_currently_end_event = spec_expr_eval(spec.endf, model)
 		}
 	}
 
 	// do something if we are in start/end range or nothing is set at all (means
 	// do it always)
-	if maybe_bool_is_nothing(sd.withinEventStartEndRange) ||
-	   maybe_bool_value(sd.withinEventStartEndRange) {
+	if maybe_bool_is_nothing(sd.within_event_start_end_range) ||
+	   maybe_bool_value(sd.within_event_start_end_range) {
 		// check for at event
 		if spec_expr_is_set(spec.atf) && spec_expr_eval(spec.atf, model) {
-			if storeObjOutputs {
-				store_results_obj(sd.outputIds[:], &sd.resultsObj, model)
+			if store_obj_outputs {
+				store_results_obj(sd.output_ids[:], &sd.results_obj, model)
 			} else {
-				store_results(sd.outputIds[:], &sd.results, model)
+				store_results(sd.output_ids[:], &sd.results, model)
 			}
 		} else if spec_expr_is_set(spec.fromf) && spec_expr_is_set(spec.tof) { 	// or from/to range event
-			isCurrentlyToEvent := false
-			if maybe_bool_is_nothing(sd.withinEventFromToRange) ||
-			   !maybe_bool_value(sd.withinEventFromToRange) {
-				sd.withinEventFromToRange = spec_expr_eval(spec.fromf, model)
-			} else if maybe_bool_is_value(sd.withinEventFromToRange) {
-				isCurrentlyToEvent = spec_expr_eval(spec.tof, model)
+			is_currently_to_event := false
+			if maybe_bool_is_nothing(sd.within_event_from_to_range) ||
+			   !maybe_bool_value(sd.within_event_from_to_range) {
+				sd.within_event_from_to_range = spec_expr_eval(spec.fromf, model)
+			} else if maybe_bool_is_value(sd.within_event_from_to_range) {
+				is_currently_to_event = spec_expr_eval(spec.tof, model)
 			}
 
-			if maybe_bool_value(sd.withinEventFromToRange) {
+			if maybe_bool_value(sd.within_event_from_to_range) {
 				// if while is specified together with a from/to range, store only if
 				// the while is true but aggregate only if the range is left - this
 				// means the range specifies the extent of recording
 				if spec_expr_is_set(spec.whilef) {
 					if spec_expr_eval(spec.whilef, model) {
-						store_results(sd.outputIds[:], &sd.intermediateResults, model)
+						store_results(sd.output_ids[:], &sd.intermediate_results, model)
 					}
 				} else {
-					store_results(sd.outputIds[:], &sd.intermediateResults, model)
+					store_results(sd.output_ids[:], &sd.intermediate_results, model)
 				}
-				if isCurrentlyToEvent {
-					if storeObjOutputs {
+				if is_currently_to_event {
+					if store_obj_outputs {
 						store_data_aggregate_results_obj(sd)
 					} else {
 						store_data_aggregate_results(sd)
 					}
-					sd.withinEventFromToRange = false
+					sd.within_event_from_to_range = false
 				}
 			}
 		} else if spec_expr_is_set(spec.whilef) { 	// or a single while aggregating expression
 			if spec_expr_eval(spec.whilef, model) {
-				store_results(sd.outputIds[:], &sd.intermediateResults, model)
-			} else if len(sd.intermediateResults) > 0 && len(sd.intermediateResults[0]) > 0 {
+				store_results(sd.output_ids[:], &sd.intermediate_results, model)
+			} else if len(sd.intermediate_results) > 0 && len(sd.intermediate_results[0]) > 0 {
 				// if while event was not successful but we got intermediate results,
 				// they should be aggregated
-				if storeObjOutputs {
+				if store_obj_outputs {
 					store_data_aggregate_results_obj(sd)
 				} else {
 					store_data_aggregate_results(sd)
@@ -555,15 +555,15 @@ store_data_store_results_if_spec_applies :: proc(
 		}
 	}
 
-	if isCurrentlyEndEvent {
-		sd.withinEventStartEndRange = false
+	if is_currently_end_event {
+		sd.within_event_start_end_range = false
 	}
 }
 
 // C++: vector<StoreData> monica::setupStorage(const Json&, const Date&, const Date&)
 setup_storage :: proc(
 	event2oids: jx.Value,
-	startDate, endDate: d.Date,
+	start_date, end_date: d.Date,
 	use_legacy_output_fns := false,
 	allocator := context.allocator,
 ) -> [dynamic]Store_Data {
@@ -581,12 +581,12 @@ setup_storage :: proc(
 	)
 	shortcuts["run"] = jx.obj(
 		allocator,
-		{"from", jx.s(d.to_iso_date_string(startDate, "", allocator), allocator)},
-		{"to", jx.s(d.to_iso_date_string(endDate, "", allocator), allocator)},
+		{"from", jx.s(d.to_iso_date_string(start_date, "", allocator), allocator)},
+		{"to", jx.s(d.to_iso_date_string(end_date, "", allocator), allocator)},
 	)
 	shortcuts["crop"] = jx.obj(allocator, {"from", jx.sl("Sowing")}, {"to", jx.sl("Harvest")})
 
-	storeData := make([dynamic]Store_Data, 0, allocator)
+	store_data := make([dynamic]Store_Data, 0, allocator)
 
 	e2os := jx.array_items(event2oids)
 	for i := 0; i < len(e2os); i += 2 {
@@ -595,8 +595,8 @@ setup_storage :: proc(
 		}
 
 		sd: Store_Data
-		sd.spec.origSpec = e2os[i]
-		spec := sd.spec.origSpec
+		sd.spec.orig_spec = e2os[i]
+		spec := sd.spec.orig_spec
 
 		// find shortcut for string or store string as 'at' pattern
 		if jx.is_string(spec) {
@@ -641,16 +641,16 @@ setup_storage :: proc(
 		}
 
 		spec_merge(&sd.spec, spec)
-		sd.outputIds = mio.parse_output_ids(
+		sd.output_ids = mio.parse_output_ids(
 			jx.array_items(e2os[i + 1]),
 			use_legacy_output_fns,
 			allocator,
 		)
 
-		append(&storeData, sd)
+		append(&store_data, sd)
 	}
 
-	return storeData
+	return store_data
 }
 
 // ---------------------------------------------------------------------------
@@ -666,27 +666,27 @@ setup_storage :: proc(
 // C++: the checkAndInitShadowOfNextCropRotation_ lambda
 @(private)
 check_and_init_shadow_of_next_crop_rotation :: proc(
-	envCropRotations: []Crop_Rotation,
+	env_crop_rotations: []Crop_Rotation,
 	crit: ^int,
-	cropRotation: ^[dynamic]^Cultivation_Method,
-	currentDate: d.Date,
+	crop_rotation: ^[dynamic]^Cultivation_Method,
+	current_date: d.Date,
 ) -> bool {
-	if crit^ < len(envCropRotations) {
+	if crit^ < len(env_crop_rotations) {
 		// if current cropRotation is finished, try to move to next
-		cr := &envCropRotations[crit^]
-		if d.is_valid(cr.end) && d.eq(currentDate, d.add(cr.end, 1)) {
+		cr := &env_crop_rotations[crit^]
+		if d.is_valid(cr.end) && d.eq(current_date, d.add(cr.end, 1)) {
 			crit^ += 1
-			clear(cropRotation)
+			clear(crop_rotation)
 		}
 
 		// check again, because we might have moved to next cropRotation
-		if crit^ < len(envCropRotations) {
+		if crit^ < len(env_crop_rotations) {
 			// if a new cropRotation starts, copy the pointers to the CMs to the
 			// shadow CR
-			cr2 := &envCropRotations[crit^]
-			if d.is_valid(cr2.start) && d.eq(currentDate, cr2.start) {
-				for i in 0 ..< len(cr2.cropRotation) {
-					append(cropRotation, &cr2.cropRotation[i])
+			cr2 := &env_crop_rotations[crit^]
+			if d.is_valid(cr2.start) && d.eq(current_date, cr2.start) {
+				for i in 0 ..< len(cr2.crop_rotation) {
+					append(crop_rotation, &cr2.crop_rotation[i])
 				}
 				return true
 			}
@@ -698,92 +698,92 @@ check_and_init_shadow_of_next_crop_rotation :: proc(
 // C++: the findNextCultivationMethod_ lambda
 @(private)
 find_next_cultivation_method :: proc(
-	currentDate: d.Date,
-	cropRotation: ^[dynamic]^Cultivation_Method,
+	current_date: d.Date,
+	crop_rotation: ^[dynamic]^Cultivation_Method,
 	cmit: ^int,
-	advanceToNextCM_in: bool,
+	advance_to_next_cm_in: bool,
 	allocator: Allocator,
 ) -> (
-	currentCM: ^Cultivation_Method,
-	nextAbsoluteCMApplicationDate: d.Date,
+	current_cm: ^Cultivation_Method,
+	next_absolute_cm_application_date: d.Date,
 ) {
-	advanceToNextCM := advanceToNextCM_in
+	advance_to_next_cm := advance_to_next_cm_in
 
 	// it might be possible that the next cultivation method has to be skipped
 	// (if cover/catch crop)
-	notFoundNextCM := true
-	for notFoundNextCM {
-		if advanceToNextCM {
+	not_found_next_cm := true
+	for not_found_next_cm {
+		if advance_to_next_cm {
 			// delete fully cultivation methods with only absolute worksteps,
 			// because they won't participate in a new run when wrapping the crop
 			// rotation
-			cm := cropRotation^[cmit^]
+			cm := crop_rotation^[cmit^]
 			if cultivation_method_are_only_absolute_worksteps(cm) || !cm.repeat {
-				ordered_remove(cropRotation, cmit^)
+				ordered_remove(crop_rotation, cmit^)
 			} else {
 				cmit^ += 1
 			}
 
 			// start anew if we reached the end of the crop rotation
-			if cmit^ >= len(cropRotation^) {
+			if cmit^ >= len(crop_rotation^) {
 				cmit^ = 0
 			}
 		}
 
 		// check if there's at least a cultivation method left in cropRotation
-		if cmit^ < len(cropRotation^) {
-			advanceToNextCM = true
-			currentCM = cropRotation^[cmit^]
+		if cmit^ < len(crop_rotation^) {
+			advance_to_next_cm = true
+			current_cm = crop_rotation^[cmit^]
 
 			// addedYear tells that the start of the cultivation method was before
 			// currentDate and thus the whole CM had to be moved into the next year
 			// - possible for relative dates
-			addedYear := cultivation_method_reinit(currentCM, currentDate)
-			if addedYear {
+			added_year := cultivation_method_reinit(current_cm, current_date)
+			if added_year {
 				// current CM is a cover crop, check if the latest sowing date would
 				// have been before current date, if so, skip current CM
-				if currentCM.is_cover_crop {
+				if current_cm.is_cover_crop {
 					// if current CM's latest sowing date is actually after current
 					// date, we have to reinit current CM again, but this time prevent
 					// shifting it to the next year
 					lsd := d.with_year(
-						cultivation_method_abs_latest_sowing_date(currentCM),
-						u16(d.year(currentDate)),
+						cultivation_method_abs_latest_sowing_date(current_cm),
+						u16(d.year(current_date)),
 					)
-					notFoundNextCM = d.lt(lsd, currentDate)
-					if !notFoundNextCM {
-						cultivation_method_reinit(currentCM, currentDate, true)
+					not_found_next_cm = d.lt(lsd, current_date)
+					if !not_found_next_cm {
+						cultivation_method_reinit(current_cm, current_date, true)
 					}
 				} else {
-					notFoundNextCM = currentCM.can_be_skipped // if current CM was marked skipable, skip it
+					not_found_next_cm = current_cm.can_be_skipped // if current CM was marked skipable, skip it
 				}
 			} else { 	// not added year or CM also had absolute dates
-				if currentCM.is_cover_crop {
-					notFoundNextCM = d.lt(
-						cultivation_method_abs_latest_sowing_date(currentCM),
-						currentDate,
+				if current_cm.is_cover_crop {
+					not_found_next_cm = d.lt(
+						cultivation_method_abs_latest_sowing_date(current_cm),
+						current_date,
 					)
-				} else if currentCM.can_be_skipped {
-					notFoundNextCM = d.lt(
-						cultivation_method_abs_start_date(currentCM),
-						currentDate,
+				} else if current_cm.can_be_skipped {
+					not_found_next_cm = d.lt(
+						cultivation_method_abs_start_date(current_cm),
+						current_date,
 					)
 				} else {
-					notFoundNextCM = false
+					not_found_next_cm = false
 				}
 			}
 
-			if notFoundNextCM {
-				nextAbsoluteCMApplicationDate = d.Date{}
+			if not_found_next_cm {
+				next_absolute_cm_application_date = d.Date{}
 			} else {
-				staticWs := cultivation_method_static_worksteps(currentCM, allocator)
-				nextAbsoluteCMApplicationDate =
-					len(staticWs) == 0 ? d.Date{} : cultivation_method_abs_start_date(currentCM, false)
+				static_ws := cultivation_method_static_worksteps(current_cm, allocator)
+				next_absolute_cm_application_date =
+					len(static_ws) == 0 ? d.Date{} : cultivation_method_abs_start_date(current_cm, false)
 			}
 		} else {
-			currentCM = nil
-			nextAbsoluteCMApplicationDate = d.Date{}
-			notFoundNextCM = false
+			current_cm = nil
+			next_absolute_cm_application_date = d.Date{}
+			not_found_next_cm = false
 		}
 	}
 
@@ -801,7 +801,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	// here, which only showed up once the Cap'n Proto server started relying on it:
 	// unlike run/serve_zmq.odin, run-monica-capnp.cpp does NOT re-assign customId
 	// after the call.
-	out.customId = env.customId
+	out.custom_id = env.custom_id
 
 	// NOTE(deviation): no C++ counterpart - runMonicaIC has no such guard.
 	//
@@ -841,13 +841,13 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	}
 
 	// prefer multiple crop rotations, but use a single rotation if there
-	if len(env.cropRotations) == 0 && len(env.cropRotation) > 0 {
+	if len(env.crop_rotations) == 0 && len(env.crop_rotation) > 0 {
 		append(
-			&env.cropRotations,
+			&env.crop_rotations,
 			make_crop_rotation(
-				clim.data_accessor_start_date(&env.climateData),
-				clim.data_accessor_end_date(&env.climateData),
-				env.cropRotation,
+				clim.data_accessor_start_date(&env.climate_data),
+				clim.data_accessor_end_date(&env.climate_data),
+				env.crop_rotation,
 			),
 		)
 	}
@@ -855,51 +855,51 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	model := core.make_monica_model(&env.params, allocator)
 	// NOTE(deviation): as the C++ AMEI branch (run-monica.cpp) for its modules
 	if core.soil_temperature_modules_configured(model) {
-		tamp, tav := clim.data_accessor_calc_tamp_and_tav(&env.climateData, allocator)
+		tamp, tav := clim.data_accessor_calc_tamp_and_tav(&env.climate_data, allocator)
 		core.soil_temperature_modules_set_tav_tamp(model, tav, tamp)
 	}
-	model.sim_params.start_date = clim.data_accessor_start_date(&env.climateData)
-	model.sim_params.end_date = clim.data_accessor_end_date(&env.climateData)
+	model.sim_params.start_date = clim.data_accessor_start_date(&env.climate_data)
+	model.sim_params.end_date = clim.data_accessor_end_date(&env.climate_data)
 
-	currentDate := clim.data_accessor_start_date(&env.climateData)
+	current_date := clim.data_accessor_start_date(&env.climate_data)
 
 	// cropRotation is a shadow of env.cropRotations[crit].cropRotation, holding
 	// pointers to CMs, which might shrink if pure absolute CMs are finished -
 	// see find_next_cultivation_method / check_and_init_shadow_of_next_crop_rotation
-	cropRotation := make([dynamic]^Cultivation_Method, 0, allocator)
+	crop_rotation := make([dynamic]^Cultivation_Method, 0, allocator)
 	crit := 0
 	cmit := 0
 
-	currentCM, nextAbsoluteCMApplicationDate := find_next_cultivation_method(
-		currentDate,
-		&cropRotation,
+	current_cm, next_absolute_cm_application_date := find_next_cultivation_method(
+		current_date,
+		&crop_rotation,
 		&cmit,
 		false,
 		allocator,
 	)
 
-	returnObjOutputs := env_return_obj_outputs(env)
+	return_obj_outputs := env_return_obj_outputs(env)
 	store := setup_storage(
 		env.events,
-		clim.data_accessor_start_date(&env.climateData),
-		clim.data_accessor_end_date(&env.climateData),
+		clim.data_accessor_start_date(&env.climate_data),
+		clim.data_accessor_end_date(&env.climate_data),
 		env_use_legacy_output_fns(env),
 		allocator,
 	)
 	model.current_events["run-started"] = true
 
-	nods := clim.data_accessor_no_of_steps_possible(&env.climateData)
-	for stepNo in 0 ..< nods {
+	nods := clim.data_accessor_no_of_steps_possible(&env.climate_data)
+	for step_no in 0 ..< nods {
 		if check_and_init_shadow_of_next_crop_rotation(
-			env.cropRotations[:],
+			env.crop_rotations[:],
 			&crit,
-			&cropRotation,
-			currentDate,
+			&crop_rotation,
+			current_date,
 		) {
 			cmit = 0
-			currentCM, nextAbsoluteCMApplicationDate = find_next_cultivation_method(
-				currentDate,
-				&cropRotation,
+			current_cm, next_absolute_cm_application_date = find_next_cultivation_method(
+				current_date,
+				&crop_rotation,
 				&cmit,
 				false,
 				allocator,
@@ -908,12 +908,12 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 		core.monica_model_daily_reset(model, allocator)
 
-		model.current_step_date = currentDate
+		model.current_step_date = current_date
 		append(
 			&model.climate_data,
 			clim.data_accessor_all_data_for_step(
-				&env.climateData,
-				stepNo,
+				&env.climate_data,
+				step_no,
 				env.params.site_params.latitude,
 				allocator,
 			),
@@ -927,21 +927,21 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 		// try to apply dynamic worksteps marked to run before everything else
 		// that day
-		if currentCM != nil {
-			cultivation_method_apply(currentCM, model, true)
+		if current_cm != nil {
+			cultivation_method_apply(current_cm, model, true)
 		}
 
 		// apply worksteps and cycle through crop rotation
-		if currentCM != nil && d.eq(nextAbsoluteCMApplicationDate, currentDate) {
+		if current_cm != nil && d.eq(next_absolute_cm_application_date, current_date) {
 			cultivation_method_abs_apply(
-				currentCM,
-				nextAbsoluteCMApplicationDate,
+				current_cm,
+				next_absolute_cm_application_date,
 				model,
 				allocator,
 			)
-			nextAbsoluteCMApplicationDate = cultivation_method_next_abs_date(
-				currentCM,
-				nextAbsoluteCMApplicationDate,
+			next_absolute_cm_application_date = cultivation_method_next_abs_date(
+				current_cm,
+				next_absolute_cm_application_date,
 			)
 		}
 
@@ -950,38 +950,38 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 
 		// try to apply dynamic worksteps marked to run AFTER everything else
 		// that day
-		if currentCM != nil {
-			cultivation_method_apply(currentCM, model, false)
+		if current_cm != nil {
+			cultivation_method_apply(current_cm, model, false)
 		}
 
 		// store results
 		for &s in store {
-			store_data_store_results_if_spec_applies(&s, model, returnObjOutputs)
+			store_data_store_results_if_spec_applies(&s, model, return_obj_outputs)
 		}
 
 		// if the next application date is not valid, we're at the end of the
 		// application list of this cultivation method and go to the next one in
 		// the crop rotation
-		if currentCM != nil &&
-		   cultivation_method_all_dynamic_worksteps_finished(currentCM) &&
-		   !d.is_valid(nextAbsoluteCMApplicationDate) {
+		if current_cm != nil &&
+		   cultivation_method_all_dynamic_worksteps_finished(current_cm) &&
+		   !d.is_valid(next_absolute_cm_application_date) {
 			core.monica_model_reset_fertiliser_counter(model)
-			currentCM, nextAbsoluteCMApplicationDate = find_next_cultivation_method(
-				d.add(currentDate, 1),
-				&cropRotation,
+			current_cm, next_absolute_cm_application_date = find_next_cultivation_method(
+				d.add(current_date, 1),
+				&crop_rotation,
 				&cmit,
 				true,
 				allocator,
 			)
 		}
 
-		currentDate = d.add(currentDate, 1)
+		current_date = d.add(current_date, 1)
 	}
 
 	for &sd in store {
 		// aggregate results of while events or unfinished other from/to ranges
 		// (where the to event didn't happen yet)
-		if returnObjOutputs {
+		if return_obj_outputs {
 			store_data_aggregate_results_obj(&sd)
 		} else {
 			store_data_aggregate_results(&sd)
@@ -989,10 +989,10 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 		append(
 			&out.data,
 			mio.Output_Data {
-				origSpec = jx.dump(sd.spec.origSpec, allocator),
-				outputIds = sd.outputIds,
+				orig_spec = jx.dump(sd.spec.orig_spec, allocator),
+				output_ids = sd.output_ids,
 				results = sd.results,
-				resultsObj = sd.resultsObj,
+				results_obj = sd.results_obj,
 			},
 		)
 	}

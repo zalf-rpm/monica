@@ -138,18 +138,18 @@ get_complex_values :: proc(
 	model: ^core.Monica_Model,
 	oid_in: OId,
 	get_value: proc(_: ^core.Monica_Model, _: int) -> f64,
-	roundToDigits: int = 0,
+	round_to_digits: int = 0,
 	allocator := context.allocator,
 ) -> jx.Value {
 	oid := oid_in
 	if oid_is_organ(&oid) {
-		oid.toLayer = int(oid.organ)
-		oid.fromLayer = int(oid.organ)
+		oid.to_layer = int(oid.organ)
+		oid.from_layer = int(oid.organ)
 	}
 
-	multipleValues := make([dynamic]jx.Value, 0, allocator)
+	multiple_values := make([dynamic]jx.Value, 0, allocator)
 	vs := make([dynamic]f64, 0, allocator)
-	for i := oid.fromLayer; i <= oid.toLayer; i += 1 {
+	for i := oid.from_layer; i <= oid.to_layer; i += 1 {
 		v := 0.0
 		if i >= 0 {
 			// A reflection-backed oid reuses this loop instead of forking the
@@ -162,17 +162,17 @@ get_complex_values :: proc(
 				v = get_value(model, i)
 			}
 		}
-		if oid.layerAggOp == .NONE {
-			append(&multipleValues, jx.f(round_or_not(v, roundToDigits)))
+		if oid.layer_agg_op == .NONE {
+			append(&multiple_values, jx.f(round_or_not(v, round_to_digits)))
 		} else {
 			append(&vs, v)
 		}
 	}
 
-	if oid.layerAggOp == .NONE {
-		return jx.Value(jx.Array(multipleValues))
+	if oid.layer_agg_op == .NONE {
+		return jx.Value(jx.Array(multiple_values))
 	}
-	return jx.f(apply_oid_op(oid.layerAggOp, vs[:]))
+	return jx.f(apply_oid_op(oid.layer_agg_op, vs[:]))
 }
 
 // C++: void setComplexValues(OId, function<void(int, Json)>, Json) - the
@@ -188,8 +188,8 @@ set_complex_values :: proc(
 ) {
 	oid := oid_in
 	if oid_is_organ(&oid) {
-		oid.toLayer = int(oid.organ)
-		oid.fromLayer = int(oid.organ)
+		oid.to_layer = int(oid.organ)
+		oid.from_layer = int(oid.organ)
 	}
 
 	if jx.is_object(value) || jx.is_null(value) {
@@ -200,7 +200,7 @@ set_complex_values :: proc(
 	if jx.is_array(value) {
 		values = jx.array_items(value)
 	} else {
-		n := oid.toLayer - oid.fromLayer + 1
+		n := oid.to_layer - oid.from_layer + 1
 		fill := make([]jx.Value, max(n, 0), allocator)
 		for i in 0 ..< len(fill) {
 			fill[i] = value
@@ -209,7 +209,7 @@ set_complex_values :: proc(
 	}
 
 	k := 0
-	for i := oid.fromLayer; i <= oid.toLayer && k < len(values); i, k = i + 1, k + 1 {
+	for i := oid.from_layer; i <= oid.to_layer && k < len(values); i, k = i + 1, k + 1 {
 		if i >= 0 {
 			// mirrors get_complex_values: a path-backed oid drives the same
 			// range/organ loop, writing through its open dimension instead of
@@ -264,8 +264,8 @@ resolve_oid_name :: proc(
 		if a, has_alias := legacy_aliases(allocator)[n0]; has_alias {
 			err := oid_bind_path(&oid, a.path, allocator)
 			if !rp.failed(err) {
-				oid.roundToDigits = a.round
-				oid.castTo = a.cast_to
+				oid.round_to_digits = a.round
+				oid.cast_to = a.cast_to
 				// Keep the legacy id, name and unit: the CSV header prints
 				// name/unit, and worksteps.odin still dispatches setfs by id.
 				oid.id = has_md ? md.id : -1
@@ -358,13 +358,13 @@ oid_organ_of :: proc(arr: []jx.Value, index: int, def: OId_Organ = .UNDEFINED_OR
 @(private)
 oid_apply_slot1 :: proc(oid: ^OId, val1: jx.Value) {
 	if jx.is_number(val1) {
-		oid.fromLayer = jx.int_value_of(val1) - 1
-		oid.toLayer = oid.fromLayer
+		oid.from_layer = jx.int_value_of(val1) - 1
+		oid.to_layer = oid.from_layer
 	} else if jx.is_string(val1) {
 		one := []jx.Value{val1}
 		op := oid_aggregation_op(one, 0)
 		if op != .UNDEFINED_OP {
-			oid.timeAggOp = op
+			oid.time_agg_op = op
 		} else {
 			oid.organ = oid_organ_of(one, 0, .UNDEFINED_ORGAN)
 		}
@@ -373,7 +373,7 @@ oid_apply_slot1 :: proc(oid: ^OId, val1: jx.Value) {
 		if len(arr2) >= 1 {
 			val1_0 := arr2[0]
 			if jx.is_number(val1_0) {
-				oid.fromLayer = jx.int_value_of(val1_0) - 1
+				oid.from_layer = jx.int_value_of(val1_0) - 1
 			} else if jx.is_string(val1_0) {
 				oid.organ = oid_organ_of(arr2, 0, .UNDEFINED_ORGAN)
 			}
@@ -381,14 +381,14 @@ oid_apply_slot1 :: proc(oid: ^OId, val1: jx.Value) {
 		if len(arr2) >= 2 {
 			val1_1 := arr2[1]
 			if jx.is_number(val1_1) {
-				oid.toLayer = jx.int_value_of(val1_1) - 1
+				oid.to_layer = jx.int_value_of(val1_1) - 1
 			} else if jx.is_string(val1_1) {
-				oid.toLayer = oid.fromLayer
-				oid.layerAggOp = oid_aggregation_op(arr2, 1, .AVG)
+				oid.to_layer = oid.from_layer
+				oid.layer_agg_op = oid_aggregation_op(arr2, 1, .AVG)
 			}
 		}
 		if len(arr2) >= 3 {
-			oid.layerAggOp = oid_aggregation_op(arr2, 2, .AVG)
+			oid.layer_agg_op = oid_aggregation_op(arr2, 2, .AVG)
 		}
 	}
 }
@@ -444,10 +444,10 @@ oid_from_object :: proc(idj: jx.Value, allocator: jx.Allocator) -> (oid: OId, ok
 		oid.name = oid.path
 	}
 	if roundj := jx.get(idj, "round"); jx.is_number(roundj) {
-		oid.roundToDigits = jx.int_value_of(roundj)
+		oid.round_to_digits = jx.int_value_of(roundj)
 	}
 	if strings.to_upper(jx.string_value_of(jx.get(idj, "cast")), context.temp_allocator) == "INT" {
-		oid.castTo = .INT
+		oid.cast_to = .INT
 	}
 	if layersj := jx.get(idj, "layers"); !jx.is_null(layersj) {
 		oid_apply_slot1(&oid, layersj)
@@ -456,7 +456,7 @@ oid_from_object :: proc(idj: jx.Value, allocator: jx.Allocator) -> (oid: OId, ok
 		oid.organ = oid_organ_of([]jx.Value{organj}, 0, .UNDEFINED_ORGAN)
 	}
 	if op := oid_aggregation_op([]jx.Value{jx.get(idj, "agg")}, 0); op != .UNDEFINED_OP {
-		oid.timeAggOp = op
+		oid.time_agg_op = op
 	}
 	if calcj := jx.get(idj, "calc"); !jx.is_null(calcj) {
 		if msg := oid_parse_calc(&oid, calcj, allocator); msg != "" {
@@ -468,21 +468,21 @@ oid_from_object :: proc(idj: jx.Value, allocator: jx.Allocator) -> (oid: OId, ok
 	if unitj := jx.get(idj, "unit"); jx.is_string(unitj) {
 		oid.unit = jx.string_value_of(unitj)
 	}
-	oid.jsonInput = jx.dump(idj, allocator)
+	oid.json_input = jx.dump(idj, allocator)
 	return oid, true
 }
 
 // C++: vector<OId> monica::parseOutputIds(const Tools::J11Array&)
 parse_output_ids :: proc(
-	oidArray: []jx.Value,
+	oid_array: []jx.Value,
 	use_legacy_output_fns := false,
 	allocator := context.allocator,
 ) -> [dynamic]OId {
-	outputIds := make([dynamic]OId, 0, allocator)
+	output_ids := make([dynamic]OId, 0, allocator)
 
 	name2metadata := build_output_table().name2metadata
 
-	for idj in oidArray {
+	for idj in oid_array {
 		if jx.is_string(idj) {
 			name := jx.string_value_of(idj)
 			n0, n1 := oid_split2(name, allocator)
@@ -490,9 +490,9 @@ parse_output_ids :: proc(
 			if !ok {
 				continue
 			}
-			oid.displayName = n1
-			oid.jsonInput = name
-			append(&outputIds, oid)
+			oid.display_name = n1
+			oid.json_input = name
+			append(&output_ids, oid)
 		} else if jx.is_array(idj) {
 			arr := jx.array_items(idj)
 			if len(arr) < 1 {
@@ -504,25 +504,25 @@ parse_output_ids :: proc(
 			if !ok {
 				continue
 			}
-			oid.displayName = n1
-			oid.jsonInput = jx.dump(idj, allocator)
+			oid.display_name = n1
+			oid.json_input = jx.dump(idj, allocator)
 
 			if len(arr) >= 2 {
 				oid_apply_slot1(&oid, arr[1])
 			}
 			if len(arr) >= 3 {
-				oid.timeAggOp = oid_aggregation_op(arr, 2, .AVG)
+				oid.time_agg_op = oid_aggregation_op(arr, 2, .AVG)
 			}
 
-			append(&outputIds, oid)
+			append(&output_ids, oid)
 		} else if jx.is_object(idj) {
 			if oid, ok := oid_from_object(idj, allocator); ok {
-				append(&outputIds, oid)
+				append(&output_ids, oid)
 			}
 		}
 	}
 
-	return outputIds
+	return output_ids
 }
 
 // ---------------------------------------------------------------------------
@@ -711,10 +711,10 @@ of_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 
 @(private)
 of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	potET := model.soil_moisture.reference_evapotranspiration * model.soil_moisture.kc_factor
-	actET := model.soil_moisture.actual_evapotranspiration
-	if potET > 0 {
-		return jx.f(tl.round(actET / potET, 2))
+	pot_et := model.soil_moisture.reference_evapotranspiration * model.soil_moisture.kc_factor
+	act_et := model.soil_moisture.actual_evapotranspiration
+	if pot_et > 0 {
+		return jx.f(tl.round(act_et / pot_et, 2))
 	}
 	return jx.f(1.0)
 }
@@ -734,8 +734,8 @@ of_eta_etc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 clamp_to_organic_layers :: proc(model: ^core.Monica_Model, oid_in: OId) -> OId {
 	oid := oid_in
 	nools := core.number_of_organic_layers(&model.soil_column)
-	oid.fromLayer = min(oid.fromLayer, nools - 1)
-	oid.toLayer = min(oid.toLayer, nools - 1)
+	oid.from_layer = min(oid.from_layer, nools - 1)
+	oid.to_layer = min(oid.to_layer, nools - 1)
 	return oid
 }
 

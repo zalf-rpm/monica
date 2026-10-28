@@ -116,6 +116,12 @@ MOVED = {
     "soilMoisture.vm_FluxAtLowerBoundary": "soil_column.flux_at_lower_boundary",
     # per-layer in the C++ too (vm_WaterFlux[i]); Odin keeps it on the layer
     "soilMoisture.vm_WaterFlux": "soil_column.layers.soil_water_flux",
+    # Monica_Model.soil_temperature is a union (MONICA's own or a module,
+    # plan-crop2ml-modules.md §1.2); both write the soil column, which is
+    # what the C++ reads through soilTemperature's back-pointer (STemp) or
+    # its own copy (SurfTemp)
+    "soilTemperature.soilColumn": "soil_column",
+    "soilTemperature.soilSurfaceTemperature": "soil_column.soil_surface_temperature",
 }
 
 

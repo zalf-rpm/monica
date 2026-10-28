@@ -53,27 +53,27 @@ OId_Cast :: enum {
 // reflection-backed iff `plan != nil`; everything else still goes through
 // build_output_table's ofs/setfs keyed by `id`.
 OId :: struct {
-	id:            int, // C++ default: -1
-	name:          string,
-	displayName:   string,
-	unit:          string,
-	jsonInput:     string,
-	layerAggOp:    OId_Op, // C++ default: NONE
-	timeAggOp:     OId_Op, // C++ default: AVG
-	organ:         OId_Organ, // C++ default: UNDEFINED_ORGAN
-	fromLayer:     int, // C++ default: -1
-	toLayer:       int, // C++ default: -1
+	id:              int, // C++ default: -1
+	name:            string,
+	display_name:    string,
+	unit:            string,
+	json_input:      string,
+	layer_agg_op:    OId_Op, // C++ default: NONE
+	time_agg_op:     OId_Op, // C++ default: AVG
+	organ:           OId_Organ, // C++ default: UNDEFINED_ORGAN
+	from_layer:      int, // C++ default: -1
+	to_layer:        int, // C++ default: -1
 
-	path:          string, // "" for lambda-backed oids
+	path:            string, // "" for lambda-backed oids
 	// OId is copied by value all over this port (`oid := oid_in`), so the
 	// plan MUST be a pointer into a setup-time allocation and never an owned
 	// value - see the risk register in plan-reflective-outputs.md §8.
-	plan:          ^rp.Path_Plan, // nil for lambda-backed oids
-	roundToDigits: int, // -1 = do not round
-	castTo:        OId_Cast,
+	plan:            ^rp.Path_Plan, // nil for lambda-backed oids
+	round_to_digits: int, // -1 = do not round
+	cast_to:         OId_Cast,
 	// the object form's "calc" (output_calc.odin), applied per day before
 	// roundToDigits/castTo; empty for a plain read
-	calc:          []Calc_Step,
+	calc:            []Calc_Step,
 }
 
 // C++ in-class defaults: id{-1}, layerAggOp{NONE}, timeAggOp{AVG},
@@ -81,19 +81,19 @@ OId :: struct {
 make_default_oid :: proc() -> OId {
 	return OId {
 		id = -1,
-		layerAggOp = .NONE,
-		timeAggOp = .AVG,
+		layer_agg_op = .NONE,
+		time_agg_op = .AVG,
 		organ = .UNDEFINED_ORGAN,
-		fromLayer = -1,
-		toLayer = -1,
-		roundToDigits = -1,
-		castTo = .NONE,
+		from_layer = -1,
+		to_layer = -1,
+		round_to_digits = -1,
+		cast_to = .NONE,
 	}
 }
 
 // C++: inline bool oid::isRange(const OId*)
 oid_is_range :: proc(oid: ^OId) -> bool {
-	return oid.fromLayer >= 0 && oid.toLayer >= 0
+	return oid.from_layer >= 0 && oid.to_layer >= 0
 }
 
 // C++: inline bool oid::isOrgan(const OId*)
@@ -148,7 +148,7 @@ oid_organ_to_string :: proc(organ: OId_Organ) -> string {
 // C++: string oid::toString(const OId*, bool)
 oid_to_string :: proc(
 	oid: ^OId,
-	includeTimeAgg: bool = false,
+	include_time_agg: bool = false,
 	allocator := context.allocator,
 ) -> string {
 	b := strings.builder_make(allocator)
@@ -158,18 +158,18 @@ oid_to_string :: proc(
 		strings.write_string(&b, ", ")
 		strings.write_string(&b, oid_organ_to_string(oid.organ))
 	} else if oid_is_range(oid) {
-		fmt.sbprintf(&b, ", [%d, %d", oid.fromLayer + 1, oid.toLayer + 1)
-		if oid.layerAggOp != .NONE {
+		fmt.sbprintf(&b, ", [%d, %d", oid.from_layer + 1, oid.to_layer + 1)
+		if oid.layer_agg_op != .NONE {
 			strings.write_string(&b, ", ")
-			strings.write_string(&b, oid_op_to_string(oid.layerAggOp))
+			strings.write_string(&b, oid_op_to_string(oid.layer_agg_op))
 		}
 		strings.write_string(&b, "]")
-	} else if oid.fromLayer >= 0 {
-		fmt.sbprintf(&b, ", %d", oid.fromLayer + 1)
+	} else if oid.from_layer >= 0 {
+		fmt.sbprintf(&b, ", %d", oid.from_layer + 1)
 	}
-	if includeTimeAgg {
+	if include_time_agg {
 		strings.write_string(&b, ", ")
-		strings.write_string(&b, oid_op_to_string(oid.timeAggOp))
+		strings.write_string(&b, oid_op_to_string(oid.time_agg_op))
 	}
 	strings.write_string(&b, "]")
 	return strings.to_string(b)
@@ -177,14 +177,14 @@ oid_to_string :: proc(
 
 // C++: string oid::outputName(const OId*)
 oid_output_name :: proc(oid: ^OId, allocator := context.allocator) -> string {
-	outName := oid.name
+	out_name := oid.name
 	if oid_is_organ(oid) {
-		outName = strings.concatenate({outName, "/", oid_organ_to_string(oid.organ)}, allocator)
+		out_name = strings.concatenate({out_name, "/", oid_organ_to_string(oid.organ)}, allocator)
 	}
-	if oid.displayName != "" {
-		outName = oid.displayName
+	if oid.display_name != "" {
+		out_name = oid.display_name
 	}
-	return outName
+	return out_name
 }
 
 // C++: struct Output::Data
@@ -193,10 +193,10 @@ oid_output_name :: proc(oid: ^OId, allocator := context.allocator) -> string {
 // "obj-outputs?" (see run.env_return_obj_outputs): results is one column per
 // output id, resultsObj one JSON object per row, keyed by oid_output_name.
 Output_Data :: struct {
-	origSpec:   string,
-	outputIds:  [dynamic]OId,
-	results:    [dynamic][dynamic]jx.Value,
-	resultsObj: [dynamic]jx.Value,
+	orig_spec:   string,
+	output_ids:  [dynamic]OId,
+	results:     [dynamic][dynamic]jx.Value,
+	results_obj: [dynamic]jx.Value,
 }
 
 // C++: struct monica::Output
@@ -206,10 +206,10 @@ Output_Data :: struct {
 // demand, since serve-monica-zmq.cpp round-trips customId and reports
 // env-merge/climate-read errors back over the wire via output::to_json.
 Output :: struct {
-	data:     [dynamic]Output_Data,
-	customId: jx.Value,
-	errors:   [dynamic]string,
-	warnings: [dynamic]string,
+	data:      [dynamic]Output_Data,
+	custom_id: jx.Value,
+	errors:    [dynamic]string,
+	warnings:  [dynamic]string,
 }
 
 // C++: Output monica::makeOutput(std::string error)
@@ -230,15 +230,15 @@ oid_to_json :: proc(oid: ^OId, allocator := context.allocator) -> jx.Value {
 		{"type", jx.sl("OId")},
 		{"id", jx.i(oid.id)},
 		{"name", jx.s(oid.name, allocator)},
-		{"displayName", jx.s(oid.displayName, allocator)},
+		{"displayName", jx.s(oid.display_name, allocator)},
 		{"unit", jx.s(oid.unit, allocator)},
-		{"jsonInput", jx.s(oid.jsonInput, allocator)},
+		{"jsonInput", jx.s(oid.json_input, allocator)},
 		{"path", jx.s(oid.path, allocator)},
-		{"layerAggOp", jx.i(int(oid.layerAggOp))},
-		{"timeAggOp", jx.i(int(oid.timeAggOp))},
+		{"layerAggOp", jx.i(int(oid.layer_agg_op))},
+		{"timeAggOp", jx.i(int(oid.time_agg_op))},
 		{"organ", jx.i(int(oid.organ))},
-		{"fromLayer", jx.i(oid.fromLayer)},
-		{"toLayer", jx.i(oid.toLayer)},
+		{"fromLayer", jx.i(oid.from_layer)},
+		{"toLayer", jx.i(oid.to_layer)},
 	)
 }
 
@@ -246,7 +246,7 @@ oid_to_json :: proc(oid: ^OId, allocator := context.allocator) -> jx.Value {
 output_to_json :: proc(out: ^Output, allocator := context.allocator) -> jx.Value {
 	ds := make(jx.Array, 0, len(out.data), allocator)
 	for &dd in out.data {
-		rs := make(jx.Array, 0, max(len(dd.results), len(dd.resultsObj)), allocator)
+		rs := make(jx.Array, 0, max(len(dd.results), len(dd.results_obj)), allocator)
 		if len(dd.results) > 0 {
 			for r in dd.results {
 				row := make(jx.Array, 0, len(r), allocator)
@@ -254,18 +254,18 @@ output_to_json :: proc(out: ^Output, allocator := context.allocator) -> jx.Value
 				append(&rs, jx.Value(row))
 			}
 		} else {
-			append(&rs, ..dd.resultsObj[:])
+			append(&rs, ..dd.results_obj[:])
 		}
-		outputIds := make(jx.Array, 0, len(dd.outputIds), allocator)
-		for &o in dd.outputIds {
-			append(&outputIds, oid_to_json(&o, allocator))
+		output_ids := make(jx.Array, 0, len(dd.output_ids), allocator)
+		for &o in dd.output_ids {
+			append(&output_ids, oid_to_json(&o, allocator))
 		}
 		append(
 			&ds,
 			jx.obj(
 				allocator,
-				{"origSpec", jx.s(dd.origSpec, allocator)},
-				{"outputIds", jx.Value(outputIds)},
+				{"origSpec", jx.s(dd.orig_spec, allocator)},
+				{"outputIds", jx.Value(output_ids)},
 				{"results", jx.Value(rs)},
 			),
 		)
@@ -283,7 +283,7 @@ output_to_json :: proc(out: ^Output, allocator := context.allocator) -> jx.Value
 	return jx.obj(
 		allocator,
 		{"type", jx.sl("Output")},
-		{"customId", out.customId},
+		{"customId", out.custom_id},
 		{"data", jx.Value(ds)},
 		{"errors", jx.Value(errs)},
 		{"warnings", jx.Value(warns)},

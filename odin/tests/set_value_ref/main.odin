@@ -45,8 +45,8 @@ dump_state :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 			model.soil_column.layers[i].soil_moisture_m3,
 		)
 	}
-	_, hasSetValue := model.current_events["SetValue"]
-	tr.dump(t, strings.concatenate({path, ".currentEvents.hasSetValue"}), hasSetValue)
+	_, has_set_value := model.current_events["SetValue"]
+	tr.dump(t, strings.concatenate({path, ".currentEvents.hasSetValue"}), has_set_value)
 }
 
 main :: proc() {
@@ -120,17 +120,17 @@ main :: proc() {
 	cultivar_json := load(monica_parameters_dir, "crops/wheat/winter-wheat.json", a)
 	residue_json := load(monica_parameters_dir, "crop-residues/wheat.json", a)
 
-	wheatCropParams := p.make_crop_parameters()
-	_ = p.crop_parameters_merge_sj_cj(&wheatCropParams, species_json, cultivar_json)
+	wheat_crop_params := p.make_crop_parameters()
+	_ = p.crop_parameters_merge_sj_cj(&wheat_crop_params, species_json, cultivar_json)
 
-	wheatResidueParams: p.Crop_Residue_Parameters
-	_ = p.crop_residue_parameters_merge(&wheatResidueParams, residue_json)
+	wheat_residue_params: p.Crop_Residue_Parameters
+	_ = p.crop_residue_parameters_merge(&wheat_residue_params, residue_json)
 
 	cm := new(core.Crop_Module, a)
 	cm^ = core.make_crop_module(
 		&model.soil_column,
-		&wheatCropParams,
-		&wheatResidueParams,
+		&wheat_crop_params,
+		&wheat_residue_params,
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
@@ -180,7 +180,7 @@ main :: proc() {
 		relhumid := clim.data_accessor_data_for_timestep(&da, .relhumid, day)
 		current_date := clim.data_accessor_date_for_step(&da, day)
 
-		vs_GroundwaterDepth := day % 40 < 15 ? 3.0 : 15.0
+		groundwater_depth := day % 40 < 15 ? 3.0 : 15.0
 		et0 := -1.0
 
 		// C++'s soiltemperature::step/soilmoisture::step read soil coverage/snow
@@ -200,7 +200,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&model.soil_moisture,
-			vs_GroundwaterDepth,
+			groundwater_depth,
 			precip,
 			tmax,
 			tmin,

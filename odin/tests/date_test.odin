@@ -7,7 +7,7 @@ import d "../support/date"
 // mas_cpp_misc/tools/date.cpp. Every assertion here comes from the C++ source
 // unchanged - do not adjust them to make the Odin pass.
 @(test)
-test_date_cpp_testDate :: proc(t: ^testing.T) {
+test_date_cpp_test_date :: proc(t: ^testing.T) {
 	D :: d.make_date
 
 	testing.expect_value(t, d.number_of_days_to(D(1, 1, 2001), D(2, 1, 2001)), 1)

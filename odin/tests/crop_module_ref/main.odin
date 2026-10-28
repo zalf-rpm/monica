@@ -19,8 +19,8 @@ import "core:os"
 import "core:strings"
 
 noop_fire_event :: proc(event: string) {}
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {}
-noop_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {return 0.0, 0.0}
+noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
+noop_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {return 0.0, 0.0}
 
 dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.noOfOrgans", cm.no_of_organs)

@@ -29,16 +29,16 @@ g_soil_organic: ^core.Soil_Organic
 g_residue_params: ^p.Organic_Matter_Parameters
 g_tracer: ^tr.Tracer
 
-real_get_snow_depth :: proc(avgAirTemp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avgAirTemp)
+real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
+	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
 }
 
-real_add_organic_matter :: proc(layer2amount: map[int]f64, nConcentration: f64) {
+real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {
 	core.soil_organic_add_organic_matter(
 		g_soil_organic,
 		g_residue_params,
 		layer2amount,
-		nConcentration,
+		n_concentration,
 	)
 }
 
@@ -333,7 +333,7 @@ main :: proc() {
 		current_date := clim.data_accessor_date_for_step(&da, day)
 		julday := clim.data_accessor_julian_day_for_step(&da, day)
 
-		vs_GroundwaterDepth: f64 = (day % 40) < 15 ? 3.0 : 15.0
+		groundwater_depth: f64 = (day % 40) < 15 ? 3.0 : 15.0
 		et0 := -1.0 // climate-min.csv has no et0 column
 
 		tr.set_day(&t, day)
@@ -353,7 +353,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&sm,
-			vs_GroundwaterDepth,
+			groundwater_depth,
 			precip,
 			tmax,
 			tmin,

@@ -43,11 +43,11 @@ write_escaped_to_builder :: proc(b: ^strings.Builder, s: string, sep: string) {
 // C++: void monica::writeOutputHeaderRows(ostream&, const vector<OId>&, string, bool, bool, bool)
 write_output_header_rows :: proc(
 	w: io.Writer,
-	outputIds: []OId,
-	csvSep: string,
-	includeHeaderRow: bool,
-	includeUnitsRow: bool,
-	includeTimeAgg: bool = true,
+	output_ids: []OId,
+	csv_sep: string,
+	include_header_row: bool,
+	include_units_row: bool,
+	include_time_agg: bool = true,
 	allocator := context.allocator,
 ) {
 	oss1 := strings.builder_make(allocator)
@@ -55,68 +55,68 @@ write_output_header_rows :: proc(
 	oss3 := strings.builder_make(allocator)
 	oss4 := strings.builder_make(allocator)
 
-	oidsSize := len(outputIds)
-	for oid_in, j in outputIds {
+	oids_size := len(output_ids)
+	for oid_in, j in output_ids {
 		oid := oid_in
-		fromLayer := oid.fromLayer
-		toLayer := oid.toLayer
-		isOrgan := oid_is_organ(&oid)
-		isRange := oid_is_range(&oid) && oid.layerAggOp == .NONE
-		if isOrgan {
+		from_layer := oid.from_layer
+		to_layer := oid.to_layer
+		is_organ := oid_is_organ(&oid)
+		is_range := oid_is_range(&oid) && oid.layer_agg_op == .NONE
+		if is_organ {
 			// organ is represented just by the value of fromLayer currently
-			toLayer = int(oid.organ)
-			fromLayer = int(oid.organ)
-		} else if isRange {
-			fromLayer += 1 // display 1-indexed layer numbers to users
-			toLayer += 1
+			to_layer = int(oid.organ)
+			from_layer = int(oid.organ)
+		} else if is_range {
+			from_layer += 1 // display 1-indexed layer numbers to users
+			to_layer += 1
 		} else {
-			toLayer = fromLayer // aggregated ranges aren't displayed as a range
+			to_layer = from_layer // aggregated ranges aren't displayed as a range
 		}
 
-		for i := fromLayer; i <= toLayer; i += 1 {
+		for i := from_layer; i <= to_layer; i += 1 {
 			name: string
-			if isOrgan {
+			if is_organ {
 				name =
-					oid.displayName != "" \
-					? oid.displayName \
+					oid.display_name != "" \
+					? oid.display_name \
 					: strings.concatenate({oid.name, "/", oid_organ_to_string(oid.organ)}, allocator)
-			} else if isRange {
+			} else if is_range {
 				name =
-					oid.displayName != "" \
-					? oid.displayName \
+					oid.display_name != "" \
+					? oid.display_name \
 					: fmt.aprintf("%s_%d", oid.name, i, allocator = allocator)
 			} else {
-				name = oid.displayName != "" ? oid.displayName : oid.name
+				name = oid.display_name != "" ? oid.display_name : oid.name
 			}
-			csvSep_ := j + 1 == oidsSize && i == toLayer ? "" : csvSep
+			csv_sep_ := j + 1 == oids_size && i == to_layer ? "" : csv_sep
 
-			write_escaped_to_builder(&oss1, name, csvSep)
-			strings.write_string(&oss1, csvSep_)
+			write_escaped_to_builder(&oss1, name, csv_sep)
+			strings.write_string(&oss1, csv_sep_)
 
 			os2 := strings.concatenate({"[", oid.unit, "]"}, allocator)
-			write_escaped_to_builder(&oss2, os2, csvSep)
-			strings.write_string(&oss2, csvSep_)
+			write_escaped_to_builder(&oss2, os2, csv_sep)
+			strings.write_string(&oss2, csv_sep_)
 
-			os3 := strings.concatenate({"m:", oid_to_string(&oid, includeTimeAgg, allocator)}, allocator)
-			write_escaped_to_builder(&oss3, os3, csvSep)
-			strings.write_string(&oss3, csvSep_)
+			os3 := strings.concatenate({"m:", oid_to_string(&oid, include_time_agg, allocator)}, allocator)
+			write_escaped_to_builder(&oss3, os3, csv_sep)
+			strings.write_string(&oss3, csv_sep_)
 
-			jsonInputNoQuotes, _ := strings.replace_all(oid.jsonInput, "\"", "", allocator)
-			os4 := strings.concatenate({"j:", jsonInputNoQuotes}, allocator)
-			write_escaped_to_builder(&oss4, os4, csvSep)
-			strings.write_string(&oss4, csvSep_)
+			json_input_no_quotes, _ := strings.replace_all(oid.json_input, "\"", "", allocator)
+			os4 := strings.concatenate({"j:", json_input_no_quotes}, allocator)
+			write_escaped_to_builder(&oss4, os4, csv_sep)
+			strings.write_string(&oss4, csv_sep_)
 		}
 	}
 
-	if includeHeaderRow {
+	if include_header_row {
 		io.write_string(w, strings.to_string(oss1))
 		io.write_string(w, "\r\n")
 	}
-	if includeUnitsRow {
+	if include_units_row {
 		io.write_string(w, strings.to_string(oss2))
 		io.write_string(w, "\r\n")
 	}
-	if includeTimeAgg {
+	if include_time_agg {
 		io.write_string(w, strings.to_string(oss3))
 		io.write_string(w, "\r\n")
 		io.write_string(w, strings.to_string(oss4))
@@ -134,7 +134,7 @@ write_output_header_rows :: proc(
 // C++'s formatting above; 17 makes every number round-trip, for checks that
 // compare values exactly.
 @(private)
-write_json_scalar :: proc(w: io.Writer, v: jx.Value, csvSep, trailing: string, precision := 6) {
+write_json_scalar :: proc(w: io.Writer, v: jx.Value, csv_sep, trailing: string, precision := 6) {
 	switch {
 	case jx.is_number(v) && precision == 6:
 		fmt.wprintf(w, "%.6g", jx.number_value(v))
@@ -144,7 +144,7 @@ write_json_scalar :: proc(w: io.Writer, v: jx.Value, csvSep, trailing: string, p
 		io.write_string(w, s[0] == '+' ? s[1:] : s)
 	case jx.is_string(v):
 		s := jx.string_value_of(v)
-		if needs_quote(s, csvSep) {
+		if needs_quote(s, csv_sep) {
 			io.write_byte(w, '"')
 			io.write_string(w, s)
 			io.write_byte(w, '"')
@@ -162,9 +162,9 @@ write_json_scalar :: proc(w: io.Writer, v: jx.Value, csvSep, trailing: string, p
 // C++: void monica::writeOutput(ostream&, const vector<OId>&, const vector<J11Array>&, string)
 write_output :: proc(
 	w: io.Writer,
-	outputIds: []OId,
+	output_ids: []OId,
 	values: [][dynamic]jx.Value,
-	csvSep: string,
+	csv_sep: string,
 	precision := 6,
 ) {
 	if len(values) == 0 {
@@ -172,21 +172,21 @@ write_output :: proc(
 	}
 
 	size := len(values[0])
-	oidsSize := len(outputIds)
+	oids_size := len(output_ids)
 	for k in 0 ..< size {
-		for i in 0 ..< oidsSize {
-			csvSep_ := i + 1 == oidsSize ? "" : csvSep
+		for i in 0 ..< oids_size {
+			csv_sep_ := i + 1 == oids_size ? "" : csv_sep
 			j := values[i][k]
 			if jx.is_array(j) {
 				items := jx.array_items(j)
-				jSize := len(items)
+				j_size := len(items)
 				for jv, jvi in items {
-					csvSep__ := jvi + 1 == jSize ? "" : csvSep
-					write_json_scalar(w, jv, csvSep, csvSep__, precision)
+					csv_sep__ := jvi + 1 == j_size ? "" : csv_sep
+					write_json_scalar(w, jv, csv_sep, csv_sep__, precision)
 				}
-				io.write_string(w, csvSep_)
+				io.write_string(w, csv_sep_)
 			} else {
-				write_json_scalar(w, j, csvSep, csvSep_, precision)
+				write_json_scalar(w, j, csv_sep, csv_sep_, precision)
 			}
 		}
 		io.write_string(w, "\r\n")
@@ -201,30 +201,30 @@ write_output :: proc(
 // Reproduced.
 write_output_obj :: proc(
 	w: io.Writer,
-	outputIds: []OId,
+	output_ids: []OId,
 	values: []jx.Value,
-	csvSep: string,
+	csv_sep: string,
 	precision := 6,
 ) {
-	oidsSize := len(outputIds)
+	oids_size := len(output_ids)
 	for o in values {
 		obj := jx.object_items(o)
-		for &oid, i in outputIds {
-			csvSep_ := i + 1 == oidsSize ? "" : csvSep
+		for &oid, i in output_ids {
+			csv_sep_ := i + 1 == oids_size ? "" : csv_sep
 			j, found := obj[oid_output_name(&oid, context.temp_allocator)]
 			if !found {
 				continue
 			}
 			if jx.is_array(j) {
 				items := jx.array_items(j)
-				jSize := len(items)
+				j_size := len(items)
 				for jv, jvi in items {
-					csvSep__ := jvi + 1 == jSize ? "" : csvSep
-					write_json_scalar(w, jv, csvSep, csvSep__, precision)
+					csv_sep__ := jvi + 1 == j_size ? "" : csv_sep
+					write_json_scalar(w, jv, csv_sep, csv_sep__, precision)
 				}
-				io.write_string(w, csvSep_)
+				io.write_string(w, csv_sep_)
 			} else {
-				write_json_scalar(w, j, csvSep, csvSep_, precision)
+				write_json_scalar(w, j, csv_sep, csv_sep_, precision)
 			}
 		}
 		io.write_string(w, "\r\n")

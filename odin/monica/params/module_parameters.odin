@@ -286,19 +286,19 @@ Stics_Parameters :: struct {
 	code_hourly_wfps_denit: int,
 	hminn:                  f64,
 	hoptn:                  f64,
-	pHminnit:               f64,
-	pHmaxnit:               f64,
+	ph_min_nit:             f64,
+	ph_max_nit:             f64,
 	nh4_min:                f64, // [mg NH4-N/kg soil]
-	pHminden:               f64,
-	pHmaxden:               f64,
+	ph_min_den:             f64,
+	ph_max_den:             f64,
 	wfpsc:                  f64,
 	tdenitopt_gauss:        f64, // [°C]
 	scale_tdenitopt:        f64, // [°C]
-	Kd:                     f64, // [mg NO3-N/L]
+	kd:                     f64, // [mg NO3-N/L]
 	k_desat:                f64, // [1/day]
 	fnx:                    f64, // [1/day]
 	vnitmax:                f64, // [mg NH4-N/kg soil/day]
-	Kamm:                   f64, // [mg NH4-N/L]
+	kamm:                   f64, // [mg NH4-N/L]
 	tnitmin:                f64, // [°C]
 	tnitopt:                f64, // [°C]
 	tnitop2:                f64, // [°C]
@@ -327,19 +327,19 @@ make_stics_parameters :: proc() -> Stics_Parameters {
 		code_hourly_wfps_denit = 2,
 		hminn = 0.3,
 		hoptn = 0.9,
-		pHminnit = 4.0,
-		pHmaxnit = 7.2,
+		ph_min_nit = 4.0,
+		ph_max_nit = 7.2,
 		nh4_min = 1.0,
-		pHminden = 7.2,
-		pHmaxden = 9.2,
+		ph_min_den = 7.2,
+		ph_max_den = 9.2,
 		wfpsc = 0.62,
 		tdenitopt_gauss = 47,
 		scale_tdenitopt = 25,
-		Kd = 148,
+		kd = 148,
 		k_desat = 3.0,
 		fnx = 0.8,
 		vnitmax = 27.3,
-		Kamm = 24,
+		kamm = 24,
 		tnitmin = 5.0,
 		tnitopt = 30.0,
 		tnitop2 = 35.0,
@@ -373,19 +373,19 @@ stics_parameters_merge :: proc(sp: ^Stics_Parameters, j: jx.Value) -> tl.Errors 
 	jx.set_int_value(&sp.code_hourly_wfps_denit, j, "code_hourly_wfps_denit")
 	jx.set_double_value(&sp.hminn, j, "hminn")
 	jx.set_double_value(&sp.hoptn, j, "hoptn")
-	jx.set_double_value(&sp.pHminnit, j, "pHminnit")
-	jx.set_double_value(&sp.pHmaxnit, j, "pHmaxnit")
+	jx.set_double_value(&sp.ph_min_nit, j, "pHminnit")
+	jx.set_double_value(&sp.ph_max_nit, j, "pHmaxnit")
 	jx.set_double_value(&sp.nh4_min, j, "nh4_min")
-	jx.set_double_value(&sp.pHminden, j, "pHminden")
-	jx.set_double_value(&sp.pHmaxden, j, "pHmaxden")
+	jx.set_double_value(&sp.ph_min_den, j, "pHminden")
+	jx.set_double_value(&sp.ph_max_den, j, "pHmaxden")
 	jx.set_double_value(&sp.wfpsc, j, "wfpsc")
 	jx.set_double_value(&sp.tdenitopt_gauss, j, "tdenitopt_gauss")
 	jx.set_double_value(&sp.scale_tdenitopt, j, "scale_tdenitopt")
-	jx.set_double_value(&sp.Kd, j, "Kd")
+	jx.set_double_value(&sp.kd, j, "Kd")
 	jx.set_double_value(&sp.k_desat, j, "k_desat")
 	jx.set_double_value(&sp.fnx, j, "fnx")
 	jx.set_double_value(&sp.vnitmax, j, "vnitmax")
-	jx.set_double_value(&sp.Kamm, j, "Kamm")
+	jx.set_double_value(&sp.kamm, j, "Kamm")
 	jx.set_double_value(&sp.tnitmin, j, "tnitmin")
 	jx.set_double_value(&sp.tnitopt, j, "tnitopt")
 	jx.set_double_value(&sp.tnitop2, j, "tnitop2")
@@ -424,19 +424,19 @@ stics_parameters_to_json :: proc(sp: ^Stics_Parameters, a: Allocator) -> jx.Valu
 		{"code_hourly_wfps_denit", jx.vu_int(sp.code_hourly_wfps_denit, "", a)},
 		{"hminn", jx.vu(sp.hminn, "", a)},
 		{"hoptn", jx.vu(sp.hoptn, "", a)},
-		{"pHminnit", jx.vu(sp.pHminnit, "", a)},
-		{"pHmaxnit", jx.vu(sp.pHmaxnit, "", a)},
+		{"pHminnit", jx.vu(sp.ph_min_nit, "", a)},
+		{"pHmaxnit", jx.vu(sp.ph_max_nit, "", a)},
 		{"nh4_min", jx.vu(sp.nh4_min, "", a)},
-		{"pHminden", jx.vu(sp.pHminden, "", a)},
-		{"pHmaxden", jx.vu(sp.pHmaxden, "", a)},
+		{"pHminden", jx.vu(sp.ph_min_den, "", a)},
+		{"pHmaxden", jx.vu(sp.ph_max_den, "", a)},
 		{"wfpsc", jx.vu(sp.wfpsc, "", a)},
 		{"tdenitopt_gauss", jx.vu(sp.tdenitopt_gauss, "", a)},
 		{"scale_tdenitopt", jx.vu(sp.scale_tdenitopt, "", a)},
-		{"Kd", jx.vu(sp.Kd, "", a)},
+		{"Kd", jx.vu(sp.kd, "", a)},
 		{"k_desat", jx.vu(sp.k_desat, "", a)},
 		{"fnx", jx.vu(sp.fnx, "", a)},
 		{"vnitmax", jx.vu(sp.vnitmax, "", a)},
-		{"Kamm", jx.vu(sp.Kamm, "", a)},
+		{"Kamm", jx.vu(sp.kamm, "", a)},
 		{"tnitmin", jx.vu(sp.tnitmin, "", a)},
 		{"tnitopt", jx.vu(sp.tnitopt, "", a)},
 		{"tnitop2", jx.vu(sp.tnitop2, "", a)},

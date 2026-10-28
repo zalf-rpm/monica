@@ -71,7 +71,7 @@ dump_soil_column_top3 :: proc(t: ^tr.Tracer, path: string, sc: ^core.Soil_Column
 		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilTemperature"}), li.soil_temperature)
 		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilMoisture_m3"}), li.soil_moisture_m3)
 		tr.dump(&(t^), strings.concatenate({p2, ".vs_SoilOrganicCarbon"}), li.soil_organic_carbon)
-		tr.dump(&(t^), strings.concatenate({p2, ".vo_AOM_Pool.size"}), len(li.vo_AOM_Pool))
+		tr.dump(&(t^), strings.concatenate({p2, ".vo_AOM_Pool.size"}), len(li.aom_pool))
 	}
 }
 
@@ -185,12 +185,12 @@ main :: proc() {
 	tr.set_day(&t, 3)
 	model.soil_column.layers[0].soil_moisture_m3 =
 		model.soil_column.layers[0].field_capacity + 0.01
-	fertAmount1 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
+	fert_amount1 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
-		p.NMin_Crop_Parameters{samplingDepth = 0.3, nTarget = 80.0, nTarget30 = 40.0},
+		p.NMin_Crop_Parameters{sampling_depth = 0.3, n_target = 80.0, n_target30 = 40.0},
 	)
-	tr.dump(&t, "fertAmount1", fertAmount1)
+	tr.dump(&t, "fertAmount1", fert_amount1)
 	dump_model(&t, "model", model)
 	dump_soil_column_top3(&t, "sc", &model.soil_column)
 	drained := core.apply_possible_delayed_fertilizer(&model.soil_column)
@@ -203,18 +203,18 @@ main :: proc() {
 	tr.set_day(&t, 4)
 	model.soil_column.layers[0].soil_moisture_m3 =
 		model.soil_column.layers[0].field_capacity - 0.05
-	fertAmount2 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
+	fert_amount2 := core.monica_model_apply_mineral_fertiliser_via_n_min_method(
 		model,
 		mfp,
-		p.NMin_Crop_Parameters{samplingDepth = 0.3, nTarget = 400.0, nTarget30 = 400.0},
+		p.NMin_Crop_Parameters{sampling_depth = 0.3, n_target = 400.0, n_target30 = 400.0},
 	)
-	tr.dump(&t, "fertAmount2", fertAmount2)
+	tr.dump(&t, "fertAmount2", fert_amount2)
 	dump_model(&t, "model", model)
 	dump_soil_column_top3(&t, "sc", &model.soil_column)
 	for i in 0 ..< 3 {
 		tr.set_day(&t, 4)
-		topDressed := core.apply_possible_top_dressing(&model.soil_column)
-		tr.dump(&t, fmt.tprintf("topDressed[%d]", i), topDressed)
+		top_dressed := core.apply_possible_top_dressing(&model.soil_column)
+		tr.dump(&t, fmt.tprintf("topDressed[%d]", i), top_dressed)
 	}
 	dump_model(&t, "model", model)
 	dump_soil_column_top3(&t, "sc", &model.soil_column)
@@ -223,8 +223,8 @@ main :: proc() {
 
 	// scenario 5: applyMineralFertiliserViaNDemand
 	tr.set_day(&t, 5)
-	demandFert := core.apply_mineral_fertiliser_via_n_demand(&model.soil_column, mfp, 0.25, 60.0)
-	tr.dump(&t, "demandFert", demandFert)
+	demand_fert := core.apply_mineral_fertiliser_via_n_demand(&model.soil_column, mfp, 0.25, 60.0)
+	tr.dump(&t, "demandFert", demand_fert)
 	dump_soil_column_top3(&t, "sc", &model.soil_column)
 
 	// scenario 6: applyIrrigation
@@ -279,9 +279,9 @@ main :: proc() {
 		threshold = 0.99,
 		critical_moisture_depth_m = 0.3,
 	}
-	triggered, triggeredAmount := core.apply_irrigation_via_trigger(&model.soil_column, &aip)
+	triggered, triggered_amount := core.apply_irrigation_via_trigger(&model.soil_column, &aip)
 	tr.dump(&t, "triggered", triggered)
-	tr.dump(&t, "triggeredAmount", triggeredAmount)
+	tr.dump(&t, "triggeredAmount", triggered_amount)
 	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.surface_water_storage)
 	core.remove_crop(&model.soil_column)
 
@@ -297,11 +297,11 @@ main :: proc() {
 
 	// scenario 9: deleteAOMPool
 	tr.set_day(&t, 9)
-	poolCountBefore := len(model.soil_column.layers[0].vo_AOM_Pool)
+	pool_count_before := len(model.soil_column.layers[0].aom_pool)
 	core.delete_aom_pool(&model.soil_column)
-	poolCountAfter := len(model.soil_column.layers[0].vo_AOM_Pool)
-	tr.dump(&t, "poolCountBefore", poolCountBefore)
-	tr.dump(&t, "poolCountAfter", poolCountAfter)
+	pool_count_after := len(model.soil_column.layers[0].aom_pool)
+	tr.dump(&t, "poolCountBefore", pool_count_before)
+	tr.dump(&t, "poolCountAfter", pool_count_after)
 
 	// scenario 10: daily-sum accumulators + clearEvents + dailyReset (bare soil)
 	tr.set_day(&t, 10)
@@ -361,16 +361,16 @@ main :: proc() {
 		}
 	}
 	d1 := d.julian_date(150, 2021)
-	co2FromDate := core.co2_for_date_from_date(d1, .RCP45)
-	tr.dump(&t, "co2FromDate", co2FromDate)
+	co2_from_date := core.co2_for_date_from_date(d1, .RCP45)
+	tr.dump(&t, "co2FromDate", co2_from_date)
 
 	idx2 := 0
-	maxGw := []f64{10.0, 18.0}
-	minGw := []f64{5.0, 20.0}
+	max_gw := []f64{10.0, 18.0}
+	min_gw := []f64{5.0, 20.0}
 	months := []int{1, 3, 7, 12}
 	jdays2 := []f64{1.0, 91.0, 182.0, 273.0, 365.0}
-	for mx in maxGw {
-		for mn in minGw {
+	for mx in max_gw {
+		for mn in min_gw {
 			for mo in months {
 				for jd in jdays2 {
 					for leap in ([]bool{false, true}) {

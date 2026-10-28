@@ -184,12 +184,12 @@ oid_shape :: proc(oid: OId) -> int {
 	if oid.plan != nil {
 		o := oid
 		switch {
-		case o.plan.open_step < 0 || o.layerAggOp != .NONE:
+		case o.plan.open_step < 0 || o.layer_agg_op != .NONE:
 			shape = 0
 		case oid_is_organ(&o):
 			shape = 1
 		case:
-			shape = max(o.toLayer - o.fromLayer + 1, 0)
+			shape = max(o.to_layer - o.from_layer + 1, 0)
 		}
 	}
 	for s in oid.calc {
@@ -222,8 +222,8 @@ combine_shapes :: proc(a, b: int) -> (int, bool) {
 calc_oid_value :: proc(model: ^core.Monica_Model, oid: OId, allocator := context.allocator) -> (jx.Value, bool) {
 	base := oid
 	base.calc = nil
-	base.roundToDigits = -1
-	base.castTo = .NONE
+	base.round_to_digits = -1
+	base.cast_to = .NONE
 	v, ok := oid_get_value(model, base, allocator)
 	if !ok {
 		return v, false
@@ -235,7 +235,7 @@ calc_oid_value :: proc(model: ^core.Monica_Model, oid: OId, allocator := context
 		}
 		v = calc_apply_json(s.op, v, r, allocator)
 	}
-	return calc_finish(v, oid.roundToDigits, oid.castTo, allocator), true
+	return calc_finish(v, oid.round_to_digits, oid.cast_to, allocator), true
 }
 
 @(private)
