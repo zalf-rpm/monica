@@ -24,9 +24,9 @@ EXTRA=$4
 #define VERSION_REVISION            0
 #define VERSION_BUILD               214
 
-MAJOR_VERSION=$(grep -oP '(?<=VERSION_MAJOR               )[^ ]*' src/resource/version.h)
-MINOR_VERSION=$(grep -oP '(?<=VERSION_MINOR               )[^ ]*' src/resource/version.h)
-PATCH_VERSION=$(grep -oP '(?<=VERSION_REVISION            )[^ ]*' src/resource/version.h)
+MAJOR_VERSION=$(grep -oP '(?<=VERSION_MAJOR               )[^ ]*' src/resource/version.h | tr -d '\r')
+MINOR_VERSION=$(grep -oP '(?<=VERSION_MINOR               )[^ ]*' src/resource/version.h | tr -d '\r')
+PATCH_VERSION=$(grep -oP '(?<=VERSION_REVISION            )[^ ]*' src/resource/version.h | tr -d '\r')
 
 echo MAJOR_VERSION: $MAJOR_VERSION
 echo MINOR_VERSION: $MINOR_VERSION
@@ -68,8 +68,8 @@ if [ "$MAJOR" = true ] || [ "$MINOR" = true ] || [ "$PATCH" = true ] ; then
     sed -i "s/VERSION_MAJOR               .*/VERSION_MAJOR               ${MAJOR_VERSION}/" src/resource/version.h
     sed -i "s/VERSION_MINOR               .*/VERSION_MINOR               ${MINOR_VERSION}/" src/resource/version.h
     sed -i "s/VERSION_REVISION            .*/VERSION_REVISION            ${PATCH_VERSION}/" src/resource/version.h
-    # change file to dos format, since git bash on windows has convert crlf to lf
-    unix2dos src/resource/version.h
+    # no unix2dos: .gitattributes (text=auto) normalizes line endings on commit
+    # anyway, and a CRLF working copy broke reading the version numbers above
 
     # commit only the version file (NEW_VERSION isn't set yet at this point)
     git add src/resource/version.h
