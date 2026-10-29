@@ -220,6 +220,9 @@ tests.
 
 ## 8. Building reproducibly (`pixi.toml`)
 
+All ways to build (pixi, Nix, Docker) and when to use which: `how-to-build.md`. This section is
+about how the pixi build is pinned.
+
 `pixi run build` produces `build/monica-run` and `build/monica-zmq-server`; `pixi run test` runs the
 suite above. Verified byte-identical `sim-min.json` output against a system-toolchain build.
 
