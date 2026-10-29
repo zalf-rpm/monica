@@ -77,6 +77,11 @@ Csv_Via_Header_Options :: struct {
 	convert:                 map[string]Header_Convert_Spec,
 	convert_fn:              map[ACD]Csv_Convert,
 	date_pattern:            string,
+	// not part of the JSON: the file only supplements data it is merged into
+	// (all but the first file in read_climate_data_from_csv_files_via_headers),
+	// so it doesn't need the otherwise required tmin, tmax, precip and
+	// globrad/sunhours
+	supplementary:           bool,
 }
 
 // C++ in-class initialisers: separator(","), noOfHeaderLines{1},
@@ -451,12 +456,13 @@ read_climate_data_from_csv_lines :: proc(
 		if !d.is_valid(date) {
 			continue
 		}
-		if !used_vs[int(ACD.tmin)] || !used_vs[int(ACD.tmax)] || !used_vs[int(ACD.precip)] {
+		if !options.supplementary &&
+		   (!used_vs[int(ACD.tmin)] || !used_vs[int(ACD.tmax)] || !used_vs[int(ACD.precip)]) {
 			continue
 		}
 
 		// if we miss the average air temperature but have min/max, average them
-		if !used_vs[int(ACD.tavg)] {
+		if !used_vs[int(ACD.tavg)] && used_vs[int(ACD.tmin)] && used_vs[int(ACD.tmax)] {
 			vs[int(ACD.tavg)] = (vs[int(ACD.tmin)] + vs[int(ACD.tmax)]) / 2.0
 			used_vs[int(ACD.tavg)] = true
 		}
@@ -468,7 +474,7 @@ read_climate_data_from_csv_lines :: proc(
 				options.latitude,
 			)
 			used_vs[int(ACD.globrad)] = true
-		} else if !used_vs[int(ACD.globrad)] {
+		} else if !used_vs[int(ACD.globrad)] && !options.supplementary {
 			continue
 		}
 
@@ -617,13 +623,22 @@ read_climate_data_from_csv_files_via_headers :: proc(
 	res: tl.EResult(Data_Accessor)
 	res.allocator = allocator
 	final_da := make_data_accessor(allocator)
+	// the first file has to be complete, the others may just replace or add
+	// some climate elements (see data_accessor_merge_climate_data)
+	supplementary_options := options
+	supplementary_options.supplementary = true
 
 	for path_to_file in paths_to_files {
 		if strings.has_prefix(path_to_file, "capnp") {
 			continue // skip capnproto sturdy refs
 		}
 
-		eda := read_climate_data_from_csv_file_via_headers(path_to_file, options, false, allocator)
+		eda := read_climate_data_from_csv_file_via_headers(
+			path_to_file,
+			data_accessor_is_valid(&final_da) ? supplementary_options : options,
+			false,
+			allocator,
+		)
 
 		if !data_accessor_is_valid(&final_da) {
 			final_da = eda.result

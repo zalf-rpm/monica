@@ -9,6 +9,7 @@
 package climate
 
 import "base:runtime"
+import "core:fmt"
 import "core:strconv"
 import "core:strings"
 import d "../date"
@@ -345,6 +346,19 @@ data_accessor_add_climate_data :: proc(
 }
 
 // C++: void DataAccessor::mergeClimateData(DataAccessor, bool)
+// (mas_cpp_misc 96be5bc: merged by climate element)
+//
+// Where the ranges overlap, other's climate elements replace this' (if
+// replace_overlapping_data), also if other has just some of them; elements only
+// in this stay. An element only in other is added if other covers the whole
+// resulting range. The range only grows (other starting earlier or ending
+// later) if other has all of this' elements, so that every element still
+// covers the whole range; else only the part of other within this' range is
+// used. A gap between the two ranges changes nothing.
+//
+// The C++ builds the merged data anew because copies of a DataAccessor share
+// it; this port doesn't share storage (see Data_Accessor), but builds it anew
+// all the same - it is the simplest form of the algorithm.
 data_accessor_merge_climate_data :: proc(
 	da: ^Data_Accessor,
 	other_in: Data_Accessor,
@@ -356,88 +370,126 @@ data_accessor_merge_climate_data :: proc(
 		return
 	}
 
-	if len(da.data) == 0 {
+	if !data_accessor_is_valid(da) {
 		da^ = other
 		return
 	}
 
-	if d.gt(da.start_date, d.add(other.end_date, 1)) ||
-	   d.lt(da.end_date, d.sub(other.start_date, 1)) {
-		// C++ prints a warning to stdout and leaves the data unchanged; that
-		// stdout side effect isn't part of any oracle's JSON output, so it is
-		// not reproduced here.
+	range :: proc(start, end: d.Date) -> string {
+		return fmt.tprintf(
+			"(%s - %s)",
+			d.to_iso_date_string(start, "", context.temp_allocator),
+			d.to_iso_date_string(end, "", context.temp_allocator),
+		)
+	}
+
+	if d.gt(da.start_date, d.add(other.end_date, 1)) || d.gt(other.start_date, d.add(da.end_date, 1)) {
+		fmt.printfln(
+			"Can't prepend or append climate data because together data don't give a continuous timeseries. current: %s new: %s. New climate data won't be appended or prepended.",
+			range(da.start_date, da.end_date),
+			range(other.start_date, other.end_date),
+		)
 		return
-	} else if d.eq(da.start_date, d.add(other.end_date, 1)) {
-		// insert all of other's data before this' data
-		for i in 0 ..< len(da.acd_to_data_index) {
-			index := da.acd_to_data_index[i]
-			if index < 0 {
-				continue
+	}
+
+	// Every climate element of the result has to cover its whole time range.
+	// So the range can only grow beyond this' range if other has all of this'
+	// climate elements (to fill the added days); else only the part of other
+	// overlapping this' range is used.
+	missing_in_other := strings.builder_make(context.temp_allocator)
+	for i in 0 ..< len(da.acd_to_data_index) {
+		if da.acd_to_data_index[i] >= 0 && other.acd_to_data_index[i] < 0 {
+			if strings.builder_len(missing_in_other) > 0 {
+				strings.write_string(&missing_in_other, ", ")
 			}
-			odai := other.data[index]
-			merged := make([dynamic]f64, 0, len(odai) + len(da.data[index]), allocator)
-			append(&merged, ..odai[:])
-			append(&merged, ..da.data[index][:])
-			da.data[index] = merged
+			strings.write_string(&missing_in_other, acd_csv_name(ACD(i)))
 		}
-		da.start_date = other.start_date
-		da.number_of_steps = len(da.data) == 0 ? 0 : len(da.data[0])
-	} else if d.eq(d.add(da.end_date, 1), other.start_date) {
-		// insert all of other's data after this' data
-		for i in 0 ..< len(da.acd_to_data_index) {
-			index := da.acd_to_data_index[i]
-			if index < 0 {
-				continue
+	}
+	new_start, new_end := da.start_date, da.end_date
+	if d.lt(other.start_date, da.start_date) || d.gt(other.end_date, da.end_date) {
+		if strings.builder_len(missing_in_other) == 0 {
+			if d.lt(other.start_date, new_start) {
+				new_start = other.start_date
 			}
-			odai := other.data[index]
-			append(&da.data[index], ..odai[:])
+			if d.gt(other.end_date, new_end) {
+				new_end = other.end_date
+			}
+		} else {
+			fmt.printfln(
+				"Can't extend climate data %s with %s, because the new data lack %s. Only the new data within %s will be used.",
+				range(da.start_date, da.end_date),
+				range(other.start_date, other.end_date),
+				strings.to_string(missing_in_other),
+				range(da.start_date, da.end_date),
+			)
 		}
-		da.end_date = other.end_date
-		da.number_of_steps = len(da.data) == 0 ? 0 : len(da.data[0])
-	} else if d.ge(da.start_date, other.start_date) && d.le(da.end_date, other.end_date) {
-		// all of this' data will be overwritten
-		da^ = other
-		return
-	} else {
-		prepend_count := d.diff(da.start_date, other.start_date)
-		append_count := d.diff(other.end_date, da.end_date)
+	}
 
-		for i in 0 ..< len(da.acd_to_data_index) {
-			index := da.acd_to_data_index[i]
-			if index < 0 {
-				continue
-			}
-			odai := other.data[index]
+	n := d.diff(new_end, new_start) + 1
+	// the days [o_from, o_to] of the result other has data for
+	o_from := d.gt(other.start_date, new_start) ? other.start_date : new_start
+	o_to := d.lt(other.end_date, new_end) ? other.end_date : new_end
+	o_from_pos, o_to_pos := d.diff(o_from, new_start), d.diff(o_to, new_start)
+	this_from_pos, this_to_pos := d.diff(da.start_date, new_start), d.diff(da.end_date, new_start)
+	other_covers_result := d.le(other.start_date, new_start) && d.ge(other.end_date, new_end)
 
-			if prepend_count > 0 {
-				prefix := make([dynamic]f64, 0, prepend_count, allocator)
-				append(&prefix, ..odai[:prepend_count])
-				append(&prefix, ..da.data[index][:])
-				da.data[index] = prefix
-			}
+	data := make([dynamic][dynamic]f64, 0, len(da.acd_to_data_index), allocator)
+	acd_to_data_index := make([dynamic]i16, len(da.acd_to_data_index), allocator)
+	for i in 0 ..< len(da.acd_to_data_index) {
+		acd_to_data_index[i] = -1
+		ti := da.acd_to_data_index[i]
+		oi := other.acd_to_data_index[i]
+		if ti < 0 && oi < 0 {
+			continue
+		}
 
-			if replace_overlapping_data {
-				dii := abs_int(prepend_count)
-				odaii := prepend_count < 0 ? 0 : prepend_count
-				for dii < len(da.data[index]) && odaii < len(odai) {
-					da.data[index][dii] = odai[odaii]
-					dii += 1
-					odaii += 1
+		if ti < 0 && !other_covers_result {
+			fmt.printfln(
+				"Can't add climate element %s from %s, because it doesn't cover the whole time range %s.",
+				acd_csv_name(ACD(i)),
+				range(other.start_date, other.end_date),
+				range(new_start, new_end),
+			)
+			continue
+		}
+
+		v := make([dynamic]f64, n, allocator)
+		if ti >= 0 {
+			td := da.data[ti][da.from_step:]
+			copy(v[this_from_pos:this_to_pos + 1], td[:this_to_pos - this_from_pos + 1])
+		}
+		if oi >= 0 {
+			od := other.data[oi][other.from_step + d.diff(o_from, other.start_date):]
+			for pos in o_from_pos ..= o_to_pos {
+				in_this_range := ti >= 0 && pos >= this_from_pos && pos <= this_to_pos
+				if !in_this_range || replace_overlapping_data {
+					v[pos] = od[pos - o_from_pos]
 				}
 			}
-
-			if append_count > 0 {
-				append(&da.data[index], ..odai[len(odai) - append_count:])
-			}
 		}
-		if prepend_count > 0 {
-			da.start_date = other.start_date
-		}
-		if append_count > 0 {
-			da.end_date = other.end_date
-		}
-		da.number_of_steps = len(da.data) == 0 ? 0 : len(da.data[0])
+		append(&data, v)
+		acd_to_data_index[i] = i16(len(data) - 1)
 	}
+
+	da.data = data
+	da.acd_to_data_index = acd_to_data_index
+	da.from_step = 0
+	da.number_of_steps = n
+	da.start_date = new_start
+	da.end_date = new_end
+}
+
+// The name a CSV header uses for a climate element (tmin, precip, co2, ...),
+// for messages: the reverse of name2acd. C++: in mergeClimateData, the first
+// name in name2acd's (std::map, so alphabetical) order - wind, not windspeed.
+acd_csv_name :: proc(acd: ACD) -> string {
+	best := ""
+	for name, a in name2acd(context.temp_allocator) {
+		if a == acd && (best == "" || name < best) {
+			best = name
+		}
+	}
+	return best != "" ? best : fmt.tprint(acd)
 }
 
 // C++: void DataAccessor::addOrReplaceClimateData(ACD, const vector<double>&)
@@ -600,11 +652,6 @@ data_accessor_to_json :: proc(da: ^Data_Accessor, a: Allocator) -> jx.Value {
 // ---------------------------------------------------------------------------
 // local helpers
 // ---------------------------------------------------------------------------
-
-@(private)
-abs_int :: proc(v: int) -> int {
-	return v < 0 ? -v : v
-}
 
 // C++: template<class Collection> J11Array Tools::toPrimJsonArray(const Collection&)
 @(private)
