@@ -30,7 +30,7 @@
     "command": "raddbg _cmake_debug/monica-run.exe -m installer/Hohenfinow2/sim-min.json",
     "cwd": "$ZED_WORKTREE_ROOT",
     "env": {
-      "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/../monica-parameters",
+      "MONICA_PARAMETERS": "$ZED_WORKTREE_ROOT/monica-parameters",
     },
   },
   // Linux: the Debug build in build/, in the Nix dev shell (flake.nix). `direnv

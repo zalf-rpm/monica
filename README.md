@@ -84,6 +84,10 @@ workers, taking jobs on port 6666 and returning results on port 7777.
 
 # Building
 
+**[how-to-build.md](how-to-build.md)** explains all ways to build MONICA on
+Linux and Windows - Nix, the Nix dev shell, pixi, Visual Studio, Docker -,
+where each one builds, and which one the Zed tasks use. The short version:
+
 Clone with the git submodules:
 
     git clone --recurse-submodules https://github.com/zalf-rpm/monica.git
@@ -103,12 +107,15 @@ Linux, the compiler. vcpkg provides Cap'n Proto, ZeroMQ and libsodium: if
 
 ## With Nix (Linux)
 
-    nix build                   # all executables in result/bin
+    nix build                   # Release, all executables in result/bin
+    nix build .#monica-debug    # Debug, also in result/bin (replaces the link)
     nix develop                 # shell with all dependencies, then e.g.:
-    cmake -B _cmake_release -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build _cmake_release
+    cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build
 
 With [direnv](https://direnv.net) (and nix-direnv), the dev shell activates
-automatically in the checkout after a one-time `direnv allow`.
+automatically in the checkout after a one-time `direnv allow`, and configures
+the Debug build in `build/` that the Zed tasks use (see
+[how-to-build.md](how-to-build.md)).
 
 ## Manually with vcpkg
 
