@@ -1,6 +1,13 @@
 # Plan: merge climate data by climate element (port of mas_cpp_misc 96be5bc)
 
 Written 2026-10-28 from the C++ side, for whoever does this in the Odin port.
+
+**Status (2026-10-29): done.** Ported in `75bfbcff` (merge, supplementary CSV files,
+`tests/climate_merge_test.odin` with the cases below); the C++ master commits with the test cases
+(`89598626`, `242d7283`, `mas_cpp_misc` at `4325d88`) are cherry-picked, and `cpp_reference` points
+to `242d7283`. Locally, Odin's `sim-min-co2.json` and `sim-min-warmer.json` outputs are identical
+to the C++ ones, section by section; the warmer case first differs from a single climate file on
+1993-01-01.
 C++ reference: `mas_cpp_misc` commit `96be5bc` ("mergeClimateData: merge by
 climate element, also partial and adding files") - files
 `climate/climate-common.cpp` (`DataAccessor::mergeClimateData`),
