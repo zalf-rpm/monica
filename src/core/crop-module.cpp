@@ -3841,6 +3841,13 @@ CropModule::fc_CropGrossPhotosynthesis_h(double inst_diff_rad, double inst_dir_r
   // empirical extinction coefficient fo diffuse radiation, crop-dependent (and maybe even
   // development stage dependent in some cases)
   double kdf = cultivarPs.pc_EmpiricalExtinctionCoeffDiffuse;
+  // there is no default (it is -1), so it has to be set in the cultivar parameters
+  if (kdf <= 0.0) {
+    throw runtime_error("EmpiricalExtinctionCoeffDiffuse has to be set (> 0) in the cultivar "
+                        "parameters of " +
+                        speciesPs.pc_SpeciesId + "/" + cultivarPs.pc_CultivarId +
+                        " when hourly photosynthesis is enabled");
+  }
   double kdfRef =
       0.6; // FS: using default kdf of 0.6 for grassland for now
            //     also tested 0.7, since ET0 is only 12cm high grass by definition, which should be
