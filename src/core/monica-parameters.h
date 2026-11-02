@@ -146,26 +146,19 @@ struct DLL_API SpeciesParameters : public Tools::Json11Serializable {
   int pc_CuttingDelayDays{0};
   double pc_DroughtImpactOnFertilityFactor{0.0};
 
-  double EF_MONO{0.5}; //!< = MTsynt [ug gDW-1 h-1] Monoterpenes, which will be emitted right after synthesis
-  double EF_MONOS{0.5};
-  //! = MTpool [ug gDW-1 h-1] Monoterpenes, which will be stored after synthesis in stores (mostly intra- oder intercellular space of leafs and then are being emitted; quasi evaporation)
-  double EF_ISO{0}; //! Isoprene emission factor
-  double VCMAX25{0}; //!< maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
-  double AEKC{65800.0};
-  //!< activation energy for Michaelis-Menten constant for CO2 (J mol-1) | MONICA default=65800.0 | LDNDC default=59356.0
-  double AEKO{1400.0};
-  //!< activation energy for Michaelis-Menten constant for O2 (J mol-1) | MONICA default=65800.0 | LDNDC default=35948.0
-  double AEVC{68800.0};
-  //!< activation energy for photosynthesis (J mol-1) | MONICA default=68800.0 | LDNDC default=58520.0
-  double KC25{460.0};
-  //!< Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1) | MONICA default=460.0 | LDNDC default=260.0
-  double KO25{330.0};
-  //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
+  double EF_MONO{0.5};  //!< = MTsynt [ug gDW-1 h-1] Monoterpenes, which will be emitted right after synthesis
+  double EF_MONOS{0.5}; //! = MTpool [ug gDW-1 h-1] Monoterpenes, which will be stored after synthesis in stores (mostly intra- oder intercellular space of leafs and then are being emitted; quasi evaporation)
+  double EF_ISO{0};     //! Isoprene emission factor
+  double VCMAX25{0};    //!< maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
+  double AEKC{65800.0}; //!< activation energy for Michaelis-Menten constant for CO2 (J mol-1) | MONICA default=65800.0 | LDNDC default=59356.0
+  double AEKO{1400.0};  //!< FS: Is this really correct?   activation energy for Michaelis-Menten constant for O2 (J mol-1) | MONICA default=65800.0 | LDNDC default=35948.0
+  double AEVC{68800.0}; //!< activation energy for photosynthesis (J mol-1) | MONICA default=68800.0 | LDNDC default=58520.0
+  double KC25{460.0};   //!< Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1) | MONICA default=460.0 | LDNDC default=260.0
+  double KO25{330.0};   //!< Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1) | MONICA default=330.0 | LDNDC default=179.0
 
-  int pc_TransitionStageLeafExp{-1}; //!< [1-7]
-  int dormancyStartDoy{0}; //!< start dormancy of perennial crops at that DOY (0 = unset)
-  int dormancyEndDoy{0};
-  //!< end dormancy of perennial crops at that DOY, start accumulating temperature sums (0 = unset)
+  int pc_TransitionStageLeafExp{-1};  //!< [1-7]
+  int dormancyStartDoy{0};            //!< start dormancy of perennial crops at that DOY (0 = unset)
+  int dormancyEndDoy{0};              //!< end dormancy of perennial crops at that DOY, start accumulating temperature sums (0 = unset)
 };
 
 typedef std::shared_ptr<SpeciesParameters> SpeciesParametersPtr;
@@ -192,11 +185,13 @@ struct DLL_API CultivarParameters : public Tools::Json11Serializable {
   std::string pc_Description;
   bool pc_Perennial{false};
   //std::string pc_PermanentCultivarId;
-  double pc_MaxAssimilationRate{0.0};
-  double pc_LightExtinctionCoefficient{0.8};
-  double pc_MaxCropHeight{0.0};
-  double pc_ResidueNRatio{0.0};
-  double pc_LT50cultivar{0.0};
+  double pc_MaxAssimilationRate{ 0.0 };
+  double pc_LightExtinctionCoefficient{ 0.8 };
+  double pc_EmpiricalExtinctionCoeffDiffuse{ -1.0 };  //FS: The default value -1.0 does not make sense and should cause an error in the model if no crop-specific value is provided in the json (this parameter has to be specified by the user in the file, no default allowed).
+  // double pc_EmpiricalExtinctionCoeffDiffuse{ 0.0 }; //param for hourly SUCROS87-style photosynthesis model //FS: maybe as growth stage dependent vector<double> pc_EmpiricalExtinctionCoeffDiffuse{ 0., 0., 0., 0., 0., 0., 0. } in the future
+  double pc_MaxCropHeight{ 0.0 };
+  double pc_ResidueNRatio{ 0.0 };
+  double pc_LT50cultivar{ 0.0 };
 
   double pc_CropHeightP1{0.0};
   double pc_CropHeightP2{0.0};
@@ -745,12 +740,21 @@ struct DLL_API CropModuleParameters : public Tools::Json11Serializable {
   bool pc_AdjustRootDepthForSoilProps{true};
   std::vector<int> pc_TimeUnderAnoxiaThreshold{4, 4, 4, 4, 4, 4, 4};
 
-  bool __enable_Phenology_WangEngelTemperatureResponse__{false};
-  bool __enable_Photosynthesis_WangEngelTemperatureResponse__{false};
-  bool __enable_hourly_FvCB_photosynthesis__{false};
-  bool __enable_T_response_leaf_expansion__{false};
-  bool __disable_daily_root_biomass_to_soil__{false};
-  bool __enable_vernalisation_factor_fix__{false};
+  bool __enable_Phenology_WangEngelTemperatureResponse__{ false };
+  bool __enable_Photosynthesis_WangEngelTemperatureResponse__{ false };
+  bool __enable_hourly_FvCB_photosynthesis__{ false };
+  
+  int __enable_hourly_photosynthesis__{ 0 };      //FS: should be 0 (=false) by default (1=true, 2=minimal version)
+  bool __enable_hourly_respiration__{ false };    //FS: should be false by default
+  bool __enable_hourly_outputs__{ false };        //FS: should be false by default
+  json11::Json::object __hourly_in_data__;        //FS: quick & dirty option to read in hourly irradiance and temperature data dictionary style
+  double __longitude__{ 0.0 };                    //FS: longitude required for hourly solar position calculations using real world time (required e.g. for consistency if real world hourly data is read in)
+  double __UTC_offset__{ 0.0 };                   //FS: UTC offset required for hourly solar position calculations using real world time (required e.g. for consistency if real world hourly data is read in)
+  bool __enable_leaf_temperature__{false};        //FS: leaf temperature model (used in hourly photosynthesis code)
+  
+  bool __enable_T_response_leaf_expansion__{ false };
+  bool __disable_daily_root_biomass_to_soil__{ false };
+  bool __enable_vernalisation_factor_fix__{ false };
   bool __enable_PASW_root_penetration__{false};
 
   bool isIntercropping{false};

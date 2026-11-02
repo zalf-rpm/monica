@@ -230,3 +230,16 @@ result-*
 tests/.suites/
 # direnv (.envrc: use flake)
 .direnv/
+
+
+
+##########
+## VS Code
+##########
+
+.vscode/
+sim-out.csv
+sim-hp-out.csv
+sim-min-out.csv
+sim-min-hp-out.csv
+hourly-outputs.csv

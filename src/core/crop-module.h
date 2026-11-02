@@ -34,6 +34,7 @@ Copyright (C) Leibniz Centre for Agricultural Landscape Research (ZALF)
 #include "model/monica/monica_state.capnp.h"
 
 #include "monica-parameters.h"
+#include "photosynthesis-hourly.h"
 #include "soilcolumn.h"
 #include "voc-common.h"
 #include "run/cultivation-method.h"
@@ -144,12 +145,125 @@ public:
 
   void addAndDistributeRootBiomassInSoil(double rootBiomass);
 
+/**
+ * @brief intercellular oxygen partial pressure
+ * 
+ * @param vw_MeanAirTemperature
+ * @return Oi
+ */
+  double Oi_empirical(double vw_MeanAirTemperature) const;
+
+  /**
+ * @brief intercellular CO2 partial pressure
+ * 
+ * approach to derive intercellular CO2 concentration Ci from Ca seems to be simplified (no stomatal conductance coupling model).
+ * 
+ * @param vw_MeanAirTemperature
+ * @param vw_AtmosphericCO2Concentration
+ * @return Ci
+ */
+  double Ci_empirical(double vw_MeanAirTemperature, double vw_AtmosphericCO2Concentration) const;
+
+  /**
+   * @brief helper function to calculate vc_KTkc, vc_KTko, term1 and term2
+   * 
+   * @param vw_MeanAirTemperature 
+   * @return std::tuple<double, double, double, double> consisting of:
+   *  vc_KTkc  Factor needed to account for temperature-dependency of Michaelis-Menten constant for CO2 (photosynthesis method). and also used in CropModule::fc_CropDryMatter method.
+   *  vc_KTko  Factor to account for temperature-dependency of Michaelis-Menten constant for O2.
+   *  term1
+   *  term2
+   */
+  std::tuple<double, double, double, double> fc_KTkc_vc_KTko_term1_term2(double vw_MeanAirTemperature) const;
+
+  struct A_rubisco_results {
+      double vc_AssimilationRate;
+      double vc_AssimilationRateReference;
+      double vc_RadiationUseEfficiency;
+      double vc_RadiationUseEfficiencyReference;
+      double vc_KTkc;
+  };
+  /**
+   * @brief Rubisco-controlled rate of CO2 assimilation (=carboxylation-limited FvCB assimilation rate)
+   * 
+   * kept very close to the original MONICA daily photosyntheisis code for now
+   * 
+   * @param vw_MeanAirTemperature                Temperature used for temperature-dependency of FvCB RuBisCO limitation. For daily photosynthesis, daily mean air temperature is used for now.
+   *                                             For hourly photosynthesis, hourly mean air temperature is used for now (no canopy temperature implemented yet).
+   * @param Cc                                   Chloroplast CO2 partial pressure (=CO2 partial pressure at the carboxylating sites of Rubisco).
+   * @param O                                    Oxygen partial pressure.
+   * @param _cropPhotosynthesisResults           Default Voc::CPData monica::CropModule::_cropPhotosynthesisResults to be altered by the function. Seems to be a helper struct used for debugging?
+   * @return A_rubisco_results (vc_AssimilationRate, vc_AssimilationRateReference, vc_RadiationUseEfficiency, vc_RadiationUseEfficiencyReference, vc_KTkc)
+   */
+  A_rubisco_results A_rubisco(double vw_MeanAirTemperature, double Cc, double O, Voc::CPData &_cropPhotosynthesisResults) const;
+
+  struct crop_r {
+    double r_aero;  //crop aerodynamic resistance
+    double r_stom;  //crop stomata resistance
+    double r_surf;  //crop surface resistance
+  };
+  crop_r crop_aerodyn_stomata_surface_resistances(double vc_SaturatedVapourPressure,
+                                                  double vc_VapourPressure,
+                                                  double vc_CropHeight,
+                                                  double A_gross,
+                                                  double LAI_sunlit,
+                                                  double vw_AtmosphericCO2Concentration,
+                                                  double pc_StomataConductanceAlpha,
+                                                  double pc_SaturationBeta,
+                                                  double vs_HeightNN,
+                                                  double vw_WindSpeed,
+                                                  double vw_WindSpeedHeight);
+
+  double leafTemperature_Paw(double globalRad_Wpm2ps,
+                             double Ta_K,
+                             double crop_AerodynamicResistance,
+                             double crop_SurfaceResistance,
+                             double vc_VapourPressure,
+                             double vc_SaturatedVapourPressure,
+                             double vc_SaturatedVapourPressureSlope,
+                             double vc_PsycrometerConstant);
+
+  struct subdaily_data {
+    std::vector<double> hourlyGlobrad;  // [MJ m-2 per model timestep]
+    std::vector<double> hourlyExtrarad; // [MJ m-2 per model timestep]
+    std::vector<double> hourlySolarEl;
+    std::vector<double> hourlyAirT;
+    std::vector<double> hourlyIdif;     // [MJ m-2 per model timestep]
+    std::vector<double> hourlyIdir;     // [MJ m-2 per model timestep]
+    std::vector<double> hourlyRH;
+    std::vector<double> hourlyWindSpeed;
+    std::vector<double> hourlyPrecip;
+    double sunriseH;
+    double sunsetH;
+    std::vector<int> _nvars_read_from_json;
+  };
+
+  subdaily_data subdaily_meteodata(const Tools::Date &currentDate, double vw_MinAirTemperature, double vw_MaxAirTemperature, double vw_WindSpeed, hPhoto::unit RadiationInUnit=hPhoto::unit::Wpm2);
+
+  struct GP_results {
+    double A;       // canopy gross photosynthesis for the whole canopy
+    double A_Ref;   // canopy gross photosynthesis for the whole canopy
+    double KTkc;    // Factor needed to account for temperature-dependency of Michaelis-Menten constant for CO2 (photosynthesis method).
+    double LAI_sl;  // canopy sunlit LAI
+    double A_sl;    // sunlit canopy gross photosynthesis (A_sl_canop * LAI_sl_canop)
+    double T_canop; // canopy temperature (on average, over all layers and shaded & sunlit leaves; first guess: air temperature)
+  };
+  GP_results fc_CropGrossPhotosynthesis_h(double inst_diff_rad,
+                                          double inst_dir_rad,
+                                          double solarElevation_rad,
+                                          double leafTemperature,
+                                          double vw_AtmosphericCO2Concentration); // ,
+                                          // double vw_AtmosphericO3Concentration);
+
+  GP_results subdaily_photosynthesis(size_t i, const CropModule::subdaily_data &sd, double vw_AtmosphericCO2Concentration, double parfrac, bool cscor, bool parcor);
+
   void fc_CropPhotosynthesis(double vw_MeanAirTemperature,
                              double vw_MaxAirTemperature,
                              double vw_MinAirTemperature,
                              double vw_AtmosphericCO2Concentration,
                              double vw_AtmosphericO3Concentration,
-                             Tools::Date currentDate);
+                             Tools::Date currentDate,
+                             double vw_WindSpeed);
 
   void fc_HeatStressImpact(double vw_MeanAirTemperature,
                            double vw_MaxAirTemperature);
@@ -158,6 +272,8 @@ public:
                     double vw_MaxAirTemperature);
 
   void fc_DroughtImpactOnFertility();
+
+  void fc_DroughtImpactOnFertility_h();
 
   void fc_CropNitrogen();
 
@@ -171,10 +287,39 @@ public:
                                         double vw_WindSpeedHeight,
                                         double vw_AtmosphericCO2Concentration);
 
+  double fc_ReferenceEvapotranspiration_h(double vw_DewAirTemperature, double vw_RelativeHumidity_h,
+                                          double vw_MeanAirTemperature_h,
+                                          double vw_WindSpeed_h, double vw_WindSpeedHeight,
+                                          double vw_AtmosphericCO2Concentration,
+                                          double vc_ExtraterrestrialRadiation_h, double vc_ExtraterrestrialRadiation_3h_b4_sunseth,
+                                          double vc_GlobalRadiation_h, double vc_GlobalRadiation_3h_b4_sunseth,
+                                          double vc_GrossPhotosynthesisReference_mol_h, bool is_daytime,
+                                          bool calc_soilHeatflux=true);
+
+  double fc_ReferenceEvapotranspiration_notApplied(double vw_MaxAirTemperature,
+                                        double vw_MinAirTemperature,
+                                        double vw_RelativeHumidity,
+                                        double vw_MeanAirTemperature,
+                                        double vw_WindSpeed,
+                                        double vw_WindSpeedHeight,
+                                        double vw_AtmosphericCO2Concentration);
+
   void fc_CropWaterUptake(size_t vm_GroundwaterTable,
                           double vw_GrossPrecipitation,
                           double vc_CurrentTotalTemperatureSum,
                           double vc_TotalTemperatureSum);
+
+  std::pair<double, double> fc_CropInterception(double vw_GrossPrecipitation, double vc_InterceptionStorage);
+
+  void update_extracted_soilColumn_params_from_daily();
+
+  void fc_CropWaterUptake_h(size_t vm_GroundwaterTable,
+                            double vc_ReferenceEvapotranspiration_h); //, double vc_OxygenDeficit_h);
+
+  std::pair<std::vector<double>, double> fc_CropWaterUptake_notApplied(const size_t vc_GroundwaterTable,
+                                                                                   const double vc_ReferenceEvapotranspiration_h,
+                                                                                   const double vc_InterceptionStorage,
+                                                                                   const double potET_limit=6.5);
 
   void fc_CropNUptake(size_t vm_GroundwaterTable,
                       double /*vc_CurrentTotalTemperatureSum*/,
@@ -477,6 +622,13 @@ public:
   double vc_TranspirationReduced{0.0};
   double rootNRedux{0.0}; //! old REDWU
   int vc_TimeUnderAnoxia{0};
+  double vc_TranspirationDeficit_h{ 1.0 };                                  // FS: hourly
+  double vc_PotentialTranspirationDeficit_h{ 0.0 };                         // FS: hourly
+  double vc_ActualTranspirationDeficit_h{ 0.0 };                            // FS: hourly
+  double vc_TranspirationReduced_h{ 0.0 };                                  // FS: hourly
+  std::vector<double> scp_FieldCapacity;                                    // FS test
+  std::vector<double> scp_PermanentWiltingPoint;                            // FS test
+  std::vector<double> vc_AvailableWaterPercentage_num_remaining;            // FS test
 
 private:
   Intercropping& _intercropping;
@@ -506,6 +658,7 @@ private:
   double vc_AbovegroundBiomassOld{0.0}; //! old OBALT
   std::vector<bool> pc_AbovegroundOrgan; //! old KOMP
   double vc_ActualTranspiration{0.0};
+  double vc_ActualTranspiration_h{0.0};                                     // FS: hourly
   std::vector<std::vector<double>> pc_AssimilatePartitioningCoeff; //! old PRO
   double pc_AssimilateReallocation{};
   double vc_Assimilates{0.0};
@@ -546,7 +699,9 @@ private:
   int pc_DevelopmentAccelerationByNitrogenStress{};
   size_t vc_DevelopmentalStage{0}; //! old INTWICK
   int _noOfCropSteps{0};
+  int _noOfHourlySteps_Devstage_gt_0{0};                                    // FS: number of hourly steps with development stage > 0
   double vc_DroughtImpactOnFertility{1.0};
+  double vc_DroughtImpactOnFertility_h{1.0};                                // FS: hourly
   double pc_DroughtImpactOnFertilityFactor{};
   std::vector<double> pc_DroughtStressThreshold; //! old DRYswell
   bool pc_EmergenceFloodingControlOn{};
@@ -556,6 +711,7 @@ private:
   bool vc_ErrorStatus{false};
   std::string vc_ErrorMessage;
   double vc_EvaporatedFromIntercept{0.0};
+  double vc_EvaporatedFromIntercept_h{0.0};                                 // FS: hourly
   double vc_ExtraterrestrialRadiation{0.0};
   double pc_FieldConditionModifier{};
   size_t vc_FinalDevelopmentalStage{0};
@@ -575,10 +731,19 @@ private:
   double pc_HeatSumIrrigationStart{};
   double pc_HeatSumIrrigationEnd{};
   double vs_HeightNN{};
+  double vc_AtmosphericPressure{};                                          // [kPa]      FS: calculated in CropModule::step(...);
+  double vc_PsycrometerConstant{};                                          // [kPa °C-1] FS: calculated in CropModule::step(...);
+  double vc_SaturatedVapourPressure_h{};                                    // [kPa]      FS: calculated in CropModule::fc_ReferenceEvapotranspiration_h(...);
+  double vc_VapourPressure_h{};                                             // [kPa]      FS: calculated in CropModule::fc_ReferenceEvapotranspiration_h(...);
+  double vc_SaturatedVapourPressureSlope_h{};                               // [kPa °C-1] FS: calculated in CropModule::fc_ReferenceEvapotranspiration_h(...);
+  double vc_crop_AerodynamicResistance_h{};                                 // [s m-1]    FS: calculated in CropModule::crop_aerodyn_stomata_surface_resistances(...);
+  double vc_crop_StomataResistance_h{};                                     // [s m-1]    FS: calculated in CropModule::crop_aerodyn_stomata_surface_resistances(...);
+  double vc_crop_SurfaceResistance_h{};                                     // [s m-1]    FS: calculated in CropModule::crop_aerodyn_stomata_surface_resistances(...);
   double pc_InitialKcFactor{}; //! old Kcini
   std::vector<double> pc_InitialOrganBiomass;
   double pc_InitialRootingDepth{};
   double vc_InterceptionStorage{0.0};
+  double vc_InterceptionStorage_remaining{0.0};                             // FS: hourly
   double vc_KcFactor{0.6}; //! old FKc
   double vc_LeafAreaIndex{0.0}; //! old LAI
   std::vector<double> vc_sunlitLeafAreaIndex;
@@ -632,15 +797,18 @@ private:
   std::vector<std::vector<double>> pc_OrganSenescenceRate; //! old DEAD
   double vc_OvercastDayRadiation{0.0}; //! old DRO
   double vc_OxygenDeficit{0.0}; //! old LURED
+  double vc_OxygenDeficit_h{0.0};                                           // FS: hourly
   double pc_PartBiologicalNFixation{};
   bool pc_Perennial{false};
   double vc_PhotoperiodicDaylength{0.0}; //! old DLP
   double vc_PhotActRadiationMean{0.0}; //! old RDN
   double pc_PlantDensity{};
   double vc_PotentialTranspiration{0.0};
+  double vc_PotentialTranspiration_h{0.0};                                  // FS: hourly
   double vc_ReferenceEvapotranspiration{0.0};
   double vc_RelativeTotalDevelopment{0.0};
   double vc_RemainingEvapotranspiration{0.0};
+  double vc_RemainingEvapotranspiration_h{0.0};                             // FS test
   double vc_ReserveAssimilatePool{0.0}; //! old ASPOO
   double pc_ResidueNRatio{};
   double pc_RespiratoryStress{};
@@ -650,6 +818,7 @@ private:
   std::vector<double> vc_RootDiameter; //! old WRAD
   double pc_RootDistributionParam{};
   std::vector<double> vc_RootEffectivity; //! old WUEFF
+  std::vector<double> vc_RootEffectivity_h;                                 // FS test
   double pc_RootFormFactor{};
   double pc_RootGrowthLag{};
   size_t vc_RootingDepth{0}; //! old WURZ
@@ -678,10 +847,16 @@ private:
   //double vc_TheoreticalGDDAccumulated{0.0}; //!< Total GDD accumulated since crop start (for phase tracking)
   std::vector<double> pc_StageTemperatureSum; //! old TSUM
   double vc_StomataResistance{0.0}; //! old RSTOM
+  double vc_StomataResistance_h{0.0};                                       // FS: hourly
+  double vc_AerodynamicResistance_h{};                                      // FS: hourly (wind speed dependent) aerodynamic resistance
+  double vc_GrossCO2Assimilation_h_pre{0.0};                                // FS: hourly; for testing only
+  double dT_pre{0.0};                                                       // FS: hourly; for testing only
   std::vector<bool> pc_StorageOrgan;
   int vc_StorageOrgan{4};
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0}; //! old dt
+  double vc_OverclockingTimeStep = {1.0};                                   // FS: overclocking time step length [hours]
+  double vc_OcTS_num = {24.0};                                              // FS: number of time steps per day (=24.0/vc_OverclockingTimeStep)
   int TimeUnderAnoxiaThresholdDefault = 4;
   std::vector<int> vc_TimeUnderAnoxiaThreshold;
   double vs_Tortuosity{}; //! old AD
@@ -698,6 +873,8 @@ private:
   double vc_TemperatureSumToFlowering{0.0};
   std::vector<double> vc_Transpiration; //! old TP
   std::vector<double> vc_TranspirationRedux; //! old TRRED
+  std::vector<double> vc_Transpiration_h;                                   // FS test
+  std::vector<double> vc_TranspirationRedux_h;                              // FS test
   double vc_VernalisationDays{0.0}; //
   double vc_VernalisationFactor{0.0}; //! old FV
   std::vector<double> pc_VernalisationRequirement; //! old VSCHWELL
@@ -763,6 +940,9 @@ private:
 #ifdef TEST_HOURLY_OUTPUT
 std::ostream& tout(bool closeFile = false);
 #endif
+
+std::ostream& hout(bool closeFile = false); // FS: hourly output data
+
 } // namespace monica
 
 
