@@ -1323,9 +1323,12 @@ double SoilMoisture::ReferenceEvapotranspiration(double vs_HeightNN, double vw_M
   vm_SurfaceResistance = vc_StomataResistance / 1.44;
 
   double vc_ClearSkySolarRadiation = (0.75 + 0.00002 * vs_HeightNN) * vc_ExtraterrestrialRadiation;
-  double vc_RelativeShortwaveRadiation = vc_ClearSkySolarRadiation > 0
-                                           ? min(vw_GlobalRadiation / vc_ClearSkySolarRadiation, 1.0)
-                                           : 1.0;
+  // keep between 0.33 (total cloud cover) and 1.0, see
+  // https://www.fao.org/4/x0490e/x0490e07.htm#radiation (FAO-56)
+  double vc_RelativeShortwaveRadiation =
+      vc_ClearSkySolarRadiation > 0
+          ? bound(0.33, vw_GlobalRadiation / vc_ClearSkySolarRadiation, 1.0)
+          : 1.0;
 
   double pc_BolzmannConstant = 0.0000000049;
   double vc_ShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vw_GlobalRadiation;

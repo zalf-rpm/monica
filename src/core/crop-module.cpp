@@ -5207,23 +5207,12 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
   //                                          ? vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation
   //                                          : 0;
 
-  // capped at 1.0 like the soil moisture module and as FAO-56 says
+  // keep between 0.33 (total cloud cover) and 1.0,
+  // see https://www.fao.org/4/x0490e/x0490e07.htm#radiation (FAO-56)
   double vc_RelativeShortwaveRadiation =
       vc_ClearSkyShortwaveRadiation > 0
-          ? std::min(vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation, 1.0)
+          ? bound(0.33, vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation, 1.0)
           : 1.0;
-  // FS: potential bugfix:
-  // -> this might be paritally solved in MONICA 3.7.1 since vc_RelativeShortwaveRadiation is capped
-  // at 1.0 (similar to the FA=-56 implementation in SoilMoisture::ReferenceEvapotranspiration(...))
-  // -> however, there still seems to be no lower bound preventing vc_RelativeShortwaveRadiation <
-  // 0.26 in ... * (1.35 * vc_RelativeShortwaveRadiation - 0.35) * ..., which could still lead
-  // physically implausible negative longwave emission in vw_NetRadiation caclulation
-  vc_RelativeShortwaveRadiation = bound(
-      0.3, vc_RelativeShortwaveRadiation,
-      1.0); // FS: ~ 0.3 is total cloud cover, and anything below that could lead to physically
-            // implausible longwave emission in vw_NetRadiation caclulation
-            //     Not sure yet if capping vc_RelativeShortwaveRadiation or directly capping the
-            //     longwave emmission in vw_NetRadiation calculation below is the correct move here!
 
   double vc_NetShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vc_GlobalRadiation;
 
@@ -5461,13 +5450,9 @@ double CropModule::fc_ReferenceEvapotranspiration_h(
                    // 0.7 to 0.8 in arid and semiarid climates
   }
 
-  // FS: potential bugfix:
-  vc_RelativeShortwaveRadiation_h = bound(
-      0.3, vc_RelativeShortwaveRadiation_h,
-      1.0); // FS: ~ 0.3 is total cloud cover, and anything below that could lead to physically
-            // implausible longwave emission in vw_NetRadiation_h caclulation
-            //     Not sure yet if capping vc_RelativeShortwaveRadiation or directly capping the
-            //     longwave emmission in vw_NetRadiation calculation below is the correct move here!
+  // keep between 0.33 (total cloud cover) and 1.0,
+  // see https://www.fao.org/4/x0490e/x0490e07.htm#radiation (FAO-56)
+  vc_RelativeShortwaveRadiation_h = bound(0.33, vc_RelativeShortwaveRadiation_h, 1.0);
 
   double vc_NetShortwaveRadiation_h =
       (1.0 - pc_ReferenceAlbedo) *
@@ -5661,16 +5646,12 @@ double CropModule::fc_ReferenceEvapotranspiration_notApplied(
   double vc_ClearSkyShortwaveRadiation =
       (0.75 + 0.00002 * vs_HeightNN) * vc_ExtraterrestrialRadiation;
 
+  // keep between 0.33 (total cloud cover) and 1.0, see
+  // https://www.fao.org/4/x0490e/x0490e07.htm#radiation (FAO-56)
   double vc_RelativeShortwaveRadiation =
-      vc_ClearSkyShortwaveRadiation > 0 ? vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation : 0;
-
-  // FS: potential bugfix:
-  vc_RelativeShortwaveRadiation = bound(
-      0.3, vc_RelativeShortwaveRadiation,
-      1.0); // FS: ~ 0.3 is total cloud cover, and anything below that could lead to physically
-            // implausible longwave emission in vw_NetRadiation caclulation
-            //     Not sure yet if capping vc_RelativeShortwaveRadiation or directly capping the
-            //     longwave emmission in vw_NetRadiation calculation below is the correct move here!
+      vc_ClearSkyShortwaveRadiation > 0
+          ? bound(0.33, vc_GlobalRadiation / vc_ClearSkyShortwaveRadiation, 1.0)
+          : 1.0;
 
   double vc_NetShortwaveRadiation = (1.0 - pc_ReferenceAlbedo) * vc_GlobalRadiation;
 
