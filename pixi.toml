@@ -55,3 +55,4 @@ build = { cmd = "python build.py build", description = "Configure and build MONI
 clean = { cmd = "python build.py clean", description = "Remove the CMake build directories" }
 test = { cmd = "python tests/run.py", description = "Run the test suites (tests/suites.toml) with a monica-run: -- --monica PATH --out DIR" }
 compare = { cmd = "python tests/compare.py", description = "Compare two test result directories: -- DIR_A DIR_B" }
+deviation = { cmd = "python tests/deviation.py", description = "How much two test result directories differ, per harvest and per run total: -- DIR_A DIR_B" }
