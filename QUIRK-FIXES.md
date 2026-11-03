@@ -87,8 +87,10 @@ Yields: all `crop` sections. N and water fluxes: totals over the run of Hohenfin
     pixi run test --monica _cmake_release/monica-run --engine master --out results/master
     git switch fix-cpp-quirks && pixi run build
     pixi run test --monica _cmake_release/monica-run --engine fixes --out results/fixes
-    pixi run compare results/master results/fixes
+    pixi run compare results/master results/fixes     # whether, value by value
+    pixi run deviation results/master results/fixes   # how much: the numbers above
 
-(On Windows `_cmake_release/monica-run.exe`.) The per-harvest and per-total numbers
-above came from a small script on top of the result directories; it isn't part of the
-repository.
+(On Windows `_cmake_release/monica-run.exe`.) `tests/deviation.py` reports per
+harvest, year and event (yields, NH3, ...) and per run total of the daily columns (N2O,
+N leaching, N uptake, ...); see `tests/README.md`. For A1 or A2 alone, build `master`
+with only that commit applied.
