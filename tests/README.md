@@ -9,6 +9,7 @@ provides one.
 
     pixi run test --monica _cmake_release/monica-run --engine linux --out results/linux
     pixi run compare results/linux results/windows
+    pixi run deviation results/master results/fix   # how much, for intended changes
 
 `run.py` runs every simulation of every suite in parallel, each in its own
 directory `<out>/<suite>/<sim>/` (`out.csv`, any further output files,
@@ -34,6 +35,25 @@ Columns are matched by name: if the two builds write different column sets,
 that is listed, and the columns both write are still compared. `--ignore
 SUITE/SIM ...` skips simulations a build is known not to support (listed in
 the report), e.g. `hohenfinow2/sim-min-ic` for a build without intercropping.
+
+`deviation.py` is for changes that are *meant* to change results - a bug fix,
+a parameter change, a new model version: not whether, but by how much. A
+row-by-row comparison of daily values mostly measures timing there (a crop
+maturing a day earlier shows its whole biomass as the difference on that
+day), so it compares quantities that don't depend on single days:
+
+- sections without daily rows (`crop`, `yearly`, `monthly`, events) value by
+  value - per harvest, year or event - grouped by crop where there is a `Crop`
+  column: mean and mean absolute relative change, range, change of the total,
+  and where the largest change occurs
+- daily time series (a `Date` column with one row per day), per simulation:
+  the change of a column's mean over the run (equivalent to its total) and of
+  its end value (the meaningful one for cumulative columns and pools)
+
+Values that are 0 in A are counted separately, layer columns (`Mois_1`,
+`Mois_2`, ...) are pooled unless `--per-layer` is given, and each suite gets
+its own tables, largest changes first (`--top N`, `--all` also lists
+unchanged columns). It also takes `--ignore` and always exits with 0.
 
 ## In CI
 

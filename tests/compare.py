@@ -236,7 +236,9 @@ def short(state: dict | None) -> str:
     return state["commit"][:10] + (" (dirty)" if state.get("dirty") else "")
 
 
-def markdown(meta_a: dict, meta_b: dict, report: Report) -> str:
+def inputs_table(meta_a: dict, meta_b: dict) -> list[str]:
+    """The report's heading and the table of what the two runs used, plus a
+    note if their inputs differ."""
     out = [f"## {meta_a['engine']} vs {meta_b['engine']}", "",
            "| | A | B |", "|---|---|---|"]
     rows = [("engine", meta_a["engine"], meta_b["engine"]),
@@ -255,7 +257,11 @@ def markdown(meta_a: dict, meta_b: dict, report: Report) -> str:
     if differing_inputs:
         out += [f"> **Note:** different inputs ({', '.join(differing_inputs)}), "
                 "so differences may be expected.", ""]
+    return out
 
+
+def markdown(meta_a: dict, meta_b: dict, report: Report) -> str:
+    out = inputs_table(meta_a, meta_b)
     if report.ignored:
         out += [f"Not compared (--ignore): {', '.join(f'`{w}`' for w in report.ignored)}", ""]
     if report.identical:
