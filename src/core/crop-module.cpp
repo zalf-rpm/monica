@@ -3654,7 +3654,7 @@ pair<vector<double>, double> CropModule::calcRootDensityFactorAndSum() {
     } else if (i_Layer < vc_RootingZone) {
       vc_RootDensityFactor[i_Layer] =
           cr::exp(-pc_RootFormFactor * (i_Layer * layerThickness)) *
-          (1.0 - ((i_Layer - vc_RootingDepth) / (vc_RootingZone - vc_RootingDepth))); // []
+          (1.0 - (double(i_Layer - vc_RootingDepth) / double(vc_RootingZone - vc_RootingDepth))); // []
     } else {
       vc_RootDensityFactor[i_Layer] = 0.0;
     } // []
