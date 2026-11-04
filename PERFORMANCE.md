@@ -53,20 +53,13 @@ The port reproduces the C++ quirks on purpose, to stay value-by-value identical,
 documents them with `NOTE(c++-quirk)`. Fixing any of them has to happen on both sides
 together, with a deliberate baseline update.
 
-- **C++ A1 (top layer copied in volatilisation): ported faithfully.**
-  `monica/core/soil_organic.odin:284-288` (`layer0 := sc.layers[0]`, with a quirk note)
-  and `:942-943` (`lay0 := ...` plus an explicit `lay0.aom_pool = clone_aom_pool(...)`,
-  needed because an Odin `[dynamic]` copy is shallow). The NH4 subtraction (`:315, 317,
-  1006`) and `days_after_application += 1` (`:1016`) are lost exactly as in C++; the file
-  header (`:10-18`) describes it.
-  - Result-identical speed-up: read the needed `sc.layers[0]` fields into locals, loop
-    over the real pool read-only, drop the clone and the dead-store loop (`:1014-1018`) -
-    also removes a leaked AOM pool copy per day.
-- **C++ A2 (integer division in the root taper): ported faithfully.**
-  `monica/core/crop_module.odin:2289-2300` (`NOTE(c++-quirk)`, int/int division, always
-  `* 1.0`).
-- **C++ A3 (sowing temperature sum since simulation start): applies identically**,
-  `monica/run/worksteps.odin:487-494`.
+- **C++ A1-A3: fixed (2026-11-04)**, together with the C++ `master` (`cbaae4cb`, see
+  its `QUIRK-FIXES.md`) and the C++ copy in `src/`; `cpp_reference` points at that commit.
+  A1: the top soil layer is referenced in `soil_organic_fo_urea` and
+  `soil_organic_fo_volatilisation` (no more copy, no `clone_aom_pool`); A2: the root
+  taper divides as `f64` (`calc_root_density_factor_and_sum`); A3: the automatic sowing
+  temperature sum runs from the sowing window's start (`automatic_sowing_condition`).
+  The fixed port is identical to the fixed C++ in both test suites.
 - **C++ A4 (`ref` cache keyed without root): applies within a run**
   (`monica/run/create_env.odin:37-60`), not across requests (`reset_caches` per request,
   `serve_zmq.odin:413`, `run_monica_capnp.odin:451`).
@@ -128,7 +121,7 @@ Found only in the port:
 
 - `core/soil_organic.odin:192-198` (`fo_urea`, 7 arrays) and `:366-414` (`fo_mit`,
   26 arrays): 33 `make([dynamic]f64, nools)` per day, no `delete` in the file
-  (C++ B5, worse here: leaked). Plus `clone_aom_pool` (`:943, 1025-1031`) daily.
+  (C++ B5, worse here: leaked). (The daily `clone_aom_pool` copy went away with the A1 fix.)
 - `core/crop_module.odin:2282` (root density factors, daily), `:2326` (dead roots as a
   `map[int]f64`), `soil_organic.odin:1410` (sorted `keys` array for that map).
 - `core/monica_model.odin:451-454`: `clear_events` makes a new map daily and drops the
@@ -187,7 +180,7 @@ Found only in the port:
 - Change: `[ACD]f64` plus `bit_set[ACD]` per day, keeping the "0 if missing" semantics.
   The `climate_data.#last.tavg` output aliases (`io/output_paths.odin:88-217`) use
   reflectpath's map-key step, so reflectpath would need an enum-array step. Bounding the
-  history needs the A3 decision first.
+  history is possible now that A3 is fixed (the sowing check only reads the sowing window).
 
 ### O6. `cr_math` calls
 
@@ -240,4 +233,4 @@ code comparable line by line.
 4. B2 running sum (with automatic sowing), O5 climate storage.
 5. The model-internal C++ items (B4, B7-B12) together with the C++ side - small in
    absolute terms, the whole model step is ~20 us per day.
-6. Any quirk fix (A) only on both sides together.
+6. Any further quirk fix (A4-A7) only on both sides together, as A1-A3 were.
