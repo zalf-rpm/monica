@@ -2285,18 +2285,14 @@ calc_root_density_factor_and_sum :: proc(
 				-cm.crop_params.species_params.root_form_factor * (f64(i_layer) * layer_thickness),
 			)
 		} else if i_layer < cm.rooting_zone {
-			// NOTE(c++-quirk): (i_Layer - rooting_depth) / (rooting_zone -
-			// rooting_depth) is genuine integer division in C++ (all size_t
-			// operands) - the C++ source has a commented-out double-cast "fix"
-			// deliberately left unapplied ("changes the outputs enough to talk
-			// about it first"). Reproduced exactly: the division below is int/int.
-			int_div := (i_layer - cm.rooting_depth) / (cm.rooting_zone - cm.rooting_depth)
 			root_density_factor[i_layer] =
 				cr_math.exp(
 					-cm.crop_params.species_params.root_form_factor *
 					(f64(i_layer) * layer_thickness),
 				) *
-				(1.0 - f64(int_div))
+				(1.0 -
+						(f64(i_layer - cm.rooting_depth) /
+								f64(cm.rooting_zone - cm.rooting_depth)))
 		} else {
 			root_density_factor[i_layer] = 0.0
 		}
