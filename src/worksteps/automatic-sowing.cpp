@@ -211,10 +211,12 @@ bool workstep::condition(AutomaticSowingData *as, MonicaModel *model) {
   if (!workstep::isPrecipitationOk(cd, as->max3dayPrecipSum, as->maxCurrentDayPrecipSum))
     return false;
 
-  // check temperature sum
+  // check temperature sum since the start of the sowing window (including today)
   double baseTemp = as->baseTemp;
+  auto daysInWindow =
+      std::min(cd.size(), size_t(std::max(0, as->absEarliestDate.numberOfDaysTo(currentDate) + 1)));
   double tempSum =
-      accumulate(cd.begin(), cd.end(), 0.0, [baseTemp](double acc, const map<ACD, double> &d) {
+      accumulate(cd.end() - daysInWindow, cd.end(), 0.0, [baseTemp](double acc, const map<ACD, double> &d) {
         auto it = d.find(Climate::tavg);
         return acc + (it == d.end() ? 0 : max(0.0, it->second - baseTemp));
       });
