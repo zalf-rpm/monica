@@ -424,9 +424,10 @@ bool AutomaticSowing::condition(MonicaModel* model) {
   //check precipitation
   if (!isPrecipitationOk(cd, _max3dayPrecipSum, _maxCurrentDayPrecipSum)) return false;
 
-  //check temperature sum
+  //check temperature sum since the start of the sowing window (including today)
   double baseTemp = _baseTemp;
-  double tempSum = accumulate(cd.begin(), cd.end(), 0.0,
+  auto daysInWindow = std::min(cd.size(), size_t(std::max(0, _absEarliestDate.numberOfDaysTo(currentDate) + 1)));
+  double tempSum = accumulate(cd.end() - daysInWindow, cd.end(), 0.0,
                               [baseTemp](double acc, const map<ACD, double>& d) {
                                 auto it = d.find(Climate::tavg);
                                 return acc + (it == d.end() ? 0 : max(0.0, it->second - baseTemp));

@@ -670,7 +670,7 @@ void SoilOrganic::fo_Urea(double vo_RainIrrigation) {
 
     // Calculate general volatilisation from NH4-Pool in top layer
     if (i == 0) {
-      auto layer0 = soilColumn.at(0);
+      auto& layer0 = soilColumn.at(0);
 
       vo_H3OIonConcentration = cr::pow(10.0, (-layer0.vs_SoilpH())); // kmol m-3
       vo_NH3aq_EquilibriumConst = cr::pow(10.0, ((-2728.3 /
@@ -1159,7 +1159,7 @@ void SoilOrganic::fo_Volatilisation(bool vo_AOM_Addition, double vw_MeanAirTempe
 
   int vo_DaysAfterApplicationSum = 0;
 
-  auto lay0 = soilColumn.at(0);
+  auto& lay0 = soilColumn.at(0);
 
   if (lay0.vs_SoilMoisture_pF() > 2.5) {
     vo_SoilWet = 0.0;
