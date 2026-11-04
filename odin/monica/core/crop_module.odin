@@ -377,8 +377,7 @@ clone_cultivar_parameters :: proc(
 // C++'s CropModule constructor does `cm->crop_params = *crop_params;`, which
 // deep-copies via CropParameters' implicit copy constructor (every
 // std::vector member is deep-copied). Odin's plain struct assignment only
-// copies [dynamic]T headers, aliasing the backing storage - the same class of
-// bug as phase 4's clone_aom_pool (soilorganic.odin). This one is not
+// copies [dynamic]T headers, aliasing the backing storage. This is not
 // hypothetical: `crop_params` typically points at a Sowing workstep's own,
 // long-lived CropParameters, reused every time that workstep fires again
 // across a multi-year crop rotation (see src/worksteps/sowing.cpp). Without
