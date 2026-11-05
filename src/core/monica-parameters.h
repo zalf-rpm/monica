@@ -655,7 +655,7 @@ struct CropModuleParameters {
   double pc_GrowthRespirationParameter2{0.0};
   double pc_Tortuosity{0.0}; // old AD
   bool pc_AdjustRootDepthForSoilProps{true};
-  std::vector<int> pc_TimeUnderAnoxiaThreshold{4, 4, 4, 4, 4, 4, 4};
+  std::vector<int> pc_TimeUnderAnoxiaThreshold{365, 365, 365, 365, 365, 365, 365};
 
   bool __enable_Phenology_WangEngelTemperatureResponse__{false};
   bool __enable_Photosynthesis_WangEngelTemperatureResponse__{false};
@@ -663,7 +663,7 @@ struct CropModuleParameters {
   bool __enable_T_response_leaf_expansion__{false};
   bool __disable_daily_root_biomass_to_soil__{false};
   bool __enable_vernalisation_factor_fix__{false};
-  bool __enable_PASW_root_penetration__{true};
+  bool __enable_PASW_root_penetration__{false};
 
   bool isIntercropping{false};
   bool sequentialWaterUse{false};

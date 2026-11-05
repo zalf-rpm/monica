@@ -701,7 +701,6 @@ Crop_Module_Parameters :: struct {
 // C++ in-class initialisers, incl. time_under_anoxia_threshold{4,4,4,4,4,4,4}
 make_crop_module_parameters :: proc(a: Allocator) -> Crop_Module_Parameters {
 	cmp := Crop_Module_Parameters {
-		__enable_PASW_root_penetration__ = true,
 		adjust_root_depth_for_soil_props = true,
 		two_way_sync                     = true,
 		intercropping_ph_redux           = 0.5,
@@ -710,7 +709,7 @@ make_crop_module_parameters :: proc(a: Allocator) -> Crop_Module_Parameters {
 	}
 	cmp.time_under_anoxia_threshold = make([dynamic]int, 0, 7, a)
 	for _ in 0 ..< 7 {
-		append(&cmp.time_under_anoxia_threshold, 4)
+		append(&cmp.time_under_anoxia_threshold, 365)
 	}
 	return cmp
 }
