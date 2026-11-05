@@ -1640,7 +1640,7 @@ fc_crop_photosynthesis :: proc(
 		prev_hgr := 0.0
 
 		for h := 0; h < 24; h += 1 {
-			hgr := tl.hourly_rad(cm.global_radiation, latitude, julian_day, h)
+			hgr := tl.hourly_rad(cm.global_radiation, latitude, julian_day, f64(h))
 			if hgr > 0 && prev_hgr == 0.0 {
 				sunrise_h = h
 			}
@@ -1649,7 +1649,7 @@ fc_crop_photosynthesis :: proc(
 
 			append(
 				&hourly_extrarad,
-				tl.hourly_rad(cm.extraterrestrial_radiation, latitude, julian_day, h),
+				tl.hourly_rad(cm.extraterrestrial_radiation, latitude, julian_day, f64(h)),
 			)
 		}
 
@@ -1660,12 +1660,12 @@ fc_crop_photosynthesis :: proc(
 			// hourly photosynthesis
 			fvcb_in: Fvcb_Canopy_Hourly_In
 
-			hourly_temp := tl.hourly_t(min_air_temperature, max_air_temperature, h, sunrise_h)
+			hourly_temp := tl.hourly_t(min_air_temperature, max_air_temperature, f64(h), f64(sunrise_h))
 			fvcb_in.leaf_temp = hourly_temp
 			fvcb_in.global_rad = hourly_globrads[h]
 			fvcb_in.extra_terr_rad = hourly_extrarad[h]
 			fvcb_in.lai = lai
-			fvcb_in.solar_el = tl.solar_elevation(h, latitude, julian_day)
+			fvcb_in.solar_el = tl.solar_elevation(f64(h), latitude, julian_day)
 			fvcb_in.vpd = tl.hourly_vapor_pressure_deficit(
 				hourly_temp,
 				min_air_temperature,

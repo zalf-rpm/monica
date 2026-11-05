@@ -228,7 +228,8 @@ solar_declination :: proc(day_of_the_year: int) -> f64 {
 // "never assigned" case is never actually observed - transliterated as two
 // parallel if-statements rather than restructured into one if/else, to keep
 // that correlation visible.
-hourly_t :: proc(tmin, tmax: f64, h, sunrise_h: int) -> f64 {
+// mas_cpp_misc 12a009e: h and sunrise_h are double (were int)
+hourly_t :: proc(tmin, tmax: f64, h, sunrise_h: f64) -> f64 {
 	PI :: 3.14159265358979323846
 	tavg := (tmin + tmax) / 2
 	amp := (tmax - tmin) / 2
@@ -236,15 +237,15 @@ hourly_t :: proc(tmin, tmax: f64, h, sunrise_h: int) -> f64 {
 	hourly_temp: f64
 
 	if h < sunrise_h {
-		h_1 = f64(h) + 10.0
-	} else if h > 14 {
-		h_1 = f64(h) - 14.0
+		h_1 = h + 10.0
+	} else if h > 14.0 {
+		h_1 = h - 14.0
 	}
 
-	if h < sunrise_h || h > 14 {
-		hourly_temp = tavg + amp*cr_math.cos(PI*h_1/(10.0 + f64(sunrise_h)))
+	if h < sunrise_h || h > 14.0 {
+		hourly_temp = tavg + amp*cr_math.cos(PI*h_1/(10.0 + sunrise_h))
 	} else {
-		hourly_temp = tavg - amp*cr_math.cos(PI*f64(h - sunrise_h)/(14.0 - f64(sunrise_h)))
+		hourly_temp = tavg - amp*cr_math.cos(PI*(h - sunrise_h)/(14.0 - sunrise_h))
 	}
 
 	return hourly_temp
@@ -268,19 +269,24 @@ hourly_vapor_pressure_deficit :: proc(
 }
 
 // C++: double Tools::solarElevation(int hour, double latitude, int dayOfTheYear)
-solar_elevation :: proc(hour: int, latitude: f64, day_of_the_year: int) -> f64 {
+// mas_cpp_misc 12a009e: hour is double (was int), asin's argument bounded to
+// [-1, 1] (NaN before, e.g. near the poles)
+solar_elevation :: proc(hour: f64, latitude: f64, day_of_the_year: int) -> f64 {
 	PI :: 3.14159265358979323846
 	lat_rad := latitude * PI / 180.0
 
 	d_decl := solar_declination(day_of_the_year)
 	d_a := cr_math.sin(d_decl) * cr_math.sin(lat_rad)
 	d_b := cr_math.cos(d_decl) * cr_math.cos(lat_rad)
-	d_ha := PI * (f64(hour) - 12) / 12
-	return cr_math.asin(d_a + d_b*cr_math.cos(d_ha)) // can be -ve
+	d_ha := PI * (hour - 12) / 12
+	return cr_math.asin(bound(-1.0, d_a + d_b*cr_math.cos(d_ha), 1.0)) // can be -ve
 }
 
 // C++: double Tools::hourlyRad(double globrad, double lat, int doy, int h)
-hourly_rad :: proc(globrad, lat: f64, doy, h: int) -> f64 {
+// mas_cpp_misc 12a009e: h is double (was int); acos's argument bounded to
+// [-1, 1]; overclocking_time_step gives the radiation of that many hours
+// instead of one (MONICA calls it with the default)
+hourly_rad :: proc(globrad, lat: f64, doy: int, h: f64, overclocking_time_step := 1.0) -> f64 {
 	PI :: 3.14159265358979323846
 	d_decl := solar_declination(doy)
 	lat_rad := lat * PI / 180.0
@@ -288,11 +294,13 @@ hourly_rad :: proc(globrad, lat: f64, doy, h: int) -> f64 {
 	d_a := cr_math.sin(d_decl) * cr_math.sin(lat_rad)
 	d_b := cr_math.cos(d_decl) * cr_math.cos(lat_rad)
 	d_a_over_b := d_a / d_b
-	d_phi := (PI * globrad / 86400.0) / (d_a*cr_math.acos(-d_a_over_b) + d_b*libc.sqrt(1 - d_a_over_b*d_a_over_b))
+	d_phi :=
+		(PI * globrad / 86400.0) /
+		(d_a*cr_math.acos(bound(-1.0, -d_a_over_b, 1.0)) + d_b*libc.sqrt(1 - d_a_over_b*d_a_over_b))
 	d_coef_a := -d_b * d_phi
 	d_coef_b := d_a * d_phi
 
-	d_totrad := max((d_coef_a*cr_math.cos(PI*f64(h)/12.0) + d_coef_b) * 3600, 0.0)
+	d_totrad := max((d_coef_a*cr_math.cos(PI*h/12.0) + d_coef_b) * 3600 * overclocking_time_step, 0.0)
 
 	return d_totrad
 }
