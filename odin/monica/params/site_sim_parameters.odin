@@ -220,7 +220,10 @@ automatic_irrigation_parameters_to_json :: proc(
 		{"irrigationParameters", irrigation_parameters_to_json(&aip.base, a)},
 		{"trigger_if_nFC_below_%", jx.vu(aip.threshold * 100.0, "%", a)},
 		{"calc_nFC_until_depth_m", jx.vu(aip.critical_moisture_depth_m, "m", a)},
-		{"minDaysBetweenIrrigationEvents", jx.vu_int(aip.min_days_between_irrigation_events, "d", a)},
+		{
+			"minDaysBetweenIrrigationEvents",
+			jx.vu_int(aip.min_days_between_irrigation_events, "d", a),
+		},
 	)
 	oo := o.(jx.Object)
 	if aip.amount > 0 {
@@ -242,7 +245,7 @@ automatic_irrigation_parameters_to_json :: proc(
 // std::map<string,Json> would have produced on output.
 Measured_Groundwater_Table_Information :: struct {
 	groundwater_information_available: bool,
-	groundwater_info:                 map[string]f64, // ISO date -> depth
+	groundwater_info:                  map[string]f64, // ISO date -> depth
 }
 
 // C++: Errors measuredgroundwatertableinformation::merge(...)
@@ -322,22 +325,22 @@ get_groundwater_information :: proc(
 // data member here (plan-odin.md prep 2); pwp_fc_sat_function selects the method by
 // name at the point of use, via soil.pwp_fc_sat_method_from_name.
 Site_Parameters :: struct {
-	latitude:                                f64, // ZALF latitude
-	slope:                                   f64 `unit:"m m-1"`,
-	height_nn:                               f64 `unit:"m"`,
-	groundwater_depth:                       f64 `unit:"m"`,
-	soil_cn_ratio:                           f64,
-	drainage_coeff:                          f64,
-	n_deposition:                            f64 `unit:"kg N ha-1 y-1"`,
-	max_effective_rooting_depth:             f64 `unit:"m"`,
-	impenetrable_layer_depth:                f64 `unit:"m"`,
-	soil_specific_humus_balance_correction:  f64, // humus equivalents
-	bare_soil_kc_factor:                     f64,
-	number_of_layers:                        int,
-	layer_thickness:                         f64,
-	soil_parameters:                         [dynamic]soil.Soil_Parameters,
-	init_soil_profile_spec:                  jx.Value, // the raw SoilProfileParameters array
-	pwp_fc_sat_function:                     string,
+	latitude:                               f64, // ZALF latitude
+	slope:                                  f64 `unit:"m m-1"`,
+	height_nn:                              f64 `unit:"m"`,
+	groundwater_depth:                      f64 `unit:"m"`,
+	soil_cn_ratio:                          f64,
+	drainage_coeff:                         f64,
+	n_deposition:                           f64 `unit:"kg N ha-1 y-1"`,
+	max_effective_rooting_depth:            f64 `unit:"m"`,
+	impenetrable_layer_depth:               f64 `unit:"m"`,
+	soil_specific_humus_balance_correction: f64, // humus equivalents
+	bare_soil_kc_factor:                    f64,
+	number_of_layers:                       int,
+	layer_thickness:                        f64,
+	soil_parameters:                        [dynamic]soil.Soil_Parameters,
+	init_soil_profile_spec:                 jx.Value, // the raw SoilProfileParameters array
+	pwp_fc_sat_function:                    string,
 }
 
 // The C++ in-class initialisers
@@ -539,7 +542,11 @@ simulation_parameters_merge :: proc(sp: ^Simulation_Parameters, j: jx.Value) -> 
 		jx.get(j, "AutoIrrigationParams"),
 	)
 
-	jx.set_bool_value(&sp.use_n_min_mineral_fertilising_method, j, "UseNMinMineralFertilisingMethod")
+	jx.set_bool_value(
+		&sp.use_n_min_mineral_fertilising_method,
+		j,
+		"UseNMinMineralFertilisingMethod",
+	)
 	_ = mineral_fertilizer_parameters_merge(
 		&sp.n_min_fertiliser_partition,
 		jx.get(j, "NMinFertiliserPartition"),
@@ -636,7 +643,10 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 		{"StartPVIndex", jx.i(sp.start_pv_index)},
 		{"serializeMonicaStateAtEnd", jx.b(sp.serialize_monica_state_at_end)},
 		{"serializedMonicaState", ser_o},
-		{"evapotranspiration-method", jx.sl(sp.dual_kc_method ? "FAO-56-Dual" : "Penman-Monteith")},
+		{
+			"evapotranspiration-method",
+			jx.sl(sp.dual_kc_method ? "FAO-56-Dual" : "Penman-Monteith"),
+		},
 	)
 	if mj, ok := modules_config_to_json(&sp.modules, a); ok {
 		o := res.(jx.Object)
@@ -691,6 +701,7 @@ Crop_Module_Parameters :: struct {
 // C++ in-class initialisers, incl. time_under_anoxia_threshold{4,4,4,4,4,4,4}
 make_crop_module_parameters :: proc(a: Allocator) -> Crop_Module_Parameters {
 	cmp := Crop_Module_Parameters {
+		__enable_PASW_root_penetration__ = true,
 		adjust_root_depth_for_soil_props = true,
 		two_way_sync                     = true,
 		intercropping_ph_redux           = 0.5,
@@ -863,7 +874,7 @@ Environment_Parameters :: struct {
 	albedo:                      f64,
 	rcp:                         RCP,
 	atmospheric_co2:             f64,
-	atmospheric_co2s:           map[int]f64,
+	atmospheric_co2s:            map[int]f64,
 	atmospheric_o3:              f64,
 	atmospheric_o3s:             map[int]f64,
 	wind_speed_height_m:         f64,
