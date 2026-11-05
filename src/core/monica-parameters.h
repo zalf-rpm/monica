@@ -663,7 +663,7 @@ struct CropModuleParameters {
   bool __enable_T_response_leaf_expansion__{false};
   bool __disable_daily_root_biomass_to_soil__{false};
   bool __enable_vernalisation_factor_fix__{false};
-  bool __enable_PASW_root_penetration__{false};
+  bool __enable_PASW_root_penetration__{true};
 
   bool isIntercropping{false};
   bool sequentialWaterUse{false};
