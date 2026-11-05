@@ -3638,12 +3638,8 @@ pair<vector<double>, double> monica::cropmodule::calcRootDensityFactorAndSum(con
     } else if (i_Layer < cm->vc_RootingZone) {
       vc_RootDensityFactor[i_Layer] =
           cr::exp(-cm->cropParams.speciesParams.pc_RootFormFactor * (i_Layer * layerThickness)) *
-          (1.0 - ((i_Layer - cm->vc_RootingDepth) / (cm->vc_RootingZone - cm->vc_RootingDepth)));
-      // fix to probably unwanted integer division
-      // commented out because it changes the outputs enough to talk about it
-      // first
-      //(1.0 - (double(i_Layer - cm->vc_RootingDepth) /
-      //          double(cm->vc_RootingZone - cm->vc_RootingDepth))); // []
+          (1.0 - (double(i_Layer - cm->vc_RootingDepth) /
+                  double(cm->vc_RootingZone - cm->vc_RootingDepth))); // []
     } else {
       vc_RootDensityFactor[i_Layer] = 0.0;
     } // []

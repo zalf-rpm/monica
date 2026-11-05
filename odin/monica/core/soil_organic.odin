@@ -6,16 +6,6 @@
 // soiltransport. `cropModule` follows the established phase-5 stub pattern
 // (crop_module_stub.odin), extended with `vc_NetPrimaryProduction` (the one
 // field this file reads, in soil_organic_step).
-//
-// Two real C++ copy-vs-reference quirks, reproduced exactly (not "fixed"):
-// `foUrea`'s `auto layer0 = so->soilColumn.layers.at(0);` and
-// `foVolatilisation`'s `auto lay0 = so->soilColumn.layers.at(0);` are BOTH
-// by-value copies (no `&`), unlike every other `auto &layi = ...` in this
-// file. Mutations made through `layer0`/`lay0` (vs_SoilNH4, and in
-// foVolatilisation's case the AOM pool's vo_DaysAfterApplication too, since
-// AOM_Pool is bound as a reference *into the copy*) never reach the real soil
-// column - a genuine, confirmed upstream bug. See soil_organic_fo_urea and
-// soil_organic_fo_volatilisation below for exactly where this happens.
 package core
 
 import tl "../../support/tools"
@@ -281,11 +271,7 @@ soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) 
 
 		// Calculate general volatilisation from NH4-Pool in top layer
 		if i == 0 {
-			// NOTE(c++-quirk): C++ `auto layer0 = so->soilColumn.layers.at(0);` is
-			// a BY-VALUE COPY (every other loop variable in this file is `auto
-			// &layi`). The vs_SoilNH4 mutation below therefore never reaches the
-			// real soil column - reproduced exactly, not fixed.
-			layer0 := sc.layers[0]
+			layer0 := &sc.layers[0]
 
 			h3o_ion_concentration = cr_math.pow(10.0, -layer0.soil_ph) // kmol m-3
 			nh3_aq_equilibrium_const = cr_math.pow(
@@ -921,28 +907,20 @@ soil_organic_fo_nh3_on_nitrite_oxidation :: proc(
 // C++: void monica::soilorganic::foVolatilisation(SoilOrganic*, bool, double, double)
 //
 // NH3 loss after manure/slurry application (ALFAM model, Soegaard et al.
-// 2002). NOTE(c++-quirk): `auto lay0 = so->soilColumn.layers.at(0);` is a
-// BY-VALUE COPY, and `vector<AOM_Properties> &AOM_Pool = lay0.vo_AOM_Pool;`
-// binds into that copy. Both the vs_SoilNH4 update below and the
-// vo_DaysAfterApplication increments at the end therefore never reach the
-// real soil column - reproduced exactly, including deep-copying vo_AOM_Pool
-// (a C++ std::vector copy is a deep copy; Odin's [dynamic]T copy is a shallow
-// header copy that would otherwise alias the real layer's backing array).
+// 2002).
 soil_organic_fo_volatilisation :: proc(
 	so: ^Soil_Organic,
 	aom_addition: bool,
 	mean_air_temperature, wind_speed: f64,
-	allocator := context.allocator,
 ) {
 	soil_wet: f64
 	n_pot_volatilised_sum := 0.0
 	n_act_volatilised := 0.0
 	days_after_application_sum := 0
 
-	lay0 := so.soil_column.layers[0] // by-value copy - see the doc comment above
-	lay0.aom_pool = clone_aom_pool(lay0.aom_pool, allocator) // deep-copy, matching std::vector's copy ctor
+	lay0 := &so.soil_column.layers[0]
 
-	if soil_moisture_pf(&lay0) > 2.5 {
+	if soil_moisture_pf(lay0) > 2.5 {
 		soil_wet = 0.0
 	} else {
 		soil_wet = 1.0
@@ -1016,19 +994,6 @@ soil_organic_fo_volatilisation :: proc(
 			props.days_after_application += 1
 		}
 	}
-}
-
-// Deep-clones an AOM_Pool ([dynamic]Aom_Properties) - a plain element-wise
-// copy suffices since Aom_Properties has no nested dynamic/pointer fields.
-// See soil_organic_fo_volatilisation's doc comment for why this is needed.
-@(private)
-clone_aom_pool :: proc(
-	pool: [dynamic]Aom_Properties,
-	allocator := context.allocator,
-) -> [dynamic]Aom_Properties {
-	cloned := make([dynamic]Aom_Properties, len(pool), allocator)
-	copy(cloned[:], pool[:])
-	return cloned
 }
 
 // C++: void monica::soilorganic::foNitrification(SoilOrganic*)

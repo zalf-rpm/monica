@@ -25,7 +25,7 @@
   },
   "vcpkg_baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d",
   "cpp_reference": {
-    "commit": "242d7283c96864ecfd0fffd085ed6ff7884b53a6",
+    "commit": "cbaae4cb5856d26831ad3503c3bd06cfa841e5e9",
     "ignore": [
       "hohenfinow2/sim-min-ic"
     ],

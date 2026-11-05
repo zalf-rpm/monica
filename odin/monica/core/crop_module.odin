@@ -377,8 +377,7 @@ clone_cultivar_parameters :: proc(
 // C++'s CropModule constructor does `cm->crop_params = *crop_params;`, which
 // deep-copies via CropParameters' implicit copy constructor (every
 // std::vector member is deep-copied). Odin's plain struct assignment only
-// copies [dynamic]T headers, aliasing the backing storage - the same class of
-// bug as phase 4's clone_aom_pool (soilorganic.odin). This one is not
+// copies [dynamic]T headers, aliasing the backing storage. This is not
 // hypothetical: `crop_params` typically points at a Sowing workstep's own,
 // long-lived CropParameters, reused every time that workstep fires again
 // across a multi-year crop rotation (see src/worksteps/sowing.cpp). Without
@@ -2286,18 +2285,14 @@ calc_root_density_factor_and_sum :: proc(
 				-cm.crop_params.species_params.root_form_factor * (f64(i_layer) * layer_thickness),
 			)
 		} else if i_layer < cm.rooting_zone {
-			// NOTE(c++-quirk): (i_Layer - rooting_depth) / (rooting_zone -
-			// rooting_depth) is genuine integer division in C++ (all size_t
-			// operands) - the C++ source has a commented-out double-cast "fix"
-			// deliberately left unapplied ("changes the outputs enough to talk
-			// about it first"). Reproduced exactly: the division below is int/int.
-			int_div := (i_layer - cm.rooting_depth) / (cm.rooting_zone - cm.rooting_depth)
 			root_density_factor[i_layer] =
 				cr_math.exp(
 					-cm.crop_params.species_params.root_form_factor *
 					(f64(i_layer) * layer_thickness),
 				) *
-				(1.0 - f64(int_div))
+				(1.0 -
+						(f64(i_layer - cm.rooting_depth) /
+								f64(cm.rooting_zone - cm.rooting_depth)))
 		} else {
 			root_density_factor[i_layer] = 0.0
 		}

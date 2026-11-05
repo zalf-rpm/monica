@@ -478,10 +478,14 @@ automatic_sowing_condition :: proc(as: ^Automatic_Sowing_Data, model: ^core.Moni
 		return false
 	}
 
-	// check temperature sum
+	// check temperature sum since the start of the sowing window (including today)
 	base_temp := as.base_temp
+	days_in_window := min(
+		len(cd),
+		max(0, d.number_of_days_to(as.abs_earliest_date, current_date) + 1),
+	)
 	temp_sum := 0.0
-	for m in cd {
+	for m in cd[len(cd) - days_in_window:] {
 		if v, ok := m[.tavg]; ok {
 			temp_sum += max(0.0, v - base_temp)
 		}
