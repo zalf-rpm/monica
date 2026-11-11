@@ -13,3 +13,8 @@ path = "installer/Hohenfinow2"
 name = "muencheberg_v140"
 git = "https://github.com/zalf-rpm/muencheberg_v140.git"
 rev = "fc051fe4b35bcb22c38ad7dd3fc1e0a1a7ecd139"
+
+[[suite]]
+name = "microlysimeter"
+git = "https://github.com/zalf-rpm/microlysimeter.git"
+rev = "b4d85e41889664a2009cb9b6877e5f9403f2e8d9"

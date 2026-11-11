@@ -162,7 +162,8 @@ LLVM or Visual Studio's "C++ Clang tools for Windows").
 # Testing
 
 `tests/` runs a set of simulation suites (Hohenfinow2, scenario repositories
-like [muencheberg_v140](https://github.com/zalf-rpm/muencheberg_v140)) with a
+like [muencheberg_v140](https://github.com/zalf-rpm/muencheberg_v140) and
+[microlysimeter](https://github.com/zalf-rpm/microlysimeter)) with a
 MONICA build and compares the outputs of different builds, e.g. Windows
 against Linux:
 
