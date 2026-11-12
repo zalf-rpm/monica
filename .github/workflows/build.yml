@@ -1,7 +1,8 @@
 # The setup-free builds from the README - pixi on Linux and Windows, Nix, and
 # the Docker image built from it - each running the test suites
 # (tests/suites.toml). The compare job then checks that all of them give the
-# same results as the Nix build, which is what the Docker image ships.
+# same results as the Nix build, which is what the Docker image ships, and the
+# validate job compares the simulations with measurements (tests/validate.py).
 name: Build and test
 
 on:
@@ -140,3 +141,65 @@ jobs:
             python3 tests/compare.py "$ref" "$r" || status=1
           done
           exit $status
+
+  # Simulated vs measured (tests/validate.py) for the suites with measurements,
+  # from the Nix build's results (all builds give the same). Information only,
+  # it doesn't fail the build: statistics on the run page, with the change of
+  # the RMSE since the previous master build; plots in the report artifact.
+  validate:
+    needs: nix
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read  # the previous master build's validation.json
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tests
+
+      - uses: prefix-dev/setup-pixi@v0.11.2
+        with:
+          environments: validate
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: results-nix-linux
+          path: results
+
+      - name: Baseline from the previous master build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          runs=$(gh run list -R "$GITHUB_REPOSITORY" -w build.yml -b master -e push -L 20 \
+                   --json databaseId,headSha --jq ".[] | select(.headSha != \"$GITHUB_SHA\") | .databaseId")
+          for id in $runs; do
+            gh run download "$id" -R "$GITHUB_REPOSITORY" -n validation-json -D baseline 2>/dev/null \
+              && { echo "baseline: run $id"; break; }
+          done
+          true
+
+      - name: Simulated vs measured
+        run: pixi run -e validate validate results --out validation --baseline baseline/validation.json --summary ''
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: validation-json
+          path: validation/validation.json
+          retention-days: 90
+
+      # not zipped, so it is a single HTML file with the plots
+      - uses: actions/upload-artifact@v7
+        id: report
+        with:
+          path: validation/report.html
+          archive: false
+          retention-days: 30
+
+      - name: Run page summary
+        run: |
+          {
+            echo "**Plots:** [report.html](${{ steps.report.outputs.artifact-url }}) (simulation as lines, measurements as dots)"
+            echo
+            cat validation/report.md
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -2,7 +2,7 @@
 
 Runs simulation suites with a MONICA build and compares the results of
 different builds - Linux against Windows, Nix against pixi, a new version
-against an old one. Plain Python (>= 3.11, standard library only); `pixi run`
+against an old one - and compares the simulations with measurements. Plain Python (>= 3.11, standard library only); `pixi run`
 provides one.
 
 ## Running
@@ -55,12 +55,44 @@ Values that are 0 in A are counted separately, layer columns (`Mois_1`,
 its own tables, largest changes first (`--top N`, `--all` also lists
 unchanged columns). It also takes `--ignore` and always exits with 0.
 
+## Simulated vs measured
+
+    pixi run validate results/linux --out validation
+    pixi run validate results/linux --out validation --baseline old/validation.json
+
+`validate.py` compares the simulations with measurements, for the suites
+whose `monica-test.toml` has `[[observed]]` entries (muencheberg_v140: yields
+and soil organic carbon; microlysimeter: N and water leaching). It writes to
+`--out`:
+
+- `report.md`: per measured quantity a table with n, measured and simulated
+  mean, bias (mean of sim − obs), MAE, RMSE, nRMSE (RMSE / measured mean), R²,
+  Willmott's index of agreement d and the Nash-Sutcliffe efficiency NSE - for
+  all measurements and per group (crop, treatment, lysimeter, ...)
+- `report.html`: the same plus the plots - per simulation the simulated time
+  series as a line and the measurements as dots (with error bars where there
+  is a standard deviation), and simulated vs measured per group with the 1:1
+  line - and the statistics per simulation
+- `validation.json`: the statistics. Given as `--baseline` to a later run, the
+  tables also show the change of the RMSE, e.g. before and after a change.
+
+It reads the measurements from the suites at the commits the results were
+made with (`--use SUITE=DIR` for a local directory). The plots need
+matplotlib, which is why the task runs in pixi's `validate` environment;
+`--no-plots` works with plain Python. It always exits with 0 (unless something
+can't be read): the statistics are information, not a test.
+
 ## In CI
 
 `.github/workflows/build.yml` builds MONICA with pixi (Linux, Windows), with
 Nix and as the Docker image, runs the suites with each and compares all
 results against the Nix build's, which is what the Docker image ships. The
 results are kept as workflow artifacts for 14 days.
+
+The `validate` job runs `validate.py` on the Nix build's results. The run
+page shows the statistics, with the change of the RMSE since the previous
+master build (whose `validation-json` artifact it downloads), and links the
+plots: the `report.html` artifact, a single HTML file.
 
 ## Adding a suite
 
@@ -74,7 +106,31 @@ results are kept as workflow artifacts for 14 days.
    # exact equality unless a column below says otherwise
    default = { atol = 0.0, rtol = 0.0 }
    # SOC_0_30_g_m2 = { rtol = 1e-9 }   # per-column exceptions, with a reason
+
+   # optional: measurements to compare the simulations with (validate.py)
+   [[observed]]
+   name = "Yield"                 # title in the report, key for --baseline
+   file = "yield_measured.csv"    # CSV with a header row
+   sim-map = "sim-map.csv"        # "sim" column + columns matched to the row,
+   # sim = "*/{site}/sim-min"     #   or a pattern: {column} from the row, glob
+   key = "year"                   # matched against output.key, or instead
+   # date = "date"                #   a date column (YYYY-MM-DD) for daily output
+   value = "yield_dm_kg_ha"
+   # sd = "sd"                    # error bars
+   unit = "kg DM/ha"
+   group = "crop"                 # statistics per crop
+   label = "T{treatment} {plot_no}"  # plot title per simulation
+   output = { section = "crop", column = "Yield", key = "harv-year" }
    ```
+
+   `output` can also have `scale` (factor for the simulated values) and
+   `accumulate`: `"since-first"` sums the daily values after the first
+   measurement date up to each measurement (cumulative measurements),
+   `"since-previous"` since the previous measurement (amounts per sampling
+   period). The details are at the top of `validate.py`; the
+   [microlysimeter](https://github.com/zalf-rpm/microlysimeter) and
+   [muencheberg_v140](https://github.com/zalf-rpm/muencheberg_v140)
+   manifests are examples.
 
    The simulations' `sim.json` must use relative paths and
    `${MONICA_PARAMETERS}` (no machine-specific paths). Each runs in its own

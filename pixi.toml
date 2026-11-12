@@ -56,3 +56,12 @@ clean = { cmd = "python build.py clean", description = "Remove the CMake build d
 test = { cmd = "python tests/run.py", description = "Run the test suites (tests/suites.toml) with a monica-run: -- --monica PATH --out DIR" }
 compare = { cmd = "python tests/compare.py", description = "Compare two test result directories: -- DIR_A DIR_B" }
 deviation = { cmd = "python tests/deviation.py", description = "How much two test result directories differ, per harvest and per run total: -- DIR_A DIR_B" }
+
+[feature.validate.dependencies]
+matplotlib-base = ">=3.11.2,<4"
+
+[feature.validate.tasks]
+validate = { cmd = "python tests/validate.py", description = "Simulated vs measured: statistics and plots for the suites with measurements: -- RESULT_DIR --out DIR" }
+
+[environments]
+validate = ["validate"]

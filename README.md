@@ -170,7 +170,14 @@ against Linux:
     pixi run test --monica _cmake_release/monica-run --out results/a
     pixi run compare results/a results/b
 
-CI does this on every push for all builds. See [tests/README.md](tests/README.md).
+For the suites with measurements (yields and soil carbon of muencheberg_v140,
+leaching of the microlysimeters), `pixi run validate results/a --out validation`
+calculates how well the simulations fit them (bias, RMSE, NSE, ...) and plots
+simulated time series against the measured values.
+
+CI does this on every push for all builds; the run page shows the comparison
+of the builds and the fit to the measurements, with the change of the RMSE
+since the previous master build. See [tests/README.md](tests/README.md).
 
 ## Step-by-step guides
 
