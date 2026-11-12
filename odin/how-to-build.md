@@ -3,6 +3,8 @@
 There are several ways to build the Odin port. They differ in where they build,
 what they produce, and what they are meant for. This page explains which one
 does what. For the C++ MONICA see `../how-to-build.md` on the C++ `master`.
+The ways to *use* the programs (MONICA as is, modules integrated, as drivers,
+standalone) are in `how-to-use.md`.
 
 In every case, clone with the git submodules first: `mas_cpp_misc` (CORE-MATH,
 `cr_math`) and `odin/support/capnp` (the Cap'n Proto shim):
