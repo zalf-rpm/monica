@@ -74,7 +74,8 @@ and soil organic carbon; microlysimeter: N and water leaching). It writes to
 - `report.html`: the same plus the plots - per simulation the simulated time
   series as a line and the measurements as dots (with error bars where there
   is a standard deviation), and simulated vs measured per group with the 1:1
-  line - and the statistics per simulation
+  line - and the statistics per simulation. Clicking a panel of a plot opens
+  a large version of it (← → step through the panels, Esc closes)
 - `validation.json`: the statistics. Given as `--baseline` to a later run, the
   tables also show the change of the RMSE, e.g. before and after a change.
 

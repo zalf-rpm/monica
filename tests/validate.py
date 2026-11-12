@@ -385,104 +385,217 @@ def markdown(suites: list[tuple[str, list[ObservedSet]]], stats: dict, baseline:
     return "\n".join(out) + "\n"
 
 
-def figures(s: ObservedSet) -> list[tuple[str, str]]:
-    """(title, base64 PNG) of the time series and the scatter plot."""
+def figures(s: ObservedSet) -> list[dict]:
+    """The time series and the scatter plots: per figure its title, the grid of
+    small panels (base64 PNG) and per panel a large version, its caption and
+    where it is in the grid (fractions of the image, from the top left)."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.dates as mdates
     import matplotlib.pyplot as plt
     import numpy as np
+    from PIL import Image
 
-    plt.rcParams.update({"font.size": 8, "axes.edgecolor": "#888", "axes.linewidth": 0.6,
-                         "xtick.color": "#555", "ytick.color": "#555",
-                         "axes.titlesize": 9, "figure.facecolor": "#fcfcfb",
-                         "axes.facecolor": "#fcfcfb"})
+    style = {"axes.edgecolor": "#888", "axes.linewidth": 0.6, "xtick.color": "#555",
+             "ytick.color": "#555", "figure.facecolor": "#fcfcfb", "axes.facecolor": "#fcfcfb"}
+    small = {**style, "font.size": 8, "axes.titlesize": 9}
+    large = {**style, "font.size": 12, "axes.titlesize": 13}
     unit = s.spec.get("unit", "")
     ylabel = f"{s.name} ({unit})" if unit else s.name
+    accumulated = s.spec["output"].get("accumulate")
 
     def x_of(values: list[str]):
         if s.is_date:
             return list(mdates.date2num(np.array(values, dtype="datetime64[D]")))
         return [to_float(v) for v in values]
 
-    def png(fig) -> str:
+    def png(fig, dpi: int) -> str:
         buf = io.BytesIO()
-        fig.savefig(buf, format="png", dpi=110)
+        fig.savefig(buf, format="png", dpi=dpi)
         plt.close(fig)
-        return base64.b64encode(buf.getvalue()).decode()
+        # line plots need few colours: a palette PNG is a fraction of the size
+        img = Image.open(io.BytesIO(buf.getvalue())).convert("RGB")
+        out = io.BytesIO()
+        img.quantize(colors=96, method=Image.Quantize.FASTOCTREE).save(out, "PNG", optimize=True)
+        return base64.b64encode(out.getvalue()).decode()
 
-    result = []
-    labels = sorted(s.series, key=natural)
+    def boxes(fig, axes: list) -> list[list[float]]:
+        fig.canvas.draw()  # positions after the constrained layout
+        return [[round(b.x0, 4), round(1 - b.y1, 4), round(b.x1, 4), round(1 - b.y0, 4)]
+                for b in (ax.get_position() for ax in axes)]
+
+    def caption(name: str, ps: list[Point]) -> str:
+        st = statistics([p.obs for p in ps], [p.sim_value for p in ps])
+        if not st["n"]:
+            return f"{name}: no measurements"
+        u = f" {unit}" if unit else ""
+        return (f"{name}: n = {st['n']}, RMSE {fmt(st['rmse'])}{u}, "
+                f"bias {fmt(st['bias'])}{u}, NSE {fmt(st['nse'])}")
+
     by_label: dict[str, list[Point]] = {}
     for p in s.points:
         by_label.setdefault(p.label, []).append(p)
-    ncols = min(len(labels), 4 if len(labels) <= 12 else 6)
-    nrows = math.ceil(len(labels) / ncols)
-    fig, axes = plt.subplots(nrows, ncols, figsize=(3.2 * ncols, 2.3 * nrows + 0.6),
-                             squeeze=False, layout="constrained")
-    accumulated = s.spec["output"].get("accumulate")
-    for ax, label in zip(axes.flat, labels):
+
+    def series_panel(ax, label: str, big: bool) -> None:
         ser = by_label.get(label, [])
         line = s.series[label]
+        k = 1.5 if big else 1.0
         if accumulated == "since-previous":
             # each value is the sum over the period ending at its date
-            ax.plot(x_of(line.x), line.y, "-", lw=1.0, color=SIM_COLOR, label="simulated",
+            ax.plot(x_of(line.x), line.y, "-", lw=1.0 * k, color=SIM_COLOR, label="simulated",
                     drawstyle="steps-pre")
         elif s.is_date:
-            ax.plot(x_of(line.x), line.y, "-", lw=1.2, color=SIM_COLOR, label="simulated")
+            ax.plot(x_of(line.x), line.y, "-", lw=1.2 * k, color=SIM_COLOR, label="simulated")
         else:
-            ax.plot(x_of(line.x), line.y, "-", lw=0.8, color=SIM_COLOR, label="simulated",
-                    marker="s", ms=2.5)
+            ax.plot(x_of(line.x), line.y, "-", lw=0.8 * k, color=SIM_COLOR, label="simulated",
+                    marker="s", ms=2.5 * k)
         if ser:
             xs, ys = x_of([p.x for p in ser]), [p.obs for p in ser]
             sds = [p.sd or 0.0 for p in ser]
-            ax.errorbar(xs, ys, yerr=sds if any(sds) else None, fmt="o", ms=4,
-                        color=OBS_COLOR, mec="#fcfcfb", mew=0.6, elinewidth=0.7,
+            ax.errorbar(xs, ys, yerr=sds if any(sds) else None, fmt="o", ms=4 * k,
+                        color=OBS_COLOR, mec="#fcfcfb", mew=0.6 * k, elinewidth=0.7 * k,
                         label="measured")
             if not accumulated and s.is_date:
                 # daily outputs run over the whole simulation, zoom to the measurements
                 pad = 0.03 * ((max(xs) - min(xs)) or 30)
                 ax.set_xlim(min(xs) - pad, max(xs) + pad)
-        ax.set_title(label)
         ax.grid(alpha=0.25, lw=0.5)
         if s.is_date:
-            loc = mdates.AutoDateLocator(minticks=3, maxticks=5)
+            loc = mdates.AutoDateLocator(minticks=3, maxticks=12 if big else 5)
             ax.xaxis.set_major_locator(loc)
             ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
-    for ax in axes.flat[len(labels):]:
-        ax.set_visible(False)
-    handles, names = axes.flat[0].get_legend_handles_labels()
-    fig.legend(handles, names, loc="outside upper right", ncols=2, frameon=False)
-    fig.supylabel(ylabel)
-    result.append(("Time series per simulation", png(fig)))
 
     groups: dict[str, list[Point]] = {}
     for p in s.points:
         groups.setdefault(p.group or "all", []).append(p)
-    if s.points:
-        ncols = min(len(groups), 4 if len(groups) <= 8 else 6)
-        nrows = math.ceil(len(groups) / ncols)
-        fig, axes = plt.subplots(nrows, ncols, figsize=(2.9 * ncols, 2.9 * nrows + 0.5),
+    group_names = sorted(groups, key=natural)
+
+    def scatter_panel(ax, g: str, big: bool) -> None:
+        ps = groups[g]
+        # each panel its own range, so groups with small values stay readable
+        values = [v for p in ps for v in (p.obs, p.sim_value)]
+        lo, hi = min(values), max(values)
+        pad = (hi - lo) * 0.05 or 1
+        lim = (lo - pad, hi + pad)
+        ax.plot(lim, lim, "--", color="#666", lw=0.8 * (1.5 if big else 1))
+        ax.plot([p.obs for p in ps], [p.sim_value for p in ps], "o", ms=6 if big else 3.5,
+                alpha=0.6, color=SIM_COLOR, mec="#fcfcfb", mew=0.4)
+        ax.set(xlim=lim, ylim=lim, aspect="equal")
+        ax.grid(alpha=0.25, lw=0.5)
+
+    result = []
+    labels = sorted(s.series, key=natural)
+    with plt.rc_context(small):
+        ncols = min(len(labels), 4 if len(labels) <= 12 else 6)
+        nrows = math.ceil(len(labels) / ncols)
+        fig, axes = plt.subplots(nrows, ncols, figsize=(3.2 * ncols, 2.3 * nrows + 0.6),
                                  squeeze=False, layout="constrained")
-        for ax, (g, ps) in zip(axes.flat, sorted(groups.items(), key=lambda kv: natural(kv[0]))):
-            # each panel its own range, so groups with small values stay readable
-            values = [v for p in ps for v in (p.obs, p.sim_value)]
-            lo, hi = min(values), max(values)
-            pad = (hi - lo) * 0.05 or 1
-            lim = (lo - pad, hi + pad)
-            ax.plot(lim, lim, "--", color="#666", lw=0.8)
-            ax.plot([p.obs for p in ps], [p.sim_value for p in ps], "o", ms=3.5,
-                    alpha=0.6, color=SIM_COLOR, mec="#fcfcfb", mew=0.4)
-            st = statistics([p.obs for p in ps], [p.sim_value for p in ps])
-            ax.set_title(f"{g} (n={st['n']}, RMSE {fmt(st['rmse'])})")
-            ax.set(xlim=lim, ylim=lim, aspect="equal")
-            ax.grid(alpha=0.25, lw=0.5)
-        for ax in axes.flat[len(groups):]:
+        for ax, label in zip(axes.flat, labels):
+            series_panel(ax, label, False)
+            ax.set_title(label)
+        for ax in axes.flat[len(labels):]:
             ax.set_visible(False)
-        fig.supxlabel(f"measured ({unit})" if unit else "measured")
-        fig.supylabel(f"simulated ({unit})" if unit else "simulated")
-        result.append(("Simulated vs measured (dashed: 1:1)", png(fig)))
+        handles, names = axes.flat[0].get_legend_handles_labels()
+        fig.legend(handles, names, loc="outside upper right", ncols=2, frameon=False)
+        fig.supylabel(ylabel)
+        pos = boxes(fig, list(axes.flat[:len(labels)]))
+        grid = png(fig, 110)
+    panels = []
+    with plt.rc_context(large):
+        for label, box in zip(labels, pos):
+            fig, ax = plt.subplots(figsize=(12, 5.4), layout="constrained")
+            series_panel(ax, label, True)
+            ax.set_title(label)
+            ax.set_ylabel(ylabel)
+            ax.legend(frameon=False, loc="best")
+            panels.append({"caption": caption(label, by_label.get(label, [])),
+                           "box": box, "src": png(fig, 100)})
+    result.append({"title": "Time series per simulation", "grid": grid, "panels": panels})
+
+    if s.points:
+        xl = f"measured ({unit})" if unit else "measured"
+        yl = f"simulated ({unit})" if unit else "simulated"
+        with plt.rc_context(small):
+            ncols = min(len(groups), 4 if len(groups) <= 8 else 6)
+            nrows = math.ceil(len(groups) / ncols)
+            fig, axes = plt.subplots(nrows, ncols, figsize=(2.9 * ncols, 2.9 * nrows + 0.5),
+                                     squeeze=False, layout="constrained")
+            for ax, g in zip(axes.flat, group_names):
+                scatter_panel(ax, g, False)
+                st = statistics([p.obs for p in groups[g]], [p.sim_value for p in groups[g]])
+                ax.set_title(f"{g} (n={st['n']}, RMSE {fmt(st['rmse'])})")
+            for ax in axes.flat[len(groups):]:
+                ax.set_visible(False)
+            fig.supxlabel(xl)
+            fig.supylabel(yl)
+            pos = boxes(fig, list(axes.flat[:len(groups)]))
+            grid = png(fig, 110)
+        panels = []
+        with plt.rc_context(large):
+            for g, box in zip(group_names, pos):
+                fig, ax = plt.subplots(figsize=(7.5, 7), layout="constrained")
+                scatter_panel(ax, g, True)
+                ax.set_title(g)
+                ax.set(xlabel=xl, ylabel=yl)
+                panels.append({"caption": caption(g, groups[g]), "box": box,
+                               "src": png(fig, 100)})
+        result.append({"title": "Simulated vs measured (dashed: 1:1)", "grid": grid,
+                       "panels": panels})
     return result
+
+
+LIGHTBOX = """
+<div id="lb" hidden><div class="lb-card" role="dialog" aria-modal="true" aria-label="enlarged plot">
+<div class="lb-bar"><span id="lb-cap"></span><span>
+<button id="lb-prev" aria-label="previous">&#8249;</button>
+<button id="lb-next" aria-label="next">&#8250;</button>
+<button id="lb-close" aria-label="close">&#215;</button></span></div>
+<img id="lb-img" alt=""></div></div>
+<script>
+(() => {
+  const lb = document.getElementById("lb"), img = document.getElementById("lb-img"),
+        cap = document.getElementById("lb-cap");
+  let panels = null, at = 0;
+  const show = i => {
+    at = (i + panels.length) % panels.length;
+    img.src = panels[at].src; img.alt = cap.textContent = panels[at].caption;
+    cap.textContent += `  (${at + 1}/${panels.length})`;
+  };
+  const open = (ps, i) => { panels = ps; lb.hidden = false; show(i); };
+  const close = () => { lb.hidden = true; img.removeAttribute("src"); };
+  document.getElementById("lb-prev").onclick = e => { e.stopPropagation(); show(at - 1); };
+  document.getElementById("lb-next").onclick = e => { e.stopPropagation(); show(at + 1); };
+  document.getElementById("lb-close").onclick = close;
+  lb.onclick = e => { if (e.target === lb) close(); };
+  addEventListener("keydown", e => {
+    if (lb.hidden) return;
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft") show(at - 1);
+    else if (e.key === "ArrowRight") show(at + 1);
+  });
+  for (const fig of document.querySelectorAll(".fig")) {
+    const ps = JSON.parse(fig.querySelector("script").textContent);
+    const grid = fig.querySelector("img"), mark = fig.querySelector(".mark");
+    const hit = e => {
+      const r = grid.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      return ps.findIndex(p => x >= p.box[0] && x <= p.box[2] && y >= p.box[1] && y <= p.box[3]);
+    };
+    grid.addEventListener("mousemove", e => {
+      const i = hit(e);
+      grid.style.cursor = i < 0 ? "default" : "zoom-in";
+      if (i < 0) { mark.hidden = true; return; }
+      const b = ps[i].box;
+      Object.assign(mark.style, { left: b[0] * 100 + "%", top: b[1] * 100 + "%",
+        width: (b[2] - b[0]) * 100 + "%", height: (b[3] - b[1]) * 100 + "%" });
+      mark.hidden = false;
+    });
+    grid.addEventListener("mouseleave", () => { mark.hidden = true; });
+    grid.addEventListener("click", e => { const i = hit(e); if (i >= 0) open(ps, i); });
+  }
+})();
+</script>
+"""
 
 
 def html_report(md_meta: str, suites: list[tuple[str, list[ObservedSet]]], stats: dict,
@@ -504,12 +617,29 @@ def html_report(md_meta: str, suites: list[tuple[str, list[ObservedSet]]], stats
              "td:first-child,th:first-child{text-align:left}"
              "th{color:#555;font-weight:600}img{max-width:100%}"
              "h2{margin-top:40px;border-top:1px solid #ccc;padding-top:16px}"
-             "details{margin:8px 0}.note{color:#555}",
+             "details{margin:8px 0}.note{color:#555}"
+             ".fig{position:relative;display:inline-block;max-width:100%}"
+             ".fig img{display:block}"
+             ".mark{position:absolute;pointer-events:none;border:2px solid #2a78d6;"
+             "border-radius:4px;background:rgba(42,120,214,.06)}"
+             "#lb{position:fixed;inset:0;background:rgba(20,20,19,.72);display:flex;"
+             "align-items:center;justify-content:center;z-index:10}"
+             "#lb[hidden]{display:none}"
+             ".lb-card{background:#fcfcfb;border-radius:8px;padding:10px 12px;"
+             "max-width:96vw;max-height:94vh;display:flex;flex-direction:column}"
+             ".lb-bar{display:flex;justify-content:space-between;gap:16px;align-items:center;"
+             "margin-bottom:6px;color:#333}"
+             ".lb-bar button{font:20px system-ui;width:36px;height:32px;margin-left:4px;"
+             "border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer}"
+             "#lb-img{max-width:calc(96vw - 24px);max-height:calc(94vh - 60px);"
+             "object-fit:contain;cursor:default}",
              "</style></head><body><h1>MONICA: simulated vs measured</h1>",
              f"<p class='note'>{html.escape(md_meta)}</p>",
              "<p class='note'>Blue: simulated, orange dots: measured (error bars: sd). "
              "Bias = mean(sim − obs); nRMSE = RMSE / obs mean; d = Willmott's index of "
-             "agreement; NSE = Nash-Sutcliffe efficiency.</p>"]
+             "agreement; NSE = Nash-Sutcliffe efficiency.</p>",
+             "<p class='note'>Click a panel of a plot to enlarge it; then ← and → step "
+             "through the panels, Esc closes.</p>"]
     for suite, sets in suites:
         for s in sets:
             st = stats[suite][s.name]
@@ -521,9 +651,15 @@ def html_report(md_meta: str, suites: list[tuple[str, list[ObservedSet]]], stats
             parts.append(table(st["group"] or "", [("all", st["all"]), *st["groups"].items()],
                                base, "groups"))
             if plots:
-                for title, data in figures(s):
-                    parts.append(f"<h3>{html.escape(title)}</h3>"
-                                 f"<img alt='{html.escape(title)}' src='data:image/png;base64,{data}'>")
+                for f in figures(s):
+                    panels = [{"caption": p["caption"], "box": p["box"],
+                               "src": "data:image/png;base64," + p["src"]} for p in f["panels"]]
+                    data = json.dumps(panels).replace("</", "<\\/")
+                    parts.append(f"<h3>{html.escape(f['title'])}</h3><div class='fig'>"
+                                 f"<img alt='{html.escape(f['title'])}' "
+                                 f"src='data:image/png;base64,{f['grid']}'>"
+                                 "<div class='mark' hidden></div>"
+                                 f"<script type='application/json'>{data}</script></div>")
             parts.append("<details><summary>Statistics per simulation</summary>"
                          + table("simulation", list(st["sims"].items()), base, "sims")
                          + "</details>")
@@ -532,7 +668,7 @@ def html_report(md_meta: str, suites: list[tuple[str, list[ObservedSet]]], stats
                              "simulated value</summary><ul>"
                              + "".join(f"<li>{html.escape(u)}</li>" for u in s.unmatched[:500])
                              + "</ul></details>")
-    parts.append("</body></html>")
+    parts.append(LIGHTBOX + "</body></html>")
     return "\n".join(parts)
 
 
