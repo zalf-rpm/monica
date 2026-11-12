@@ -92,7 +92,13 @@ results are kept as workflow artifacts for 14 days.
 The `validate` job runs `validate.py` on the Nix build's results. The run
 page shows the statistics, with the change of the RMSE since the previous
 master build (whose `validation-json` artifact it downloads), and links the
-plots: the `report.html` artifact, a single HTML file.
+plots: the `report.html` artifact, a single HTML file. For master pushes and
+tags it also publishes the run to
+[zalf-rpm/monica_validation](https://github.com/zalf-rpm/monica_validation),
+whose page https://zalf-rpm.github.io/monica_validation/ shows the statistics
+over time (with the plots of releases and of the latest runs). That needs the
+`VALIDATION_DEPLOY_KEY` secret: the private half of a deploy key with write
+access to monica_validation; without it the step is skipped.
 
 ## Adding a suite
 

@@ -177,7 +177,9 @@ simulated time series against the measured values.
 
 CI does this on every push for all builds; the run page shows the comparison
 of the builds and the fit to the measurements, with the change of the RMSE
-since the previous master build. See [tests/README.md](tests/README.md).
+since the previous master build. How the fit develops over commits and
+releases: https://zalf-rpm.github.io/monica_validation/. See
+[tests/README.md](tests/README.md).
 
 ## Step-by-step guides
 
