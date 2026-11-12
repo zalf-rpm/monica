@@ -89,6 +89,7 @@ monica_et_step :: proc(b: ^Monica_Et, in_: ^Input, out: ^Output, allocator := co
 	et.et_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.reference_evapotranspiration = b.a.reference_evapotranspiration
 	out.potential_evapotranspiration = b.a.potential_evapotranspiration
+	out.saturation_vapor_pressure_deficit = b.a.saturation_vapor_pressure_deficit
 	out.net_radiation = b.a.net_radiation
 	out.evaporated_from_surface = b.s.evaporated_from_surface
 	out.actual_evaporation = b.s.actual_evaporation
@@ -139,4 +140,5 @@ monica_et_entry :: Module_Entry {
 	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {monica_et_step(m.(^Monica_Et), in_, out, a)},
 	destroy = proc(m: Module, a: Allocator) {destroy_monica_et(m.(^Monica_Et), a)},
 	integrated = true,
+	needs_layers = true,
 }

@@ -13,6 +13,8 @@
 //     evaporation/transpiration/ET and their layers, net radiation
 //   - drivers run on the same input and are only reported; MONICA's own (or
 //     the integrated module) has changed the state, not they.
+// The input includes the intermediates of MONICA's ET0, which
+// Monica_AMEI_potential_Evapotranspiration takes as inputs.
 //
 // The FAO-56 dual Kc pathway (sim.json "evapotranspiration-method") is
 // MONICA's own only; check_modules_config refuses it with an integrated module.
@@ -142,6 +144,46 @@ evapotranspiration_with_modules :: proc(
 		day.crop_evaporated_from_intercept = cm.evaporated_from_intercept
 		day.gross_photosynthesis_reference_mol = cm.gross_photosynthesis_reference_mol
 	}
+	// The intermediates of the ET0 MONICA's own uses (`evapotranspiration`): the
+	// crop module's with a crop, soil moisture's without. Calculated here, on
+	// a copy, rather than taken from MONICA's own calculation: on days with an
+	// ET0 from the climate data, or with an integrated module, MONICA doesn't
+	// calculate it, and both procedures write a field (the stomata resistance,
+	// the net radiation) the copy keeps away from MONICA's state. The crop
+	// module's step ran before, so its state is the day's.
+	terms: Et0_Terms
+	if developmental_stage > 0 && cm != nil {
+		cmc := cm^
+		_ = fc_reference_evapotranspiration(
+			&cmc,
+			max_air_temp,
+			min_air_temp,
+			relative_humidity,
+			avg_air_temp,
+			wind_speed,
+			wind_speed_height,
+			model.atmospheric_co2_concentration,
+			&terms,
+		)
+	} else {
+		smc := sm^
+		_ = reference_evapotranspiration(
+			&smc,
+			max_air_temp,
+			min_air_temp,
+			relative_humidity,
+			avg_air_temp,
+			wind_speed,
+			wind_speed_height,
+			global_radiation,
+			julian_day,
+			&terms,
+		)
+	}
+	day.vapor_pressure = terms.vapour_pressure
+	day.saturated_vapor_pressure = terms.saturated_vapour_pressure
+	day.stomata_resistance = terms.stomata_resistance
+	day.net_radiation = terms.net_radiation
 	gather :: proc(m: ^Evapotranspiration_Module, day: ^etm.Daily, sc: ^Soil_Column, cm: ^Crop_Module) {
 		m.input.daily = day^
 		for &l, i in sc.layers {

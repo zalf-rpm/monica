@@ -598,8 +598,8 @@ evaporation, gross photosynthesis). The two packages:
   local variables, in two places. Its C++ adapter sets only the vapour pressure and, integrated,
   replaces the whole `fm_Evapotranspiration` while only setting ET0. Then evaporation and
   transpiration never leave the soil water. It also takes the crop's ET0 only *with* an external
-  ET0, which looks inverted. Not usable integrated; no binding yet (as a driver it would need
-  MONICA to keep those intermediates).
+  ET0, which looks inverted. Not usable integrated. (Since 2026-11-12 a driver and standalone,
+  see the end of phase 5; the "inverted" condition was the adapter's, not the model's.)
 
 What was built:
 
@@ -684,6 +684,36 @@ Afterwards C++ AMEI's own ET and its module agree on every number of sim-min. On
 agree after regenerating the cpp2 code from EvapoTranspirationModels b65ec8c and applying fix 5
 (both tested by patching, not committed; uncommitted in `monica_amei`: the getters and the
 adapter).
+
+Monica_AMEI_potential_Evapotranspiration, 2026-11-12 (for the first phase of the AMEI
+evapotranspiration exercise: ET0 and potential ET from intermediates supplied from outside, later
+from MONICA):
+
+* Binding `monica/modules/evapotranspiration/monica_amei_pot_et.odin`; in the table with
+  `integrated = false` (it has no evaporation, transpiration or soil water), `inputs` and
+  `outputs` (new `Module_Entry` fields: the `Daily` fields it reads and the `Output` fields it
+  computes; nil: all) and `needs_layers` (false; true for Monica_Evapotranspiration).
+* `Daily` got the intermediates (`vapor_pressure`, `saturated_vapor_pressure`,
+  `stomata_resistance`, `net_radiation`), `Output` the `saturation_vapor_pressure_deficit`.
+* Driver: the gather computes the intermediates of the ET0 MONICA's own uses - the crop module's
+  (`fc_reference_evapotranspiration`) with a crop (developmental stage > 0), soil moisture's
+  (`reference_evapotranspiration`) without - with a new optional `terms` parameter, on a copy of
+  the crop module or soil moisture. Not taken from MONICA's own calculation: with an ET0 from the
+  climate data or an integrated module MONICA doesn't calculate it, and both write a field
+  (stomata resistance, net radiation) the copy keeps away from MONICA's state.
+* Standalone: `monica-module run Evapotranspiration <impl> <input.json> [out.csv]`
+  (`cmd/monica-module/evapotranspiration.odin`): per-run values in JSON (for this module only
+  `HeightNN`), the daily ones in a CSV with the `Daily` field names as columns; writes the module's
+  `outputs`. Works for Monica_Evapotranspiration too, which needs `Layers`.
+* Checks (`tests/check_drivers.py`, `check_modules.sh`, CI): refused integrated; as a driver on
+  sim-min its ET0 == MONICA's (2557 days, 2038 with a crop) and its potential ET == MONICA's
+  *before* evaporation from surface water (the crop's remaining ET or ET0 * Kc, at most 6.5) - the
+  full module reports it after that, so the two differ on surface water days (53 of 132 on
+  sim-min); standalone on the driver's inputs == the driver; Odin == the generated Python (7671 of
+  7671 values). Outputs without the module and with the other modules byte-identical (8
+  simulations).
+* Not done: integrated with MONICA's own evaporation and transpiration using the module's ET0 and
+  potential ET - a mode the current design doesn't have.
 
 **Phase 6: a second process as a module (optional, proves R3).** E.g. move evapotranspiration's
 internal code behind its own union like soil temperature in phase 1, then write a small

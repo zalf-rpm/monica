@@ -8,7 +8,8 @@
     "SoilTemperature modules: Monica_SoilTemp, DSSAT_ST_standalone, DSSAT_EPICST_standalone,",
     "ApsimCampbell, BiomaSurfacePartonSoilSWATC, BiomaSurfaceSWATSoilSWATC,",
     "Simplace_Soil_Temperature, SQ_Soil_Temperature, Stics_soil_temperature.",
-    "Evapotranspiration modules: Monica_Evapotranspiration (not with FAO-56-Dual).",
+    "Evapotranspiration modules: Monica_Evapotranspiration (not with FAO-56-Dual),",
+    "Monica_AMEI_potential_Evapotranspiration (only ET0 and potential ET, driver only).",
     "Output columns given by path get the field's unit; 'unit' overrides it. 'calc' applies",
     "steps [op, operand] or [op] left to right; an operand is a number or another output.",
     "Operators: + - * / ^ % min max < <= > >= == != (1 or 0), neg abs sqrt exp ln log10 floor ceil."
@@ -30,7 +31,10 @@
       "ApsimCampbell"
     ],
     "Evapotranspiration": { "impl": "internal" },
-    "EvapotranspirationDrivers": ["Monica_Evapotranspiration"]
+    "EvapotranspirationDrivers": [
+      "Monica_Evapotranspiration",
+      "Monica_AMEI_potential_Evapotranspiration"
+    ]
   },
   "output": {
     "write-file?": true,
@@ -106,6 +110,22 @@
           "unit": "1",
           "round": 3,
           "calc": ["/", "soil_moisture.reference_evapotranspiration"]
+        },
+        {
+          "path": "modules.evapotranspiration_drivers.Monica_AMEI_potential_Evapotranspiration.output.reference_evapotranspiration",
+          "name": "PotET.ET0"
+        },
+        {
+          "path": "modules.evapotranspiration_drivers.Monica_AMEI_potential_Evapotranspiration.output.potential_evapotranspiration",
+          "name": "PotET.ETp"
+        },
+        {
+          "path": "modules.evapotranspiration_drivers.Monica_AMEI_potential_Evapotranspiration.input.daily.vapor_pressure",
+          "name": "PotET.vp"
+        },
+        {
+          "path": "modules.evapotranspiration_drivers.Monica_AMEI_potential_Evapotranspiration.input.daily.stomata_resistance",
+          "name": "PotET.rs"
         }
       ],
       "yearly",

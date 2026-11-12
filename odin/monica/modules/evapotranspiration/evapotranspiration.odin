@@ -8,11 +8,12 @@
 // capillary rise. Unlike soil temperature it changes MONICA's state: the soil
 // moisture and the surface water storage come in and go out again.
 //
-// Only Monica_Evapotranspiration so far. Monica_AMEI_potential_Evapotranspiration
-// computes ET0 and the potential ET from intermediates (vapour pressures, net
-// radiation, stomata resistance) that MONICA only has as locals, in two
-// different places (soil moisture without a crop, the crop module with one),
-// so it has no binding yet.
+// Two modules: Monica_Evapotranspiration, MONICA's whole evapotranspiration,
+// and Monica_AMEI_potential_Evapotranspiration, just its ET0 and potential ET
+// from intermediates (vapour pressures, net radiation, stomata resistance)
+// that are inputs here - from outside standalone, from MONICA's own ET0 as a
+// driver (core/evapotranspiration_impl.odin). It can't replace MONICA's own,
+// which also has to give the evaporation, transpiration and soil water.
 //
 // A new module (R3): as in monica/modules/soil_temperature, its file with a
 // constant Module_Entry at the end, plus one line each in Module and `modules`.
@@ -68,13 +69,21 @@ Daily :: struct {
 	kc_factor:                          f64 `unit:"1"`, // MONICA's current Kc
 	snow_depth:                         f64 `unit:"mm"`,
 	surface_water_storage:              f64 `unit:"mm"`, // before the step
+	// the intermediates of MONICA's ET0 - the crop module's with a crop
+	// (developmental_stage > 0), soil moisture's without - which
+	// Monica_AMEI_potential_Evapotranspiration takes as inputs
+	vapor_pressure:                     f64 `unit:"kPa"`,
+	saturated_vapor_pressure:           f64 `unit:"kPa"`,
+	stomata_resistance:                 f64 `unit:"s m-1"`,
+	net_radiation:                      f64 `unit:"MJ m-2"`,
 }
 
 // What MONICA's own evapotranspiration produces.
 Output :: struct {
-	reference_evapotranspiration: f64 `unit:"mm"`,
-	potential_evapotranspiration: f64 `unit:"mm"`,
-	net_radiation:                f64 `unit:"MJ m-2"`,
+	reference_evapotranspiration:      f64 `unit:"mm"`,
+	potential_evapotranspiration:      f64 `unit:"mm"`,
+	saturation_vapor_pressure_deficit: f64 `unit:"kPa"`,
+	net_radiation:                     f64 `unit:"MJ m-2"`,
 	evaporated_from_surface:      f64 `unit:"mm"`,
 	actual_evaporation:           f64 `unit:"mm"`,
 	actual_transpiration:         f64 `unit:"mm"`,
@@ -97,6 +106,7 @@ make_output :: proc(no_of_layers: int, allocator := context.allocator) -> Output
 
 Module :: union {
 	^Monica_Et,
+	^Monica_Amei_Pot_Et,
 }
 
 // A module's table row, as in monica/modules/soil_temperature.
@@ -114,11 +124,19 @@ Module_Entry :: struct {
 	destroy: proc(m: Module, allocator: Allocator),
 	// whether it can replace MONICA's own (computes everything Output has)
 	integrated: bool,
+	// the Daily fields it reads (monica-module names those missing in its
+	// input), and the Output fields it computes, the others stay 0
+	// (monica-module writes only these); nil: all
+	inputs:  []string,
+	outputs: []string,
+	// whether it needs the soil profile (Input's per-layer arrays)
+	needs_layers: bool,
 }
 
 @(rodata)
 modules := [?]Module_Entry {
 	monica_et_entry,
+	monica_amei_pot_et_entry,
 }
 
 find_module :: proc(name: string) -> (Module_Entry, bool) {

@@ -24,6 +24,8 @@
    ET, extracted into Crop2ML units - identical since C++ master 445fa61c and
    EvapoTranspirationModels b65ec8c), and MONICA's soil moisture outputs are
    exactly the module's.
+5. Monica_AMEI_potential_Evapotranspiration: refused integrated; as a driver
+   MONICA's ET0 and potential ET; standalone the driver's outputs.
 
 Needs MONICA_PARAMETERS. Standard library only.
 """
@@ -44,7 +46,14 @@ MODULES = ["Monica_SoilTemp", "DSSAT_ST_standalone", "DSSAT_EPICST_standalone", 
            "BiomaSurfacePartonSoilSWATC", "BiomaSurfaceSWATSoilSWATC", "Simplace_Soil_Temperature",
            "SQ_Soil_Temperature", "Stics_soil_temperature"]
 DRIVERS = "modules.soil_temperature_drivers"
-ET_MODULES = ["Monica_Evapotranspiration"]
+ET_MODULES = ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration"]
+ET_INTEGRATED = ["Monica_Evapotranspiration"]  # the others only compute some of the outputs
+POT_ET = "Monica_AMEI_potential_Evapotranspiration"
+# its inputs (monica/modules/evapotranspiration's Daily)
+POT_ET_INPUTS = ["tavg", "wind", "wind_speed_height", "kc_factor", "developmental_stage",
+                 "crop_remaining_evapotranspiration", "vapor_pressure", "saturated_vapor_pressure",
+                 "stomata_resistance", "net_radiation"]
+POT_ET_OUTPUTS = ["reference_evapotranspiration", "potential_evapotranspiration", "saturation_vapor_pressure_deficit"]
 ET_DRIVERS = "modules.evapotranspiration_drivers"
 ET_SCALARS = ["reference_evapotranspiration", "net_radiation", "evaporated_from_surface", "actual_evaporation",
               "actual_transpiration", "actual_evapotranspiration"]
@@ -194,7 +203,7 @@ def evapotranspiration(monica_run, work):
     outs = run_variant(monica_run, work, "et-drivers", {"EvapotranspirationDrivers": ET_MODULES})
     same = outs.keys() == plain.keys() and all(outs[k] == plain[k] for k in plain)
     check(same, f"drivers: {len(plain)} outputs of {', '.join(FIXTURES)} byte-identical")
-    for m in ET_MODULES:
+    for m in ET_INTEGRATED:
         outs = run_variant(monica_run, work, f"et-integrated-{m}", {"Evapotranspiration": {"impl": m}})
         same = outs.keys() == plain.keys() and all(outs[k] == plain[k] for k in plain)
         check(same, f"{m} integrated: {len(plain)} outputs of {', '.join(FIXTURES)} byte-identical")
@@ -225,6 +234,63 @@ def evapotranspiration(monica_run, work):
         check(same, f"{m} integrated: MONICA's evaporation/transpiration/ET0 == the module's, {len(days)} days")
 
 
+def potential_evapotranspiration(monica_run, monica_module, work):
+    """Monica_AMEI_potential_Evapotranspiration: refused integrated; as a
+    driver, MONICA's ET0, and MONICA's potential ET before evaporation from
+    surface water (soil_moisture.odin `evapotranspiration`: the crop's
+    remaining ET with a crop, ET0 * Kc without, at most 6.5 mm) - the full
+    module reports it after that; standalone on the inputs the driver got, the
+    driver's outputs. tests/check_modules.sh compares that standalone run with
+    the generated Python."""
+    print(f"== {POT_ET}")
+    j = json.loads((H2 / "sim-min.json").read_text())
+    for key in ("crop.json", "site.json", "climate.csv"):
+        j[key] = str(H2 / j[key])
+    j["Modules"] = {"Evapotranspiration": {"impl": POT_ET}}
+    (work / "pot-et-integrated.json").write_text(json.dumps(j, indent=1))
+    r = subprocess.run([str(monica_run), "pot-et-integrated.json"], cwd=work, capture_output=True, text=True)
+    check(r.returncode != 0 and "can only run as a driver" in r.stdout + r.stderr, "refused integrated")
+
+    name = "pot-et-driver"
+    j["Modules"] = {"EvapotranspirationDrivers": [POT_ET]}
+    out = j["output"]
+    out["file-name"] = f"{name}.csv"
+    out["path-to-output"] = "./"
+    out["csv-options"] = {**out.get("csv-options", {}), "precision": 17, "include-units-row": False}
+    m = f"{ET_DRIVERS}.{POT_ET}"
+    cols = ["Date", {"path": "soil_moisture.reference_evapotranspiration", "name": "ET0"}]
+    cols += [{"path": f"{m}.output.{v}", "name": v} for v in POT_ET_OUTPUTS]
+    cols += [{"path": f"{m}.input.daily.{v}", "name": f"in.{v}"} for v in POT_ET_INPUTS]
+    out["events"] = ["daily", cols]
+    (work / f"{name}.json").write_text(json.dumps(j, indent=1))
+    run([monica_run, f"{name}.json"], work)
+    days = read_section(work / f"{name}.csv")
+    check(len(days) > 0 and all(r["reference_evapotranspiration"] == r["ET0"] for r in days),
+          f"driver ET0 == MONICA's, {len(days)} days")
+
+    def potential(r):
+        p = (float(r["in.crop_remaining_evapotranspiration"]) if int(r["in.developmental_stage"]) > 0
+             else float(r["ET0"]) * float(r["in.kc_factor"]))
+        return 6.5 if p > 6.5 else p
+    check(all(float(r["potential_evapotranspiration"]) == potential(r) for r in days),
+          f"driver potential ET == MONICA's before evaporation from surface water, {len(days)} days")
+
+    with open(work / "pot-et-standalone.csv", "w", newline="") as f:
+        f.write(",".join(["date"] + POT_ET_INPUTS) + "\n")
+        for r in days:
+            f.write(",".join([r["Date"]] + [r[f"in.{v}"] for v in POT_ET_INPUTS]) + "\n")
+    site = json.loads((H2 / j["site.json"]).read_text())
+    height = site["SiteParameters"]["HeightNN"]
+    height = height[0] if isinstance(height, list) else height
+    (work / "pot-et-standalone.json").write_text(json.dumps({"HeightNN": height, "Daily": "pot-et-standalone.csv"}))
+    run([monica_module, "run", "Evapotranspiration", POT_ET, "pot-et-standalone.json", "pot-et-standalone-out.csv"],
+        work)
+    sa = list(csv.DictReader(open(work / "pot-et-standalone-out.csv", newline="")))
+    check(len(sa) == len(days) and all(o["date"] == r["Date"] and all(o[v] == r[v] for v in POT_ET_OUTPUTS)
+                                       for o, r in zip(sa, days)),
+          "monica-module standalone on the driver's inputs == the driver")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--monica-run", required=True, type=Path)
@@ -239,6 +305,7 @@ def main():
     drivers_against_monica_and_standalone(ns.monica_run.resolve(), ns.monica_module.resolve(), work)
     integrated(ns.monica_run.resolve(), work)
     evapotranspiration(ns.monica_run.resolve(), work)
+    potential_evapotranspiration(ns.monica_run.resolve(), ns.monica_module.resolve(), work)
     print("== FAIL" if failures else "== PASS")
     return 1 if failures else 0
 

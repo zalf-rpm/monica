@@ -1147,6 +1147,10 @@ evapotranspiration :: proc(
 //        double)
 //
 // Penman-Monteith method, FAO Irrigation and Drainage Paper 56.
+//
+// NOTE(deviation): `terms` gets the intermediates the evapotranspiration
+// module Monica_AMEI_potential_Evapotranspiration takes as inputs
+// (evapotranspiration_impl.odin); nil, as in MONICA's own call, changes nothing.
 reference_evapotranspiration :: proc(
 	sm: ^Soil_Moisture,
 	max_air_temperature,
@@ -1157,6 +1161,7 @@ reference_evapotranspiration :: proc(
 	wind_speed_height,
 	global_radiation: f64,
 	julian_day: int,
+	terms: ^Et0_Terms = nil,
 ) -> f64 {
 	pi := 3.14159265358979323
 
@@ -1300,7 +1305,26 @@ reference_evapotranspiration :: proc(
 		ref_evapotranspiration = 0.0
 	}
 
+	if terms != nil {
+		terms^ = Et0_Terms {
+			vapour_pressure           = vapour_pressure,
+			saturated_vapour_pressure = saturated_vapour_pressure,
+			net_radiation             = sm.net_radiation,
+			stomata_resistance        = STOMATA_RESISTANCE,
+		}
+	}
 	return ref_evapotranspiration
+}
+
+// NOTE(deviation): the intermediates of an ET0 calculation (soil moisture's
+// reference_evapotranspiration, the crop module's
+// fc_reference_evapotranspiration) that the evapotranspiration module
+// Monica_AMEI_potential_Evapotranspiration takes as inputs.
+Et0_Terms :: struct {
+	vapour_pressure:           f64 `unit:"kPa"`,
+	saturated_vapour_pressure: f64 `unit:"kPa"`,
+	net_radiation:             f64 `unit:"MJ m-2"`,
+	stomata_resistance:        f64 `unit:"s m-1"`,
 }
 
 // C++: double monica::soilmoisture::getEReducer1(const SoilMoisture*, int,

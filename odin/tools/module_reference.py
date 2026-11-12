@@ -34,7 +34,7 @@ CROP2ML = ODIN / "build" / "crop2ml"
 def read_input(path):
     path = Path(path)
     j = json.loads(path.read_text())
-    layers = j["Layers"]
+    layers = j.get("Layers", [])
     days = []
     with open(path.parent / j["Daily"], newline="") as f:
         for row in csv.DictReader(f):
@@ -73,6 +73,10 @@ def thickness_cm(m):
 
 
 # --- the mappings, one per module: as in the Odin bindings -------------------
+#
+# Each returns (parameters, daily(day) -> inputs, extract(env, n) -> values),
+# and optionally the output columns after "date"; without them the soil
+# temperature ones (surface, then one per layer).
 
 def monica_soiltemp(j, layers):
     """monica/modules/soil_temperature/monica_soiltemp.odin"""
@@ -303,7 +307,29 @@ MODULES = {
     "Simplace_Soil_Temperature": ("SoilTemperatureModels", simplace),
     "SQ_Soil_Temperature": ("SoilTemperatureModels", lambda j, ls, d0: sq(j, ls)),
     "Stics_soil_temperature": ("SoilTemperatureModels", stics),
+    "Monica_AMEI_potential_Evapotranspiration": ("EvapoTranspirationModels",
+                                                 lambda j, ls, d0: monica_amei_pot_et(j, ls)),
 }
+
+
+def monica_amei_pot_et(j, layers):
+    """monica/modules/evapotranspiration/monica_amei_pot_et.odin"""
+    params = {"height_nn": j.get("HeightNN", 0.0)}
+
+    def daily(day):
+        return {
+            "mean_air_temperature": day.get("tavg", 0.0), "wind_speed": day.get("wind", 0.0),
+            "wind_speed_height": day.get("wind_speed_height", 0.0), "kc_factor": day.get("kc_factor", 0.0),
+            "developmental_stage": int(day.get("developmental_stage", 0)),
+            "crop_remaining_evapotranspiration": day.get("crop_remaining_evapotranspiration", 0.0),
+            "vapor_pressure": day.get("vapor_pressure", 0.0),
+            "saturated_vapor_pressure": day.get("saturated_vapor_pressure", 0.0),
+            "stomata_resistance": day.get("stomata_resistance", 0.0),
+            "net_radiation": day.get("net_radiation", 0.0),
+        }
+
+    columns = ["reference_evapotranspiration", "potential_evapotranspiration", "saturation_vapor_pressure_deficit"]
+    return params, daily, lambda env, n: [env[c] for c in columns], columns
 
 
 def run(module, input_path, out_path):
@@ -318,7 +344,7 @@ def run(module, input_path, out_path):
     comp = Topology(module, package).model
 
     j, layers, days = read_input(input_path)
-    params, daily, extract = mapping(j, layers, days[0])
+    params, daily, extract, *columns = mapping(j, layers, days[0])
 
     class MappedInputs(Inputs):
         """PyCrop2ML's deterministic inputs, overridden with the mapped ones.
@@ -359,12 +385,18 @@ def run(module, input_path, out_path):
             reference.run_body(reference.init_body)
         n = len(layers)
         with open(out_path, "w", newline="") as f:
-            f.write("date,soil_surface_temperature" + "".join(f",layer_{i + 1}" for i in range(n)) + "\n")
+            if columns:
+                f.write("date," + ",".join(columns[0]) + "\n")
+            else:
+                f.write("date,soil_surface_temperature" + "".join(f",layer_{i + 1}" for i in range(n)) + "\n")
             for day in days:
                 env.update(daily(day))
                 reference.run_body(reference.model_body)
-                surface, layer_temps = extract(env, n)
-                values = [surface] + list(layer_temps)
+                if columns:
+                    values = extract(env, n)
+                else:
+                    surface, layer_temps = extract(env, n)
+                    values = [surface] + list(layer_temps)
                 f.write(day["date"] + "".join("," + format(float(v), ".17g") for v in values) + "\n")
     finally:
         reference.unload()

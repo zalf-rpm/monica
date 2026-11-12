@@ -2760,10 +2760,13 @@ fc_crop_dry_matter :: proc(
 //
 // FAO-56 Penman-Monteith reference evapotranspiration (Allen, Pereira, Raes
 // & Smith 1998, FAO Irrigation and Drainage Paper 56).
+//
+// NOTE(deviation): `terms` as in soil moisture's reference_evapotranspiration.
 fc_reference_evapotranspiration :: proc(
 	cm: ^Crop_Module,
 	max_air_temperature, min_air_temperature, relative_humidity, mean_air_temperature: f64,
 	wind_speed, wind_speed_height, atmospheric_co2_concentration: f64,
+	terms: ^Et0_Terms = nil,
 ) -> f64 {
 	crop_ps := cm.mod_params
 
@@ -2858,6 +2861,14 @@ fc_reference_evapotranspiration :: proc(
 		reference_evapotranspiration = 0.0
 	}
 
+	if terms != nil {
+		terms^ = Et0_Terms {
+			vapour_pressure           = vapour_pressure,
+			saturated_vapour_pressure = saturated_vapour_pressure,
+			net_radiation             = net_radiation,
+			stomata_resistance        = cm.stomata_resistance,
+		}
+	}
 	return reference_evapotranspiration
 }
 

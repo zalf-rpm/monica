@@ -2,7 +2,10 @@
 // without MONICA (plan-crop2ml-modules.md §1.4, "standalone").
 //
 //   monica-module run SoilTemperature <impl> <input.json> [out.csv]
+//   monica-module run Evapotranspiration <impl> <input.json> [out.csv]
 //   monica-module from-sim <sim.json> <input.json>
+//
+// Evapotranspiration: see evapotranspiration.odin. Below: soil temperature.
 //
 // `run` reads an input file, runs <impl> day by day and writes a CSV (to
 // stdout without out.csv): date, soil surface temperature, then one column
@@ -41,6 +44,7 @@
 package monica_module
 
 import "../../monica/core"
+import etm "../../monica/modules/evapotranspiration"
 import stm "../../monica/modules/soil_temperature"
 import p "../../monica/params"
 import "../../monica/run"
@@ -58,25 +62,37 @@ import "core:strings"
 
 usage :: proc() {
 	fmt.eprintln("usage: monica-module run SoilTemperature <impl> <input.json> [out.csv]")
+	fmt.eprintln("       monica-module run Evapotranspiration <impl> <input.json> [out.csv]")
 	fmt.eprintln("       monica-module from-sim <sim.json> <input.json>")
 	names := make([dynamic]string, context.temp_allocator)
 	append(&names, p.MODULE_IMPL_INTERNAL)
 	for e in stm.modules {
 		append(&names, e.name)
 	}
-	fmt.eprintfln("impls: %s", strings.join(names[:], ", ", context.temp_allocator))
+	fmt.eprintfln("SoilTemperature impls: %s", strings.join(names[:], ", ", context.temp_allocator))
+	clear(&names)
+	for e in etm.modules {
+		append(&names, e.name)
+	}
+	fmt.eprintfln("Evapotranspiration impls: %s", strings.join(names[:], ", ", context.temp_allocator))
 }
 
 main :: proc() {
 	args := os.args
 	switch {
 	case len(args) >= 5 && args[1] == "run":
-		if args[2] != "SoilTemperature" {
-			fmt.eprintfln("unknown process %q (known: SoilTemperature)", args[2])
+		out_path := len(args) >= 6 ? args[5] : ""
+		err: string
+		switch args[2] {
+		case "SoilTemperature":
+			err = run_soil_temperature(args[3], args[4], out_path)
+		case "Evapotranspiration":
+			err = run_evapotranspiration(args[3], args[4], out_path)
+		case:
+			fmt.eprintfln("unknown process %q (known: SoilTemperature, Evapotranspiration)", args[2])
 			os.exit(2)
 		}
-		out_path := len(args) >= 6 ? args[5] : ""
-		if err := run_soil_temperature(args[3], args[4], out_path); err != "" {
+		if err != "" {
 			fmt.eprintln(err)
 			os.exit(1)
 		}
