@@ -192,6 +192,13 @@ jobs:
           path: validation/validation.json
           retention-days: 90
 
+      # everything, for the release-results job
+      - uses: actions/upload-artifact@v7
+        with:
+          name: validation
+          path: validation
+          retention-days: 14
+
       # not zipped, so it is a single HTML file with the plots
       - uses: actions/upload-artifact@v7
         id: report
@@ -238,3 +245,40 @@ jobs:
             sleep $((attempt * 5))
           done
           echo "**Over time:** https://zalf-rpm.github.io/monica_validation/" >> "$GITHUB_STEP_SUMMARY"
+
+  # For tags: the Nix build's test results and the validation report as an
+  # asset of the release, e.g. to compare a later version with it
+  # (tests/compare.py, deviation.py, validate.py --baseline). The release may
+  # not exist yet (on-tag.yml creates it too): whichever job comes first
+  # creates the draft.
+  release-results:
+    needs: [nix, validate]
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') && needs.nix.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: results-nix-linux
+          path: results
+
+      - uses: actions/download-artifact@v8
+        if: needs.validate.result == 'success'
+        with:
+          name: validation
+          path: validation
+
+      - name: Upload to the release
+        run: |
+          file="monica-test-results_${TAG}.tar.xz"
+          dirs=(results); [ -d validation ] && dirs+=(validation)
+          tar -cJf "$file" "${dirs[@]}"
+          gh release view "$TAG" >/dev/null 2>&1 \
+            || gh release create "$TAG" --draft --title "Monica $TAG" \
+            || gh release view "$TAG" >/dev/null  # created by on-tag.yml meanwhile
+          gh release upload "$TAG" "$file" --clobber

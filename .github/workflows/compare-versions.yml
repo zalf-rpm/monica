@@ -1,0 +1,96 @@
+# Compare two MONICA versions (commits, tags or branches), started by hand:
+# Actions -> "Compare two versions" -> Run workflow. Both are built with Nix
+# (so 3.7.0 and later, which have flake.nix) and run with the same test
+# suites - those of the branch the workflow is started from - but each with
+# its own monica-parameters. The run page then shows
+#   - tests/compare.py:   whether and where the outputs differ
+#   - tests/deviation.py: by how much (per harvest, year, run total)
+#   - tests/validate.py:  the fit to the measurements of B, with the change
+#                         of the RMSE against A
+# and the artifacts hold both result directories and B's report with plots.
+# Builds give the same results on every platform, so this reproduces exactly
+# what the two versions compute.
+name: Compare two versions
+
+on:
+  workflow_dispatch:
+    inputs:
+      a:
+        description: "Version A, the reference (commit, tag or branch), e.g. 3.7.1.improved_merge_climate_data"
+        required: true
+      b:
+        description: "Version B (commit, tag or branch)"
+        required: true
+        default: master
+
+jobs:
+  run:
+    strategy:
+      matrix:
+        version: [a, b]
+    runs-on: ubuntu-latest
+    env:
+      REF: ${{ matrix.version == 'a' && inputs.a || inputs.b }}
+    steps:
+      # the test suites and tools: from the branch the workflow runs on
+      - uses: actions/checkout@v7
+        with:
+          path: tools
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.REF }}
+          submodules: recursive
+          path: version
+
+      - uses: cachix/install-nix-action@v31.11.2
+
+      - name: nix build
+        working-directory: version
+        run: |
+          [ -f flake.nix ] || { echo "::error::$REF has no flake.nix (only 3.7.0 and later can be built here)"; exit 1; }
+          nix build -L
+
+      - name: Test suites
+        run: |
+          python3 tools/tests/run.py --monica version/result/bin/monica-run \
+            --params version/monica-parameters --source version --engine "$REF" --out results
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: results-${{ matrix.version }}
+          path: results
+          retention-days: 30
+
+  compare:
+    needs: run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: prefix-dev/setup-pixi@v0.11.2
+        with:
+          environments: validate
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: results-*
+          path: .
+
+      - name: Outputs identical?
+        # differences are expected here, so this doesn't fail the job
+        run: python3 tests/compare.py results-a results-b || true
+
+      - name: How much they differ
+        run: python3 tests/deviation.py results-a results-b
+
+      - name: Simulated vs measured
+        run: |
+          pixi run -e validate validate results-a --out validation-a --no-plots --summary ''
+          pixi run -e validate validate results-b --out validation-b --baseline validation-a/validation.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          path: validation-b/report.html
+          archive: false
+          retention-days: 30

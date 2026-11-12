@@ -19,6 +19,8 @@ return codes and run times. Useful options:
 
 - `--params DIR`: another monica-parameters checkout (default: the submodule),
   e.g. to see what a parameter change does
+- `--source DIR`: the MONICA checkout the tested build comes from, if not this
+  one (recorded in `metadata.json`)
 - `--only SUITE ...`: just these suites
 - `--use SUITE=DIR`: a local directory instead of the suite's pinned source,
   e.g. to try out changes to a scenario repository before committing them
@@ -99,6 +101,23 @@ whose page https://zalf-rpm.github.io/monica_validation/ shows the statistics
 over time (with the plots of releases and of the latest runs). That needs the
 `VALIDATION_DEPLOY_KEY` secret: the private half of a deploy key with write
 access to monica_validation; without it the step is skipped.
+
+For tags, the `release-results` job attaches the Nix build's results and the
+validation report to the release as `monica-test-results_<tag>.tar.xz`
+(about 10 MB; `results/` and `validation/`), so later versions can be compared
+with it locally:
+
+    gh release download <tag> -p 'monica-test-results_*' && tar -xJf monica-test-results_<tag>.tar.xz
+    pixi run test --monica _cmake_release/monica-run --out mine
+    pixi run deviation results mine
+    pixi run validate mine --out validation-mine --baseline validation/validation.json
+
+To compare any two versions (commits, tags, branches; 3.7.0 and later) without
+building them yourself: Actions → "Compare two versions" → Run workflow
+(`.github/workflows/compare-versions.yml`). It builds both with Nix, runs
+them with the same suites (those of the branch you start it from), each with
+its own monica-parameters, and shows `compare.py`, `deviation.py` and
+`validate.py` (B against A) on the run page.
 
 ## Adding a suite
 

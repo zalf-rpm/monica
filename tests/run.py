@@ -106,6 +106,9 @@ def main() -> None:
                                     "(default: <os>-<machine>)")
     p.add_argument("--params", type=Path, default=ROOT / "monica-parameters",
                    help="monica-parameters directory (default: the submodule)")
+    p.add_argument("--source", type=Path, default=ROOT,
+                   help="MONICA checkout the build is from, for metadata.json "
+                        "(default: this one)")
     p.add_argument("--suites", type=Path, default=TESTS / "suites.toml")
     p.add_argument("--only", nargs="+", metavar="SUITE", help="run just these suites")
     p.add_argument("--use", action="append", default=[], metavar="SUITE=DIR",
@@ -144,7 +147,7 @@ def main() -> None:
         sys.exit(f"error: can't run --monica {a.monica}: {e}")
     meta = {
         "engine": a.engine or f"{platform.system()}-{platform.machine()}".lower(),
-        "monica": {"command": monica, "version": version, "source": git_state(ROOT)},
+        "monica": {"command": monica, "version": version, "source": git_state(a.source.resolve())},
         "platform": {"system": platform.system(), "release": platform.release(),
                      "machine": platform.machine(), "python": platform.python_version()},
         "parameters": {"path": str(params), **(git_state(params) or {})},

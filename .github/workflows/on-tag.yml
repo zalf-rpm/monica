@@ -164,8 +164,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
+        # build.yml's release-results job may have created it already
         run: |
-          gh release create ${{ github.ref_name }} --draft --title="Monica ${{ github.ref_name }}" 
+          gh release view $env:tag *> $null
+          if ($LASTEXITCODE -ne 0) { gh release create $env:tag --draft --title="Monica $env:tag" }
+          if ($LASTEXITCODE -ne 0) { gh release view $env:tag }  # created meanwhile
 
       - name: Upload executable
         working-directory: ./monica
