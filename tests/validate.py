@@ -585,6 +585,10 @@ def main() -> None:
         if directory is None:
             print(f"note: suite {entry['name']}: source not found, skipped", file=sys.stderr)
             continue
+        if not (directory / run.MANIFEST).is_file():
+            print(f"note: suite {entry['name']}: no {directory / run.MANIFEST}, skipped",
+                  file=sys.stderr)
+            continue
         manifest = tomllib.loads((directory / run.MANIFEST).read_text(encoding="utf-8"))
         specs = manifest.get("observed", [])
         if not specs:
