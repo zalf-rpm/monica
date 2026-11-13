@@ -8,8 +8,9 @@ references between files, and for the crop module which `Crop_Module` fields
 each procedure reads and writes); the conclusions were checked by hand.
 
 Nothing here changes the code. It is a basis for deciding where MONICA's
-interfaces should be. Sections 7-9 look at the other modules and sketch the
-two new structs the plan needs (previous-day values, crop-soil exchange).
+interfaces should be. Sections 7-10 look at the other modules, sketch the
+two new structs the plan needs (previous-day values, crop-soil exchange), and
+estimate what such explicit interfaces cost.
 
 The scans can be repeated with `tools/field_deps.py` (run from `odin/`):
 
@@ -17,11 +18,13 @@ The scans can be repeated with `tools/field_deps.py` (run from `odin/`):
     pixi run python tools/field_deps.py fields monica/core/crop_module.odin Crop_Module cm
     pixi run python tools/field_deps.py lag monica/core/crop_module.odin Crop_Module cm crop_module_step
     pixi run python tools/field_deps.py fields monica/core/soil_moisture.odin Soil_Moisture sm --soil sm.soil_column
+    pixi run python tools/field_deps.py writers monica/core/soil_column.odin Soil_Layer monica
 
 `files`: which file uses which other file's declarations; `fields`: per
 procedure the struct's fields written and read (including those of the
 procedures it calls), soil values read, procedures called; `lag`: the fields
-the step reads before they are written that day - the previous day's values.
+the step reads before they are written that day - the previous day's values;
+`writers`: which files and procedures assign each field of a struct.
 It is a text scan, not a parser: check what matters by hand.
 
 ## 1. Packages
@@ -423,14 +426,56 @@ fertilising, delayed fertiliser, top dressing. Two steps:
 - move the management actions out (together with the crop's management,
   section 5: one "management" component that worksteps and automatic rules
   act through);
-- make the ownership of `Soil_Layer` explicit. The layers are a shared
-  blackboard, which is fine for a soil model, but each value should have one
-  writer during the day. Today: water content - soil moisture; temperature -
-  soil temperature; `soil_frozen` - frost; NO3 - soil transport; NH4, urea,
-  SOM/SMB pools - soil organic; and soil column itself for everything at
-  initialisation and for management. Grouping the fields by owner (water,
-  temperature, mineral N, organic pools, texture/hydraulic properties) would
-  show that in the type, like the `using` grouping of section 6.
+- make the ownership of `Soil_Layer` explicit (below).
+
+**Shared soil state, owners and changes.** A shared soil column is the right
+design: the soil processes and the crop act on the same physical soil, and
+handing the soil state around as copies would gain nothing. What is missing is
+a rule for who may change which value. Today (`field_deps.py writers
+monica/core/soil_column.odin Soil_Layer monica`, the daily processes; plus
+the management actions and the initialisation):
+
+| Value | Written during the day by | Written by management / outputs |
+|---|---|---|
+| `soil_frozen` | frost | |
+| `soil_water_flux` | soil moisture | |
+| `soil_temperature` | soil temperature (or the integrated module) | tillage |
+| `soil_moisture_m3` | soil moisture (infiltration, capillary rise, ET) or the integrated ET module | irrigation trigger, tillage, settable output `mois_set_value` |
+| `soil_nh4` | soil organic (urea hydrolysis, decomposition, volatilisation, nitrification) | fertilising, tillage |
+| `soil_no3` | soil organic (decomposition, nitrification, denitrification) **and** soil transport (transport, deposition, crop uptake) | fertilising, irrigation, tillage |
+| SOM/SMB pools, urea | soil organic | tillage, fertilising |
+
+"One writer per value" fits values like temperature or the frozen state, but
+not pools: NO3 and NH4 are changed by several processes on the same day, and
+correctly so. The rule that fits both:
+
+- **Every state value has one owner** - the component that holds it and keeps
+  it consistent (the soil N component for NO3 and NH4, soil moisture for the
+  water content, ...).
+- **Other processes deliver a change, not a new value**, and the owner applies
+  it. The crop already works this way: it computes `n_uptake_from_layer[]` and
+  `transpiration[]`, and soil transport and soil moisture subtract them; the
+  crop never writes NO3 or the water content itself.
+- **Management changes the state on purpose, between the days** (worksteps,
+  settable outputs). It should go through the owner's procedures ("add
+  fertiliser N to layer i") instead of writing fields, so the owner can keep
+  derived values consistent - tillage, which mixes layers and writes nearly
+  everything, is the extreme case.
+
+Grouping the layer's fields by owner (water, temperature, mineral N, organic
+pools, texture and hydraulic properties) would show this in the type, like
+the `using` grouping of section 6, and `field_deps.py writers` then shows
+directly when a component writes into a group it doesn't own.
+
+One caution, because of bit-identity: today the processes change NO3 *in
+sequence* - nitrification sees what decomposition left, denitrification what
+nitrification left. The cleaner-looking alternative, every process delivers
+a flux and the owner sums and applies them once (also Crop2ML's rate/state
+separation), changes the numbers: the order of the floating-point operations
+and what each process sees both change. That is a model change, to be
+decided and validated as such. The bit-identical version: the owner calls the
+processes in today's order, and each changes the pool through the owner's
+procedure.
 
 **`soil_organic.odin` (1676 lines): almost there.** It is already split into
 per-process procedures, run in order by `soil_organic_step`: urea hydrolysis,
@@ -528,6 +573,13 @@ a Crop2ML model, and the carry-over struct is the wiring of the delayed links
 in MONICA's composite. A module that needs its *own* previous state can still
 have an `s1`.
 
+**Keep it to scalars.** About a dozen numbers copied once a day cost nothing
+(section 10). The leaf increments are one element of the organ arrays, so
+copy the element, not the array: a struct copy (`prev := cm^`, or a full
+`s`→`s1`) copies only the *headers* of dynamic arrays, so `prev.x[i]` and
+`cm.x[i]` would be the same memory - a correctness trap, and a deep copy
+instead would allocate every day.
+
 ## 9. The crop-soil exchange structs
 
 Today the soil components hold a `^Crop_Module` and read what they need
@@ -618,10 +670,45 @@ Details to check when doing it, to stay bit-identical:
 - **Copies or views.** The per-layer slices can point to the crop's arrays
   (no copy) or be copied (20 values); a view is simplest, but then the
   struct is only valid until the crop is removed - the model owns both, so
-  that is manageable.
+  that is manageable. If copied, allocate the arrays once (with the model or
+  at sowing) and overwrite them daily - the copy is free (section 10), a
+  daily allocation isn't.
 - **The other direction.** The crop reads about 13 soil values (section 2).
   The soil column is the shared state of the soil, so reading it is
   legitimate; a `Soil_To_Crop` struct would mainly document *which* values the
   crop reads. I'd start with `Crop_To_Soil`, which removes the cycle, and
   replace the crop's `^Soil_Column` with a read view only once the crop's
   components (section 5) have explicit inputs anyway.
+
+## 10. What explicit interfaces cost
+
+Sections 8 and 9 copy data that today is read in place. That cost is
+negligible:
+
+- **A day costs about 200 µs.** The Hohenfinow2 example (`sim-min.json`,
+  2557 days) runs in 0.53 s with the default unoptimized build, including
+  startup, reading the parameters and writing the outputs.
+- **The copies are tiny in comparison.** `Crop_To_Soil` is about 20 numbers
+  and two arrays of about 20 layers (~500 bytes), `Crop_Carry_Over` about a
+  dozen numbers. Copying that takes tens of nanoseconds even unoptimized: on
+  the order of 0.01-0.1 % of a day. The day's time goes into the crop's hourly
+  photosynthesis loop with its exp/log/trig calls, soil organic's per-layer
+  processes and the soil water loops.
+- **A bigger copy exists already, unnoticed.** With modules configured,
+  `evapotranspiration_impl.odin` copies the whole `Crop_Module` (`cmc := cm^`)
+  every day to get the ET0 terms.
+- **Many runs don't change the ratio.** Regional runs on the servers multiply
+  the cost per day, but 0.1 % stays 0.1 %.
+
+What does cost, and what the designs above avoid:
+
+1. **Allocations per day** - a `make`, a growing `append`, a map insert cost
+   far more than copying a few hundred bytes. Exchange structs allocate their
+   per-layer arrays once and are overwritten daily; scalars are copied freely.
+2. **Deep copies of structs with dynamic arrays** (a Crop2ML-style full
+   `s`→`s1` of the crop) - they would allocate, and a shallow copy instead
+   shares the arrays (section 8).
+
+So whether to make an interface explicit is a question of clarity, not of
+speed. A component that gets a small struct by value even reads contiguous
+memory instead of following pointers into a struct of 172 fields.

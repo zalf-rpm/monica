@@ -19,6 +19,11 @@ write through a pointer passed to another package isn't seen).
       walks <step proc> in order and lists the fields read before they are
       written that day but written later in it: the previous day's values.
 
+  field_deps.py writers <file.odin> <Struct> <dir> [--only <field>...]
+      for each field of <Struct>: the files and procedures under <dir> that
+      assign it (by field name, so a field of another struct with the same
+      name shows up too - check)
+
 Run with the pixi Python: pixi run python tools/field_deps.py ...
 """
 
@@ -197,6 +202,26 @@ def cmd_lag(a):
             print(f"    {f}")
 
 
+def cmd_writers(a):
+    fields = struct_fields(open(a.file).read(), a.struct)
+    if a.only:
+        fields &= set(a.only)
+    W = collections.defaultdict(lambda: collections.defaultdict(set))
+    for f in sorted(glob.glob(os.path.join(a.dir, "**", "*.odin"), recursive=True)):
+        proc = "?"
+        for l in open(f).read().split("\n"):
+            m = re.match(r"^([a-z_0-9]+) :: proc", l)
+            if m:
+                proc = m.group(1)
+            for m in re.finditer(r"\.([a-z_0-9]+)(?:\[[^\]]*\])?\s*(\+=|-=|\*=|/=|=)(?!=)", strip_comments(l)):
+                if m.group(1) in fields:
+                    W[m.group(1)][os.path.basename(f)[:-5]].add(proc)
+    for fld in sorted(W):
+        print(f"{fld}:")
+        for k, v in sorted(W[fld].items()):
+            print(f"    {k}: {', '.join(sorted(v))}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -204,8 +229,11 @@ def main():
     p = sub.add_parser("fields"); p.add_argument("file"); p.add_argument("struct"); p.add_argument("var")
     p.add_argument("--soil", nargs="*", default=[]); p.add_argument("--json")
     p = sub.add_parser("lag"); p.add_argument("file"); p.add_argument("struct"); p.add_argument("var"); p.add_argument("step")
+    p = sub.add_parser("writers"); p.add_argument("file"); p.add_argument("struct"); p.add_argument("dir")
+    p.add_argument("--only", nargs="*")
     a = ap.parse_args()
-    {"files": lambda: files_graph(a.pkg), "fields": lambda: cmd_fields(a), "lag": lambda: cmd_lag(a)}[a.cmd]()
+    {"files": lambda: files_graph(a.pkg), "fields": lambda: cmd_fields(a), "lag": lambda: cmd_lag(a),
+     "writers": lambda: cmd_writers(a)}[a.cmd]()
 
 
 if __name__ == "__main__":
