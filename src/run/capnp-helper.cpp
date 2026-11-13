@@ -43,8 +43,22 @@ ACD monica::climateElementToACD(mas::schema::climate::Element e) {
   case mas::schema::climate::Element::RELHUMID: return ACD::relhumid;
   case mas::schema::climate::Element::WIND: return ACD::wind;
   case mas::schema::climate::Element::GLOBRAD: return ACD::globrad;
+  // both used to be dropped: the measured vapor pressure never reached the ET0 calculation (MONICA
+  // fell back to the relative humidity) and a CO2 time series (e.g. FACE treatments) was ignored
+  case mas::schema::climate::Element::VAPORPRESS: return ACD::vaporpress;
+  case mas::schema::climate::Element::CO2: return ACD::co2;
   default: return ACD::skip;
   }
+}
+
+namespace {
+// the climate schema's units -> the units MONICA works with
+double toMonicaUnit(ACD acd, double value) {
+  switch (acd) {
+  case ACD::vaporpress: return value / 10.0; // [hPa] in the schema -> [kPa] in MONICA's ET0
+  default: return value;
+  }
+}
 }
 
 std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(
@@ -53,7 +67,8 @@ std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(
   std::map<ACD, double> res;
   KJ_ASSERT(header.size() == data.size())
     for (const auto i : kj::indices(header)) {
-      res[climateElementToACD(header[i])] = data[i];
+      auto acd = climateElementToACD(header[i]);
+      if (acd != ACD::skip) res[acd] = toMonicaUnit(acd, data[i]);
     }
   return res;
 }
@@ -62,7 +77,8 @@ std::map<ACD, double> monica::dailyClimateDataToDailyClimateMap(
   const capnp::List<mas::schema::model::monica::Params::DailyWeather::KV>::Reader& dailyData) {
   std::map<ACD, double> res;
   for (const auto& kv : dailyData) {
-    res[climateElementToACD(kv.getKey())] = kv.getValue();
+    auto acd = climateElementToACD(kv.getKey());
+    if (acd != ACD::skip) res[acd] = toMonicaUnit(acd, kv.getValue());
   }
   return res;
 }
@@ -73,32 +89,16 @@ DataAccessor monica::fromCapnpData(
   const Tools::Date& endDate,
   capnp::List<mas::schema::climate::Element>::Reader header,
   capnp::List<capnp::List<float>>::Reader data) {
-  typedef mas::schema::climate::Element E;
-
   if (data.size() == 0) return {};
 
   DataAccessor da(startDate, endDate);
   for (capnp::uint i = 0; i < header.size(); i++) {
+    auto acd = climateElementToACD(header[i]);
+    if (acd == ACD::skip) continue;
     auto vs = data[i];
     std::vector<double> d(data[0].size());
-    for (capnp::uint k = 0; k < vs.size(); k++) d[k] = vs[k];
-    switch (header[i]) {
-    case E::TMIN: da.addClimateData(ACD::tmin, kj::mv(d));
-      break;
-    case E::TAVG: da.addClimateData(ACD::tavg, kj::mv(d));
-      break;
-    case E::TMAX: da.addClimateData(ACD::tmax, kj::mv(d));
-      break;
-    case E::PRECIP: da.addClimateData(ACD::precip, kj::mv(d));
-      break;
-    case E::RELHUMID: da.addClimateData(ACD::relhumid, kj::mv(d));
-      break;
-    case E::WIND: da.addClimateData(ACD::wind, kj::mv(d));
-      break;
-    case E::GLOBRAD: da.addClimateData(ACD::globrad, kj::mv(d));
-      break;
-    default: ;
-    }
+    for (capnp::uint k = 0; k < vs.size(); k++) d[k] = toMonicaUnit(acd, vs[k]);
+    da.addClimateData(acd, kj::mv(d));
   }
   return da;
 }
@@ -226,10 +226,16 @@ kj::Promise<J11Array> monica::fromCapnpSoilProfile(mas::schema::soil::Profile::C
                                                }
                                                if (initialSoilMoisturePercent >= 0.0 &&
                                                    l.find("FieldCapacity") != l.end()) {
-                                                 // calculate actually the initial soil moisture in percent of field capacity
-                                                 l["SoilMoisturePercentFC"] =
-                                                   initialSoilMoisturePercent / (
-                                                     l["FieldCapacity"].number_value() * 100.0);
+                                                 // the schema's soil moisture is [vol%], MONICA wants [% of field capacity];
+                                                 // FieldCapacity is a fraction here, so vol% / FC gives % of FC
+                                                 // (this used to divide by FC * 100 as well, i.e. ~1 % of FC instead of ~100 %)
+                                                 auto percentFC = initialSoilMoisturePercent / l["FieldCapacity"].number_value();
+                                                 if (percentFC > 100.0) {
+                                                   KJ_LOG(WARNING, "initial soil moisture above field capacity, set to field capacity",
+                                                          initialSoilMoisturePercent, l["FieldCapacity"].number_value());
+                                                   percentFC = 100.0;
+                                                 }
+                                                 l["SoilMoisturePercentFC"] = percentFC;
                                                }
 
                                                ls.emplace_back(l);
