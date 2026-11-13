@@ -9,6 +9,7 @@
 // truncated the thicknesses to whole cm; they are rounded here (thickness_cm).
 package soil_temperature
 
+import c2m "../crop2ml"
 import dst "../../../amei/DSSAT_ST_standalone"
 
 Dssat_St :: struct {
@@ -72,6 +73,7 @@ dssat_st_step :: proc(b: ^Dssat_St, in_: ^Input, out: ^Output, allocator := cont
 	dssat_st_exogenous(b, in_)
 	// same length every day, so this doesn't allocate
 	dst.stemp_component_set_sw(&b.c, in_.soil_moisture, allocator)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	dst.stemp_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.s.srftemp
 	copy(out.layer_temperature, b.s.st[:b.no_of_layers])

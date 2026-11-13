@@ -18,6 +18,7 @@ target's known bugs - see its docstring. Both come from `pixi run gen-amei`:
     tools/module_reference.py --dynamic in.json out.json
 """
 import argparse
+import copy
 import csv
 import json
 import math
@@ -332,6 +333,21 @@ def monica_amei_pot_et(j, layers):
     return params, daily, lambda env, n: [env[c] for c in columns], columns
 
 
+def carry_t1(env, t1_names):
+    """Crop2ML's previous-day inputs: `<x>_t1` gets the value the state `x` has
+    at the end of the previous day (after init on the first), as the Odin
+    bindings copy `s` into `s1` before each step (monica/modules/crop2ml). A
+    copy, so that a model changing `x` in place doesn't change `x_t1`. Before
+    `x` exists, `x_t1` keeps its input value."""
+    for name in t1_names:
+        if name[:-3] in env:
+            env[name] = copy.copy(env[name[:-3]])
+
+
+def t1_inputs(comp):
+    return [v.name for v in getattr(comp, "inputs", []) if v.name.endswith("_t1")]
+
+
 def run(module, input_path, out_path):
     sys.path.insert(0, str(CROP2ML / "PyCrop2ML" / "test" / "cyml"))
     from odin_reference import Inputs, PythonReference
@@ -384,6 +400,7 @@ def run(module, input_path, out_path):
         if reference.init_body is not None:
             reference.run_body(reference.init_body)
         n = len(layers)
+        t1 = t1_inputs(comp)
         with open(out_path, "w", newline="") as f:
             if columns:
                 f.write("date," + ",".join(columns[0]) + "\n")
@@ -391,6 +408,7 @@ def run(module, input_path, out_path):
                 f.write("date,soil_surface_temperature" + "".join(f",layer_{i + 1}" for i in range(n)) + "\n")
             for day in days:
                 env.update(daily(day))
+                carry_t1(env, t1)
                 reference.run_body(reference.model_body)
                 if columns:
                     values = extract(env, n)

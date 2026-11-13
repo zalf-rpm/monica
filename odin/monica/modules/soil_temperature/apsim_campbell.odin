@@ -17,6 +17,7 @@
 //     adapter left it at 0 outside its sensitivity build, which used the site's
 package soil_temperature
 
+import c2m "../crop2ml"
 import apsim "../../../amei/ApsimCampbell"
 
 Apsim_Campbell :: struct {
@@ -91,6 +92,7 @@ apsim_campbell_init :: proc(b: ^Apsim_Campbell, in_: ^Input, allocator := contex
 
 apsim_campbell_step :: proc(b: ^Apsim_Campbell, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	apsim_campbell_exogenous(b, in_)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	apsim.soiltemp_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.s.ave_soil_temp[1]
 	copy(out.layer_temperature, b.s.ave_soil_temp[2:2 + b.no_of_layers])

@@ -9,6 +9,7 @@
 // soil moisture minus the wilting point, as the adapter has it.
 package soil_temperature
 
+import c2m "../crop2ml"
 import bps "../../../amei/BiomaSurfacePartonSoilSWATC"
 
 Bioma_Parton_Swat :: struct {
@@ -60,6 +61,7 @@ bioma_parton_swat_init :: proc(b: ^Bioma_Parton_Swat, in_: ^Input, allocator := 
 
 bioma_parton_swat_step :: proc(b: ^Bioma_Parton_Swat, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	bioma_parton_swat_exogenous(b, in_)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	bps.surface_parton_soil_swatc_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.a.surface_soil_temperature
 	copy(out.layer_temperature, b.s.soil_temperature_by_layers[:b.no_of_layers])

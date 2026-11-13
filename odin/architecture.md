@@ -7,10 +7,12 @@ making them separate. The numbers come from scanning the code (imports,
 references between files, and for the crop module which `Crop_Module` fields
 each procedure reads and writes); the conclusions were checked by hand.
 
-Nothing here changes the code. It is a basis for deciding where MONICA's
-interfaces should be. Sections 7-10 look at the other modules, sketch the
-two new structs the plan needs (previous-day values, crop-soil exchange), and
-estimate what such explicit interfaces cost.
+Apart from the bindings' previous-day state (section 11), nothing here
+changes the code. It is a basis for deciding where MONICA's interfaces should
+be. Sections 7-10 look at the other modules, sketch the two new structs the
+plan needs (previous-day values, crop-soil exchange), and estimate what such
+explicit interfaces cost; section 11 explains Crop2ML's `s`/`s1` and rates and
+states, and how MONICA relates to them.
 
 The scans can be repeated with `tools/field_deps.py` (run from `odin/`):
 
@@ -712,3 +714,138 @@ What does cost, and what the designs above avoid:
 So whether to make an interface explicit is a question of clarity, not of
 speed. A component that gets a small struct by value even reads contiguous
 memory instead of following pointers into a struct of 172 fields.
+
+## 11. Crop2ML's s and s1, and rates and states
+
+### s and s1
+
+A Crop2ML model gets its state twice: `s`, today's, which it writes, and
+`s1`, the previous day's, which it reads. A model unit asks for yesterday's
+value of a state `x` by naming an input `x_t1`; the generator turns that into
+a read of `s1.x` (`odinGenerator.py`). SiriusQuality's `LeafNumber`, for
+example, becomes
+
+```odin
+s.leaf_number = s1.leaf_number + min(a.delta_tt / phyllochron_, 0.999)
+```
+
+Filling `s1` is the host's job: before each call to the composite's
+`calculate_model`, it copies `s` - still the end state of the previous day -
+into `s1`.
+
+In practice `s1` is optional. None of the packages bound so far (the soil
+temperature and evapotranspiration models in `amei/`) has a `_t1` input: they
+read the state `x` and write `x` in place, which is MONICA's style too.
+Phenology models typically do use `_t1`.
+
+**In place, the call order is the dataflow.** With everything updated in
+place, a reader gets the latest value and can't tell whether it is today's
+from upstream or yesterday's because the writer hasn't run yet. As long as
+every reader runs after its writer, that is what is intended. `s1` (or the
+carry-over struct of section 8) is only needed where a component reads a
+value *before* that day's writer has run - and the point of making it
+explicit is that it shows: "the development stage uses yesterday's daylength
+factor" is then in a signature, not hidden in the order of the calls.
+
+**How the bindings do it.** Every binding in `monica/modules/` calls
+`c2m.copy_state(&b.s1, &b.s, allocator)` (`monica/modules/crop2ml/state.odin`)
+right before `calculate_model`, so a package with `_t1` inputs works when it
+is added:
+
+- the copy is deep: `s1`'s lists get their own memory (a plain struct copy
+  would share the arrays, and a model writing `s.x[i]` would change
+  `s1.x[i]`);
+- it doesn't allocate daily: `s1`'s lists are allocated on the first day and
+  reused, grown if `s`'s get longer. A dynamic array keeps the allocator of its
+  first allocation, and MONICA's first module step gets the model's allocator
+  (the later ones a daily scratch arena), so `s1` lives as long as the module;
+- it supports what the Odin generator emits for a State: numbers, bools,
+  strings, dates, fixed arrays, lists of those; anything else panics with the
+  type's name;
+- for the current packages it changes nothing (they don't read `s1`) and costs
+  a copy of a few hundred bytes a day.
+
+The Python reference (`tools/module_reference.py`, which checks the generated
+Odin against the generated Python) does the same: before each day, every
+`x_t1` gets a copy of yesterday's `x` (`carry_t1`). PyCrop2ML's own
+`test/cyml/odin_reference.py` doesn't yet; that would be a change in the
+PyCrop2ML fork.
+
+Checked with the real generator output: a one-unit package made from
+SiriusQuality's `LeafNumber` (PyCrop2ML's `pheno_pkg` example), generated with
+the pinned PyCrop2ML and stepped four days with ΔTT = 25 °C d and a
+phyllochron of 100 °C d leaf-1:
+
+| | Odin | Python |
+|---|---|---|
+| without the copy | 0.999 0.999 0.999 0.999 (`s1` is zero: the model's zero-phyllochron guard) | 0.25 0.25 0.25 0.25 |
+| with the copy | 0.25 0.5 0.75 1 | 0.25 0.5 0.75 1 |
+
+`tests/crop2ml_state_test.odin` covers the copy itself (deep, growing and
+shrinking lists, no leaks, the first allocator kept) and a hand-written model
+of the same form. (The full phenology package doesn't generate yet: the Odin
+target has no rule for Python's `list.index`.)
+
+### Rates and states
+
+Crop2ML's variables are `state`, `rate`, `auxiliary` or `exogenous` (in our
+packages' metadata: 294, 25, 128 and 155). The categories make the roles
+visible, but Crop2ML doesn't require a parent to do all the integrating:
+
+- **within a unit**, it is normal to compute rates and update the state at
+  the end;
+- **across units**, upstream units deliver rates (fluxes) and one unit, the
+  owner of the state, integrates them - the `rate` category makes that hand-over
+  visible.
+
+So the rule is the one of section 7: *a state is changed by its owner; the
+others hand over rates.* What the separation gains where several processes
+act on the same state:
+
+1. **The order of the processes doesn't change the result** - all see the
+   state at the start of the day. In place, nitrification sees what
+   decomposition left, and swapping the two changes the numbers.
+2. **Who gets limited is explicit.** When several processes draw from one pool
+   (NO3: denitrification, crop uptake, leaching), the owner sees all demands
+   and can scale them if the pool doesn't suffice. In place, whoever runs
+   first wins and the later ones are capped - a priority nobody decided.
+3. **Mass balances can be checked**: the sum of the rates is the change of
+   the state.
+4. **Swapping a process is easier**: a replacement delivers the same rate.
+
+Sequential in-place updating isn't simply wrong, though: as operator splitting
+it is an established numerical method, and for fast, tightly coupled processes
+(infiltration and redistribution of water) it can be more stable than summing
+rates computed from the same start state. And moving a part of MONICA from
+sequential updates to summed rates changes its results: a model change, to be
+validated, not a restructuring.
+
+**Where MONICA stands.** Already rate/state, or close:
+
+| Where | How |
+|---|---|
+| crop → soil water | the crop computes `transpiration[]` per layer, soil moisture subtracts it from the water content - a hand-over across components |
+| crop → soil NO3 | the crop computes `n_uptake_from_layer[]`, soil transport applies it |
+| soil organic carbon | decomposition (`soil_organic_fo_mit`) writes only deltas (`som_fast_delta`, `smb_slow_delta`, the AOM pools' deltas), `soil_organic_fo_pool_update` adds them to the pools at the end and computes the carbon balance - textbook rate/state within a component |
+| crop biomass | `organ_growth_increment` and `organ_senescence_increment` are the rates, the organ biomass is updated from them in the same procedure |
+| temperature sums, vernalisation days | a daily increment added to a sum |
+
+Where it would gain most:
+
+1. **Soil mineral N (NH4, NO2, NO3)** - the clear case. The pools are changed
+   in place, in sequence: urea hydrolysis adds NH4; decomposition mineralises
+   or immobilises; volatilisation takes NH4, capped at what is there;
+   nitrification moves NH4 to NO2 to NO3; denitrification takes NO3; soil
+   transport then applies the crop's uptake and leaching. Each step is capped
+   at what the previous ones left, so the call order is an undocumented
+   priority. Each process delivering its demand, and the N owner limiting and
+   applying them, would turn that priority into a decision - and it is where
+   MONICA and STICS variants are already swapped. It changes the results.
+2. **Soil water within the day.** Infiltration, percolation, capillary rise,
+   evaporation and transpiration change the water content in sequence. Mostly
+   deliberate operator splitting, and the crop's transpiration is already a
+   hand-over; documenting the order and what each step sees would help more
+   than changing it.
+3. **The crop's internals** are mostly rate → state within a unit, which is
+   fine; their problems are the previous-day reads (section 8) and the
+   cross-writes (section 4), questions of ownership rather than of rates.

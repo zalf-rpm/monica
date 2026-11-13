@@ -178,6 +178,11 @@ conversions (m → cm, kg m-3 → g cm-3, fractions → %) and the layer mapping
 generated Component's `init`, not single ModelUnit inits (the Odin Component's init applies
 renamed inputs; B3 in `plan-odin-target.md`).
 
+Before each `calculate_model`, the binding copies the state `s` into the previous-day state
+`s1` (`c2m.copy_state`, `monica/modules/crop2ml/state.odin`): that is the host's job in
+Crop2ML, and models with `<x>_t1` inputs read yesterday's values from `s1`. The packages
+bound so far don't read `s1`; the copy is for those that will (`odin/architecture.md` §11).
+
 A hand-written variant can skip the input struct and read MonicaModel directly, like MONICA's
 own implementation, if it only ever runs integrated.
 

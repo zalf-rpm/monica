@@ -8,6 +8,7 @@
 // day's irrigation, BIOMAS the crop's above-ground biomass, MULCHMASS 0.
 package soil_temperature
 
+import c2m "../crop2ml"
 import epic "../../../amei/DSSAT_EPICST_standalone"
 
 Dssat_Epicst :: struct {
@@ -68,6 +69,7 @@ dssat_epicst_init :: proc(b: ^Dssat_Epicst, in_: ^Input, allocator := context.al
 dssat_epicst_step :: proc(b: ^Dssat_Epicst, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	dssat_epicst_exogenous(b, in_)
 	epic.stemp_epic_component_set_sw(&b.c, in_.soil_moisture, allocator)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	epic.stemp_epic_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.s.srftemp
 	copy(out.layer_temperature, b.s.st[:b.no_of_layers])

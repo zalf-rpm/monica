@@ -14,6 +14,7 @@
 // water MONICA needs from its evapotranspiration (`integrated = false`).
 package evapotranspiration
 
+import c2m "../crop2ml"
 import pet "../../../amei/Monica_AMEI_potential_Evapotranspiration"
 
 Monica_Amei_Pot_Et :: struct {
@@ -60,6 +61,7 @@ monica_amei_pot_et_step :: proc(b: ^Monica_Amei_Pot_Et, in_: ^Input, out: ^Outpu
 	a.saturated_vapor_pressure = in_.saturated_vapor_pressure
 	a.stomata_resistance = in_.stomata_resistance
 	a.net_radiation = in_.net_radiation
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	pet.amei_pot_et_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.reference_evapotranspiration = a.reference_evapotranspiration
 	out.potential_evapotranspiration = a.potential_evapotranspiration

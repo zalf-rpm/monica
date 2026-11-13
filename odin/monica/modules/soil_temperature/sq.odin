@@ -8,6 +8,7 @@
 // the minimum and maximum is the surface's and every layer's temperature.
 package soil_temperature
 
+import c2m "../crop2ml"
 import sq "../../../amei/SQ_Soil_Temperature"
 
 Sq :: struct {
@@ -47,6 +48,7 @@ sq_init :: proc(b: ^Sq, in_: ^Input, allocator := context.allocator) {
 
 sq_step :: proc(b: ^Sq, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	sq_exogenous(b, in_)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	sq.soil_temperature_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	avg := (b.s.min_t_soil + b.s.max_t_soil) / 2.0
 	out.soil_surface_temperature = avg

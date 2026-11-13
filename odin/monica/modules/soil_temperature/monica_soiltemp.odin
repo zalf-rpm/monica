@@ -12,6 +12,7 @@
 //     AMEI branch read it from its own parameter, which MONICA doesn't have
 package soil_temperature
 
+import c2m "../crop2ml"
 import mst "../../../amei/Monica_SoilTemp"
 
 // The temperature layers are MONICA's layers plus a ground and a bottom layer.
@@ -89,6 +90,7 @@ monica_soil_temp_step :: proc(
 	allocator := context.allocator,
 ) {
 	monica_soil_temp_exogenous(b, in_)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	mst.soil_temperature_comp_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.s.soil_surface_temperature
 	copy(out.layer_temperature, b.s.soil_temperature[:b.no_of_layers])

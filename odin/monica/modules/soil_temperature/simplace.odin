@@ -15,6 +15,7 @@
 // adapter passes mm, which is what the module computes with.
 package soil_temperature
 
+import c2m "../crop2ml"
 import simp "../../../amei/Simplace_Soil_Temperature"
 
 Simplace :: struct {
@@ -72,6 +73,7 @@ simplace_init :: proc(b: ^Simplace, in_: ^Input, allocator := context.allocator)
 
 simplace_step :: proc(b: ^Simplace, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	simplace_exogenous(b, in_)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	simp.soil_temperature_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.s.soil_surface_temperature
 	copy(out.layer_temperature, b.s.soil_temp_array[:b.no_of_layers])

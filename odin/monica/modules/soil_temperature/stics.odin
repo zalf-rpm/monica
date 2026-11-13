@@ -8,6 +8,7 @@
 // value of the 1 cm profile is the surface temperature.
 package soil_temperature
 
+import c2m "../crop2ml"
 import stics "../../../amei/Stics_soil_temperature"
 
 Stics :: struct {
@@ -52,6 +53,7 @@ stics_init :: proc(b: ^Stics, in_: ^Input, allocator := context.allocator) {
 
 stics_step :: proc(b: ^Stics, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	stics_exogenous(b, in_)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	stics.soil_temp_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.s.temp_profile[0]
 	copy(out.layer_temperature, b.s.layer_temp[:b.no_of_layers])

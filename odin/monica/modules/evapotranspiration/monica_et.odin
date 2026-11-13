@@ -15,6 +15,7 @@
 // and the fixed stomata resistance without one, MONICA's 100 s m-1.
 package evapotranspiration
 
+import c2m "../crop2ml"
 import et "../../../amei/Monica_Evapotranspiration"
 
 Monica_Et :: struct {
@@ -86,6 +87,7 @@ monica_et_step :: proc(b: ^Monica_Et, in_: ^Input, out: ^Output, allocator := co
 	copy(b.s.soil_moisture[:n], in_.soil_moisture)
 	b.s.soil_moisture[n] = in_.soil_moisture[n - 1]
 	b.s.surface_water_storage = in_.surface_water_storage
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	et.et_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.reference_evapotranspiration = b.a.reference_evapotranspiration
 	out.potential_evapotranspiration = b.a.potential_evapotranspiration

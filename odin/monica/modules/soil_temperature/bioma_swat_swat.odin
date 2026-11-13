@@ -9,6 +9,7 @@
 // biomass goes into the auxiliary struct, where this package has it.
 package soil_temperature
 
+import c2m "../crop2ml"
 import bss "../../../amei/BiomaSurfaceSWATSoilSWATC"
 
 Bioma_Swat_Swat :: struct {
@@ -60,6 +61,7 @@ bioma_swat_swat_init :: proc(b: ^Bioma_Swat_Swat, in_: ^Input, allocator := cont
 
 bioma_swat_swat_step :: proc(b: ^Bioma_Swat_Swat, in_: ^Input, out: ^Output, allocator := context.allocator) {
 	bioma_swat_swat_exogenous(b, in_)
+	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	bss.surface_swat_soil_swatc_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.soil_surface_temperature = b.a.surface_soil_temperature
 	copy(out.layer_temperature, b.s.soil_temperature_by_layers[:b.no_of_layers])
