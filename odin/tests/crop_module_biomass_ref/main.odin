@@ -34,10 +34,6 @@ g_last_organic_matter_total: f64
 g_last_organic_matter_nconc: f64
 g_organic_matter_call_count: int
 
-real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
-}
-
 recording_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {
 	// Odin map iteration order is unspecified, unlike C++'s std::map (sorted
 	// ascending by key) - and floating-point addition is not associative, so
@@ -250,7 +246,7 @@ day_step :: proc(
 		core.fc_heat_stress_impact(cm, max_air_temperature, min_air_temperature)
 
 		if frost_kill_on {
-			core.fc_frost_kill(cm, max_air_temperature, min_air_temperature)
+			core.fc_frost_kill(cm, max_air_temperature, min_air_temperature, core.snow_for_crop(g_soil_moisture))
 		}
 
 		core.fc_drought_impact_on_fertility(cm)
@@ -386,7 +382,6 @@ main :: proc() {
 		&cpp.crop_params,
 		&cpp.sim_params,
 		recording_add_organic_matter,
-		real_get_snow_depth,
 		nil,
 		a,
 	)
@@ -541,7 +536,6 @@ main :: proc() {
 			&cpp.crop_params,
 			&cpp.sim_params,
 			recording_add_organic_matter,
-			real_get_snow_depth,
 			nil,
 			a,
 		)

@@ -25,7 +25,6 @@ ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
 noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
-noop_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {return 0.0, 0.0}
 
 @(private)
 jn :: proc(path, name: string) -> string {
@@ -343,7 +342,6 @@ main :: proc() {
 			&cpp.crop_params,
 			&cpp.sim_params,
 			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)
@@ -383,7 +381,6 @@ main :: proc() {
 			&hourly_crop_mod_params,
 			&cpp.sim_params,
 			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)
@@ -417,7 +414,6 @@ main :: proc() {
 			&cpp.crop_params,
 			&cpp.sim_params,
 			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)
@@ -454,7 +450,6 @@ main :: proc() {
 			&cpp.crop_params,
 			&cpp.sim_params,
 			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)

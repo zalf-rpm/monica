@@ -196,15 +196,6 @@ monica_model_add_organic_matter_cb :: proc(layer2amount: map[int]f64, nconc: f64
 	)
 }
 
-// C++: [model](double avgAirTemp) {
-//        return soilmoisture::getSnowDepthAndCalcTemperatureUnderSnow(
-//          model->soilMoisture.get(), avgAirTemp); }
-monica_model_get_snow_depth_cb :: proc(avg_air_temp: f64) -> (f64, f64) {
-	return get_snow_depth_and_calc_temperature_under_snow(
-		&g_current_model.soil_moisture,
-		avg_air_temp,
-	)
-}
 
 // C++: void monica::monicamodel::addDailySumFertiliser(MonicaModel*, double)
 monica_model_add_daily_sum_fertiliser :: proc(model: ^Monica_Model, amount: f64) {
@@ -940,6 +931,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		model.atmospheric_o3_concentration,
 		precip,
 		et0,
+		snow_for_crop(&model.soil_moisture),
 		allocator,
 	)
 	monica_model_add_crop_events(model, events)

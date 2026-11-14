@@ -225,8 +225,6 @@ Crop_Module :: struct {
 
 	// C++: std::function<void(std::map<size_t, double>, double)> add_organic_matter;
 	add_organic_matter:                      proc(_: map[int]f64, _: f64),
-	// C++: std::function<std::pair<double, double>(double)> get_snow_depth_and_calc_temp_under_snow;
-	get_snow_depth_and_calc_temp_under_snow: proc(_: f64) -> (f64, f64),
 	o3_short_term_damage:                    f64 `unit:"0-1"`,
 	o3_long_term_damage:                     f64 `unit:"0-1"`,
 	o3_senescence:                           f64,
@@ -407,7 +405,6 @@ make_crop_module :: proc(
 	crop_module_params: ^p.Crop_Module_Parameters,
 	sim_params: ^p.Simulation_Parameters,
 	add_organic_matter: proc(_: map[int]f64, _: f64),
-	get_snow_depth_and_calc_temp_under_snow: proc(_: f64) -> (f64, f64),
 	intercropping: rawptr,
 	allocator := context.allocator,
 ) -> Crop_Module {
@@ -420,7 +417,6 @@ make_crop_module :: proc(
 	cm.sim_params = sim_params
 	cm.residue_params = residue_params^
 	cm.add_organic_matter = add_organic_matter
-	cm.get_snow_depth_and_calc_temp_under_snow = get_snow_depth_and_calc_temp_under_snow
 
 	cm.no_of_organs = p.species_parameters_number_of_organs(&cm.crop_params.species_params)
 	cm.no_of_dev_stages = p.species_parameters_number_of_developmental_stages(
@@ -2124,7 +2120,9 @@ fc_heat_stress_impact :: proc(cm: ^Crop_Module, max_air_temperature, min_air_tem
 //
 // Fowler, Byrns & Greer (2014): Overwinter Low-Temperature Responses of
 // Cereals. Crop Sci. 54:2395-2405.
-fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64) {
+//
+// `snow`: instead of the C++'s getSnowDepthAndCalcTempUnderSnow callback.
+fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64, snow: Snow_For_Crop) {
 	cultivar_ps := &cm.crop_params.cultivar_params
 	soil_column := cm.soil_column
 
@@ -2133,7 +2131,8 @@ fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64) {
 
 	night_temperature := min_air_temp + ((max_air_temp - min_air_temp) / 4.0)
 	crown_temperature := night_temperature * 0.8
-	snow_depth, temp_under_snow := cm.get_snow_depth_and_calc_temp_under_snow(crown_temperature)
+	snow_depth := snow.snow_depth
+	temp_under_snow := temperature_under_snow(crown_temperature, snow_depth, snow.frost_depth)
 	if cm.developmental_stage <= 1 {
 		crown_temperature =
 			(3.0 * soil_column.soil_surface_temperature +
@@ -3476,6 +3475,7 @@ crop_module_step :: proc(
 	relative_humidity, wind_speed, wind_speed_height: f64,
 	atmospheric_co2_concentration, atmospheric_o3_concentration: f64,
 	gross_precipitation, reference_evapotranspiration: f64,
+	snow: Snow_For_Crop,
 	allocator := context.allocator,
 ) -> (
 	events: Crop_Events,
@@ -3713,7 +3713,7 @@ crop_module_step :: proc(
 		fc_heat_stress_impact(cm, max_air_temperature, min_air_temperature)
 
 		if cm.sim_params.frost_kill_on {
-			fc_frost_kill(cm, max_air_temperature, min_air_temperature)
+			fc_frost_kill(cm, max_air_temperature, min_air_temperature, snow)
 		}
 
 		fc_drought_impact_on_fertility(cm)

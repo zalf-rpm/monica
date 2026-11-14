@@ -114,3 +114,17 @@ crop_event_names :: proc(e: Crop_Events) -> (names: [5]string, n: int) {
 	if e.stage > 0 {names[n] = fmt.tprintf("Stage-%d", e.stage); n += 1}
 	return
 }
+
+// What the crop's frost kill needs from soil moisture's snow and frost
+// components (their state at the end of yesterday's soil step), instead of
+// the C++'s `getSnowDepthAndCalcTempUnderSnow` callback into the model. The
+// crop step doesn't change soil moisture, so taking it before the step reads
+// the same values the callback read during it.
+Snow_For_Crop :: struct {
+	snow_depth:  f64,
+	frost_depth: f64,
+}
+
+snow_for_crop :: proc(sm: ^Soil_Moisture) -> Snow_For_Crop {
+	return {snow_depth = sm.snow_component.snow_depth, frost_depth = sm.frost_component.frost_depth}
+}

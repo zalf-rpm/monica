@@ -235,14 +235,20 @@ calc_temperature_under_snow :: proc(
 	fc: ^Frost_Component,
 	mean_air_temperature, snow_depth: f64,
 ) -> f64 {
+	return temperature_under_snow(mean_air_temperature, snow_depth, fc.frost_depth)
+}
+
+// calc_temperature_under_snow on values, for the crop's frost kill
+// (Snow_For_Crop), which has no Frost_Component.
+temperature_under_snow :: proc(mean_air_temperature, snow_depth, frost_depth: f64) -> f64 {
 	temperature_under_snow := 0.0
 	if snow_depth / 100.0 < 0.01 {
 		temperature_under_snow = mean_air_temperature
-	} else if fc.frost_depth < 0.01 {
+	} else if frost_depth < 0.01 {
 		temperature_under_snow = mean_air_temperature
 	} else {
 		temperature_under_snow =
-			mean_air_temperature / (1.0 + (10.0 * snow_depth / 100.0) / fc.frost_depth)
+			mean_air_temperature / (1.0 + (10.0 * snow_depth / 100.0) / frost_depth)
 	}
 	return temperature_under_snow
 }

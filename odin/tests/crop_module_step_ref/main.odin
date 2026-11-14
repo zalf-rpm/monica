@@ -29,10 +29,6 @@ g_soil_organic: ^core.Soil_Organic
 g_residue_params: ^p.Organic_Matter_Parameters
 g_tracer: ^tr.Tracer
 
-real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
-}
-
 real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {
 	core.soil_organic_add_organic_matter(
 		g_soil_organic,
@@ -279,7 +275,6 @@ main :: proc() {
 		&cpp.crop_params,
 		&cpp.sim_params,
 		real_add_organic_matter,
-		real_get_snow_depth,
 		nil,
 		a,
 	)
@@ -379,6 +374,7 @@ main :: proc() {
 			ATM_O3,
 			precip,
 			-1.0,
+			core.snow_for_crop(g_soil_moisture),
 			a,
 		)
 		names, n := core.crop_event_names(events)

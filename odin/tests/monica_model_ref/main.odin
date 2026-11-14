@@ -262,7 +262,6 @@ main :: proc() {
 		&model.crop_mod_params,
 		&model.sim_params,
 		no_add_organic_matter,
-		no_snow,
 		nil,
 		a,
 	)

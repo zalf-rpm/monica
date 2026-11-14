@@ -135,7 +135,6 @@ main :: proc() {
 		&model.crop_mod_params,
 		&model.sim_params,
 		core.monica_model_add_organic_matter_cb,
-		core.monica_model_get_snow_depth_cb,
 		nil,
 		a,
 	)
@@ -225,6 +224,7 @@ main :: proc() {
 			ATM_O3,
 			precip,
 			-1.0,
+			core.snow_for_crop(&model.soil_moisture),
 		)
 		core.monica_model_add_crop_events(model, events)
 		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(cm, false))
