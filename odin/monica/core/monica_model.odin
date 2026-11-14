@@ -52,6 +52,7 @@ Monica_Model :: struct {
 	soil_organic:                    Soil_Organic, // organic code
 	soil_transport:                  Soil_Transport, // transport code
 	current_crop_module:             ^Crop_Module, // crop code for possibly planted crop; nil if none
+	crop_to_soil:                    Crop_To_Soil, // what the soil components read from the crop today; crop_to_soil.odin
 
 	// store applied fertiliser during one production process
 	sum_fertiliser:                  f64 `unit:"kgN ha-1"`, // mineral N
@@ -746,6 +747,11 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	daily_climate := model.climate_data[len(model.climate_data) - 1]
 	tmin := daily_climate[.tmin]
+
+	// The crop as the soil components see it today (crop_to_soil.odin):
+	// after the crop step and the worksteps before it. Nothing below changes
+	// the crop.
+	crop_to_soil_fill(&model.crop_to_soil, model.current_crop_module, model.clear_crop_upon_next_day)
 	tavg := daily_climate[.tavg]
 	tmax := daily_climate[.tmax]
 	precip := daily_climate[.precip]
