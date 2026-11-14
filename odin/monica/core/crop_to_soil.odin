@@ -5,7 +5,7 @@ package core
 // declared in one place instead of each holding a ^Crop_Module.
 
 // What the crop gives the soil components on a day. Owned by Monica_Model,
-// filled by crop_to_soil_fill at the start of monica_model_general_step -
+// filled by crop_to_soil_of at the start of monica_model_general_step -
 // after the crop step and the worksteps before it, right where the soil
 // components used to read the crop - so the values are exactly those they
 // read before.
@@ -44,8 +44,7 @@ Crop_To_Soil :: struct {
 	net_primary_production:       f64 `unit:"kgC ha-1"`,
 }
 
-crop_to_soil_fill :: proc(cts: ^Crop_To_Soil, cm: ^Crop_Module, being_cleared: bool) {
-	cts^ = {}
+crop_to_soil_of :: proc(cm: ^Crop_Module, being_cleared: bool) -> (cts: Crop_To_Soil) {
 	if cm == nil {
 		return
 	}
@@ -66,6 +65,7 @@ crop_to_soil_fill :: proc(cts: ^Crop_To_Soil, cm: ^Crop_Module, being_cleared: b
 	cts.transpiration = cm.transpiration[:]
 	cts.n_uptake_from_layer = cm.n_uptake_from_layer[:]
 	cts.net_primary_production = cm.net_primary_production
+	return
 }
 
 // The crop's side of the automatic irrigation trigger

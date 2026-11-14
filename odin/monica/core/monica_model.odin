@@ -751,7 +751,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 	// The crop as the soil components see it today (crop_to_soil.odin):
 	// after the crop step and the worksteps before it. Nothing below changes
 	// the crop.
-	crop_to_soil_fill(&model.crop_to_soil, model.current_crop_module, model.clear_crop_upon_next_day)
+	model.crop_to_soil = crop_to_soil_of(model.current_crop_module, model.clear_crop_upon_next_day)
 	tavg := daily_climate[.tavg]
 	tmax := daily_climate[.tmax]
 	precip := daily_climate[.precip]
@@ -859,7 +859,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 	)
 
 	soil_organic_step(&model.soil_organic, tavg, precip, wind)
-	soil_transport_step(&model.soil_transport)
+	soil_transport_step(&model.soil_transport, model.crop_to_soil)
 }
 
 // C++: void monica::monicamodel::cropStep(MonicaModel*)

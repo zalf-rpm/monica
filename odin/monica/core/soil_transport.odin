@@ -76,7 +76,10 @@ make_soil_transport :: proc(
 }
 
 // C++: void monica::soiltransport::step(SoilTransport*)
-soil_transport_step :: proc(st: ^Soil_Transport) {
+//
+// `crop`: the crop's N uptake per layer (crop_to_soil.odin), instead of the
+// C++'s read through the crop module.
+soil_transport_step :: proc(st: ^Soil_Transport, crop: Crop_To_Soil) {
 	min_time_step_factor := 1.0 // [t t-1]
 	nols := len(st.soil_column.layers)
 
@@ -84,7 +87,7 @@ soil_transport_step :: proc(st: ^Soil_Transport) {
 		// st.soil_no3[i] = st.soil_column.layers[i].soil_no3
 
 		st.n_uptake_from_layer[i] =
-			st.crop_module != nil ? st.crop_module.n_uptake_from_layer[i] : 0
+			crop.has_crop ? crop.n_uptake_from_layer[i] : 0
 		if i == nols - 1 {
 			st.percolation_rate[i] = st.soil_column.flux_at_lower_boundary // [mm]
 		} else {

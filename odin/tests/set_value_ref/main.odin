@@ -230,7 +230,7 @@ main :: proc() {
 			-1.0,
 		)
 		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
-		core.soil_transport_step(&model.soil_transport)
+		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(cm, false))
 	}
 
 	t := tr.make_tracer(os.to_stream(os.stdout), a)

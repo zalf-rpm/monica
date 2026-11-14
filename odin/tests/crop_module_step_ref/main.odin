@@ -386,7 +386,7 @@ main :: proc() {
 		)
 
 		core.soil_organic_step(&so, tavg, precip, wind)
-		core.soil_transport_step(&str)
+		core.soil_transport_step(&str, core.crop_to_soil_of(&cm, false))
 
 		dump_crop_module(&t, &cm)
 		tr.dump(&t, "soilMoistureDiag.vc_PercentageSoilCoverage", sm.soil_coverage_percent)

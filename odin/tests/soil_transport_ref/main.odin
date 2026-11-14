@@ -170,7 +170,7 @@ main :: proc() {
 			julday,
 			et0,
 		)
-		core.soil_transport_step(&st)
+		core.soil_transport_step(&st, core.crop_to_soil_of(nil, false))
 
 		tr.set_day(&t, day)
 		tr.dump(&t, "soilTransport", st)
