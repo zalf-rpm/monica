@@ -268,7 +268,6 @@ main :: proc() {
 		nil,
 		a,
 	)
-	core.put_crop(&model.soil_column, &cm)
 	cm.current_total_temperature_sum =
 		(cm.crop_params.cultivar_params.heat_sum_irrigation_start +
 			cm.crop_params.cultivar_params.heat_sum_irrigation_end) /
@@ -283,7 +282,6 @@ main :: proc() {
 	tr.dump(&t, "triggered", triggered)
 	tr.dump(&t, "triggeredAmount", triggered_amount)
 	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.surface_water_storage)
-	core.remove_crop(&model.soil_column)
 
 	// scenario 8: applyTillage
 	tr.set_day(&t, 8)

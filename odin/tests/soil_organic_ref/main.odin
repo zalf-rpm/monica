@@ -105,9 +105,7 @@ main :: proc() {
 		cpp.sim_params.layer_thickness,
 		a,
 	)
-	sm.crop_module = nil // bare soil - see the file comment
 	so := core.make_soil_organic(&sc, cpp.soil_organic_mod_params)
-	so.crop_module = nil
 
 	// --- climate ---
 	copts := clim.make_csv_via_header_options()

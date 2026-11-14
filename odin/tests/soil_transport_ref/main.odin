@@ -100,7 +100,6 @@ main :: proc() {
 		cpp.sim_params.layer_thickness,
 		a,
 	)
-	sm.crop_module = nil // bare soil - see the file comment
 	st := core.make_soil_transport(
 		cpp.soil_transport_mod_params,
 		&sc,
@@ -108,7 +107,6 @@ main :: proc() {
 		&cpp.env_params,
 		&cpp.crop_params,
 	)
-	st.crop_module = nil
 
 	// --- climate ---
 	copts := clim.make_csv_via_header_options()

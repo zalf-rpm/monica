@@ -3,9 +3,9 @@
 //
 // No monica-back-pointer deviation: the C++ struct takes `SoilColumn&` and
 // `SoilOrganicModuleParameters` directly (no MonicaModel&), just like
-// soiltransport. `cropModule` follows the established phase-5 stub pattern
-// (crop_module_stub.odin), extended with `vc_NetPrimaryProduction` (the one
-// field this file reads, in soil_organic_step).
+// soiltransport. The C++'s `cropModule` field is not ported: the one value
+// read from the crop (`vc_NetPrimaryProduction`, in soil_organic_step) comes
+// as a `Crop_To_Soil` parameter (crop_to_soil.odin).
 package core
 
 import tl "../../support/tools"
@@ -62,7 +62,6 @@ Soil_Organic :: struct {
 	// incorporation. Automatically set to false if carbamid amount falls
 	// below 0.001.
 	incorporation:                bool,
-	crop_module:                  ^Crop_Module,
 }
 
 // C++: kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn&,

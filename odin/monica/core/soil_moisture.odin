@@ -8,24 +8,12 @@
 //  1. No `monica` field. The C++ struct's `MonicaModel &monica` is read in two
 //     shapes: (a) `sm->monica.currentCropModule.get()->X` at 10 call sites
 //     across `step`/`evapotranspiration`, and (b) `sm->monica.simPs.X` /
-//     `sm->monica.dailySumIrrigationWater` (2 sites). For (a): the C++ struct
-//     *also* carries its own `CropModule *cropModule` field, kept in sync with
-//     `monica.currentCropModule.get()` by monica-model.cpp at every plant/
-//     harvest event (`soilMoisture->cropModule = currentCropModule.get()`) -
-//     the two pointers are provably always equal while a crop is live. So
-//     every `monica.currentCropModule`-mediated read below goes through the
-//     `cropModule` field instead, which already exists as a genuine C++
-//     struct member (unlike soil_temperature.odin's case, this isn't inventing
-//     a new field, just routing through the one MONICA itself keeps
-//     synchronised). For (b): `dualKcMethod`/`dailySumIrrigationWater` become
-//     explicit parameters on `step`/`evapotranspiration`/
-//     `dual_kc_precomputation`, the same move used for `p_timeStep` in
-//     `make_soil_temperature`.
-//  2. `cropModule` points at `Crop_Module`, a phase-5 stub (see
-//     crop_module_stub.odin) carrying only the 10 fields this file reads.
-//     Phase 5 replaces it with the real ~4,750-line struct; every field here
-//     already has its final C++ name, so nothing calling into `cropModule.X`
-//     needs to change.
+//     `sm->monica.dailySumIrrigationWater` (2 sites). For (a): the crop
+//     values come as a `Crop_To_Soil` parameter (crop_to_soil.odin) -
+//     neither `monica` nor the C++'s own `cropModule` field is ported. For
+//     (b): `dualKcMethod`/`dailySumIrrigationWater` become explicit
+//     parameters on `step`/`evapotranspiration`/`dual_kc_precomputation`,
+//     the same move used for `p_timeStep` in `make_soil_temperature`.
 //
 // `siteParameters`/`envPs`/`cropPs` ARE kept as genuine fields (pointers, not
 // values - Odin has no reference type): the C++ struct already stores these as
@@ -95,7 +83,6 @@ Soil_Moisture :: struct {
 	xsa_critical_soil_moisture:   f64,
 	snow_component:               Snow_Component,
 	frost_component:              Frost_Component,
-	crop_module:                  ^Crop_Module,
 }
 
 // C++: kj::Own<SoilMoisture> monica::makeSoilMoisture(MonicaModel&, const
@@ -420,7 +407,7 @@ capillary_rise :: proc(sm: ^Soil_Moisture, crop: Crop_To_Soil, allocator := cont
 	// (max(size_t(1), groundwater_table_layer - vc_RootingDepth)): if
 	// vc_RootingDepth ever exceeds groundwater_table_layer the subtraction
 	// wraps to a huge positive number rather than going negative, reproduced
-	// here with explicit uint arithmetic. Dormant while cropModule is nil
+	// here with explicit uint arithmetic. Dormant without a crop
 	// (vc_RootingDepth always 0); matters once phase 5 plants a crop whose
 	// roots reach below a shallow water table.
 	groundwater_distance := max(

@@ -164,11 +164,6 @@ sowing_apply :: proc(
 			)
 		}
 
-		model.soil_transport.crop_module = model.current_crop_module
-		model.soil_column.crop_module = model.current_crop_module
-		model.soil_moisture.crop_module = model.current_crop_module
-		model.soil_organic.crop_module = model.current_crop_module
-
 		if model.sim_params.use_n_min_mineral_fertilising_method &&
 		   !model.current_crop_module.crop_params.cultivar_params.winter_crop {
 			core.clear_top_dressing_params(&model.soil_column)

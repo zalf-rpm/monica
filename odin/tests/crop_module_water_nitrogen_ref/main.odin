@@ -340,7 +340,6 @@ main :: proc() {
 		cpp.sim_params.layer_thickness,
 		a,
 	)
-	sm.crop_module = nil
 	g_soil_moisture = &sm
 
 	monica_parameters_dir := tl.fix_system_separator(

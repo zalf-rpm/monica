@@ -4,9 +4,9 @@
 // No monica-back-pointer deviation needed here, unlike soil_temperature.odin/
 // soil_moisture.odin: the C++ struct already takes siteParams/envParams/
 // cropModParams as raw pointers passed directly into makeSoilTransport, not
-// read through a MonicaModel&. cropModule points at the same phase-5
-// Crop_Module stub soil_moisture.odin introduced (crop_module_stub.odin),
-// extended with the one extra field this file reads (vc_NUptakeFromLayer).
+// read through a MonicaModel&. The C++'s `cropModule` field is not ported:
+// the one value read from the crop (vc_NUptakeFromLayer) comes as a
+// `Crop_To_Soil` parameter (crop_to_soil.odin).
 package core
 
 import p "../params"
@@ -33,7 +33,6 @@ Soil_Transport :: struct {
 	time_step:            f64,
 	total_dispersion:     [dynamic]f64,
 	percolation_rate:     [dynamic]f64 `unit:"mm d-1"`,
-	crop_module:          ^Crop_Module,
 }
 
 // C++: kj::Own<SoilTransport> monica::makeSoilTransport(

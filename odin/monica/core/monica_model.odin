@@ -321,12 +321,7 @@ monica_model_daily_reset :: proc(model: ^Monica_Model, allocator := context.allo
 	monica_model_clear_events(model, allocator)
 
 	if model.clear_crop_upon_next_day {
-		model.soil_transport.crop_module = nil
-		model.soil_column.crop_module = nil
-		model.soil_moisture.crop_module = nil
-		model.soil_organic.crop_module = nil
 		model.current_crop_module = nil
-
 		model.clear_crop_upon_next_day = false
 	}
 }

@@ -142,9 +142,6 @@ main :: proc() {
 	)
 	model.current_crop_module = cm
 
-	model.soil_moisture.crop_module = cm
-	model.soil_organic.crop_module = cm
-	model.soil_transport.crop_module = cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(

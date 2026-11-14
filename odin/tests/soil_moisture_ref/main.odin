@@ -99,7 +99,6 @@ main :: proc() {
 		cpp.sim_params.layer_thickness,
 		a,
 	)
-	sm.crop_module = nil // bare soil - see the file comment
 
 	// --- climate ---
 	copts := clim.make_csv_via_header_options()
