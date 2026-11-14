@@ -569,6 +569,13 @@ crop_module_step :: proc(cm: ^Crop_Module, ...) {
 }
 ```
 
+*Implemented in phase B of `plan-component-interfaces.md`:*
+`core/crop_carry_over.odin`, with 15 values (the scan also found oxygen
+deficiency reading yesterday's stage, and crop N status yesterday's biomass
+and N concentrations). One difference to the sketch below: the clamp of the
+water stress keeps a write into `transpiration_deficit` (now in the step),
+because at the final developmental stage water uptake doesn't overwrite it.
+
 Two details make this bit-identical to today:
 
 - **Take it at the start of the step, not at the end of the previous one.**

@@ -50,7 +50,7 @@ apply. 5 at the latest at the end of each phase.
 |---|---|---|---|
 | 0 | 0.1-0.3 | branch, baseline, reference scans | done (80e13d1) |
 | A | A1-A5 | crop → soil exchange struct, callbacks as return values | done except A4b (moved to E1): 7ca53e2 .. 22d1a1e |
-| B | B1-B3 | previous-day carry-over struct | |
+| B | B1-B3 | previous-day carry-over struct | done: d88401c .. f9e568a |
 | C | C1-C3 | crop fields grouped into component sub-structs | |
 | D | D1-D6 | leaf components with input/state structs and tags | |
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | |
@@ -164,6 +164,31 @@ Done when: no soil file mentions `Crop_Module`, apart from
   deliberate, C++-compatible choice.
 
 Done when: `field_deps.py lag` reports only fields that are in the carry-over.
+
+What was done:
+- `Crop_Carry_Over` (`core/crop_carry_over.odin`, d88401c) holds 15 values:
+  stage, water/N/frost stress, the daylength and vernalisation factors,
+  rooting depth, the leaf growth/senescence increments, ET0, crop height,
+  above/belowground biomass and the two N concentrations. More than the
+  architecture.md sketch: the scan also found oxygen deficiency reading
+  yesterday's stage, and crop N status yesterday's biomass and N
+  concentrations.
+- The readers get them as parameters (8f26372, d228f39, 22aeca8):
+  development, oxygen deficiency, the intercropping height, the green area,
+  photosynthesis, drought impact, crop N status, dry matter (and the dead-root
+  transfer it calls).
+- **The clamp keeps a write.** At the final developmental stage water uptake
+  doesn't write `transpiration_deficit`, so the clamped value survives into
+  the next day and the model's stress sum. Dropping the write would change
+  that, so the clamp moved from `fc_drought_impact_on_fertility` into the step
+  as a visible `cm.transpiration_deficit = water_stress`.
+- Remaining in `field_deps.py lag`: each part's own counters and state
+  (cutting delay, transplant days, dormancy date, stem elongation flag, step
+  count) and photosynthesis reading growth's whole `organ_green_biomass` -
+  an array, deliberately not copied (see the struct's comment).
+- Checked additionally on two perennial scenarios (clover-grass ley, alfalfa,
+  1991-1996 with cuttings: perennial reset and cutting), added to
+  `extra_sims.py`.
 
 ## Phase C: group the crop's fields (architecture.md §6 step 1)
 
