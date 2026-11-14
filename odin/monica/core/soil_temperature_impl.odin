@@ -241,10 +241,10 @@ soil_temperature_daily :: proc(
 	day.snow_depth = sm.snow_component.snow_depth
 	day.snow_water_equivalent = sm.snow_component.frozen_water_in_snow + sm.snow_component.liquid_water_in_snow
 	day.temperature_under_snow = sm.frost_component.temperature_under_snow
-	if cm := model.current_crop_module; cm != nil {
-		day.above_ground_biomass = cm.aboveground_biomass
-		day.crop_height = cm.crop_height
-		day.lai = cm.leaf_area_index
+	if crop := &model.crop_to_soil; crop.has_crop {
+		day.above_ground_biomass = crop.aboveground_biomass
+		day.crop_height = crop.crop_height
+		day.lai = crop.leaf_area_index
 	}
 	return
 }

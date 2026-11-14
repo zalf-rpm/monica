@@ -807,8 +807,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		monica_model_add_daily_sum_fertiliser(model, fertilizer_amount)
 	}
 
-	soil_coverage :=
-		model.current_crop_module != nil ? model.current_crop_module.soil_coverage : 0.0
+	soil_coverage := model.crop_to_soil.soil_coverage // 0 without a crop
 	// NOTE(deviation): dispatch on the configured implementation
 	// (soil_temperature_impl.odin); MONICA's own gets exactly the C++ call.
 	modules_day: Soil_Temperature_Daily
