@@ -267,7 +267,7 @@ main :: proc() {
 			-1.0,
 			a,
 		)
-		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(&cm, false))
 		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(&cm, false))
 		free_all(context.temp_allocator)
 	}

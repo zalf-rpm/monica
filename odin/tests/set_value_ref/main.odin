@@ -229,7 +229,7 @@ main :: proc() {
 			precip,
 			-1.0,
 		)
-		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(cm, false))
 		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(cm, false))
 	}
 

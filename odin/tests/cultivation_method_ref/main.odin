@@ -382,7 +382,7 @@ main :: proc() {
 			}
 		}
 
-		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(model.current_crop_module, false))
 		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(model.current_crop_module, false))
 
 		if day % 60 == 0 || day == n - 1 {

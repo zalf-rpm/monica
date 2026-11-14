@@ -858,7 +858,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		crop_cleared = model.clear_crop_upon_next_day,
 	)
 
-	soil_organic_step(&model.soil_organic, tavg, precip, wind)
+	soil_organic_step(&model.soil_organic, tavg, precip, wind, model.crop_to_soil)
 	soil_transport_step(&model.soil_transport, model.crop_to_soil)
 }
 

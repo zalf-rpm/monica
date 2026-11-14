@@ -1617,10 +1617,15 @@ soil_organic_fo_net_ecosystem_exchange :: proc(
 }
 
 // C++: void monica::soilorganic::step(SoilOrganic*, double, double, double)
-soil_organic_step :: proc(so: ^Soil_Organic, mean_air_temperature, precipitation, wind_speed: f64) {
-	// C++: `so->cropModule ? so->cropModule->vc_NetPrimaryProduction : 0` - real
-	// SoilOrganic struct field, no monica-back-pointer deviation needed here.
-	net_primary_production := so.crop_module != nil ? so.crop_module.net_primary_production : 0
+//
+// `crop`: the crop's NPP (crop_to_soil.odin), instead of the C++'s
+// `cropModule ? cropModule->vc_NetPrimaryProduction : 0`.
+soil_organic_step :: proc(
+	so: ^Soil_Organic,
+	mean_air_temperature, precipitation, wind_speed: f64,
+	crop: Crop_To_Soil,
+) {
+	net_primary_production := crop.has_crop ? crop.net_primary_production : 0
 
 	soil_organic_fo_urea(so)
 	soil_organic_fo_mit(so)

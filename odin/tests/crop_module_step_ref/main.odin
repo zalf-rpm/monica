@@ -385,7 +385,7 @@ main :: proc() {
 			a,
 		)
 
-		core.soil_organic_step(&so, tavg, precip, wind)
+		core.soil_organic_step(&so, tavg, precip, wind, core.crop_to_soil_of(&cm, false))
 		core.soil_transport_step(&str, core.crop_to_soil_of(&cm, false))
 
 		dump_crop_module(&t, &cm)

@@ -182,7 +182,7 @@ main :: proc() {
 			julday,
 			et0,
 		)
-		core.soil_organic_step(&so, tavg, precip, wind)
+		core.soil_organic_step(&so, tavg, precip, wind, core.crop_to_soil_of(nil, false))
 
 		tr.set_day(&t, day)
 		tr.dump(&t, "soilOrganic", so)
