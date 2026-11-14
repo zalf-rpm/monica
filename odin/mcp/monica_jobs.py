@@ -33,7 +33,12 @@ FIXTURE_DIR = REPO / "installer" / "Hohenfinow2"
 
 
 def _default_binary() -> Path:
-    exe = REPO / "odin" / "build" / ("monica-run.exe" if os.name == "nt" else "monica-run")
+    exe = (
+        REPO
+        / "odin"
+        / "build"
+        / ("monica-run.exe" if os.name == "nt" else "monica-run")
+    )
     return Path(os.environ.get("MONICA_RUN", exe))
 
 
@@ -79,10 +84,29 @@ DAILY_OUTPUTS: dict[str, str] = {
     "NLeach": "N leaching below the leaching depth [kg N/ha]",
 }
 # columns aggregated by summing (fluxes); all others are averaged
-FLUX_COLUMNS = {"Precip", "Irrig", "NFert", "Act_ET", "ET0", "RunOff", "Recharge", "NLeach"}
+FLUX_COLUMNS = {
+    "Precip",
+    "Irrig",
+    "NFert",
+    "Act_ET",
+    "ET0",
+    "RunOff",
+    "Recharge",
+    "NLeach",
+}
 # crop state/stress columns: monthly means only over days with a crop
 # (between crops they are 0 or meaningless and would dilute the mean)
-CROP_ONLY_COLUMNS = {"Stage", "Yield", "AbBiom", "LAI", "TraDef", "NDef", "HeatRed", "FrostRed", "OxRed"}
+CROP_ONLY_COLUMNS = {
+    "Stage",
+    "Yield",
+    "AbBiom",
+    "LAI",
+    "TraDef",
+    "NDef",
+    "HeatRed",
+    "FrostRed",
+    "OxRed",
+}
 
 
 def _daily_spec(extra: list[str]) -> list[Any]:
@@ -114,10 +138,22 @@ CROP_OUTPUTS: list[Any] = [
     ["NFert", "SUM"],
 ]
 CROP_COLUMN_NAMES = [
-    "cm_count", "crop", "yield_kg_ha", "sowing", "harvest", "max_aboveground_biomass_kg_ha",
-    "max_lai", "mean_water_stress_factor", "mean_n_stress_factor", "heat_reduction_factor",
-    "frost_reduction_factor", "mean_oxygen_factor", "precip_mm", "actual_et_mm",
-    "irrigation_mm", "n_fertilizer_kg_ha",
+    "cm_count",
+    "crop",
+    "yield_kg_ha",
+    "sowing",
+    "harvest",
+    "max_aboveground_biomass_kg_ha",
+    "max_lai",
+    "mean_water_stress_factor",
+    "mean_n_stress_factor",
+    "heat_reduction_factor",
+    "frost_reduction_factor",
+    "mean_oxygen_factor",
+    "precip_mm",
+    "actual_et_mm",
+    "irrigation_mm",
+    "n_fertilizer_kg_ha",
 ]
 
 YEARLY_OUTPUTS: list[Any] = [
@@ -131,8 +167,14 @@ YEARLY_OUTPUTS: list[Any] = [
     ["NLeach", "SUM"],
 ]
 YEARLY_COLUMN_NAMES = [
-    "year", "precip_mm", "actual_et_mm", "irrigation_mm", "n_fertilizer_kg_ha",
-    "runoff_mm", "recharge_mm", "n_leaching_kg_ha",
+    "year",
+    "precip_mm",
+    "actual_et_mm",
+    "irrigation_mm",
+    "n_fertilizer_kg_ha",
+    "runoff_mm",
+    "recharge_mm",
+    "n_leaching_kg_ha",
 ]
 
 # ---------------------------------------------------------------------------
@@ -143,7 +185,9 @@ DATE_MMDD = re.compile(r"^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$")
 
 
 try:  # under the MCP SDK these reach the model verbatim instead of a generic "Error executing tool"
-    from mcp.server.mcpserver.exceptions import ResourceError as _ResourceError, ToolError as _ToolError
+    from mcp.server.mcpserver.exceptions import ResourceError as _ResourceError
+    from mcp.server.mcpserver.exceptions import ToolError as _ToolError
+
     _ERROR_BASES: tuple[type, ...] = (_ToolError, _ResourceError)
 except ImportError:  # job layer used without MCP
     _ERROR_BASES = (ValueError,)
@@ -191,7 +235,9 @@ def _residue_file(species: str) -> str:
     return "crop-residues/wheat.json"  # generic fallback, reported in the job's notes
 
 
-def build_crop_json(rotation: list[dict[str, Any]], auto_irrigation: bool) -> tuple[dict, list[str]]:
+def build_crop_json(
+    rotation: list[dict[str, Any]], auto_irrigation: bool
+) -> tuple[dict, list[str]]:
     if not rotation:
         raise ScenarioError("rotation must contain at least one crop")
     notes: list[str] = []
@@ -202,9 +248,13 @@ def build_crop_json(rotation: list[dict[str, Any]], auto_irrigation: bool) -> tu
         if not (MONICA_PARAMETERS / "crops" / f"{species}.json").exists():
             raise ScenarioError(f"unknown species {species!r} - see list_crops")
         if not (MONICA_PARAMETERS / "crops" / species / f"{cultivar}.json").exists():
-            raise ScenarioError(f"unknown cultivar {cultivar!r} for {species!r} - see list_crops")
+            raise ScenarioError(
+                f"unknown cultivar {cultivar!r} for {species!r} - see list_crops"
+            )
         sowing = _check_mmdd(c["sowing_date"], f"rotation[{i}].sowing_date")
-        latest_harvest = _check_mmdd(c["latest_harvest_date"], f"rotation[{i}].latest_harvest_date")
+        latest_harvest = _check_mmdd(
+            c["latest_harvest_date"], f"rotation[{i}].latest_harvest_date"
+        )
         winter = c.get("winter_crop")
         if winter is None:
             winter = "winter" in cultivar
@@ -222,37 +272,49 @@ def build_crop_json(rotation: list[dict[str, Any]], auto_irrigation: bool) -> tu
         }
         ws: list[dict[str, Any]] = []
         if auto_irrigation:
-            ws.append({
-                "type": "AutomaticIrrigation",
-                "irrigateCrop": True,
-                "parameters": {
-                    "irrigationParameters": {"nitrateConcentration": [0, "mg dm-3"]},
-                    "amount": [17, "mm"],
-                    "trigger_if_nFC_below_%": [50, "%"],
-                    "calc_nFC_until_depth_m": [0.3, "m"],
-                },
-            })
-        ws.append({"date": "0000-" + sowing, "type": "Sowing", "crop": ["ref", "crops", key]})
+            ws.append(
+                {
+                    "type": "AutomaticIrrigation",
+                    "irrigateCrop": True,
+                    "parameters": {
+                        "irrigationParameters": {
+                            "nitrateConcentration": [0, "mg dm-3"]
+                        },
+                        "amount": [17, "mm"],
+                        "trigger_if_nFC_below_%": [50, "%"],
+                        "calc_nFC_until_depth_m": [0.3, "m"],
+                    },
+                }
+            )
+        ws.append(
+            {"date": "0000-" + sowing, "type": "Sowing", "crop": ["ref", "crops", key]}
+        )
         for j, f in enumerate(c.get("n_fertilization") or []):
             d = _check_mmdd(f["date"], f"rotation[{i}].n_fertilization[{j}].date")
             kg = float(f["kg_n_ha"])
             if not 0 < kg <= 400:
-                raise ScenarioError(f"rotation[{i}].n_fertilization[{j}].kg_n_ha must be in (0, 400]")
-            ws.append({
-                "type": "MineralFertilization",
-                "date": _rel_date(d, sowing),
-                "amount": [kg, "kg N"],
-                "partition": ["include-from-file", "mineral-fertilisers/AN.json"],
-            })
-        ws.append({
-            "type": "AutomaticHarvest",
-            "latest-date": _rel_date(latest_harvest, sowing),
-            "min-%-asw": 0,
-            "max-%-asw": 100,
-            "max-3d-precip-sum": 999,
-            "max-curr-day-precip": 999,
-            "harvest-time": "maturity",
-        })
+                raise ScenarioError(
+                    f"rotation[{i}].n_fertilization[{j}].kg_n_ha must be in (0, 400]"
+                )
+            ws.append(
+                {
+                    "type": "MineralFertilization",
+                    "date": _rel_date(d, sowing),
+                    "amount": [kg, "kg N"],
+                    "partition": ["include-from-file", "mineral-fertilisers/AN.json"],
+                }
+            )
+        ws.append(
+            {
+                "type": "AutomaticHarvest",
+                "latest-date": _rel_date(latest_harvest, sowing),
+                "min-%-asw": 0,
+                "max-%-asw": 100,
+                "max-3d-precip-sum": 999,
+                "max-curr-day-precip": 999,
+                "harvest-time": "maturity",
+            }
+        )
         cms.append({"worksteps": ws})
     crop_json = {
         "crops": crops,
@@ -270,9 +332,24 @@ def default_site() -> dict[str, Any]:
         "latitude": 52.8,
         "n_deposition_kg_ha_y": 30,
         "soil_profile": [
-            {"thickness_m": 0.3, "soc_percent": 0.8, "ka5_texture": "Sl2", "bulk_density_kg_m3": 1446},
-            {"thickness_m": 0.1, "soc_percent": 0.15, "ka5_texture": "Sl2", "bulk_density_kg_m3": 1446},
-            {"thickness_m": 1.6, "soc_percent": 0.05, "ka5_texture": "Sl2", "bulk_density_kg_m3": 1446},
+            {
+                "thickness_m": 0.3,
+                "soc_percent": 0.8,
+                "ka5_texture": "Sl2",
+                "bulk_density_kg_m3": 1446,
+            },
+            {
+                "thickness_m": 0.1,
+                "soc_percent": 0.15,
+                "ka5_texture": "Sl2",
+                "bulk_density_kg_m3": 1446,
+            },
+            {
+                "thickness_m": 1.6,
+                "soc_percent": 0.05,
+                "ka5_texture": "Sl2",
+                "bulk_density_kg_m3": 1446,
+            },
         ],
     }
 
@@ -289,14 +366,18 @@ def build_site_json(site: dict[str, Any] | None) -> dict:
         if t <= 0:
             raise ScenarioError(f"soil_profile[{i}].thickness_m must be > 0")
         total += t
-        layers.append({
-            "Thickness": [t, "m"],
-            "SoilOrganicCarbon": [float(l["soc_percent"]), "%"],
-            "KA5TextureClass": str(l["ka5_texture"]),
-            "SoilRawDensity": [float(l["bulk_density_kg_m3"]), "kg m-3"],
-        })
+        layers.append(
+            {
+                "Thickness": [t, "m"],
+                "SoilOrganicCarbon": [float(l["soc_percent"]), "%"],
+                "KA5TextureClass": str(l["ka5_texture"]),
+                "SoilRawDensity": [float(l["bulk_density_kg_m3"]), "kg m-3"],
+            }
+        )
     if not 0.5 <= total <= 3.0:
-        raise ScenarioError(f"soil profile must be 0.5-3.0 m deep in total, got {total:.2f} m")
+        raise ScenarioError(
+            f"soil profile must be 0.5-3.0 m deep in total, got {total:.2f} m"
+        )
     return {
         "SiteParameters": {
             "Latitude": lat,
@@ -306,7 +387,10 @@ def build_site_json(site: dict[str, Any] | None) -> dict:
             "pwpFcSatFunction": "Wessolek2009",
             "SoilProfileParameters": layers,
         },
-        "SoilTemperatureParameters": ["include-from-file", "general/soil-temperature.json"],
+        "SoilTemperatureParameters": [
+            "include-from-file",
+            "general/soil-temperature.json",
+        ],
         "EnvironmentParameters": {
             "=": ["include-from-file", "general/environment.json"],
             "LeachingDepth": 2.0,
@@ -323,7 +407,10 @@ def build_sim_json(extra_daily: list[str]) -> dict:
         "crop.json": "crop.json",
         "site.json": "site.json",
         "climate.csv": "climate.csv",
-        "climate.csv-options": {"no-of-climate-file-header-lines": 2, "csv-separator": ","},
+        "climate.csv-options": {
+            "no-of-climate-file-header-lines": 2,
+            "csv-separator": ",",
+        },
         "debug?": False,
         "include-file-base-path": "${MONICA_PARAMETERS}",
         "output": {
@@ -337,9 +424,12 @@ def build_sim_json(extra_daily: list[str]) -> dict:
                 "csv-separator": ",",
             },
             "events": [
-                "daily", _daily_spec(extra_daily),
-                "crop", CROP_OUTPUTS,
-                "yearly", YEARLY_OUTPUTS,
+                "daily",
+                _daily_spec(extra_daily),
+                "crop",
+                CROP_OUTPUTS,
+                "yearly",
+                YEARLY_OUTPUTS,
             ],
         },
         "UseSecondaryYields": True,
@@ -374,7 +464,9 @@ class Job:
         return JOBS_DIR / self.job_id
 
     def save(self) -> None:
-        (self.dir / "job.json").write_text(json.dumps(asdict(self), indent=2), encoding="utf-8")
+        (self.dir / "job.json").write_text(
+            json.dumps(asdict(self), indent=2), encoding="utf-8"
+        )
 
     def public(self) -> dict[str, Any]:
         d = {k: v for k, v in asdict(self).items() if k != "scenario"}
@@ -386,7 +478,12 @@ class Job:
 class LocalExecutor:
     """Runs monica-run as a local subprocess, a few jobs in parallel."""
 
-    def __init__(self, binary: Path | None = None, max_parallel: int | None = None, timeout_s: int = 900):
+    def __init__(
+        self,
+        binary: Path | None = None,
+        max_parallel: int | None = None,
+        timeout_s: int = 900,
+    ):
         self.binary = binary or _default_binary()
         self.timeout_s = timeout_s
         self.pool = concurrent.futures.ThreadPoolExecutor(
@@ -403,13 +500,23 @@ class LocalExecutor:
         try:
             p = subprocess.run(
                 [str(self.binary), "-m", "sim.json"],
-                cwd=job.dir, env=env, capture_output=True, text=True, timeout=self.timeout_s,
+                cwd=job.dir,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_s,
             )
             (job.dir / "run.log").write_text(p.stdout + p.stderr, encoding="utf-8")
             if p.returncode != 0:
-                job.status, job.error = "failed", f"monica-run exited with {p.returncode}: {(p.stdout + p.stderr)[-800:]}"
+                job.status, job.error = (
+                    "failed",
+                    f"monica-run exited with {p.returncode}: {(p.stdout + p.stderr)[-800:]}",
+                )
             elif not (job.dir / "out_section_crop.csv").exists():
-                job.status, job.error = "failed", "monica-run produced no output (see run.log)"
+                job.status, job.error = (
+                    "failed",
+                    "monica-run produced no output (see run.log)",
+                )
             else:
                 job.status = "succeeded"
         except subprocess.TimeoutExpired:
@@ -431,28 +538,47 @@ class JobManager:
             try:
                 j = Job(**json.loads(jf.read_text(encoding="utf-8")))
                 if j.status in ("queued", "running"):
-                    j.status, j.error = "failed", "server restarted while the job was pending"
+                    j.status, j.error = (
+                        "failed",
+                        "server restarted while the job was pending",
+                    )
                 self.jobs[j.job_id] = j
             except Exception:  # noqa: BLE001
                 pass
 
     def submit(self, rotation, site, auto_irrigation, extra_daily, label) -> Job:
         if not self.executor.binary.exists():
-            raise ScenarioError(f"monica-run binary not found at {self.executor.binary} - build the Odin port first")
+            raise ScenarioError(
+                f"monica-run binary not found at {self.executor.binary} - build the Odin port first"
+            )
         crop_json, notes = build_crop_json(rotation, auto_irrigation)
         site_json = build_site_json(site)
         for oid in extra_daily:
             if not re.fullmatch(r"[A-Za-z0-9_|/.\-]+", oid):
                 raise ScenarioError(f"invalid output id {oid!r}")
         job = Job(
-            job_id=uuid.uuid4().hex[:12], label=label, status="queued", created=time.time(), notes=notes,
-            scenario={"rotation": rotation, "site": site or default_site(),
-                      "auto_irrigation": auto_irrigation, "extra_daily_outputs": extra_daily},
+            job_id=uuid.uuid4().hex[:12],
+            label=label,
+            status="queued",
+            created=time.time(),
+            notes=notes,
+            scenario={
+                "rotation": rotation,
+                "site": site or default_site(),
+                "auto_irrigation": auto_irrigation,
+                "extra_daily_outputs": extra_daily,
+            },
         )
         job.dir.mkdir(parents=True)
-        (job.dir / "crop.json").write_text(json.dumps(crop_json, indent=2), encoding="utf-8")
-        (job.dir / "site.json").write_text(json.dumps(site_json, indent=2), encoding="utf-8")
-        (job.dir / "sim.json").write_text(json.dumps(build_sim_json(extra_daily), indent=2), encoding="utf-8")
+        (job.dir / "crop.json").write_text(
+            json.dumps(crop_json, indent=2), encoding="utf-8"
+        )
+        (job.dir / "site.json").write_text(
+            json.dumps(site_json, indent=2), encoding="utf-8"
+        )
+        (job.dir / "sim.json").write_text(
+            json.dumps(build_sim_json(extra_daily), indent=2), encoding="utf-8"
+        )
         shutil.copyfile(CLIMATE_FILE, job.dir / "climate.csv")
         job.save()
         with self.lock:
@@ -481,13 +607,19 @@ class JobManager:
 # ---------------------------------------------------------------------------
 
 
-def read_section(job: Job, section: str) -> tuple[list[str], list[str], list[list[str]]]:
+def read_section(
+    job: Job, section: str
+) -> tuple[list[str], list[str], list[list[str]]]:
     """(header, units, rows) of out_section_<section>.csv"""
     path = job.dir / f"out_section_{section}.csv"
     if not path.exists():
-        raise ScenarioError(f"job {job.job_id} has no {section} output (status: {job.status})")
+        raise ScenarioError(
+            f"job {job.job_id} has no {section} output (status: {job.status})"
+        )
     rows = list(csv.reader(io.StringIO(path.read_text(encoding="utf-8"))))
-    rows = [r[:-1] if r and r[-1] == "" else r for r in rows]  # MONICA writes a trailing separator
+    rows = [
+        r[:-1] if r and r[-1] == "" else r for r in rows
+    ]  # MONICA writes a trailing separator
     return rows[0], rows[1], rows[2:]
 
 
@@ -518,16 +650,25 @@ def summarize(job: Job) -> dict[str, Any]:
         "climate": f"Hohenfinow2 station data {CLIMATE_PERIOD[0]}..{CLIMATE_PERIOD[1]}",
         "seasons": seasons,
         "years": years,
-        "mean_yield_by_crop_kg_ha": {k: round(sum(v) / len(v), 1) for k, v in by_crop.items()},
-        "notes": job.notes + [
+        "mean_yield_by_crop_kg_ha": {
+            k: round(sum(v) / len(v), 1) for k, v in by_crop.items()
+        },
+        "notes": job.notes
+        + [
             "stress factors are 1 = no stress, lower = stronger stress; a season's last row may be "
             "an unfinished crop at the end of the climate period (no harvest date)",
         ],
     }
 
 
-def daily(job: Job, columns: list[str], start: str | None, end: str | None,
-          aggregate: str, max_rows: int) -> dict[str, Any]:
+def daily(
+    job: Job,
+    columns: list[str],
+    start: str | None,
+    end: str | None,
+    aggregate: str,
+    max_rows: int,
+) -> dict[str, Any]:
     header, units, rows = read_section(job, "daily")
     cols = columns or ["Date", "Crop", "Stage", "Yield", "LAI", "TraDef", "NDef"]
     missing = [c for c in cols if c not in header]
@@ -547,7 +688,11 @@ def daily(job: Job, columns: list[str], start: str | None, end: str | None,
             crop_i = header.index("Crop")
             for c, i in zip(cols[1:], idx[1:]):
                 src = [r for r in rs if r[crop_i]] if c in CROP_ONLY_COLUMNS else rs
-                vals = [float(r[i]) for r in src if r[i] not in ("", None) and _is_float(r[i])]
+                vals = [
+                    float(r[i])
+                    for r in src
+                    if r[i] not in ("", None) and _is_float(r[i])
+                ]
                 if not vals:
                     # no crop that month -> None; non-numeric (e.g. Crop) -> last value
                     row.append(None if c in CROP_ONLY_COLUMNS else rs[-1][i])
