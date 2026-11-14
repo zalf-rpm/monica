@@ -105,6 +105,8 @@ phenology_day_step :: proc(
 	cm.oxygen_deficit = core.fc_oxygen_deficiency(
 		cm,
 		critical_oxygen_content[cm.developmental_stage],
+		cm.developmental_stage,
+		cm.rooting_depth,
 	)
 
 	old_developmental_stage := cm.developmental_stage
@@ -135,6 +137,10 @@ phenology_day_step :: proc(
 			cm.soil_column.layers[0].field_capacity,
 			cm.soil_column.layers[0].permanent_wilting_point,
 			current_date,
+			cm.transpiration_deficit,
+			cm.crop_n_redux,
+			cm.daylength_factor,
+			cm.vernalisation_factor,
 		)
 	}
 

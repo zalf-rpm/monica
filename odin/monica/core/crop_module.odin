@@ -793,12 +793,18 @@ fc_vernalisation_factor :: proc(
 }
 
 // C++: double monica::cropmodule::fcOxygenDeficiency(CropModule*, double criticalOxygenContent)
-fc_oxygen_deficiency :: proc(cm: ^Crop_Module, critical_oxygen_content: f64) -> f64 {
+// `developmental_stage`, `rooting_depth`: yesterday's (Crop_Carry_Over) -
+// phenology and the root system run later in the step.
+fc_oxygen_deficiency :: proc(
+	cm: ^Crop_Module,
+	critical_oxygen_content: f64,
+	developmental_stage, rooting_depth: int,
+) -> f64 {
 	soil_column := cm.soil_column
 	time_under_anoxia_threshold_at_stage := cm.time_under_anoxia_threshold_default
-	if cm.developmental_stage < len(cm.mod_params.time_under_anoxia_threshold) {
+	if developmental_stage < len(cm.mod_params.time_under_anoxia_threshold) {
 		time_under_anoxia_threshold_at_stage =
-			cm.mod_params.time_under_anoxia_threshold[cm.developmental_stage]
+			cm.mod_params.time_under_anoxia_threshold[developmental_stage]
 	}
 
 	// Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
@@ -806,7 +812,7 @@ fc_oxygen_deficiency :: proc(cm: ^Crop_Module, critical_oxygen_content: f64) -> 
 	sum_soil_moisture := 0.0
 	sum_layers := 0
 	// MP: changed to consider at least first 30 cm and then rooting depth
-	nols := min(max(3, cm.rooting_depth), len(soil_column.layers))
+	nols := min(max(3, rooting_depth), len(soil_column.layers))
 	for i := 0; i < nols; i += 1 {
 		sum_saturation += soil_column.layers[i].saturation
 		sum_soil_moisture += soil_column.layers[i].soil_moisture_m3
@@ -860,6 +866,9 @@ fc_crop_developmental_stage :: proc(
 	cm: ^Crop_Module,
 	mean_air_temperature, soil_moisture_m3, field_capacity, permanent_wilting_point: f64,
 	current_date: d.Date,
+	// yesterday's (Crop_Carry_Over): water uptake, crop N status and the two
+	// factors run later in the step - the factors after the stage (the C++ order)
+	water_stress, n_stress, daylength_factor, vernalisation_factor: f64,
 	allocator := context.allocator,
 ) {
 	cultivar_ps := &cm.crop_params.cultivar_params
@@ -873,8 +882,8 @@ fc_crop_developmental_stage :: proc(
 				temp_incr :=
 					(min(mean_air_temperature, cultivar_ps.optimum_temperature[cm.developmental_stage]) -
 						base_temperature[cm.developmental_stage]) *
-					cm.vernalisation_factor *
-					cm.daylength_factor *
+					vernalisation_factor *
+					daylength_factor *
 					cm.time_step
 				cm.current_temperature_sum[cm.developmental_stage] += temp_incr
 				cm.current_total_temperature_sum += temp_incr
@@ -935,17 +944,17 @@ fc_crop_developmental_stage :: proc(
 		development_acceleration_by_nitrogen_stress := 1.0 // old NPROG
 		if species_ps.development_acceleration_by_nitrogen_stress == 1 && apc > 0.9 {
 			development_acceleration_by_nitrogen_stress =
-				1.0 + ((1.0 - cm.crop_n_redux) * (1.0 - cm.crop_n_redux))
+				1.0 + ((1.0 - n_stress) * (1.0 - n_stress))
 		}
 
 		// Development acceleration by water deficit
 		development_acceleration_by_water_stress := 1.0 // old WPROG
-		if cm.transpiration_deficit < cultivar_ps.drought_stress_threshold[cm.developmental_stage] &&
+		if water_stress < cultivar_ps.drought_stress_threshold[cm.developmental_stage] &&
 		   apc > 0.9 {
 			// Das heißt, das betrifft nur die Kornfüllungsphase (acp>0.9).
 			if cm.oxygen_deficit >= 1.0 {
 				development_acceleration_by_water_stress =
-					1.0 + ((1.0 - cm.transpiration_deficit) * (1.0 - cm.transpiration_deficit))
+					1.0 + ((1.0 - water_stress) * (1.0 - water_stress))
 			}
 		}
 
@@ -969,8 +978,8 @@ fc_crop_developmental_stage :: proc(
 			temp_incr :=
 				dev_t_response *
 				mean_air_temperature *
-				cm.vernalisation_factor *
-				cm.daylength_factor *
+				vernalisation_factor *
+				daylength_factor *
 				development_acceleration_by_stress *
 				cm.time_step
 			cm.current_temperature_sum[cm.developmental_stage] += temp_incr
@@ -980,8 +989,8 @@ fc_crop_developmental_stage :: proc(
 				temp_incr :=
 					(min(mean_air_temperature, cultivar_ps.optimum_temperature[cm.developmental_stage]) -
 						base_temperature[cm.developmental_stage]) *
-					cm.vernalisation_factor *
-					cm.daylength_factor *
+					vernalisation_factor *
+					daylength_factor *
 					development_acceleration_by_stress *
 					cm.time_step
 				cm.current_temperature_sum[cm.developmental_stage] += temp_incr // MP: effektive Temperatur wird aufsummiert
@@ -3490,7 +3499,6 @@ crop_module_step :: proc(
 
 	// The values the parts below read from yesterday (crop_carry_over.odin).
 	prev := crop_carry_over_of(cm)
-	_ = prev
 
 	julian_day := int(d.julian_day(current_date))
 
@@ -3515,7 +3523,9 @@ crop_module_step :: proc(
 
 	cm.oxygen_deficit = fc_oxygen_deficiency(
 		cm,
-		species_ps.critical_oxygen_content[cm.developmental_stage],
+		species_ps.critical_oxygen_content[prev.developmental_stage],
+		prev.developmental_stage,
+		prev.rooting_depth,
 	)
 
 	old_developmental_stage := cm.developmental_stage
@@ -3546,6 +3556,10 @@ crop_module_step :: proc(
 			soil_column.layers[0].field_capacity,
 			soil_column.layers[0].permanent_wilting_point,
 			current_date,
+			prev.water_stress,
+			prev.n_stress,
+			prev.daylength_factor,
+			prev.vernalisation_factor,
 			allocator,
 		)
 	}
@@ -3683,7 +3697,7 @@ crop_module_step :: proc(
 
 	if cm.developmental_stage > 0 {
 		max_crop_height :=
-			cm.mod_params.is_intercropping && cm.intercropping_other_crop_height > cm.crop_height ? cultivar_ps.max_crop_height * cm.mod_params.intercropping_ph_redux : cultivar_ps.max_crop_height
+			cm.mod_params.is_intercropping && cm.intercropping_other_crop_height > prev.crop_height ? cultivar_ps.max_crop_height * cm.mod_params.intercropping_ph_redux : cultivar_ps.max_crop_height
 
 		fc_crop_size(cm, max_crop_height)
 
