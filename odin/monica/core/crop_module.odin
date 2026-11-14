@@ -3546,7 +3546,7 @@ crop_module_step :: proc(
 		prev.rooting_depth,
 	)
 
-	old_developmental_stage := cm.developmental_stage
+	old_developmental_stage := prev.developmental_stage
 
 	// start accumulating temperature sums only after dormancy
 	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
@@ -3605,6 +3605,12 @@ crop_module_step :: proc(
 		events.stage = cm.developmental_stage + 1
 	}
 
+	// NOTE(c++-quirk): the daylength and vernalisation factors are computed
+	// AFTER the stage, so fc_crop_developmental_stage above used yesterday's
+	// (prev.daylength_factor, prev.vernalisation_factor), and today's factors
+	// are for today's - possibly new - stage. Probably not intended, but it is
+	// the C++ order, kept for identical results; it is visible in
+	// Crop_Carry_Over now instead of being a consequence of the call order.
 	cm.daylength_factor = fc_daylength_factor(
 		cm,
 		cultivar_ps.daylength_requirement[cm.developmental_stage],
