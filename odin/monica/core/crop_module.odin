@@ -3488,6 +3488,10 @@ crop_module_step :: proc(
 	species_ps := &cm.crop_params.species_params
 	cultivar_ps := &cm.crop_params.cultivar_params
 
+	// The values the parts below read from yesterday (crop_carry_over.odin).
+	prev := crop_carry_over_of(cm)
+	_ = prev
+
 	julian_day := int(d.julian_day(current_date))
 
 	if cm.cutting_delay_days > 0 {
