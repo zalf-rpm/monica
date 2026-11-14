@@ -218,11 +218,24 @@ day_step :: proc(
 			core.fc_frost_kill(cm, max_air_temperature, min_air_temperature, core.snow_for_crop(g_soil_moisture))
 		}
 
-		core.fc_drought_impact_on_fertility(cm)
+		if cm.transpiration_deficit < 0.0 {cm.transpiration_deficit = 0.0} // the C++ clamp, now in the step
+		core.fc_drought_impact_on_fertility(cm, cm.transpiration_deficit)
 
-		core.fc_crop_nitrogen(cm)
+		core.fc_crop_nitrogen(
+			cm,
+			cm.aboveground_biomass,
+			cm.belowground_biomass,
+			cm.n_concentration_aboveground_biomass,
+			cm.n_concentration_root,
+		)
 
-		core.fc_crop_dry_matter(cm, mean_air_temperature, allocator)
+		core.fc_crop_dry_matter(
+			cm,
+			mean_air_temperature,
+			cm.transpiration_deficit,
+			cm.n_concentration_root,
+			allocator,
+		)
 
 		// climate-min.csv has no et0 column, so this is always the live
 		// branch (referenceEvapotranspiration < 0)

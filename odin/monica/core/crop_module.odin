@@ -2199,20 +2199,20 @@ fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64, snow: S
 }
 
 // C++: void monica::cropmodule::fcDroughtImpactOnFertility(CropModule*)
-fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module) {
+//
+// `water_stress`: yesterday's transpiration deficit, clamped to >= 0 - the
+// C++ clamps the water uptake's field here in place; crop_module_step does
+// that now, visibly.
+fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module, water_stress: f64) {
 	cultivar_ps := &cm.crop_params.cultivar_params
-
-	if cm.transpiration_deficit < 0.0 {
-		cm.transpiration_deficit = 0.0
-	}
 
 	// Fertility of the crop is reduced in cases of severe drought during bloom
 	fertility_drought_threshold :=
 		cm.crop_params.species_params.drought_impact_on_fertility_factor *
 		cultivar_ps.drought_stress_threshold[cm.developmental_stage]
-	if cm.transpiration_deficit < fertility_drought_threshold &&
+	if water_stress < fertility_drought_threshold &&
 	   cultivar_ps.assimilate_partitioning_coeff[cm.developmental_stage][cm.storage_organ] > 0.0 {
-		transpiration_deficit_helper := cm.transpiration_deficit / fertility_drought_threshold
+		transpiration_deficit_helper := water_stress / fertility_drought_threshold
 
 		if cm.oxygen_deficit < 1.0 {
 			cm.drought_impact_on_fertility = 1.0
@@ -2227,7 +2227,14 @@ fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module) {
 }
 
 // C++: void monica::cropmodule::fcCropNitrogen(CropModule*)
-fc_crop_nitrogen :: proc(cm: ^Crop_Module) {
+//
+// The biomass and N concentrations are yesterday's (Crop_Carry_Over): growth
+// and N uptake run later in the step.
+fc_crop_nitrogen :: proc(
+	cm: ^Crop_Module,
+	aboveground_biomass, belowground_biomass: f64,
+	n_concentration_aboveground_biomass, n_concentration_root: f64,
+) {
 	species_ps := &cm.crop_params.species_params
 
 	cm.critical_n_concentration =
@@ -2235,31 +2242,31 @@ fc_crop_nitrogen :: proc(cm: ^Crop_Module) {
 		(1.0 +
 				(species_ps.n_concentration_b0 *
 						cr_math.exp(
-							-0.26 * (cm.aboveground_biomass + cm.belowground_biomass) / 1000.0,
+							-0.26 * (aboveground_biomass + belowground_biomass) / 1000.0,
 						))) /
 		100.0 // [kg ha-1 -> t ha-1]
 	cm.target_n_concentration = cm.critical_n_concentration * species_ps.luxury_n_coeff
-	cm.n_concentration_aboveground_biomass_old = cm.n_concentration_aboveground_biomass
-	cm.n_concentration_root_old = cm.n_concentration_root
+	cm.n_concentration_aboveground_biomass_old = n_concentration_aboveground_biomass
+	cm.n_concentration_root_old = n_concentration_root
 
-	if cm.n_concentration_root < 0.01 {
-		if cm.n_concentration_root <= 0.005 {
+	if n_concentration_root < 0.01 {
+		if n_concentration_root <= 0.005 {
 			cm.root_n_redux = 0.0
 		} else {
 			// old WUX
-			root_n_redux_helper := (cm.n_concentration_root - 0.005) / 0.005
+			root_n_redux_helper := (n_concentration_root - 0.005) / 0.005
 			cm.root_n_redux = 1.0 - libc.sqrt(1.0 - root_n_redux_helper * root_n_redux_helper)
 		}
 	} else {
 		cm.root_n_redux = 1.0
 	}
 
-	if cm.n_concentration_aboveground_biomass < cm.critical_n_concentration {
-		if cm.n_concentration_aboveground_biomass <= species_ps.minimum_n_concentration {
+	if n_concentration_aboveground_biomass < cm.critical_n_concentration {
+		if n_concentration_aboveground_biomass <= species_ps.minimum_n_concentration {
 			cm.crop_n_redux = 0.0
 		} else {
 			crop_n_redux_helper :=
-				(cm.n_concentration_aboveground_biomass - species_ps.minimum_n_concentration) /
+				(n_concentration_aboveground_biomass - species_ps.minimum_n_concentration) /
 				(cm.critical_n_concentration - species_ps.minimum_n_concentration)
 
 			// New Monica approach
@@ -2323,6 +2330,7 @@ fc_move_dead_root_biomass_to_soil :: proc(
 	cm: ^Crop_Module,
 	dead_root_biomass, root_density_factor_sum: f64,
 	root_density_factor: [dynamic]f64,
+	n_concentration_root: f64,
 	allocator := context.allocator,
 ) {
 	nools := cm.soil_column.number_of_organic_layers
@@ -2338,7 +2346,7 @@ fc_move_dead_root_biomass_to_soil :: proc(
 	}
 
 	if len(layer2_dead_root_biomass_at_layer) > 0 {
-		cm.add_organic_matter(layer2_dead_root_biomass_at_layer, cm.n_concentration_root)
+		cm.add_organic_matter(layer2_dead_root_biomass_at_layer, n_concentration_root)
 	}
 }
 
@@ -2354,6 +2362,7 @@ add_and_distribute_root_biomass_in_soil :: proc(
 		root_biomass,
 		root_density_factor_sum,
 		root_density_factor,
+		cm.n_concentration_root,
 		allocator,
 	)
 }
@@ -2368,6 +2377,9 @@ add_and_distribute_root_biomass_in_soil :: proc(
 fc_crop_dry_matter :: proc(
 	cm: ^Crop_Module,
 	mean_air_temperature: f64,
+	// yesterday's (Crop_Carry_Over): water uptake and N uptake run later; the
+	// water stress clamped to >= 0 (see fc_drought_impact_on_fertility)
+	water_stress, n_concentration_root: f64,
 	allocator := context.allocator,
 ) {
 	crop_ps := cm.mod_params
@@ -2529,7 +2541,7 @@ fc_crop_dry_matter :: proc(
 
 			if i_organ == Organ_Root {
 				cm.organ_biomass[Organ_Root] -= cm.organ_senescence_increment[Organ_Root]
-				cm.total_biomass_n_content -= daily_dead_biomass_increment * cm.n_concentration_root
+				cm.total_biomass_n_content -= daily_dead_biomass_increment * n_concentration_root
 				daily_dead_root_biomass_increment = daily_dead_biomass_increment
 			} else {
 				// shoot or leaf
@@ -2604,7 +2616,7 @@ fc_crop_dry_matter :: proc(
 	// vc_RootNIncrement: computed but unused elsewhere in the C++ too - a
 	// genuine dead store, kept for fidelity.
 	if cm.root_biomass < cm.root_biomass_old {
-		root_n_increment = (cm.root_biomass_old - cm.root_biomass) * cm.n_concentration_root
+		root_n_increment = (cm.root_biomass_old - cm.root_biomass) * n_concentration_root
 	} else {
 		root_n_increment = 0
 	}
@@ -2625,7 +2637,7 @@ fc_crop_dry_matter :: proc(
 			available_water_percentage = 0.0
 		}
 	} else {
-		if cm.transpiration_deficit <
+		if water_stress <
 			   (0.95 * cultivar_ps.drought_stress_threshold[cm.developmental_stage]) &&
 		   cultivar_ps.crop_specific_max_rooting_depth >= 0.8 &&
 		   cm.rooting_depth_m > 0.95 * cm.max_rooting_depth &&
@@ -2717,6 +2729,7 @@ fc_crop_dry_matter :: proc(
 			daily_dead_root_biomass_increment,
 			root_density_factor_sum,
 			root_density_factor,
+			n_concentration_root,
 			allocator,
 		)
 	}
@@ -3744,11 +3757,31 @@ crop_module_step :: proc(
 			fc_frost_kill(cm, max_air_temperature, min_air_temperature, snow)
 		}
 
-		fc_drought_impact_on_fertility(cm)
+		// The C++ clamps the water uptake's transpiration deficit (yesterday's)
+		// to >= 0 inside fcDroughtImpactOnFertility. The write stays, but here:
+		// at the final developmental stage water uptake doesn't overwrite it,
+		// so the clamped value is what the next day and the model's stress sum
+		// see.
+		water_stress := prev.water_stress < 0.0 ? 0.0 : prev.water_stress
+		cm.transpiration_deficit = water_stress
 
-		fc_crop_nitrogen(cm)
+		fc_drought_impact_on_fertility(cm, water_stress)
 
-		fc_crop_dry_matter(cm, mean_air_temperature, allocator)
+		fc_crop_nitrogen(
+			cm,
+			prev.aboveground_biomass,
+			prev.belowground_biomass,
+			prev.n_concentration_aboveground_biomass,
+			prev.n_concentration_root,
+		)
+
+		fc_crop_dry_matter(
+			cm,
+			mean_air_temperature,
+			water_stress,
+			prev.n_concentration_root,
+			allocator,
+		)
 
 		// calculate reference evapotranspiration if not provided directly
 		// via climate files
