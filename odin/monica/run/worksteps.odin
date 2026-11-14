@@ -148,7 +148,6 @@ sowing_apply :: proc(
 			&model.site_params,
 			&model.crop_mod_params,
 			&model.sim_params,
-			core.monica_model_fire_event_cb,
 			core.monica_model_add_organic_matter_cb,
 			core.monica_model_get_snow_depth_cb,
 			nil,

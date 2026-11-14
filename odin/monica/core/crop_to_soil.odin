@@ -1,5 +1,7 @@
 package core
 
+import "core:fmt"
+
 // The crop -> soil interface (architecture.md section 9, plan-component-
 // interfaces.md phase A): what the soil components read from the crop,
 // declared in one place instead of each holding a ^Crop_Module.
@@ -89,4 +91,26 @@ irrigation_crop_window :: proc(cm: ^Crop_Module) -> Irrigation_Crop_Window {
 		heat_sum_irrigation_start = cm.crop_params.cultivar_params.heat_sum_irrigation_start,
 		heat_sum_irrigation_end = cm.crop_params.cultivar_params.heat_sum_irrigation_end,
 	}
+}
+
+// The events of a crop step (crop_module_step's result), instead of the
+// C++'s `fireEvent` callback into the model. Their names in the model's
+// current events: crop_event_names.
+Crop_Events :: struct {
+	emergence:              bool,
+	anthesis:               bool,
+	maturity:               bool,
+	cereal_stem_elongation: bool,
+	stage:                  int, // "Stage-<stage>" (1-based) on a stage change or right after sowing; 0: none
+}
+
+// The C++ event names, in the order the C++ step fires them. "Stage-<n>" is
+// formatted with the temp allocator, as before.
+crop_event_names :: proc(e: Crop_Events) -> (names: [5]string, n: int) {
+	if e.emergence {names[n] = "emergence"; n += 1}
+	if e.anthesis {names[n] = "anthesis"; n += 1}
+	if e.maturity {names[n] = "maturity"; n += 1}
+	if e.cereal_stem_elongation {names[n] = "cereal-stem-elongation"; n += 1}
+	if e.stage > 0 {names[n] = fmt.tprintf("Stage-%d", e.stage); n += 1}
+	return
 }

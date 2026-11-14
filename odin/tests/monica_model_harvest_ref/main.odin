@@ -37,8 +37,6 @@ real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64)
 	)
 }
 
-no_fire_event :: proc(event: string) {}
-
 dump_model_harvest :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 	tr.dump(
 		t,
@@ -174,7 +172,6 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		no_fire_event,
 		real_add_organic_matter,
 		real_get_snow_depth,
 		nil,

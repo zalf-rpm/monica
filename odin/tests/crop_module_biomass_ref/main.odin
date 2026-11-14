@@ -24,8 +24,6 @@ import "core:strings"
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
-noop_fire_event :: proc(event: string) {}
-
 // Odin `proc` values can't capture surrounding state (no closures), unlike
 // C++'s capturing lambdas - these test-driver-only globals are the
 // workaround, matching the "driver globals for callback wiring" pattern this
@@ -387,7 +385,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		noop_fire_event,
 		recording_add_organic_matter,
 		real_get_snow_depth,
 		nil,
@@ -543,7 +540,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_fire_event,
 			recording_add_organic_matter,
 			real_get_snow_depth,
 			nil,

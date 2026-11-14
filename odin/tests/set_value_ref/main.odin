@@ -134,7 +134,6 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		core.monica_model_fire_event_cb,
 		core.monica_model_add_organic_matter_cb,
 		core.monica_model_get_snow_depth_cb,
 		nil,
@@ -211,7 +210,7 @@ main :: proc() {
 			et0,
 			model.sim_params.dual_kc_method,
 		)
-		core.crop_module_step(
+		events := core.crop_module_step(
 			cm,
 			tavg,
 			tmax,
@@ -227,6 +226,7 @@ main :: proc() {
 			precip,
 			-1.0,
 		)
+		core.monica_model_add_crop_events(model, events)
 		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(cm, false))
 		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(cm, false))
 	}

@@ -223,8 +223,6 @@ Crop_Module :: struct {
 	voc_species:                             Voc_Species_Data,
 	crop_photosynthesis_results:             Voc_Cp_Data,
 
-	// C++: std::function<void(std::string)> fire_event;
-	fire_event:                              proc(_: string),
 	// C++: std::function<void(std::map<size_t, double>, double)> add_organic_matter;
 	add_organic_matter:                      proc(_: map[int]f64, _: f64),
 	// C++: std::function<std::pair<double, double>(double)> get_snow_depth_and_calc_temp_under_snow;
@@ -408,7 +406,6 @@ make_crop_module :: proc(
 	site_params: ^p.Site_Parameters,
 	crop_module_params: ^p.Crop_Module_Parameters,
 	sim_params: ^p.Simulation_Parameters,
-	fire_event: proc(_: string),
 	add_organic_matter: proc(_: map[int]f64, _: f64),
 	get_snow_depth_and_calc_temp_under_snow: proc(_: f64) -> (f64, f64),
 	intercropping: rawptr,
@@ -422,7 +419,6 @@ make_crop_module :: proc(
 	cm.site_params = site_params
 	cm.sim_params = sim_params
 	cm.residue_params = residue_params^
-	cm.fire_event = fire_event
 	cm.add_organic_matter = add_organic_matter
 	cm.get_snow_depth_and_calc_temp_under_snow = get_snow_depth_and_calc_temp_under_snow
 
@@ -3468,6 +3464,10 @@ crop_module_ic_send_rcv :: proc(cm: ^Crop_Module, outmsg: string) {
 // The daily orchestration entry point: calls every cropmodule:: function
 // ported in checkpoints 3-6 in step()'s real order, plus the FAO-56 dual-Kc
 // block below.
+//
+// Returns the day's events instead of the C++'s `fireEvent` callback
+// (plan-component-interfaces.md A4); the model adds them to its current
+// events (monica_model_add_crop_events). Nothing in the step reads them.
 crop_module_step :: proc(
 	cm: ^Crop_Module,
 	mean_air_temperature, max_air_temperature, min_air_temperature: f64,
@@ -3477,6 +3477,8 @@ crop_module_step :: proc(
 	atmospheric_co2_concentration, atmospheric_o3_concentration: f64,
 	gross_precipitation, reference_evapotranspiration: f64,
 	allocator := context.allocator,
+) -> (
+	events: Crop_Events,
 ) {
 	soil_column := cm.soil_column
 	// Crop parameters are read through pointers, never cached by value: like
@@ -3545,38 +3547,26 @@ crop_module_step :: proc(
 	}
 
 	if old_developmental_stage == 0 && cm.developmental_stage == 1 {
-		if cm.fire_event != nil {
-			cm.fire_event("emergence")
-		}
+		events.emergence = true
 	} else if is_anthesis_day(cm, old_developmental_stage, cm.developmental_stage) {
 		cm.anthesis_day = julian_day
-		if cm.fire_event != nil {
-			cm.fire_event("anthesis")
-		}
+		events.anthesis = true
 	} else if is_maturity_day(cm, old_developmental_stage, cm.developmental_stage) {
 		cm.maturity_day = julian_day
 		cm.maturity_reached = true
-		if cm.fire_event != nil {
-			cm.fire_event("maturity")
-		}
+		events.maturity = true
 	}
 
-	// NOTE(c++-quirk): this fire_event call is not guarded by a nil check,
-	// unlike every other call site in this function - harmless in practice
-	// since fire_event is a required, always-set constructor parameter, but
-	// reproduced exactly rather than "fixed" to match the others.
 	if !cm.stem_elongation_event_fired &&
 	   cm.current_total_temperature_sum >=
 		   cultivar_ps.stage_temperature_sum[2] * 0.25 + cultivar_ps.stage_temperature_sum[1] {
-		cm.fire_event("cereal-stem-elongation")
+		events.cereal_stem_elongation = true
 		cm.stem_elongation_event_fired = true
 	}
 
-	// fire stage event on stage change or right after sowing
+	// stage event on stage change or right after sowing
 	if old_developmental_stage != cm.developmental_stage || cm.no_of_crop_steps == 0 {
-		if cm.fire_event != nil {
-			cm.fire_event(fmt.tprintf("Stage-%d", cm.developmental_stage + 1))
-		}
+		events.stage = cm.developmental_stage + 1
 	}
 
 	cm.daylength_factor = fc_daylength_factor(
@@ -3772,6 +3762,7 @@ crop_module_step :: proc(
 	}
 
 	cm.no_of_crop_steps += 1
+	return
 }
 
 // ---------------------------------------------------------------------------

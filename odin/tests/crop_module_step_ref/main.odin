@@ -278,7 +278,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		recording_fire_event,
 		real_add_organic_matter,
 		real_get_snow_depth,
 		nil,
@@ -365,7 +364,7 @@ main :: proc() {
 			dual_kc_method,
 		)
 
-		core.crop_module_step(
+		events := core.crop_module_step(
 			&cm,
 			tavg,
 			tmax,
@@ -382,6 +381,8 @@ main :: proc() {
 			-1.0,
 			a,
 		)
+		names, n := core.crop_event_names(events)
+		for name in names[:n] {recording_fire_event(name)}
 
 		core.soil_organic_step(&so, tavg, precip, wind, core.crop_to_soil_of(&cm, false))
 		core.soil_transport_step(&str, core.crop_to_soil_of(&cm, false))

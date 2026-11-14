@@ -21,7 +21,6 @@ import "core:os"
 import "core:strconv"
 import "core:strings"
 
-noop_fire_event :: proc(event: string) {}
 noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
 noop_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {return 0.0, 0.0}
 
@@ -313,7 +312,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
 			nil,
@@ -403,7 +401,6 @@ main :: proc() {
 			&cpp.site_params,
 			&synth_crop_mod_params,
 			&cpp.sim_params,
-			noop_fire_event,
 			noop_add_organic_matter,
 			noop_get_snow_depth,
 			nil,

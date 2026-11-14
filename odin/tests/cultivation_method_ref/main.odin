@@ -354,7 +354,7 @@ main :: proc() {
 		run.cultivation_method_apply(&cm, model, true)
 
 		if model.current_crop_module != nil {
-			core.crop_module_step(
+			events := core.crop_module_step(
 				model.current_crop_module,
 				tavg,
 				tmax,
@@ -371,6 +371,7 @@ main :: proc() {
 				-1.0,
 				a,
 			)
+			core.monica_model_add_crop_events(model, events)
 		}
 
 		run.cultivation_method_apply(&cm, model, false)

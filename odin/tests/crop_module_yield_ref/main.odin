@@ -37,8 +37,6 @@ real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64)
 	)
 }
 
-no_fire_event :: proc(event: string) {}
-
 dump_yield_getters :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Module, a: jx.Allocator) {
 	ids := core.organ_ids_for_primary_yield(cm, a)
 	keys := make([dynamic]int, 0, len(ids), a)
@@ -235,7 +233,6 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		no_fire_event,
 		real_add_organic_matter,
 		real_get_snow_depth,
 		nil,

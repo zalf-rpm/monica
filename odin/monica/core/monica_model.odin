@@ -176,8 +176,12 @@ make_monica_model :: proc(
 g_current_model: ^Monica_Model
 
 // C++: [model](string event) { model->currentEvents.insert(std::move(event)); }
-monica_model_fire_event_cb :: proc(event: string) {
-	g_current_model.current_events[event] = true
+// - the crop step returns its events instead (Crop_Events).
+monica_model_add_crop_events :: proc(model: ^Monica_Model, events: Crop_Events) {
+	names, n := crop_event_names(events)
+	for name in names[:n] {
+		model.current_events[name] = true
+	}
 }
 
 // C++: [model](const std::map<size_t,double>& layer2amount, double nconc) {
@@ -921,7 +925,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 
 	wind_speed_height := model.env_params.wind_speed_height_m
 
-	crop_module_step(
+	events := crop_module_step(
 		model.current_crop_module,
 		tavg,
 		tmax,
@@ -938,6 +942,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		et0,
 		allocator,
 	)
+	monica_model_add_crop_events(model, events)
 
 	if model.sim_params.use_automatic_irrigation &&
 	   (!d.is_valid(model.sim_params.auto_irrigation_params.start_date) ||

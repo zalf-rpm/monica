@@ -23,7 +23,6 @@ import "core:strings"
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
-noop_fire_event :: proc(event: string) {}
 noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
 
 // Odin `proc` values can't capture - see checkpoint 5's file comment.
@@ -377,7 +376,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		noop_fire_event,
 		noop_add_organic_matter,
 		real_get_snow_depth,
 		nil,
