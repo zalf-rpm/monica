@@ -247,6 +247,11 @@ day_step :: proc(
 			ATM_CO2,
 			ATM_O3,
 			current_date,
+			cm.transpiration_deficit,
+			cm.crop_n_redux,
+			cm.crop_frost_redux,
+			cm.rooting_depth,
+			cm.reference_evapotranspiration,
 		)
 
 		core.fc_heat_stress_impact(cm, max_air_temperature, min_air_temperature)

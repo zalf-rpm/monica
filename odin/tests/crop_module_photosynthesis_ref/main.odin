@@ -211,6 +211,11 @@ day_step :: proc(
 			ATM_CO2,
 			ATM_O3,
 			current_date,
+			cm.transpiration_deficit,
+			cm.crop_n_redux,
+			cm.crop_frost_redux,
+			cm.rooting_depth,
+			cm.reference_evapotranspiration,
 		)
 
 		cm.gross_primary_production = core.fc_gross_primary_production(cm)

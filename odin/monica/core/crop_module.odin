@@ -1285,6 +1285,11 @@ fc_crop_photosynthesis :: proc(
 	mean_air_temperature, max_air_temperature, min_air_temperature: f64,
 	atmospheric_co2_concentration, atmospheric_o3_concentration: f64,
 	current_date: d.Date,
+	// yesterday's (Crop_Carry_Over): water uptake, crop N status, frost kill, the
+	// root system and the crop's ET0 (for the O3 uptake) run later in the step
+	water_stress, n_stress, frost_redux: f64,
+	rooting_depth: int,
+	reference_et0: f64,
 	allocator := context.allocator,
 ) {
 	crop_ps := cm.mod_params
@@ -1627,7 +1632,7 @@ fc_crop_photosynthesis :: proc(
 	// NOTE(c++-quirk): the C++ multiplies vc_GrossCO2Assimilation by itself
 	// here (a no-op, per the source comment "* transpiration_deficit" being
 	// commented out) - reproduced as the no-op it is, not simplified away.
-	if cm.transpiration_deficit < drought_stress_threshold {
+	if water_stress < drought_stress_threshold {
 		gross_co2_assimilation = gross_co2_assimilation
 	}
 
@@ -1691,7 +1696,7 @@ fc_crop_photosynthesis :: proc(
 			o3_par.gamma3 = 0.05 // TODO: calibrate and add to crop params
 			o3_par.gamma1 = 0.025 // TODO: calibrate and add to crop params
 
-			root_depth := cm.rooting_depth
+			root_depth := rooting_depth
 			if root_depth >= 1 { 	// the crop has emerged
 				fc := 0.0
 				wp := 0.0
@@ -1715,7 +1720,7 @@ fc_crop_photosynthesis :: proc(
 				o3_in.fc = fc / f64(root_depth + 1) // field capacity, m3 m-3, avg in the rooted zone
 				o3_in.wp = wp / f64(root_depth + 1) // wilting point, m3 m-3
 				o3_in.swc = swc / f64(root_depth + 1) // soil water content, m3 m-3
-				o3_in.et0 = cm.reference_evapotranspiration
+				o3_in.et0 = reference_et0
 				o3_in.o3a = atmospheric_o3_concentration
 				o3_in.gs = avg_leaf_gs
 				o3_in.h = h
@@ -1818,12 +1823,12 @@ fc_crop_photosynthesis :: proc(
 				cm.crop_photosynthesis_results.ci = lf.ci
 				cm.crop_photosynthesis_results.vc_max =
 					fvcb_vcmax_bernacchi_f(mcd.t_fol, species_ps.vcmax25) *
-					cm.crop_n_redux *
-					cm.transpiration_deficit
+					n_stress *
+					water_stress
 				cm.crop_photosynthesis_results.j_max =
 					fvcb_jmax_bernacchi_f(mcd.t_fol, 120) *
-					cm.crop_n_redux *
-					cm.transpiration_deficit
+					n_stress *
+					water_stress
 				cm.crop_photosynthesis_results.jj = lf.jj
 				cm.crop_photosynthesis_results.jj1000 = lf.jj1000
 				cm.crop_photosynthesis_results.jv = lf.jv
@@ -1865,12 +1870,12 @@ fc_crop_photosynthesis :: proc(
 	// reduction value for assimilate amount to simulate field conditions
 	cm.assimilates *= species_ps.field_condition_modifier
 	// reduction value for assimilate amount to simulate frost damage
-	cm.assimilates *= cm.crop_frost_redux
+	cm.assimilates *= frost_redux
 	// MP: added reduction value for assimilate amount to simulate waterlogging
 	cm.assimilates *= cm.oxygen_deficit
 
-	if cm.transpiration_deficit < drought_stress_threshold { 	// MP: Access point for drought optimisation
-		cm.assimilates = cm.assimilates * cm.transpiration_deficit
+	if water_stress < drought_stress_threshold { 	// MP: Access point for drought optimisation
+		cm.assimilates = cm.assimilates * water_stress
 	}
 
 	cm.gross_assimilates = cm.assimilates
@@ -3706,8 +3711,8 @@ crop_module_step :: proc(
 		fc_crop_green_area(
 			cm,
 			mean_air_temperature,
-			cm.organ_growth_increment[Organ_Leaf],
-			cm.organ_senescence_increment[Organ_Leaf],
+			prev.leaf_growth_increment,
+			prev.leaf_senescence_increment,
 			cultivar_ps.specific_leaf_area[cm.developmental_stage - 1],
 			cultivar_ps.specific_leaf_area[cm.developmental_stage],
 			cultivar_ps.specific_leaf_area[1],
@@ -3725,6 +3730,11 @@ crop_module_step :: proc(
 			atmospheric_co2_concentration,
 			atmospheric_o3_concentration,
 			current_date,
+			prev.water_stress,
+			prev.n_stress,
+			prev.frost_redux,
+			prev.rooting_depth,
+			prev.reference_evapotranspiration,
 			allocator,
 		)
 
