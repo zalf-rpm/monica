@@ -34,9 +34,13 @@ deliberate model change and gets its own branch.
 | 3 | same bytes as the C++ master (needs `../monica` built, with the uncommitted 6-digit `Mois`) | `bash tests/diff_vs_cpp.sh` |
 | 4 | Crop2ML modules unchanged (only for steps touching `soil_temperature_impl`, `evapotranspiration_impl`, `monica/modules`) | `bash tests/check_modules.sh` (Linux / CI) |
 | 5 | C++ test suites, value by value | CI on push (`.github/workflows/odin.yml`) |
+| 6 | scenarios the fixtures don't cover, byte-identical to the branch's base binary: automatic irrigation (workstep and model-level), FAO-56 dual Kc, output sections keyed to every crop event, N-min fertilising | `build/tmp_cm/extra_sims.py` (base binary in `build/base-bin`, built from `f84b55c`) |
+| 7 | the Odin test drivers (`tests/*_ref`) and `cmd/monica-module` still compile | `build/tmp_cm/check_drivers.sh` |
+| 8 | the Crop2ML modules as drivers and integrated, before/after (phase A: 683 CSVs identical) | `tests/check_drivers.py` with the base and the new binaries, then compare the two work directories (~30 min each) |
 
-Per step: 1-3 locally. 4 where it applies. 5 at the latest at the end of
-each phase.
+Per step: 1-3, 6 and 7 locally, all in one go with `build/tmp_cm/gate.sh`
+(the helper scripts live under `build/`, not committed). 4 and 8 where they
+apply. 5 at the latest at the end of each phase.
 
 ---
 
@@ -45,7 +49,7 @@ each phase.
 | Phase | Step | What | Status |
 |---|---|---|---|
 | 0 | 0.1-0.3 | branch, baseline, reference scans | done (80e13d1) |
-| A | A1-A5 | crop → soil exchange struct, callbacks as return values | |
+| A | A1-A5 | crop → soil exchange struct, callbacks as return values | done except A4b (moved to E1): 7ca53e2 .. 22d1a1e |
 | B | B1-B3 | previous-day carry-over struct | |
 | C | C1-C3 | crop fields grouped into component sub-structs | |
 | D | D1-D6 | leaf components with input/state structs and tags | |
@@ -87,6 +91,17 @@ dependency cycle crop ↔ soil.
   end of `crop_module_step`.
   - Per-layer arrays are allocated once and overwritten daily.
   - Nobody reads it yet, so the gate is trivially identical.
+  - Done (7ca53e2), with two changes to the plan:
+    - Filled at the **start of the general step**, not at the end of the
+      crop step: worksteps run before the step, and on a harvest day the crop
+      step is skipped while the soil components still read the harvested
+      crop's last values (soil transport its N uptake, soil organic its NPP,
+      soil moisture its rooting depth; soil moisture treats it as absent
+      otherwise). `has_crop` and `being_cleared` carry that.
+    - The per-layer arrays are views of the crop's arrays (no copy, no
+      allocation), valid for the day.
+    - The automatic irrigation trigger, checked in the crop step and by a
+      workstep, gets its own small `Irrigation_Crop_Window`.
 - **A2 Switch the readers, one file per commit.** Easiest first:
   1. `soil_transport`: `n_uptake_from_layer[]`.
   2. `soil_organic`: NPP.
@@ -96,23 +111,44 @@ dependency cycle crop ↔ soil.
 
   For each reader, check that its bare-soil default really was what the zero
   value gives.
+  - Done: 37f08d8, 189289b, 72bcbfb, 1c0f37c, 0bac111. The readers get the
+    struct as a by-value (read-only) parameter; inside soil moisture it is
+    passed on to evapotranspiration, dual Kc and capillary rise.
 - **A3 Remove the `crop_module` fields** from `Soil_Moisture`,
   `Soil_Organic`, `Soil_Transport` and `Soil_Column`.
   - `evapotranspiration_impl` keeps its crop access until E3, because it calls
     `fc_reference_evapotranspiration` on a crop copy.
   - The model's stress sums keep reading the crop directly: the model owns it.
+  - Done (89d9b21); `put_crop`/`remove_crop` went too. The ET modules path
+    takes the whole crop from `model.current_crop_module`.
 - **A4 Return events and organic matter instead of using callbacks.**
   `crop_module_step` returns `Crop_Day_Results` (events, organic-matter
   additions), and the model applies them.
   - First check, per call, that adding the organic matter *after* the step is
     identical. The crop doesn't read soil organic's pools, but verify it.
     `apply_cutting` is outside the step.
+  - **A4a events: done (38618be).** `crop_module_step` returns `Crop_Events`
+    (no allocation); the model adds the names to its current events.
+  - **A4b organic matter: not bit-identical, moved to E1.** The dead roots go
+    to the soil *inside* the step (`fc_crop_dry_matter` →
+    `fc_move_dead_root_biomass_to_soil`), and `soil_organic_add_organic_matter`
+    also adds the residue's NH4 and NO3 to the layers - which the crop's N
+    uptake reads later the same day. 68 of the 71 crop residue files in
+    monica-parameters have non-zero `AOM_NH4Content`/`AOM_NO3Content`, so
+    applying the dead roots after the step changes the N uptake. Once the root
+    system is its own component (E1), the wiring in `crop_module_step` can
+    hand the dead roots to the soil between the root system and N uptake -
+    same timing, but visible. Until then the `add_organic_matter` callback and
+    `g_current_model` stay (only for this).
 - **A5 Pass the snow depth as a parameter.** The value for frost kill (from
   the snow component) becomes an explicit input of the crop step, then remove
   the crop's uses of `g_current_model`.
+  - Done (22d1a1e): `Snow_For_Crop` (snow depth, frost depth), and a pure
+    `temperature_under_snow` the frost kill calls itself.
 
 Done when: no soil file mentions `Crop_Module`, apart from
 `evapotranspiration_impl`, and the crop calls nothing through a global.
+- Reached, except the organic-matter callback (A4b, see E1).
 
 ## Phase B: previous-day values (architecture.md §8)
 
@@ -168,6 +204,10 @@ Order (easy first), each one commit:
 
 - **E1 Root system out of `fc_crop_dry_matter`**: rooting depth and zone, root
   density, diameter and length, and the dead roots going to the soil.
+  - Then A4b: the root system returns the dead roots, and the wiring hands
+    them to soil organic before N uptake runs (same timing as today); the
+    `add_organic_matter` callback and `g_current_model` go. `apply_cutting`
+    (management, outside the step) returns its residues to the caller.
 - **E2 O3 impact and VOC emissions out of `fc_crop_photosynthesis`.** VOC
   becomes an output-only component (driver candidate).
 - **E3 Crop reference ET as a component.** `evapotranspiration_impl` uses it

@@ -164,6 +164,17 @@ not *declared*: it consists of whatever fields the other side happens to read.
 | crop → model | `monica_model.odin` | `crop_n_redux`, `transpiration_deficit`, `crop_heat_redux`, `oxygen_deficit` (stress sums), `soil_coverage` (soil temperature), crop params (N-min fertilising) |
 | soil → crop | `crop_module.odin` | per layer: `soil_moisture_m3`, `field_capacity`, `permanent_wilting_point`, `saturation`, `soil_no3`, `soil_temperature`, `layer_thickness_m`, `soil_clay_content`, `soil_sand_content`; column: `surface_water_storage`, `soil_surface_temperature`, `groundwater_table_layer_idx`, `number_of_organic_layers`; snow via callback |
 
+**Since phase A of `plan-component-interfaces.md`** (branch
+`component-interfaces`): the soil components no longer hold a
+`^Crop_Module`. They get a `Crop_To_Soil` value (`core/crop_to_soil.odin`)
+that the model fills at the start of the general step; the automatic
+irrigation trigger gets an `Irrigation_Crop_Window`; the crop step returns
+its events (`Crop_Events`) and gets the snow state as an input
+(`Snow_For_Crop`). Still open: `evapotranspiration_impl` reads the whole crop
+(for the crop's ET0, plan step E3), and the dead roots still go to soil
+organic through the `add_organic_matter` callback over `g_current_model`
+(plan step E1, see section 9). The tables above describe the state before.
+
 Outside `core`, the outputs read the crop too: `io/build_output.odin` through
 about 15 getters (`get_primary_crop_yield`, ...), and `io/output_paths.odin`
 names 53 crop fields as output paths. With reflective outputs *every* field
@@ -672,10 +683,22 @@ Details to check when doing it, to stay bit-identical:
   crop reads later that day depends on it; the dead roots go into soil
   organic's pools, which the crop doesn't read, but that needs checking per
   call (and for `apply_cutting`, which isn't part of the step anyway).
+  - *Checked (phase A): it isn't the same.* `soil_organic_add_organic_matter`
+    also adds the residue's NH4 and NO3 to the layers, and the crop's N uptake
+    reads the NO3 later in the same step; 68 of the 71 crop residue files in
+    monica-parameters have non-zero NH4/NO3 contents. So the dead roots must
+    reach the soil between the root system and N uptake, as today - possible
+    without a callback once the root system is its own component.
+- **When it is filled.** *Found in phase A:* not at the end of the crop
+  step but right before the soil components run. Harvest and incorporation
+  happen in worksteps before the step; that day the crop step is skipped, but
+  the soil components still read the harvested crop's last values (N uptake,
+  NPP, rooting depth), while soil moisture treats the crop as absent.
+  `Crop_To_Soil.has_crop` and `.being_cleared` say which is which.
 - **Copies or views.** The per-layer slices can point to the crop's arrays
   (no copy) or be copied (20 values); a view is simplest, but then the
   struct is only valid until the crop is removed - the model owns both, so
-  that is manageable. If copied, allocate the arrays once (with the model or
+  that is manageable. (Phase A uses views, valid for the day.) If copied, allocate the arrays once (with the model or
   at sowing) and overwrite them daily - the copy is free (section 10), a
   daily allocation isn't.
 - **The other direction.** The crop reads about 13 soil values (section 2).
