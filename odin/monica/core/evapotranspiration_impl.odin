@@ -112,6 +112,7 @@ evapotranspiration_with_modules :: proc(
 	reference_evapotranspiration_mm: f64,
 	dual_kc_method: bool,
 	daily_sum_irrigation_water_mm: f64,
+	crop: Crop_To_Soil,
 ) {
 	ms := sm.modules
 	model := ms.model
@@ -136,7 +137,9 @@ evapotranspiration_with_modules :: proc(
 	day.soil_coverage = sm.soil_coverage_percent
 	day.snow_depth = sm.snow_component.snow_depth
 	day.surface_water_storage = sc.surface_water_storage
-	cm := sm.crop_module
+	// The whole crop, not only Crop_To_Soil: the crop's ET0 below needs it
+	// (plan-component-interfaces.md, E3).
+	cm := model.current_crop_module
 	if cm != nil {
 		day.developmental_stage = developmental_stage
 		day.carboxylation_pathway = cm.crop_params.species_params.carboxylation_pathway
@@ -237,6 +240,7 @@ evapotranspiration_with_modules :: proc(
 			reference_evapotranspiration_mm,
 			dual_kc_method,
 			daily_sum_irrigation_water_mm,
+			crop,
 		)
 	}
 

@@ -842,6 +842,7 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 
 	soil_moisture_step(
 		&model.soil_moisture,
+		model.crop_to_soil,
 		model.groundwater_depth_m,
 		precip,
 		tmax,
@@ -854,7 +855,6 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		int(julday),
 		et0,
 		model.sim_params.dual_kc_method,
-		crop_cleared = model.clear_crop_upon_next_day,
 	)
 
 	soil_organic_step(&model.soil_organic, tavg, precip, wind, model.crop_to_soil)

@@ -407,6 +407,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&model.soil_moisture,
+			core.crop_to_soil_of(model.current_crop_module, false),
 			groundwater_depth,
 			precip,
 			tmax,

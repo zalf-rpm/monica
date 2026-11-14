@@ -165,9 +165,12 @@ make_soil_moisture :: proc(
 // Named soil_moisture_step, not step - see soil_temperature_step's comment on
 // why (this package mirrors src/core/, not individual C++ namespaces).
 // dual_kc_method stands in for `sm->monica.simPs.dualKcMethod`, daily_sum_irrigation_water
-// for `sm->monica.dailySumIrrigationWater` - see the package comment.
+// for `sm->monica.dailySumIrrigationWater` - see the package comment. `crop`
+// is what the C++ reads through `monica.currentCropModule` and
+// `monica.clearCropUponNextDay()` (crop_to_soil.odin).
 soil_moisture_step :: proc(
 	sm: ^Soil_Moisture,
+	crop: Crop_To_Soil,
 	groundwater_depth_m,
 	precipitation_mm,
 	max_air_temp_deg_c,
@@ -181,7 +184,6 @@ soil_moisture_step :: proc(
 	reference_evapotranspiration_mm: f64,
 	dual_kc_method: bool = false,
 	daily_sum_irrigation_water_mm: f64 = 0.0,
-	crop_cleared := false, // the crop is harvested, gone tomorrow (Monica_Model.clear_crop_upon_next_day)
 ) {
 	sc := sm.soil_column
 
@@ -196,15 +198,14 @@ soil_moisture_step :: proc(
 	sm.lambda_below = sc.layers[sm.no_of_soil_layers - 1].lambda
 
 	dev_stage := 0
-	// C++: `sm->monica.currentCropModule.get()` - see the package comment.
 	// C++: if (monica.isCropPlanted() && !monica.clearCropUponNextDay()): a
 	// harvested crop, whose step no longer runs, is no crop here
-	if sm.crop_module != nil && !crop_cleared {
-		sm.soil_coverage_percent = sm.crop_module.soil_coverage
-		sm.kc_factor = sm.crop_module.kc_factor
-		dev_stage = sm.crop_module.developmental_stage
+	if crop.has_crop && !crop.being_cleared {
+		sm.soil_coverage_percent = crop.soil_coverage
+		sm.kc_factor = crop.kc_factor
+		dev_stage = crop.developmental_stage
 		if dev_stage > 0 {
-			sm.net_precipitation_mm = sm.crop_module.net_precipitation
+			sm.net_precipitation_mm = crop.net_precipitation
 		} else {
 			sm.net_precipitation_mm = precipitation_mm
 		}
@@ -266,6 +267,7 @@ soil_moisture_step :: proc(
 			reference_evapotranspiration_mm,
 			dual_kc_method,
 			daily_sum_irrigation_water_mm,
+			crop,
 		)
 	} else {
 		evapotranspiration_with_modules(
@@ -283,10 +285,11 @@ soil_moisture_step :: proc(
 			reference_evapotranspiration_mm,
 			dual_kc_method,
 			daily_sum_irrigation_water_mm,
+			crop,
 		)
 	}
 
-	capillary_rise(sm)
+	capillary_rise(sm, crop)
 }
 
 // C++: void monica::soilmoisture::infiltration(SoilMoisture*, double)
@@ -406,10 +409,12 @@ infiltration :: proc(sm: ^Soil_Moisture, water_to_infiltrate: f64) {
 }
 
 // C++: void monica::soilmoisture::capillaryRise(SoilMoisture*)
-capillary_rise :: proc(sm: ^Soil_Moisture, allocator := context.allocator) {
+//
+// `crop.rooting_depth` is read for a crop being cleared too, as in the C++.
+capillary_rise :: proc(sm: ^Soil_Moisture, crop: Crop_To_Soil, allocator := context.allocator) {
 	sc := sm.soil_column
 
-	rooting_depth := sm.crop_module != nil ? sm.crop_module.rooting_depth : 0
+	rooting_depth := crop.has_crop ? crop.rooting_depth : 0
 
 	// NOTE(c++-quirk): C++ computes this as size_t arithmetic
 	// (max(size_t(1), groundwater_table_layer - vc_RootingDepth)): if
@@ -752,14 +757,15 @@ backwater_replenishment :: proc(sm: ^Soil_Moisture) {
 // C++: double monica::soilmoisture::dualKcPrecomputation(SoilMoisture*, double,
 //        double, double)
 //
-// Only ever called when sm.crop_module != nil (see evapotranspiration's
-// useDualKc guard), matching the C++'s unchecked `cropModule->` derefs below.
+// Only ever called with crop.has_crop (see evapotranspiration's useDualKc
+// guard), matching the C++'s unchecked `cropModule->` derefs below.
 // daily_sum_irrigation_water stands in for `sm->monica.dailySumIrrigationWater`
 // - see the package comment.
 dual_kc_precomputation :: proc(
 	sm: ^Soil_Moisture,
 	wind_speed, tmin, tmax, precip: f64,
 	daily_sum_irrigation_water: f64,
+	crop: Crop_To_Soil,
 ) -> f64 {
 	e_pot_dual_kc := 0.0 // [mm d-1] replaces (1-beta)*PET per layer
 
@@ -767,7 +773,7 @@ dual_kc_precomputation :: proc(
 	et0 := sm.reference_evapotranspiration
 
 	// --- Kcb: basal crop coefficient (interpolated in crop module) ---
-	kcb := sm.crop_module.kcb_factor
+	kcb := crop.kcb_factor
 
 	// --- Calculate Depletion first (FAO-56 §8.3) to inform memory logic ---
 	scl_0 := &sm.soil_column.layers[0]
@@ -893,7 +899,7 @@ dual_kc_precomputation :: proc(
 	eo_tmin := 0.6108 * cr_math.exp((17.27 * tmin) / (tmin + 237.3))
 	rh_min := max(5.0, min(100.0, (eo_tmin / eo_tmax) * 100.0))
 	baseline := 1.2 // FAO-56 §6 default for most crops
-	h := max(0.01, sm.crop_module.crop_height) // native simulated height [m]
+	h := max(0.01, crop.crop_height) // native simulated height [m]
 	kc_max := baseline + (0.04 * (u2 - 2.0) - 0.004 * (rh_min - 45.0)) * cr_math.pow(h / 3.0, 0.3)
 	kc_max = max(kc_max, kcb + 0.05)
 
@@ -939,6 +945,7 @@ evapotranspiration :: proc(
 	reference_evapotranspiration_mm: f64,
 	dual_kc_method: bool,
 	daily_sum_irrigation_water_mm: f64,
+	crop: Crop_To_Soil,
 ) {
 	sc := sm.soil_column
 
@@ -962,15 +969,14 @@ evapotranspiration :: proc(
 
 	// If a crop grows, ETp is taken from crop module
 	if developmental_stage > 0 {
-		// C++: `monica.currentCropModule.get()` - see the package comment.
 		if reference_evapotranspiration_mm < 0.0 {
-			sm.reference_evapotranspiration = sm.crop_module.reference_evapotranspiration
+			sm.reference_evapotranspiration = crop.reference_evapotranspiration
 		} else {
 			sm.reference_evapotranspiration = reference_evapotranspiration_mm
 		}
 
-		potential_evapotranspiration = sm.crop_module.remaining_evapotranspiration
-		evaporated_from_intercept = sm.crop_module.evaporated_from_intercept
+		potential_evapotranspiration = crop.remaining_evapotranspiration
+		evaporated_from_intercept = crop.evaporated_from_intercept
 	} else { 	// if no crop grows ETp is calculated from ET0 * kc
 		if reference_evapotranspiration_mm < 0.0 {
 			sm.reference_evapotranspiration = reference_evapotranspiration(
@@ -1028,10 +1034,10 @@ evapotranspiration :: proc(
 			// FAO-56 Dual Kc pathway - precompute potential soil evaporation
 			// (E_pot) using the Ke coefficient. Runs ONLY when dualKcMethod is
 			// enabled, a crop is present (vc_DevelopmentalStage > 0), and
-			// sm.crop_module != nil. Otherwise the Single Kc loop runs unchanged.
+			// crop.has_crop. Otherwise the Single Kc loop runs unchanged.
 			// -----------------------------------------------------------------
 			e_pot_dual_kc := 0.0
-			use_dual_kc := dual_kc_method && developmental_stage > 0 && sm.crop_module != nil
+			use_dual_kc := dual_kc_method && developmental_stage > 0 && crop.has_crop
 			if use_dual_kc {
 				e_pot_dual_kc = dual_kc_precomputation(
 					sm,
@@ -1040,6 +1046,7 @@ evapotranspiration :: proc(
 					max_air_temp_deg,
 					precip_mm,
 					daily_sum_irrigation_water_mm,
+					crop,
 				)
 			} else {
 				sm.ke = 0.0
@@ -1101,8 +1108,7 @@ evapotranspiration :: proc(
 						sm.evaporation[i_layer] = 0.0
 					}
 
-					// C++: `monica.currentCropModule.get()->vc_Transpiration` - see the package comment.
-					sm.transpiration[i_layer] = sm.crop_module.transpiration[i_layer]
+					sm.transpiration[i_layer] = crop.transpiration[i_layer]
 
 					// Transpiration is capped in case potential ET after surface
 					// and interception evaporation has occurred on same day

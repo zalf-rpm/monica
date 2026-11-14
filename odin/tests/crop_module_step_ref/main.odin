@@ -353,6 +353,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&sm,
+			core.crop_to_soil_of(&cm, false),
 			groundwater_depth,
 			precip,
 			tmax,
