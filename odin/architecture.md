@@ -12,7 +12,10 @@ changes the code. It is a basis for deciding where MONICA's interfaces should
 be. Sections 7-10 look at the other modules, sketch the two new structs the
 plan needs (previous-day values, crop-soil exchange), and estimate what such
 explicit interfaces cost; section 11 explains Crop2ML's `s`/`s1` and rates and
-states, and how MONICA relates to them.
+states, and how MONICA relates to them; section 12 discusses how components
+could declare their inputs and outputs (global map vs. parameters vs.
+per-component structs with tagged metadata) and lists designs left out for
+compatibility.
 
 The scans can be repeated with `tools/field_deps.py` (run from `odin/`):
 
@@ -341,7 +344,7 @@ flowchart TB
 |---|---|---|---:|---|
 | Radiation and day length | `fc_radiation`; duplicate in `soil_moisture` | none | 84 | easy - pure function of day, latitude, radiation, sunshine |
 | Phenology | `fc_crop_developmental_stage`, `fc_daylength_factor`, `fc_vernalisation_factor`, `set_stage`, anthesis/maturity, dormancy and events from the step, `wang_engel_temperature_response`, temperature-sum getters | stage, temperature sums, vernalisation days, dormancy end, events | ~400 | medium - needs explicit yesterday's stresses; the perennial reset |
-| Canopy | `fc_crop_size`, `fc_crop_green_area`, `fc_soil_coverage`, `fc_kc_factor`, the dual-Kc block | height, diameter, LAI, GAI, Kc, Kcb | ~180 | easy |
+| Canopy (a grouping of today's procedures, not an existing component; see section 12) | `fc_crop_size`, `fc_crop_green_area`, `fc_soil_coverage`, `fc_kc_factor`, the dual-Kc block | height, diameter, LAI, GAI, Kc, Kcb | ~180 | easy |
 | Photosynthesis and respiration | `fc_crop_photosynthesis` without O3 and VOC | the 24/240-step buffers (if not VOC-only) | ~550 | medium - the biggest procedure, but one purpose; FvCB is already in its own file |
 | O3 impact | the O3 part of 8, `o3_impact.odin` | `o3_*` | (in 8) | easy, already half out |
 | VOC emissions | `calculate_voc_emissions`, the buffer part of 8, `voc_*.odin` | rad/tfol buffers, emissions | (in 8) | easy - nothing in the model reads the results, only outputs: a natural *driver* |
@@ -849,3 +852,156 @@ Where it would gain most:
 3. **The crop's internals** are mostly rate → state within a unit, which is
    fine; their problems are the previous-day reads (section 8) and the
    cross-writes (section 4), questions of ownership rather than of rates.
+
+## 12. Declared interfaces: global map, parameter lists, or something between
+
+Sections 5-9 leave a question open. The `using`-embedded sub-structs of
+section 6, step 1, only *sort* the crop's fields: a component that reads
+`cm.leaf_area_index` through `^Crop_Module` declares nothing, and an adapted
+algorithm that suddenly needs another component's value just reads it -
+nothing shows that a dependency was added. The plan gains real modularity at
+the crop ↔ soil boundary (section 9), but inside the crop only where step 2
+(narrowed signatures) is actually done, and for the two big procedures that
+would probably take long. This section is about how to declare inputs and
+outputs inside the crop (and the soil modules) without either extreme.
+
+### The two extremes
+
+**A global variable map (Simplace).** As far as I know Simplace's design, a
+component declares every variable it uses - name, type, unit, range,
+description, role (constant, input, output, state, rate) - and reaches other
+values only through these declarations, linked by name in the solution file;
+transformers adapt outputs to inputs through the same map. Its strength is that
+the declaration *is* the access mechanism, so it can't drift from the code, and
+users recombine components without recompiling. The costs: every access is a
+lookup, a missing producer is found at load time instead of compile time, and
+the call order still decides whether a reader sees today's or yesterday's value
+(as in MONICA today, section 11).
+
+**Everything as parameters and return values.** The compiler checks every
+dependency, and a signature says exactly what a procedure takes and changes.
+At the granularity of single procedures, though, the signatures get long, every
+new dependency has to be threaded through several call levels, and the
+plumbing outweighs the physics. This is the part that is too expensive at fine
+granularity.
+
+MONICA doesn't connect components dynamically, so it doesn't need the map's
+runtime flexibility; what it needs from Simplace is the *self-description*.
+
+### Proposal: input, state and output per component, wired in one place
+
+Declare at the level of the components of section 5 (about 15 in the crop),
+not of single procedures:
+
+```odin
+Phenology_In :: struct {
+	tavg:                 f64 `unit:"°C"`,
+	soil_temperature_top: f64 `unit:"°C"`,
+	day_length:           f64 `unit:"h"  src:"Radiation"`,
+	water_stress:         f64 `unit:"0-1" src:"Water_Uptake" lag:"1d"`,
+	n_stress:             f64 `unit:"0-1" src:"Crop_N_Status" lag:"1d"`,
+}
+
+// Owned and persistent; written only by phenology.
+Phenology_State :: struct {
+	developmental_stage: int,
+	temperature_sum:     [MAX_STAGES]f64 `unit:"°C d" cat:"state"`,
+	vernalisation_days:  f64              `unit:"d"    cat:"state"`,
+}
+
+phenology_step :: proc(ps: ^Species_Parameters, s: ^Phenology_State, in: Phenology_In) {...}
+
+// crop_module_step is the "solution file" - as code the compiler checks:
+phenology_step(species_ps, &cm.phenology, Phenology_In{
+	tavg                 = w.tavg,
+	soil_temperature_top = soil.temperature[0],
+	day_length           = rad.effective_day_length,
+	water_stress         = prev.water_stress, // carry-over, section 8
+	n_stress             = prev.n_stress,
+})
+```
+
+- **The declaration is the signature.** A component sees its `In`, its own
+  state and its parameters, nothing else. A new dependency is one field in
+  `In` and one wiring line in the step - visible in the diff and in one
+  predictable place, instead of a hidden read or a parameter threaded through
+  three call levels.
+- **Reading another component's state is free and enforced.** Odin parameters
+  are immutable, and large structs are passed by reference internally, so a
+  component that needs, say, the root system's state can take
+  `roots: Root_System_State` by value at no cost and can't write it. Caveat:
+  slices and dynamic arrays inside such a struct can still be written
+  element-wise.
+- **Inside a component, no ceremony.** Its helper procedures share its state
+  freely and take scalars; that is cohesion, not coupling. The question "who
+  reads what" matters between components, so that is where it is declared.
+- **Metadata in struct tags.** Units, descriptions, role (state, rate,
+  auxiliary - the Crop2ML categories of section 11), source component and lag
+  go into field tags, which `core:reflect` reads at runtime (`reflectpath`
+  already resolves the outputs by reflection; section 8's carry-over struct
+  uses `unit` tags already). From this one source one could generate the
+  output documentation and units, the dependency graph of section 5 (instead
+  of a hand-drawn one), Crop2ML descriptions, and the MCP server's
+  `monica://docs/outputs` (`odin/mcp`). Simplace's self-description, without
+  the dynamic map.
+- **Checkable.** Odin doesn't warn about struct fields nobody reads. A small
+  tool in the spirit of `tools/field_deps.py` could report `In` fields a
+  component never reads, check that every same-day `src` runs earlier in the
+  step and every `lag:"1d"` input comes from the carry-over, and draw the graph.
+
+This only changes where a value comes from, not the floating-point operations
+or their order, so it is bit-compatible and fits section 6 as a sharpened
+step 2: leaves first (radiation, Kc, the stresses, crop N), then the medium
+components as they get cut out (root system, growth, photosynthesis).
+
+**New components.** The "Canopy" of section 5 is only a grouping of today's
+procedures (`fc_crop_size`, `fc_crop_green_area`, `fc_soil_coverage`,
+`fc_kc_factor`); MONICA has no canopy component yet. A planned one would be the
+natural first component written in this form from the start: its `In` says
+which phenology, growth and weather values it needs, its state replaces the
+grouped fields, and photosynthesis, water uptake and the soil's
+`Crop_To_Soil` read its output instead of `cm.leaf_area_index` and friends.
+That also makes it swappable against the current procedures (section 6,
+step 7).
+
+### The order of evaluation
+
+Three ways to handle it, from compatible to not:
+
+1. **In place, with the order made explicit** - the plan: the carry-over
+   struct (section 8) holds yesterday's values, the `lag` tags mark every
+   feedback, and a check confirms that same-day edges follow the call order.
+   Bit-compatible.
+2. **A derived order.** Components declare their same-day inputs, and the
+   order is the topological sort of the graph. The results stay the same only
+   while the derived order equals today's; mainly a tooling question.
+3. **Two-phase rate/integrate**, as in DSSAT's CSM (`RATE`, then `INTEGR`):
+   every component computes rates from the state at the start of the day, then
+   each owner integrates. The order stops mattering, mass balances can be
+   checked, and competing claims on a pool are limited explicitly (section 11).
+   This changes the results and was left out for that reason, except as the
+   recommended model change for soil mineral N.
+
+### Further designs, excluded for compatibility or effort
+
+| Idea | Gain | Bit-compatible? |
+|---|---|---|
+| Immutable parameters: cutting stores a modifier in the state instead of changing `max_assimilation_rate`; the perennial reset swaps a parameter reference instead of the contents | removes "parameters as state" (section 4) | probably, if the multiplication order is kept |
+| Management as commands each owner applies (`phenology_apply(Transplant)`, ...) instead of `force_transplant_state` writing everywhere | ownership holds for management too | yes, with care about order |
+| Unit-carrying types (`Kg_Per_Ha :: distinct f64`) | unit mismatches become compile errors | yes, but many casts; worth it at component boundaries at most |
+| Debug-build mass-balance asserts per component (water, N, C) | catches bugs early | yes |
+| Rate/state with demand limiting for soil NH4/NO2/NO3 | turns the call order into a decided priority | no |
+| Global rate/integrate split (above, 3) | results independent of the order | no |
+| Shared radiation and ET0 between crop and soil (section 6, step 6) | removes a duplicate | yes, if the formulas are identical |
+| Many sites per process, per-layer data as struct-of-arrays (`#soa`) | throughput for regional and HPC runs | per site yes, but a big restructuring |
+| A declarative model description generating structs, wiring and docs (Crop2ML taken all the way) | one source of truth | in principle, but replaces handwritten code |
+
+### Suggested order
+
+1. The crop ↔ soil exchange structs and the carry-over struct (sections 8, 9).
+2. The input/state pattern component by component, leaves first, with tags
+   from the start - and any new component, such as a canopy model, in this
+   form from day one.
+3. The small tag and graph tool.
+4. Soil mineral N as rate/state with explicit limiting: the first deliberate,
+   validated model change.
