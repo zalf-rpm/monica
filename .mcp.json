@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "monica": {
+      "command": "pixi",
+      "args": ["run", "--manifest-path", "odin/mcp/pixi.toml", "serve"]
+    }
+  }
+}

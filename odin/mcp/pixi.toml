@@ -1,0 +1,19 @@
+[workspace]
+name = "monica-mcp"
+version = "0.1.0"
+description = "Prototype MCP server exposing the Odin MONICA build to AI agents"
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
+
+[dependencies]
+python = ">=3.11,<3.14"
+
+[pypi-dependencies]
+mcp = ">=1.10"
+
+[tasks]
+# stdio transport - what Claude Code / Claude Desktop launch as a subprocess
+serve = { cmd = "python server.py", description = "Run the MONICA MCP server over stdio" }
+# Streamable HTTP transport - for remote clients (no auth yet: prototype only)
+serve-http = { cmd = "python server.py --http", description = "Run the MONICA MCP server over Streamable HTTP on 127.0.0.1:8765" }
+smoke = { cmd = "python smoke_test.py", description = "Run a simulation end to end through the MCP client API" }
