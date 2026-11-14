@@ -44,7 +44,7 @@ each phase.
 
 | Phase | Step | What | Status |
 |---|---|---|---|
-| 0 | 0.1-0.3 | branch, baseline, reference scans | |
+| 0 | 0.1-0.3 | branch, baseline, reference scans | done (80e13d1) |
 | A | A1-A5 | crop → soil exchange struct, callbacks as return values | |
 | B | B1-B3 | previous-day carry-over struct | |
 | C | C1-C3 | crop fields grouped into component sub-structs | |
@@ -63,6 +63,13 @@ each phase.
 - **0.2** Baseline: `bash tests/diff_outputs.sh --save` on the branch's
   starting commit, and confirm that `diff_vs_cpp.sh` passes. Every later step
   is compared against this baseline.
+  - Done: saved to `build/out-component-base` (8 CSVs, 3 fixtures). Gate 2 is
+    therefore `BASE=build/out-component-base pixi run bash tests/diff_outputs.sh`.
+  - C++ (gate 3): `../monica` master is at `cbaae4cb` (A1-A3 fixed),
+    `build/monica-run.exe` doesn't exist and the 6-digit `Mois` change is no
+    longer in the checkout. `_cmake_release/monica-run.exe` (3 Nov) used via
+    `CPP_RUN=`: all sections identical except `Mois_1..3`; the Odin values
+    rounded to 3 digits match (5 rounding ties within ±0.0005).
 - **0.3** Reference scans, kept under `build/` (not committed), so each step
   can be checked against what the code did before:
   - `field_deps.py fields monica/core/crop_module.odin Crop_Module cm`
