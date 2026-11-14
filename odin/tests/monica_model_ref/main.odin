@@ -279,7 +279,7 @@ main :: proc() {
 		threshold = 0.99,
 		critical_moisture_depth_m = 0.3,
 	}
-	triggered, triggered_amount := core.apply_irrigation_via_trigger(&model.soil_column, &aip)
+	triggered, triggered_amount := core.apply_irrigation_via_trigger(&model.soil_column, &aip, core.irrigation_crop_window(&cm))
 	tr.dump(&t, "triggered", triggered)
 	tr.dump(&t, "triggeredAmount", triggered_amount)
 	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.surface_water_storage)

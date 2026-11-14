@@ -1163,6 +1163,7 @@ automatic_irrigation_apply :: proc(
 	irrigation_triggered, irrigation_amount := core.apply_irrigation_via_trigger(
 		&model.soil_column,
 		&ai.params,
+		core.irrigation_crop_window(model.current_crop_module),
 	)
 	if irrigation_triggered {
 		model.current_events["AutomaticIrrigation"] = true

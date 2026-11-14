@@ -583,20 +583,24 @@ apply_possible_top_dressing :: proc(sc: ^Soil_Column) -> f64 {
 
 // C++: std::pair<bool,double> monica::soilcolumn::applyIrrigationViaTrigger(
 //        SoilColumn*, const AutomaticIrrigationParameters&)
+//
+// `crop`: the crop's temperature sum and irrigation window
+// (crop_to_soil.odin), instead of the C++'s read through the crop module.
 apply_irrigation_via_trigger :: proc(
 	sc: ^Soil_Column,
 	aips: ^p.Automatic_Irrigation_Parameters,
+	crop: Irrigation_Crop_Window,
 ) -> (
 	triggered: bool,
 	amount: f64,
 ) {
-	if sc.crop_module == nil {
+	if !crop.has_crop {
 		return false, 0
 	}
 
-	s := sc.crop_module.crop_params.cultivar_params.heat_sum_irrigation_start
-	e := sc.crop_module.crop_params.cultivar_params.heat_sum_irrigation_end
-	cts := sc.crop_module.current_total_temperature_sum
+	s := crop.heat_sum_irrigation_start
+	e := crop.heat_sum_irrigation_end
+	cts := crop.current_total_temperature_sum
 	if cts < s || cts > e || aips.threshold < 0.0 {
 		return false, 0
 	}

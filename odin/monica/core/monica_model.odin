@@ -953,6 +953,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		irrigation_triggered, irrigation_amount := apply_irrigation_via_trigger(
 			&model.soil_column,
 			&model.sim_params.auto_irrigation_params,
+			irrigation_crop_window(model.current_crop_module),
 		)
 		if irrigation_triggered {
 			model.soil_organic.irrigation_amount += irrigation_amount
