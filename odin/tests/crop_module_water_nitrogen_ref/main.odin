@@ -260,13 +260,7 @@ day_step :: proc(
 			cm.reference_evapotranspiration = reference_evapotranspiration
 		}
 
-		core.fc_crop_water_uptake(
-			cm,
-			soil_column.groundwater_table_layer_idx,
-			gross_precipitation,
-			cm.current_total_temperature_sum,
-			cm.total_temperature_sum,
-		)
+		core.water_uptake_step(&cm.water_uptake, core.water_uptake_in(cm, gross_precipitation))
 
 		core.fc_crop_n_uptake(
 			cm,
