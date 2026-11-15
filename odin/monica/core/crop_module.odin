@@ -137,28 +137,6 @@ Crop_Photosynthesis :: struct {
 	fraction_of_intercepted_radiation2: f64,
 }
 
-// Growth and partitioning: organ biomass, senescence, reserves, N demand (first part of
-// fc_crop_dry_matter).
-Crop_Growth :: struct {
-	storage_organ:                  int,
-	organ_biomass:                  [dynamic]f64, //! old WORG
-	organ_green_biomass:            [dynamic]f64,
-	organ_dead_biomass:             [dynamic]f64, //! old WDORG
-	organ_growth_increment:         [dynamic]f64 `unit:"kgDM ha-1"`, //! old GORG
-	organ_senescence_increment:     [dynamic]f64, //! old DGORG
-	aboveground_biomass:            f64 `unit:"kgDM ha-1"`, //! old OBMAS
-	aboveground_biomass_old:        f64, //! old OBALT
-	belowground_biomass:            f64,
-	belowground_biomass_old:        f64,
-	total_biomass:                  f64,
-	reserve_assimilate_pool:        f64, //! old ASPOO
-	net_photosynthesis:             f64 `unit:"kgCH2O ha-1"`, //! old GTW
-	crop_n_demand:                  f64, //! old DTGESN
-	max_n_uptake:                   f64, //! old MAXUP
-	assimilate_part_coeffs_reduced: bool,
-	dying_out:                      bool,
-}
-
 // Water uptake: interception, potential and actual transpiration per layer, water stress
 // (fc_crop_water_uptake).
 Crop_Water_Uptake :: struct {
@@ -1479,266 +1457,6 @@ add_and_distribute_root_biomass_in_soil :: proc(
 	)
 }
 
-// C++: void monica::cropmodule::fcCropDryMatter(CropModule*, double vw_MeanAirTemperature)
-//
-// Dry matter allocation within the crop: the result from crop photosynthesis
-// is allocated to the different crop organs under consideration of stress
-// factors (water, nitrogen, temperature), plus root growth (rooting depth,
-// root density/diameter per layer) and handing daily dead root biomass off
-// to soil organic matter via fcMoveDeadRootBiomassToSoil/add_organic_matter.
-fc_crop_dry_matter :: proc(
-	cm: ^Crop_Module,
-	// yesterday's (Crop_Carry_Over): N uptake runs later in the step
-	n_concentration_root: f64,
-) -> (
-	dead_root_biomass: f64, // the day's dead root biomass, for the root system
-) {
-	crop_ps := cm.mod_params
-	species_ps := &cm.crop_params.species_params
-	cultivar_ps := &cm.crop_params.cultivar_params
-	aboveground_organ := species_ps.aboveground_organ
-	assimilate_partitioning_coeff_arr := cultivar_ps.assimilate_partitioning_coeff
-	assimilate_reallocation := species_ps.assimilate_reallocation
-	organ_senescence_rate := cultivar_ps.organ_senescence_rate
-	perennial := cultivar_ps.perennial
-	stage_temperature_sum := cultivar_ps.stage_temperature_sum
-	storage_organ := species_ps.storage_organ
-
-
-	max_root_n_concentration := 0.0 // old WGM
-	assimilate_partitioning_coeff_old := 0.0
-	assimilate_partitioning_coeff := 0.0
-
-	// Assuming that growth respiration takes 30% of total assimilation - from
-	// AGROSIM algorithms (the HERMES alternative is commented out in the C++)
-	cm.net_photosynthesis = cm.assimilates
-	// TMP_Regulatory_factor: computed but never read again afterward in the
-	// C++ either - a genuine dead store, kept for fidelity.
-	tmp_regulatory_factor := species_ps.stage_mobil_from_storage_coeff[cm.developmental_stage]
-	if cm.developmental_stage == 1 {
-		tmp_regulatory_factor =
-			species_ps.stage_mobil_from_storage_coeff[cm.developmental_stage] * cm.k_tkc
-	}
-	_ = tmp_regulatory_factor
-
-	mobilization_from_storage :=
-		cm.organ_biomass[cm.storage_organ] *
-		species_ps.stage_mobil_from_storage_coeff[cm.developmental_stage] *
-		cm.k_tkc
-
-	cm.reserve_assimilate_pool = 0.0
-
-	cm.aboveground_biomass_old = cm.aboveground_biomass
-	cm.aboveground_biomass = 0.0
-	cm.belowground_biomass_old = cm.belowground_biomass
-	cm.belowground_biomass = 0.0
-	cm.total_biomass = 0.0
-
-	// Dry matter production - old NRKOM
-	assimilate_partition_leaf := 0.05
-	daily_dead_root_biomass_increment := 0.0
-	for i_organ := 0; i_organ < cm.no_of_organs; i_organ += 1 {
-		// Prevent out-of-bounds array access on developmental stage indices
-		// during early phases. If developmental_stage is 0, fall back to
-		// index 0 as the previous stage index.
-		prev_stage := cm.developmental_stage > 0 ? cm.developmental_stage - 1 : 0
-		assimilate_partitioning_coeff_old = assimilate_partitioning_coeff_arr[prev_stage][i_organ]
-		assimilate_partitioning_coeff =
-			assimilate_partitioning_coeff_arr[cm.developmental_stage][i_organ]
-
-		// Identify storage organ and reduce assimilate flux in case of heat stress
-		if storage_organ[i_organ] {
-			assimilate_partitioning_coeff_old =
-				assimilate_partitioning_coeff_old *
-				cm.crop_heat_redux *
-				cm.drought_impact_on_fertility
-			assimilate_partitioning_coeff =
-				assimilate_partitioning_coeff *
-				cm.crop_heat_redux *
-				cm.drought_impact_on_fertility
-		}
-
-		if (cm.current_temperature_sum[cm.developmental_stage] /
-			   stage_temperature_sum[cm.developmental_stage]) >
-		   1 {
-			// Pflanze ist ausgewachsen
-			cm.organ_growth_increment[i_organ] = 0.0
-			cm.organ_senescence_increment[i_organ] = 0.0
-			if perennial {
-				cm.growth_cycle_ended = true
-			}
-		} else {
-			// test if there is a positive balance of produced assimilates; if
-			// net_photosynthesis is negative, the crop needs more for
-			// maintenance than for building new biomass
-			if cm.net_photosynthesis < 0.0 {
-				// reduce biomass from leaf and shoot because of negative assimilate
-				if i_organ == Organ_Leaf {
-					incr := assimilate_partition_leaf * cm.net_photosynthesis
-					if libc.fabs(incr) <= cm.organ_biomass[i_organ] {
-						cm.organ_growth_increment[i_organ] = incr
-					} else {
-						// temporary hack because complex algorithm produces
-						// questionable results - reduce only what is available
-						cm.organ_growth_increment[i_organ] = (-1) * cm.organ_biomass[i_organ]
-					}
-				} else if i_organ == Organ_Shoot {
-					incr := assimilate_partition_leaf * cm.net_photosynthesis // should be negative
-					if libc.fabs(incr) <= cm.organ_biomass[i_organ] {
-						cm.organ_growth_increment[i_organ] = incr
-					} else {
-						cm.organ_growth_increment[i_organ] = (-1) * cm.organ_biomass[i_organ]
-					}
-				} else {
-					// root or storage organ - do nothing in case of negative photosynthesis
-					cm.organ_growth_increment[i_organ] = 0
-				}
-			} else { 	// net_photosynthesis >= 0.0
-				cm.organ_growth_increment[i_organ] =
-					cm.net_photosynthesis *
-					(assimilate_partitioning_coeff_old +
-							((assimilate_partitioning_coeff - assimilate_partitioning_coeff_old) *
-									(cm.current_temperature_sum[cm.developmental_stage] /
-											stage_temperature_sum[cm.developmental_stage]))) *
-					cm.crop_n_redux // [kg CH2O ha-1]
-
-				use_mobilization_from_storage := true
-				if use_mobilization_from_storage {
-					if i_organ != cm.storage_organ {
-						cm.organ_growth_increment[i_organ] +=
-							mobilization_from_storage *
-							(assimilate_partitioning_coeff_old +
-									((assimilate_partitioning_coeff -
-												assimilate_partitioning_coeff_old) *
-											(cm.current_temperature_sum[cm.developmental_stage] /
-													stage_temperature_sum[cm.developmental_stage]))) *
-							cm.crop_n_redux
-					} else {
-						cm.organ_growth_increment[i_organ] -=
-							mobilization_from_storage * cm.crop_n_redux
-						cm.organ_growth_increment[i_organ] +=
-							mobilization_from_storage *
-							(assimilate_partitioning_coeff_old +
-									((assimilate_partitioning_coeff -
-												assimilate_partitioning_coeff_old) *
-											(cm.current_temperature_sum[cm.developmental_stage] /
-													stage_temperature_sum[cm.developmental_stage]))) *
-							cm.crop_n_redux
-					}
-				}
-			}
-			cm.organ_senescence_increment[i_organ] =
-				cm.organ_green_biomass[i_organ] *
-				(organ_senescence_rate[prev_stage][i_organ] +
-						((organ_senescence_rate[cm.developmental_stage][i_organ] -
-									organ_senescence_rate[prev_stage][i_organ]) *
-								(cm.current_temperature_sum[cm.developmental_stage] /
-										stage_temperature_sum[cm.developmental_stage]))) // [kg CH2O ha-1]
-		}
-
-		cm.organ_biomass[i_organ] += cm.organ_growth_increment[i_organ] * cm.time_step // [kg CH2O ha-1]
-		if i_organ == cm.storage_organ {
-			cm.organ_dead_biomass[i_organ] += cm.organ_senescence_increment[i_organ] * cm.time_step
-		} else {
-			// root, shoot, leaf
-			reallocation_rate :=
-				assimilate_reallocation * cm.organ_senescence_increment[i_organ] * cm.time_step
-			cm.organ_biomass[cm.storage_organ] += reallocation_rate
-			daily_dead_biomass_increment := cm.organ_senescence_increment[i_organ] - reallocation_rate
-
-			if i_organ == Organ_Root {
-				cm.organ_biomass[Organ_Root] -= cm.organ_senescence_increment[Organ_Root]
-				cm.total_biomass_n_content -= daily_dead_biomass_increment * n_concentration_root
-				daily_dead_root_biomass_increment = daily_dead_biomass_increment
-			} else {
-				// shoot or leaf
-				cm.organ_biomass[i_organ] -= reallocation_rate
-				cm.organ_dead_biomass[i_organ] += daily_dead_biomass_increment // [kg CH2O ha-1]
-			}
-		}
-
-		cm.organ_green_biomass[i_organ] =
-			cm.organ_biomass[i_organ] - cm.organ_dead_biomass[i_organ]
-		if cm.organ_green_biomass[i_organ] < 0.0 {
-			cm.organ_dead_biomass[i_organ] = cm.organ_biomass[i_organ]
-			cm.organ_green_biomass[i_organ] = 0.0
-		}
-
-		if aboveground_organ[i_organ] {
-			cm.aboveground_biomass += cm.organ_biomass[i_organ]
-		} else if i_organ != Organ_Root {
-			cm.belowground_biomass += cm.organ_biomass[i_organ]
-		}
-
-		cm.total_biomass += cm.organ_biomass[i_organ]
-	}
-
-	// old @todo: N redux noch ausgeschaltet
-	cm.reserve_assimilate_pool = 0.0
-
-	if cm.developmental_stage > 0 {
-		max_root_n_concentration =
-			species_ps.stage_max_root_n_concentration[cm.developmental_stage - 1] -
-			(species_ps.stage_max_root_n_concentration[cm.developmental_stage - 1] -
-					species_ps.stage_max_root_n_concentration[cm.developmental_stage]) *
-				cm.current_temperature_sum[cm.developmental_stage] /
-				stage_temperature_sum[cm.developmental_stage] // [kg kg-1]
-	} else {
-		max_root_n_concentration = species_ps.stage_max_root_n_concentration[cm.developmental_stage]
-	}
-
-	cm.crop_n_demand =
-		((cm.target_n_concentration * cm.aboveground_biomass) +
-			(cm.organ_biomass[Organ_Root] * max_root_n_concentration) +
-			(cm.target_n_concentration * cm.belowground_biomass / cultivar_ps.residue_n_ratio) -
-			cm.total_biomass_n_content) *
-		cm.time_step // [kg ha-1]
-
-	// vc_NConcentrationOptimum: computed but unused elsewhere in the C++ too -
-	// a genuine dead store, kept for fidelity.
-	n_concentration_optimum :=
-		((cm.target_n_concentration -
-					(cm.target_n_concentration - cm.critical_n_concentration) * 0.15) *
-				cm.aboveground_biomass +
-			(cm.target_n_concentration -
-					(cm.target_n_concentration - cm.critical_n_concentration) * 0.15) *
-				cm.belowground_biomass /
-				cultivar_ps.residue_n_ratio +
-			(cm.organ_biomass[Organ_Root] * max_root_n_concentration) -
-			cm.total_biomass_n_content) *
-		cm.time_step // [kg ha-1]
-	_ = n_concentration_optimum
-
-	if cm.crop_n_demand > (crop_ps.max_crop_n_demand * cm.time_step) {
-		// Not more than 6kg N per day to be taken up.
-		cm.crop_n_demand = crop_ps.max_crop_n_demand * cm.time_step
-	}
-
-	if cm.crop_n_demand < 0 {
-		cm.crop_n_demand = 0.0
-	}
-
-
-	dead_root_biomass = daily_dead_root_biomass_increment
-	return
-}
-
-// The end of the C++ fcCropDryMatter: the maximum N uptake, and the N demand
-// limited by the root length the root system computed before.
-fc_crop_n_demand_by_root_length :: proc(cm: ^Crop_Module) {
-	species_ps := &cm.crop_params.species_params
-
-	// Limiting the maximum N-uptake to 26-13*10^-14 mol/cm root/sec
-	cm.max_n_uptake =
-		species_ps.max_n_uptake_param -
-		(cm.current_total_temperature_sum / cm.total_temperature_sum) // [kg m root-1]
-
-	if (cm.crop_n_demand / 10000.0) > (cm.total_root_length * cm.max_n_uptake * cm.time_step) {
-		cm.crop_n_demand = cm.total_root_length * cm.max_n_uptake * cm.time_step // [kg m-2]
-	} else {
-		cm.crop_n_demand = cm.crop_n_demand / 10000.0 // [kg ha-1 -> kg m-2]
-	}}
-
 // ---------------------------------------------------------------------------
 // Phase 5 checkpoint 6: water + nitrogen uptake
 //
@@ -2600,7 +2318,15 @@ crop_module_step :: proc(
 
 		// growth, root system, the N demand limited by root length: the three
 		// parts of the C++ fcCropDryMatter
-		dead_root_biomass := fc_crop_dry_matter(cm, prev.n_concentration_root)
+		dead_root_biomass, total_biomass_n_content, growth_cycle_ended := growth_step(
+			&cm.growth,
+			&cm.crop_params,
+			growth_in(cm, prev.n_concentration_root),
+		)
+		cm.total_biomass_n_content = total_biomass_n_content
+		if growth_cycle_ended {
+			cm.growth_cycle_ended = true
+		}
 
 		dead_roots := root_system_step(
 			&cm.roots,
@@ -2633,7 +2359,16 @@ crop_module_step :: proc(
 			)
 		}
 
-		fc_crop_n_demand_by_root_length(cm)
+		growth_limit_n_demand(
+			&cm.growth,
+			&cm.crop_params,
+			Growth_N_Limit_In {
+				total_root_length = cm.total_root_length,
+				current_total_temperature_sum = cm.current_total_temperature_sum,
+				total_temperature_sum = cm.total_temperature_sum,
+				time_step = cm.time_step,
+			},
+		)
 
 		// calculate reference evapotranspiration if not provided directly
 		// via climate files

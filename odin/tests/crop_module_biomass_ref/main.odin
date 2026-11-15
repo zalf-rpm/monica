@@ -250,7 +250,13 @@ day_step :: proc(
 
 		{
 			// the three parts of the C++ fcCropDryMatter, as in crop_module_step
-			dead_root_biomass := core.fc_crop_dry_matter(cm, cm.n_concentration_root)
+			dead_root_biomass, total_biomass_n_content, growth_cycle_ended := core.growth_step(
+				&cm.growth,
+				&cm.crop_params,
+				core.growth_in(cm, cm.n_concentration_root),
+			)
+			cm.total_biomass_n_content = total_biomass_n_content
+			if growth_cycle_ended {cm.growth_cycle_ended = true}
 			dead_roots := core.root_system_step(
 				&cm.roots,
 				&cm.crop_params,
@@ -274,7 +280,7 @@ day_step :: proc(
 			if len(dead_roots) > 0 {
 				recording_add_organic_matter(dead_roots, cm.n_concentration_root)
 			}
-			core.fc_crop_n_demand_by_root_length(cm)
+			core.growth_limit_n_demand(&cm.growth, &cm.crop_params, {cm.total_root_length, cm.current_total_temperature_sum, cm.total_temperature_sum, cm.time_step})
 		}
 
 		cm.gross_primary_production = core.fc_gross_primary_production(cm)

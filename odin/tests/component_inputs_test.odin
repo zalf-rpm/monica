@@ -26,6 +26,8 @@ COMPONENT_INPUTS := []typeid {
 	mcore.Crop_Et0_In,
 	mcore.Phenology_In,
 	mcore.Phenology_Events_In,
+	mcore.Growth_In,
+	mcore.Growth_N_Limit_In,
 }
 
 // Where a value comes from: a crop component (its state struct without the
