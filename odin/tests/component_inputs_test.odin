@@ -29,6 +29,7 @@ COMPONENT_INPUTS := []typeid {
 	mcore.Growth_In,
 	mcore.Growth_N_Limit_In,
 	mcore.Water_Uptake_In,
+	mcore.N_Uptake_In,
 }
 
 // Where a value comes from: a crop component (its state struct without the

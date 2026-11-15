@@ -262,12 +262,7 @@ day_step :: proc(
 
 		core.water_uptake_step(&cm.water_uptake, core.water_uptake_in(cm, gross_precipitation))
 
-		core.fc_crop_n_uptake(
-			cm,
-			soil_column.groundwater_table_layer_idx,
-			cm.current_total_temperature_sum,
-			cm.total_temperature_sum,
-		)
+		core.n_uptake_step(&cm.n_uptake, &cm.crop_params, core.n_uptake_in(cm))
 
 		cm.gross_primary_production = core.fc_gross_primary_production(cm)
 		cm.net_primary_production = core.fc_net_primary_production(cm, cm.total_respired)
