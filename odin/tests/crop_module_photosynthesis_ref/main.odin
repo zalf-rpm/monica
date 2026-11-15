@@ -151,20 +151,9 @@ day_step :: proc(
 		cm.maturity_reached = true
 	}
 
-	cm.daylength_factor = core.fc_daylength_factor(
-		cm,
-		daylength_requirement[cm.developmental_stage],
-		cm.effective_day_length,
-		cm.photoperiodic_daylength,
-		base_daylength[cm.developmental_stage],
-	)
+	cm.daylength_factor = core.crop_daylength_factor({daylength_requirement = daylength_requirement[cm.developmental_stage], base_daylength = base_daylength[cm.developmental_stage], effective_day_length = cm.effective_day_length, photoperiodic_daylength = cm.photoperiodic_daylength})
 
-	cm.vernalisation_factor, cm.vernalisation_days = core.fc_vernalisation_factor(
-		cm,
-		mean_air_temperature,
-		vernalisation_requirement[cm.developmental_stage],
-		cm.vernalisation_days,
-	)
+	cm.vernalisation_factor, cm.vernalisation_days = core.crop_vernalisation_factor({mean_air_temperature = mean_air_temperature, vernalisation_requirement = vernalisation_requirement[cm.developmental_stage], vernalisation_days = cm.vernalisation_days, time_step = cm.time_step, enable_fix = core.vernalisation_factor_fix_enabled(cm)})
 
 	if cm.total_temperature_sum == 0.0 {
 		cm.relative_total_development = 0.0

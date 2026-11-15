@@ -790,17 +790,28 @@ crop_radiation :: proc(input: Radiation_In) -> (r: Crop_Radiation) {
 	}	return
 }
 
+// What crop_daylength_factor needs (plan-component-interfaces.md D2).
+Daylength_Factor_In :: struct {
+	// > 0: long-day plant; < 0: short-day plant, the critical day length
+	daylength_requirement:   f64 `unit:"h" src:"cultivar"`,
+	base_daylength:          f64 `unit:"h" src:"cultivar"`,
+	effective_day_length:    f64 `unit:"h" src:"Radiation"`,
+	photoperiodic_daylength: f64 `unit:"h" src:"Radiation"`,
+}
+
 // C++: double monica::cropmodule::fcDaylengthFactor(CropModule*, double
 // daylengthRequirement, double effectiveDayLength, double
 // photoperiodicDayLength, double baseDaylength)
-fc_daylength_factor :: proc(
-	cm: ^Crop_Module,
-	daylength_requirement, effective_day_length, photoperiodic_day_length, base_daylength: f64,
-) -> f64 {
+crop_daylength_factor :: proc(input: Daylength_Factor_In) -> (factor: f64) {
+	daylength_requirement := input.daylength_requirement
+	effective_day_length := input.effective_day_length
+	photoperiodic_day_length := input.photoperiodic_daylength
+	base_daylength := input.base_daylength
+
 	if daylength_requirement > 0.0 {
 		// Long-day plants: development acceleration by day length (day length
 		// requirement is positive).
-		cm.daylength_factor =
+		factor =
 			(photoperiodic_day_length - base_daylength) / (daylength_requirement - base_daylength)
 	} else if daylength_requirement < 0.0 {
 		// Short-day plants: development acceleration by night length (day
@@ -808,42 +819,56 @@ fc_daylength_factor :: proc(
 		critical_day_lenght := -daylength_requirement
 		maximum_day_length := -base_daylength
 		if effective_day_length <= critical_day_lenght {
-			cm.daylength_factor = 1.0
+			factor = 1.0
 		} else {
-			cm.daylength_factor =
+			factor =
 				(effective_day_length - maximum_day_length) /
 				(critical_day_lenght - maximum_day_length)
 		}
 	} else {
-		cm.daylength_factor = 1.0
+		factor = 1.0
 	}
 
-	cm.daylength_factor = max(0.0, min(cm.daylength_factor, 1.0))
+	factor = max(0.0, min(factor, 1.0))
 
-	return cm.daylength_factor
+	return
+}
+
+// What crop_vernalisation_factor needs (plan-component-interfaces.md D2).
+Vernalisation_In :: struct {
+	mean_air_temperature:      f64 `unit:"°C" src:"weather"`,
+	vernalisation_requirement: f64 `unit:"d" src:"cultivar"`,
+	vernalisation_days:        f64 `unit:"d" src:"Phenology" cat:"state"`, // so far
+	time_step:                 f64 `unit:"d"`,
+	enable_fix:                bool `unit:"" src:"crop parameters"`, // vernalisation_factor_fix_enabled
+}
+
+// The crop's own `__enable_vernalisation_factor_fix__`, else the crop module
+// parameters' (the C++ reads it inside fcVernalisationFactor).
+vernalisation_factor_fix_enabled :: proc(cm: ^Crop_Module) -> bool {
+	enable, ok := cm.crop_params.__enable_vernalisation_factor_fix__.?
+	if !ok {
+		enable = cm.mod_params.__enable_vernalisation_factor_fix__
+	}
+	return enable
 }
 
 // C++: pair<double,double> monica::cropmodule::fcVernalisationFactor(CropModule*,
 // double meanAirTemperature, double vernalisationRequirement, double vernalisationDays)
-fc_vernalisation_factor :: proc(
-	cm: ^Crop_Module,
-	mean_air_temperature, vernalisation_requirement, vernalisation_days_in: f64,
+crop_vernalisation_factor :: proc(
+	input: Vernalisation_In,
 ) -> (
-	f64,
-	f64,
+	factor: f64,
+	vernalisation_days: f64,
 ) {
-	vernalisation_days := vernalisation_days_in
-
-	// see if for this crop the fix is requested else use the default one at
-	// the crop module level
-	enable_vernalisation_factor_fix, ok := cm.crop_params.__enable_vernalisation_factor_fix__.?
-	if !ok {
-		enable_vernalisation_factor_fix = cm.mod_params.__enable_vernalisation_factor_fix__
-	}
+	mean_air_temperature := input.mean_air_temperature
+	vernalisation_requirement := input.vernalisation_requirement
+	vernalisation_days = input.vernalisation_days
+	enable_vernalisation_factor_fix := input.enable_fix
 	effective_vernalisation: f64
 
 	if vernalisation_requirement == 0.0 {
-		cm.vernalisation_factor = 1.0
+		factor = 1.0
 	} else {
 		switch {
 		case mean_air_temperature > -4.0 && mean_air_temperature <= 0.0:
@@ -863,30 +888,30 @@ fc_vernalisation_factor :: proc(
 		}
 
 		// old VERNTAGE
-		vernalisation_days += effective_vernalisation * cm.time_step
+		vernalisation_days += effective_vernalisation * input.time_step
 
 		// old VERSCHWELL
 		vernalisation_threshold := min(vernalisation_requirement, 9.0) - 1.0
 
 		if vernalisation_threshold >= 1 {
-			cm.vernalisation_factor =
+			factor =
 				(vernalisation_days - vernalisation_threshold) /
 				(vernalisation_requirement - vernalisation_threshold)
 
 			if enable_vernalisation_factor_fix {
-				cm.vernalisation_factor = min(max(0.0, cm.vernalisation_factor), 1.0)
+				factor = min(max(0.0, factor), 1.0)
 			}
-			if cm.vernalisation_factor < 0 {
-				cm.vernalisation_factor = 0.0 // MP: Vernalisation kann nie negativ sein
+			if factor < 0 {
+				factor = 0.0 // MP: Vernalisation kann nie negativ sein
 			}
 		} else {
-			cm.vernalisation_factor = 1.0
+			factor = 1.0
 			// MP: Vernalisation hat keinen Effekt, wenn kein (bzw. 0 als)
 			// Threshold definiert ist.
 		}
 	}
 
-	return cm.vernalisation_factor, vernalisation_days
+	return
 }
 
 // C++: double monica::cropmodule::fcOxygenDeficiency(CropModule*, double criticalOxygenContent)
@@ -3715,19 +3740,23 @@ crop_module_step :: proc(
 	// are for today's - possibly new - stage. Probably not intended, but it is
 	// the C++ order, kept for identical results; it is visible in
 	// Crop_Carry_Over now instead of being a consequence of the call order.
-	cm.daylength_factor = fc_daylength_factor(
-		cm,
-		cultivar_ps.daylength_requirement[cm.developmental_stage],
-		cm.effective_day_length,
-		cm.photoperiodic_daylength,
-		cultivar_ps.base_daylength[cm.developmental_stage],
+	cm.daylength_factor = crop_daylength_factor(
+		Daylength_Factor_In {
+			daylength_requirement = cultivar_ps.daylength_requirement[cm.developmental_stage],
+			base_daylength = cultivar_ps.base_daylength[cm.developmental_stage],
+			effective_day_length = cm.effective_day_length,
+			photoperiodic_daylength = cm.photoperiodic_daylength,
+		},
 	)
 
-	cm.vernalisation_factor, cm.vernalisation_days = fc_vernalisation_factor(
-		cm,
-		mean_air_temperature,
-		cultivar_ps.vernalisation_requirement[cm.developmental_stage],
-		cm.vernalisation_days,
+	cm.vernalisation_factor, cm.vernalisation_days = crop_vernalisation_factor(
+		Vernalisation_In {
+			mean_air_temperature = mean_air_temperature,
+			vernalisation_requirement = cultivar_ps.vernalisation_requirement[cm.developmental_stage],
+			vernalisation_days = cm.vernalisation_days,
+			time_step = cm.time_step,
+			enable_fix = vernalisation_factor_fix_enabled(cm),
+		},
 	)
 
 	if cm.total_temperature_sum == 0.0 {
