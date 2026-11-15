@@ -51,7 +51,7 @@ apply. 5 at the latest at the end of each phase.
 | 0 | 0.1-0.3 | branch, baseline, reference scans | done (80e13d1) |
 | A | A1-A5 | crop → soil exchange struct, callbacks as return values | done except A4b (moved to E1): 7ca53e2 .. 22d1a1e |
 | B | B1-B3 | previous-day carry-over struct | done: d88401c .. f9e568a |
-| C | C1-C3 | crop fields grouped into component sub-structs | |
+| C | C1-C3 | crop fields grouped into component sub-structs | done: 0866110, afdcffd, C3 in the docs commit |
 | D | D1-D6 | leaf components with input/state structs and tags | |
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | |
 | F | F1-F6 | medium components, management, parameters | |
@@ -203,6 +203,20 @@ What was done:
 - **C3 Field ownership table.** In `architecture.md`, list which sub-struct
   owns each field, and which procedures still write fields of another
   sub-struct. This is the to-do list for D-F.
+
+What was done:
+- C1 (0866110): `reflectpath` resolves fields of `using`-embedded structs by
+  their own name (offsets added at compile time, still one step); the trace
+  walker lists them flat. New unit test.
+- C2 (afdcffd): 16 sub-structs (`Crop_Radiation`, `Crop_Phenology`,
+  `Crop_Canopy`, `Crop_Photosynthesis`, `Crop_O3`, `Crop_Voc`, `Crop_Stress`,
+  `Crop_N_Status`, `Crop_Growth`, `Crop_Root_System`, `Crop_Et0`,
+  `Crop_Water_Uptake`, `Crop_N_Uptake`, `Crop_Carbon`, `Crop_Management`,
+  `Crop_Intercropping`), named `Crop_*` rather than `*_State` so the names stay
+  free for the components' own state structs in D-F. Compound literals (the
+  defaults) work through `using` unchanged.
+- C3: architecture.md, "Field ownership after step 1" in section 6,
+  generated from `field_deps.py writers` (`build/tmp_cm/c3_ownership.py`).
 
 ## Phase D: leaf components with declared inputs (architecture.md §12)
 

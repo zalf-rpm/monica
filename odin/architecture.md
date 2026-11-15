@@ -417,6 +417,68 @@ checks each step.
 After the crop module, `soil_organic.odin` (1676 lines) and
 `soil_moisture.odin` (1483 lines) would deserve the same analysis.
 
+### Field ownership after step 1 (plan-component-interfaces.md C2/C3)
+
+Step 1 is done: `Crop_Module`'s fields are in 16 sub-structs embedded with
+`using` (`crop_module.odin`), named after the components of section 5. A
+field belongs to the group of the procedure that computes it
+(`field_deps.py writers`); the parameters, the soil/site pointers, the
+organic-matter callback and the error state stay direct fields.
+
+| Group | Fields |
+|---|---:|
+| `Crop_Module` | 13 |
+| `Crop_Radiation` | 9 |
+| `Crop_Phenology` | 18 |
+| `Crop_Canopy` | 10 |
+| `Crop_Photosynthesis` | 17 |
+| `Crop_O3` | 5 |
+| `Crop_Voc` | 14 |
+| `Crop_Stress` | 10 |
+| `Crop_N_Status` | 6 |
+| `Crop_Growth` | 17 |
+| `Crop_Root_System` | 11 |
+| `Crop_Et0` | 2 |
+| `Crop_Water_Uptake` | 16 |
+| `Crop_N_Uptake` | 9 |
+| `Crop_Carbon` | 3 |
+| `Crop_Management` | 8 |
+| `Crop_Intercropping` | 2 |
+
+| Procedure (owner) | Writes fields of |
+|---|---|
+| `fc_crop_dry_matter` (Growth) | `Crop_N_Uptake`: total_biomass_n_content; `Crop_Phenology`: growth_cycle_ended; `Crop_Root_System`: current_total_temperature_sum_root, max_rooting_depth, root_biomass, root_biomass_old, root_density, root_diameter, rooting_depth, rooting_depth_m, rooting_zone, total_root_length |
+| `apply_cutting` (Management) | `Crop_Canopy`: leaf_area_index; `Crop_Growth`: aboveground_biomass, organ_biomass, organ_dead_biomass, organ_green_biomass; `Crop_N_Uptake`: total_biomass_n_content |
+| `force_transplant_state` (Management) | `Crop_Canopy`: leaf_area_index; `Crop_Growth`: aboveground_biomass, organ_biomass, organ_green_biomass, total_biomass; `Crop_N_Uptake`: n_concentration_aboveground_biomass, n_concentration_root, total_biomass_n_content; `Crop_Phenology`: current_temperature_sum, current_total_temperature_sum; `Crop_Root_System`: root_biomass, rooting_depth, rooting_depth_m, rooting_zone, total_root_length |
+| `set_perennial_crop_parameters` (Management) | `Crop_Module`: perennial_crop_params |
+| `fc_crop_developmental_stage` (Phenology) | `Crop_Module`: error_message, error_status |
+| `fc_update_crop_parameters_for_perennial` (Phenology) | `Crop_Module`: crop_params, no_of_dev_stages, no_of_organs |
+| `fc_crop_photosynthesis` (Photosynthesis) | `Crop_O3`: o3_long_term_damage, o3_senescence, o3_short_term_damage, o3_sum_uptake, o3_w_stomatal_closure; `Crop_Voc`: full24, full240, guenther_emissions, index24, index240, jjv_emissions, rad24, rad240, tfol24, tfol240 |
+
+| Group | Written by crop_module_step itself |
+|---|---|
+| `Crop_Canopy` | kc_factor, kcb_factor, soil_coverage |
+| `Crop_Carbon` | gross_primary_production, net_primary_production |
+| `Crop_Et0` | reference_evapotranspiration |
+| `Crop_Management` | cutting_delay_days, days_since_transplant, transplant_efficiency |
+| `Crop_Phenology` | anthesis_day, daylength_factor, maturity_day, maturity_reached, no_of_crop_steps, perennial_crop_dormancy_period_end_date, relative_total_development, stem_elongation_event_fired, vernalisation_days |
+| `Crop_Stress` | oxygen_deficit |
+| `Crop_Water_Uptake` | transpiration_deficit |
+
+What the cross-writes mean for the next steps:
+
+- `fc_crop_dry_matter` computes the root system (11 fields): step E1 cuts it
+  out. It also ends the growth cycle (`growth_cycle_ended`, phenology) and
+  updates the N content (`total_biomass_n_content`, N uptake).
+- `fc_crop_photosynthesis` computes O3 and VOC: step E2.
+- Management (`force_transplant_state`, `apply_cutting`) writes canopy,
+  growth, N, phenology and root state: step F6 (per-component commands).
+- The perennial reset in development replaces the parameters
+  (`crop_params`, organ and stage counts): step F6, parameters as a reference.
+- The step itself computes what isn't a procedure yet: Kc and Kcb (canopy,
+  D3), GPP/NPP (carbon), the phenology events and bookkeeping (F1), the ET0
+  choice (E3), and the water-stress clamp (section 8).
+
 ## 7. The other modules
 
 The crop module is the clearest case, but not the only one. In order of
