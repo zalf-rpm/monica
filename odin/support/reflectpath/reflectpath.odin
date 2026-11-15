@@ -286,7 +286,7 @@ compile :: proc(
 
 			#partial switch info in ti.variant {
 			case runtime.Type_Info_Struct:
-				f := reflect.struct_field_by_name(cur, seg)
+				f := struct_field_through_using(cur, seg)
 				if f.type == nil {
 					return plan, mkerr(
 						.UNKNOWN_FIELD,
@@ -831,7 +831,43 @@ variant_has_field :: proc(v: ^runtime.Type_Info, field: string) -> bool {
 	if _, is_struct := t.variant.(runtime.Type_Info_Struct); !is_struct {
 		return false
 	}
-	return reflect.struct_field_by_name(t.id, field).type != nil
+	return struct_field_through_using(t.id, field).type != nil
+}
+
+// reflect.struct_field_by_name, but like Odin's own selector it also finds a
+// field of a struct embedded with `using` (by value): `crop.leaf_area_index`
+// when Crop_Module has `using canopy: Canopy_State`. The returned offset is
+// relative to T (the embedding offsets added up), so a path compiles to the
+// same single FIELD step as before the field moved. Direct fields first,
+// then the `using` fields in declaration order, depth-first. A `using` of a
+// pointer is not looked through (it would need a load); its fields are
+// reached by naming it.
+@(private)
+struct_field_through_using :: proc(T: typeid, name: string) -> (field: reflect.Struct_Field) {
+	field = reflect.struct_field_by_name(T, name)
+	if field.type != nil {
+		return
+	}
+	ti := runtime.type_info_base(type_info_of(T))
+	s, is_struct := ti.variant.(runtime.Type_Info_Struct)
+	if !is_struct {
+		return
+	}
+	for i in 0 ..< int(s.field_count) {
+		if !s.usings[i] {
+			continue
+		}
+		ft := runtime.type_info_base(s.types[i])
+		if _, embedded := ft.variant.(runtime.Type_Info_Struct); !embedded {
+			continue
+		}
+		inner := struct_field_through_using(s.types[i].id, name)
+		if inner.type != nil {
+			inner.offset += s.offsets[i]
+			return inner
+		}
+	}
+	return {}
 }
 
 @(private)

@@ -118,6 +118,14 @@ walk :: proc(t: ^Tracer, path: string, v: any) {
 		fields := reflect.struct_fields_zipped(v.id)
 		for f in fields {
 			fv := reflect.struct_field_value(v, f)
+			// a struct embedded with `using` contributes its fields under their
+			// own names, as Odin's selector (and reflectpath) sees them
+			if f.is_using {
+				if _, embedded := reflect.type_info_base(f.type).variant.(reflect.Type_Info_Struct); embedded {
+					walk(t, path, fv)
+					continue
+				}
+			}
 			sub := join(t, path, f.name)
 			walk(t, sub, fv)
 		}

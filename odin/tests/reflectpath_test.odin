@@ -604,3 +604,61 @@ test_reflectpath_leaf_typing :: proc(t: ^testing.T) {
 }
 
 _ :: runtime
+
+// Fields of structs embedded with `using` resolve under their own name, as
+// Odin's selector does (plan-component-interfaces.md C1): splitting a struct
+// into embedded sub-structs must not change any output path.
+@(private = "file")
+Using_Leaf :: struct {
+	deep: f64 `unit:"mm"`,
+}
+
+@(private = "file")
+Using_Part :: struct {
+	before:          i32,
+	part_value:      f64 `unit:"m2 m-2"`,
+	using leaf_part: Using_Leaf,
+}
+
+@(private = "file")
+Using_Root :: struct {
+	first:      f64,
+	using part: Using_Part,
+	last:       f64,
+	ptr_part:   ^Using_Part,
+}
+
+@(test)
+test_reflectpath_through_using :: proc(t: ^testing.T) {
+	r := Using_Root{first = 1, last = 9}
+	r.part.before = 2
+	r.part_value = 3.5
+	r.deep = 4.25
+	other := Using_Part{part_value = 7}
+	r.ptr_part = &other
+
+	cases := []struct {
+		path: string,
+		want: f64,
+		unit: string,
+	}{
+		{"first", 1, ""},
+		{"part_value", 3.5, "m2 m-2"}, // through one using
+		{"deep", 4.25, "mm"}, // through two
+		{"part.part_value", 3.5, "m2 m-2"}, // the explicit path still works
+		{"part.leaf_part.deep", 4.25, "mm"},
+		{"last", 9, ""},
+		{"ptr_part.part_value", 7, "m2 m-2"},
+	}
+	for c in cases {
+		plan, err := rp.compile(typeid_of(Using_Root), c.path, context.temp_allocator)
+		if !testing.expectf(t, !rp.failed(err), "%s: %v", c.path, err) {
+			continue
+		}
+		v, ok := rp.resolve_f64(&plan, r, 0)
+		testing.expectf(t, ok && v == c.want, "%s: %v (%v), want %v", c.path, v, ok, c.want)
+		testing.expectf(t, plan.unit == c.unit, "%s: unit %q, want %q", c.path, plan.unit, c.unit)
+	}
+	_, err := rp.compile(typeid_of(Using_Root), "nope", context.temp_allocator)
+	testing.expect(t, rp.failed(err))
+}
