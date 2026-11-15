@@ -189,16 +189,6 @@ Crop_Voc :: struct {
 	crop_photosynthesis_results: Voc_Cp_Data,
 }
 
-// Crop N status: critical and target N concentrations, N stress (fc_crop_nitrogen).
-Crop_N_Status :: struct {
-	critical_n_concentration:                f64 `unit:"kgN kgDM-1"`, //! old GEHMIN
-	target_n_concentration:                  f64 `unit:"kgN kgDM-1"`, //! old GEHMAX
-	crop_n_redux:                            f64 `unit:"0-1"`, //! old REDUK
-	root_n_redux:                            f64 `unit:"0-1"`, //! old REDWU
-	n_concentration_aboveground_biomass_old: f64, //! old GEHALT
-	n_concentration_root_old:                f64, //! old
-}
-
 // Growth and partitioning: organ biomass, senescence, reserves, N demand (first part of
 // fc_crop_dry_matter).
 Crop_Growth :: struct {
@@ -1985,62 +1975,6 @@ calculate_voc_emissions :: proc(
 // whichever checkpoint actually needs them (phase 7's output table).
 // ---------------------------------------------------------------------------
 
-// C++: void monica::cropmodule::fcCropNitrogen(CropModule*)
-//
-// The biomass and N concentrations are yesterday's (Crop_Carry_Over): growth
-// and N uptake run later in the step.
-fc_crop_nitrogen :: proc(
-	cm: ^Crop_Module,
-	aboveground_biomass, belowground_biomass: f64,
-	n_concentration_aboveground_biomass, n_concentration_root: f64,
-) {
-	species_ps := &cm.crop_params.species_params
-
-	cm.critical_n_concentration =
-		species_ps.n_concentration_pn *
-		(1.0 +
-				(species_ps.n_concentration_b0 *
-						cr_math.exp(
-							-0.26 * (aboveground_biomass + belowground_biomass) / 1000.0,
-						))) /
-		100.0 // [kg ha-1 -> t ha-1]
-	cm.target_n_concentration = cm.critical_n_concentration * species_ps.luxury_n_coeff
-	cm.n_concentration_aboveground_biomass_old = n_concentration_aboveground_biomass
-	cm.n_concentration_root_old = n_concentration_root
-
-	if n_concentration_root < 0.01 {
-		if n_concentration_root <= 0.005 {
-			cm.root_n_redux = 0.0
-		} else {
-			// old WUX
-			root_n_redux_helper := (n_concentration_root - 0.005) / 0.005
-			cm.root_n_redux = 1.0 - libc.sqrt(1.0 - root_n_redux_helper * root_n_redux_helper)
-		}
-	} else {
-		cm.root_n_redux = 1.0
-	}
-
-	if n_concentration_aboveground_biomass < cm.critical_n_concentration {
-		if n_concentration_aboveground_biomass <= species_ps.minimum_n_concentration {
-			cm.crop_n_redux = 0.0
-		} else {
-			crop_n_redux_helper :=
-				(n_concentration_aboveground_biomass - species_ps.minimum_n_concentration) /
-				(cm.critical_n_concentration - species_ps.minimum_n_concentration)
-
-			// New Monica approach
-			cm.crop_n_redux =
-				1.0 - cr_math.exp(species_ps.minimum_n_concentration - (5.0 * crop_n_redux_helper))
-		}
-	} else {
-		cm.crop_n_redux = 1.0
-	}
-
-	if !cm.sim_params.nitrogen_response_on {
-		cm.crop_n_redux = 1.0
-	}
-}
-
 // C++: pair<vector<double>,double> monica::cropmodule::calcRootDensityFactorAndSum(const CropModule*)
 calc_root_density_factor_and_sum :: proc(
 	cm: ^Crop_Module,
@@ -3503,12 +3437,16 @@ crop_module_step :: proc(
 			},
 		)
 
-		fc_crop_nitrogen(
-			cm,
-			prev.aboveground_biomass,
-			prev.belowground_biomass,
-			prev.n_concentration_aboveground_biomass,
-			prev.n_concentration_root,
+		n_status_step(
+			&cm.n_status,
+			&cm.crop_params,
+			N_Status_In {
+				aboveground_biomass = prev.aboveground_biomass,
+				belowground_biomass = prev.belowground_biomass,
+				n_concentration_aboveground_biomass = prev.n_concentration_aboveground_biomass,
+				n_concentration_root = prev.n_concentration_root,
+				nitrogen_response_on = cm.sim_params.nitrogen_response_on,
+			},
 		)
 
 		fc_crop_dry_matter(

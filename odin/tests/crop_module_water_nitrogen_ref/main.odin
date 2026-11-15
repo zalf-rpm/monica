@@ -199,12 +199,11 @@ day_step :: proc(
 		if cm.transpiration_deficit < 0.0 {cm.transpiration_deficit = 0.0} // the C++ clamp, now in the step
 		core.stress_drought_impact_on_fertility(&cm.stress, &cm.crop_params, {cm.transpiration_deficit, cm.developmental_stage, cm.storage_organ})
 
-		core.fc_crop_nitrogen(
-			cm,
-			cm.aboveground_biomass,
-			cm.belowground_biomass,
-			cm.n_concentration_aboveground_biomass,
-			cm.n_concentration_root,
+		core.n_status_step(
+			&cm.n_status,
+			&cm.crop_params,
+			{cm.aboveground_biomass, cm.belowground_biomass, cm.n_concentration_aboveground_biomass,
+			 cm.n_concentration_root, cm.sim_params.nitrogen_response_on},
 		)
 
 		core.fc_crop_dry_matter(
