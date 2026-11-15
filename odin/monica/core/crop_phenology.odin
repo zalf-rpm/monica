@@ -47,7 +47,7 @@ Phenology_In :: struct {
 	daylength_factor:                       f64 `unit:"0-1" src:"Phenology" lag:"1d"`,
 	vernalisation_factor:                   f64 `unit:"0-1" src:"Phenology" lag:"1d"`,
 	oxygen_deficit:                         f64 `unit:"0-1" src:"Stress"`,
-	storage_organ:                          int `unit:"" src:"Growth"`,
+	storage_organ:                          int `unit:"" src:"crop parameters"`,
 	no_of_dev_stages:                       int `unit:"" src:"crop parameters"`,
 	time_step:                              f64 `unit:"d"`,
 	emergence_moisture_control_on:          bool `unit:"" src:"simulation parameters"`,

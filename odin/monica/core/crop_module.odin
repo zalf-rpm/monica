@@ -59,6 +59,7 @@ Organ_Sugar :: 5
 Crop_Module :: struct {
 	no_of_organs:          int, // C++ size_t
 	no_of_dev_stages:      int, // C++ size_t
+	storage_organ:         int, // index of the species' storage organ, set when the crop is made
 	// C++: Intercropping *intercropping - Intercropping itself is dropped
 	// (Cap'n Proto RPC, see plan-odin.md's dropped table); every real use of
 	// this field is behind `if (isIntercropping)`, always false in every

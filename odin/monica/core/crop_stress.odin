@@ -25,7 +25,7 @@ Crop_Stress :: struct {
 }
 
 Oxygen_Deficiency_In :: struct {
-	critical_oxygen_content:     f64 `unit:"m3 m-3" src:"species"`, // at yesterday's stage
+	critical_oxygen_content:     f64 `unit:"m3 m-3" src:"species" lag:"1d"`, // at yesterday's stage
 	developmental_stage:         int `unit:"" src:"Phenology" lag:"1d"`,
 	rooting_depth:               int `unit:"layer#" src:"Root_System" lag:"1d"`,
 	time_under_anoxia_threshold: []int `unit:"d" src:"crop module parameters"`, // per stage
@@ -229,7 +229,7 @@ Drought_Impact_In :: struct {
 	// yesterday's transpiration deficit, clamped to >= 0 (crop_module_step)
 	water_stress:        f64 `unit:"0-1" src:"Water_Uptake" lag:"1d"`,
 	developmental_stage: int `unit:"" src:"Phenology"`,
-	storage_organ:       int `unit:"" src:"Growth"`,
+	storage_organ:       int `unit:"" src:"crop parameters"`,
 }
 
 // C++: void monica::cropmodule::fcDroughtImpactOnFertility(CropModule*)

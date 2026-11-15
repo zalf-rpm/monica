@@ -12,7 +12,6 @@ import "core:slice"
 // Growth and partitioning: organ biomass, senescence, reserves, N demand (first part of
 // fc_crop_dry_matter).
 Crop_Growth :: struct {
-	storage_organ:                  int,
 	organ_biomass:                  [dynamic]f64, //! old WORG
 	organ_green_biomass:            [dynamic]f64,
 	organ_dead_biomass:             [dynamic]f64, //! old WDORG
@@ -43,9 +42,11 @@ Growth_In :: struct {
 	developmental_stage:         int `unit:"" src:"Phenology"`,
 	current_temperature_sum:     []f64 `unit:"°C d" src:"Phenology"`, // per stage
 	n_concentration_root:        f64 `unit:"kgN kgDM-1" src:"N_Uptake" lag:"1d"`,
-	// N uptake's; growth subtracts the dead roots' N and returns the new value
-	total_biomass_n_content:     f64 `unit:"kgN ha-1" src:"N_Uptake"`,
+	// N uptake's, read in place before N uptake runs (so yesterday's); growth
+	// subtracts the dead roots' N and returns the new value
+	total_biomass_n_content:     f64 `unit:"kgN ha-1" src:"N_Uptake" lag:"1d"`,
 	no_of_organs:                int `unit:"" src:"crop parameters"`,
+	storage_organ:               int `unit:"" src:"crop parameters"`, // the organ index
 	time_step:                   f64 `unit:"d"`,
 	max_crop_n_demand:           f64 `unit:"kgN ha-1" src:"crop module parameters"`, // per day
 }
@@ -65,6 +66,7 @@ growth_in :: proc(cm: ^Crop_Module, n_concentration_root: f64) -> Growth_In {
 		n_concentration_root = n_concentration_root,
 		total_biomass_n_content = cm.total_biomass_n_content,
 		no_of_organs = cm.no_of_organs,
+		storage_organ = cm.storage_organ,
 		time_step = cm.time_step,
 		max_crop_n_demand = cm.mod_params.max_crop_n_demand,
 	}
@@ -119,7 +121,7 @@ growth_step :: proc(
 	_ = tmp_regulatory_factor
 
 	mobilization_from_storage :=
-		g.organ_biomass[g.storage_organ] *
+		g.organ_biomass[input.storage_organ] *
 		species_ps.stage_mobil_from_storage_coeff[input.developmental_stage] *
 		input.k_tkc
 
@@ -201,7 +203,7 @@ growth_step :: proc(
 
 				use_mobilization_from_storage := true
 				if use_mobilization_from_storage {
-					if i_organ != g.storage_organ {
+					if i_organ != input.storage_organ {
 						g.organ_growth_increment[i_organ] +=
 							mobilization_from_storage *
 							(assimilate_partitioning_coeff_old +
@@ -234,13 +236,13 @@ growth_step :: proc(
 		}
 
 		g.organ_biomass[i_organ] += g.organ_growth_increment[i_organ] * input.time_step // [kg CH2O ha-1]
-		if i_organ == g.storage_organ {
+		if i_organ == input.storage_organ {
 			g.organ_dead_biomass[i_organ] += g.organ_senescence_increment[i_organ] * input.time_step
 		} else {
 			// root, shoot, leaf
 			reallocation_rate :=
 				assimilate_reallocation * g.organ_senescence_increment[i_organ] * input.time_step
-			g.organ_biomass[g.storage_organ] += reallocation_rate
+			g.organ_biomass[input.storage_organ] += reallocation_rate
 			daily_dead_biomass_increment := g.organ_senescence_increment[i_organ] - reallocation_rate
 
 			if i_organ == Organ_Root {
