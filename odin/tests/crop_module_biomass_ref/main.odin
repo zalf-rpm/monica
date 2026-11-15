@@ -24,8 +24,6 @@ import "core:strings"
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
-noop_fire_event :: proc(event: string) {}
-
 // Odin `proc` values can't capture surrounding state (no closures), unlike
 // C++'s capturing lambdas - these test-driver-only globals are the
 // workaround, matching the "driver globals for callback wiring" pattern this
@@ -35,10 +33,6 @@ g_soil_moisture: ^core.Soil_Moisture
 g_last_organic_matter_total: f64
 g_last_organic_matter_nconc: f64
 g_organic_matter_call_count: int
-
-real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
-}
 
 recording_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {
 	// Odin map iteration order is unspecified, unlike C++'s std::map (sorted
@@ -143,12 +137,9 @@ day_step :: proc(
 
 	julian_day := int(d.julian_day(current_date))
 
-	core.fc_radiation(cm, f64(julian_day), global_radiation, sunshine_hours)
+	cm.radiation = core.crop_radiation({f64(julian_day), cm.site_params.latitude, global_radiation, sunshine_hours})
 
-	cm.oxygen_deficit = core.fc_oxygen_deficiency(
-		cm,
-		critical_oxygen_content[cm.developmental_stage],
-	)
+	core.stress_oxygen_deficiency(&cm.stress, {critical_oxygen_content = critical_oxygen_content[cm.developmental_stage], developmental_stage = cm.developmental_stage, rooting_depth = cm.rooting_depth, time_under_anoxia_threshold = cm.mod_params.time_under_anoxia_threshold[:], time_step = cm.time_step, soil_layers = cm.soil_column.layers[:]})
 
 	old_developmental_stage := cm.developmental_stage
 
@@ -170,14 +161,18 @@ day_step :: proc(
 		}
 	}
 	if !perennial || d.ge(current_date, cm.perennial_crop_dormancy_period_end_date) {
-		core.fc_crop_developmental_stage(
-			cm,
-			mean_air_temperature,
-			cm.soil_column.layers[0].soil_moisture_m3,
-			cm.soil_column.layers[0].field_capacity,
-			cm.soil_column.layers[0].permanent_wilting_point,
-			current_date,
-		)
+		{
+			reset_perennial, irregular := core.phenology_development(
+				&cm.phenology,
+				&cm.crop_params,
+				core.phenology_in(cm, mean_air_temperature, current_date, cm.transpiration_deficit, cm.crop_n_redux, cm.daylength_factor, cm.vernalisation_factor),
+			)
+			if irregular {cm.error_status = true; cm.error_message = "irregular developmental stage"}
+			if reset_perennial {
+				core.fc_update_crop_parameters_for_perennial(cm)
+				core.phenology_reset_perennial(&cm.phenology, &cm.crop_params, cm.no_of_dev_stages, current_date)
+			}
+		}
 	}
 
 	if core.is_anthesis_day(cm, old_developmental_stage, cm.developmental_stage) {
@@ -187,20 +182,9 @@ day_step :: proc(
 		cm.maturity_reached = true
 	}
 
-	cm.daylength_factor = core.fc_daylength_factor(
-		cm,
-		daylength_requirement[cm.developmental_stage],
-		cm.effective_day_length,
-		cm.photoperiodic_daylength,
-		base_daylength[cm.developmental_stage],
-	)
+	cm.daylength_factor = core.crop_daylength_factor({daylength_requirement = daylength_requirement[cm.developmental_stage], base_daylength = base_daylength[cm.developmental_stage], effective_day_length = cm.effective_day_length, photoperiodic_daylength = cm.photoperiodic_daylength})
 
-	cm.vernalisation_factor, cm.vernalisation_days = core.fc_vernalisation_factor(
-		cm,
-		mean_air_temperature,
-		vernalisation_requirement[cm.developmental_stage],
-		cm.vernalisation_days,
-	)
+	cm.vernalisation_factor, cm.vernalisation_days = core.crop_vernalisation_factor({mean_air_temperature = mean_air_temperature, vernalisation_requirement = vernalisation_requirement[cm.developmental_stage], vernalisation_days = cm.vernalisation_days, time_step = cm.time_step, enable_fix = core.vernalisation_factor_fix_enabled(cm)})
 
 	if cm.total_temperature_sum == 0.0 {
 		cm.relative_total_development = 0.0
@@ -208,61 +192,85 @@ day_step :: proc(
 		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
-	if cm.developmental_stage == 0 {
-		cm.kc_factor = cm.site_params.bare_soil_kc_factor
-	} else {
-		cm.kc_factor = core.fc_kc_factor(
-			cm,
-			stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
-			stage_kc_factor[cm.developmental_stage],
-			stage_kc_factor[cm.developmental_stage - 1],
-		)
-	}
+	core.canopy_kc_factor(
+		&cm.canopy,
+		&cm.crop_params,
+		{cm.developmental_stage, cm.current_temperature_sum[:], cm.site_params.bare_soil_kc_factor},
+	)
 
 	if cm.developmental_stage > 0 {
 		max_crop_height := max_crop_height
 
-		core.fc_crop_size(cm, max_crop_height)
-
-		core.fc_crop_green_area(
-			cm,
-			mean_air_temperature,
-			cm.organ_growth_increment[core.Organ_Leaf],
-			cm.organ_senescence_increment[core.Organ_Leaf],
-			specific_leaf_area[cm.developmental_stage - 1],
-			specific_leaf_area[cm.developmental_stage],
-			specific_leaf_area[1],
-			stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
+		core.canopy_growth(
+			&cm.canopy,
+			&cm.crop_params,
+			{
+				developmental_stage = cm.developmental_stage,
+				mean_air_temperature = mean_air_temperature,
+				max_crop_height = max_crop_height,
+				current_total_temperature_sum = cm.current_total_temperature_sum,
+				current_temperature_sum = cm.current_temperature_sum[:],
+				leaf_growth_increment = cm.organ_growth_increment[core.Organ_Leaf],
+				leaf_senescence_increment = cm.organ_senescence_increment[core.Organ_Leaf],
+				enable_t_response_leaf_expansion = cm.mod_params.__enable_T_response_leaf_expansion__,
+				time_step = cm.time_step,
+			},
 		)
 
-		cm.soil_coverage = core.fc_soil_coverage(cm)
+		core.photosynthesis_step(&cm.photosynthesis, &cm.o3, &cm.voc, &cm.crop_params, cm.mod_params, core.photosynthesis_in(cm, mean_air_temperature, max_air_temperature, min_air_temperature, ATM_CO2, ATM_O3, current_date, cm.transpiration_deficit, cm.crop_n_redux, cm.crop_frost_redux, cm.rooting_depth, cm.reference_evapotranspiration))
 
-		core.fc_crop_photosynthesis(
-			cm,
-			mean_air_temperature,
-			max_air_temperature,
-			min_air_temperature,
-			ATM_CO2,
-			ATM_O3,
-			current_date,
-		)
-
-		core.fc_heat_stress_impact(cm, max_air_temperature, min_air_temperature)
+		core.stress_heat(&cm.stress, &cm.crop_params, {max_air_temperature, min_air_temperature, cm.current_total_temperature_sum})
 
 		if frost_kill_on {
-			core.fc_frost_kill(cm, max_air_temperature, min_air_temperature)
+			core.stress_frost_kill(&cm.stress, &cm.crop_params, core.frost_kill_in(cm, max_air_temperature, min_air_temperature, core.snow_for_crop(g_soil_moisture)))
 		}
 
-		core.fc_drought_impact_on_fertility(cm)
+		if cm.transpiration_deficit < 0.0 {cm.transpiration_deficit = 0.0} // the C++ clamp, now in the step
+		core.stress_drought_impact_on_fertility(&cm.stress, &cm.crop_params, {cm.transpiration_deficit, cm.developmental_stage, cm.storage_organ})
 
-		core.fc_crop_nitrogen(cm)
+		core.n_status_step(
+			&cm.n_status,
+			&cm.crop_params,
+			{cm.aboveground_biomass, cm.belowground_biomass, cm.n_concentration_aboveground_biomass,
+			 cm.n_concentration_root, cm.sim_params.nitrogen_response_on},
+		)
 
-		core.fc_crop_dry_matter(cm, mean_air_temperature, allocator)
+		{
+			// the three parts of the C++ fcCropDryMatter, as in crop_module_step
+			dead_root_biomass, total_biomass_n_content, growth_cycle_ended := core.growth_step(
+				&cm.growth,
+				&cm.crop_params,
+				core.growth_in(cm, cm.n_concentration_root),
+			)
+			cm.total_biomass_n_content = total_biomass_n_content
+			if growth_cycle_ended {cm.growth_cycle_ended = true}
+			dead_roots := core.root_system_step(
+				&cm.roots,
+				&cm.crop_params,
+				{
+					root_biomass = cm.organ_biomass[core.Organ_Root],
+					dead_root_biomass = dead_root_biomass,
+					n_concentration_root = cm.n_concentration_root,
+					water_stress = cm.transpiration_deficit,
+					developmental_stage = cm.developmental_stage,
+					no_of_dev_stages = cm.no_of_dev_stages,
+					mean_air_temperature = mean_air_temperature,
+					soil_layers = cm.soil_column.layers[:],
+					number_of_organic_layers = cm.soil_column.number_of_organic_layers,
+					impenetrable_layer_depth = cm.site_params.impenetrable_layer_depth,
+					max_effective_rooting_depth = cm.site_params.max_effective_rooting_depth,
+					enable_pasw_root_penetration = cm.mod_params.__enable_PASW_root_penetration__,
+					disable_daily_root_biomass_to_soil = cm.mod_params.__disable_daily_root_biomass_to_soil__,
+				},
+				allocator,
+			)
+			if len(dead_roots) > 0 {
+				recording_add_organic_matter(dead_roots, cm.n_concentration_root)
+			}
+			core.growth_limit_n_demand(&cm.growth, &cm.crop_params, {cm.total_root_length, cm.current_total_temperature_sum, cm.total_temperature_sum, cm.time_step})
+		}
 
-		cm.gross_primary_production = core.fc_gross_primary_production(cm)
-		cm.net_primary_production = core.fc_net_primary_production(cm, cm.total_respired)
+		core.carbon_step(&cm.carbon, {cm.gross_assimilates, cm.total_respired})
 	}
 
 	cm.no_of_crop_steps += 1
@@ -350,7 +358,6 @@ main :: proc() {
 		cpp.sim_params.layer_thickness,
 		a,
 	)
-	sm.crop_module = nil
 	g_soil_moisture = &sm
 
 	monica_parameters_dir := tl.fix_system_separator(
@@ -388,9 +395,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		noop_fire_event,
-		recording_add_organic_matter,
-		real_get_snow_depth,
 		nil,
 		a,
 	)
@@ -450,6 +454,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&sm,
+			core.crop_to_soil_of(nil, false),
 			groundwater_depth,
 			precip,
 			tmax,
@@ -512,7 +517,6 @@ main :: proc() {
 			cpp.sim_params.layer_thickness,
 			a,
 		)
-		sm2.crop_module = nil
 		g_soil_moisture = &sm2
 
 		senescent_crop_params := wheat_crop_params
@@ -544,9 +548,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_fire_event,
-			recording_add_organic_matter,
-			real_get_snow_depth,
 			nil,
 			a,
 		)
@@ -578,6 +579,7 @@ main :: proc() {
 			)
 			core.soil_moisture_step(
 				&sm2,
+				core.crop_to_soil_of(nil, false),
 				groundwater_depth,
 				precip,
 				tmax,

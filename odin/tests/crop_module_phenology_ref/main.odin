@@ -21,9 +21,6 @@ import "core:os"
 import "core:strconv"
 import "core:strings"
 
-noop_fire_event :: proc(event: string) {}
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
-noop_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {return 0.0, 0.0}
 
 @(private)
 jn :: proc(path, name: string) -> string {
@@ -102,12 +99,9 @@ phenology_day_step :: proc(
 
 	julian_day := julian_day_override >= 0 ? julian_day_override : int(d.julian_day(current_date))
 
-	core.fc_radiation(cm, f64(julian_day), global_radiation, sunshine_hours)
+	cm.radiation = core.crop_radiation({f64(julian_day), cm.site_params.latitude, global_radiation, sunshine_hours})
 
-	cm.oxygen_deficit = core.fc_oxygen_deficiency(
-		cm,
-		critical_oxygen_content[cm.developmental_stage],
-	)
+	core.stress_oxygen_deficiency(&cm.stress, {critical_oxygen_content = critical_oxygen_content[cm.developmental_stage], developmental_stage = cm.developmental_stage, rooting_depth = cm.rooting_depth, time_under_anoxia_threshold = cm.mod_params.time_under_anoxia_threshold[:], time_step = cm.time_step, soil_layers = cm.soil_column.layers[:]})
 
 	old_developmental_stage := cm.developmental_stage
 
@@ -130,14 +124,18 @@ phenology_day_step :: proc(
 		}
 	}
 	if !perennial || d.ge(current_date, cm.perennial_crop_dormancy_period_end_date) {
-		core.fc_crop_developmental_stage(
-			cm,
-			mean_air_temperature,
-			cm.soil_column.layers[0].soil_moisture_m3,
-			cm.soil_column.layers[0].field_capacity,
-			cm.soil_column.layers[0].permanent_wilting_point,
-			current_date,
-		)
+		{
+			reset_perennial, irregular := core.phenology_development(
+				&cm.phenology,
+				&cm.crop_params,
+				core.phenology_in(cm, mean_air_temperature, current_date, cm.transpiration_deficit, cm.crop_n_redux, cm.daylength_factor, cm.vernalisation_factor),
+			)
+			if irregular {cm.error_status = true; cm.error_message = "irregular developmental stage"}
+			if reset_perennial {
+				core.fc_update_crop_parameters_for_perennial(cm)
+				core.phenology_reset_perennial(&cm.phenology, &cm.crop_params, cm.no_of_dev_stages, current_date)
+			}
+		}
 	}
 
 	if core.is_anthesis_day(cm, old_developmental_stage, cm.developmental_stage) {
@@ -147,20 +145,9 @@ phenology_day_step :: proc(
 		cm.maturity_reached = true
 	}
 
-	cm.daylength_factor = core.fc_daylength_factor(
-		cm,
-		daylength_requirement[cm.developmental_stage],
-		cm.effective_day_length,
-		cm.photoperiodic_daylength,
-		base_daylength[cm.developmental_stage],
-	)
+	cm.daylength_factor = core.crop_daylength_factor({daylength_requirement = daylength_requirement[cm.developmental_stage], base_daylength = base_daylength[cm.developmental_stage], effective_day_length = cm.effective_day_length, photoperiodic_daylength = cm.photoperiodic_daylength})
 
-	cm.vernalisation_factor, cm.vernalisation_days = core.fc_vernalisation_factor(
-		cm,
-		mean_air_temperature,
-		vernalisation_requirement[cm.developmental_stage],
-		cm.vernalisation_days,
-	)
+	cm.vernalisation_factor, cm.vernalisation_days = core.crop_vernalisation_factor({mean_air_temperature = mean_air_temperature, vernalisation_requirement = vernalisation_requirement[cm.developmental_stage], vernalisation_days = cm.vernalisation_days, time_step = cm.time_step, enable_fix = core.vernalisation_factor_fix_enabled(cm)})
 
 	if cm.total_temperature_sum == 0.0 {
 		cm.relative_total_development = 0.0
@@ -168,36 +155,30 @@ phenology_day_step :: proc(
 		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
-	if cm.developmental_stage == 0 {
-		cm.kc_factor = cm.site_params.bare_soil_kc_factor
-	} else {
-		cm.kc_factor = core.fc_kc_factor(
-			cm,
-			stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
-			stage_kc_factor[cm.developmental_stage],
-			stage_kc_factor[cm.developmental_stage - 1],
-		)
-	}
+	core.canopy_kc_factor(
+		&cm.canopy,
+		&cm.crop_params,
+		{cm.developmental_stage, cm.current_temperature_sum[:], cm.site_params.bare_soil_kc_factor},
+	)
 
 	if cm.developmental_stage > 0 {
 		max_crop_height := max_crop_height
 
-		core.fc_crop_size(cm, max_crop_height)
-
-		core.fc_crop_green_area(
-			cm,
-			mean_air_temperature,
-			cm.organ_growth_increment[core.Organ_Leaf],
-			cm.organ_senescence_increment[core.Organ_Leaf],
-			specific_leaf_area[cm.developmental_stage - 1],
-			specific_leaf_area[cm.developmental_stage],
-			specific_leaf_area[1],
-			stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
+		core.canopy_growth(
+			&cm.canopy,
+			&cm.crop_params,
+			{
+				developmental_stage = cm.developmental_stage,
+				mean_air_temperature = mean_air_temperature,
+				max_crop_height = max_crop_height,
+				current_total_temperature_sum = cm.current_total_temperature_sum,
+				current_temperature_sum = cm.current_temperature_sum[:],
+				leaf_growth_increment = cm.organ_growth_increment[core.Organ_Leaf],
+				leaf_senescence_increment = cm.organ_senescence_increment[core.Organ_Leaf],
+				enable_t_response_leaf_expansion = cm.mod_params.__enable_T_response_leaf_expansion__,
+				time_step = cm.time_step,
+			},
 		)
-
-		cm.soil_coverage = core.fc_soil_coverage(cm)
 	}
 
 	cm.no_of_crop_steps += 1
@@ -313,9 +294,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_fire_event,
-			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)
@@ -403,9 +381,6 @@ main :: proc() {
 			&cpp.site_params,
 			&synth_crop_mod_params,
 			&cpp.sim_params,
-			noop_fire_event,
-			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)

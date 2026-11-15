@@ -24,10 +24,6 @@ g_soil_moisture: ^core.Soil_Moisture
 g_soil_organic: ^core.Soil_Organic
 g_residue_params: ^p.Organic_Matter_Parameters
 
-real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
-}
-
 real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {
 	core.soil_organic_add_organic_matter(
 		g_soil_organic,
@@ -36,8 +32,6 @@ real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64)
 		n_concentration,
 	)
 }
-
-no_fire_event :: proc(event: string) {}
 
 dump_model_harvest :: proc(t: ^tr.Tracer, path: string, model: ^core.Monica_Model) {
 	tr.dump(
@@ -174,18 +168,12 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		no_fire_event,
-		real_add_organic_matter,
-		real_get_snow_depth,
 		nil,
 		a,
 	)
 	model.current_crop_module = &cm
 	g_residue_params = &cm.residue_params.base
 
-	model.soil_moisture.crop_module = &cm
-	model.soil_organic.crop_module = &cm
-	model.soil_transport.crop_module = &cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -237,6 +225,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&model.soil_moisture,
+			core.crop_to_soil_of(&cm, false),
 			groundwater_depth,
 			precip,
 			tmax,
@@ -265,10 +254,12 @@ main :: proc() {
 			ATM_O3,
 			precip,
 			-1.0,
+			core.snow_for_crop(g_soil_moisture),
+			g_soil_organic,
 			a,
 		)
-		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
-		core.soil_transport_step(&model.soil_transport)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(&cm, false))
+		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(&cm, false))
 		free_all(context.temp_allocator)
 	}
 

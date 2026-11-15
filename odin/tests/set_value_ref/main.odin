@@ -134,17 +134,11 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		core.monica_model_fire_event_cb,
-		core.monica_model_add_organic_matter_cb,
-		core.monica_model_get_snow_depth_cb,
 		nil,
 		a,
 	)
 	model.current_crop_module = cm
 
-	model.soil_moisture.crop_module = cm
-	model.soil_organic.crop_module = cm
-	model.soil_transport.crop_module = cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -200,6 +194,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&model.soil_moisture,
+			core.crop_to_soil_of(cm, false),
 			groundwater_depth,
 			precip,
 			tmax,
@@ -213,7 +208,7 @@ main :: proc() {
 			et0,
 			model.sim_params.dual_kc_method,
 		)
-		core.crop_module_step(
+		events := core.crop_module_step(
 			cm,
 			tavg,
 			tmax,
@@ -228,9 +223,12 @@ main :: proc() {
 			ATM_O3,
 			precip,
 			-1.0,
+			core.snow_for_crop(&model.soil_moisture),
+			&model.soil_organic,
 		)
-		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
-		core.soil_transport_step(&model.soil_transport)
+		core.monica_model_add_crop_events(model, events)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(cm, false))
+		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(cm, false))
 	}
 
 	t := tr.make_tracer(os.to_stream(os.stdout), a)

@@ -18,9 +18,6 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 
-noop_fire_event :: proc(event: string) {}
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
-noop_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {return 0.0, 0.0}
 
 dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.noOfOrgans", cm.no_of_organs)
@@ -328,9 +325,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_fire_event,
-			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)
@@ -349,9 +343,6 @@ main :: proc() {
 			&cpp.site_params,
 			&crop_mod_params,
 			&cpp.sim_params,
-			noop_fire_event,
-			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)
@@ -370,9 +361,6 @@ main :: proc() {
 			&site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_fire_event,
-			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)
@@ -398,9 +386,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_fire_event,
-			noop_add_organic_matter,
-			noop_get_snow_depth,
 			nil,
 			a,
 		)

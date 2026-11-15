@@ -7,11 +7,10 @@
 //
 // Phase 6 checkpoint 1 adds the rest of soilcolumn.h's declared surface -
 // applyMineralFertiliser*, applyIrrigation*, applyTillage, the delayed-N-min
-// machinery, putCrop/removeCrop, clearTopDressingParams, deleteAOMPool - now
-// that a live MonicaModel exists to call them. cropModule is upgraded from
-// the phase-3 `rawptr` placeholder to a real `^Crop_Module` (safe: same
-// package, no import cycle, and every other phase-4 module's own cropModule
-// field was already typed this way since phase 5 checkpoint 2).
+// machinery, clearTopDressingParams, deleteAOMPool - now that a live
+// MonicaModel exists to call them. The C++'s `cropModule` field and
+// putCrop/removeCrop are not ported: the soil reads the crop through
+// Crop_To_Soil and Irrigation_Crop_Window (crop_to_soil.odin).
 package core
 
 import tl "../../support/tools"
@@ -257,9 +256,6 @@ Soil_Column :: struct {
 	top_dressing_partition:      p.Mineral_Fertilizer_Parameters,
 	top_dressing_delay:          int,
 	delayed_n_min_applications:  [dynamic]Delayed_N_Min_Application_Params,
-
-	// C++: CropModule *cropModule{nullptr}
-	crop_module:                 ^Crop_Module,
 }
 
 // C++ in-class initialisers
@@ -365,16 +361,6 @@ sum_soil_temperature :: proc(sc: ^Soil_Column, layers: int) -> f64 {
 // ---------------------------------------------------------------------------
 // Phase 6 checkpoint 1: workstep/orchestration-facing SoilColumn mutators.
 // ---------------------------------------------------------------------------
-
-// C++: void monica::soilcolumn::putCrop(SoilColumn*, CropModule*)
-put_crop :: proc(sc: ^Soil_Column, cm: ^Crop_Module) {
-	sc.crop_module = cm
-}
-
-// C++: void monica::soilcolumn::removeCrop(SoilColumn*)
-remove_crop :: proc(sc: ^Soil_Column) {
-	sc.crop_module = nil
-}
 
 // C++: void monica::soilcolumn::clearTopDressingParams(SoilColumn*)
 clear_top_dressing_params :: proc(sc: ^Soil_Column) {
@@ -583,20 +569,24 @@ apply_possible_top_dressing :: proc(sc: ^Soil_Column) -> f64 {
 
 // C++: std::pair<bool,double> monica::soilcolumn::applyIrrigationViaTrigger(
 //        SoilColumn*, const AutomaticIrrigationParameters&)
+//
+// `crop`: the crop's temperature sum and irrigation window
+// (crop_to_soil.odin), instead of the C++'s read through the crop module.
 apply_irrigation_via_trigger :: proc(
 	sc: ^Soil_Column,
 	aips: ^p.Automatic_Irrigation_Parameters,
+	crop: Irrigation_Crop_Window,
 ) -> (
 	triggered: bool,
 	amount: f64,
 ) {
-	if sc.crop_module == nil {
+	if !crop.has_crop {
 		return false, 0
 	}
 
-	s := sc.crop_module.crop_params.cultivar_params.heat_sum_irrigation_start
-	e := sc.crop_module.crop_params.cultivar_params.heat_sum_irrigation_end
-	cts := sc.crop_module.current_total_temperature_sum
+	s := crop.heat_sum_irrigation_start
+	e := crop.heat_sum_irrigation_end
+	cts := crop.current_total_temperature_sum
 	if cts < s || cts > e || aips.threshold < 0.0 {
 		return false, 0
 	}

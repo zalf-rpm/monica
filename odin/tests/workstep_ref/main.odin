@@ -407,6 +407,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&model.soil_moisture,
+			core.crop_to_soil_of(model.current_crop_module, false),
 			groundwater_depth,
 			precip,
 			tmax,
@@ -436,7 +437,7 @@ main :: proc() {
 		}
 
 		if model.current_crop_module != nil {
-			core.crop_module_step(
+			events := core.crop_module_step(
 				model.current_crop_module,
 				tavg,
 				tmax,
@@ -451,8 +452,11 @@ main :: proc() {
 				ATM_O3,
 				precip,
 				-1.0,
+				core.snow_for_crop(&model.soil_moisture),
+				&model.soil_organic,
 				a,
 			)
+			core.monica_model_add_crop_events(model, events)
 		}
 
 		// Cutting - applied mid-season on the still-growing primary crop (the
@@ -488,8 +492,8 @@ main :: proc() {
 			tr.dump(&t, "harvestedOnDate", d.to_iso_date_string(current_date))
 		}
 
-		core.soil_organic_step(&model.soil_organic, tavg, precip, wind)
-		core.soil_transport_step(&model.soil_transport)
+		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(model.current_crop_module, false))
+		core.soil_transport_step(&model.soil_transport, core.crop_to_soil_of(model.current_crop_module, false))
 
 		if day % 60 == 0 || day == n - 1 {
 			tr.set_day(&t, day)

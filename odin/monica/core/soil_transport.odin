@@ -4,9 +4,9 @@
 // No monica-back-pointer deviation needed here, unlike soil_temperature.odin/
 // soil_moisture.odin: the C++ struct already takes siteParams/envParams/
 // cropModParams as raw pointers passed directly into makeSoilTransport, not
-// read through a MonicaModel&. cropModule points at the same phase-5
-// Crop_Module stub soil_moisture.odin introduced (crop_module_stub.odin),
-// extended with the one extra field this file reads (vc_NUptakeFromLayer).
+// read through a MonicaModel&. The C++'s `cropModule` field is not ported:
+// the one value read from the crop (vc_NUptakeFromLayer) comes as a
+// `Crop_To_Soil` parameter (crop_to_soil.odin).
 package core
 
 import p "../params"
@@ -33,7 +33,6 @@ Soil_Transport :: struct {
 	time_step:            f64,
 	total_dispersion:     [dynamic]f64,
 	percolation_rate:     [dynamic]f64 `unit:"mm d-1"`,
-	crop_module:          ^Crop_Module,
 }
 
 // C++: kj::Own<SoilTransport> monica::makeSoilTransport(
@@ -76,7 +75,10 @@ make_soil_transport :: proc(
 }
 
 // C++: void monica::soiltransport::step(SoilTransport*)
-soil_transport_step :: proc(st: ^Soil_Transport) {
+//
+// `crop`: the crop's N uptake per layer (crop_to_soil.odin), instead of the
+// C++'s read through the crop module.
+soil_transport_step :: proc(st: ^Soil_Transport, crop: Crop_To_Soil) {
 	min_time_step_factor := 1.0 // [t t-1]
 	nols := len(st.soil_column.layers)
 
@@ -84,7 +86,7 @@ soil_transport_step :: proc(st: ^Soil_Transport) {
 		// st.soil_no3[i] = st.soil_column.layers[i].soil_no3
 
 		st.n_uptake_from_layer[i] =
-			st.crop_module != nil ? st.crop_module.n_uptake_from_layer[i] : 0
+			crop.has_crop ? crop.n_uptake_from_layer[i] : 0
 		if i == nols - 1 {
 			st.percolation_rate[i] = st.soil_column.flux_at_lower_boundary // [mm]
 		} else {

@@ -29,10 +29,6 @@ g_soil_organic: ^core.Soil_Organic
 g_residue_params: ^p.Organic_Matter_Parameters
 g_tracer: ^tr.Tracer
 
-real_get_snow_depth :: proc(avg_air_temp: f64) -> (f64, f64) {
-	return core.get_snow_depth_and_calc_temperature_under_snow(g_soil_moisture, avg_air_temp)
-}
-
 real_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {
 	core.soil_organic_add_organic_matter(
 		g_soil_organic,
@@ -278,9 +274,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		recording_fire_event,
-		real_add_organic_matter,
-		real_get_snow_depth,
 		nil,
 		a,
 	)
@@ -288,9 +281,6 @@ main :: proc() {
 
 	// widen phase 4's bare-soil coupling to this real, live crop - matches
 	// production soilcolumn::putCrop/soiltransport::putCrop wiring.
-	sm.crop_module = &cm
-	so.crop_module = &cm
-	str.crop_module = &cm
 
 	copts := clim.make_csv_via_header_options()
 	_ = clim.csv_via_header_options_merge(
@@ -353,6 +343,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&sm,
+			core.crop_to_soil_of(&cm, false),
 			groundwater_depth,
 			precip,
 			tmax,
@@ -367,7 +358,7 @@ main :: proc() {
 			dual_kc_method,
 		)
 
-		core.crop_module_step(
+		events := core.crop_module_step(
 			&cm,
 			tavg,
 			tmax,
@@ -382,11 +373,15 @@ main :: proc() {
 			ATM_O3,
 			precip,
 			-1.0,
+			core.snow_for_crop(g_soil_moisture),
+			g_soil_organic,
 			a,
 		)
+		names, n := core.crop_event_names(events)
+		for name in names[:n] {recording_fire_event(name)}
 
-		core.soil_organic_step(&so, tavg, precip, wind)
-		core.soil_transport_step(&str)
+		core.soil_organic_step(&so, tavg, precip, wind, core.crop_to_soil_of(&cm, false))
+		core.soil_transport_step(&str, core.crop_to_soil_of(&cm, false))
 
 		dump_crop_module(&t, &cm)
 		tr.dump(&t, "soilMoistureDiag.vc_PercentageSoilCoverage", sm.soil_coverage_percent)

@@ -112,6 +112,7 @@ evapotranspiration_with_modules :: proc(
 	reference_evapotranspiration_mm: f64,
 	dual_kc_method: bool,
 	daily_sum_irrigation_water_mm: f64,
+	crop: Crop_To_Soil,
 ) {
 	ms := sm.modules
 	model := ms.model
@@ -136,7 +137,9 @@ evapotranspiration_with_modules :: proc(
 	day.soil_coverage = sm.soil_coverage_percent
 	day.snow_depth = sm.snow_component.snow_depth
 	day.surface_water_storage = sc.surface_water_storage
-	cm := sm.crop_module
+	// The whole crop, not only Crop_To_Soil: the module inputs and the crop's
+	// ET0 terms below read it.
+	cm := model.current_crop_module
 	if cm != nil {
 		day.developmental_stage = developmental_stage
 		day.carboxylation_pathway = cm.crop_params.species_params.carboxylation_pathway
@@ -145,25 +148,25 @@ evapotranspiration_with_modules :: proc(
 		day.gross_photosynthesis_reference_mol = cm.gross_photosynthesis_reference_mol
 	}
 	// The intermediates of the ET0 MONICA's own uses (`evapotranspiration`): the
-	// crop module's with a crop, soil moisture's without. Calculated here, on
-	// a copy, rather than taken from MONICA's own calculation: on days with an
-	// ET0 from the climate data, or with an integrated module, MONICA doesn't
-	// calculate it, and both procedures write a field (the stomata resistance,
-	// the net radiation) the copy keeps away from MONICA's state. The crop
+	// crop's with a crop (crop_et0, a pure function), soil moisture's without.
+	// Calculated here rather than taken from MONICA's own calculation: on days
+	// with an ET0 from the climate data, or with an integrated module, MONICA
+	// doesn't calculate it. Soil moisture's procedure writes a field (the net
+	// radiation), which the copy keeps away from MONICA's state. The crop
 	// module's step ran before, so its state is the day's.
 	terms: Et0_Terms
 	if developmental_stage > 0 && cm != nil {
-		cmc := cm^
-		_ = fc_reference_evapotranspiration(
-			&cmc,
-			max_air_temp,
-			min_air_temp,
-			relative_humidity,
-			avg_air_temp,
-			wind_speed,
-			wind_speed_height,
-			model.atmospheric_co2_concentration,
-			&terms,
+		_, terms = crop_et0(
+			crop_et0_in(
+				cm,
+				max_air_temp,
+				min_air_temp,
+				relative_humidity,
+				avg_air_temp,
+				wind_speed,
+				wind_speed_height,
+				model.atmospheric_co2_concentration,
+			),
 		)
 	} else {
 		smc := sm^
@@ -237,6 +240,7 @@ evapotranspiration_with_modules :: proc(
 			reference_evapotranspiration_mm,
 			dual_kc_method,
 			daily_sum_irrigation_water_mm,
+			crop,
 		)
 	}
 

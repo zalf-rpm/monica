@@ -105,9 +105,7 @@ main :: proc() {
 		cpp.sim_params.layer_thickness,
 		a,
 	)
-	sm.crop_module = nil // bare soil - see the file comment
 	so := core.make_soil_organic(&sc, cpp.soil_organic_mod_params)
-	so.crop_module = nil
 
 	// --- climate ---
 	copts := clim.make_csv_via_header_options()
@@ -170,6 +168,7 @@ main :: proc() {
 		)
 		core.soil_moisture_step(
 			&sm,
+			core.crop_to_soil_of(nil, false),
 			groundwater_depth,
 			precip,
 			tmax,
@@ -182,7 +181,7 @@ main :: proc() {
 			julday,
 			et0,
 		)
-		core.soil_organic_step(&so, tavg, precip, wind)
+		core.soil_organic_step(&so, tavg, precip, wind, core.crop_to_soil_of(nil, false))
 
 		tr.set_day(&t, day)
 		tr.dump(&t, "soilOrganic", so)

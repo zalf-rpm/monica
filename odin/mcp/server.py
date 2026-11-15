@@ -357,6 +357,19 @@ def output_docs() -> str:
     return "\n".join(lines)
 
 
+@server.resource(
+    "monica://docs/components",
+    mime_type="text/markdown",
+    description="How MONICA's crop model is structured: its components, what each one reads "
+    "(with units and sources, incl. previous-day values) and its state - generated from the code",
+)
+def component_docs() -> str:
+    path = mj.REPO / "odin" / "components.md"
+    if not path.exists():
+        raise mj.ScenarioError("components.md not found - run `pixi run gen-components-doc` in odin/")
+    return path.read_text(encoding="utf-8")
+
+
 @server.prompt()
 def explain_simulation(job_id: str) -> str:
     """Guide the model through explaining a finished simulation to a user."""

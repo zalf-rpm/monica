@@ -252,8 +252,6 @@ main :: proc() {
 		&wheat_residue_params,
 		load(monica_parameters_dir, "crop-residues/wheat.json", a),
 	)
-	no_fire_event :: proc(_: string) {}
-	no_add_organic_matter :: proc(_: map[int]f64, _: f64) {}
 	no_snow :: proc(_: f64) -> (f64, f64) {return 0, 0}
 	cm := core.make_crop_module(
 		&model.soil_column,
@@ -262,13 +260,9 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		no_fire_event,
-		no_add_organic_matter,
-		no_snow,
 		nil,
 		a,
 	)
-	core.put_crop(&model.soil_column, &cm)
 	cm.current_total_temperature_sum =
 		(cm.crop_params.cultivar_params.heat_sum_irrigation_start +
 			cm.crop_params.cultivar_params.heat_sum_irrigation_end) /
@@ -279,11 +273,10 @@ main :: proc() {
 		threshold = 0.99,
 		critical_moisture_depth_m = 0.3,
 	}
-	triggered, triggered_amount := core.apply_irrigation_via_trigger(&model.soil_column, &aip)
+	triggered, triggered_amount := core.apply_irrigation_via_trigger(&model.soil_column, &aip, core.irrigation_crop_window(&cm))
 	tr.dump(&t, "triggered", triggered)
 	tr.dump(&t, "triggeredAmount", triggered_amount)
 	tr.dump(&t, "sc.vs_SurfaceWaterStorage", model.soil_column.surface_water_storage)
-	core.remove_crop(&model.soil_column)
 
 	// scenario 8: applyTillage
 	tr.set_day(&t, 8)

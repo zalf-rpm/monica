@@ -8,24 +8,12 @@
 //  1. No `monica` field. The C++ struct's `MonicaModel &monica` is read in two
 //     shapes: (a) `sm->monica.currentCropModule.get()->X` at 10 call sites
 //     across `step`/`evapotranspiration`, and (b) `sm->monica.simPs.X` /
-//     `sm->monica.dailySumIrrigationWater` (2 sites). For (a): the C++ struct
-//     *also* carries its own `CropModule *cropModule` field, kept in sync with
-//     `monica.currentCropModule.get()` by monica-model.cpp at every plant/
-//     harvest event (`soilMoisture->cropModule = currentCropModule.get()`) -
-//     the two pointers are provably always equal while a crop is live. So
-//     every `monica.currentCropModule`-mediated read below goes through the
-//     `cropModule` field instead, which already exists as a genuine C++
-//     struct member (unlike soil_temperature.odin's case, this isn't inventing
-//     a new field, just routing through the one MONICA itself keeps
-//     synchronised). For (b): `dualKcMethod`/`dailySumIrrigationWater` become
-//     explicit parameters on `step`/`evapotranspiration`/
-//     `dual_kc_precomputation`, the same move used for `p_timeStep` in
-//     `make_soil_temperature`.
-//  2. `cropModule` points at `Crop_Module`, a phase-5 stub (see
-//     crop_module_stub.odin) carrying only the 10 fields this file reads.
-//     Phase 5 replaces it with the real ~4,750-line struct; every field here
-//     already has its final C++ name, so nothing calling into `cropModule.X`
-//     needs to change.
+//     `sm->monica.dailySumIrrigationWater` (2 sites). For (a): the crop
+//     values come as a `Crop_To_Soil` parameter (crop_to_soil.odin) -
+//     neither `monica` nor the C++'s own `cropModule` field is ported. For
+//     (b): `dualKcMethod`/`dailySumIrrigationWater` become explicit
+//     parameters on `step`/`evapotranspiration`/`dual_kc_precomputation`,
+//     the same move used for `p_timeStep` in `make_soil_temperature`.
 //
 // `siteParameters`/`envPs`/`cropPs` ARE kept as genuine fields (pointers, not
 // values - Odin has no reference type): the C++ struct already stores these as
@@ -95,7 +83,6 @@ Soil_Moisture :: struct {
 	xsa_critical_soil_moisture:   f64,
 	snow_component:               Snow_Component,
 	frost_component:              Frost_Component,
-	crop_module:                  ^Crop_Module,
 }
 
 // C++: kj::Own<SoilMoisture> monica::makeSoilMoisture(MonicaModel&, const
@@ -165,9 +152,12 @@ make_soil_moisture :: proc(
 // Named soil_moisture_step, not step - see soil_temperature_step's comment on
 // why (this package mirrors src/core/, not individual C++ namespaces).
 // dual_kc_method stands in for `sm->monica.simPs.dualKcMethod`, daily_sum_irrigation_water
-// for `sm->monica.dailySumIrrigationWater` - see the package comment.
+// for `sm->monica.dailySumIrrigationWater` - see the package comment. `crop`
+// is what the C++ reads through `monica.currentCropModule` and
+// `monica.clearCropUponNextDay()` (crop_to_soil.odin).
 soil_moisture_step :: proc(
 	sm: ^Soil_Moisture,
+	crop: Crop_To_Soil,
 	groundwater_depth_m,
 	precipitation_mm,
 	max_air_temp_deg_c,
@@ -181,7 +171,6 @@ soil_moisture_step :: proc(
 	reference_evapotranspiration_mm: f64,
 	dual_kc_method: bool = false,
 	daily_sum_irrigation_water_mm: f64 = 0.0,
-	crop_cleared := false, // the crop is harvested, gone tomorrow (Monica_Model.clear_crop_upon_next_day)
 ) {
 	sc := sm.soil_column
 
@@ -196,15 +185,14 @@ soil_moisture_step :: proc(
 	sm.lambda_below = sc.layers[sm.no_of_soil_layers - 1].lambda
 
 	dev_stage := 0
-	// C++: `sm->monica.currentCropModule.get()` - see the package comment.
 	// C++: if (monica.isCropPlanted() && !monica.clearCropUponNextDay()): a
 	// harvested crop, whose step no longer runs, is no crop here
-	if sm.crop_module != nil && !crop_cleared {
-		sm.soil_coverage_percent = sm.crop_module.soil_coverage
-		sm.kc_factor = sm.crop_module.kc_factor
-		dev_stage = sm.crop_module.developmental_stage
+	if crop.has_crop && !crop.being_cleared {
+		sm.soil_coverage_percent = crop.soil_coverage
+		sm.kc_factor = crop.kc_factor
+		dev_stage = crop.developmental_stage
 		if dev_stage > 0 {
-			sm.net_precipitation_mm = sm.crop_module.net_precipitation
+			sm.net_precipitation_mm = crop.net_precipitation
 		} else {
 			sm.net_precipitation_mm = precipitation_mm
 		}
@@ -266,6 +254,7 @@ soil_moisture_step :: proc(
 			reference_evapotranspiration_mm,
 			dual_kc_method,
 			daily_sum_irrigation_water_mm,
+			crop,
 		)
 	} else {
 		evapotranspiration_with_modules(
@@ -283,10 +272,11 @@ soil_moisture_step :: proc(
 			reference_evapotranspiration_mm,
 			dual_kc_method,
 			daily_sum_irrigation_water_mm,
+			crop,
 		)
 	}
 
-	capillary_rise(sm)
+	capillary_rise(sm, crop)
 }
 
 // C++: void monica::soilmoisture::infiltration(SoilMoisture*, double)
@@ -406,16 +396,18 @@ infiltration :: proc(sm: ^Soil_Moisture, water_to_infiltrate: f64) {
 }
 
 // C++: void monica::soilmoisture::capillaryRise(SoilMoisture*)
-capillary_rise :: proc(sm: ^Soil_Moisture, allocator := context.allocator) {
+//
+// `crop.rooting_depth` is read for a crop being cleared too, as in the C++.
+capillary_rise :: proc(sm: ^Soil_Moisture, crop: Crop_To_Soil, allocator := context.allocator) {
 	sc := sm.soil_column
 
-	rooting_depth := sm.crop_module != nil ? sm.crop_module.rooting_depth : 0
+	rooting_depth := crop.has_crop ? crop.rooting_depth : 0
 
 	// NOTE(c++-quirk): C++ computes this as size_t arithmetic
 	// (max(size_t(1), groundwater_table_layer - vc_RootingDepth)): if
 	// vc_RootingDepth ever exceeds groundwater_table_layer the subtraction
 	// wraps to a huge positive number rather than going negative, reproduced
-	// here with explicit uint arithmetic. Dormant while cropModule is nil
+	// here with explicit uint arithmetic. Dormant without a crop
 	// (vc_RootingDepth always 0); matters once phase 5 plants a crop whose
 	// roots reach below a shallow water table.
 	groundwater_distance := max(
@@ -752,14 +744,15 @@ backwater_replenishment :: proc(sm: ^Soil_Moisture) {
 // C++: double monica::soilmoisture::dualKcPrecomputation(SoilMoisture*, double,
 //        double, double)
 //
-// Only ever called when sm.crop_module != nil (see evapotranspiration's
-// useDualKc guard), matching the C++'s unchecked `cropModule->` derefs below.
+// Only ever called with crop.has_crop (see evapotranspiration's useDualKc
+// guard), matching the C++'s unchecked `cropModule->` derefs below.
 // daily_sum_irrigation_water stands in for `sm->monica.dailySumIrrigationWater`
 // - see the package comment.
 dual_kc_precomputation :: proc(
 	sm: ^Soil_Moisture,
 	wind_speed, tmin, tmax, precip: f64,
 	daily_sum_irrigation_water: f64,
+	crop: Crop_To_Soil,
 ) -> f64 {
 	e_pot_dual_kc := 0.0 // [mm d-1] replaces (1-beta)*PET per layer
 
@@ -767,7 +760,7 @@ dual_kc_precomputation :: proc(
 	et0 := sm.reference_evapotranspiration
 
 	// --- Kcb: basal crop coefficient (interpolated in crop module) ---
-	kcb := sm.crop_module.kcb_factor
+	kcb := crop.kcb_factor
 
 	// --- Calculate Depletion first (FAO-56 §8.3) to inform memory logic ---
 	scl_0 := &sm.soil_column.layers[0]
@@ -893,7 +886,7 @@ dual_kc_precomputation :: proc(
 	eo_tmin := 0.6108 * cr_math.exp((17.27 * tmin) / (tmin + 237.3))
 	rh_min := max(5.0, min(100.0, (eo_tmin / eo_tmax) * 100.0))
 	baseline := 1.2 // FAO-56 §6 default for most crops
-	h := max(0.01, sm.crop_module.crop_height) // native simulated height [m]
+	h := max(0.01, crop.crop_height) // native simulated height [m]
 	kc_max := baseline + (0.04 * (u2 - 2.0) - 0.004 * (rh_min - 45.0)) * cr_math.pow(h / 3.0, 0.3)
 	kc_max = max(kc_max, kcb + 0.05)
 
@@ -939,6 +932,7 @@ evapotranspiration :: proc(
 	reference_evapotranspiration_mm: f64,
 	dual_kc_method: bool,
 	daily_sum_irrigation_water_mm: f64,
+	crop: Crop_To_Soil,
 ) {
 	sc := sm.soil_column
 
@@ -962,15 +956,14 @@ evapotranspiration :: proc(
 
 	// If a crop grows, ETp is taken from crop module
 	if developmental_stage > 0 {
-		// C++: `monica.currentCropModule.get()` - see the package comment.
 		if reference_evapotranspiration_mm < 0.0 {
-			sm.reference_evapotranspiration = sm.crop_module.reference_evapotranspiration
+			sm.reference_evapotranspiration = crop.reference_evapotranspiration
 		} else {
 			sm.reference_evapotranspiration = reference_evapotranspiration_mm
 		}
 
-		potential_evapotranspiration = sm.crop_module.remaining_evapotranspiration
-		evaporated_from_intercept = sm.crop_module.evaporated_from_intercept
+		potential_evapotranspiration = crop.remaining_evapotranspiration
+		evaporated_from_intercept = crop.evaporated_from_intercept
 	} else { 	// if no crop grows ETp is calculated from ET0 * kc
 		if reference_evapotranspiration_mm < 0.0 {
 			sm.reference_evapotranspiration = reference_evapotranspiration(
@@ -1028,10 +1021,10 @@ evapotranspiration :: proc(
 			// FAO-56 Dual Kc pathway - precompute potential soil evaporation
 			// (E_pot) using the Ke coefficient. Runs ONLY when dualKcMethod is
 			// enabled, a crop is present (vc_DevelopmentalStage > 0), and
-			// sm.crop_module != nil. Otherwise the Single Kc loop runs unchanged.
+			// crop.has_crop. Otherwise the Single Kc loop runs unchanged.
 			// -----------------------------------------------------------------
 			e_pot_dual_kc := 0.0
-			use_dual_kc := dual_kc_method && developmental_stage > 0 && sm.crop_module != nil
+			use_dual_kc := dual_kc_method && developmental_stage > 0 && crop.has_crop
 			if use_dual_kc {
 				e_pot_dual_kc = dual_kc_precomputation(
 					sm,
@@ -1040,6 +1033,7 @@ evapotranspiration :: proc(
 					max_air_temp_deg,
 					precip_mm,
 					daily_sum_irrigation_water_mm,
+					crop,
 				)
 			} else {
 				sm.ke = 0.0
@@ -1101,8 +1095,7 @@ evapotranspiration :: proc(
 						sm.evaporation[i_layer] = 0.0
 					}
 
-					// C++: `monica.currentCropModule.get()->vc_Transpiration` - see the package comment.
-					sm.transpiration[i_layer] = sm.crop_module.transpiration[i_layer]
+					sm.transpiration[i_layer] = crop.transpiration[i_layer]
 
 					// Transpiration is capped in case potential ET after surface
 					// and interception evaporation has occurred on same day
@@ -1163,70 +1156,20 @@ reference_evapotranspiration :: proc(
 	julian_day: int,
 	terms: ^Et0_Terms = nil,
 ) -> f64 {
-	pi := 3.14159265358979323
-
-	declination := -23.4 * cr_math.cos(2.0 * pi * ((f64(julian_day) + 10.0) / 365.0))
-	declination_sinus :=
-		cr_math.sin(declination * pi / 180.0) * cr_math.sin(sm.site_params.latitude * pi / 180.0)
-	declination_cosinus :=
-		cr_math.cos(declination * pi / 180.0) * cr_math.cos(sm.site_params.latitude * pi / 180.0)
-
-	arg_astro_day_length := declination_sinus / declination_cosinus
-	// The argument of asin must be in the range of -1 to 1
-	arg_astro_day_length = tl.bound(-1.0, arg_astro_day_length, 1.0)
-	astronomic_day_lenght := 12.0 * (pi + 2.0 * cr_math.asin(arg_astro_day_length)) / pi
-
-	arg_effective_day_length :=
-		(-cr_math.sin(8.0 * pi / 180.0) + declination_sinus) / declination_cosinus
-	arg_effective_day_length = tl.bound(-1.0, arg_effective_day_length, 1.0)
-	effective_day_lenght := 12.0 * (pi + 2.0 * cr_math.asin(arg_effective_day_length)) / pi
-
-	arg_photo_day_length :=
-		(-cr_math.sin(-6.0 * pi / 180.0) + declination_sinus) / declination_cosinus
-	arg_photo_day_length = tl.bound(-1.0, arg_photo_day_length, 1.0)
-	photoperiodic_daylength := 12.0 * (pi + 2.0 * cr_math.asin(arg_photo_day_length)) / pi
-	_ = effective_day_lenght
-	_ = photoperiodic_daylength
-
-	arg_phot_act := min(
-		1.0,
-		((declination_sinus / declination_cosinus) *
-			(declination_sinus / declination_cosinus)),
-	)
-	// The argument of sqrt must be >= 0
-	phot_act_radiation_mean :=
-		3600.0 *
-		(declination_sinus * astronomic_day_lenght +
-				24.0 / pi * declination_cosinus * libc.sqrt(1.0 - arg_phot_act))
-
-	clear_day_radiation := 0.0
-	if phot_act_radiation_mean > 0 && astronomic_day_lenght > 0 {
-		clear_day_radiation =
-			0.5 *
-			1300.0 *
-			phot_act_radiation_mean *
-			cr_math.exp(-0.14 / (phot_act_radiation_mean / (astronomic_day_lenght * 3600.0)))
-	}
-	// vc_OvercastDayRadiation, like vc_EffectiveDayLenght/vc_PhotoperiodicDaylength/
-	// vm_AerodynamicResistance below, is computed by the C++ but never read
-	// afterward (dead in the C++ itself) - kept for literal fidelity.
-	overcast_day_radiation := 0.2 * clear_day_radiation
-	_ = overcast_day_radiation
-
-	// C++: written as in the crop module's radiation, so both give the same bits
-	solar_constant := 0.082
-	sc := 24.0 * 60.0 / pi * solar_constant * (1.0 + 0.033 * cr_math.cos(2.0 * pi * f64(julian_day) / 365.0))
-	arg_sha := tl.bound(
-		-1.0,
-		-cr_math.tan(sm.site_params.latitude * pi / 180.0) * cr_math.tan(declination * pi / 180.0),
-		1.0,
-	)
-	// The argument of acos must be in the range of -1 to 1
-	sha := cr_math.acos(arg_sha)
-
-	// [J cm-2] --> [MJ m-2]
+	// Declination, day lengths and radiation: the crop's function, whose
+	// formulas this procedure used to repeat (plan-component-interfaces.md G1;
+	// tests/radiation_shared_test.odin checks the bits). Of those values the
+	// ET0 uses only the extraterrestrial radiation; the others (day lengths,
+	// PAR, clear and overcast day radiation) were dead stores here, in the C++
+	// too.
 	extraterrestrial_radiation :=
-		sc * (sha * declination_sinus + declination_cosinus * cr_math.sin(sha)) // [MJ m-2]
+		crop_radiation(
+			Radiation_In {
+				julian_day = f64(julian_day),
+				latitude = sm.site_params.latitude,
+				global_radiation = global_radiation,
+			},
+		).extraterrestrial_radiation // [MJ m-2]
 
 	// Calculation of atmospheric pressure
 	atmospheric_pressure :=

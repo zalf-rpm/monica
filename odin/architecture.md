@@ -164,6 +164,18 @@ not *declared*: it consists of whatever fields the other side happens to read.
 | crop → model | `monica_model.odin` | `crop_n_redux`, `transpiration_deficit`, `crop_heat_redux`, `oxygen_deficit` (stress sums), `soil_coverage` (soil temperature), crop params (N-min fertilising) |
 | soil → crop | `crop_module.odin` | per layer: `soil_moisture_m3`, `field_capacity`, `permanent_wilting_point`, `saturation`, `soil_no3`, `soil_temperature`, `layer_thickness_m`, `soil_clay_content`, `soil_sand_content`; column: `surface_water_storage`, `soil_surface_temperature`, `groundwater_table_layer_idx`, `number_of_organic_layers`; snow via callback |
 
+**Since phases A and E of `plan-component-interfaces.md`** (branch
+`component-interfaces`): the soil components no longer hold a
+`^Crop_Module`, and the crop module no longer calls back into the model
+(the callbacks and `g_current_model` are gone; the dead roots go to soil
+organic through an explicit parameter of the crop step). They get a `Crop_To_Soil` value (`core/crop_to_soil.odin`)
+that the model fills at the start of the general step; the automatic
+irrigation trigger gets an `Irrigation_Crop_Window`; the crop step returns
+its events (`Crop_Events`) and gets the snow state as an input
+(`Snow_For_Crop`). Still reading the crop directly: `evapotranspiration_impl`,
+for the evapotranspiration modules' inputs (read-only; the crop's ET0 terms
+come from the pure `crop_et0`). The tables above describe the state before.
+
 Outside `core`, the outputs read the crop too: `io/build_output.odin` through
 about 15 getters (`get_primary_crop_yield`, ...), and `io/output_paths.odin`
 names 53 crop fields as output paths. With reflective outputs *every* field
@@ -277,7 +289,8 @@ Things a split has to deal with, because one part changes another part's data:
    ET0 terms - a sign it wants to be a component of its own.
 7. **Radiation is duplicated.** `soil_moisture.odin`'s ET0 (around line
    1168) computes declination and the day lengths again, with the same
-   formulas as `fc_radiation`.
+   formulas as `fc_radiation`. *(Resolved in phase G: it calls
+   `crop_radiation`.)*
 8. **Callbacks through a global** (`g_current_model`), see section 2.
 
 ## 5. Proposed components
@@ -339,6 +352,10 @@ flowchart TB
     CBA ==>|NPP| SOIL
     MAN -.-> PHE & CAN & GRO & ROO & PHO
 ```
+
+*The implemented components and their actual connections, generated from
+the code's tags: `components.md` (`pixi run gen-components-doc`). The diagram
+above is the proposal it started from.*
 
 | Component | From today's code | State it would own | Size now | How separable |
 |---|---|---|---:|---|
@@ -405,6 +422,74 @@ checks each step.
 
 After the crop module, `soil_organic.odin` (1676 lines) and
 `soil_moisture.odin` (1483 lines) would deserve the same analysis.
+
+### Field ownership after step 1 (plan-component-interfaces.md C2/C3)
+
+Step 1 is done: `Crop_Module`'s fields are in 16 sub-structs embedded with
+`using` (`crop_module.odin`), named after the components of section 5. A
+field belongs to the group of the procedure that computes it
+(`field_deps.py writers`); the parameters, the soil/site pointers, the
+organic-matter callback and the error state stay direct fields.
+
+| Group | Fields |
+|---|---:|
+| `Crop_Module` | 13 |
+| `Crop_Radiation` | 9 |
+| `Crop_Phenology` | 18 |
+| `Crop_Canopy` | 10 |
+| `Crop_Photosynthesis` | 17 |
+| `Crop_O3` | 5 |
+| `Crop_Voc` | 14 |
+| `Crop_Stress` | 10 |
+| `Crop_N_Status` | 6 |
+| `Crop_Growth` | 17 |
+| `Crop_Root_System` | 11 |
+| `Crop_Et0` | 2 |
+| `Crop_Water_Uptake` | 16 |
+| `Crop_N_Uptake` | 9 |
+| `Crop_Carbon` | 3 |
+| `Crop_Management` | 8 |
+| `Crop_Intercropping` | 2 |
+
+| Procedure (owner) | Writes fields of |
+|---|---|
+| `fc_crop_dry_matter` (Growth) | `Crop_N_Uptake`: total_biomass_n_content; `Crop_Phenology`: growth_cycle_ended; `Crop_Root_System`: current_total_temperature_sum_root, max_rooting_depth, root_biomass, root_biomass_old, root_density, root_diameter, rooting_depth, rooting_depth_m, rooting_zone, total_root_length |
+| `apply_cutting` (Management) | `Crop_Canopy`: leaf_area_index; `Crop_Growth`: aboveground_biomass, organ_biomass, organ_dead_biomass, organ_green_biomass; `Crop_N_Uptake`: total_biomass_n_content |
+| `force_transplant_state` (Management) | `Crop_Canopy`: leaf_area_index; `Crop_Growth`: aboveground_biomass, organ_biomass, organ_green_biomass, total_biomass; `Crop_N_Uptake`: n_concentration_aboveground_biomass, n_concentration_root, total_biomass_n_content; `Crop_Phenology`: current_temperature_sum, current_total_temperature_sum; `Crop_Root_System`: root_biomass, rooting_depth, rooting_depth_m, rooting_zone, total_root_length |
+| `set_perennial_crop_parameters` (Management) | `Crop_Module`: perennial_crop_params |
+| `fc_crop_developmental_stage` (Phenology) | `Crop_Module`: error_message, error_status |
+| `fc_update_crop_parameters_for_perennial` (Phenology) | `Crop_Module`: crop_params, no_of_dev_stages, no_of_organs |
+| `fc_crop_photosynthesis` (Photosynthesis) | `Crop_O3`: o3_long_term_damage, o3_senescence, o3_short_term_damage, o3_sum_uptake, o3_w_stomatal_closure; `Crop_Voc`: full24, full240, guenther_emissions, index24, index240, jjv_emissions, rad24, rad240, tfol24, tfol240 |
+
+| Group | Written by crop_module_step itself |
+|---|---|
+| `Crop_Canopy` | kc_factor, kcb_factor, soil_coverage |
+| `Crop_Carbon` | gross_primary_production, net_primary_production |
+| `Crop_Et0` | reference_evapotranspiration |
+| `Crop_Management` | cutting_delay_days, days_since_transplant, transplant_efficiency |
+| `Crop_Phenology` | anthesis_day, daylength_factor, maturity_day, maturity_reached, no_of_crop_steps, perennial_crop_dormancy_period_end_date, relative_total_development, stem_elongation_event_fired, vernalisation_days |
+| `Crop_Stress` | oxygen_deficit |
+| `Crop_Water_Uptake` | transpiration_deficit |
+
+*Resolved in phases E and F:* the root system is its own component (E1),
+O3 and VOC too (E2); growth returns the N content and the end of the growth
+cycle instead of writing them (F2); management dispatches to commands each
+owner applies (F6); the perennial reset is split around the parameter swap
+(F1). The table above is the state after step 1, before those.
+
+What the cross-writes meant for the next steps:
+
+- `fc_crop_dry_matter` computes the root system (11 fields): step E1 cuts it
+  out. It also ends the growth cycle (`growth_cycle_ended`, phenology) and
+  updates the N content (`total_biomass_n_content`, N uptake).
+- `fc_crop_photosynthesis` computes O3 and VOC: step E2.
+- Management (`force_transplant_state`, `apply_cutting`) writes canopy,
+  growth, N, phenology and root state: step F6 (per-component commands).
+- The perennial reset in development replaces the parameters
+  (`crop_params`, organ and stage counts): step F6, parameters as a reference.
+- The step itself computes what isn't a procedure yet: Kc and Kcb (canopy,
+  D3), GPP/NPP (carbon), the phenology events and bookkeeping (F1), the ET0
+  choice (E3), and the water-stress clamp (section 8).
 
 ## 7. The other modules
 
@@ -558,6 +643,13 @@ crop_module_step :: proc(cm: ^Crop_Module, ...) {
 }
 ```
 
+*Implemented in phase B of `plan-component-interfaces.md`:*
+`core/crop_carry_over.odin`, with 15 values (the scan also found oxygen
+deficiency reading yesterday's stage, and crop N status yesterday's biomass
+and N concentrations). One difference to the sketch below: the clamp of the
+water stress keeps a write into `transpiration_deficit` (now in the step),
+because at the final developmental stage water uptake doesn't overwrite it.
+
 Two details make this bit-identical to today:
 
 - **Take it at the start of the step, not at the end of the previous one.**
@@ -672,10 +764,22 @@ Details to check when doing it, to stay bit-identical:
   crop reads later that day depends on it; the dead roots go into soil
   organic's pools, which the crop doesn't read, but that needs checking per
   call (and for `apply_cutting`, which isn't part of the step anyway).
+  - *Checked (phase A): it isn't the same.* `soil_organic_add_organic_matter`
+    also adds the residue's NH4 and NO3 to the layers, and the crop's N uptake
+    reads the NO3 later in the same step; 68 of the 71 crop residue files in
+    monica-parameters have non-zero NH4/NO3 contents. So the dead roots must
+    reach the soil between the root system and N uptake, as today - possible
+    without a callback once the root system is its own component.
+- **When it is filled.** *Found in phase A:* not at the end of the crop
+  step but right before the soil components run. Harvest and incorporation
+  happen in worksteps before the step; that day the crop step is skipped, but
+  the soil components still read the harvested crop's last values (N uptake,
+  NPP, rooting depth), while soil moisture treats the crop as absent.
+  `Crop_To_Soil.has_crop` and `.being_cleared` say which is which.
 - **Copies or views.** The per-layer slices can point to the crop's arrays
   (no copy) or be copied (20 values); a view is simplest, but then the
   struct is only valid until the crop is removed - the model owns both, so
-  that is manageable. If copied, allocate the arrays once (with the model or
+  that is manageable. (Phase A uses views, valid for the day.) If copied, allocate the arrays once (with the model or
   at sowing) and overwrite them daily - the copy is free (section 10), a
   daily allocation isn't.
 - **The other direction.** The crop reads about 13 soil values (section 2).
@@ -895,31 +999,37 @@ not of single procedures:
 
 ```odin
 Phenology_In :: struct {
-	tavg:                 f64 `unit:"°C"`,
-	soil_temperature_top: f64 `unit:"°C"`,
-	day_length:           f64 `unit:"h"  src:"Radiation"`,
+	tavg:                 f64 `unit:"°C" src:"weather"`,
+	soil_temperature_top: f64 `unit:"°C" src:"soil"`,
+	day_length:           f64 `unit:"h" src:"Radiation"`,
 	water_stress:         f64 `unit:"0-1" src:"Water_Uptake" lag:"1d"`,
-	n_stress:             f64 `unit:"0-1" src:"Crop_N_Status" lag:"1d"`,
+	n_stress:             f64 `unit:"0-1" src:"N_Status" lag:"1d"`,
 }
 
-// Owned and persistent; written only by phenology.
-Phenology_State :: struct {
+// Owned and persistent; written only by phenology. (Today's Crop_Phenology.)
+Crop_Phenology :: struct {
 	developmental_stage: int,
 	temperature_sum:     [MAX_STAGES]f64 `unit:"°C d" cat:"state"`,
-	vernalisation_days:  f64              `unit:"d"    cat:"state"`,
+	vernalisation_days:  f64 `unit:"d" cat:"state"`,
 }
 
-phenology_step :: proc(ps: ^Species_Parameters, s: ^Phenology_State, in: Phenology_In) {...}
+phenology_step :: proc(s: ^Crop_Phenology, ps: ^p.Crop_Parameters, input: Phenology_In) {...}
 
 // crop_module_step is the "solution file" - as code the compiler checks:
-phenology_step(species_ps, &cm.phenology, Phenology_In{
+phenology_step(&cm.phenology, &cm.crop_params, Phenology_In{
 	tavg                 = w.tavg,
 	soil_temperature_top = soil.temperature[0],
-	day_length           = rad.effective_day_length,
+	day_length           = cm.effective_day_length,
 	water_stress         = prev.water_stress, // carry-over, section 8
 	n_stress             = prev.n_stress,
 })
 ```
+
+*As implemented (phase D):* the conventions are in `CONVENTIONS.md` §9b -
+state `Crop_<Component>`, inputs `<Process>_In`, procedures
+`<component>_<process>(state, params, input)`; `input`, not `in`, which is an
+Odin keyword. Examples: `core/crop_canopy.odin`, `crop_stress.odin`,
+`crop_n_status.odin`, and `crop_radiation` for a function without state.
 
 - **The declaration is the signature.** A component sees its `In`, its own
   state and its parameters, nothing else. A new dependency is one field in

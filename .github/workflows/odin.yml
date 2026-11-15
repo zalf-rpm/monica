@@ -137,6 +137,15 @@ jobs:
         working-directory: monica/odin
         run: pixi run test
 
+      # The crop components' declared inputs (CONVENTIONS.md 9b) and the
+      # reference generated from them (components.md) must match the code.
+      - name: Crop components
+        if: runner.os == 'Linux'
+        working-directory: monica/odin
+        run: |
+          pixi run check-components
+          pixi run python tools/component_check.py doc -o components.md --check
+
       # The C++ repo at the pinned commit, for its tests/ (run.py, the suite
       # definitions) and its monica-parameters submodule.
       - name: Pinned C++ commit
