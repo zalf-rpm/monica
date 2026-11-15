@@ -273,3 +273,25 @@ dead_roots_per_layer :: proc(
 
 	return layer2_dead_root_biomass_at_layer
 }
+
+// Transplanting (force_transplant_state): the root biomass, the species'
+// initial rooting depth and zone, and the total root length.
+root_system_transplant :: proc(
+	r: ^Crop_Root_System,
+	ps: ^p.Crop_Parameters,
+	root_mass: f64,
+	soil_layers: []Soil_Layer,
+) {
+	r.root_biomass = root_mass
+
+	// Settle rooting zone and layers based on standard species parameters
+	nols := len(soil_layers)
+	layer_thickness := soil_layers[0].layer_thickness_m
+	r.rooting_depth_m = ps.species_params.initial_rooting_depth
+	r.rooting_depth = min(int(libc.round(r.rooting_depth_m / layer_thickness)), nols)
+	r.rooting_zone = min(int(libc.round(1.3 * r.rooting_depth_m / layer_thickness)), nols)
+
+	// Force total root length based on physical constants
+	r.total_root_length =
+		(r.root_biomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * 3.14159265358979323)
+}

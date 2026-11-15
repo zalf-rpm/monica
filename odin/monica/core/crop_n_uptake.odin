@@ -266,3 +266,18 @@ n_uptake_step :: proc(n: ^Crop_N_Uptake, ps: ^p.Crop_Parameters, input: N_Uptake
 		}
 	}
 }
+
+// Transplanting (force_transplant_state): the species' N concentrations, to
+// prevent severe immediate starvation stress in new seedlings, and the N
+// content of the transplant.
+n_uptake_transplant :: proc(
+	n: ^Crop_N_Uptake,
+	ps: ^p.Crop_Parameters,
+	aboveground_biomass, root_biomass: f64,
+) {
+	n.n_concentration_aboveground_biomass = ps.species_params.n_concentration_aboveground_biomass
+	n.n_concentration_root = ps.species_params.n_concentration_root
+	n.total_biomass_n_content =
+		(aboveground_biomass * n.n_concentration_aboveground_biomass) +
+		(root_biomass * n.n_concentration_root)
+}

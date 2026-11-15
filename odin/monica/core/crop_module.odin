@@ -94,18 +94,6 @@ Crop_Module :: struct {
 	using ic:              Crop_Intercropping,
 }
 
-// Management state: transplant shock, cutting (force_transplant_state, apply_cutting).
-Crop_Management :: struct {
-	transplant_shock_duration: int,
-	days_since_transplant:     int,
-	transplant_efficiency:     f64,
-	cutting_delay_days:        int,
-	exported_cut_biomass:      f64 `unit:"kgDM ha-1"`,
-	sum_exported_cut_biomass:  f64 `unit:"kgDM ha-1"`,
-	residue_cut_biomass:       f64 `unit:"kgDM ha-1"`,
-	sum_residue_cut_biomass:   f64 `unit:"kgDM ha-1"`,
-}
-
 // Intercropping: the other crop's height and LAI (set_other_crop_height_and_lait).
 Crop_Intercropping :: struct {
 	intercropping_other_crop_height: f64,
@@ -523,16 +511,7 @@ maturity_reached :: proc(cm: ^Crop_Module) -> bool {
 
 // C++: void monica::cropmodule::setStage(CropModule*, size_t newStage)
 set_stage :: proc(cm: ^Crop_Module, new_stage: int) {
-	cm.current_total_temperature_sum = 0.0
-	for stage := 0; stage < cm.no_of_dev_stages; stage += 1 {
-		if stage < new_stage {
-			cm.current_total_temperature_sum += cm.current_temperature_sum[stage]
-		} else {
-			cm.current_temperature_sum[stage] = 0.0
-		}
-	}
-
-	cm.developmental_stage = new_stage
+	phenology_set_stage(&cm.phenology, new_stage, cm.no_of_dev_stages)
 }
 
 // ---------------------------------------------------------------------------
@@ -687,81 +666,6 @@ set_perennial_crop_parameters :: proc(
 	ptr^ = clone_crop_parameters(cps, allocator)
 	cm.perennial_crop_params = ptr
 }
-
-// C++: void monica::cropmodule::forceTransplantState(CropModule*, double
-// temperatureSum, double lai, size_t stage, double rootMass, double
-// leafMass, double shootMass, int postTransplantDelay)
-//
-// --- BEGIN TRANSPLANT MODIFICATION --- (matching the C++ source's own
-// begin/end markers around this function)
-force_transplant_state :: proc(
-	cm: ^Crop_Module,
-	temperature_sum, lai: f64,
-	stage: int,
-	root_mass, leaf_mass, shoot_mass: f64,
-	post_transplant_delay: int,
-) {
-	// Initialize transplant shock duration parameters
-	cm.transplant_shock_duration = post_transplant_delay
-	cm.days_since_transplant = 0
-
-	// --- Step 1: Force developmental stage and LAI ---
-	set_stage(cm, stage)
-	cm.leaf_area_index = lai
-
-	// --- Step 2: Force cumulative and stage-specific GDD temperature sums ---
-	cm.current_total_temperature_sum = temperature_sum
-
-	remaining_gdd := temperature_sum
-	for i := 0; i < len(cm.current_temperature_sum); i += 1 {
-		if i < stage {
-			threshold := cm.crop_params.cultivar_params.stage_temperature_sum[i]
-			cm.current_temperature_sum[i] = threshold
-			remaining_gdd -= threshold
-		} else if i == stage {
-			cm.current_temperature_sum[i] = max(0.0, remaining_gdd)
-		} else {
-			cm.current_temperature_sum[i] = 0.0
-		}
-	}
-
-	// --- Step 3: Initialize organ biomass pools ---
-	if len(cm.organ_biomass) > 2 {
-		cm.organ_biomass[0] = root_mass
-		cm.organ_biomass[1] = leaf_mass
-		cm.organ_biomass[2] = shoot_mass
-		cm.organ_green_biomass[0] = root_mass
-		cm.organ_green_biomass[1] = leaf_mass
-		cm.organ_green_biomass[2] = shoot_mass
-	}
-
-	// --- Step 4: Update carbon balance and rooting depth state variables ---
-	cm.root_biomass = root_mass
-	cm.aboveground_biomass = leaf_mass + shoot_mass
-	cm.total_biomass = root_mass + leaf_mass + shoot_mass
-
-	// Settle rooting zone and layers based on standard species parameters
-	nols := len(cm.soil_column.layers)
-	layer_thickness := cm.soil_column.layers[0].layer_thickness_m
-	cm.rooting_depth_m = cm.crop_params.species_params.initial_rooting_depth
-	cm.rooting_depth = min(int(libc.round(cm.rooting_depth_m / layer_thickness)), nols)
-	cm.rooting_zone = min(int(libc.round(1.3 * cm.rooting_depth_m / layer_thickness)), nols)
-
-	// Force total root length based on physical constants
-	cm.total_root_length =
-		(cm.root_biomass * 100000.0 * 100.0 / 7.0) / (0.015 * 0.015 * 3.14159265358979323)
-
-	// Force nitrogen pools to prevent severe immediate starvation stress in
-	// new seedlings
-	cm.n_concentration_aboveground_biomass =
-		cm.crop_params.species_params.n_concentration_aboveground_biomass
-	cm.n_concentration_root = cm.crop_params.species_params.n_concentration_root
-	cm.total_biomass_n_content =
-		(cm.aboveground_biomass * cm.n_concentration_aboveground_biomass) +
-		(cm.root_biomass * cm.n_concentration_root)
-}
-
-// --- END TRANSPLANT MODIFICATION ---
 
 // C++: the icSendRcv lambda inside step(). The intercropping RPC exchange
 // body is unreachable (Intercropping is a dropped feature, see

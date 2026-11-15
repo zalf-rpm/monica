@@ -261,3 +261,8 @@ canopy_green_area :: proc(c: ^Crop_Canopy, ps: ^p.Crop_Parameters, input: Canopy
 	c.green_area_index =
 		c.leaf_area_index + (c.crop_height * PI * c.crop_diameter * f64(ps.species_params.plant_density)) // [m2 m-2]
 }
+
+// Transplanting (force_transplant_state): the transplant's leaf area.
+canopy_transplant :: proc(c: ^Crop_Canopy, leaf_area_index: f64) {
+	c.leaf_area_index = leaf_area_index
+}

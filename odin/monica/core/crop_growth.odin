@@ -342,3 +342,17 @@ growth_limit_n_demand :: proc(g: ^Crop_Growth, ps: ^p.Crop_Parameters, input: Gr
 		g.crop_n_demand = g.crop_n_demand / 10000.0 // [kg ha-1 -> kg m-2]
 	}
 }
+
+// Transplanting (force_transplant_state): the transplant's organ biomass.
+growth_transplant :: proc(g: ^Crop_Growth, root_mass, leaf_mass, shoot_mass: f64) {
+	if len(g.organ_biomass) > 2 {
+		g.organ_biomass[0] = root_mass
+		g.organ_biomass[1] = leaf_mass
+		g.organ_biomass[2] = shoot_mass
+		g.organ_green_biomass[0] = root_mass
+		g.organ_green_biomass[1] = leaf_mass
+		g.organ_green_biomass[2] = shoot_mass
+	}
+	g.aboveground_biomass = leaf_mass + shoot_mass
+	g.total_biomass = root_mass + leaf_mass + shoot_mass
+}

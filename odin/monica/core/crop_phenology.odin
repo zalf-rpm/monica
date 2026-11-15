@@ -530,3 +530,39 @@ crop_vernalisation_factor :: proc(
 
 	return
 }
+
+// C++: void monica::cropmodule::setStage(CropModule*, size_t newStage): the
+// new stage, the temperature sums of the stages before it kept, the others
+// cleared. A management command (cutting, transplanting, the "Stage" output
+// setter).
+phenology_set_stage :: proc(ph: ^Crop_Phenology, new_stage, no_of_dev_stages: int) {
+	ph.current_total_temperature_sum = 0.0
+	for stage := 0; stage < no_of_dev_stages; stage += 1 {
+		if stage < new_stage {
+			ph.current_total_temperature_sum += ph.current_temperature_sum[stage]
+		} else {
+			ph.current_temperature_sum[stage] = 0.0
+		}
+	}
+
+	ph.developmental_stage = new_stage
+}
+
+// Transplanting (force_transplant_state): the temperature sums of a crop
+// transplanted at `stage` after `temperature_sum` degree days.
+phenology_transplant :: proc(ph: ^Crop_Phenology, ps: ^p.Crop_Parameters, stage: int, temperature_sum: f64) {
+	ph.current_total_temperature_sum = temperature_sum
+
+	remaining_gdd := temperature_sum
+	for i := 0; i < len(ph.current_temperature_sum); i += 1 {
+		if i < stage {
+			threshold := ps.cultivar_params.stage_temperature_sum[i]
+			ph.current_temperature_sum[i] = threshold
+			remaining_gdd -= threshold
+		} else if i == stage {
+			ph.current_temperature_sum[i] = max(0.0, remaining_gdd)
+		} else {
+			ph.current_temperature_sum[i] = 0.0
+		}
+	}
+}
