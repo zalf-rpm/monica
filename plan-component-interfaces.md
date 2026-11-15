@@ -54,7 +54,7 @@ apply. 5 at the latest at the end of each phase.
 | C | C1-C3 | crop fields grouped into component sub-structs | done: 0866110, afdcffd, C3 in the docs commit |
 | D | D1-D6 | leaf components with input/state structs and tags | done: 48fe4e4 .. 4f16b1c |
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | done (incl. A4b): 6d8c48d .. 2d84e45 |
-| F | F1-F6 | medium components, management, parameters | |
+| F | F1-F6 | medium components, management, parameters | done: e20cc9d .. 272a9d3 (F6 "reference" part not done, see below) |
 | G | G1 | share radiation/day length with soil ET0 | |
 | H | H1-H3 | tag and graph tool, generated docs | |
 | I | I1-I3 | soil mineral N as rate/state (model change, own branch) | |
@@ -313,6 +313,44 @@ What was done:
 
 Done when: no step procedure takes `^Crop_Module`. `crop_module_step` is
 wiring only.
+
+What was done:
+- F1 (e20cc9d) `core/crop_phenology.odin`: `phenology_start_dormancy`,
+  `phenology_development`, `phenology_reset_perennial`, `phenology_events`,
+  plus the factor functions. The perennial reset is split where it replaces
+  the crop parameters: development returns that a new cycle starts, the step
+  swaps the parameters and calls `phenology_reset_perennial` with the new
+  ones.
+- F2 (db70653) `core/crop_growth.odin`: `growth_step` (returns the dead root
+  biomass, the updated N content - N uptake's - and the end of a perennial's
+  growth cycle - phenology's) and `growth_limit_n_demand`.
+- F3 (3b5b4a0) `core/crop_water_uptake.odin`, F4 (a6ad909)
+  `core/crop_n_uptake.odin`, F5 (e65d2a9) `core/crop_photosynthesis.odin`
+  (gets the O3 and VOC states: it steps both), 48736f2 `core/crop_carbon.odin`
+  and `core/crop_radiation.odin`.
+- F6 (8c11707, 7dcebc3, 80184bc): `force_transplant_state` and
+  `apply_cutting` (`core/crop_management.odin`) dispatch to commands each
+  owner applies (`phenology_set_stage`, `phenology_transplant`,
+  `canopy_transplant`, `growth_cut`, `canopy_after_cut`, `management_cut`,
+  `n_uptake_after_cut`, ...). Immutable parameters: the max assimilation rate
+  a cutting reduces is photosynthesis state (the same multiplications in the
+  same order) - the crop parameters are no longer written during a run.
+  Visible difference: an output path or SetValue on
+  `crop_params.cultivar_params.max_assimilation_rate` sees/sets the unchanged
+  parameter.
+- **Not done: the perennial reset as a parameter reference swap.** With the
+  cutting no longer writing parameters, the clone at the reset copies
+  unchanged data; replacing `crop_params` (a value) by a pointer to the
+  sowing's or the perennial parameters would only change ownership and
+  memory, with no visible effect, and touches every `cm.crop_params` use and
+  the output paths. Left as it is.
+- 272a9d3: the last inline updates (`management_daily_step`,
+  `phenology_relative_development`). `crop_module_step` now fills inputs,
+  calls the components and does the documented hand-overs: the carry-over,
+  the water-stress clamp, the ET0 choice (climate file or `crop_et0`), the
+  dead roots to soil organic, the perennial parameter swap.
+- Extra scenarios added: a Transplant workstep; cuttings that reduce the max
+  assimilation rate (90 %).
 
 ## Phase G: remove duplicates (architecture.md §6 step 6)
 

@@ -466,7 +466,13 @@ organic-matter callback and the error state stay direct fields.
 | `Crop_Stress` | oxygen_deficit |
 | `Crop_Water_Uptake` | transpiration_deficit |
 
-What the cross-writes mean for the next steps:
+*Resolved in phases E and F:* the root system is its own component (E1),
+O3 and VOC too (E2); growth returns the N content and the end of the growth
+cycle instead of writing them (F2); management dispatches to commands each
+owner applies (F6); the perennial reset is split around the parameter swap
+(F1). The table above is the state after step 1, before those.
+
+What the cross-writes meant for the next steps:
 
 - `fc_crop_dry_matter` computes the root system (11 fields): step E1 cuts it
   out. It also ends the growth cycle (`growth_cycle_ended`, phenology) and
