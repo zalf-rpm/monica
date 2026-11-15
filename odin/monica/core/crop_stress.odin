@@ -150,9 +150,9 @@ Frost_Kill_In :: struct {
 	max_air_temperature:      f64 `unit:"°C" src:"weather"`,
 	min_air_temperature:      f64 `unit:"°C" src:"weather"`,
 	snow:                     Snow_For_Crop `src:"soil moisture"`,
-	snow_depth_mm:            f64 `unit:"mm" src:"soil column"`, // for the respiratory stress
-	soil_surface_temperature: f64 `unit:"°C" src:"soil column"`,
-	top_soil_temperature:     f64 `unit:"°C" src:"soil column"`, // layer 0
+	snow_depth_mm:            f64 `unit:"mm" src:"soil"`, // for the respiratory stress
+	soil_surface_temperature: f64 `unit:"°C" src:"soil"`,
+	top_soil_temperature:     f64 `unit:"°C" src:"soil"`, // layer 0
 	developmental_stage:      int `unit:"" src:"Phenology"`,
 	vernalisation_factor:     f64 `unit:"0-1" src:"Phenology"`,
 	current_temperature_sum:  []f64 `unit:"°C d" src:"Phenology"`, // per stage

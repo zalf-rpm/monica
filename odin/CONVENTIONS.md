@@ -301,3 +301,42 @@ XML (`plan-crop2ml-modules.md` §2).
 
 An object-form output column may override the unit (`"unit"`) and transform the value
 (`"calc"`, `monica/io/output_calc.odin`); a `"calc"` without `"unit"` prints no unit.
+
+## 9b. Crop components: state, declared inputs, wiring
+
+The crop module is being split into components (`plan-component-interfaces.md`,
+`architecture.md` §5 and §12). A component looks like this
+(`core/crop_canopy.odin`, `crop_stress.odin`, `crop_n_status.odin`):
+
+```odin
+Crop_Canopy :: struct {...}            // its state, embedded in Crop_Module with `using canopy: Crop_Canopy`
+
+Canopy_Growth_In :: struct {           // what it reads on a day, from outside its state
+	developmental_stage:       int `unit:"" src:"Phenology"`,
+	leaf_growth_increment:     f64 `unit:"kgDM ha-1" src:"Growth" lag:"1d"`,
+	...
+}
+
+canopy_growth :: proc(c: ^Crop_Canopy, ps: ^p.Crop_Parameters, input: Canopy_Growth_In) {...}
+```
+
+- **Names.** State `Crop_<Component>`, embedded as `<component>`; inputs `<Process>_In`;
+  a procedure that updates state `<component>_<process>(state, params, input)`
+  (`canopy_growth`, `stress_heat`, `n_status_step` when there is only one); a function without
+  state `crop_<what>(input) -> result` (`crop_radiation`, `crop_daylength_factor`).
+- **A procedure writes only its own state** and reads only its state, its `input` and the
+  parameters. Everything from elsewhere - other components, the soil, the weather - is an
+  input field, filled in `crop_module_step` (the wiring). A new dependency is a new input field.
+- **Inputs are values.** `input` is passed by value, so it can't be written (large structs go by
+  reference internally - no cost). A slice in an input is a view of someone else's array: read
+  it, never write through it.
+- **Tags on input fields.** `unit` on every number (§9a; `unit:""` for flags), `src` = where the
+  value comes from - a component (its state struct without `Crop_`: `Phenology`, `Growth`,
+  `Root_System`, ...) or `weather`, `site`, `soil`, `soil moisture`, `species`, `cultivar`,
+  `crop parameters`, `crop module parameters`, `simulation parameters` - and `lag:"1d"` when it
+  is the previous day's value (from `Crop_Carry_Over`, §8 of architecture.md). Optional
+  `cat:"state"|"rate"|"aux"` (Crop2ML's categories). `tests/component_inputs_test.odin` checks
+  units and the vocabulary; add each new `*_In` there.
+- **Bit-identical moves.** When a procedure becomes a component, its body moves verbatim -
+  `cm.x` becomes `state.x`, `input.x` or `ps.x`, nothing else - so the C++ comparison stays
+  exact. Unreachable branches may go, with a comment saying why.

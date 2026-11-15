@@ -987,31 +987,37 @@ not of single procedures:
 
 ```odin
 Phenology_In :: struct {
-	tavg:                 f64 `unit:"°C"`,
-	soil_temperature_top: f64 `unit:"°C"`,
-	day_length:           f64 `unit:"h"  src:"Radiation"`,
+	tavg:                 f64 `unit:"°C" src:"weather"`,
+	soil_temperature_top: f64 `unit:"°C" src:"soil"`,
+	day_length:           f64 `unit:"h" src:"Radiation"`,
 	water_stress:         f64 `unit:"0-1" src:"Water_Uptake" lag:"1d"`,
-	n_stress:             f64 `unit:"0-1" src:"Crop_N_Status" lag:"1d"`,
+	n_stress:             f64 `unit:"0-1" src:"N_Status" lag:"1d"`,
 }
 
-// Owned and persistent; written only by phenology.
-Phenology_State :: struct {
+// Owned and persistent; written only by phenology. (Today's Crop_Phenology.)
+Crop_Phenology :: struct {
 	developmental_stage: int,
 	temperature_sum:     [MAX_STAGES]f64 `unit:"°C d" cat:"state"`,
-	vernalisation_days:  f64              `unit:"d"    cat:"state"`,
+	vernalisation_days:  f64 `unit:"d" cat:"state"`,
 }
 
-phenology_step :: proc(ps: ^Species_Parameters, s: ^Phenology_State, in: Phenology_In) {...}
+phenology_step :: proc(s: ^Crop_Phenology, ps: ^p.Crop_Parameters, input: Phenology_In) {...}
 
 // crop_module_step is the "solution file" - as code the compiler checks:
-phenology_step(species_ps, &cm.phenology, Phenology_In{
+phenology_step(&cm.phenology, &cm.crop_params, Phenology_In{
 	tavg                 = w.tavg,
 	soil_temperature_top = soil.temperature[0],
-	day_length           = rad.effective_day_length,
+	day_length           = cm.effective_day_length,
 	water_stress         = prev.water_stress, // carry-over, section 8
 	n_stress             = prev.n_stress,
 })
 ```
+
+*As implemented (phase D):* the conventions are in `CONVENTIONS.md` §9b -
+state `Crop_<Component>`, inputs `<Process>_In`, procedures
+`<component>_<process>(state, params, input)`; `input`, not `in`, which is an
+Odin keyword. Examples: `core/crop_canopy.odin`, `crop_stress.odin`,
+`crop_n_status.odin`, and `crop_radiation` for a function without state.
 
 - **The declaration is the signature.** A component sees its `In`, its own
   state and its parameters, nothing else. A new dependency is one field in

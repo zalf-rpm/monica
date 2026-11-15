@@ -52,7 +52,7 @@ apply. 5 at the latest at the end of each phase.
 | A | A1-A5 | crop → soil exchange struct, callbacks as return values | done except A4b (moved to E1): 7ca53e2 .. 22d1a1e |
 | B | B1-B3 | previous-day carry-over struct | done: d88401c .. f9e568a |
 | C | C1-C3 | crop fields grouped into component sub-structs | done: 0866110, afdcffd, C3 in the docs commit |
-| D | D1-D6 | leaf components with input/state structs and tags | |
+| D | D1-D6 | leaf components with input/state structs and tags | done: 48fe4e4 .. D6 docs commit |
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | |
 | F | F1-F6 | medium components, management, parameters | |
 | G | G1 | share radiation/day length with soil ET0 | |
@@ -238,6 +238,25 @@ Order (easy first), each one commit:
 - **D5 Crop N status.**
 - **D6 Review**: are the tag names and the `In`/`State` convention right? Fix
   them in `CONVENTIONS.md` before the bigger components.
+
+What was done:
+- D1 (48fe4e4) `crop_radiation(Radiation_In) -> Crop_Radiation`, pure.
+- D2 (2ee4ef9) `crop_daylength_factor`, `crop_vernalisation_factor`, pure;
+  the vernalisation-fix lookup became an input.
+- D3 (c34f08d) `core/crop_canopy.odin`: `canopy_kc_factor`,
+  `canopy_kcb_factor` (the dual-Kc block from the step), `canopy_growth`
+  (size, green area, coverage). The intercropping exchange between size and
+  green area is an empty stub in Odin, so the three could become one call.
+- D4 (5fafabe) `core/crop_stress.odin`: oxygen, heat, frost, drought impact.
+  Made visible: frost kill reads the snow depth twice (soil moisture's snow
+  component and the soil column's `snow_depth_mm`); drought impact reads
+  growth's storage organ.
+- D5 (23a1add) `core/crop_n_status.odin`: `n_status_step`.
+- D6: `CONVENTIONS.md` §9b (names, inputs as values, tags and their
+  vocabulary, verbatim moves); `tests/component_inputs_test.odin` checks the
+  tags; the architecture.md §12 sketch corrected (`in` is a keyword).
+- Output units: the radiation fields got unit tags, which only shows in the
+  units row of outputs that name them by path (none of the legacy ids do).
 
 ## Phase E: cut the big procedures (architecture.md §4, §6 step 4)
 
