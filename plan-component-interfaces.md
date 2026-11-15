@@ -56,7 +56,7 @@ apply. 5 at the latest at the end of each phase.
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | done (incl. A4b): 6d8c48d .. 2d84e45 |
 | F | F1-F6 | medium components, management, parameters | done: e20cc9d .. 272a9d3 (F6 "reference" part not done, see below) |
 | G | G1 | share radiation/day length with soil ET0 | done: a7a116f |
-| H | H1-H3 | tag and graph tool, generated docs | done: 13f06e3, H2/H3 commit |
+| H | H1-H3 | tag and graph tool, generated docs | done: 13f06e3, d1ed0f1 |
 | I | I1-I3 | soil mineral N as rate/state (model change, own branch) | |
 
 ---
