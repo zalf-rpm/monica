@@ -34,13 +34,16 @@ deliberate model change and gets its own branch.
 | 3 | same bytes as the C++ master (needs `../monica` built, with the uncommitted 6-digit `Mois`) | `bash tests/diff_vs_cpp.sh` |
 | 4 | Crop2ML modules unchanged (only for steps touching `soil_temperature_impl`, `evapotranspiration_impl`, `monica/modules`) | `bash tests/check_modules.sh` (Linux / CI) |
 | 5 | C++ test suites, value by value | CI on push (`.github/workflows/odin.yml`) |
-| 6 | scenarios the fixtures don't cover, byte-identical to the branch's base binary: automatic irrigation (workstep and model-level), FAO-56 dual Kc, output sections keyed to every crop event, N-min fertilising | `build/tmp_cm/extra_sims.py` (base binary in `build/base-bin`, built from `f84b55c`) |
-| 7 | the Odin test drivers (`tests/*_ref`) and `cmd/monica-module` still compile | `build/tmp_cm/check_drivers.sh` |
-| 8 | the Crop2ML modules as drivers and integrated, before/after (phase A: 683 CSVs identical) | `tests/check_drivers.py` with the base and the new binaries, then compare the two work directories (~30 min each) |
+| 6 | scenarios the fixtures don't cover, byte-identical to a reference binary: automatic irrigation (workstep and model-level), FAO-56 dual Kc, output sections keyed to every crop event, N-min fertilising, hourly FvCB with O3 and VOC, a Transplant workstep, perennials with cuttings | `tests/extra_scenarios.py` (`--save --reference <binary>` once, from the starting commit) |
+| 7 | the Odin test drivers (`tests/*_ref`) and `cmd/monica-module` still compile | `tests/compile_drivers.sh` |
+| 8 | the Crop2ML modules as drivers and integrated, before/after | `tests/modules_before_after.sh <reference bin dir>` (~30 min per run) |
+| 9 | the components' declared inputs; `components.md` up to date (also in CI) | `pixi run check-components`, `tools/component_check.py doc -o components.md --check` |
 
-Per step: 1-3, 6 and 7 locally, all in one go with `build/tmp_cm/gate.sh`
-(the helper scripts live under `build/`, not committed). 4 and 8 where they
-apply. 5 at the latest at the end of each phase.
+Per step: 1-3, 6, 7 and 9 in one go with `pixi run bash tests/refactor_gate.sh`
+(`BASE=` the baseline directory, `CPP_RUN=` the C++ monica-run). 4 and 8
+where they apply. 5 at the latest at the end of each phase. (During phases
+A-H these helpers lived uncommitted under `build/tmp_cm`; they were moved to
+`odin/tests` afterwards.)
 
 ---
 
