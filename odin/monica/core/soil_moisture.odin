@@ -1156,70 +1156,20 @@ reference_evapotranspiration :: proc(
 	julian_day: int,
 	terms: ^Et0_Terms = nil,
 ) -> f64 {
-	pi := 3.14159265358979323
-
-	declination := -23.4 * cr_math.cos(2.0 * pi * ((f64(julian_day) + 10.0) / 365.0))
-	declination_sinus :=
-		cr_math.sin(declination * pi / 180.0) * cr_math.sin(sm.site_params.latitude * pi / 180.0)
-	declination_cosinus :=
-		cr_math.cos(declination * pi / 180.0) * cr_math.cos(sm.site_params.latitude * pi / 180.0)
-
-	arg_astro_day_length := declination_sinus / declination_cosinus
-	// The argument of asin must be in the range of -1 to 1
-	arg_astro_day_length = tl.bound(-1.0, arg_astro_day_length, 1.0)
-	astronomic_day_lenght := 12.0 * (pi + 2.0 * cr_math.asin(arg_astro_day_length)) / pi
-
-	arg_effective_day_length :=
-		(-cr_math.sin(8.0 * pi / 180.0) + declination_sinus) / declination_cosinus
-	arg_effective_day_length = tl.bound(-1.0, arg_effective_day_length, 1.0)
-	effective_day_lenght := 12.0 * (pi + 2.0 * cr_math.asin(arg_effective_day_length)) / pi
-
-	arg_photo_day_length :=
-		(-cr_math.sin(-6.0 * pi / 180.0) + declination_sinus) / declination_cosinus
-	arg_photo_day_length = tl.bound(-1.0, arg_photo_day_length, 1.0)
-	photoperiodic_daylength := 12.0 * (pi + 2.0 * cr_math.asin(arg_photo_day_length)) / pi
-	_ = effective_day_lenght
-	_ = photoperiodic_daylength
-
-	arg_phot_act := min(
-		1.0,
-		((declination_sinus / declination_cosinus) *
-			(declination_sinus / declination_cosinus)),
-	)
-	// The argument of sqrt must be >= 0
-	phot_act_radiation_mean :=
-		3600.0 *
-		(declination_sinus * astronomic_day_lenght +
-				24.0 / pi * declination_cosinus * libc.sqrt(1.0 - arg_phot_act))
-
-	clear_day_radiation := 0.0
-	if phot_act_radiation_mean > 0 && astronomic_day_lenght > 0 {
-		clear_day_radiation =
-			0.5 *
-			1300.0 *
-			phot_act_radiation_mean *
-			cr_math.exp(-0.14 / (phot_act_radiation_mean / (astronomic_day_lenght * 3600.0)))
-	}
-	// vc_OvercastDayRadiation, like vc_EffectiveDayLenght/vc_PhotoperiodicDaylength/
-	// vm_AerodynamicResistance below, is computed by the C++ but never read
-	// afterward (dead in the C++ itself) - kept for literal fidelity.
-	overcast_day_radiation := 0.2 * clear_day_radiation
-	_ = overcast_day_radiation
-
-	// C++: written as in the crop module's radiation, so both give the same bits
-	solar_constant := 0.082
-	sc := 24.0 * 60.0 / pi * solar_constant * (1.0 + 0.033 * cr_math.cos(2.0 * pi * f64(julian_day) / 365.0))
-	arg_sha := tl.bound(
-		-1.0,
-		-cr_math.tan(sm.site_params.latitude * pi / 180.0) * cr_math.tan(declination * pi / 180.0),
-		1.0,
-	)
-	// The argument of acos must be in the range of -1 to 1
-	sha := cr_math.acos(arg_sha)
-
-	// [J cm-2] --> [MJ m-2]
+	// Declination, day lengths and radiation: the crop's function, whose
+	// formulas this procedure used to repeat (plan-component-interfaces.md G1;
+	// tests/radiation_shared_test.odin checks the bits). Of those values the
+	// ET0 uses only the extraterrestrial radiation; the others (day lengths,
+	// PAR, clear and overcast day radiation) were dead stores here, in the C++
+	// too.
 	extraterrestrial_radiation :=
-		sc * (sha * declination_sinus + declination_cosinus * cr_math.sin(sha)) // [MJ m-2]
+		crop_radiation(
+			Radiation_In {
+				julian_day = f64(julian_day),
+				latitude = sm.site_params.latitude,
+				global_radiation = global_radiation,
+			},
+		).extraterrestrial_radiation // [MJ m-2]
 
 	// Calculation of atmospheric pressure
 	atmospheric_pressure :=
