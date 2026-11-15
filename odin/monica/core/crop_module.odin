@@ -160,33 +160,6 @@ Crop_Photosynthesis :: struct {
 	fraction_of_intercepted_radiation2: f64,
 }
 
-// O3 impact (computed in fc_crop_photosynthesis, o3_impact.odin).
-Crop_O3 :: struct {
-	o3_short_term_damage:  f64 `unit:"0-1"`,
-	o3_long_term_damage:   f64 `unit:"0-1"`,
-	o3_senescence:         f64,
-	o3_sum_uptake:         f64 `unit:"µmol m-2"`,
-	o3_w_stomatal_closure: f64 `unit:"0-1"`,
-}
-
-// VOC emissions: the 24/240-step buffers and the emissions (only reported).
-Crop_Voc :: struct {
-	step_size24:                 int,
-	step_size240:                int,
-	rad24:                       [dynamic]f64,
-	rad240:                      [dynamic]f64,
-	tfol24:                      [dynamic]f64,
-	tfol240:                     [dynamic]f64,
-	index24:                     int,
-	index240:                    int,
-	full24:                      bool,
-	full240:                     bool,
-	guenther_emissions:          Voc_Emissions,
-	jjv_emissions:               Voc_Emissions,
-	voc_species:                 Voc_Species_Data,
-	crop_photosynthesis_results: Voc_Cp_Data,
-}
-
 // Growth and partitioning: organ biomass, senescence, reserves, N demand (first part of
 // fc_crop_dry_matter).
 Crop_Growth :: struct {
@@ -1546,9 +1519,7 @@ fc_crop_photosynthesis :: proc(
 			)
 		}
 
-		cm.guenther_emissions = Voc_Emissions{}
-		cm.jjv_emissions = Voc_Emissions{}
-
+		voc_hours: [24]Voc_Hour
 		for h := 0; h < 24; h += 1 {
 			// hourly photosynthesis
 			fvcb_in: Fvcb_Canopy_Hourly_In
@@ -1578,159 +1549,50 @@ fc_crop_photosynthesis :: proc(
 			// [umol CO2 m-2 (h-1)] -> [kg CO2 ha-1 (d-1)]
 			daily_gp += fvcb_res.canopy_gross_photos * 44.0 / 100.0 / 1000.0
 
-			// hourly O3 uptake and damage
-			o3_par := make_o3_impact_params()
-			o3_par.gamma3 = 0.05 // TODO: calibrate and add to crop params
-			o3_par.gamma1 = 0.025 // TODO: calibrate and add to crop params
+			// hourly O3 uptake and damage: its damage lowers the next hour's vcmax
+			// (above), so the O3 component is stepped inside the hourly loop
+			o3_hourly_step(
+				&cm.o3,
+				O3_Hourly_In {
+					hour = h,
+					sunlit = fvcb_res.sunlit,
+					shaded = fvcb_res.shaded,
+					rooting_depth = rooting_depth,
+					soil_layers = soil_column.layers[:],
+					reference_et0 = reference_et0,
+					atmospheric_o3_concentration = atmospheric_o3_concentration,
+					relative_total_development = cm.relative_total_development,
+					temperature_sum_to_flowering = cm.temperature_sum_to_flowering,
+					total_temperature_sum = cm.total_temperature_sum,
+					water_deficit_response_on = water_deficit_response_on,
+				},
+			)
 
-			root_depth := rooting_depth
-			if root_depth >= 1 { 	// the crop has emerged
-				fc := 0.0
-				wp := 0.0
-				swc := 0.0
-				for i := 0; i < root_depth; i += 1 {
-					fc += soil_column.layers[i].field_capacity
-					wp += soil_column.layers[i].permanent_wilting_point
-					swc += soil_column.layers[i].soil_moisture_m3
-				}
-
-				// weighted average gs and conversion from unit ground area
-				// to unit leaf area
-				lai_sun_weight := fvcb_res.sunlit.lai / (fvcb_res.sunlit.lai + fvcb_res.shaded.lai)
-				lai_sh_weight := 1 - lai_sun_weight
-				avg_leaf_gs := lai_sh_weight * fvcb_res.shaded.gs / fvcb_res.shaded.lai
-				if fvcb_res.sunlit.lai > 0 {
-					avg_leaf_gs += lai_sun_weight * fvcb_res.sunlit.gs / fvcb_res.sunlit.lai
-				}
-
-				o3_in: O3_Impact_In
-				o3_in.fc = fc / f64(root_depth + 1) // field capacity, m3 m-3, avg in the rooted zone
-				o3_in.wp = wp / f64(root_depth + 1) // wilting point, m3 m-3
-				o3_in.swc = swc / f64(root_depth + 1) // soil water content, m3 m-3
-				o3_in.et0 = reference_et0
-				o3_in.o3a = atmospheric_o3_concentration
-				o3_in.gs = avg_leaf_gs
-				o3_in.h = h
-				o3_in.reldev = cm.relative_total_development
-				o3_in.gdd_flo = cm.temperature_sum_to_flowering
-				o3_in.gdd_mat = cm.total_temperature_sum
-				o3_in.f_o3s_d_prev = cm.o3_short_term_damage
-				o3_in.sum_o3_up = cm.o3_sum_uptake
-
-				o3_res := o3_impact_hourly(o3_in, o3_par, water_deficit_response_on)
-
-				cm.o3_short_term_damage = o3_res.f_o3s_d
-				cm.o3_long_term_damage = o3_res.f_o3l
-				cm.o3_senescence = o3_res.f_ls
-				cm.o3_sum_uptake += o3_res.hourly_o3_up
-				cm.o3_w_stomatal_closure = o3_res.ws_st_clos
-			}
-
-			// calculate VOC emissions
-			globrad_wm2 := fvcb_in.global_rad * 1000000.0 / 3600 // MJ m-2 h-1 -> W m-2
-			if cm.index240 < cm.step_size240 - 1 {
-				cm.index240 += 1
-			} else {
-				cm.index240 = 0
-				cm.full240 = true
-			}
-			cm.rad240[cm.index240] = globrad_wm2
-			cm.tfol240[cm.index240] = fvcb_in.leaf_temp
-
-			if cm.index24 < cm.step_size24 - 1 {
-				cm.index24 += 1
-			} else {
-				cm.index24 = 0
-				cm.full24 = true
-			}
-			cm.rad24[cm.index24] = globrad_wm2
-			cm.tfol24[cm.index24] = fvcb_in.leaf_temp
-
-			mcd: Voc_Micro_Climate_Data
-			mcd.rad = globrad_wm2
-			rad24_sum := 0.0
-			for v in cm.rad24 {
-				rad24_sum += v
-			}
-			mcd.rad24 = rad24_sum / (cm.full24 ? f64(len(cm.rad24)) : f64(cm.index24 + 1))
-			rad240_sum := 0.0
-			for v in cm.rad240 {
-				rad240_sum += v
-			}
-			mcd.rad240 = rad240_sum / (cm.full240 ? f64(len(cm.rad240)) : f64(cm.index240 + 1))
-			mcd.t_fol = fvcb_in.leaf_temp
-			tfol24_sum := 0.0
-			for v in cm.tfol24 {
-				tfol24_sum += v
-			}
-			mcd.t_fol24 = tfol24_sum / (cm.full24 ? f64(len(cm.tfol24)) : f64(cm.index24 + 1))
-			tfol240_sum := 0.0
-			for v in cm.tfol240 {
-				tfol240_sum += v
-			}
-			mcd.t_fol240 = tfol240_sum / (cm.full240 ? f64(len(cm.tfol240)) : f64(cm.index240 + 1))
-			mcd.co2concentration = atmospheric_co2_concentration
-
-			species: Voc_Species_Data
-			species.lai = lai
-			species.m_fol = cm.organ_green_biomass[Organ_Leaf] / (100.0 * 100.0) // kg/ha -> kg/m2
-			species.sla =
-				species.m_fol > 0 ? species.lai / species.m_fol : specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
-
-			species.ef_mono = species_ps.ef_mono
-			species.ef_monos = species_ps.ef_monos
-			species.ef_iso = species_ps.ef_iso
-			species.vcmax25 = species_ps.vcmax25
-			species.aekc = species_ps.aekc
-			species.aeko = species_ps.aeko
-			species.aevc = species_ps.aevc
-			species.kc25 = species_ps.kc25
-
-			ges := voc_guenther_emissions(species, &mcd, 1.0 / 24.0, allocator)
-			voc_emissions_add(&cm.guenther_emissions, &ges, allocator)
-
-			sun_lai := fvcb_res.sunlit.lai
-			sh_lai := fvcb_res.shaded.lai
-			leaf_fractions := []Fvcb_Leaf_Fraction{fvcb_res.sunlit, fvcb_res.shaded}
-			for lf in leaf_fractions {
-				species.lai = lf.lai
-				species.m_fol =
-					cm.organ_green_biomass[Organ_Leaf] /
-					(100.0 * 100.0) *
-					lf.lai /
-					(sun_lai + sh_lai) // kg/ha -> kg/m2
-				species.sla =
-					species.m_fol > 0 ? species.lai / species.m_fol : specific_leaf_area[cm.developmental_stage] * 100.0 * 100.0 // ha/kg -> m2/kg
-
-				mcd.rad = lf.rad // W m-2 global incident
-
-				cm.crop_photosynthesis_results.kc = lf.kc
-				cm.crop_photosynthesis_results.ko = lf.ko * 1000
-				cm.crop_photosynthesis_results.oi = lf.oi * 1000
-				cm.crop_photosynthesis_results.ci = lf.ci
-				cm.crop_photosynthesis_results.vc_max =
-					fvcb_vcmax_bernacchi_f(mcd.t_fol, species_ps.vcmax25) *
-					n_stress *
-					water_stress
-				cm.crop_photosynthesis_results.j_max =
-					fvcb_jmax_bernacchi_f(mcd.t_fol, 120) *
-					n_stress *
-					water_stress
-				cm.crop_photosynthesis_results.jj = lf.jj
-				cm.crop_photosynthesis_results.jj1000 = lf.jj1000
-				cm.crop_photosynthesis_results.jv = lf.jv
-
-				jjves := voc_jjv_emissions(
-					species,
-					&mcd,
-					cm.crop_photosynthesis_results,
-					1.0 / 24.0,
-					false,
-					allocator,
-				)
-				voc_emissions_add(&cm.jjv_emissions, &jjves, allocator)
+			// for the VOC emissions after the loop
+			voc_hours[h] = Voc_Hour {
+				global_rad = fvcb_in.global_rad,
+				leaf_temp  = fvcb_in.leaf_temp,
+				sunlit     = fvcb_res.sunlit,
+				shaded     = fvcb_res.shaded,
 			}
 		}
+
+		// VOC emissions: only reported, nothing in the crop reads them, so they
+		// are computed from the day's 24 hours after the loop
+		voc_step(
+			&cm.voc,
+			&cm.crop_params,
+			Voc_In {
+				hours = voc_hours,
+				lai = lai,
+				leaf_green_biomass = cm.organ_green_biomass[Organ_Leaf],
+				specific_leaf_area = specific_leaf_area[cm.developmental_stage],
+				atmospheric_co2_concentration = atmospheric_co2_concentration,
+				n_stress = n_stress,
+				water_stress = water_stress,
+			},
+			allocator,
+		)
 	}
 
 	gross_co2_assimilation =
