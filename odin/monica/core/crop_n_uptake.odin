@@ -281,3 +281,15 @@ n_uptake_transplant :: proc(
 		(aboveground_biomass * n.n_concentration_aboveground_biomass) +
 		(root_biomass * n.n_concentration_root)
 }
+
+// Cutting (apply_cutting): the N content loses the cut aboveground biomass'
+// share of the aboveground N.
+n_uptake_after_cut :: proc(
+	n: ^Crop_N_Uptake,
+	aboveground_biomass, old_aboveground_biomass, old_aboveground_n_content: f64,
+) {
+	if old_aboveground_biomass > 0.0 {
+		n.total_biomass_n_content -=
+			(1 - aboveground_biomass / old_aboveground_biomass) * old_aboveground_n_content
+	}
+}

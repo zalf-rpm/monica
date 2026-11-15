@@ -7,6 +7,7 @@ package core
 
 import p "../params"
 import libc "core:c/libc"
+import "core:slice"
 
 // Growth and partitioning: organ biomass, senescence, reserves, N demand (first part of
 // fc_crop_dry_matter).
@@ -355,4 +356,100 @@ growth_transplant :: proc(g: ^Crop_Growth, root_mass, leaf_mass, shoot_mass: f64
 	}
 	g.aboveground_biomass = leaf_mass + shoot_mass
 	g.total_biomass = root_mass + leaf_mass + shoot_mass
+}
+
+// Cutting (apply_cutting): cuts the organs as specified (by default the
+// cultivar's organs for cutting), as biomass, percentage or remaining LAI.
+// Returns the cut biomass and the part of it left on the field (not
+// exported). `leaf_area_index` and `current_sla` are the canopy's before the
+// cut.
+growth_cut :: proc(
+	g: ^Crop_Growth,
+	ps: ^p.Crop_Parameters,
+	organs: map[int]Cutting_Value,
+	exports: map[int]f64,
+	leaf_area_index, current_sla: f64,
+	allocator := context.allocator,
+) -> (
+	sum_cut_biomass: f64,
+	sum_residue_biomass: f64,
+) {
+	organs := organs
+	if len(organs) == 0 {
+		for yc in ps.cultivar_params.organ_ids_for_cutting {
+			organs[yc.organ_id - 1] = Cutting_Value {
+				value = yc.yield_percentage,
+			}
+		}
+	}
+
+	keys := make([dynamic]int, 0, len(organs), allocator)
+	for k in organs {
+		append(&keys, k)
+	}
+	slice.sort(keys[:])
+
+	for organ_id in keys {
+		organ_spec := organs[organ_id]
+
+		old_organ_biomass := g.organ_biomass[organ_id]
+		old_organ_dead_biomass := g.organ_dead_biomass[organ_id]
+		old_organ_green_biomass := old_organ_biomass - old_organ_dead_biomass
+		new_organ_biomass := 0.0
+		cut_organ_biomass := 0.0
+
+		if organ_spec.unit == .Biomass {
+			if organ_spec.cut_or_left == .Cut {
+				cut_organ_biomass = min(organ_spec.value, old_organ_biomass)
+				new_organ_biomass = old_organ_biomass - cut_organ_biomass
+			} else if organ_spec.cut_or_left == .Left {
+				new_organ_biomass = min(organ_spec.value, old_organ_biomass)
+				cut_organ_biomass = old_organ_biomass - new_organ_biomass
+			}
+
+			if old_organ_biomass == 0 {
+				g.organ_dead_biomass[organ_id] = 0
+			} else {
+				g.organ_dead_biomass[organ_id] =
+					new_organ_biomass * min(old_organ_dead_biomass / old_organ_biomass, 1.0)
+			}
+		} else if organ_spec.unit == .Percentage {
+			if organ_spec.cut_or_left == .Cut {
+				cut_organ_biomass = organ_spec.value * old_organ_biomass
+				new_organ_biomass = old_organ_biomass - cut_organ_biomass
+			} else if organ_spec.cut_or_left == .Left {
+				new_organ_biomass = organ_spec.value * old_organ_biomass
+				cut_organ_biomass = old_organ_biomass - new_organ_biomass
+			}
+
+			if old_organ_biomass == 0 {
+				g.organ_dead_biomass[organ_id] = 0
+			} else {
+				g.organ_dead_biomass[organ_id] =
+					new_organ_biomass * min(old_organ_dead_biomass / old_organ_biomass, 1.0)
+			}
+		} else if organ_spec.unit == .LAI {
+			// only "left" is supported for LAI
+			if organ_spec.value > leaf_area_index {
+				new_organ_biomass = old_organ_green_biomass
+				cut_organ_biomass = old_organ_dead_biomass
+				g.organ_dead_biomass[organ_id] = 0 // all the dead biomass is assumed to be cut
+			} else {
+				new_organ_biomass = min(organ_spec.value / current_sla, old_organ_green_biomass)
+				cut_organ_biomass = old_organ_biomass - new_organ_biomass
+				g.organ_dead_biomass[organ_id] = 0 // all the dead biomass is assumed to be cut
+			}
+		}
+
+		export_biomass := cut_organ_biomass * exports[organ_id]
+
+		g.aboveground_biomass -= cut_organ_biomass
+		sum_cut_biomass += cut_organ_biomass
+		sum_residue_biomass += cut_organ_biomass - export_biomass
+		g.organ_biomass[organ_id] = new_organ_biomass
+		g.organ_green_biomass[organ_id] =
+			g.organ_biomass[organ_id] - g.organ_dead_biomass[organ_id]
+	}
+
+	return
 }

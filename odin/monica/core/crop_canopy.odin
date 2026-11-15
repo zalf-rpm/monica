@@ -266,3 +266,12 @@ canopy_green_area :: proc(c: ^Crop_Canopy, ps: ^p.Crop_Parameters, input: Canopy
 canopy_transplant :: proc(c: ^Crop_Canopy, leaf_area_index: f64) {
 	c.leaf_area_index = leaf_area_index
 }
+
+// Cutting (apply_cutting): the leaf area of the remaining green leaves, at the
+// specific leaf area before the cut.
+canopy_after_cut :: proc(c: ^Crop_Canopy, leaf_green_biomass, current_sla: f64) {
+	// update LAI
+	if leaf_green_biomass > 0 {
+		c.leaf_area_index = leaf_green_biomass * current_sla
+	}
+}

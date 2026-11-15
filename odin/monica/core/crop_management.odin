@@ -1,5 +1,7 @@
 package core
 
+import p "../params"
+
 // Management of a growing crop (plan-component-interfaces.md F6): what a
 // Transplant or Cutting workstep does to it, as commands each owning
 // component applies to its own state - instead of one procedure writing
@@ -53,3 +55,72 @@ force_transplant_state :: proc(
 }
 
 // --- END TRANSPLANT MODIFICATION ---
+
+// Cutting: the cut biomass, exported and left on the field, and the delay
+// before the crop develops again.
+management_cut :: proc(m: ^Crop_Management, ps: ^p.Crop_Parameters, sum_cut_biomass, sum_residue_biomass: f64) {
+	m.exported_cut_biomass = sum_cut_biomass - sum_residue_biomass
+	m.sum_exported_cut_biomass += m.exported_cut_biomass
+	m.residue_cut_biomass = sum_residue_biomass
+	m.sum_residue_cut_biomass += m.residue_cut_biomass
+	m.cutting_delay_days = ps.species_params.cutting_delay_days
+}
+
+// C++: void monica::cropmodule::applyCutting(CropModule*,
+//        std::map<int, CuttingData::Value>&, std::map<int, double>&, double)
+//
+// `organs`/`exports` are genuine in-out maps in the C++ (organs gets
+// populated from pc_OrganIdsForCutting when passed in empty) - Odin's
+// map[K]V parameters already alias the caller's backing store like a C++
+// reference, so no extra indirection is needed to reproduce that.
+//
+// Iterates `organs` in ascending key order to match C++ std::map's sorted
+// iteration - Odin map iteration order is unspecified and floating-point
+// addition (aboveground_biomass -=, sumCutBiomass +=, sumResidueBiomass +=)
+// is not associative, the same "sort keys first" fix phase 5 checkpoint 6's
+// oracle regression needed.
+apply_cutting :: proc(
+	cm: ^Crop_Module,
+	organs: map[int]Cutting_Value,
+	exports: map[int]f64,
+	cut_max_assimilation_fraction: f64,
+	allocator := context.allocator,
+) -> (
+	// for soil organic (the caller adds them; the C++ called addOrganicMatter
+	// here) - nothing if nothing was left on the field
+	residues: map[int]f64,
+	residue_n_concentration: f64,
+) {
+	old_aboveground_biomass := cm.aboveground_biomass
+	old_agb_n_content := cm.aboveground_biomass * cm.n_concentration_aboveground_biomass
+	current_sla := cm.leaf_area_index / cm.organ_green_biomass[Organ_Leaf]
+
+	sum_cut_biomass, sum_residue_biomass := growth_cut(
+		&cm.growth,
+		&cm.crop_params,
+		organs,
+		exports,
+		cm.leaf_area_index,
+		current_sla,
+		allocator,
+	)
+	management_cut(&cm.management, &cm.crop_params, sum_cut_biomass, sum_residue_biomass)
+
+	if sum_residue_biomass > 0 {
+		// prepare to add crop residues to soilorganic (AOMs)
+		residues = make(map[int]f64, 1, allocator)
+		residues[0] = sum_residue_biomass
+		// residues get the aboveground biomass N concentration
+		residue_n_concentration = cm.n_concentration_aboveground_biomass
+	}
+
+	canopy_after_cut(&cm.canopy, cm.organ_green_biomass[Organ_Leaf], current_sla)
+
+	// reset stage and temperature sum after cutting
+	set_stage(cm, cm.crop_params.species_params.stage_after_cut)
+
+	cm.crop_params.cultivar_params.max_assimilation_rate *= cut_max_assimilation_fraction
+
+	n_uptake_after_cut(&cm.n_uptake, cm.aboveground_biomass, old_aboveground_biomass, old_agb_n_content)
+	return
+}
