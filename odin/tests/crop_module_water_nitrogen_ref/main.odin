@@ -206,13 +206,34 @@ day_step :: proc(
 			 cm.n_concentration_root, cm.sim_params.nitrogen_response_on},
 		)
 
-		core.fc_crop_dry_matter(
-			cm,
-			mean_air_temperature,
-			cm.transpiration_deficit,
-			cm.n_concentration_root,
-			allocator,
-		)
+		{
+			// the three parts of the C++ fcCropDryMatter, as in crop_module_step
+			dead_root_biomass := core.fc_crop_dry_matter(cm, cm.n_concentration_root)
+			dead_roots := core.root_system_step(
+				&cm.roots,
+				&cm.crop_params,
+				{
+					root_biomass = cm.organ_biomass[core.Organ_Root],
+					dead_root_biomass = dead_root_biomass,
+					n_concentration_root = cm.n_concentration_root,
+					water_stress = cm.transpiration_deficit,
+					developmental_stage = cm.developmental_stage,
+					no_of_dev_stages = cm.no_of_dev_stages,
+					mean_air_temperature = mean_air_temperature,
+					soil_layers = cm.soil_column.layers[:],
+					number_of_organic_layers = cm.soil_column.number_of_organic_layers,
+					impenetrable_layer_depth = cm.site_params.impenetrable_layer_depth,
+					max_effective_rooting_depth = cm.site_params.max_effective_rooting_depth,
+					enable_pasw_root_penetration = cm.mod_params.__enable_PASW_root_penetration__,
+					disable_daily_root_biomass_to_soil = cm.mod_params.__disable_daily_root_biomass_to_soil__,
+				},
+				allocator,
+			)
+			if len(dead_roots) > 0 {
+				cm.add_organic_matter(dead_roots, cm.n_concentration_root)
+			}
+			core.fc_crop_n_demand_by_root_length(cm)
+		}
 
 		// climate-min.csv has no et0 column, so this is always the live
 		// branch (referenceEvapotranspiration < 0)

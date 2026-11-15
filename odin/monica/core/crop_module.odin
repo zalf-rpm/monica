@@ -211,23 +211,6 @@ Crop_Growth :: struct {
 	dying_out:                      bool,
 }
 
-// Root system: rooting depth and zone, root biomass, density, diameter and length (second part of
-// fc_crop_dry_matter).
-Crop_Root_System :: struct {
-	rooting_depth:                      int `unit:"layer#"`, // C++ size_t, //! old WURZ
-	rooting_depth_m:                    f64,
-	rooting_zone:                       int `unit:"layer#"`, // C++ size_t
-	max_rooting_depth:                  f64, //! old WURM
-	// vs_soil_mineral_n_content:               [dynamic]f64, //! old C1
-	soil_specific_max_rooting_depth:    f64, //! old WURZMAX [m]
-	root_biomass:                       f64, //! old WUMAS
-	root_biomass_old:                   f64, //! old WUMALT
-	root_density:                       [dynamic]f64, //! old WUDICH
-	root_diameter:                      [dynamic]f64, //! old WRAD
-	total_root_length:                  f64, //! old WULAEN
-	current_total_temperature_sum_root: f64,
-}
-
 // The crop's reference evapotranspiration (fc_reference_evapotranspiration).
 Crop_Et0 :: struct {
 	reference_evapotranspiration: f64 `unit:"mm"`,
@@ -1983,42 +1966,19 @@ calc_root_density_factor_and_sum :: proc(
 	[dynamic]f64,
 	f64,
 ) {
-	nols := len(cm.soil_column.layers)
-	layer_thickness := cm.soil_column.layers[0].layer_thickness_m
-
-	// Calculating a root density distribution factor []
-	root_density_factor := make([dynamic]f64, nols, allocator)
-	for i_layer := 0; i_layer < nols; i_layer += 1 {
-		if i_layer < cm.rooting_depth {
-			root_density_factor[i_layer] = cr_math.exp(
-				-cm.crop_params.species_params.root_form_factor * (f64(i_layer) * layer_thickness),
-			)
-		} else if i_layer < cm.rooting_zone {
-			root_density_factor[i_layer] =
-				cr_math.exp(
-					-cm.crop_params.species_params.root_form_factor *
-					(f64(i_layer) * layer_thickness),
-				) *
-				(1.0 -
-						(f64(i_layer - cm.rooting_depth) /
-								f64(cm.rooting_zone - cm.rooting_depth)))
-		} else {
-			root_density_factor[i_layer] = 0.0
-		}
-	}
-
-	// Summing up all factors to scale to a relative factor between [0;1]
-	root_density_factor_sum := 0.0
-	for i_layer := 0; i_layer < cm.rooting_zone; i_layer += 1 {
-		root_density_factor_sum += root_density_factor[i_layer]
-	}
-
-	return root_density_factor, root_density_factor_sum
+	return root_density_factor_and_sum(
+		cm.rooting_depth,
+		cm.rooting_zone,
+		cm.crop_params.species_params.root_form_factor,
+		cm.soil_column.layers[:],
+		allocator,
+	)
 }
 
 // C++: void monica::cropmodule::fcMoveDeadRootBiomassToSoil(CropModule*,
 // double deadRootBiomass, double rootDensityFactorSum, const
-// vector<double>& rootDensityFactor)
+// vector<double>& rootDensityFactor) - the distribution is
+// dead_roots_per_layer; the caller hands the result to soil organic.
 fc_move_dead_root_biomass_to_soil :: proc(
 	cm: ^Crop_Module,
 	dead_root_biomass, root_density_factor_sum: f64,
@@ -2026,20 +1986,16 @@ fc_move_dead_root_biomass_to_soil :: proc(
 	n_concentration_root: f64,
 	allocator := context.allocator,
 ) {
-	nools := cm.soil_column.number_of_organic_layers
-
-	layer2_dead_root_biomass_at_layer := make(map[int]f64, allocator)
-	for i := 0; i < cm.rooting_zone; i += 1 {
-		dead_root_biomass_at_layer := root_density_factor[i] / root_density_factor_sum * dead_root_biomass
-		// just add organic matter if > 0.0001
-		if int(dead_root_biomass_at_layer * 10000) > 0 {
-			idx := i < nools ? i : nools - 1
-			layer2_dead_root_biomass_at_layer[idx] += dead_root_biomass_at_layer
-		}
-	}
-
-	if len(layer2_dead_root_biomass_at_layer) > 0 {
-		cm.add_organic_matter(layer2_dead_root_biomass_at_layer, n_concentration_root)
+	dead_roots := dead_roots_per_layer(
+		dead_root_biomass,
+		root_density_factor_sum,
+		root_density_factor,
+		cm.rooting_zone,
+		cm.soil_column.number_of_organic_layers,
+		allocator,
+	)
+	if len(dead_roots) > 0 {
+		cm.add_organic_matter(dead_roots, n_concentration_root)
 	}
 }
 
@@ -2069,14 +2025,12 @@ add_and_distribute_root_biomass_in_soil :: proc(
 // to soil organic matter via fcMoveDeadRootBiomassToSoil/add_organic_matter.
 fc_crop_dry_matter :: proc(
 	cm: ^Crop_Module,
-	mean_air_temperature: f64,
-	// yesterday's (Crop_Carry_Over): water uptake and N uptake run later; the
-	// water stress clamped to >= 0 (see fc_drought_impact_on_fertility)
-	water_stress, n_concentration_root: f64,
-	allocator := context.allocator,
+	// yesterday's (Crop_Carry_Over): N uptake runs later in the step
+	n_concentration_root: f64,
+) -> (
+	dead_root_biomass: f64, // the day's dead root biomass, for the root system
 ) {
 	crop_ps := cm.mod_params
-	soil_column := cm.soil_column
 	species_ps := &cm.crop_params.species_params
 	cultivar_ps := &cm.crop_params.cultivar_params
 	aboveground_organ := species_ps.aboveground_organ
@@ -2087,11 +2041,8 @@ fc_crop_dry_matter :: proc(
 	stage_temperature_sum := cultivar_ps.stage_temperature_sum
 	storage_organ := species_ps.storage_organ
 
-	nols := len(soil_column.layers)
-	layer_thickness := soil_column.layers[0].layer_thickness_m
 
 	max_root_n_concentration := 0.0 // old WGM
-	root_n_increment := 0.0 // old WUMM
 	assimilate_partitioning_coeff_old := 0.0
 	assimilate_partitioning_coeff := 0.0
 
@@ -2261,8 +2212,6 @@ fc_crop_dry_matter :: proc(
 
 	// old @todo: N redux noch ausgeschaltet
 	cm.reserve_assimilate_pool = 0.0
-	cm.root_biomass_old = cm.root_biomass
-	cm.root_biomass = cm.organ_biomass[Organ_Root]
 
 	if cm.developmental_stage > 0 {
 		max_root_n_concentration =
@@ -2277,7 +2226,7 @@ fc_crop_dry_matter :: proc(
 
 	cm.crop_n_demand =
 		((cm.target_n_concentration * cm.aboveground_biomass) +
-			(cm.root_biomass * max_root_n_concentration) +
+			(cm.organ_biomass[Organ_Root] * max_root_n_concentration) +
 			(cm.target_n_concentration * cm.belowground_biomass / cultivar_ps.residue_n_ratio) -
 			cm.total_biomass_n_content) *
 		cm.time_step // [kg ha-1]
@@ -2292,7 +2241,7 @@ fc_crop_dry_matter :: proc(
 					(cm.target_n_concentration - cm.critical_n_concentration) * 0.15) *
 				cm.belowground_biomass /
 				cultivar_ps.residue_n_ratio +
-			(cm.root_biomass * max_root_n_concentration) -
+			(cm.organ_biomass[Organ_Root] * max_root_n_concentration) -
 			cm.total_biomass_n_content) *
 		cm.time_step // [kg ha-1]
 	_ = n_concentration_optimum
@@ -2306,142 +2255,15 @@ fc_crop_dry_matter :: proc(
 		cm.crop_n_demand = 0.0
 	}
 
-	// vc_RootNIncrement: computed but unused elsewhere in the C++ too - a
-	// genuine dead store, kept for fidelity.
-	if cm.root_biomass < cm.root_biomass_old {
-		root_n_increment = (cm.root_biomass_old - cm.root_biomass) * n_concentration_root
-	} else {
-		root_n_increment = 0
-	}
-	_ = root_n_increment
 
-	layer_index_below_rooting_depth := min(cm.rooting_depth, nols - 1)
-	available_water_percentage := 0.0
-	if crop_ps.__enable_PASW_root_penetration__ {
-		// In case of drought stress the root will grow deeper
-		available_water :=
-			soil_column.layers[layer_index_below_rooting_depth].field_capacity -
-			soil_column.layers[layer_index_below_rooting_depth].permanent_wilting_point
-		available_water_percentage =
-			(soil_column.layers[layer_index_below_rooting_depth].soil_moisture_m3 -
-				soil_column.layers[layer_index_below_rooting_depth].permanent_wilting_point) /
-			available_water
-		if available_water_percentage < 0.0 {
-			available_water_percentage = 0.0
-		}
-	} else {
-		if water_stress <
-			   (0.95 * cultivar_ps.drought_stress_threshold[cm.developmental_stage]) &&
-		   cultivar_ps.crop_specific_max_rooting_depth >= 0.8 &&
-		   cm.rooting_depth_m > 0.95 * cm.max_rooting_depth &&
-		   cm.developmental_stage < cm.no_of_dev_stages - 1 { 	// only if crop-specific max rooting depth is deeper than 80cm
-			cm.max_rooting_depth += 0.005
-		}
-	}
+	dead_root_biomass = daily_dead_root_biomass_increment
+	return
+}
 
-	if cm.max_rooting_depth > (f64(nols - 1) * layer_thickness) {
-		cm.max_rooting_depth = f64(nols - 1) * layer_thickness
-	}
-
-	// restrict root growth to everything above the impenetrable layer
-	if cm.site_params.impenetrable_layer_depth > 0 {
-		cm.max_rooting_depth = min(cm.max_rooting_depth, cm.site_params.impenetrable_layer_depth)
-	}
-
-	// Pedersen et al. (2010): Modelling diverse root density dynamics and
-	// deep nitrogen uptake - a simple approach. Plant & Soil 326, 493-510.
-
-	// Determining temperature sum for root growth
-	maximum_temperature_root_growth := species_ps.minimum_temperature_root_growth + 20.0
-	daily_temperature_root := 0.0
-	if mean_air_temperature >= maximum_temperature_root_growth {
-		daily_temperature_root =
-			maximum_temperature_root_growth - species_ps.minimum_temperature_root_growth
-	} else {
-		daily_temperature_root = mean_air_temperature - species_ps.minimum_temperature_root_growth
-	}
-	if daily_temperature_root < 0.0 {
-		daily_temperature_root = 0.0
-	}
-	cm.current_total_temperature_sum_root += daily_temperature_root
-
-	// Determining root penetration rate according to soil clay content [m degC-1 d-1]
-	root_penetration_rate := 0.0
-	if soil_column.layers[layer_index_below_rooting_depth].soil_clay_content <= 0.02 {
-		root_penetration_rate = 0.5 * species_ps.root_penetration_rate
-	} else if soil_column.layers[layer_index_below_rooting_depth].soil_clay_content <= 0.08 {
-		root_penetration_rate =
-			((1.0 / 3.0) +
-				(0.5 / 0.06 * soil_column.layers[layer_index_below_rooting_depth].soil_clay_content)) *
-			species_ps.root_penetration_rate
-	} else {
-		root_penetration_rate = species_ps.root_penetration_rate
-	}
-	if crop_ps.__enable_PASW_root_penetration__ {
-		if available_water_percentage <= 0.25 {
-			root_penetration_rate =
-				min(1.0, 4 * available_water_percentage) * root_penetration_rate
-		} else {
-			root_penetration_rate = species_ps.root_penetration_rate
-		}
-	}
-
-	// Calculating rooting depth [m]
-	if cm.current_total_temperature_sum_root <= species_ps.root_growth_lag {
-		cm.rooting_depth_m = species_ps.initial_rooting_depth
-	} else {
-		cm.rooting_depth_m += daily_temperature_root * root_penetration_rate
-	}
-
-	if cm.rooting_depth_m <= species_ps.initial_rooting_depth {
-		cm.rooting_depth_m = species_ps.initial_rooting_depth
-	}
-	if cm.rooting_depth_m > cm.max_rooting_depth {
-		cm.rooting_depth_m = cm.max_rooting_depth
-	}
-	if cm.rooting_depth_m > cm.site_params.max_effective_rooting_depth {
-		cm.rooting_depth_m = cm.site_params.max_effective_rooting_depth
-	}
-
-	cm.rooting_depth = min(int(libc.round(cm.rooting_depth_m / layer_thickness)), nols) // layer no
-	cm.rooting_zone = min(int(libc.round(1.3 * cm.rooting_depth_m / layer_thickness)), nols) // layer no
-
-	cm.total_root_length = cm.root_biomass * species_ps.specific_root_length // [m m-2]
-
-	// Calculating a root density distribution factor []
-	root_density_factor, root_density_factor_sum := calc_root_density_factor_and_sum(
-		cm,
-		allocator,
-	)
-
-	// calculate the distribution of dead root biomass (for later addition
-	// into AOM pools in soil-organic)
-	if !crop_ps.__disable_daily_root_biomass_to_soil__ {
-		fc_move_dead_root_biomass_to_soil(
-			cm,
-			daily_dead_root_biomass_increment,
-			root_density_factor_sum,
-			root_density_factor,
-			n_concentration_root,
-			allocator,
-		)
-	}
-
-	// Calculating root density per layer from total root length and a
-	// relative root density distribution factor
-	for i_layer := 0; i_layer < cm.rooting_zone; i_layer += 1 {
-		cm.root_density[i_layer] =
-			(root_density_factor[i_layer] / root_density_factor_sum) * cm.total_root_length // [m m-3]
-	}
-
-	for i_layer := 0; i_layer < cm.rooting_zone; i_layer += 1 {
-		// Root diameter [m]
-		if aboveground_organ[3] {
-			cm.root_diameter[i_layer] = 0.0002 - (f64(i_layer + 1) * 0.00001)
-		} else {
-			cm.root_diameter[i_layer] = 0.0001
-		}
-	}
+// The end of the C++ fcCropDryMatter: the maximum N uptake, and the N demand
+// limited by the root length the root system computed before.
+fc_crop_n_demand_by_root_length :: proc(cm: ^Crop_Module) {
+	species_ps := &cm.crop_params.species_params
 
 	// Limiting the maximum N-uptake to 26-13*10^-14 mol/cm root/sec
 	cm.max_n_uptake =
@@ -2452,8 +2274,7 @@ fc_crop_dry_matter :: proc(
 		cm.crop_n_demand = cm.total_root_length * cm.max_n_uptake * cm.time_step // [kg m-2]
 	} else {
 		cm.crop_n_demand = cm.crop_n_demand / 10000.0 // [kg ha-1 -> kg m-2]
-	}
-}
+	}}
 
 // ---------------------------------------------------------------------------
 // Phase 5 checkpoint 6: water + nitrogen uptake
@@ -3449,13 +3270,37 @@ crop_module_step :: proc(
 			},
 		)
 
-		fc_crop_dry_matter(
-			cm,
-			mean_air_temperature,
-			water_stress,
-			prev.n_concentration_root,
+		// growth, root system, the N demand limited by root length: the three
+		// parts of the C++ fcCropDryMatter
+		dead_root_biomass := fc_crop_dry_matter(cm, prev.n_concentration_root)
+
+		dead_roots := root_system_step(
+			&cm.roots,
+			&cm.crop_params,
+			Root_System_In {
+				root_biomass = cm.organ_biomass[Organ_Root],
+				dead_root_biomass = dead_root_biomass,
+				n_concentration_root = prev.n_concentration_root,
+				water_stress = water_stress,
+				developmental_stage = cm.developmental_stage,
+				no_of_dev_stages = cm.no_of_dev_stages,
+				mean_air_temperature = mean_air_temperature,
+				soil_layers = soil_column.layers[:],
+				number_of_organic_layers = soil_column.number_of_organic_layers,
+				impenetrable_layer_depth = cm.site_params.impenetrable_layer_depth,
+				max_effective_rooting_depth = cm.site_params.max_effective_rooting_depth,
+				enable_pasw_root_penetration = cm.mod_params.__enable_PASW_root_penetration__,
+				disable_daily_root_biomass_to_soil = cm.mod_params.__disable_daily_root_biomass_to_soil__,
+			},
 			allocator,
 		)
+		// the dead roots go to soil organic now, before N uptake reads the soil
+		// N (the residues' NH4 and NO3 are added to the layers)
+		if len(dead_roots) > 0 {
+			cm.add_organic_matter(dead_roots, prev.n_concentration_root)
+		}
+
+		fc_crop_n_demand_by_root_length(cm)
 
 		// calculate reference evapotranspiration if not provided directly
 		// via climate files

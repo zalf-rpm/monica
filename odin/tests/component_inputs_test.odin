@@ -20,6 +20,7 @@ COMPONENT_INPUTS := []typeid {
 	mcore.Frost_Kill_In,
 	mcore.Drought_Impact_In,
 	mcore.N_Status_In,
+	mcore.Root_System_In,
 }
 
 // Where a value comes from: a crop component (its state struct without the
