@@ -741,22 +741,7 @@ crop_module_step :: proc(
 
 	julian_day := int(d.julian_day(current_date))
 
-	if cm.cutting_delay_days > 0 {
-		cm.cutting_delay_days -= 1
-	}
-
-	// [TRANSPLANT SHOCK] Daily stress recovery calculation. The daily
-	// transplant efficiency factors in transplant shock, increasing linearly
-	// from a baseline of 0.2 (80% initial stress) to 1.0 (no stress) over
-	// the post-transplant delay duration.
-	cm.transplant_efficiency = 1.0
-	if cm.days_since_transplant >= 0 && cm.days_since_transplant < cm.transplant_shock_duration {
-		cm.transplant_efficiency =
-			0.2 + 0.8 * (f64(cm.days_since_transplant) / f64(cm.transplant_shock_duration))
-		cm.days_since_transplant += 1
-	} else if cm.days_since_transplant >= cm.transplant_shock_duration {
-		cm.days_since_transplant = -1 // Recovery period has successfully concluded
-	}
+	management_daily_step(&cm.management)
 
 	cm.radiation = crop_radiation(
 		Radiation_In {
@@ -844,11 +829,7 @@ crop_module_step :: proc(
 		},
 	)
 
-	if cm.total_temperature_sum == 0.0 {
-		cm.relative_total_development = 0.0
-	} else {
-		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
-	}
+	phenology_relative_development(&cm.phenology)
 
 	canopy_kc_in := Canopy_Kc_In {
 		developmental_stage     = cm.developmental_stage,

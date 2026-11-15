@@ -124,3 +124,24 @@ apply_cutting :: proc(
 	n_uptake_after_cut(&cm.n_uptake, cm.aboveground_biomass, old_aboveground_biomass, old_agb_n_content)
 	return
 }
+
+// Every day at the start of the crop step: the cutting delay counts down, the
+// transplant shock recovers.
+management_daily_step :: proc(m: ^Crop_Management) {
+	if m.cutting_delay_days > 0 {
+		m.cutting_delay_days -= 1
+	}
+
+	// [TRANSPLANT SHOCK] Daily stress recovery calculation. The daily
+	// transplant efficiency factors in transplant shock, increasing linearly
+	// from a baseline of 0.2 (80% initial stress) to 1.0 (no stress) over
+	// the post-transplant delay duration.
+	m.transplant_efficiency = 1.0
+	if m.days_since_transplant >= 0 && m.days_since_transplant < m.transplant_shock_duration {
+		m.transplant_efficiency =
+			0.2 + 0.8 * (f64(m.days_since_transplant) / f64(m.transplant_shock_duration))
+		m.days_since_transplant += 1
+	} else if m.days_since_transplant >= m.transplant_shock_duration {
+		m.days_since_transplant = -1 // Recovery period has successfully concluded
+	}
+}

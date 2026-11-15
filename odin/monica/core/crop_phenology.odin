@@ -566,3 +566,13 @@ phenology_transplant :: proc(ph: ^Crop_Phenology, ps: ^p.Crop_Parameters, stage:
 		}
 	}
 }
+
+// The current total temperature sum relative to the whole cycle's (part of
+// the C++ step()).
+phenology_relative_development :: proc(ph: ^Crop_Phenology) {
+	if ph.total_temperature_sum == 0.0 {
+		ph.relative_total_development = 0.0
+	} else {
+		ph.relative_total_development = ph.current_total_temperature_sum / ph.total_temperature_sum
+	}
+}
