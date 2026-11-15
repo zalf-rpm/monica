@@ -46,7 +46,8 @@ Remote-style test: `pixi run serve-http` serves Streamable HTTP on
 | `compare_jobs` | scenarios side by side |
 
 Resources: `monica://jobs/{job_id}/{file}` (inputs, run log, full output
-CSVs) and `monica://docs/outputs`. Prompt: `explain_simulation(job_id)`.
+CSVs), `monica://docs/outputs` and `monica://docs/components` (how the crop
+model is structured: `odin/components.md`, generated from the code). Prompt: `explain_simulation(job_id)`.
 
 Input is deliberately high level (`species`, `cultivar`, `MM-DD` dates, kg N
 per application, soil layers by KA5 texture) and is translated into MONICA's

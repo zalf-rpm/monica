@@ -56,7 +56,7 @@ apply. 5 at the latest at the end of each phase.
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | done (incl. A4b): 6d8c48d .. 2d84e45 |
 | F | F1-F6 | medium components, management, parameters | done: e20cc9d .. 272a9d3 (F6 "reference" part not done, see below) |
 | G | G1 | share radiation/day length with soil ET0 | done: a7a116f |
-| H | H1-H3 | tag and graph tool, generated docs | |
+| H | H1-H3 | tag and graph tool, generated docs | done: 13f06e3, H2/H3 commit |
 | I | I1-I3 | soil mineral N as rate/state (model change, own branch) | |
 
 ---
@@ -378,6 +378,25 @@ H1 can start as soon as D1-D2 exist, and is useful as a check from then on.
 - **H3 Generate documentation from the tags**: output units and descriptions,
   and the MCP server's `monica://docs/outputs` (`odin/mcp`). Crop2ML
   descriptions are optional.
+
+What was done:
+- H1 (13f06e3) `tools/component_check.py check` (`pixi run check-components`):
+  unused input fields, previous-day inputs that are neither the carry-over nor
+  state not yet written that day, same-day inputs filled before their source
+  runs, fields filled from another component than their `src`. Its first
+  findings were fixed: `storage_organ` is a species constant, not growth state
+  (moved to the crop's direct fields); the critical oxygen content at
+  yesterday's stage and growth's in/out N content are previous-day values.
+- H2/H3: `component_check.py graph` (components only, `--all` with weather,
+  soil, site and parameters) and `doc` -> `odin/components.md`
+  (`pixi run gen-components-doc`; `doc --check` tells whether it is up to
+  date): the graph, each component's state with units, its inputs with unit,
+  source and previous-day flag. The MCP server serves it as
+  `monica://docs/components`.
+- Not done: output descriptions and Crop2ML descriptions from tags - the
+  fields have no description tags; units and sources are what the tags
+  carry. `monica://docs/outputs` still describes the MCP server's own daily
+  columns.
 
 ## Phase I: soil mineral N as rate/state (model change, separate branch)
 

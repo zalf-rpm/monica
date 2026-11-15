@@ -353,6 +353,10 @@ flowchart TB
     MAN -.-> PHE & CAN & GRO & ROO & PHO
 ```
 
+*The implemented components and their actual connections, generated from
+the code's tags: `components.md` (`pixi run gen-components-doc`). The diagram
+above is the proposal it started from.*
+
 | Component | From today's code | State it would own | Size now | How separable |
 |---|---|---|---:|---|
 | Radiation and day length | `fc_radiation`; duplicate in `soil_moisture` | none | 84 | easy - pure function of day, latitude, radiation, sunshine |

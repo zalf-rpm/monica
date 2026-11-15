@@ -12,11 +12,12 @@ A text scan of monica/core/crop_*.odin, not a parser - like field_deps.py.
                 step hasn't written yet when the input is filled
       - src:    a field filled from another component's state than its src says
 
-  component_check.py graph
+  component_check.py graph [--all]
       the component graph (mermaid) from the src/lag tags: solid arrows for
-      same-day values, dashed for the previous day's
+      same-day values, dashed for the previous day's; --all adds the weather,
+      soil, site and parameter inputs
 
-  component_check.py doc [-o components.md]
+  component_check.py doc [-o components.md] [--check]
       a generated reference: the graph, and per component its state (with
       units) and its inputs (with unit, src, lag)
 
@@ -261,16 +262,17 @@ def node_id(name):
     return re.sub(r"\W", "_", name)
 
 
-def graph(model):
+def graph(model, external=False):
     lines = ["flowchart LR"]
-    used = {s for (s, r, _) in edges(model)} | {r for (s, r, _) in edges(model)}
+    es = {k: v for k, v in edges(model).items() if external or k[0] not in EXTERNAL}
+    used = {s for (s, r, _) in es} | {r for (s, r, _) in es}
     for ext in EXTERNAL:
         if ext in used:
             lines.append(f"    {node_id(ext)}([{ext}])")
     for comp in FILE_COMPONENT.values():
         if comp in used:
             lines.append(f"    {node_id(comp)}[{comp}]")
-    for (src, reader, lag), fields in sorted(edges(model).items()):
+    for (src, reader, lag), fields in sorted(es.items()):
         label = ", ".join(sorted(set(fields))) if len(set(fields)) <= 3 else f"{len(set(fields))} values"
         arrow = "-.->" if lag else "-->"
         lines.append(f"    {node_id(src)} {arrow}|\"{label}\"| {node_id(reader)}")
@@ -283,8 +285,10 @@ def doc(model):
            "",
            "Generated from the state structs and the tagged inputs in `monica/core/crop_*.odin`",
            "(`CONVENTIONS.md` 9b, `plan-component-interfaces.md`). Solid arrows: the same day's value;",
-           "dashed: the previous day's (`lag:\"1d\"`, from `Crop_Carry_Over`). Edges from a component to",
-           "itself are left out.",
+           "dashed: the previous day's (`lag:\"1d\"`, from `Crop_Carry_Over`, or read in place before",
+           "the source runs). Same-day edges from a component to itself are left out; the inputs from the",
+           "weather, the soil, the site and the parameters are in the tables. What the crop gives the soil",
+           "is `Crop_To_Soil` (`crop_to_soil.odin`).",
            "",
            "```mermaid", graph(model), "```", ""]
     by_comp = {}
@@ -312,17 +316,26 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("check")
-    sub.add_parser("graph")
+    g = sub.add_parser("graph")
+    g.add_argument("--all", action="store_true")
     d = sub.add_parser("doc")
     d.add_argument("-o", "--output")
+    d.add_argument("--check", action="store_true", help="exit 1 if --output differs from what would be generated")
     a = ap.parse_args()
     model = Model()
     if a.cmd == "check":
         sys.exit(cmd_check(model))
     if a.cmd == "graph":
-        print(graph(model))
+        print(graph(model, a.all))
     if a.cmd == "doc":
         text = doc(model)
+        if a.check:
+            current = read(a.output) if a.output and os.path.exists(a.output) else ""
+            if current != text + "\n":
+                print(f"{a.output} is out of date - run: pixi run gen-components-doc")
+                sys.exit(1)
+            print(f"{a.output} is up to date")
+            return
         if a.output:
             with open(a.output, "w", encoding="utf-8", newline="\n") as f:
                 f.write(text + "\n")

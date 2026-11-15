@@ -337,6 +337,12 @@ canopy_growth :: proc(c: ^Crop_Canopy, ps: ^p.Crop_Parameters, input: Canopy_Gro
   is the previous day's value (from `Crop_Carry_Over`, §8 of architecture.md). Optional
   `cat:"state"|"rate"|"aux"` (Crop2ML's categories). `tests/component_inputs_test.odin` checks
   units and the vocabulary; add each new `*_In` there.
+- **Checks and the generated reference.** `pixi run check-components` (`tools/component_check.py`)
+  reports input fields nobody reads, previous-day inputs that aren't the carry-over (or state not
+  yet written that day, read in place), same-day inputs filled before their source runs, and
+  fields filled from another component than their `src`. `pixi run gen-components-doc`
+  regenerates `components.md` - the component graph, each component's state and inputs - from the
+  code; regenerate it with every change of a component's state or inputs.
 - **Bit-identical moves.** When a procedure becomes a component, its body moves verbatim -
   `cm.x` becomes `state.x`, `input.x` or `ps.x`, nothing else - so the C++ comparison stays
   exact. Unreachable branches may go, with a comment saying why.
