@@ -98,15 +98,24 @@ Crop_Module :: struct {
 
 // Radiation and day length (fc_radiation): a function of the day, latitude and the weather.
 Crop_Radiation :: struct {
-	declination:                f64, //! old EFF0
-	astronomic_day_lenght:      f64, //! old DL
-	effective_day_length:       f64, //! old DLE
-	photoperiodic_daylength:    f64, //! old DLP
-	extraterrestrial_radiation: f64,
-	clear_day_radiation:        f64, //! old DRC
-	overcast_day_radiation:     f64, //! old DRO
-	phot_act_radiation_mean:    f64, //! old RDN
-	global_radiation:           f64,
+	declination:                f64 `unit:"°"`, //! old EFF0
+	astronomic_day_lenght:      f64 `unit:"h"`, //! old DL
+	effective_day_length:       f64 `unit:"h"`, //! old DLE
+	photoperiodic_daylength:    f64 `unit:"h"`, //! old DLP
+	extraterrestrial_radiation: f64 `unit:"MJ m-2"`,
+	clear_day_radiation:        f64 `unit:"J m-2"`, //! old DRC
+	overcast_day_radiation:     f64 `unit:"J m-2"`, //! old DRO
+	phot_act_radiation_mean:    f64 `unit:"J m-2"`, //! old RDN
+	global_radiation:           f64 `unit:"MJ m-2"`,
+}
+
+// What crop_radiation needs (plan-component-interfaces.md D1).
+Radiation_In :: struct {
+	julian_day:       f64 `unit:"d"`,
+	latitude:         f64 `unit:"°" src:"site"`,
+	// measured; <= 0: estimated from the sunshine hours
+	global_radiation: f64 `unit:"MJ m-2" src:"weather"`,
+	sunshine_hours:   f64 `unit:"h" src:"weather"`,
 }
 
 // Phenology: stage, temperature sums, vernalisation, day length factor, dormancy and the events
@@ -690,37 +699,43 @@ sum_stage_temperature_sums :: proc(cm: ^Crop_Module, start_at_stage, end_at_incl
 // implementation of day-length/declination/radiation from soilmoisture.odin's
 // own copy (soilmoisture computes its own for a different consumer); not
 // deduplicated, matching the C++.
-fc_radiation :: proc(cm: ^Crop_Module, julian_day, global_radiation, sunshine_hours: f64) {
+//
+// A pure function of the day, the latitude and the weather (D1): returns the
+// values instead of writing them into the crop.
+crop_radiation :: proc(input: Radiation_In) -> (r: Crop_Radiation) {
+	julian_day := input.julian_day
+	global_radiation := input.global_radiation
+	sunshine_hours := input.sunshine_hours
 
 	PI :: 3.14159265358979323
 
 	// Calculation of declination - old DEC
-	cm.declination = -23.4 * cr_math.cos(2.0 * PI * ((julian_day + 10.0) / 365.0))
+	r.declination = -23.4 * cr_math.cos(2.0 * PI * ((julian_day + 10.0) / 365.0))
 
 	declination_sinus :=
-		cr_math.sin(cm.declination * PI / 180.0) * cr_math.sin(cm.site_params.latitude * PI / 180.0) // old SINLD
+		cr_math.sin(r.declination * PI / 180.0) * cr_math.sin(input.latitude * PI / 180.0) // old SINLD
 	declination_cosinus :=
-		cr_math.cos(cm.declination * PI / 180.0) * cr_math.cos(cm.site_params.latitude * PI / 180.0) // old COSLD
+		cr_math.cos(r.declination * PI / 180.0) * cr_math.cos(input.latitude * PI / 180.0) // old COSLD
 
 	// Calculation of the atmospheric day lenght - old DL
 	arg_astro_day_length := declination_sinus / declination_cosinus
 	arg_astro_day_length = tl.bound(-1.0, arg_astro_day_length, 1.0)
-	cm.astronomic_day_lenght = 12.0 * (PI + 2.0 * cr_math.asin(arg_astro_day_length)) / PI
+	r.astronomic_day_lenght = 12.0 * (PI + 2.0 * cr_math.asin(arg_astro_day_length)) / PI
 
 	// Calculation of the effective day length - old DLE
 	edl_helper := (-cr_math.sin(f64(8.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
 
 	if edl_helper < -1.0 || edl_helper > 1.0 {
-		cm.effective_day_length = 0.01
+		r.effective_day_length = 0.01
 	} else {
-		cm.effective_day_length = 12.0 * (PI + 2.0 * cr_math.asin(edl_helper)) / PI
+		r.effective_day_length = 12.0 * (PI + 2.0 * cr_math.asin(edl_helper)) / PI
 	}
 
 	// old DLP
 	arg_photo_day_length :=
 		(-cr_math.sin(f64(-6.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
 	arg_photo_day_length = tl.bound(-1.0, arg_photo_day_length, 1.0)
-	cm.photoperiodic_daylength = 12.0 * (PI + 2.0 * cr_math.asin(arg_photo_day_length)) / PI
+	r.photoperiodic_daylength = 12.0 * (PI + 2.0 * cr_math.asin(arg_photo_day_length)) / PI
 
 	// Calculation of the mean photosynthetically active radiation [J m-2] - old RDN
 	arg_phot_act := min(
@@ -728,24 +743,24 @@ fc_radiation :: proc(cm: ^Crop_Module, julian_day, global_radiation, sunshine_ho
 		(declination_sinus / declination_cosinus) *
 		(declination_sinus / declination_cosinus),
 	)
-	cm.phot_act_radiation_mean =
+	r.phot_act_radiation_mean =
 		3600.0 *
-		(declination_sinus * cm.astronomic_day_lenght +
+		(declination_sinus * r.astronomic_day_lenght +
 				24.0 / PI * declination_cosinus * libc.sqrt(1.0 - arg_phot_act))
 
 	// Calculation of radiation on a clear day [J m-2] - old DRC
-	if cm.phot_act_radiation_mean > 0 && cm.astronomic_day_lenght > 0 {
-		cm.clear_day_radiation =
+	if r.phot_act_radiation_mean > 0 && r.astronomic_day_lenght > 0 {
+		r.clear_day_radiation =
 			0.5 *
 			1300.0 *
-			cm.phot_act_radiation_mean *
-			cr_math.exp(-0.14 / (cm.phot_act_radiation_mean / (cm.astronomic_day_lenght * 3600.0)))
+			r.phot_act_radiation_mean *
+			cr_math.exp(-0.14 / (r.phot_act_radiation_mean / (r.astronomic_day_lenght * 3600.0)))
 	} else {
-		cm.clear_day_radiation = 0
+		r.clear_day_radiation = 0
 	}
 
 	// Calculation of radiation on an overcast day [J m-2] - old DRO
-	cm.overcast_day_radiation = 0.2 * cm.clear_day_radiation
+	r.overcast_day_radiation = 0.2 * r.clear_day_radiation
 
 	// Calculation of extraterrestrial radiation - old EXT
 	solar_constant := 0.082
@@ -756,23 +771,23 @@ fc_radiation :: proc(cm: ^Crop_Module, julian_day, global_radiation, sunshine_ho
 		solar_constant *
 		(1.0 + 0.033 * cr_math.cos(2.0 * PI * julian_day / 365.0))
 
-	arg_solar_angle := -cr_math.tan(cm.site_params.latitude * PI / 180.0) * cr_math.tan(cm.declination * PI / 180.0)
+	arg_solar_angle := -cr_math.tan(input.latitude * PI / 180.0) * cr_math.tan(r.declination * PI / 180.0)
 	arg_solar_angle = tl.bound(-1.0, arg_solar_angle, 1.0)
 	sunset_solar_angle := cr_math.acos(arg_solar_angle)
-	cm.extraterrestrial_radiation =
+	r.extraterrestrial_radiation =
 		sc *
 		(sunset_solar_angle * declination_sinus +
 				declination_cosinus * cr_math.sin(sunset_solar_angle)) // [MJ m-2]
 
 	if global_radiation > 0.0 {
-		cm.global_radiation = global_radiation
-	} else if cm.astronomic_day_lenght > 0 {
-		cm.global_radiation =
-			cm.extraterrestrial_radiation *
-			(0.19 + 0.55 * sunshine_hours / cm.astronomic_day_lenght)
+		r.global_radiation = global_radiation
+	} else if r.astronomic_day_lenght > 0 {
+		r.global_radiation =
+			r.extraterrestrial_radiation *
+			(0.19 + 0.55 * sunshine_hours / r.astronomic_day_lenght)
 	} else {
-		cm.global_radiation = 0
-	}
+		r.global_radiation = 0
+	}	return
 }
 
 // C++: double monica::cropmodule::fcDaylengthFactor(CropModule*, double
@@ -3619,7 +3634,14 @@ crop_module_step :: proc(
 		cm.days_since_transplant = -1 // Recovery period has successfully concluded
 	}
 
-	fc_radiation(cm, f64(julian_day), global_radiation, sunshine_hours)
+	cm.radiation = crop_radiation(
+		Radiation_In {
+			julian_day = f64(julian_day),
+			latitude = cm.site_params.latitude,
+			global_radiation = global_radiation,
+			sunshine_hours = sunshine_hours,
+		},
+	)
 
 	cm.oxygen_deficit = fc_oxygen_deficiency(
 		cm,

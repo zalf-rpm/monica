@@ -95,7 +95,7 @@ day_step :: proc(
 
 	julian_day := int(d.julian_day(current_date))
 
-	core.fc_radiation(cm, f64(julian_day), global_radiation, sunshine_hours)
+	cm.radiation = core.crop_radiation({f64(julian_day), cm.site_params.latitude, global_radiation, sunshine_hours})
 
 	cm.oxygen_deficit = core.fc_oxygen_deficiency(
 		cm,
