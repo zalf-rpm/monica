@@ -103,12 +103,7 @@ day_step :: proc(
 
 	cm.radiation = core.crop_radiation({f64(julian_day), cm.site_params.latitude, global_radiation, sunshine_hours})
 
-	cm.oxygen_deficit = core.fc_oxygen_deficiency(
-		cm,
-		critical_oxygen_content[cm.developmental_stage],
-		cm.developmental_stage,
-		cm.rooting_depth,
-	)
+	core.stress_oxygen_deficiency(&cm.stress, {critical_oxygen_content = critical_oxygen_content[cm.developmental_stage], developmental_stage = cm.developmental_stage, rooting_depth = cm.rooting_depth, time_under_anoxia_threshold = cm.mod_params.time_under_anoxia_threshold[:], time_step = cm.time_step, soil_layers = cm.soil_column.layers[:]})
 
 	old_developmental_stage := cm.developmental_stage
 

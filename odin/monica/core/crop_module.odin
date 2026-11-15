@@ -189,21 +189,6 @@ Crop_Voc :: struct {
 	crop_photosynthesis_results: Voc_Cp_Data,
 }
 
-// Stress factors: oxygen deficiency, heat, frost and drought impact on fertility
-// (fc_oxygen_deficiency, fc_heat_stress_impact, fc_frost_kill, fc_drought_impact_on_fertility).
-Crop_Stress :: struct {
-	oxygen_deficit:                      f64 `unit:"0-1"`, //! old LURED
-	time_under_anoxia:                   int `unit:"d"`,
-	time_under_anoxia_threshold_default: int,
-	crop_heat_redux:                     f64 `unit:"0-1"`,
-	days_after_begin_flowering:          int,
-	total_crop_heat_impact:              f64,
-	crop_frost_redux:                    f64 `unit:"0-1"`,
-	lt50:                                f64 `unit:"°C"`,
-	lt50_m:                              f64,
-	drought_impact_on_fertility:         f64,
-}
-
 // Crop N status: critical and target N concentrations, N stress (fc_crop_nitrogen).
 Crop_N_Status :: struct {
 	critical_n_concentration:                f64 `unit:"kgN kgDM-1"`, //! old GEHMIN
@@ -896,53 +881,6 @@ crop_vernalisation_factor :: proc(
 	}
 
 	return
-}
-
-// C++: double monica::cropmodule::fcOxygenDeficiency(CropModule*, double criticalOxygenContent)
-// `developmental_stage`, `rooting_depth`: yesterday's (Crop_Carry_Over) -
-// phenology and the root system run later in the step.
-fc_oxygen_deficiency :: proc(
-	cm: ^Crop_Module,
-	critical_oxygen_content: f64,
-	developmental_stage, rooting_depth: int,
-) -> f64 {
-	soil_column := cm.soil_column
-	time_under_anoxia_threshold_at_stage := cm.time_under_anoxia_threshold_default
-	if developmental_stage < len(cm.mod_params.time_under_anoxia_threshold) {
-		time_under_anoxia_threshold_at_stage =
-			cm.mod_params.time_under_anoxia_threshold[developmental_stage]
-	}
-
-	// Reduktion bei Luftmangel Stauwasser berücksichtigen!!!!
-	sum_saturation := 0.0
-	sum_soil_moisture := 0.0
-	sum_layers := 0
-	// MP: changed to consider at least first 30 cm and then rooting depth
-	nols := min(max(3, rooting_depth), len(soil_column.layers))
-	for i := 0; i < nols; i += 1 {
-		sum_saturation += soil_column.layers[i].saturation
-		sum_soil_moisture += soil_column.layers[i].soil_moisture_m3
-		sum_layers += 1
-	}
-	avg_air_filled_pore_volume := (sum_saturation - sum_soil_moisture) / f64(sum_layers)
-	if avg_air_filled_pore_volume < critical_oxygen_content {
-		// MP: conditions changed for stage-dependent waterlogging
-		cm.time_under_anoxia += int(cm.time_step)
-		if cm.time_under_anoxia >= time_under_anoxia_threshold_at_stage {
-			max_oxygen_deficit := max(0.0, avg_air_filled_pore_volume) / critical_oxygen_content
-			cm.oxygen_deficit = max(
-				0.0,
-				1.0 -
-				f64(cm.time_under_anoxia) /
-					f64(time_under_anoxia_threshold_at_stage) *
-					(1.0 - max_oxygen_deficit),
-			)
-		}
-	} else {
-		cm.time_under_anoxia = 0
-		cm.oxygen_deficit = 1.0
-	}
-	return cm.oxygen_deficit
 }
 
 // C++: double WangEngelTemperatureResponse(double, double, double, double,
@@ -2046,165 +1984,6 @@ calculate_voc_emissions :: proc(
 // pure output-API surface for build-output.cpp, so they can wait for
 // whichever checkpoint actually needs them (phase 7's output table).
 // ---------------------------------------------------------------------------
-
-// C++: void monica::cropmodule::fcHeatStressImpact(CropModule*, double
-// vw_MaxAirTemperature, double vw_MinAirTemperature)
-fc_heat_stress_impact :: proc(cm: ^Crop_Module, max_air_temperature, min_air_temperature: f64) {
-	cultivar_ps := &cm.crop_params.cultivar_params
-
-	// AGROSIM night and day temperatures
-	photo_temperature :=
-		max_air_temperature - ((max_air_temperature - min_air_temperature) / 4.0)
-	fraction_open_flowers := 0.0
-	yesterdays_fraction_open_flowers := 0.0
-
-	if cultivar_ps.begin_sensitive_phase_heat_stress == 0.0 &&
-	   cultivar_ps.end_sensitive_phase_heat_stress == 0.0 {
-		cm.total_crop_heat_impact = 1.0
-	}
-
-	if cm.current_total_temperature_sum >= cultivar_ps.begin_sensitive_phase_heat_stress &&
-	   cm.current_total_temperature_sum < cultivar_ps.end_sensitive_phase_heat_stress {
-		// Crop heat redux: Challinor et al. (2005), Agric. and Forest
-		// Meteorology 135, 180-189.
-		crop_heat_impact :=
-			1.0 -
-			((photo_temperature - cultivar_ps.critical_temperature_heat_stress) /
-					(cm.crop_params.species_params.limiting_temperature_heat_stress -
-							cultivar_ps.critical_temperature_heat_stress))
-
-		if crop_heat_impact > 1.0 {
-			crop_heat_impact = 1.0
-		}
-		if crop_heat_impact < 0.0 {
-			crop_heat_impact = 0.0
-		}
-
-		// Fraction open flowers: Moriondo et al. (2011), Climatic Change 104
-		// (3-4), 679-701.
-		fraction_open_flowers =
-			1.0 /
-			(1.0 + ((1.0 / 0.015) - 1.0) * cr_math.exp(-1.4 * f64(cm.days_after_begin_flowering)))
-		if cm.days_after_begin_flowering > 0 {
-			yesterdays_fraction_open_flowers =
-				1.0 /
-				(1.0 +
-						((1.0 / 0.015) - 1.0) *
-							cr_math.exp(-1.4 * f64(cm.days_after_begin_flowering - 1)))
-		} else {
-			yesterdays_fraction_open_flowers = 0.0
-		}
-		daily_flowering_rate := fraction_open_flowers - yesterdays_fraction_open_flowers
-
-		// Total effect: Challinor et al. (2005)
-		cm.total_crop_heat_impact += crop_heat_impact * daily_flowering_rate
-
-		cm.days_after_begin_flowering += 1
-	}
-
-	if cm.current_total_temperature_sum >= cultivar_ps.end_sensitive_phase_heat_stress ||
-	   fraction_open_flowers > 0.999999 {
-		if cm.total_crop_heat_impact < cm.crop_heat_redux {
-			cm.crop_heat_redux = cm.total_crop_heat_impact
-		}
-	}
-}
-
-// C++: void monica::cropmodule::fcFrostKill(CropModule*, double maxAirTemp, double minAirTemp)
-//
-// Fowler, Byrns & Greer (2014): Overwinter Low-Temperature Responses of
-// Cereals. Crop Sci. 54:2395-2405.
-//
-// `snow`: instead of the C++'s getSnowDepthAndCalcTempUnderSnow callback.
-fc_frost_kill :: proc(cm: ^Crop_Module, max_air_temp, min_air_temp: f64, snow: Snow_For_Crop) {
-	cultivar_ps := &cm.crop_params.cultivar_params
-	soil_column := cm.soil_column
-
-	lt50_old := cm.lt50
-	cm.lt50_m = min(cm.lt50, cm.lt50_m)
-
-	night_temperature := min_air_temp + ((max_air_temp - min_air_temp) / 4.0)
-	crown_temperature := night_temperature * 0.8
-	snow_depth := snow.snow_depth
-	temp_under_snow := temperature_under_snow(crown_temperature, snow_depth, snow.frost_depth)
-	if cm.developmental_stage <= 1 {
-		crown_temperature =
-			(3.0 * soil_column.soil_surface_temperature +
-				2.0 * soil_column.layers[0].soil_temperature) /
-			5.0
-	} else if snow_depth > 0.0 {
-		crown_temperature = temp_under_snow
-	}
-
-	frost_hardening := 0.0
-	threshold_induction_temperature := 3.72135 - 0.401124 * cultivar_ps.lt50_cultivar
-	if cm.vernalisation_factor < 1.0 && crown_temperature < threshold_induction_temperature {
-		frost_hardening =
-			cultivar_ps.frost_hardening *
-			(threshold_induction_temperature - crown_temperature) *
-			(lt50_old - cultivar_ps.lt50_cultivar)
-	}
-
-	frost_dehardening := 0.0
-	double_ridge_counter := cm.current_temperature_sum[1] / cultivar_ps.stage_temperature_sum[1]
-	vrt_factor := 1.0 / (1.0 + cr_math.exp(80.0 * (double_ridge_counter - 0.9)))
-	if (double_ridge_counter < 1.0 && crown_temperature >= threshold_induction_temperature) ||
-	   double_ridge_counter >= 1.0 {
-		frost_dehardening =
-			cultivar_ps.frost_dehardening / (1.0 + cr_math.exp(4.35 - 0.28 * crown_temperature))
-	} else if double_ridge_counter < 1.0 &&
-	   -4.0 <= crown_temperature &&
-	   crown_temperature < threshold_induction_temperature {
-		frost_dehardening =
-			(1.0 - vrt_factor) *
-			cultivar_ps.frost_dehardening /
-			(1.0 + cr_math.exp(4.35 - 0.28 * crown_temperature))
-	}
-
-	snow_depth_factor := 1.0
-	if soil_column.snow_depth_mm <= 125.0 {
-		snow_depth_factor = soil_column.snow_depth_mm / 125.0
-	}
-	respiration_factor := (cr_math.exp(0.84 + 0.051 * crown_temperature) - 2.0) / 1.85
-	respiratory_stress := cultivar_ps.respiratory_stress * respiration_factor * snow_depth_factor
-
-	cm.lt50 = lt50_old - frost_hardening + frost_dehardening + respiratory_stress
-
-	if cm.lt50 > -3.0 {
-		cm.lt50 = -3.0
-	}
-	if crown_temperature < cm.lt50_m {
-		cm.crop_frost_redux *= 0.5
-	}
-}
-
-// C++: void monica::cropmodule::fcDroughtImpactOnFertility(CropModule*)
-//
-// `water_stress`: yesterday's transpiration deficit, clamped to >= 0 - the
-// C++ clamps the water uptake's field here in place; crop_module_step does
-// that now, visibly.
-fc_drought_impact_on_fertility :: proc(cm: ^Crop_Module, water_stress: f64) {
-	cultivar_ps := &cm.crop_params.cultivar_params
-
-	// Fertility of the crop is reduced in cases of severe drought during bloom
-	fertility_drought_threshold :=
-		cm.crop_params.species_params.drought_impact_on_fertility_factor *
-		cultivar_ps.drought_stress_threshold[cm.developmental_stage]
-	if water_stress < fertility_drought_threshold &&
-	   cultivar_ps.assimilate_partitioning_coeff[cm.developmental_stage][cm.storage_organ] > 0.0 {
-		transpiration_deficit_helper := water_stress / fertility_drought_threshold
-
-		if cm.oxygen_deficit < 1.0 {
-			cm.drought_impact_on_fertility = 1.0
-		} else {
-			cm.drought_impact_on_fertility =
-				1.0 -
-				((1.0 - transpiration_deficit_helper) * (1.0 - transpiration_deficit_helper))
-		}
-	} else {
-		cm.drought_impact_on_fertility = 1.0
-	}
-}
 
 // C++: void monica::cropmodule::fcCropNitrogen(CropModule*)
 //
@@ -3460,6 +3239,22 @@ crop_module_ic_send_rcv :: proc(cm: ^Crop_Module, outmsg: string) {
 	}
 }
 
+// Fills Frost_Kill_In from the crop and its soil column (crop_module_step and
+// the test drivers).
+frost_kill_in :: proc(cm: ^Crop_Module, max_air_temperature, min_air_temperature: f64, snow: Snow_For_Crop) -> Frost_Kill_In {
+	return {
+		max_air_temperature = max_air_temperature,
+		min_air_temperature = min_air_temperature,
+		snow = snow,
+		snow_depth_mm = cm.soil_column.snow_depth_mm,
+		soil_surface_temperature = cm.soil_column.soil_surface_temperature,
+		top_soil_temperature = cm.soil_column.layers[0].soil_temperature,
+		developmental_stage = cm.developmental_stage,
+		vernalisation_factor = cm.vernalisation_factor,
+		current_temperature_sum = cm.current_temperature_sum[:],
+	}
+}
+
 // C++: void monica::cropmodule::step(CropModule*, double meanAirTemperature,
 // double maxAirTemperature, double minAirTemperature, double globalRadiation,
 // double sunshineHours, Tools::Date currentDate, double relativeHumidity,
@@ -3526,11 +3321,16 @@ crop_module_step :: proc(
 		},
 	)
 
-	cm.oxygen_deficit = fc_oxygen_deficiency(
-		cm,
-		species_ps.critical_oxygen_content[prev.developmental_stage],
-		prev.developmental_stage,
-		prev.rooting_depth,
+	stress_oxygen_deficiency(
+		&cm.stress,
+		Oxygen_Deficiency_In {
+			critical_oxygen_content = species_ps.critical_oxygen_content[prev.developmental_stage],
+			developmental_stage = prev.developmental_stage,
+			rooting_depth = prev.rooting_depth,
+			time_under_anoxia_threshold = cm.mod_params.time_under_anoxia_threshold[:],
+			time_step = cm.time_step,
+			soil_layers = soil_column.layers[:],
+		},
 	)
 
 	old_developmental_stage := prev.developmental_stage
@@ -3671,10 +3471,18 @@ crop_module_step :: proc(
 			allocator,
 		)
 
-		fc_heat_stress_impact(cm, max_air_temperature, min_air_temperature)
+		stress_heat(
+			&cm.stress,
+			&cm.crop_params,
+			Heat_Stress_In {
+				max_air_temperature = max_air_temperature,
+				min_air_temperature = min_air_temperature,
+				current_total_temperature_sum = cm.current_total_temperature_sum,
+			},
+		)
 
 		if cm.sim_params.frost_kill_on {
-			fc_frost_kill(cm, max_air_temperature, min_air_temperature, snow)
+			stress_frost_kill(&cm.stress, &cm.crop_params, frost_kill_in(cm, max_air_temperature, min_air_temperature, snow))
 		}
 
 		// The C++ clamps the water uptake's transpiration deficit (yesterday's)
@@ -3685,7 +3493,15 @@ crop_module_step :: proc(
 		water_stress := prev.water_stress < 0.0 ? 0.0 : prev.water_stress
 		cm.transpiration_deficit = water_stress
 
-		fc_drought_impact_on_fertility(cm, water_stress)
+		stress_drought_impact_on_fertility(
+			&cm.stress,
+			&cm.crop_params,
+			Drought_Impact_In {
+				water_stress = water_stress,
+				developmental_stage = cm.developmental_stage,
+				storage_organ = cm.storage_organ,
+			},
+		)
 
 		fc_crop_nitrogen(
 			cm,

@@ -139,12 +139,7 @@ day_step :: proc(
 
 	cm.radiation = core.crop_radiation({f64(julian_day), cm.site_params.latitude, global_radiation, sunshine_hours})
 
-	cm.oxygen_deficit = core.fc_oxygen_deficiency(
-		cm,
-		critical_oxygen_content[cm.developmental_stage],
-		cm.developmental_stage,
-		cm.rooting_depth,
-	)
+	core.stress_oxygen_deficiency(&cm.stress, {critical_oxygen_content = critical_oxygen_content[cm.developmental_stage], developmental_stage = cm.developmental_stage, rooting_depth = cm.rooting_depth, time_under_anoxia_threshold = cm.mod_params.time_under_anoxia_threshold[:], time_step = cm.time_step, soil_layers = cm.soil_column.layers[:]})
 
 	old_developmental_stage := cm.developmental_stage
 
@@ -237,14 +232,14 @@ day_step :: proc(
 			cm.reference_evapotranspiration,
 		)
 
-		core.fc_heat_stress_impact(cm, max_air_temperature, min_air_temperature)
+		core.stress_heat(&cm.stress, &cm.crop_params, {max_air_temperature, min_air_temperature, cm.current_total_temperature_sum})
 
 		if frost_kill_on {
-			core.fc_frost_kill(cm, max_air_temperature, min_air_temperature, core.snow_for_crop(g_soil_moisture))
+			core.stress_frost_kill(&cm.stress, &cm.crop_params, core.frost_kill_in(cm, max_air_temperature, min_air_temperature, core.snow_for_crop(g_soil_moisture)))
 		}
 
 		if cm.transpiration_deficit < 0.0 {cm.transpiration_deficit = 0.0} // the C++ clamp, now in the step
-		core.fc_drought_impact_on_fertility(cm, cm.transpiration_deficit)
+		core.stress_drought_impact_on_fertility(&cm.stress, &cm.crop_params, {cm.transpiration_deficit, cm.developmental_stage, cm.storage_organ})
 
 		core.fc_crop_nitrogen(
 			cm,
