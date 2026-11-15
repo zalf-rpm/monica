@@ -252,7 +252,6 @@ main :: proc() {
 		&wheat_residue_params,
 		load(monica_parameters_dir, "crop-residues/wheat.json", a),
 	)
-	no_add_organic_matter :: proc(_: map[int]f64, _: f64) {}
 	no_snow :: proc(_: f64) -> (f64, f64) {return 0, 0}
 	cm := core.make_crop_module(
 		&model.soil_column,
@@ -261,7 +260,6 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		no_add_organic_matter,
 		nil,
 		a,
 	)

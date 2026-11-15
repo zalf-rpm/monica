@@ -23,7 +23,6 @@ import "core:strings"
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
 
 // Odin `proc` values can't capture - see checkpoint 5's file comment.
 g_soil_moisture: ^core.Soil_Moisture
@@ -229,9 +228,7 @@ day_step :: proc(
 				},
 				allocator,
 			)
-			if len(dead_roots) > 0 {
-				cm.add_organic_matter(dead_roots, cm.n_concentration_root)
-			}
+			_ = dead_roots // the C++ driver discards them (no-op callback)
 			core.fc_crop_n_demand_by_root_length(cm)
 		}
 
@@ -394,7 +391,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		noop_add_organic_matter,
 		nil,
 		a,
 	)

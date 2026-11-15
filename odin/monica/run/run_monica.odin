@@ -206,12 +206,9 @@ Spec_Expr_Kind :: enum {
 
 // C++: std::function<bool(const MonicaModel&)>, materialised as data plus a
 // single dispatcher (spec_expr_eval) instead of a closure. Odin procs can't
-// capture; unlike the "one live model" global-pointer workaround used
-// elsewhere in this port (monica_model.odin's g_current_model), here many
-// differently-parameterised expressions coexist at once (each shortcut's
-// date pattern, each workstep event name), so there is no single global to
-// redirect calls through - the captured data has to live somewhere, and a
-// plain struct is the direct Odin equivalent.
+// capture; many differently-parameterised expressions coexist at once (each
+// shortcut's date pattern, each workstep event name), so the captured data
+// has to live somewhere, and a plain struct is the direct Odin equivalent.
 Spec_Expr :: struct {
 	kind:       Spec_Expr_Kind,
 	day:        Maybe(int),

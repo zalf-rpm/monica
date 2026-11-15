@@ -21,7 +21,6 @@ import "core:os"
 import "core:strconv"
 import "core:strings"
 
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
 
 @(private)
 jn :: proc(path, name: string) -> string {
@@ -295,7 +294,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_add_organic_matter,
 			nil,
 			a,
 		)
@@ -383,7 +381,6 @@ main :: proc() {
 			&cpp.site_params,
 			&synth_crop_mod_params,
 			&cpp.sim_params,
-			noop_add_organic_matter,
 			nil,
 			a,
 		)

@@ -73,8 +73,6 @@ Crop_Module :: struct {
 	// C++: kj::Own<CropParameters> perennial_crop_params - nil unless a
 	// Sowing workstep's separatePerennialCropParams is set (phase 6).
 	perennial_crop_params: ^p.Crop_Parameters,
-	// C++: std::function<void(std::map<size_t, double>, double)> add_organic_matter;
-	add_organic_matter:    proc(_: map[int]f64, _: f64),
 	error_status:          bool,
 	error_message:         string,
 
@@ -437,7 +435,6 @@ make_crop_module :: proc(
 	site_params: ^p.Site_Parameters,
 	crop_module_params: ^p.Crop_Module_Parameters,
 	sim_params: ^p.Simulation_Parameters,
-	add_organic_matter: proc(_: map[int]f64, _: f64),
 	intercropping: rawptr,
 	allocator := context.allocator,
 ) -> Crop_Module {
@@ -449,7 +446,6 @@ make_crop_module :: proc(
 	cm.site_params = site_params
 	cm.sim_params = sim_params
 	cm.residue_params = residue_params^
-	cm.add_organic_matter = add_organic_matter
 
 	cm.no_of_organs = p.species_parameters_number_of_organs(&cm.crop_params.species_params)
 	cm.no_of_dev_stages = p.species_parameters_number_of_developmental_stages(
@@ -1975,43 +1971,21 @@ calc_root_density_factor_and_sum :: proc(
 	)
 }
 
-// C++: void monica::cropmodule::fcMoveDeadRootBiomassToSoil(CropModule*,
-// double deadRootBiomass, double rootDensityFactorSum, const
-// vector<double>& rootDensityFactor) - the distribution is
-// dead_roots_per_layer; the caller hands the result to soil organic.
-fc_move_dead_root_biomass_to_soil :: proc(
-	cm: ^Crop_Module,
-	dead_root_biomass, root_density_factor_sum: f64,
-	root_density_factor: [dynamic]f64,
-	n_concentration_root: f64,
-	allocator := context.allocator,
-) {
-	dead_roots := dead_roots_per_layer(
-		dead_root_biomass,
-		root_density_factor_sum,
-		root_density_factor,
-		cm.rooting_zone,
-		cm.soil_column.number_of_organic_layers,
-		allocator,
-	)
-	if len(dead_roots) > 0 {
-		cm.add_organic_matter(dead_roots, n_concentration_root)
-	}
-}
-
 // C++: void monica::cropmodule::addAndDistributeRootBiomassInSoil(CropModule*, double rootBiomass)
+// - returns the root biomass per organic layer; the caller adds it to soil
+// organic (with cm.n_concentration_root).
 add_and_distribute_root_biomass_in_soil :: proc(
 	cm: ^Crop_Module,
 	root_biomass: f64,
 	allocator := context.allocator,
-) {
+) -> map[int]f64 {
 	root_density_factor, root_density_factor_sum := calc_root_density_factor_and_sum(cm, allocator)
-	fc_move_dead_root_biomass_to_soil(
-		cm,
+	return dead_roots_per_layer(
 		root_biomass,
 		root_density_factor_sum,
 		root_density_factor,
-		cm.n_concentration_root,
+		cm.rooting_zone,
+		cm.soil_column.number_of_organic_layers,
 		allocator,
 	)
 }
@@ -3033,6 +3007,9 @@ crop_module_step :: proc(
 	atmospheric_co2_concentration, atmospheric_o3_concentration: f64,
 	gross_precipitation, reference_evapotranspiration: f64,
 	snow: Snow_For_Crop,
+	// where the dead roots go during the step (the C++ addOrganicMatter
+	// callback); nil: nowhere (test drivers without soil organic)
+	soil_organic: ^Soil_Organic,
 	allocator := context.allocator,
 ) -> (
 	events: Crop_Events,
@@ -3296,8 +3273,13 @@ crop_module_step :: proc(
 		)
 		// the dead roots go to soil organic now, before N uptake reads the soil
 		// N (the residues' NH4 and NO3 are added to the layers)
-		if len(dead_roots) > 0 {
-			cm.add_organic_matter(dead_roots, prev.n_concentration_root)
+		if len(dead_roots) > 0 && soil_organic != nil {
+			soil_organic_add_organic_matter(
+				soil_organic,
+				&cm.residue_params.base,
+				dead_roots,
+				prev.n_concentration_root,
+			)
 		}
 
 		fc_crop_n_demand_by_root_length(cm)
@@ -3572,6 +3554,11 @@ apply_cutting :: proc(
 	exports: map[int]f64,
 	cut_max_assimilation_fraction: f64,
 	allocator := context.allocator,
+) -> (
+	// for soil organic (the caller adds them; the C++ called addOrganicMatter
+	// here) - nothing if nothing was left on the field
+	residues: map[int]f64,
+	residue_n_concentration: f64,
 ) {
 	old_aboveground_biomass := cm.aboveground_biomass
 	old_agb_n_content := cm.aboveground_biomass * cm.n_concentration_aboveground_biomass
@@ -3663,10 +3650,10 @@ apply_cutting :: proc(
 
 	if sum_residue_biomass > 0 {
 		// prepare to add crop residues to soilorganic (AOMs)
-		residue_map := make(map[int]f64, 1, allocator)
-		residue_map[0] = sum_residue_biomass
+		residues = make(map[int]f64, 1, allocator)
+		residues[0] = sum_residue_biomass
 		// residues get the aboveground biomass N concentration
-		cm.add_organic_matter(residue_map, cm.n_concentration_aboveground_biomass)
+		residue_n_concentration = cm.n_concentration_aboveground_biomass
 	}
 
 	// update LAI
@@ -3684,4 +3671,5 @@ apply_cutting :: proc(
 		cm.total_biomass_n_content -=
 			(1 - cm.aboveground_biomass / old_aboveground_biomass) * old_agb_n_content
 	}
+	return
 }

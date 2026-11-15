@@ -141,17 +141,15 @@ make_monica_model :: proc(
 	// C++ in-class initialisers: std::set<std::string> currentEvents/
 	// previousDaysEvents default-construct empty, never nullptr. Odin's zero
 	// map value is nil, which panics on write (m[k] = v) - initialise both to
-	// real, empty maps so monica_model_fire_event_cb (below) and clearEvents/
+	// real, empty maps so monica_model_add_crop_events and clearEvents/
 	// dailyReset's map reassignment can write to them from day one.
 	model.current_events = make(map[string]bool, 0, allocator)
 	model.previous_days_events = make(map[string]bool, 0, allocator)
 
-	// Every CropModule created by a Sowing/Transplant/AutomaticSowing
-	// workstep's apply() needs real fireEvent/addOrganicMatter/
-	// getSnowDepthAndCalcTempUnderSnow callbacks wired to *this* model - see
-	// monica_model_fire_event_cb's doc comment below for why this is a
-	// package-level global rather than a captured closure.
-	g_current_model = model
+	// The C++ wires fireEvent/addOrganicMatter/getSnowDepthAndCalcTempUnderSnow
+	// callbacks into every CropModule; here the crop step returns its events,
+	// gets the snow state and soil organic as parameters, and harvest and
+	// cutting return their residues (plan-component-interfaces.md A4, A5, E1).
 
 	// NOTE(deviation): evapotranspiration modules; nothing without sim.json
 	// "Modules" (evapotranspiration_impl.odin)
@@ -159,21 +157,6 @@ make_monica_model :: proc(
 
 	return model
 }
-
-// This is the real resolution of the "Odin proc type has no capture" gap
-// phase 5 checkpoint 2 deliberately deferred (crop_module.odin's own
-// comment on Crop_Module.fireEvent/addOrganicMatter/
-// getSnowDepthAndCalcTempUnderSnow): the C++ lambdas
-// (sowing.cpp/automatic-sowing.cpp/transplant.cpp) capture `model` by value,
-// but Odin's `proc(_: string)` etc. field types cannot close over anything.
-// monica-run is a single-simulation-per-process CLI tool - there is only
-// ever one live MonicaModel at a time in this port's scope (matching the
-// real C++'s actual usage, not just a convenient shortcut) - so a
-// package-level "the current model" pointer, set once by make_monica_model
-// and never reassigned (the model is heap-allocated once and never moved,
-// same invariant the risk register already requires), is behaviourally
-// identical to the C++ capture for every caller in this port.
-g_current_model: ^Monica_Model
 
 // C++: [model](string event) { model->currentEvents.insert(std::move(event)); }
 // - the crop step returns its events instead (Crop_Events).
@@ -183,19 +166,6 @@ monica_model_add_crop_events :: proc(model: ^Monica_Model, events: Crop_Events) 
 		model.current_events[name] = true
 	}
 }
-
-// C++: [model](const std::map<size_t,double>& layer2amount, double nconc) {
-//        soilorganic::addOrganicMatter(model->soilOrganic.get(),
-//          model->currentCropModule->residueParams, layer2amount, nconc); }
-monica_model_add_organic_matter_cb :: proc(layer2amount: map[int]f64, nconc: f64) {
-	soil_organic_add_organic_matter(
-		&g_current_model.soil_organic,
-		&g_current_model.current_crop_module.residue_params.base,
-		layer2amount,
-		nconc,
-	)
-}
-
 
 // C++: void monica::monicamodel::addDailySumFertiliser(MonicaModel*, double)
 monica_model_add_daily_sum_fertiliser :: proc(model: ^Monica_Model, amount: f64) {
@@ -523,7 +493,15 @@ monica_model_harvest_current_crop :: proc(
 		// dead root biomass has already been added daily, so just living root
 		// biomass is left
 		root_biomass := cm.organ_green_biomass[0]
-		add_and_distribute_root_biomass_in_soil(cm, root_biomass, allocator)
+		roots := add_and_distribute_root_biomass_in_soil(cm, root_biomass, allocator)
+		if len(roots) > 0 {
+			soil_organic_add_organic_matter(
+				&model.soil_organic,
+				&cm.residue_params.base,
+				roots,
+				cm.n_concentration_root,
+			)
+		}
 
 		if exported && len(spec.organ_to_spec_val) == 0 {
 			if opt_carb_mgmt_data.opt_carbon_conservation {
@@ -932,6 +910,7 @@ monica_model_crop_step :: proc(model: ^Monica_Model, allocator := context.alloca
 		precip,
 		et0,
 		snow_for_crop(&model.soil_moisture),
+		&model.soil_organic,
 		allocator,
 	)
 	monica_model_add_crop_events(model, events)

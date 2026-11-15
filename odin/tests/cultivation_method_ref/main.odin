@@ -370,6 +370,7 @@ main :: proc() {
 				precip,
 				-1.0,
 				core.snow_for_crop(&model.soil_moisture),
+				&model.soil_organic,
 				a,
 			)
 			core.monica_model_add_crop_events(model, events)

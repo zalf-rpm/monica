@@ -274,7 +274,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		real_add_organic_matter,
 		nil,
 		a,
 	)
@@ -375,6 +374,7 @@ main :: proc() {
 			precip,
 			-1.0,
 			core.snow_for_crop(g_soil_moisture),
+			g_soil_organic,
 			a,
 		)
 		names, n := core.crop_event_names(events)

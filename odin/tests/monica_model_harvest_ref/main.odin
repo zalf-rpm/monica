@@ -168,7 +168,6 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		real_add_organic_matter,
 		nil,
 		a,
 	)
@@ -256,6 +255,7 @@ main :: proc() {
 			precip,
 			-1.0,
 			core.snow_for_crop(g_soil_moisture),
+			g_soil_organic,
 			a,
 		)
 		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(&cm, false))

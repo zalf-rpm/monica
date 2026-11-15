@@ -272,7 +272,7 @@ day_step :: proc(
 				allocator,
 			)
 			if len(dead_roots) > 0 {
-				cm.add_organic_matter(dead_roots, cm.n_concentration_root)
+				recording_add_organic_matter(dead_roots, cm.n_concentration_root)
 			}
 			core.fc_crop_n_demand_by_root_length(cm)
 		}
@@ -403,7 +403,6 @@ main :: proc() {
 		&cpp.site_params,
 		&cpp.crop_params,
 		&cpp.sim_params,
-		recording_add_organic_matter,
 		nil,
 		a,
 	)
@@ -557,7 +556,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			recording_add_organic_matter,
 			nil,
 			a,
 		)

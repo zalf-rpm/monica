@@ -148,7 +148,6 @@ sowing_apply :: proc(
 			&model.site_params,
 			&model.crop_mod_params,
 			&model.sim_params,
-			core.monica_model_add_organic_matter_cb,
 			nil,
 			allocator,
 		)
@@ -356,8 +355,8 @@ automatic_sowing_apply :: proc(
 }
 
 // Package-level "the AutomaticSowingData currently registered for a daily
-// callback" - the same capture-workaround shape as
-// core.monica_model_fire_event_cb, but NOT verified against a real caller:
+// callback" - a package-level capture workaround (the crop module's former
+// model global is gone), NOT verified against a real caller:
 // run-monica.cpp (phase 7) is the only real caller of
 // registerDailyFunction/this returned function, and no fixture in this repo
 // uses AutomaticSowing at all (crop-min.json only has Sowing/
@@ -820,12 +819,21 @@ cutting_apply :: proc(c: ^Cutting_Data, ws: ^Workstep, model: ^core.Monica_Model
 	workstep_apply_common(ws, model)
 
 	assert(model.current_crop_module != nil)
-	core.apply_cutting(
-		model.current_crop_module,
+	cm := model.current_crop_module
+	residues, residue_n_concentration := core.apply_cutting(
+		cm,
 		c.organ_id_2_cutting_spec,
 		c.organ_id_2_export_fraction,
 		c.cut_max_assimilation_rate_fraction,
 	)
+	if len(residues) > 0 {
+		core.soil_organic_add_organic_matter(
+			&model.soil_organic,
+			&cm.residue_params.base,
+			residues,
+			residue_n_concentration,
+		)
+	}
 	model.current_events["Cutting"] = true
 
 	return true

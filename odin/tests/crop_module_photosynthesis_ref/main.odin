@@ -24,7 +24,6 @@ import "core:strings"
 ATM_CO2 :: 380.0 // ppm, illustrative constant
 ATM_O3 :: 60.0 // ppb, illustrative constant
 
-noop_add_organic_matter :: proc(layer2amount: map[int]f64, n_concentration: f64) {}
 
 @(private)
 jn :: proc(path, name: string) -> string {
@@ -330,7 +329,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_add_organic_matter,
 			nil,
 			a,
 		)
@@ -369,7 +367,6 @@ main :: proc() {
 			&cpp.site_params,
 			&hourly_crop_mod_params,
 			&cpp.sim_params,
-			noop_add_organic_matter,
 			nil,
 			a,
 		)
@@ -402,7 +399,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_add_organic_matter,
 			nil,
 			a,
 		)
@@ -438,7 +434,6 @@ main :: proc() {
 			&cpp.site_params,
 			&cpp.crop_params,
 			&cpp.sim_params,
-			noop_add_organic_matter,
 			nil,
 			a,
 		)

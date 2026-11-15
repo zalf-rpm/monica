@@ -229,7 +229,6 @@ main :: proc() {
 		&model.site_params,
 		&model.crop_mod_params,
 		&model.sim_params,
-		real_add_organic_matter,
 		nil,
 		a,
 	)
@@ -317,6 +316,7 @@ main :: proc() {
 			precip,
 			-1.0,
 			core.snow_for_crop(g_soil_moisture),
+			g_soil_organic,
 			a,
 		)
 		core.soil_organic_step(&model.soil_organic, tavg, precip, wind, core.crop_to_soil_of(&cm, false))
@@ -343,7 +343,7 @@ main :: proc() {
 		}
 		exports := make(map[int]f64, 0, a)
 		exports[1] = 0.6
-		core.apply_cutting(&cm, organs, exports, 0.9, a)
+		{residues, residue_n := core.apply_cutting(&cm, organs, exports, 0.9, a); if len(residues) > 0 {real_add_organic_matter(residues, residue_n)}}
 	}
 	dump_cutting_state(&t, "cropModule", &cm)
 
@@ -358,7 +358,7 @@ main :: proc() {
 		}
 		exports := make(map[int]f64, 0, a)
 		exports[2] = 0.5
-		core.apply_cutting(&cm, organs, exports, 1.0, a)
+		{residues, residue_n := core.apply_cutting(&cm, organs, exports, 1.0, a); if len(residues) > 0 {real_add_organic_matter(residues, residue_n)}}
 	}
 	dump_cutting_state(&t, "cropModule", &cm)
 
@@ -373,7 +373,7 @@ main :: proc() {
 		}
 		exports := make(map[int]f64, 0, a)
 		exports[1] = 0.4
-		core.apply_cutting(&cm, organs, exports, 0.95, a)
+		{residues, residue_n := core.apply_cutting(&cm, organs, exports, 0.95, a); if len(residues) > 0 {real_add_organic_matter(residues, residue_n)}}
 	}
 	dump_cutting_state(&t, "cropModule", &cm)
 
@@ -382,7 +382,7 @@ main :: proc() {
 	{
 		organs := make(map[int]core.Cutting_Value, 0, a)
 		exports := make(map[int]f64, 0, a)
-		core.apply_cutting(&cm, organs, exports, 1.0, a)
+		{residues, residue_n := core.apply_cutting(&cm, organs, exports, 1.0, a); if len(residues) > 0 {real_add_organic_matter(residues, residue_n)}}
 		tr.dump(&t, "cropModule.autoFilledOrgans.size", len(organs))
 	}
 	dump_cutting_state(&t, "cropModule", &cm)
