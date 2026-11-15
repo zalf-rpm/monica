@@ -217,20 +217,7 @@ day_step :: proc(
 			},
 		)
 
-		core.fc_crop_photosynthesis(
-			cm,
-			mean_air_temperature,
-			max_air_temperature,
-			min_air_temperature,
-			ATM_CO2,
-			ATM_O3,
-			current_date,
-			cm.transpiration_deficit,
-			cm.crop_n_redux,
-			cm.crop_frost_redux,
-			cm.rooting_depth,
-			cm.reference_evapotranspiration,
-		)
+		core.photosynthesis_step(&cm.photosynthesis, &cm.o3, &cm.voc, &cm.crop_params, cm.mod_params, core.photosynthesis_in(cm, mean_air_temperature, max_air_temperature, min_air_temperature, ATM_CO2, ATM_O3, current_date, cm.transpiration_deficit, cm.crop_n_redux, cm.crop_frost_redux, cm.rooting_depth, cm.reference_evapotranspiration))
 
 		core.stress_heat(&cm.stress, &cm.crop_params, {max_air_temperature, min_air_temperature, cm.current_total_temperature_sum})
 
