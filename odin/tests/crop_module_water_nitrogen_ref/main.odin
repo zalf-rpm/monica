@@ -155,36 +155,30 @@ day_step :: proc(
 		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
-	if cm.developmental_stage == 0 {
-		cm.kc_factor = cm.site_params.bare_soil_kc_factor
-	} else {
-		cm.kc_factor = core.fc_kc_factor(
-			cm,
-			stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
-			stage_kc_factor[cm.developmental_stage],
-			stage_kc_factor[cm.developmental_stage - 1],
-		)
-	}
+	core.canopy_kc_factor(
+		&cm.canopy,
+		&cm.crop_params,
+		{cm.developmental_stage, cm.current_temperature_sum[:], cm.site_params.bare_soil_kc_factor},
+	)
 
 	if cm.developmental_stage > 0 {
 		max_crop_height := max_crop_height
 
-		core.fc_crop_size(cm, max_crop_height)
-
-		core.fc_crop_green_area(
-			cm,
-			mean_air_temperature,
-			cm.organ_growth_increment[core.Organ_Leaf],
-			cm.organ_senescence_increment[core.Organ_Leaf],
-			specific_leaf_area[cm.developmental_stage - 1],
-			specific_leaf_area[cm.developmental_stage],
-			specific_leaf_area[1],
-			stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
+		core.canopy_growth(
+			&cm.canopy,
+			&cm.crop_params,
+			{
+				developmental_stage = cm.developmental_stage,
+				mean_air_temperature = mean_air_temperature,
+				max_crop_height = max_crop_height,
+				current_total_temperature_sum = cm.current_total_temperature_sum,
+				current_temperature_sum = cm.current_temperature_sum[:],
+				leaf_growth_increment = cm.organ_growth_increment[core.Organ_Leaf],
+				leaf_senescence_increment = cm.organ_senescence_increment[core.Organ_Leaf],
+				enable_t_response_leaf_expansion = cm.mod_params.__enable_T_response_leaf_expansion__,
+				time_step = cm.time_step,
+			},
 		)
-
-		cm.soil_coverage = core.fc_soil_coverage(cm)
 
 		core.fc_crop_photosynthesis(
 			cm,

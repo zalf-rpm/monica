@@ -141,22 +141,6 @@ Crop_Phenology :: struct {
 	time_step:                               f64, //! old dt
 }
 
-// Canopy: size, leaf area, soil coverage, Kc and the FAO-56 dual-Kc Kcb curve (fc_crop_size,
-// fc_crop_green_area, fc_soil_coverage, fc_kc_factor, the dual-Kc block in the step).
-Crop_Canopy :: struct {
-	crop_height:      f64 `unit:"m"`,
-	crop_diameter:    f64,
-	leaf_area_index:  f64 `unit:"m2 m-2"`, //! old LAI
-	green_area_index: f64,
-	soil_coverage:    f64,
-	kc_factor:        f64 `unit:"1"`, //! old FKc
-	// vs_soil_specific_max_rooting_depth:      f64,
-	kcb_factor:       f64 `unit:"1"`, // Current daily Kcb (output of GDD-based 4-phase interpolation)
-	kcb_ini:          f64, // Initial/germination phase Kcb (flat, Phase 1)
-	kcb_mid:          f64, // Mid-season plateau Kcb (Phase 3)
-	kcb_end:          f64, // End of late-season Kcb target (Phase 4)
-}
-
 // Photosynthesis and respiration (fc_crop_photosynthesis, classic or FvCB).
 Crop_Photosynthesis :: struct {
 	co2_method:                         int,
@@ -1170,132 +1154,6 @@ fc_crop_developmental_stage :: proc(
 		cm.error_status = true
 		cm.error_message = "irregular developmental stage"
 	}
-}
-
-// C++: double monica::cropmodule::fcKcFactor(const CropModule*, double
-// d_StageTemperatureSum, double d_CurrentTemperatureSum, double
-// d_StageKcFactor, double d_EarlierStageKcFactor)
-fc_kc_factor :: proc(
-	cm: ^Crop_Module,
-	stage_temperature_sum, current_temperature_sum, stage_kc_factor, earlier_stage_kc_factor: f64,
-) -> f64 {
-	relative_development := 0.0
-	if stage_temperature_sum > 0.0 {
-		relative_development = min(current_temperature_sum / stage_temperature_sum, 1.0) // old relint
-	}
-
-	if cm.developmental_stage == 0 {
-		initial_kc_factor := cm.crop_params.species_params.initial_kc_factor
-		return initial_kc_factor + (stage_kc_factor - initial_kc_factor) * relative_development
-	} else {
-		// Interpolating the Kc Factors
-		return(
-			earlier_stage_kc_factor +
-			((stage_kc_factor - earlier_stage_kc_factor) * relative_development) \
-		)
-	}
-}
-
-// C++: void monica::cropmodule::fcCropSize(CropModule*, double maxCropHeight)
-fc_crop_size :: proc(cm: ^Crop_Module, max_crop_height: f64) {
-	stage_temperature_sum := cm.crop_params.cultivar_params.stage_temperature_sum
-
-	total_temperature_sum_for_height := 0.0
-	for stage := 1; f64(stage) < cm.crop_params.species_params.stage_at_max_height + 1; stage += 1 {
-		total_temperature_sum_for_height += stage_temperature_sum[stage]
-	}
-	relative_total_development_for_height := min(
-		cm.current_total_temperature_sum / total_temperature_sum_for_height,
-		1.0,
-	)
-	if relative_total_development_for_height > 0.0 {
-		cm.crop_height =
-			max_crop_height /
-			(1.0 +
-					cr_math.exp(
-						-cm.crop_params.cultivar_params.crop_height_p1 *
-						(relative_total_development_for_height -
-								cm.crop_params.cultivar_params.crop_height_p2),
-					))
-	} else {
-		cm.crop_height = 0.0
-	}
-
-	total_temperature_sum_for_diameter := 0.0
-	for stage := 1; f64(stage) < cm.crop_params.species_params.stage_at_max_diameter + 1; stage += 1 {
-		total_temperature_sum_for_diameter += stage_temperature_sum[stage]
-	}
-	relative_total_development_for_diameter := min(
-		cm.current_total_temperature_sum / total_temperature_sum_for_diameter,
-		1.0,
-	)
-	if relative_total_development_for_diameter > 0.0 {
-		cm.crop_diameter =
-			cm.crop_params.species_params.max_crop_diameter * relative_total_development_for_diameter
-	} else {
-		cm.crop_diameter = 0.0
-	}
-}
-
-// C++: void monica::cropmodule::fcCropGreenArea(CropModule*, double
-// vw_MeanAirTemperature, double d_LeafBiomassIncrement, double
-// d_LeafBiomassDecrement, double d_SpecificLeafAreaStart, double
-// d_SpecificLeafAreaEnd, double d_SpecificLeafAreaEarly, double
-// d_StageTemperatureSum, double d_CurrentTemperatureSum)
-fc_crop_green_area :: proc(
-	cm: ^Crop_Module,
-	mean_air_temperature, leaf_biomass_increment, leaf_biomass_decrement: f64,
-	specific_leaf_area_start, specific_leaf_area_end, specific_leaf_area_early: f64,
-	stage_temperature_sum, current_temperature_sum: f64,
-) {
-
-	temp_response_expansion := 1.0
-	if cm.mod_params.__enable_T_response_leaf_expansion__ {
-		// Stage switch T response leaf exp (wheat = 2, maize = -1 (deactivated))
-		if cm.developmental_stage + 1 <= cm.crop_params.species_params.transition_stage_leaf_exp {
-			// Early stages leaf expansion T response
-			reference_temp_response_expansion :=
-				223.9 * cr_math.exp(-5.03 * cr_math.exp(-0.0653 * cm.crop_params.cultivar_params.early_ref_leaf_exp))
-			temp_response_expansion = min(
-				223.9 *
-				cr_math.exp(-5.03 * cr_math.exp(-0.0653 * mean_air_temperature)) /
-				reference_temp_response_expansion,
-				1.3,
-			)
-		} else {
-			// leaf expansion T response
-			reference_temp_response_expansion :=
-				37.7 * cr_math.exp(-7.23 * cr_math.exp(-0.1462 * cm.crop_params.cultivar_params.ref_leaf_exp))
-			temp_response_expansion = min(
-				37.7 *
-				cr_math.exp(-7.23 * cr_math.exp(-0.1462 * mean_air_temperature)) /
-				reference_temp_response_expansion,
-				1.3,
-			)
-		}
-	}
-
-	cm.leaf_area_index +=
-		(leaf_biomass_increment *
-			temp_response_expansion *
-			(specific_leaf_area_start +
-					(current_temperature_sum /
-							stage_temperature_sum *
-							(specific_leaf_area_end - specific_leaf_area_start))) *
-			cm.time_step) -
-		(leaf_biomass_decrement * specific_leaf_area_early * cm.time_step) // [ha ha-1]
-
-	if cm.leaf_area_index <= 0.0 {
-		cm.leaf_area_index = 0.001
-	}
-	PI :: 3.14159265358979323
-	cm.green_area_index =
-		cm.leaf_area_index + (cm.crop_height * PI * cm.crop_diameter * f64(cm.crop_params.species_params.plant_density)) // [m2 m-2]
-}
-
-// C++: double monica::cropmodule::fcSoilCoverage(const CropModule*)
-fc_soil_coverage :: proc(cm: ^Crop_Module) -> f64 {
-	return 1.0 - cr_math.exp(-0.5 * cm.leaf_area_index)
 }
 
 // C++: void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule*)
@@ -3765,114 +3623,37 @@ crop_module_step :: proc(
 		cm.relative_total_development = cm.current_total_temperature_sum / cm.total_temperature_sum
 	}
 
-	if cm.developmental_stage == 0 {
-		cm.kc_factor = cm.site_params.bare_soil_kc_factor // @todo Claas: muss hier etwas Genaueres hin, siehe FAO?
-	} else {
-		cm.kc_factor = fc_kc_factor(
-			cm,
-			cultivar_ps.stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
-			cultivar_ps.stage_kc_factor[cm.developmental_stage],
-			cultivar_ps.stage_kc_factor[cm.developmental_stage - 1],
-		)
+	canopy_kc_in := Canopy_Kc_In {
+		developmental_stage     = cm.developmental_stage,
+		current_temperature_sum = cm.current_temperature_sum[:],
+		bare_soil_kc_factor     = cm.site_params.bare_soil_kc_factor,
 	}
-
-	// FAO-56 Dual Kc: GDD-based 4-phase trapezoidal Kcb curve (replaces
-	// static per-stage arrays). Phase 1 (flat initial) | Phase 2 (linear
-	// ascent) | Phase 3 (mid-season) | Phase 4 (descent). Not a
-	// cropmodule:: function in C++ - inline in step() itself there too.
-	{
-		stage_kc_factor := cultivar_ps.stage_kc_factor
-		stage_temperature_sum := cultivar_ps.stage_temperature_sum
-		n_stages := len(stage_kc_factor)
-		if n_stages > 0 {
-			// Compute total elapsed GDD as sum of all completed stages plus
-			// current stage progress
-			elapsed_gdd := 0.0
-			for s := 0; s < n_stages; s += 1 {
-				elapsed_gdd += cm.current_temperature_sum[s]
-			}
-
-			// Identify mid-season start: first stage where Kc equals the maximum
-			max_kc := stage_kc_factor[0]
-			for v in stage_kc_factor {
-				if v > max_kc {
-					max_kc = v
-				}
-			}
-			mid_stage_start := n_stages - 1
-			for i := 1; i < n_stages; i += 1 {
-				if stage_kc_factor[i] >= max_kc - 1e-6 {
-					mid_stage_start = i
-					break
-				}
-			}
-			// Identify late-season start: first stage after plateau where Kc drops
-			late_stage_start := n_stages - 1
-			for i := mid_stage_start + 1; i < n_stages; i += 1 {
-				if stage_kc_factor[i] < max_kc - 1e-6 {
-					late_stage_start = i
-					break
-				}
-			}
-
-			// GDD boundaries
-			gdd_phase1_end := stage_temperature_sum[0] // end of germination/initial phase
-			gdd_to_mid := 0.0
-			for i := 0; i < mid_stage_start; i += 1 {
-				gdd_to_mid += stage_temperature_sum[i]
-			}
-			gdd_late_start := 0.0
-			for i := 0; i < late_stage_start; i += 1 {
-				gdd_late_start += stage_temperature_sum[i]
-			}
-			gdd_late_total := 0.0
-			for i := late_stage_start; i < n_stages; i += 1 {
-				gdd_late_total += stage_temperature_sum[i]
-			}
-
-			if elapsed_gdd <= gdd_phase1_end {
-				// Phase 1: flat initial
-				cm.kcb_factor = cm.kcb_ini
-			} else if cm.developmental_stage < mid_stage_start {
-				// Phase 2: linear development ascent
-				denom := gdd_to_mid - gdd_phase1_end
-				frac := denom > 0.0 ? min(1.0, (elapsed_gdd - gdd_phase1_end) / denom) : 1.0
-				cm.kcb_factor = cm.kcb_ini + frac * (cm.kcb_mid - cm.kcb_ini)
-			} else if cm.developmental_stage < late_stage_start {
-				// Phase 3: mid-season plateau
-				cm.kcb_factor = cm.kcb_mid
-			} else {
-				// Phase 4: late-season linear descent
-				gdd_since_late := elapsed_gdd - gdd_late_start
-				frac := gdd_late_total > 0.0 ? min(1.0, gdd_since_late / gdd_late_total) : 1.0
-				cm.kcb_factor = cm.kcb_mid + frac * (cm.kcb_end - cm.kcb_mid)
-			}
-			cm.kcb_factor = max(0.0, cm.kcb_factor)
-		}
-	}
+	canopy_kc_factor(&cm.canopy, &cm.crop_params, canopy_kc_in)
+	canopy_kcb_factor(&cm.canopy, &cm.crop_params, canopy_kc_in)
 
 	if cm.developmental_stage > 0 {
 		max_crop_height :=
 			cm.mod_params.is_intercropping && cm.intercropping_other_crop_height > prev.crop_height ? cultivar_ps.max_crop_height * cm.mod_params.intercropping_ph_redux : cultivar_ps.max_crop_height
 
-		fc_crop_size(cm, max_crop_height)
-
+		// the intercropping exchange (a no-op stub here) sits between crop size and
+		// green area in the C++
 		crop_module_ic_send_rcv(cm, "devstage > 0: ")
 
-		fc_crop_green_area(
-			cm,
-			mean_air_temperature,
-			prev.leaf_growth_increment,
-			prev.leaf_senescence_increment,
-			cultivar_ps.specific_leaf_area[cm.developmental_stage - 1],
-			cultivar_ps.specific_leaf_area[cm.developmental_stage],
-			cultivar_ps.specific_leaf_area[1],
-			cultivar_ps.stage_temperature_sum[cm.developmental_stage],
-			cm.current_temperature_sum[cm.developmental_stage],
+		canopy_growth(
+			&cm.canopy,
+			&cm.crop_params,
+			Canopy_Growth_In {
+				developmental_stage = cm.developmental_stage,
+				mean_air_temperature = mean_air_temperature,
+				max_crop_height = max_crop_height,
+				current_total_temperature_sum = cm.current_total_temperature_sum,
+				current_temperature_sum = cm.current_temperature_sum[:],
+				leaf_growth_increment = prev.leaf_growth_increment,
+				leaf_senescence_increment = prev.leaf_senescence_increment,
+				enable_t_response_leaf_expansion = cm.mod_params.__enable_T_response_leaf_expansion__,
+				time_step = cm.time_step,
+			},
 		)
-
-		cm.soil_coverage = fc_soil_coverage(cm)
 
 		fc_crop_photosynthesis(
 			cm,
