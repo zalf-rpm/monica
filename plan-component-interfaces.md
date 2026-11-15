@@ -60,7 +60,7 @@ A-H these helpers lived uncommitted under `build/tmp_cm`; they were moved to
 | F | F1-F6 | medium components, management, parameters | done: e20cc9d .. 272a9d3 (F6 "reference" part not done, see below) |
 | G | G1 | share radiation/day length with soil ET0 | done: a7a116f |
 | H | H1-H3 | tag and graph tool, generated docs | done: 13f06e3, d1ed0f1 |
-| I | I1-I3 | soil mineral N as rate/state (model change, own branch) | |
+| I | I1-I3 | soil mineral N as rate/state (model change, own branch) | I1, I2 done on branch `soil-n-rates`, behind a switch (off by default); I3: divergence and SOC measured, decision with the MONICA team open |
 
 ---
 
@@ -412,6 +412,56 @@ Not bit-compatible: it is validated, not diffed.
   explicit rule, applies them, and checks the mass balance.
 - **I3** Validate against measurements and the current version; decide with
   the MONICA team before merging.
+
+### What was done (branch `soil-n-rates`)
+
+- **A switch, not a replacement.** `Soil_Organic_Module_Parameters.mineral_n_as_rates`
+  (JSON `"MineralNAsRates"` in the soil organic parameters; for comparison runs
+  `MONICA_MINERAL_N_AS_RATES=1` in monica-run's environment), off by default.
+  Off is the C++'s in-place path, unchanged: the refactoring gate passes
+  (fixtures, C++, extra scenarios byte-identical), so CI keeps its exact
+  check, and one binary runs both variants for comparisons.
+- **I1.** Each process procedure (`soil_organic_fo_urea`, `_mit`,
+  `_volatilisation`, both nitrification and both denitrification models) takes
+  an optional `^Mineral_N_Rates`: nil = in place as before, non-nil = record its
+  demand from the unchanged start-of-step state. One implementation of each
+  process serves both paths. Deposition and crop uptake come from soil
+  transport (`soil_transport_deposition_rate`, the crop's `n_uptake_from_layer`).
+  `soil_organic_step` and `soil_transport_step` are split into halves both paths
+  use.
+- **I2.** `core/soil_mineral_n.odin`: `mineral_n_apply` limits along
+  carbamid -> NH4 -> NO2 -> NO3. Available = start content + the same day's
+  inflows; committed claims first (immobilisation - its N is booked in the
+  microbial biomass by the C deltas; crop uptake - the crop has already added
+  it); the soil's own transformations and losses share the rest
+  proportionally. Pools stay >= 0, the mass balance is asserted every day
+  (< 1e-9 kg N m-3, rounding is ~1e-18). Leaching (transport) runs after, on
+  the new state. Unit tests: `tests/soil_mineral_n_test.odin`.
+- **Kept on purpose**, so the divergence is the rate/state change alone: the
+  processes' own rules (immobilisation split, NH3 caps, denitrification at most
+  `transport_rate_coeff` * NO3), including two C++ quirks found on the way -
+  after the immobilisation-limited recalculation, `|n_balance|` is *added* to
+  NH4 even when it is still negative; the ALFAM volatilisation cap compares
+  kg m-3 with kg m-2. Both are questions for the MONICA team on their own.
+- **I3, how much it diverges** (`../monica/tests/deviation.py` on the
+  hohenfinow2 and muencheberg_v140 suites, off vs on; 55 simulations, all ran):
+  - yields: mean change per harvest within ±0.1 % for every crop, single
+    harvests -3.8 % ... +3.6 %; above-ground biomass and LAI similar
+  - mineral N pools (hohenfinow2 daily means): NH4 +1.0 %, NO2 +1.0 %, NO3
+    +0.1 %; NH3 volatilisation +4 % in total (+10 % mean monthly); N2O
+    +0.3 %, denitrification -0.5 %, leaching -0.2 % in total
+  - SOC: changes of 0.01-0.1 %
+  The limits rarely bind; most of the change comes from all processes seeing
+  the start-of-day state instead of what the previous process left.
+- **I3, against measurements**: `odin/tests/v140_soc_vs_measured.py` compares
+  the V140 suite's daily SOC (0-30 cm) with `soil_corg_measured.csv` (1006
+  samples). Off and on are the same to the 4th digit (bias +0.117 % SOC, RMSE
+  0.191, r 0.51) - SOC can't tell the variants apart. The suite has no N
+  measurements (Nmin, N uptake, leaching), which is what would discriminate.
+- **Open for the decision**: N measurements to validate against; whether
+  committed claims first + proportional sharing is the rule wanted (a fixed
+  priority would be the alternative); whether the same-day inflows should
+  count as available (pure explicit Euler would not); the two quirks above.
 
 ---
 

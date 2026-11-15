@@ -78,7 +78,21 @@ make_soil_transport :: proc(
 //
 // `crop`: the crop's N uptake per layer (crop_to_soil.odin), instead of the
 // C++'s read through the crop module.
+//
+// The in-place path (the C++'s). With `mineral_n_as_rates` deposition and
+// crop uptake are demands on the soil mineral N owner (soil_mineral_n.odin),
+// which uses soil_transport_prepare/_deposition_rate/_set_no3_aq/_transport.
 soil_transport_step :: proc(st: ^Soil_Transport, crop: Crop_To_Soil) {
+	min_time_step_factor := soil_transport_prepare(st, crop)
+
+	n_deposition(st)
+	n_uptake(st)
+
+	soil_transport_transport(st, min_time_step_factor)
+}
+
+// The crop's uptake demand, the percolation rates and the time step factor.
+soil_transport_prepare :: proc(st: ^Soil_Transport, crop: Crop_To_Soil) -> f64 {
 	min_time_step_factor := 1.0 // [t t-1]
 	nols := len(st.soil_column.layers)
 
@@ -107,9 +121,12 @@ soil_transport_step :: proc(st: ^Soil_Transport, crop: Crop_To_Soil) {
 
 		min_time_step_factor = min(min_time_step_factor, time_step_factor_current_layer)
 	}
+	return min_time_step_factor
+}
 
-	n_deposition(st)
-	n_uptake(st)
+// Nitrate transport and leaching on soil_no3_aq, then back to soil_no3.
+soil_transport_transport :: proc(st: ^Soil_Transport, min_time_step_factor: f64) {
+	nols := len(st.soil_column.layers)
 
 	// Nitrate transport is called according to the set time step
 	st.leaching_at_boundary = 0.0
@@ -130,10 +147,23 @@ soil_transport_step :: proc(st: ^Soil_Transport, crop: Crop_To_Soil) {
 // Kersebaum 1989. Daily N deposition, transformed from an annual value, added
 // to the ammonium... (really nitrate: soil_no3) pool of the top soil layer.
 n_deposition :: proc(st: ^Soil_Transport) {
+	st.soil_column.layers[0].soil_no3 += soil_transport_deposition_rate(st)
+}
+
+// The daily deposition into the top layer [kg N m-3 d-1].
+soil_transport_deposition_rate :: proc(st: ^Soil_Transport) -> f64 {
 	daily_n_deposition := st.site_params.n_deposition / 365.0
 
-	st.soil_column.layers[0].soil_no3 +=
-		daily_n_deposition / (10000.0 * st.soil_column.layers[0].layer_thickness_m)
+	return daily_n_deposition / (10000.0 * st.soil_column.layers[0].layer_thickness_m)
+}
+
+// mineral_n_as_rates: the solute NO3 concentration from the soil NO3 after
+// the owner applied the day's rates (n_uptake does this in place).
+soil_transport_set_no3_aq :: proc(st: ^Soil_Transport) {
+	for i in 0 ..< len(st.soil_column.layers) {
+		layer := &st.soil_column.layers[i]
+		st.soil_no3_aq[i] = layer.soil_no3 / layer.soil_moisture_m3
+	}
 }
 
 // C++: void monica::soiltransport::nUptake(SoilTransport*)

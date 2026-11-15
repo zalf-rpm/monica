@@ -503,6 +503,12 @@ Soil_Organic_Module_Parameters :: struct {
 	__enable_kaiteew_MoistOnDecompostion__: bool,
 	__enable_kaiteew_ClayOnDecompostion__:  bool,
 	stics_params:                           Stics_Parameters,
+	// Odin only, not in the C++ (plan-component-interfaces.md phase I): soil
+	// mineral N as rate/state with explicit limiting (core/soil_mineral_n.odin)
+	// instead of the in-place sequence. JSON "MineralNAsRates"; the
+	// environment variable MONICA_MINERAL_N_AS_RATES=1 switches it on in
+	// monica-run for comparisons. Off by default.
+	mineral_n_as_rates:                     bool,
 }
 
 // The C++ in-class initialisers
@@ -624,6 +630,8 @@ soil_organic_module_parameters_merge :: proc(
 		j,
 		"__enable_kaiteew_ClayOnDecompostion__",
 	)
+
+	jx.set_bool_value(&sop.mineral_n_as_rates, j, "MineralNAsRates")
 
 	if jx.is_object(jx.get(j, "stics")) {
 		e := stics_parameters_merge(&sop.stics_params, jx.get(j, "stics"))

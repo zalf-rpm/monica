@@ -62,6 +62,13 @@ Soil_Organic :: struct {
 	// incorporation. Automatically set to false if carbamid amount falls
 	// below 0.001.
 	incorporation:                bool,
+
+	// mineral_n_as_rates (soil_mineral_n.odin): the processes' demands and
+	// the actual rates after limiting, per layer of the whole column, and the
+	// day's largest mass-balance error [kg N m-3].
+	mineral_n_demand:             Mineral_N_Rates,
+	mineral_n_actual:             Mineral_N_Rates,
+	mineral_n_balance_error:      f64,
 }
 
 // C++: kj::Own<SoilOrganic> monica::makeSoilOrganic(SoilColumn&,
@@ -101,6 +108,10 @@ make_soil_organic :: proc(
 	resize(&so.som_fast_input, nools)
 	resize(&so.som_fast_delta, nools)
 	resize(&so.som_slow_delta, nools)
+	if params.mineral_n_as_rates {
+		so.mineral_n_demand = make_mineral_n_rates(len(sc.layers))
+		so.mineral_n_actual = make_mineral_n_rates(len(sc.layers))
+	}
 
 	part_som_to_smb_slow := so.mod_params.part_som_to_smb_slow
 	part_som_to_smb_fast := so.mod_params.part_som_to_smb_fast
@@ -175,7 +186,14 @@ make_soil_organic :: proc(
 }
 
 // C++: void monica::soilorganic::foUrea(SoilOrganic*)
-soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) {
+// `rates` non-nil (mineral_n_as_rates): records hydrolysis and the NH3
+// volatilisation as demands instead of changing the pools; both then see the
+// start-of-step NH4.
+soil_organic_fo_urea :: proc(
+	so: ^Soil_Organic,
+	rates: ^Mineral_N_Rates = nil,
+	allocator := context.allocator,
+) {
 	sc := so.soil_column
 	nools := sc.number_of_organic_layers
 	soil_carbamid_solid := make([dynamic]f64, nools, allocator)
@@ -255,7 +273,14 @@ soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) 
 		// kmol urea m soil-3 d-1
 		hydrolysis_rate[i] = hydrolysis_rate[i] * 86400.0 * soil_bulk_density(layer)
 
-		if hydrolysis_rate[i] >= soil_carbamid_aq[i] {
+		if rates != nil {
+			if hydrolysis_rate[i] >= soil_carbamid_aq[i] {
+				rates.hydrolysis[i] = layer.soil_carbamid
+			} else {
+				rates.hydrolysis[i] =
+					hydrolysis_rate[i] * soil.PO_UREA_MOLECULAR_WEIGHT * soil.PO_UREA_TO_N * 1000.0
+			}
+		} else if hydrolysis_rate[i] >= soil_carbamid_aq[i] {
 			layer.soil_nh4 += layer.soil_carbamid
 			layer.soil_carbamid = 0.0
 		} else {
@@ -295,7 +320,10 @@ soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) 
 			// kg N m-3 d-1
 			nh3_volatilising = nh3_gas * soil.PO_NH3_MOLECULAR_WEIGHT * 1000.0
 
-			if nh3_volatilising >= layer0.soil_nh4 {
+			if rates != nil {
+				nh3_volatilising = min(nh3_volatilising, layer0.soil_nh4)
+				rates.volatilisation_urea[0] = nh3_volatilising
+			} else if nh3_volatilising >= layer0.soil_nh4 {
 				nh3_volatilising = layer0.soil_nh4
 				layer0.soil_nh4 = 0.0
 			} else {
@@ -325,7 +353,15 @@ soil_organic_fo_urea :: proc(so: ^Soil_Organic, allocator := context.allocator) 
 // struct fields are populated later, by foPoolUpdate. Reproduced as local
 // variables here too, never touching `so.aom_fast_delta_sum`/
 // `so.aom_slow_delta_sum`.
-soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
+//
+// `rates` non-nil (mineral_n_as_rates): records net mineralisation and the
+// immobilisation from NH4 and NO3 as demands instead of changing the pools.
+// The C pools' deltas are the same either way.
+soil_organic_fo_mit :: proc(
+	so: ^Soil_Organic,
+	rates: ^Mineral_N_Rates = nil,
+	allocator := context.allocator,
+) {
 	sc := so.soil_column
 	params := &so.mod_params
 
@@ -631,17 +667,34 @@ soil_organic_fo_mit :: proc(so: ^Soil_Organic, allocator := context.allocator) {
 				}
 
 				// Update of Soil NH4 after recalculated N balance
-				layi.soil_nh4 += libc.fabs(n_balance[i])
+				// NOTE(c++-quirk): adds |n_balance| even if the recalculated
+				// balance is still negative (immobilisation). Kept in both
+				// paths, so the rate/state change stays separate from it.
+				if rates != nil {
+					rates.mineralisation[i] = libc.fabs(n_balance[i])
+				} else {
+					layi.soil_nh4 += libc.fabs(n_balance[i])
+				}
 			} else {
 				// Bedarf kann durch Ammonium-Pool nicht gedeckt werden --> Nitrat wird verwendet
 				if libc.fabs(n_balance[i]) >= (layi.soil_nh4 * immobilisation_rate_coeff_nh4) {
-					layi.soil_no3 -=
-						libc.fabs(n_balance[i]) - (layi.soil_nh4 * immobilisation_rate_coeff_nh4)
-					layi.soil_nh4 -= layi.soil_nh4 * immobilisation_rate_coeff_nh4
+					if rates != nil {
+						rates.immobilisation_no3[i] =
+							libc.fabs(n_balance[i]) - (layi.soil_nh4 * immobilisation_rate_coeff_nh4)
+						rates.immobilisation_nh4[i] = layi.soil_nh4 * immobilisation_rate_coeff_nh4
+					} else {
+						layi.soil_no3 -=
+							libc.fabs(n_balance[i]) - (layi.soil_nh4 * immobilisation_rate_coeff_nh4)
+						layi.soil_nh4 -= layi.soil_nh4 * immobilisation_rate_coeff_nh4
+					}
+				} else if rates != nil {
+					rates.immobilisation_nh4[i] = libc.fabs(n_balance[i])
 				} else {
 					layi.soil_nh4 -= libc.fabs(n_balance[i])
 				}
 			}
+		} else if rates != nil {
+			rates.mineralisation[i] = libc.fabs(n_balance[i])
 		} else {
 			layi.soil_nh4 += libc.fabs(n_balance[i])
 		}
@@ -911,6 +964,7 @@ soil_organic_fo_volatilisation :: proc(
 	so: ^Soil_Organic,
 	aom_addition: bool,
 	mean_air_temperature, wind_speed: f64,
+	rates: ^Mineral_N_Rates = nil,
 ) {
 	soil_wet: f64
 	n_pot_volatilised_sum := 0.0
@@ -980,7 +1034,14 @@ soil_organic_fo_volatilisation :: proc(
 		}
 
 		// update NH4 content of top soil layer with volatilisation balance
-		lay0.soil_nh4 -= (n_act_volatilised / lay0.layer_thickness_m)
+		// (mineral_n_as_rates: recorded as the demand, limited by the owner,
+		// which also keeps NH4 from going negative - the cap above compares
+		// kg m-3 with kg m-2)
+		if rates != nil {
+			rates.volatilisation_manure[0] = n_act_volatilised / lay0.layer_thickness_m
+		} else {
+			lay0.soil_nh4 -= (n_act_volatilised / lay0.layer_thickness_m)
+		}
 	} else {
 		n_act_volatilised = 0.0
 	}
@@ -996,7 +1057,7 @@ soil_organic_fo_volatilisation :: proc(
 }
 
 // C++: void monica::soilorganic::foNitrification(SoilOrganic*)
-soil_organic_fo_nitrification :: proc(so: ^Soil_Organic) {
+soil_organic_fo_nitrification :: proc(so: ^Soil_Organic, rates: ^Mineral_N_Rates = nil) {
 	sc := so.soil_column
 	params := &so.mod_params
 
@@ -1026,6 +1087,12 @@ soil_organic_fo_nitrification :: proc(so: ^Soil_Organic) {
 
 		so.act_nitrification_rate[i] = nitrite_oxidation_rate_coeff[i] * layi.soil_no2
 
+		if rates != nil {
+			rates.ammonia_oxidation[i] = so.act_ammonia_oxidation_rate[i]
+			rates.nitrite_oxidation[i] = so.act_nitrification_rate[i]
+			continue
+		}
+
 		// Update NH4, NO2 and NO3 content with nitrification balance
 		// Stange, F., C. Nendel (2014): N.N., in preparation
 		if nh4_i > so.act_ammonia_oxidation_rate[i] {
@@ -1047,7 +1114,7 @@ soil_organic_fo_nitrification :: proc(so: ^Soil_Organic) {
 }
 
 // C++: void monica::soilorganic::foSticsNitrification(SoilOrganic*)
-soil_organic_fo_stics_nitrification :: proc(so: ^Soil_Organic) {
+soil_organic_fo_stics_nitrification :: proc(so: ^Soil_Organic, rates: ^Mineral_N_Rates = nil) {
 	sc := so.soil_column
 	stics_params := &so.mod_params.stics_params
 
@@ -1073,7 +1140,9 @@ soil_organic_fo_stics_nitrification :: proc(so: ^Soil_Organic) {
 				layi.saturation,
 			) * mg_n_per_kg_to_kg_n_per_m3 // mg-N -> kg-N
 
-		if nh4_i > so.act_nitrification_rate[i] {
+		if rates != nil {
+			rates.nitrification_direct[i] = so.act_nitrification_rate[i]
+		} else if nh4_i > so.act_nitrification_rate[i] {
 			layi.soil_nh4 -= so.act_nitrification_rate[i]
 			layi.soil_no3 += so.act_nitrification_rate[i]
 		} else {
@@ -1084,7 +1153,7 @@ soil_organic_fo_stics_nitrification :: proc(so: ^Soil_Organic) {
 }
 
 // C++: void monica::soilorganic::foDenitrification(SoilOrganic*)
-soil_organic_fo_denitrification :: proc(so: ^Soil_Organic) {
+soil_organic_fo_denitrification :: proc(so: ^Soil_Organic, rates: ^Mineral_N_Rates = nil) {
 	sc := so.soil_column
 	params := &so.mod_params
 
@@ -1111,7 +1180,9 @@ soil_organic_fo_denitrification :: proc(so: ^Soil_Organic) {
 		)
 
 		// update NO3 content of soil layer with denitrification balance [kg N m-3]
-		if no3_i > so.act_denitrification_rate[i] {
+		if rates != nil {
+			rates.denitrification[i] = so.act_denitrification_rate[i]
+		} else if no3_i > so.act_denitrification_rate[i] {
 			layi.soil_no3 -= so.act_denitrification_rate[i]
 		} else {
 			so.act_denitrification_rate[i] = no3_i
@@ -1125,7 +1196,7 @@ soil_organic_fo_denitrification :: proc(so: ^Soil_Organic) {
 }
 
 // C++: void monica::soilorganic::foSticsDenitrification(SoilOrganic*)
-soil_organic_fo_stics_denitrification :: proc(so: ^Soil_Organic) {
+soil_organic_fo_stics_denitrification :: proc(so: ^Soil_Organic, rates: ^Mineral_N_Rates = nil) {
 	sc := so.soil_column
 	stics_params := &so.mod_params.stics_params
 
@@ -1152,7 +1223,9 @@ soil_organic_fo_stics_denitrification :: proc(so: ^Soil_Organic) {
 			) * mg_n_per_kg_to_kg_n_per_m3 // mg-N -> kg-N
 
 		// update NO3 content of soil layer with denitrification balance [kg N m-3]
-		if no3_i > so.act_denitrification_rate[i] {
+		if rates != nil {
+			rates.denitrification[i] = so.act_denitrification_rate[i]
+		} else if no3_i > so.act_denitrification_rate[i] {
 			layi.soil_no3 -= so.act_denitrification_rate[i]
 		} else {
 			so.act_denitrification_rate[i] = no3_i
@@ -1619,28 +1692,78 @@ soil_organic_fo_net_ecosystem_exchange :: proc(
 //
 // `crop`: the crop's NPP (crop_to_soil.odin), instead of the C++'s
 // `cropModule ? cropModule->vc_NetPrimaryProduction : 0`.
+//
+// The in-place path (the C++'s). With `mineral_n_as_rates` the general step
+// calls soil_n_step_as_rates (soil_mineral_n.odin) instead, which uses the
+// two halves below.
 soil_organic_step :: proc(
 	so: ^Soil_Organic,
 	mean_air_temperature, precipitation, wind_speed: f64,
 	crop: Crop_To_Soil,
 ) {
-	net_primary_production := crop.has_crop ? crop.net_primary_production : 0
+	soil_organic_n_processes(so, mean_air_temperature, wind_speed)
+	soil_organic_finish(so, crop)
+}
 
-	soil_organic_fo_urea(so)
-	soil_organic_fo_mit(so)
-	soil_organic_fo_volatilisation(so, so.added_organic_matter, mean_air_temperature, wind_speed)
+// The N transformations. `rates` nil: in place, in sequence; non-nil: each
+// records its demand from the unchanged start-of-step state.
+soil_organic_n_processes :: proc(
+	so: ^Soil_Organic,
+	mean_air_temperature, wind_speed: f64,
+	rates: ^Mineral_N_Rates = nil,
+) {
+	soil_organic_fo_urea(so, rates)
+	soil_organic_fo_mit(so, rates)
+	soil_organic_fo_volatilisation(
+		so,
+		so.added_organic_matter,
+		mean_air_temperature,
+		wind_speed,
+		rates,
+	)
 
 	if so.mod_params.stics_params.use_nit {
-		soil_organic_fo_stics_nitrification(so)
+		soil_organic_fo_stics_nitrification(so, rates)
 	} else {
-		soil_organic_fo_nitrification(so)
+		soil_organic_fo_nitrification(so, rates)
 	}
 
 	if so.mod_params.stics_params.use_denit {
-		soil_organic_fo_stics_denitrification(so)
+		soil_organic_fo_stics_denitrification(so, rates)
 	} else {
-		soil_organic_fo_denitrification(so)
+		soil_organic_fo_denitrification(so, rates)
 	}
+}
+
+// mineral_n_as_rates: the reported process rates and sums from the actual
+// (limited) rates instead of the demands soil_organic_n_processes left.
+soil_organic_take_actual_rates :: proc(so: ^Soil_Organic, actual: ^Mineral_N_Rates) {
+	sc := so.soil_column
+	nools := sc.number_of_organic_layers
+
+	// the processes added their demand-based total already
+	so.sum_denitrification -= so.total_denitrification
+	so.total_denitrification = 0.0
+	for i in 0 ..< nools {
+		if so.mod_params.stics_params.use_nit {
+			so.act_nitrification_rate[i] = actual.nitrification_direct[i]
+		} else {
+			so.act_ammonia_oxidation_rate[i] = actual.ammonia_oxidation[i]
+			so.act_nitrification_rate[i] = actual.nitrite_oxidation[i]
+		}
+		so.act_denitrification_rate[i] = actual.denitrification[i]
+		so.total_denitrification += actual.denitrification[i] * sc.layers[i].layer_thickness_m // [kg m-3] --> [kg m-2]
+	}
+	so.sum_denitrification += so.total_denitrification // [kg N m-2]
+
+	lt0 := sc.layers[0].layer_thickness_m
+	so.nh3_volatilised = actual.volatilisation_urea[0] * lt0 // [kg N m-2]
+	so.total_nh3_volatilised = actual.volatilisation_manure[0] * lt0 + so.nh3_volatilised // [kg N m-2]
+}
+
+// N2O, the C pool update, NEP/NEE, the sums and the daily resets.
+soil_organic_finish :: proc(so: ^Soil_Organic, crop: Crop_To_Soil) {
+	net_primary_production := crop.has_crop ? crop.net_primary_production : 0
 
 	n2o_nit, n2o_denit: f64
 	if so.mod_params.stics_params.use_n2o {
