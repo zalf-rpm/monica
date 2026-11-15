@@ -161,18 +161,18 @@ day_step :: proc(
 		}
 	}
 	if !perennial || d.ge(current_date, cm.perennial_crop_dormancy_period_end_date) {
-		core.fc_crop_developmental_stage(
-			cm,
-			mean_air_temperature,
-			cm.soil_column.layers[0].soil_moisture_m3,
-			cm.soil_column.layers[0].field_capacity,
-			cm.soil_column.layers[0].permanent_wilting_point,
-			current_date,
-			cm.transpiration_deficit,
-			cm.crop_n_redux,
-			cm.daylength_factor,
-			cm.vernalisation_factor,
-		)
+		{
+			reset_perennial, irregular := core.phenology_development(
+				&cm.phenology,
+				&cm.crop_params,
+				core.phenology_in(cm, mean_air_temperature, current_date, cm.transpiration_deficit, cm.crop_n_redux, cm.daylength_factor, cm.vernalisation_factor),
+			)
+			if irregular {cm.error_status = true; cm.error_message = "irregular developmental stage"}
+			if reset_perennial {
+				core.fc_update_crop_parameters_for_perennial(cm)
+				core.phenology_reset_perennial(&cm.phenology, &cm.crop_params, cm.no_of_dev_stages, current_date)
+			}
+		}
 	}
 
 	if core.is_anthesis_day(cm, old_developmental_stage, cm.developmental_stage) {

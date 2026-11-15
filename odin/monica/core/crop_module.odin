@@ -116,29 +116,6 @@ Radiation_In :: struct {
 	sunshine_hours:   f64 `unit:"h" src:"weather"`,
 }
 
-// Phenology: stage, temperature sums, vernalisation, day length factor, dormancy and the events
-// (fc_crop_developmental_stage, fc_daylength_factor, fc_vernalisation_factor, set_stage, the step).
-Crop_Phenology :: struct {
-	developmental_stage:                     int, // C++ size_t, //! old INTWICK
-	final_developmental_stage:               int, // C++ size_t
-	current_temperature_sum:                 [dynamic]f64, //! old SUM
-	current_total_temperature_sum:           f64 `unit:"°C d"`, //! old FP
-	total_temperature_sum:                   f64,
-	temperature_sum_to_flowering:            f64,
-	relative_total_development:              f64 `unit:"0-1"`,
-	daylength_factor:                        f64 `unit:"0-1"`, //! old DAYL
-	vernalisation_factor:                    f64 `unit:"0-1"`, //! old FV
-	vernalisation_days:                      f64,
-	growth_cycle_ended:                      bool,
-	perennial_crop_dormancy_period_end_date: d.Date,
-	no_of_crop_steps:                        int,
-	stem_elongation_event_fired:             bool,
-	anthesis_day:                            int,
-	maturity_day:                            int,
-	maturity_reached:                        bool,
-	time_step:                               f64, //! old dt
-}
-
 // Photosynthesis and respiration (fc_crop_photosynthesis, classic or FvCB).
 Crop_Photosynthesis :: struct {
 	co2_method:                         int,
@@ -695,341 +672,6 @@ crop_radiation :: proc(input: Radiation_In) -> (r: Crop_Radiation) {
 	}	return
 }
 
-// What crop_daylength_factor needs (plan-component-interfaces.md D2).
-Daylength_Factor_In :: struct {
-	// > 0: long-day plant; < 0: short-day plant, the critical day length
-	daylength_requirement:   f64 `unit:"h" src:"cultivar"`,
-	base_daylength:          f64 `unit:"h" src:"cultivar"`,
-	effective_day_length:    f64 `unit:"h" src:"Radiation"`,
-	photoperiodic_daylength: f64 `unit:"h" src:"Radiation"`,
-}
-
-// C++: double monica::cropmodule::fcDaylengthFactor(CropModule*, double
-// daylengthRequirement, double effectiveDayLength, double
-// photoperiodicDayLength, double baseDaylength)
-crop_daylength_factor :: proc(input: Daylength_Factor_In) -> (factor: f64) {
-	daylength_requirement := input.daylength_requirement
-	effective_day_length := input.effective_day_length
-	photoperiodic_day_length := input.photoperiodic_daylength
-	base_daylength := input.base_daylength
-
-	if daylength_requirement > 0.0 {
-		// Long-day plants: development acceleration by day length (day length
-		// requirement is positive).
-		factor =
-			(photoperiodic_day_length - base_daylength) / (daylength_requirement - base_daylength)
-	} else if daylength_requirement < 0.0 {
-		// Short-day plants: development acceleration by night length (day
-		// length requirement is negative and represents critical day length).
-		critical_day_lenght := -daylength_requirement
-		maximum_day_length := -base_daylength
-		if effective_day_length <= critical_day_lenght {
-			factor = 1.0
-		} else {
-			factor =
-				(effective_day_length - maximum_day_length) /
-				(critical_day_lenght - maximum_day_length)
-		}
-	} else {
-		factor = 1.0
-	}
-
-	factor = max(0.0, min(factor, 1.0))
-
-	return
-}
-
-// What crop_vernalisation_factor needs (plan-component-interfaces.md D2).
-Vernalisation_In :: struct {
-	mean_air_temperature:      f64 `unit:"°C" src:"weather"`,
-	vernalisation_requirement: f64 `unit:"d" src:"cultivar"`,
-	vernalisation_days:        f64 `unit:"d" src:"Phenology" cat:"state"`, // so far
-	time_step:                 f64 `unit:"d"`,
-	enable_fix:                bool `unit:"" src:"crop parameters"`, // vernalisation_factor_fix_enabled
-}
-
-// The crop's own `__enable_vernalisation_factor_fix__`, else the crop module
-// parameters' (the C++ reads it inside fcVernalisationFactor).
-vernalisation_factor_fix_enabled :: proc(cm: ^Crop_Module) -> bool {
-	enable, ok := cm.crop_params.__enable_vernalisation_factor_fix__.?
-	if !ok {
-		enable = cm.mod_params.__enable_vernalisation_factor_fix__
-	}
-	return enable
-}
-
-// C++: pair<double,double> monica::cropmodule::fcVernalisationFactor(CropModule*,
-// double meanAirTemperature, double vernalisationRequirement, double vernalisationDays)
-crop_vernalisation_factor :: proc(
-	input: Vernalisation_In,
-) -> (
-	factor: f64,
-	vernalisation_days: f64,
-) {
-	mean_air_temperature := input.mean_air_temperature
-	vernalisation_requirement := input.vernalisation_requirement
-	vernalisation_days = input.vernalisation_days
-	enable_vernalisation_factor_fix := input.enable_fix
-	effective_vernalisation: f64
-
-	if vernalisation_requirement == 0.0 {
-		factor = 1.0
-	} else {
-		switch {
-		case mean_air_temperature > -4.0 && mean_air_temperature <= 0.0:
-			effective_vernalisation = (mean_air_temperature + 4.0) / 4.0
-		case mean_air_temperature > 0.0 && mean_air_temperature <= 3.0:
-			effective_vernalisation = 1.0
-		case mean_air_temperature > 3.0 && mean_air_temperature <= 7.0:
-			effective_vernalisation = 1.0 - (0.2 * (mean_air_temperature - 3.0) / 4.0)
-		case mean_air_temperature > 7.0 && mean_air_temperature <= 9.0:
-			effective_vernalisation = 0.8 - (0.4 * (mean_air_temperature - 7.0) / 2.0)
-		case mean_air_temperature > 9.0 && mean_air_temperature <= 18.0:
-			effective_vernalisation = 0.4 - (0.4 * (mean_air_temperature - 9.0) / 9.0)
-		case mean_air_temperature <= -4.0 || mean_air_temperature > 18.0:
-			effective_vernalisation = 0.0
-		case:
-			effective_vernalisation = 1.0
-		}
-
-		// old VERNTAGE
-		vernalisation_days += effective_vernalisation * input.time_step
-
-		// old VERSCHWELL
-		vernalisation_threshold := min(vernalisation_requirement, 9.0) - 1.0
-
-		if vernalisation_threshold >= 1 {
-			factor =
-				(vernalisation_days - vernalisation_threshold) /
-				(vernalisation_requirement - vernalisation_threshold)
-
-			if enable_vernalisation_factor_fix {
-				factor = min(max(0.0, factor), 1.0)
-			}
-			if factor < 0 {
-				factor = 0.0 // MP: Vernalisation kann nie negativ sein
-			}
-		} else {
-			factor = 1.0
-			// MP: Vernalisation hat keinen Effekt, wenn kein (bzw. 0 als)
-			// Threshold definiert ist.
-		}
-	}
-
-	return
-}
-
-// C++: double WangEngelTemperatureResponse(double, double, double, double,
-// double) - a file-scope free function in crop-module.cpp, used only by
-// fcCropDevelopmentalStage below.
-@(private)
-wang_engel_temperature_response :: proc(t, tmin, topt, tmax, betacoeff: f64) -> f64 {
-	// MP: what is this beta coefficient?
-	// prevent nan values with t < tmin
-	if t < tmin || t > tmax {
-		return 0.0
-	}
-
-	alfa := cr_math.log(f64(2.0)) / cr_math.log((tmax - tmin) / (topt - tmin))
-	numerator :=
-		2 * cr_math.pow(t - tmin, alfa) * cr_math.pow(topt - tmin, alfa) - cr_math.pow(t - tmin, 2 * alfa)
-	denominator := cr_math.pow(topt - tmin, 2 * alfa)
-
-	// MP: beta coefficient should be 2*alfa
-	return cr_math.pow(numerator / denominator, betacoeff)
-}
-
-// C++: void monica::cropmodule::fcCropDevelopmentalStage(CropModule*, double
-// meanAirTemperature, double soilMoisture_m3, double fieldCapacity, double
-// permanentWiltingPoint, Tools::Date currentDate)
-fc_crop_developmental_stage :: proc(
-	cm: ^Crop_Module,
-	mean_air_temperature, soil_moisture_m3, field_capacity, permanent_wilting_point: f64,
-	current_date: d.Date,
-	// yesterday's (Crop_Carry_Over): water uptake, crop N status and the two
-	// factors run later in the step - the factors after the stage (the C++ order)
-	water_stress, n_stress, daylength_factor, vernalisation_factor: f64,
-	allocator := context.allocator,
-) {
-	cultivar_ps := &cm.crop_params.cultivar_params
-	species_ps := &cm.crop_params.species_params
-	base_temperature := species_ps.base_temperature
-	stage_temperature_sum := cultivar_ps.stage_temperature_sum
-
-	if cm.developmental_stage == 0 {
-		if cultivar_ps.perennial {
-			if mean_air_temperature > base_temperature[cm.developmental_stage] {
-				temp_incr :=
-					(min(mean_air_temperature, cultivar_ps.optimum_temperature[cm.developmental_stage]) -
-						base_temperature[cm.developmental_stage]) *
-					vernalisation_factor *
-					daylength_factor *
-					cm.time_step
-				cm.current_temperature_sum[cm.developmental_stage] += temp_incr
-				cm.current_total_temperature_sum += temp_incr
-			}
-
-			// @todo: shouldn't current_temperature_sum be reduces by the
-			// excess temperature like further below?
-			if cm.current_temperature_sum[cm.developmental_stage] >=
-			   stage_temperature_sum[cm.developmental_stage] {
-				if cm.developmental_stage < cm.no_of_dev_stages - 1 {
-					cm.developmental_stage += 1
-				}
-			}
-		} else {
-			soil_temperature := cm.soil_column.layers[0].soil_temperature // MP: Bodentemperatur der ersten 10cm
-			if soil_temperature > base_temperature[cm.developmental_stage] {
-				emergence_condition := true
-				// Germination only if soil water content in top layer exceeds
-				// 20% of capillary water, but is not beyond field capacity
-				if cm.sim_params.emergence_moisture_control_on {
-					capillary_water := field_capacity - permanent_wilting_point
-					emergence_condition =
-						emergence_condition &&
-						soil_moisture_m3 > ((0.2 * capillary_water) + permanent_wilting_point) &&
-						soil_moisture_m3 <= field_capacity
-				}
-				// Germination only if no water is stored on the soil surface.
-				if cm.sim_params.emergence_flooding_control_on {
-					emergence_condition =
-						emergence_condition && cm.soil_column.surface_water_storage < 0.001
-				}
-
-				if emergence_condition {
-					cm.current_temperature_sum[cm.developmental_stage] +=
-						(soil_temperature - base_temperature[cm.developmental_stage]) *
-						cm.time_step
-
-					if cm.current_temperature_sum[cm.developmental_stage] >=
-					   stage_temperature_sum[cm.developmental_stage] {
-						stage_excess_temperature_sum :=
-							cm.current_temperature_sum[cm.developmental_stage] -
-							stage_temperature_sum[cm.developmental_stage]
-						if cm.developmental_stage < cm.no_of_dev_stages - 1 {
-							cm.developmental_stage += 1
-							cm.current_temperature_sum[cm.developmental_stage] +=
-								stage_excess_temperature_sum
-						}
-					}
-				}
-			}
-		}
-	} else if cm.developmental_stage > 0 {
-		// MP: wenn die Frucht aufgegangen ist, können N- und Wasser-Stress zum
-		// Tragen kommen (nur während der Kornfüllungsphase --> schnelleres Abreifen)
-		apc := cultivar_ps.assimilate_partitioning_coeff[cm.developmental_stage][cm.storage_organ]
-
-		// Development acceleration by N deficit in crop tissue
-		development_acceleration_by_nitrogen_stress := 1.0 // old NPROG
-		if species_ps.development_acceleration_by_nitrogen_stress == 1 && apc > 0.9 {
-			development_acceleration_by_nitrogen_stress =
-				1.0 + ((1.0 - n_stress) * (1.0 - n_stress))
-		}
-
-		// Development acceleration by water deficit
-		development_acceleration_by_water_stress := 1.0 // old WPROG
-		if water_stress < cultivar_ps.drought_stress_threshold[cm.developmental_stage] &&
-		   apc > 0.9 {
-			// Das heißt, das betrifft nur die Kornfüllungsphase (acp>0.9).
-			if cm.oxygen_deficit >= 1.0 {
-				development_acceleration_by_water_stress =
-					1.0 + ((1.0 - water_stress) * (1.0 - water_stress))
-			}
-		}
-
-		// old DEVPROG
-		development_acceleration_by_stress := max(
-			development_acceleration_by_nitrogen_stress,
-			development_acceleration_by_water_stress,
-		)
-
-		if cm.mod_params.__enable_Phenology_WangEngelTemperatureResponse__ {
-			dev_t_response := max(
-				0.0,
-				wang_engel_temperature_response(
-					mean_air_temperature,
-					cultivar_ps.min_temp_dev_we,
-					cultivar_ps.opt_temp_dev_we,
-					cultivar_ps.max_temp_dev_we,
-					1.0,
-				), // MP: warum steht hier 1?
-			)
-			temp_incr :=
-				dev_t_response *
-				mean_air_temperature *
-				vernalisation_factor *
-				daylength_factor *
-				development_acceleration_by_stress *
-				cm.time_step
-			cm.current_temperature_sum[cm.developmental_stage] += temp_incr
-			cm.current_total_temperature_sum += temp_incr
-		} else {
-			if mean_air_temperature > base_temperature[cm.developmental_stage] {
-				temp_incr :=
-					(min(mean_air_temperature, cultivar_ps.optimum_temperature[cm.developmental_stage]) -
-						base_temperature[cm.developmental_stage]) *
-					vernalisation_factor *
-					daylength_factor *
-					development_acceleration_by_stress *
-					cm.time_step
-				cm.current_temperature_sum[cm.developmental_stage] += temp_incr // MP: effektive Temperatur wird aufsummiert
-				cm.current_total_temperature_sum += temp_incr
-			}
-		}
-
-		do_reset_perennial_crop :=
-			cultivar_ps.perennial &&
-			species_ps.dormancy_start_doy > 0 &&
-			int(d.day_of_year(current_date)) >= species_ps.dormancy_start_doy
-		if cm.current_temperature_sum[cm.developmental_stage] >=
-		   stage_temperature_sum[cm.developmental_stage] {
-			if cm.developmental_stage < cm.no_of_dev_stages - 1 {
-				stage_excess_temperature_sum :=
-					cm.current_temperature_sum[cm.developmental_stage] -
-					stage_temperature_sum[cm.developmental_stage]
-				cm.developmental_stage += 1
-				cm.current_temperature_sum[cm.developmental_stage] += stage_excess_temperature_sum
-			} else if cm.developmental_stage == cm.no_of_dev_stages - 1 { 	// MP: Frucht ist reif
-				if cultivar_ps.perennial && cm.growth_cycle_ended {
-					do_reset_perennial_crop = true
-				}
-			}
-		}
-		if do_reset_perennial_crop {
-			cm.developmental_stage = 0
-			fc_update_crop_parameters_for_perennial(cm, allocator)
-			for stage := 0; stage < cm.no_of_dev_stages; stage += 1 {
-				cm.current_temperature_sum[stage] = 0.0
-			}
-			cm.current_total_temperature_sum = 0.0
-			cm.growth_cycle_ended = false
-			if species_ps.dormancy_end_doy == 0 {
-				cm.perennial_crop_dormancy_period_end_date = current_date
-			} else {
-				year_delta := 0
-				if int(d.day_of_year(current_date)) > species_ps.dormancy_end_doy {
-					year_delta = 1
-				}
-				cm.perennial_crop_dormancy_period_end_date = d.add(
-					d.make_date(
-						1,
-						1,
-						u16(d.year(current_date) + year_delta),
-						false,
-						false,
-						d.DEFAULT_USE_LEAP_YEARS,
-					),
-					u64(species_ps.dormancy_end_doy - 1),
-				)
-			}
-		}
-	} else {
-		cm.error_status = true
-		cm.error_message = "irregular developmental stage"
-	}
-}
-
 // C++: void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule*)
 fc_update_crop_parameters_for_perennial :: proc(cm: ^Crop_Module, allocator := context.allocator) {
 	if cm.perennial_crop_params == nil {
@@ -1047,8 +689,7 @@ fc_update_crop_parameters_for_perennial :: proc(cm: ^Crop_Module, allocator := c
 //
 // Method is called after calculation of the developmental stage.
 is_anthesis_day :: proc(cm: ^Crop_Module, old_dev_stage, new_dev_stage: int) -> bool {
-	a, b := anthesis_between_stages(cm)
-	return a == old_dev_stage && b == new_dev_stage
+	return is_anthesis_stage_change(cm.no_of_dev_stages, old_dev_stage, new_dev_stage)
 }
 
 // C++: kj::Tuple<int,int> monica::cropmodule::anthesisBetweenStages(const CropModule*)
@@ -1066,15 +707,7 @@ anthesis_between_stages :: proc(cm: ^Crop_Module) -> (int, int) {
 //
 // Method is called after calculation of the developmental stage.
 is_maturity_day :: proc(cm: ^Crop_Module, old_dev_stage, new_dev_stage: int) -> bool {
-	// corn crops
-	if cm.no_of_dev_stages == 6 {
-		return old_dev_stage == 4 && new_dev_stage == 5
-		// maize, sorghum and other crops with 7 developmental stages
-	} else if cm.no_of_dev_stages == 7 {
-		return old_dev_stage == 5 && new_dev_stage == 6
-	}
-
-	return false
+	return is_maturity_stage_change(cm.no_of_dev_stages, old_dev_stage, new_dev_stage)
 }
 
 // C++: int monica::cropmodule::getAnthesisDay(const CropModule*)
@@ -2804,62 +2437,43 @@ crop_module_step :: proc(
 
 	old_developmental_stage := prev.developmental_stage
 
-	// start accumulating temperature sums only after dormancy
-	if !d.is_valid(cm.perennial_crop_dormancy_period_end_date) {
-		if species_ps.dormancy_end_doy == 0 {
-			cm.perennial_crop_dormancy_period_end_date = current_date
-		} else {
-			cm.perennial_crop_dormancy_period_end_date = d.add(
-				d.make_date(
-					1,
-					1,
-					u16(d.year(current_date)),
-					false,
-					false,
-					d.DEFAULT_USE_LEAP_YEARS,
-				),
-				u64(species_ps.dormancy_end_doy - 1),
-			)
+	phenology_start_dormancy(&cm.phenology, &cm.crop_params, current_date)
+	if !cultivar_ps.perennial || d.ge(current_date, cm.perennial_crop_dormancy_period_end_date) {
+		reset_perennial, irregular := phenology_development(
+			&cm.phenology,
+			&cm.crop_params,
+			phenology_in(
+				cm,
+				mean_air_temperature,
+				current_date,
+				prev.water_stress,
+				prev.n_stress,
+				prev.daylength_factor,
+				prev.vernalisation_factor,
+			),
+		)
+		if irregular {
+			cm.error_status = true
+			cm.error_message = "irregular developmental stage"
+		}
+		if reset_perennial {
+			// the perennial reset replaces the crop parameters (parameters as
+			// state, plan-component-interfaces.md F6), then resets phenology
+			// with the new ones - the C++ order
+			fc_update_crop_parameters_for_perennial(cm, allocator)
+			phenology_reset_perennial(&cm.phenology, &cm.crop_params, cm.no_of_dev_stages, current_date)
 		}
 	}
-	if !cultivar_ps.perennial || d.ge(current_date, cm.perennial_crop_dormancy_period_end_date) {
-		fc_crop_developmental_stage(
-			cm,
-			mean_air_temperature,
-			soil_column.layers[0].soil_moisture_m3,
-			soil_column.layers[0].field_capacity,
-			soil_column.layers[0].permanent_wilting_point,
-			current_date,
-			prev.water_stress,
-			prev.n_stress,
-			prev.daylength_factor,
-			prev.vernalisation_factor,
-			allocator,
-		)
-	}
 
-	if old_developmental_stage == 0 && cm.developmental_stage == 1 {
-		events.emergence = true
-	} else if is_anthesis_day(cm, old_developmental_stage, cm.developmental_stage) {
-		cm.anthesis_day = julian_day
-		events.anthesis = true
-	} else if is_maturity_day(cm, old_developmental_stage, cm.developmental_stage) {
-		cm.maturity_day = julian_day
-		cm.maturity_reached = true
-		events.maturity = true
-	}
-
-	if !cm.stem_elongation_event_fired &&
-	   cm.current_total_temperature_sum >=
-		   cultivar_ps.stage_temperature_sum[2] * 0.25 + cultivar_ps.stage_temperature_sum[1] {
-		events.cereal_stem_elongation = true
-		cm.stem_elongation_event_fired = true
-	}
-
-	// stage event on stage change or right after sowing
-	if old_developmental_stage != cm.developmental_stage || cm.no_of_crop_steps == 0 {
-		events.stage = cm.developmental_stage + 1
-	}
+	events = phenology_events(
+		&cm.phenology,
+		&cm.crop_params,
+		Phenology_Events_In {
+			old_developmental_stage = old_developmental_stage,
+			julian_day = julian_day,
+			no_of_dev_stages = cm.no_of_dev_stages,
+		},
+	)
 
 	// NOTE(c++-quirk): the daylength and vernalisation factors are computed
 	// AFTER the stage, so fc_crop_developmental_stage above used yesterday's
