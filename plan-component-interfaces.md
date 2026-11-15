@@ -55,7 +55,7 @@ apply. 5 at the latest at the end of each phase.
 | D | D1-D6 | leaf components with input/state structs and tags | done: 48fe4e4 .. 4f16b1c |
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | done (incl. A4b): 6d8c48d .. 2d84e45 |
 | F | F1-F6 | medium components, management, parameters | done: e20cc9d .. 272a9d3 (F6 "reference" part not done, see below) |
-| G | G1 | share radiation/day length with soil ET0 | |
+| G | G1 | share radiation/day length with soil ET0 | done: a7a116f |
 | H | H1-H3 | tag and graph tool, generated docs | |
 | I | I1-I3 | soil mineral N as rate/state (model change, own branch) | |
 
@@ -357,6 +357,13 @@ What was done:
 - **G1 One radiation and day-length function** (from D1), used by the crop and
   by `soil_moisture`'s ET0. First check that the formulas are really identical
   operation by operation.
+  - Done (a7a116f). Not all are identical - the effective day length differs
+    (the crop clips to 0.01 outside [-1, 1], soil moisture clamped the
+    argument) - but soil moisture's ET0 uses only the extraterrestrial
+    radiation; the rest were dead stores there (in the C++ too). The
+    extraterrestrial radiation is bit-identical: the former code is kept in
+    `tests/radiation_shared_test.odin` as the reference, checked for every day
+    of the year at latitudes -66..66.
 
 ## Phase H: tooling (architecture.md §12)
 

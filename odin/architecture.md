@@ -289,7 +289,8 @@ Things a split has to deal with, because one part changes another part's data:
    ET0 terms - a sign it wants to be a component of its own.
 7. **Radiation is duplicated.** `soil_moisture.odin`'s ET0 (around line
    1168) computes declination and the day lengths again, with the same
-   formulas as `fc_radiation`.
+   formulas as `fc_radiation`. *(Resolved in phase G: it calls
+   `crop_radiation`.)*
 8. **Callbacks through a global** (`g_current_model`), see section 2.
 
 ## 5. Proposed components
