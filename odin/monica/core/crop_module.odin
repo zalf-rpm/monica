@@ -49,198 +49,280 @@ Organ_Struct :: 4
 Organ_Sugar :: 5
 
 // C++: struct monica::CropModule (src/core/crop-module.h)
+//
+// The fields are grouped by the component that owns them (architecture.md
+// section 5, plan-component-interfaces.md C2) into sub-structs embedded with
+// `using`: `cm.leaf_area_index` still works, output paths (`crop.<field>`)
+// too (reflectpath looks through `using`), and the grouping is visible in the
+// type. Owner = the procedure that computes a field; which procedures still
+// write another group's fields is listed in architecture.md.
 Crop_Module :: struct {
-	no_of_organs:                            int, // C++ size_t
-	no_of_dev_stages:                        int, // C++ size_t
-
-	// --- BEGIN TRANSPLANT MODIFICATION ---
-	transplant_shock_duration:               int,
-	days_since_transplant:                   int,
-	transplant_efficiency:                   f64,
-	// --- END TRANSPLANT MODIFICATION ---
-	transpiration_deficit:                   f64 `unit:"0-1"`, //! old TRREL
-	potential_transpiration_deficit:         f64 `unit:"0-1"`,
-	actual_transpiration_deficit:            f64 `unit:"0-1"`,
-	transpiration_reduced:                   f64 `unit:"mm"`,
-	root_n_redux:                            f64 `unit:"0-1"`, //! old REDWU
-	time_under_anoxia:                       int `unit:"d"`,
-
+	no_of_organs:          int, // C++ size_t
+	no_of_dev_stages:      int, // C++ size_t
 	// C++: Intercropping *intercropping - Intercropping itself is dropped
 	// (Cap'n Proto RPC, see plan-odin.md's dropped table); every real use of
 	// this field is behind `if (isIntercropping)`, always false in every
 	// fixture in this repo, so it stays a typed-but-inert pointer.
-	intercropping:                           rawptr,
-	soil_column:                             ^Soil_Column,
-	site_params:                             ^p.Site_Parameters,
-	sim_params:                              ^p.Simulation_Parameters,
-	mod_params:                              ^p.Crop_Module_Parameters,
-	crop_params:                             p.Crop_Parameters,
-	residue_params:                          p.Crop_Residue_Parameters,
+	intercropping:         rawptr,
+	soil_column:           ^Soil_Column,
+	site_params:           ^p.Site_Parameters,
+	sim_params:            ^p.Simulation_Parameters,
+	mod_params:            ^p.Crop_Module_Parameters,
+	crop_params:           p.Crop_Parameters,
+	residue_params:        p.Crop_Residue_Parameters,
 	// C++: kj::Own<CropParameters> perennial_crop_params - nil unless a
 	// Sowing workstep's separatePerennialCropParams is set (phase 6).
-	perennial_crop_params:                   ^p.Crop_Parameters,
+	perennial_crop_params: ^p.Crop_Parameters,
+	// C++: std::function<void(std::map<size_t, double>, double)> add_organic_matter;
+	add_organic_matter:    proc(_: map[int]f64, _: f64),
+	error_status:          bool,
+	error_message:         string,
 
-	//! old N
-	aboveground_biomass:                     f64 `unit:"kgDM ha-1"`, //! old OBMAS
-	aboveground_biomass_old:                 f64, //! old OBALT
-	actual_transpiration:                    f64 `unit:"mm"`,
-	assimilates:                             f64 `unit:"kgCH2O ha-1"`,
-	assimilation_rate:                       f64, //! old AMAX
-	astronomic_day_lenght:                   f64, //! old DL
-	belowground_biomass:                     f64,
-	belowground_biomass_old:                 f64,
-	clear_day_radiation:                     f64, //! old DRC
-	co2_method:                              int,
-	critical_n_concentration:                f64 `unit:"kgN kgDM-1"`, //! old GEHMIN
-	crop_diameter:                           f64,
-	crop_frost_redux:                        f64 `unit:"0-1"`,
-	crop_heat_redux:                         f64 `unit:"0-1"`,
-	crop_height:                             f64 `unit:"m"`,
-	crop_n_demand:                           f64, //! old DTGESN
-	crop_n_redux:                            f64 `unit:"0-1"`, //! old REDUK
-	crop_water_uptake:                       [dynamic]f64, //! old TP
+	using radiation:       Crop_Radiation,
+	using phenology:       Crop_Phenology,
+	using canopy:          Crop_Canopy,
+	using photosynthesis:  Crop_Photosynthesis,
+	using o3:              Crop_O3,
+	using voc:             Crop_Voc,
+	using stress:          Crop_Stress,
+	using n_status:        Crop_N_Status,
+	using growth:          Crop_Growth,
+	using roots:           Crop_Root_System,
+	using et0:             Crop_Et0,
+	using water_uptake:    Crop_Water_Uptake,
+	using n_uptake:        Crop_N_Uptake,
+	using carbon:          Crop_Carbon,
+	using management:      Crop_Management,
+	using ic:              Crop_Intercropping,
+}
+
+// Radiation and day length (fc_radiation): a function of the day, latitude and the weather.
+Crop_Radiation :: struct {
+	declination:                f64, //! old EFF0
+	astronomic_day_lenght:      f64, //! old DL
+	effective_day_length:       f64, //! old DLE
+	photoperiodic_daylength:    f64, //! old DLP
+	extraterrestrial_radiation: f64,
+	clear_day_radiation:        f64, //! old DRC
+	overcast_day_radiation:     f64, //! old DRO
+	phot_act_radiation_mean:    f64, //! old RDN
+	global_radiation:           f64,
+}
+
+// Phenology: stage, temperature sums, vernalisation, day length factor, dormancy and the events
+// (fc_crop_developmental_stage, fc_daylength_factor, fc_vernalisation_factor, set_stage, the step).
+Crop_Phenology :: struct {
+	developmental_stage:                     int, // C++ size_t, //! old INTWICK
+	final_developmental_stage:               int, // C++ size_t
 	current_temperature_sum:                 [dynamic]f64, //! old SUM
 	current_total_temperature_sum:           f64 `unit:"°C d"`, //! old FP
-	current_total_temperature_sum_root:      f64,
-	daylength_factor:                        f64 `unit:"0-1"`, //! old DAYL
-	days_after_begin_flowering:              int,
-	declination:                             f64, //! old EFF0
-	developmental_stage:                     int, // C++ size_t, //! old INTWICK
-	no_of_crop_steps:                        int,
-	drought_impact_on_fertility:             f64,
-	effective_day_length:                    f64, //! old DLE
-	error_status:                            bool,
-	error_message:                           string,
-	evaporated_from_intercept:               f64 `unit:"mm"`,
-	extraterrestrial_radiation:              f64,
-	final_developmental_stage:               int, // C++ size_t
-	fixed_n:                                 f64 `unit:"kgN ha-1"`,
-	global_radiation:                        f64,
-	green_area_index:                        f64,
-	gross_assimilates:                       f64,
-	gross_photosynthesis:                    f64 `unit:"kgCH2O ha-1"`, //! old GPHOT
-	gross_photosynthesis_mol:                f64,
-	gross_photosynthesis_reference_mol:      f64,
-	gross_primary_production:                f64 `unit:"kgC ha-1"`,
-	growth_cycle_ended:                      bool,
-	growth_respiration_as:                   f64 `unit:"kgCH2O ha-1"`,
-	interception_storage:                    f64,
-	kc_factor:                               f64 `unit:"1"`, //! old FKc
-	leaf_area_index:                         f64 `unit:"m2 m-2"`, //! old LAI
-	sunlit_leaf_area_index:                  [dynamic]f64,
-	shaded_leaf_area_index:                  [dynamic]f64,
-	lt50:                                    f64 `unit:"°C"`,
-	lt50_m:                                  f64,
-	maintenance_respiration_as:              f64 `unit:"kgCH2O ha-1"`,
-	max_n_uptake:                            f64, //! old MAXUP
-	max_rooting_depth:                       f64, //! old WURM
-	net_maintenance_respiration:             f64, //! old MAINT
-	net_photosynthesis:                      f64 `unit:"kgCH2O ha-1"`, //! old GTW
-	net_precipitation:                       f64,
-	net_primary_production:                  f64 `unit:"kgC ha-1"`,
-	n_concentration_aboveground_biomass:     f64 `unit:"kgN kgDM-1"`, //! old GEHOB
-	n_concentration_aboveground_biomass_old: f64, //! old GEHALT
-	n_content_deficit:                       f64,
-	n_concentration_root:                    f64 `unit:"kgN kgDM-1"`, //! old WUGEH
-	n_concentration_root_old:                f64, //! old
-	n_uptake_from_layer:                     [dynamic]f64, //! old PE
-	organ_biomass:                           [dynamic]f64, //! old WORG
-	organ_dead_biomass:                      [dynamic]f64, //! old WDORG
-	organ_green_biomass:                     [dynamic]f64,
-	organ_growth_increment:                  [dynamic]f64 `unit:"kgDM ha-1"`, //! old GORG
-	organ_senescence_increment:              [dynamic]f64, //! old DGORG
-	overcast_day_radiation:                  f64, //! old DRO
-	oxygen_deficit:                          f64 `unit:"0-1"`, //! old LURED
-	photoperiodic_daylength:                 f64, //! old DLP
-	phot_act_radiation_mean:                 f64, //! old RDN
-	potential_transpiration:                 f64,
-	reference_evapotranspiration:            f64 `unit:"mm"`,
-	relative_total_development:              f64 `unit:"0-1"`,
-	remaining_evapotranspiration:            f64 `unit:"mm"`,
-	reserve_assimilate_pool:                 f64, //! old ASPOO
-	root_biomass:                            f64, //! old WUMAS
-	root_biomass_old:                        f64, //! old WUMALT
-	root_density:                            [dynamic]f64, //! old WUDICH
-	root_diameter:                           [dynamic]f64, //! old WRAD
-	root_effectivity:                        [dynamic]f64, //! old WUEFF
-	rooting_depth:                           int `unit:"layer#"`, // C++ size_t, //! old WURZ
-	rooting_depth_m:                         f64,
-	rooting_zone:                            int `unit:"layer#"`, // C++ size_t
-	soil_coverage:                           f64,
-	// vs_soil_mineral_n_content:               [dynamic]f64, //! old C1
-	soil_specific_max_rooting_depth:         f64, //! old WURZMAX [m]
-	// vs_soil_specific_max_rooting_depth:      f64,
-	// FAO-56 Dual Kc: GDD-based trapezoidal Kcb curve state.
-	kcb_factor:                              f64 `unit:"1"`, // Current daily Kcb (output of GDD-based 4-phase interpolation)
-	kcb_ini:                                 f64, // Initial/germination phase Kcb (flat, Phase 1)
-	kcb_mid:                                 f64, // Mid-season plateau Kcb (Phase 3)
-	kcb_end:                                 f64, // End of late-season Kcb target (Phase 4)
-	stomata_resistance:                      f64 `unit:"s m-1"`, //! old RSTOM
-	storage_organ:                           int,
-	target_n_concentration:                  f64 `unit:"kgN kgDM-1"`, //! old GEHMAX
-	time_step:                               f64, //! old dt
-	time_under_anoxia_threshold_default:     int,
-	total_biomass:                           f64,
-	total_biomass_n_content:                 f64 `unit:"kgN ha-1"`, //! old PESUM
-	total_crop_heat_impact:                  f64,
-	total_n_input:                           f64,
-	total_n_uptake:                          f64 `unit:"kgN ha-1"`, //! old SUMPE
-	total_respired:                          f64,
-	respiration:                             f64,
-	sum_total_n_uptake:                      f64 `unit:"kgN ha-1"`, //! summation of all calculated NUptake; needed for sensitivity analysis
-	total_root_length:                       f64, //! old WULAEN
 	total_temperature_sum:                   f64,
 	temperature_sum_to_flowering:            f64,
-	transpiration:                           [dynamic]f64 `unit:"mm"`, //! old TP
-	transpiration_redux:                     [dynamic]f64, //! old TRRED
-	vernalisation_days:                      f64,
+	relative_total_development:              f64 `unit:"0-1"`,
+	daylength_factor:                        f64 `unit:"0-1"`, //! old DAYL
 	vernalisation_factor:                    f64 `unit:"0-1"`, //! old FV
-	dying_out:                               bool,
-	accumulated_et_a:                        f64,
-	accumulated_transpiration:               f64,
-	sum_exported_cut_biomass:                f64 `unit:"kgDM ha-1"`,
-	exported_cut_biomass:                    f64 `unit:"kgDM ha-1"`,
-	sum_residue_cut_biomass:                 f64 `unit:"kgDM ha-1"`,
-	residue_cut_biomass:                     f64 `unit:"kgDM ha-1"`,
-	cutting_delay_days:                      int,
+	vernalisation_days:                      f64,
+	growth_cycle_ended:                      bool,
+	perennial_crop_dormancy_period_end_date: d.Date,
+	no_of_crop_steps:                        int,
+	stem_elongation_event_fired:             bool,
 	anthesis_day:                            int,
 	maturity_day:                            int,
 	maturity_reached:                        bool,
+	time_step:                               f64, //! old dt
+}
 
-	// VOC members
-	step_size24:                             int,
-	step_size240:                            int,
-	rad24:                                   [dynamic]f64,
-	rad240:                                  [dynamic]f64,
-	tfol24:                                  [dynamic]f64,
-	tfol240:                                 [dynamic]f64,
-	index24:                                 int,
-	index240:                                int,
-	full24:                                  bool,
-	full240:                                 bool,
-	guenther_emissions:                      Voc_Emissions,
-	jjv_emissions:                           Voc_Emissions,
-	voc_species:                             Voc_Species_Data,
-	crop_photosynthesis_results:             Voc_Cp_Data,
+// Canopy: size, leaf area, soil coverage, Kc and the FAO-56 dual-Kc Kcb curve (fc_crop_size,
+// fc_crop_green_area, fc_soil_coverage, fc_kc_factor, the dual-Kc block in the step).
+Crop_Canopy :: struct {
+	crop_height:      f64 `unit:"m"`,
+	crop_diameter:    f64,
+	leaf_area_index:  f64 `unit:"m2 m-2"`, //! old LAI
+	green_area_index: f64,
+	soil_coverage:    f64,
+	kc_factor:        f64 `unit:"1"`, //! old FKc
+	// vs_soil_specific_max_rooting_depth:      f64,
+	kcb_factor:       f64 `unit:"1"`, // Current daily Kcb (output of GDD-based 4-phase interpolation)
+	kcb_ini:          f64, // Initial/germination phase Kcb (flat, Phase 1)
+	kcb_mid:          f64, // Mid-season plateau Kcb (Phase 3)
+	kcb_end:          f64, // End of late-season Kcb target (Phase 4)
+}
 
-	// C++: std::function<void(std::map<size_t, double>, double)> add_organic_matter;
-	add_organic_matter:                      proc(_: map[int]f64, _: f64),
-	o3_short_term_damage:                    f64 `unit:"0-1"`,
-	o3_long_term_damage:                     f64 `unit:"0-1"`,
-	o3_senescence:                           f64,
-	o3_sum_uptake:                           f64 `unit:"µmol m-2"`,
-	o3_w_stomatal_closure:                   f64 `unit:"0-1"`,
-	assimilate_part_coeffs_reduced:          bool,
-	k_tkc:                                   f64, // old KTkc
-	k_tko:                                   f64, // old KTkc
-	stem_elongation_event_fired:             bool,
+// Photosynthesis and respiration (fc_crop_photosynthesis, classic or FvCB).
+Crop_Photosynthesis :: struct {
+	co2_method:                         int,
+	assimilation_rate:                  f64, //! old AMAX
+	gross_photosynthesis:               f64 `unit:"kgCH2O ha-1"`, //! old GPHOT
+	gross_photosynthesis_mol:           f64,
+	gross_photosynthesis_reference_mol: f64,
+	gross_assimilates:                  f64,
+	assimilates:                        f64 `unit:"kgCH2O ha-1"`,
+	growth_respiration_as:              f64 `unit:"kgCH2O ha-1"`,
+	maintenance_respiration_as:         f64 `unit:"kgCH2O ha-1"`,
+	net_maintenance_respiration:        f64, //! old MAINT
+	total_respired:                     f64,
+	sunlit_leaf_area_index:             [dynamic]f64,
+	shaded_leaf_area_index:             [dynamic]f64,
+	k_tkc:                              f64, // old KTkc
+	k_tko:                              f64, // old KTkc
+	fraction_of_intercepted_radiation1: f64,
+	fraction_of_intercepted_radiation2: f64,
+}
 
-	// intercropping
-	intercropping_other_crop_height:         f64,
-	intercropping_other_lait:                f64,
-	fraction_of_intercepted_radiation1:      f64,
-	fraction_of_intercepted_radiation2:      f64,
-	perennial_crop_dormancy_period_end_date: d.Date,
+// O3 impact (computed in fc_crop_photosynthesis, o3_impact.odin).
+Crop_O3 :: struct {
+	o3_short_term_damage:  f64 `unit:"0-1"`,
+	o3_long_term_damage:   f64 `unit:"0-1"`,
+	o3_senescence:         f64,
+	o3_sum_uptake:         f64 `unit:"µmol m-2"`,
+	o3_w_stomatal_closure: f64 `unit:"0-1"`,
+}
+
+// VOC emissions: the 24/240-step buffers and the emissions (only reported).
+Crop_Voc :: struct {
+	step_size24:                 int,
+	step_size240:                int,
+	rad24:                       [dynamic]f64,
+	rad240:                      [dynamic]f64,
+	tfol24:                      [dynamic]f64,
+	tfol240:                     [dynamic]f64,
+	index24:                     int,
+	index240:                    int,
+	full24:                      bool,
+	full240:                     bool,
+	guenther_emissions:          Voc_Emissions,
+	jjv_emissions:               Voc_Emissions,
+	voc_species:                 Voc_Species_Data,
+	crop_photosynthesis_results: Voc_Cp_Data,
+}
+
+// Stress factors: oxygen deficiency, heat, frost and drought impact on fertility
+// (fc_oxygen_deficiency, fc_heat_stress_impact, fc_frost_kill, fc_drought_impact_on_fertility).
+Crop_Stress :: struct {
+	oxygen_deficit:                      f64 `unit:"0-1"`, //! old LURED
+	time_under_anoxia:                   int `unit:"d"`,
+	time_under_anoxia_threshold_default: int,
+	crop_heat_redux:                     f64 `unit:"0-1"`,
+	days_after_begin_flowering:          int,
+	total_crop_heat_impact:              f64,
+	crop_frost_redux:                    f64 `unit:"0-1"`,
+	lt50:                                f64 `unit:"°C"`,
+	lt50_m:                              f64,
+	drought_impact_on_fertility:         f64,
+}
+
+// Crop N status: critical and target N concentrations, N stress (fc_crop_nitrogen).
+Crop_N_Status :: struct {
+	critical_n_concentration:                f64 `unit:"kgN kgDM-1"`, //! old GEHMIN
+	target_n_concentration:                  f64 `unit:"kgN kgDM-1"`, //! old GEHMAX
+	crop_n_redux:                            f64 `unit:"0-1"`, //! old REDUK
+	root_n_redux:                            f64 `unit:"0-1"`, //! old REDWU
+	n_concentration_aboveground_biomass_old: f64, //! old GEHALT
+	n_concentration_root_old:                f64, //! old
+}
+
+// Growth and partitioning: organ biomass, senescence, reserves, N demand (first part of
+// fc_crop_dry_matter).
+Crop_Growth :: struct {
+	storage_organ:                  int,
+	organ_biomass:                  [dynamic]f64, //! old WORG
+	organ_green_biomass:            [dynamic]f64,
+	organ_dead_biomass:             [dynamic]f64, //! old WDORG
+	organ_growth_increment:         [dynamic]f64 `unit:"kgDM ha-1"`, //! old GORG
+	organ_senescence_increment:     [dynamic]f64, //! old DGORG
+	aboveground_biomass:            f64 `unit:"kgDM ha-1"`, //! old OBMAS
+	aboveground_biomass_old:        f64, //! old OBALT
+	belowground_biomass:            f64,
+	belowground_biomass_old:        f64,
+	total_biomass:                  f64,
+	reserve_assimilate_pool:        f64, //! old ASPOO
+	net_photosynthesis:             f64 `unit:"kgCH2O ha-1"`, //! old GTW
+	crop_n_demand:                  f64, //! old DTGESN
+	max_n_uptake:                   f64, //! old MAXUP
+	assimilate_part_coeffs_reduced: bool,
+	dying_out:                      bool,
+}
+
+// Root system: rooting depth and zone, root biomass, density, diameter and length (second part of
+// fc_crop_dry_matter).
+Crop_Root_System :: struct {
+	rooting_depth:                      int `unit:"layer#"`, // C++ size_t, //! old WURZ
+	rooting_depth_m:                    f64,
+	rooting_zone:                       int `unit:"layer#"`, // C++ size_t
+	max_rooting_depth:                  f64, //! old WURM
+	// vs_soil_mineral_n_content:               [dynamic]f64, //! old C1
+	soil_specific_max_rooting_depth:    f64, //! old WURZMAX [m]
+	root_biomass:                       f64, //! old WUMAS
+	root_biomass_old:                   f64, //! old WUMALT
+	root_density:                       [dynamic]f64, //! old WUDICH
+	root_diameter:                      [dynamic]f64, //! old WRAD
+	total_root_length:                  f64, //! old WULAEN
+	current_total_temperature_sum_root: f64,
+}
+
+// The crop's reference evapotranspiration (fc_reference_evapotranspiration).
+Crop_Et0 :: struct {
+	reference_evapotranspiration: f64 `unit:"mm"`,
+	stomata_resistance:           f64 `unit:"s m-1"`, //! old RSTOM
+}
+
+// Water uptake: interception, potential and actual transpiration per layer, water stress
+// (fc_crop_water_uptake).
+Crop_Water_Uptake :: struct {
+	interception_storage:            f64,
+	net_precipitation:               f64,
+	evaporated_from_intercept:       f64 `unit:"mm"`,
+	remaining_evapotranspiration:    f64 `unit:"mm"`,
+	potential_transpiration:         f64,
+	actual_transpiration:            f64 `unit:"mm"`,
+	transpiration:                   [dynamic]f64 `unit:"mm"`, //! old TP
+	transpiration_redux:             [dynamic]f64, //! old TRRED
+	root_effectivity:                [dynamic]f64, //! old WUEFF
+	crop_water_uptake:               [dynamic]f64, //! old TP
+	transpiration_deficit:           f64 `unit:"0-1"`, //! old TRREL
+	potential_transpiration_deficit: f64 `unit:"0-1"`,
+	actual_transpiration_deficit:    f64 `unit:"0-1"`,
+	transpiration_reduced:           f64 `unit:"mm"`,
+	accumulated_et_a:                f64,
+	accumulated_transpiration:       f64,
+}
+
+// N uptake: per layer, fixation, N contents (fc_crop_n_uptake).
+Crop_N_Uptake :: struct {
+	n_uptake_from_layer:                 [dynamic]f64, //! old PE
+	fixed_n:                             f64 `unit:"kgN ha-1"`,
+	n_concentration_aboveground_biomass: f64 `unit:"kgN kgDM-1"`, //! old GEHOB
+	n_concentration_root:                f64 `unit:"kgN kgDM-1"`, //! old WUGEH
+	total_biomass_n_content:             f64 `unit:"kgN ha-1"`, //! old PESUM
+	total_n_input:                       f64,
+	total_n_uptake:                      f64 `unit:"kgN ha-1"`, //! old SUMPE
+	sum_total_n_uptake:                  f64 `unit:"kgN ha-1"`, //! summation of all calculated NUptake; needed for sensitivity analysis
+	n_content_deficit:                   f64,
+}
+
+// Carbon balance (fc_gross_primary_production, fc_net_primary_production).
+Crop_Carbon :: struct {
+	gross_primary_production: f64 `unit:"kgC ha-1"`,
+	net_primary_production:   f64 `unit:"kgC ha-1"`,
+	respiration:              f64,
+}
+
+// Management state: transplant shock, cutting (force_transplant_state, apply_cutting).
+Crop_Management :: struct {
+	transplant_shock_duration: int,
+	days_since_transplant:     int,
+	transplant_efficiency:     f64,
+	cutting_delay_days:        int,
+	exported_cut_biomass:      f64 `unit:"kgDM ha-1"`,
+	sum_exported_cut_biomass:  f64 `unit:"kgDM ha-1"`,
+	residue_cut_biomass:       f64 `unit:"kgDM ha-1"`,
+	sum_residue_cut_biomass:   f64 `unit:"kgDM ha-1"`,
+}
+
+// Intercropping: the other crop's height and LAI (set_other_crop_height_and_lait).
+Crop_Intercropping :: struct {
+	intercropping_other_crop_height: f64,
+	intercropping_other_lait:        f64,
 }
 
 // C++ in-class initialisers
