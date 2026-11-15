@@ -119,7 +119,7 @@ apply_cutting :: proc(
 	// reset stage and temperature sum after cutting
 	set_stage(cm, cm.crop_params.species_params.stage_after_cut)
 
-	cm.crop_params.cultivar_params.max_assimilation_rate *= cut_max_assimilation_fraction
+	photosynthesis_cut(&cm.photosynthesis, cut_max_assimilation_fraction)
 
 	n_uptake_after_cut(&cm.n_uptake, cm.aboveground_biomass, old_aboveground_biomass, old_agb_n_content)
 	return

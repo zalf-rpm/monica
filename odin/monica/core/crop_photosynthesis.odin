@@ -32,6 +32,10 @@ Crop_Photosynthesis :: struct {
 	k_tko:                              f64, // old KTkc
 	fraction_of_intercepted_radiation1: f64,
 	fraction_of_intercepted_radiation2: f64,
+	// the cultivar's MaxAssimilationRate, reduced by each cutting (photosynthesis_cut)
+	// and reset when a perennial's parameters are replaced - the C++ multiplies the
+	// parameter itself
+	max_assimilation_rate:              f64,
 }
 
 // What photosynthesis_step reads on a day.
@@ -215,7 +219,7 @@ photosynthesis_step :: proc(
 
 			// Berechnung des Transformationsfaktors fuer pflanzenspez. AMAX bei
 			// 25 grad - old fakamax
-			amax_factor := cultivar_ps.max_assimilation_rate / 34.668
+			amax_factor := ph.max_assimilation_rate / 34.668
 			amax_factor_reference := crop_ps.reference_max_assimilation_rate / 34.668
 			// old vcmax
 			vcmax := 98.0 * amax_factor * k_tvmax
@@ -303,7 +307,7 @@ photosynthesis_step :: proc(
 				1.0,
 			)
 
-			ph.assimilation_rate = cultivar_ps.max_assimilation_rate * t_response
+			ph.assimilation_rate = ph.max_assimilation_rate * t_response
 			assimilation_rate_reference = crop_ps.reference_max_assimilation_rate * t_response
 
 			// old KCo1
@@ -330,7 +334,7 @@ photosynthesis_step :: proc(
 			1.0,
 		)
 
-		ph.assimilation_rate = cultivar_ps.max_assimilation_rate * t_response
+		ph.assimilation_rate = ph.max_assimilation_rate * t_response
 		assimilation_rate_reference = crop_ps.reference_max_assimilation_rate * t_response
 	}
 
@@ -745,4 +749,10 @@ photosynthesis_step :: proc(
 	if mean_air_temperature < minimum_temperature_for_assimilation {
 		ph.gross_photosynthesis = ph.net_maintenance_respiration
 	}
+}
+
+// Cutting (apply_cutting): the maximum assimilation rate is reduced by the
+// workstep's fraction.
+photosynthesis_cut :: proc(ph: ^Crop_Photosynthesis, cut_max_assimilation_fraction: f64) {
+	ph.max_assimilation_rate *= cut_max_assimilation_fraction
 }

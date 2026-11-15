@@ -269,6 +269,7 @@ make_crop_module :: proc(
 	cm.soil_column = soil_column
 	cm.mod_params = crop_module_params
 	cm.crop_params = clone_crop_parameters(crop_params^, allocator)
+	cm.max_assimilation_rate = cm.crop_params.cultivar_params.max_assimilation_rate
 	cm.site_params = site_params
 	cm.sim_params = sim_params
 	cm.residue_params = residue_params^
@@ -462,6 +463,7 @@ fc_update_crop_parameters_for_perennial :: proc(cm: ^Crop_Module, allocator := c
 		return
 	}
 	cm.crop_params = clone_crop_parameters(cm.perennial_crop_params^, allocator)
+	cm.max_assimilation_rate = cm.crop_params.cultivar_params.max_assimilation_rate
 	cm.no_of_organs = p.species_parameters_number_of_organs(&cm.crop_params.species_params)
 	cm.no_of_dev_stages = p.species_parameters_number_of_developmental_stages(
 		&cm.crop_params.species_params,
