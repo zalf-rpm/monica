@@ -164,16 +164,17 @@ not *declared*: it consists of whatever fields the other side happens to read.
 | crop → model | `monica_model.odin` | `crop_n_redux`, `transpiration_deficit`, `crop_heat_redux`, `oxygen_deficit` (stress sums), `soil_coverage` (soil temperature), crop params (N-min fertilising) |
 | soil → crop | `crop_module.odin` | per layer: `soil_moisture_m3`, `field_capacity`, `permanent_wilting_point`, `saturation`, `soil_no3`, `soil_temperature`, `layer_thickness_m`, `soil_clay_content`, `soil_sand_content`; column: `surface_water_storage`, `soil_surface_temperature`, `groundwater_table_layer_idx`, `number_of_organic_layers`; snow via callback |
 
-**Since phase A of `plan-component-interfaces.md`** (branch
+**Since phases A and E of `plan-component-interfaces.md`** (branch
 `component-interfaces`): the soil components no longer hold a
-`^Crop_Module`. They get a `Crop_To_Soil` value (`core/crop_to_soil.odin`)
+`^Crop_Module`, and the crop module no longer calls back into the model
+(the callbacks and `g_current_model` are gone; the dead roots go to soil
+organic through an explicit parameter of the crop step). They get a `Crop_To_Soil` value (`core/crop_to_soil.odin`)
 that the model fills at the start of the general step; the automatic
 irrigation trigger gets an `Irrigation_Crop_Window`; the crop step returns
 its events (`Crop_Events`) and gets the snow state as an input
-(`Snow_For_Crop`). Still open: `evapotranspiration_impl` reads the whole crop
-(for the crop's ET0, plan step E3), and the dead roots still go to soil
-organic through the `add_organic_matter` callback over `g_current_model`
-(plan step E1, see section 9). The tables above describe the state before.
+(`Snow_For_Crop`). Still reading the crop directly: `evapotranspiration_impl`,
+for the evapotranspiration modules' inputs (read-only; the crop's ET0 terms
+come from the pure `crop_et0`). The tables above describe the state before.
 
 Outside `core`, the outputs read the crop too: `io/build_output.odin` through
 about 15 getters (`get_primary_crop_yield`, ...), and `io/output_paths.odin`

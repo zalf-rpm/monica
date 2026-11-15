@@ -53,7 +53,7 @@ apply. 5 at the latest at the end of each phase.
 | B | B1-B3 | previous-day carry-over struct | done: d88401c .. f9e568a |
 | C | C1-C3 | crop fields grouped into component sub-structs | done: 0866110, afdcffd, C3 in the docs commit |
 | D | D1-D6 | leaf components with input/state structs and tags | done: 48fe4e4 .. 4f16b1c |
-| E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | |
+| E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | done (incl. A4b): 6d8c48d .. 2d84e45 |
 | F | F1-F6 | medium components, management, parameters | |
 | G | G1 | share radiation/day length with soil ET0 | |
 | H | H1-H3 | tag and graph tool, generated docs | |
@@ -271,6 +271,30 @@ What was done:
 - **E3 Crop reference ET as a component.** `evapotranspiration_impl` uses it
   instead of copying the whole crop (`cmc := cm^`). This removes the last soil
   → crop access from phase A.
+
+What was done:
+- E1a (6d8c48d) `core/crop_root_system.odin`: `root_system_step`. The C++
+  fcCropDryMatter is now three calls in the step: growth
+  (`fc_crop_dry_matter`, returns the day's dead root biomass), the root
+  system, and `fc_crop_n_demand_by_root_length` (the N demand capped by the
+  root length the root system just computed).
+- E1b = A4b (4fc5386): the step hands the dead roots to soil organic right
+  after the root system, as the callback did; `crop_module_step` takes the
+  soil organic as a parameter. Harvest and cutting return their roots and
+  residues to the caller. The `add_organic_matter` callback and
+  `g_current_model` are gone - the crop module no longer reaches into the
+  model.
+- E2 (5d9505f) `core/crop_o3.odin`, `core/crop_voc.odin`. O3 stays an hourly
+  step inside photosynthesis' FvCB loop (its damage lowers the next hour's
+  vcmax - a real hourly coupling); VOC runs after the loop on the 24 stored
+  hours (only reported). Checked with a new extra scenario that enables the
+  hourly FvCB path with O3 - no fixture does. Pre-existing, not changed: the
+  JJV VOC emissions are NaN in that scenario (with the base binary too).
+- E3 (2d84e45) `core/crop_et0.odin`: `crop_et0` is a pure function returning
+  ET0 and its terms (incl. the stomata resistance); the ET modules call it
+  instead of copying the crop. `evapotranspiration_impl` still reads the crop
+  for the modules' inputs (transpiration, carboxylation pathway, ...) - via
+  the model's current crop, read-only.
 
 ## Phase F: medium components, management, parameters
 
