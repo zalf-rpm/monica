@@ -52,7 +52,7 @@ apply. 5 at the latest at the end of each phase.
 | A | A1-A5 | crop → soil exchange struct, callbacks as return values | done except A4b (moved to E1): 7ca53e2 .. 22d1a1e |
 | B | B1-B3 | previous-day carry-over struct | done: d88401c .. f9e568a |
 | C | C1-C3 | crop fields grouped into component sub-structs | done: 0866110, afdcffd, C3 in the docs commit |
-| D | D1-D6 | leaf components with input/state structs and tags | done: 48fe4e4 .. D6 docs commit |
+| D | D1-D6 | leaf components with input/state structs and tags | done: 48fe4e4 .. 4f16b1c |
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | |
 | F | F1-F6 | medium components, management, parameters | |
 | G | G1 | share radiation/day length with soil ET0 | |
