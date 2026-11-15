@@ -236,16 +236,20 @@ day_step :: proc(
 		// branch (referenceEvapotranspiration < 0)
 		reference_evapotranspiration := -1.0
 		if reference_evapotranspiration < 0 {
-			cm.reference_evapotranspiration = core.fc_reference_evapotranspiration(
-				cm,
-				max_air_temperature,
-				min_air_temperature,
-				relativeHumidity,
-				mean_air_temperature,
-				wind_speed,
-				wind_speed_height,
-				ATM_CO2,
+			et0, terms := core.crop_et0(
+				core.crop_et0_in(
+					cm,
+					max_air_temperature,
+					min_air_temperature,
+					relativeHumidity,
+					mean_air_temperature,
+					wind_speed,
+					wind_speed_height,
+					ATM_CO2,
+				),
 			)
+			cm.reference_evapotranspiration = et0
+			cm.stomata_resistance = terms.stomata_resistance
 		} else {
 			cm.reference_evapotranspiration = reference_evapotranspiration
 		}

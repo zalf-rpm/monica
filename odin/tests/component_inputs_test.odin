@@ -23,6 +23,7 @@ COMPONENT_INPUTS := []typeid {
 	mcore.Root_System_In,
 	mcore.O3_Hourly_In,
 	mcore.Voc_In,
+	mcore.Crop_Et0_In,
 }
 
 // Where a value comes from: a crop component (its state struct without the
