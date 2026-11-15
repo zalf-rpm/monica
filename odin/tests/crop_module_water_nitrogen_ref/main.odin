@@ -251,8 +251,7 @@ day_step :: proc(
 
 		core.n_uptake_step(&cm.n_uptake, &cm.crop_params, core.n_uptake_in(cm))
 
-		cm.gross_primary_production = core.fc_gross_primary_production(cm)
-		cm.net_primary_production = core.fc_net_primary_production(cm, cm.total_respired)
+		core.carbon_step(&cm.carbon, {cm.gross_assimilates, cm.total_respired})
 	}
 
 	cm.no_of_crop_steps += 1

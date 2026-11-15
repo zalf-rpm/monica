@@ -270,8 +270,7 @@ day_step :: proc(
 			core.growth_limit_n_demand(&cm.growth, &cm.crop_params, {cm.total_root_length, cm.current_total_temperature_sum, cm.total_temperature_sum, cm.time_step})
 		}
 
-		cm.gross_primary_production = core.fc_gross_primary_production(cm)
-		cm.net_primary_production = core.fc_net_primary_production(cm, cm.total_respired)
+		core.carbon_step(&cm.carbon, {cm.gross_assimilates, cm.total_respired})
 	}
 
 	cm.no_of_crop_steps += 1

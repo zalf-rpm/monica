@@ -182,8 +182,7 @@ day_step :: proc(
 
 		core.photosynthesis_step(&cm.photosynthesis, &cm.o3, &cm.voc, &cm.crop_params, cm.mod_params, core.photosynthesis_in(cm, mean_air_temperature, max_air_temperature, min_air_temperature, ATM_CO2, ATM_O3, current_date, cm.transpiration_deficit, cm.crop_n_redux, cm.crop_frost_redux, cm.rooting_depth, cm.reference_evapotranspiration))
 
-		cm.gross_primary_production = core.fc_gross_primary_production(cm)
-		cm.net_primary_production = core.fc_net_primary_production(cm, cm.total_respired)
+		core.carbon_step(&cm.carbon, {cm.gross_assimilates, cm.total_respired})
 	}
 
 	cm.no_of_crop_steps += 1

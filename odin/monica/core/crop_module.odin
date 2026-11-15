@@ -94,35 +94,6 @@ Crop_Module :: struct {
 	using ic:              Crop_Intercropping,
 }
 
-// Radiation and day length (fc_radiation): a function of the day, latitude and the weather.
-Crop_Radiation :: struct {
-	declination:                f64 `unit:"°"`, //! old EFF0
-	astronomic_day_lenght:      f64 `unit:"h"`, //! old DL
-	effective_day_length:       f64 `unit:"h"`, //! old DLE
-	photoperiodic_daylength:    f64 `unit:"h"`, //! old DLP
-	extraterrestrial_radiation: f64 `unit:"MJ m-2"`,
-	clear_day_radiation:        f64 `unit:"J m-2"`, //! old DRC
-	overcast_day_radiation:     f64 `unit:"J m-2"`, //! old DRO
-	phot_act_radiation_mean:    f64 `unit:"J m-2"`, //! old RDN
-	global_radiation:           f64 `unit:"MJ m-2"`,
-}
-
-// What crop_radiation needs (plan-component-interfaces.md D1).
-Radiation_In :: struct {
-	julian_day:       f64 `unit:"d"`,
-	latitude:         f64 `unit:"°" src:"site"`,
-	// measured; <= 0: estimated from the sunshine hours
-	global_radiation: f64 `unit:"MJ m-2" src:"weather"`,
-	sunshine_hours:   f64 `unit:"h" src:"weather"`,
-}
-
-// Carbon balance (fc_gross_primary_production, fc_net_primary_production).
-Crop_Carbon :: struct {
-	gross_primary_production: f64 `unit:"kgC ha-1"`,
-	net_primary_production:   f64 `unit:"kgC ha-1"`,
-	respiration:              f64,
-}
-
 // Management state: transplant shock, cutting (force_transplant_state, apply_cutting).
 Crop_Management :: struct {
 	transplant_shock_duration: int,
@@ -497,104 +468,6 @@ sum_stage_temperature_sums :: proc(cm: ^Crop_Module, start_at_stage, end_at_incl
 	return ts
 }
 
-// C++: void monica::cropmodule::fcRadiation(CropModule*, double julianDay,
-// double globalRadiation, double sunshineHours)
-//
-// Taken from the original HERMES model - a separate, independent
-// implementation of day-length/declination/radiation from soilmoisture.odin's
-// own copy (soilmoisture computes its own for a different consumer); not
-// deduplicated, matching the C++.
-//
-// A pure function of the day, the latitude and the weather (D1): returns the
-// values instead of writing them into the crop.
-crop_radiation :: proc(input: Radiation_In) -> (r: Crop_Radiation) {
-	julian_day := input.julian_day
-	global_radiation := input.global_radiation
-	sunshine_hours := input.sunshine_hours
-
-	PI :: 3.14159265358979323
-
-	// Calculation of declination - old DEC
-	r.declination = -23.4 * cr_math.cos(2.0 * PI * ((julian_day + 10.0) / 365.0))
-
-	declination_sinus :=
-		cr_math.sin(r.declination * PI / 180.0) * cr_math.sin(input.latitude * PI / 180.0) // old SINLD
-	declination_cosinus :=
-		cr_math.cos(r.declination * PI / 180.0) * cr_math.cos(input.latitude * PI / 180.0) // old COSLD
-
-	// Calculation of the atmospheric day lenght - old DL
-	arg_astro_day_length := declination_sinus / declination_cosinus
-	arg_astro_day_length = tl.bound(-1.0, arg_astro_day_length, 1.0)
-	r.astronomic_day_lenght = 12.0 * (PI + 2.0 * cr_math.asin(arg_astro_day_length)) / PI
-
-	// Calculation of the effective day length - old DLE
-	edl_helper := (-cr_math.sin(f64(8.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
-
-	if edl_helper < -1.0 || edl_helper > 1.0 {
-		r.effective_day_length = 0.01
-	} else {
-		r.effective_day_length = 12.0 * (PI + 2.0 * cr_math.asin(edl_helper)) / PI
-	}
-
-	// old DLP
-	arg_photo_day_length :=
-		(-cr_math.sin(f64(-6.0 * PI / 180.0)) + declination_sinus) / declination_cosinus
-	arg_photo_day_length = tl.bound(-1.0, arg_photo_day_length, 1.0)
-	r.photoperiodic_daylength = 12.0 * (PI + 2.0 * cr_math.asin(arg_photo_day_length)) / PI
-
-	// Calculation of the mean photosynthetically active radiation [J m-2] - old RDN
-	arg_phot_act := min(
-		1.0,
-		(declination_sinus / declination_cosinus) *
-		(declination_sinus / declination_cosinus),
-	)
-	r.phot_act_radiation_mean =
-		3600.0 *
-		(declination_sinus * r.astronomic_day_lenght +
-				24.0 / PI * declination_cosinus * libc.sqrt(1.0 - arg_phot_act))
-
-	// Calculation of radiation on a clear day [J m-2] - old DRC
-	if r.phot_act_radiation_mean > 0 && r.astronomic_day_lenght > 0 {
-		r.clear_day_radiation =
-			0.5 *
-			1300.0 *
-			r.phot_act_radiation_mean *
-			cr_math.exp(-0.14 / (r.phot_act_radiation_mean / (r.astronomic_day_lenght * 3600.0)))
-	} else {
-		r.clear_day_radiation = 0
-	}
-
-	// Calculation of radiation on an overcast day [J m-2] - old DRO
-	r.overcast_day_radiation = 0.2 * r.clear_day_radiation
-
-	// Calculation of extraterrestrial radiation - old EXT
-	solar_constant := 0.082
-	sc :=
-		24.0 *
-		60.0 /
-		PI *
-		solar_constant *
-		(1.0 + 0.033 * cr_math.cos(2.0 * PI * julian_day / 365.0))
-
-	arg_solar_angle := -cr_math.tan(input.latitude * PI / 180.0) * cr_math.tan(r.declination * PI / 180.0)
-	arg_solar_angle = tl.bound(-1.0, arg_solar_angle, 1.0)
-	sunset_solar_angle := cr_math.acos(arg_solar_angle)
-	r.extraterrestrial_radiation =
-		sc *
-		(sunset_solar_angle * declination_sinus +
-				declination_cosinus * cr_math.sin(sunset_solar_angle)) // [MJ m-2]
-
-	if global_radiation > 0.0 {
-		r.global_radiation = global_radiation
-	} else if r.astronomic_day_lenght > 0 {
-		r.global_radiation =
-			r.extraterrestrial_radiation *
-			(0.19 + 0.55 * sunshine_hours / r.astronomic_day_lenght)
-	} else {
-		r.global_radiation = 0
-	}	return
-}
-
 // C++: void monica::cropmodule::fcUpdateCropParametersForPerennial(CropModule*)
 fc_update_crop_parameters_for_perennial :: proc(cm: ^Crop_Module, allocator := context.allocator) {
 	if cm.perennial_crop_params == nil {
@@ -665,19 +538,6 @@ set_stage :: proc(cm: ^Crop_Module, new_stage: int) {
 // ---------------------------------------------------------------------------
 // Phase 5 checkpoint 4: photosynthesis + assimilation
 // ---------------------------------------------------------------------------
-
-// C++: double monica::cropmodule::fcGrossPrimaryProduction(const CropModule*)
-fc_gross_primary_production :: proc(cm: ^Crop_Module) -> f64 {
-	// Converting photosynthesis rate from [kg CH2O ha-1 d-1] back to [kg C ha-1 d-1]
-	return cm.gross_assimilates / 30.0 * 12.0
-}
-
-// C++: double monica::cropmodule::fcNetPrimaryProduction(CropModule*, double total_respired)
-fc_net_primary_production :: proc(cm: ^Crop_Module, total_respired: f64) -> f64 {
-	// Convert [kg CH2O ha-1 d-1] to [kg C ha-1 d-1]
-	cm.respiration = total_respired / 30.0 * 12.0
-	return cm.gross_primary_production - cm.respiration
-}
 
 // C++: void monica::cropmodule::calculateVOCEmissions(CropModule*, const Voc::MicroClimateData&)
 calculate_voc_emissions :: proc(
@@ -1262,9 +1122,7 @@ crop_module_step :: proc(
 
 		n_uptake_step(&cm.n_uptake, &cm.crop_params, n_uptake_in(cm))
 
-		cm.gross_primary_production = fc_gross_primary_production(cm)
-
-		cm.net_primary_production = fc_net_primary_production(cm, cm.total_respired)
+		carbon_step(&cm.carbon, Carbon_In{gross_assimilates = cm.gross_assimilates, total_respired = cm.total_respired})
 	} else {
 		crop_module_ic_send_rcv(cm, "devstage 0: ")
 	}
