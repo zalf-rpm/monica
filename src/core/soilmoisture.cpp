@@ -868,6 +868,8 @@ void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
     // output in monica.cpp
     if (externalReferenceEvapotranspiration < 0.0) {
       vm_ReferenceEvapotranspiration = monica.cropGrowth()->get_ReferenceEvapotranspiration();
+      // the net radiation of that ET0, so the output follows the crop as well
+      vw_NetRadiation = monica.cropGrowth()->get_NetRadiation();
     } else {
       vm_ReferenceEvapotranspiration = externalReferenceEvapotranspiration;
     }

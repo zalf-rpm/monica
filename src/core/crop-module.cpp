@@ -3675,6 +3675,8 @@ double CropModule::fc_ReferenceEvapotranspiration(double vw_MaxAirTemperature,
     vc_ReferenceEvapotranspiration = 0.0;
   }
 
+  vc_NetRadiation = vw_NetRadiation;
+
   return vc_ReferenceEvapotranspiration;
 }
 

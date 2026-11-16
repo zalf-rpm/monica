@@ -775,7 +775,7 @@ BOTRes& monica::buildOutputTable()
         return monica.cropGrowth() ? round(monica.cropGrowth()->get_GrossPrimaryProduction(), oid.roundToDigits.orDefault(5)) : 0.0;
       });
 
-      build({ id++, "net_radiation", "", "" },
+      build({ id++, "net_radiation", "MJ m-2", "Net radiation of the reference evapotranspiration (the crop's once it has emerged)" },
       [](const MonicaModel& monica, const OId& oid)
       {
         return round(monica.soilMoisture().vw_NetRadiation, oid.roundToDigits.orDefault(3));

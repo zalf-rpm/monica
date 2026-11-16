@@ -239,6 +239,7 @@ public:
   double get_KcFactor() const;
 
   double get_StomataResistance() const;
+  double get_NetRadiation() const { return vc_NetRadiation; } //!< [MJ m-2] of the crop's ET0
 
   double get_Transpiration(int i_Layer) const;
   std::vector<double> get_Transpiration() const { return vc_Transpiration; };
@@ -653,6 +654,7 @@ private:
   std::vector<double> pc_StageKcFactor; //! old Kc
   std::vector<double> pc_StageTemperatureSum; //! old TSUM
   double vc_StomataResistance{0.0}; //! old RSTOM
+  double vc_NetRadiation{0.0};      //!< [MJ m-2] of vc_ReferenceEvapotranspiration, for output
   std::vector<bool> pc_StorageOrgan;
   int vc_StorageOrgan{4};
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
