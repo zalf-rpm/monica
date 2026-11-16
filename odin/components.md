@@ -538,6 +538,7 @@ State `Crop_Et0`:
 |---|---|---|
 | `reference_evapotranspiration` | `f64` | mm |
 | `stomata_resistance` | `f64` | s m-1 |
+| `net_radiation` | `f64` | MJ m-2 |
 
 Input `Crop_Et0_In`:
 

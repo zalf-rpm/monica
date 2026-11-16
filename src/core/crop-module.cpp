@@ -3797,6 +3797,8 @@ double monica::cropmodule::fcReferenceEvapotranspiration(
       (vc_SaturatedVapourPressureSlope +
        vc_PsycrometerConstant * (1.0 + (vc_SurfaceResistance / vc_AerodynamicResistance)));
 
+  cm->vc_NetRadiation = vw_NetRadiation;
+
   if (vc_ReferenceEvapotranspiration < 0.0) {
     vc_ReferenceEvapotranspiration = 0.0;
   }

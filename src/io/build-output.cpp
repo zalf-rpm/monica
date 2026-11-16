@@ -1624,6 +1624,12 @@ BOTRes &monica::buildOutputTable() {
                   oid, [&](int i) { return monica.soilMoisture->vm_WaterFlux.at(i); }, 1);
             });
 
+      // from the AMEI branch (not in master); with a crop the net radiation of the crop's ET0
+      build({id++, "net_radiation", "MJ m-2", "Net radiation of the reference evapotranspiration"},
+            [](const MonicaModel &monica, OId oid) {
+              return round(monica.soilMoisture->vw_NetRadiation, 3);
+            });
+
       tableBuilt = true;
     }
   }

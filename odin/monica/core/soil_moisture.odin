@@ -958,6 +958,8 @@ evapotranspiration :: proc(
 	if developmental_stage > 0 {
 		if reference_evapotranspiration_mm < 0.0 {
 			sm.reference_evapotranspiration = crop.reference_evapotranspiration
+			// the net radiation of that ET0, so the output follows the crop as well
+			sm.net_radiation = crop.net_radiation
 		} else {
 			sm.reference_evapotranspiration = reference_evapotranspiration_mm
 		}

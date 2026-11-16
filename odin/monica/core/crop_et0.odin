@@ -10,6 +10,7 @@ package core
 Crop_Et0 :: struct {
 	reference_evapotranspiration: f64 `unit:"mm"`,
 	stomata_resistance:           f64 `unit:"s m-1"`, //! old RSTOM
+	net_radiation:                f64 `unit:"MJ m-2"`, // of the ET0 above, for output (soil moisture takes it on crop days)
 }
 
 // What crop_et0 reads.

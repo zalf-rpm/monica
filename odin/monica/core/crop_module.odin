@@ -1002,6 +1002,7 @@ crop_module_step :: proc(
 			)
 			cm.reference_evapotranspiration = et0
 			cm.stomata_resistance = terms.stomata_resistance
+			cm.et0.net_radiation = terms.net_radiation
 		} else {
 			// use reference evapotranspiration from climate file
 			cm.reference_evapotranspiration = reference_evapotranspiration

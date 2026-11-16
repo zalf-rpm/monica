@@ -138,6 +138,8 @@ g_alias_table := []Alias_Entry {
 	{"NDef", {"current_crop_module.crop_n_redux", 5, .NONE, "0;1"}},
 	{"NEE", {"soil_organic.net_ecosystem_exchange", 5, .NONE, "kgC ha-"}},
 	{"NEP", {"soil_organic.net_ecosystem_production", 5, .NONE, "kgC ha-1"}},
+	// from the AMEI branch (not in master): with a crop the crop ET0's net radiation
+	{"net_radiation", {"soil_moisture.net_radiation", 3, .NONE, "MJ m-2"}},
 	{"NetPhot", {"current_crop_module.net_photosynthesis", 2, .NONE, "kgCH2O ha-1"}},
 	{"NFert", {"daily_sum_fertiliser", 1, .NONE, "kgN ha-1"}},
 	{"NFixed", {"current_crop_module.fixed_n", 2, .NONE, "kgN ha-1"}},

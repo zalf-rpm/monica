@@ -34,6 +34,7 @@ Crop_To_Soil :: struct {
 	aboveground_biomass:          f64 `unit:"kgDM ha-1"`,
 	// water - soil moisture
 	reference_evapotranspiration: f64 `unit:"mm"`,
+	net_radiation:                f64 `unit:"MJ m-2"`, // of reference_evapotranspiration
 	remaining_evapotranspiration: f64 `unit:"mm"`,
 	net_precipitation:            f64,
 	evaporated_from_intercept:    f64 `unit:"mm"`,
@@ -60,6 +61,7 @@ crop_to_soil_of :: proc(cm: ^Crop_Module, being_cleared: bool) -> (cts: Crop_To_
 	cts.leaf_area_index = cm.leaf_area_index
 	cts.aboveground_biomass = cm.aboveground_biomass
 	cts.reference_evapotranspiration = cm.reference_evapotranspiration
+	cts.net_radiation = cm.et0.net_radiation
 	cts.remaining_evapotranspiration = cm.remaining_evapotranspiration
 	cts.net_precipitation = cm.net_precipitation
 	cts.evaporated_from_intercept = cm.evaporated_from_intercept

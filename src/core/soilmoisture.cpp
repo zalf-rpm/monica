@@ -1013,6 +1013,8 @@ void evapotranspiration(SoilMoisture *sm, double vc_PercentageSoilCoverage, doub
     if (vw_ReferenceEvapotranspiration < 0.0) {
       vm_ReferenceEvapotranspiration =
           monica.currentCropModule.get()->vc_ReferenceEvapotranspiration;
+      // the net radiation of that ET0, so the output follows the crop as well
+      sm->vw_NetRadiation = monica.currentCropModule.get()->vc_NetRadiation;
     } else {
       vm_ReferenceEvapotranspiration = vw_ReferenceEvapotranspiration;
     }

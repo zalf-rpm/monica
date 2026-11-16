@@ -186,6 +186,7 @@ struct CropModule {
   // double vc_TheoreticalGDDAccumulated{0.0}; //!< Total GDD accumulated since
   // crop start (for phase tracking)
   double vc_StomataResistance{0.0}; //! old RSTOM
+  double vc_NetRadiation{0.0};      //!< [MJ m-2] of vc_ReferenceEvapotranspiration, for output
   int vc_StorageOrgan{4};
   double vc_TargetNConcentration{0.0}; //! old GEHMAX
   double vc_TimeStep{1.0};             //! old dt
