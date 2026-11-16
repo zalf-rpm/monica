@@ -6,9 +6,6 @@ package core
 // modules (evapotranspiration_impl.odin) call it for the ET0 terms instead of
 // running fcReferenceEvapotranspiration on a copy of the whole crop.
 
-import libc "core:c/libc"
-import "../../support/cr_math"
-
 // The crop's reference evapotranspiration (crop_et0).
 Crop_Et0 :: struct {
 	reference_evapotranspiration: f64 `unit:"mm"`,
@@ -26,7 +23,6 @@ Crop_Et0_In :: struct {
 	atmospheric_co2_concentration:      f64 `unit:"ppm" src:"weather"`,
 	height_nn:                          f64 `unit:"m" src:"site"`,
 	gross_photosynthesis_reference_mol: f64 `unit:"mol m-2 s-1" src:"Photosynthesis"`,
-	carboxylation_pathway:              int `unit:"" src:"species"`,
 	extraterrestrial_radiation:         f64 `unit:"MJ m-2" src:"Radiation"`,
 	global_radiation:                   f64 `unit:"MJ m-2" src:"Radiation"`,
 	saturation_beta:                    f64 `unit:"kPa" src:"crop module parameters"`,
@@ -50,7 +46,6 @@ crop_et0_in :: proc(
 		atmospheric_co2_concentration = atmospheric_co2_concentration,
 		height_nn = cm.site_params.height_nn,
 		gross_photosynthesis_reference_mol = cm.gross_photosynthesis_reference_mol,
-		carboxylation_pathway = cm.crop_params.species_params.carboxylation_pathway,
 		extraterrestrial_radiation = cm.extraterrestrial_radiation,
 		global_radiation = cm.global_radiation,
 		saturation_beta = cm.mod_params.saturation_beta,
@@ -64,118 +59,38 @@ crop_et0_in :: proc(
 // vw_RelativeHumidity, double vw_MeanAirTemperature, double vw_WindSpeed,
 // double vw_WindSpeedHeight, double vw_AtmosphericCO2Concentration)
 //
-// FAO-56 Penman-Monteith reference evapotranspiration (Allen, Pereira, Raes
-// & Smith 1998, FAO Irrigation and Drainage Paper 56).
+// FAO-56 Penman-Monteith (fao56_et0, et0.odin - shared with soil moisture's
+// ET0) with the crop's stomata resistance.
 //
 // NOTE(deviation): returns the stomata resistance with the other terms
 // (Et0_Terms) instead of writing it into the crop.
 crop_et0 :: proc(input: Crop_Et0_In) -> (et0: f64, terms: Et0_Terms) {
-	max_air_temperature := input.max_air_temperature
-	min_air_temperature := input.min_air_temperature
-	relative_humidity := input.relative_humidity
-	mean_air_temperature := input.mean_air_temperature
-	wind_speed := input.wind_speed
-	wind_speed_height := input.wind_speed_height
-	atmospheric_co2_concentration := input.atmospheric_co2_concentration
-	stomata_resistance: f64
-
-	// Calculation of atmospheric pressure
-	atmospheric_pressure :=
-		101.3 * cr_math.pow((293.0 - (0.0065 * input.height_nn)) / 293.0, 5.26)
-
-	// Calculation of psychrometer constant
-	psycrometer_constant := 0.000665 * atmospheric_pressure
-
-	// Calc. of saturated water vapour pressure at daily max/min temperature
-	saturated_vapour_pressure_max :=
-		0.6108 * cr_math.exp((17.27 * max_air_temperature) / (237.3 + max_air_temperature))
-	saturated_vapour_pressure_min :=
-		0.6108 * cr_math.exp((17.27 * min_air_temperature) / (237.3 + min_air_temperature))
-
-	saturated_vapour_pressure :=
-		(saturated_vapour_pressure_max + saturated_vapour_pressure_min) / 2.0
-
-	vapour_pressure: f64
-	if relative_humidity <= 0.0 {
-		// Assuming Tdew = Tmin as suggested in FAO56 Allen et al. 1998
-		vapour_pressure = saturated_vapour_pressure_min
-	} else {
-		vapour_pressure = relative_humidity * saturated_vapour_pressure
+	et0_in := Et0_In {
+		max_air_temperature        = input.max_air_temperature,
+		min_air_temperature        = input.min_air_temperature,
+		relative_humidity          = input.relative_humidity,
+		mean_air_temperature       = input.mean_air_temperature,
+		wind_speed                 = input.wind_speed,
+		wind_speed_height          = input.wind_speed_height,
+		height_nn                  = input.height_nn,
+		extraterrestrial_radiation = input.extraterrestrial_radiation,
+		global_radiation           = input.global_radiation,
+		reference_albedo           = input.reference_albedo,
 	}
+	vapour_pressure, saturated_vapour_pressure := et0_vapour_pressures(et0_in)
+	return fao56_et0(et0_in, crop_stomata_resistance(input, saturated_vapour_pressure - vapour_pressure))
+}
 
-	saturation_deficit := saturated_vapour_pressure - vapour_pressure
-
-	// Slope of saturation water vapour pressure-to-temperature relation
-	saturated_vapour_pressure_slope :=
-		(4098.0 *
-			(0.6108 *
-					cr_math.exp((17.27 * mean_air_temperature) / (mean_air_temperature + 237.3)))) /
-		((mean_air_temperature + 237.3) * (mean_air_temperature + 237.3))
-
-	// 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
-	wind_speed_2m := max(0.5, wind_speed * (4.87 / cr_math.log(67.8 * wind_speed_height - 5.42)))
-
-	aerodynamic_resistance := 208.0 / wind_speed_2m
-
+// The crop's stomata resistance [s m-1] from its reference gross
+// photosynthesis and the saturation deficit [kPa] (Yu et al. 2001:
+// saturation_beta = 3.5, stomata_conductance_alpha = 0.06). C++ has the same
+// formula for C3 and C4.
+crop_stomata_resistance :: proc(input: Crop_Et0_In, saturation_deficit: f64) -> f64 {
 	if input.gross_photosynthesis_reference_mol <= 0.0 {
-		stomata_resistance = 999999.9
-	} else {
-		// Yu et al. 2001: input.saturation_beta = 3.5, input.stomata_conductance_alpha = 0.06
-		if input.carboxylation_pathway == 1 {
-			stomata_resistance =
-				(atmospheric_co2_concentration *
-					(1.0 + saturation_deficit / input.saturation_beta)) /
-				(input.stomata_conductance_alpha * input.gross_photosynthesis_reference_mol)
-		} else {
-			stomata_resistance =
-				(atmospheric_co2_concentration *
-					(1.0 + saturation_deficit / input.saturation_beta)) /
-				(input.stomata_conductance_alpha * input.gross_photosynthesis_reference_mol)
-		}
+		return 999999.9
 	}
-
-	surface_resistance := stomata_resistance / 1.44
-
-	clear_sky_shortwave_radiation :=
-		(0.75 + 0.00002 * input.height_nn) * input.extraterrestrial_radiation
-
-	// C++: capped at 1.0, as the soil moisture's ET0 and FAO-56 have it
-	relative_shortwave_radiation :=
-		clear_sky_shortwave_radiation > 0 ? min(input.global_radiation / clear_sky_shortwave_radiation, 1.0) : 1.0
-
-	// input.reference_albedo: FAO green grass reference albedo, Allen et al. 1998
-	net_shortwave_radiation := (1.0 - input.reference_albedo) * input.global_radiation
-
-	BOLZMAN_CONSTANT :: 0.0000000049 // 4.903 * 10^-9 MJ m-2 K-4 d-1
-	net_radiation :=
-		net_shortwave_radiation -
-		(BOLZMAN_CONSTANT *
-				(cr_math.pow(min_air_temperature + 273.16, 4.0) +
-						cr_math.pow(max_air_temperature + 273.16, 4.0)) /
-				2.0 *
-				(1.35 * relative_shortwave_radiation - 0.35) *
-				(0.34 - 0.14 * libc.sqrt(vapour_pressure)))
-
-	// Penman-Monteith-Method FAO
-	reference_evapotranspiration :=
-		((0.408 * saturated_vapour_pressure_slope * net_radiation) +
-			(psycrometer_constant *
-					(900.0 / (mean_air_temperature + 273.0)) *
-					wind_speed_2m *
-					saturation_deficit)) /
-		(saturated_vapour_pressure_slope +
-				psycrometer_constant * (1.0 + (surface_resistance / aerodynamic_resistance)))
-
-	if reference_evapotranspiration < 0.0 {
-		reference_evapotranspiration = 0.0
-	}
-
-	terms = Et0_Terms {
-		vapour_pressure           = vapour_pressure,
-		saturated_vapour_pressure = saturated_vapour_pressure,
-		net_radiation             = net_radiation,
-		stomata_resistance        = stomata_resistance,
-	}
-	et0 = reference_evapotranspiration
-	return
+	return(
+		(input.atmospheric_co2_concentration * (1.0 + saturation_deficit / input.saturation_beta)) /
+		(input.stomata_conductance_alpha * input.gross_photosynthesis_reference_mol)
+	)
 }

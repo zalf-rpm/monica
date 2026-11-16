@@ -59,6 +59,7 @@ A-H these helpers lived uncommitted under `build/tmp_cm`; they were moved to
 | E | E1-E3 | cut the big procedures (roots, O3/VOC, crop ET0) | done (incl. A4b): 6d8c48d .. 2d84e45 |
 | F | F1-F6 | medium components, management, parameters | done: e20cc9d .. 272a9d3 (F6 "reference" part not done, see below) |
 | G | G1 | share radiation/day length with soil ET0 | done: a7a116f |
+| G | G2 | one FAO-56 ET0 for crop and soil moisture | done |
 | H | H1-H3 | tag and graph tool, generated docs | done: 13f06e3, d1ed0f1 |
 | I | I1-I3 | soil mineral N as rate/state (model change, own branch) | I1, I2 done on branch `soil-n-rates`, behind a switch (off by default); I3: divergence and SOC measured, decision with the MONICA team open |
 
@@ -367,6 +368,18 @@ What was done:
     extraterrestrial radiation is bit-identical: the former code is kept in
     `tests/radiation_shared_test.odin` as the reference, checked for every day
     of the year at latitudes -66..66.
+- **G2 One Penman-Monteith ET0.** Soil moisture's `reference_evapotranspiration`
+  repeated the crop's FAO-56 formulas; the only difference is the stomata
+  resistance (the FAO default `STOMATA_RESISTANCE`, 100 s m-1, vs. the crop's
+  from its reference photosynthesis and the saturation deficit).
+  - Done: `core/et0.odin` has `fao56_et0(Et0_In, stomata_resistance)` and
+    `et0_vapour_pressures`; `crop_et0` computes `crop_stomata_resistance` and
+    calls it, soil moisture's procedure calls it with the constant (and still
+    stores the net radiation). As in the AMEI module `Monica_Evapotranspiration`.
+    `Crop_Et0_In.carboxylation_pathway` dropped: C++ branches on it but
+    computes the same in both branches (the checker reported it unused).
+  - Checked: the 66 simulations of the C++ suites give byte-identical outputs
+    with the binaries before and after; unit tests, `check_modules.sh`.
 
 ## Phase H: tooling (architecture.md §12)
 

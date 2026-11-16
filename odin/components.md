@@ -552,7 +552,6 @@ Input `Crop_Et0_In`:
 | `atmospheric_co2_concentration` | `f64` | ppm | weather |  |  |
 | `height_nn` | `f64` | m | site |  |  |
 | `gross_photosynthesis_reference_mol` | `f64` | mol m-2 s-1 | Photosynthesis |  |  |
-| `carboxylation_pathway` | `int` |  | species |  |  |
 | `extraterrestrial_radiation` | `f64` | MJ m-2 | Radiation |  |  |
 | `global_radiation` | `f64` | MJ m-2 | Radiation |  |  |
 | `saturation_beta` | `f64` | kPa | crop module parameters |  |  |
