@@ -286,11 +286,18 @@ Things a split has to deal with, because one part changes another part's data:
    `fc_reference_evapotranspiration` uses the stomata resistance derived from
    `gross_photosynthesis_reference_mol` (from 8), and
    `evapotranspiration_impl.odin` calls it on a copy of the crop to get the
-   ET0 terms - a sign it wants to be a component of its own.
+   ET0 terms - a sign it wants to be a component of its own. *(Resolved in
+   phase E: the pure `crop_et0`.)*
 7. **Radiation is duplicated.** `soil_moisture.odin`'s ET0 (around line
    1168) computes declination and the day lengths again, with the same
    formulas as `fc_radiation`. *(Resolved in phase G: it calls
-   `crop_radiation`.)*
+   `crop_radiation`.)* So is the Penman-Monteith ET0 itself: soil
+   moisture's `reference_evapotranspiration` repeats the crop's formulas with
+   a fixed stomata resistance (FAO's 100 s m-1) instead of the one from the
+   crop's photosynthesis. *(Resolved in phase G2: both call `fao56_et0`,
+   `core/et0.odin`, with their own stomata resistance - the split the AMEI
+   module `Monica_Evapotranspiration` has, `StomataResistance` /
+   `CalcStomataResistance` before one `ReferenceEvapotranspiration`.)*
 8. **Callbacks through a global** (`g_current_model`), see section 2.
 
 ## 5. Proposed components
@@ -412,7 +419,8 @@ checks each step.
    (events, organic matter to add) or explicit parameters (snow).
 6. **Share what is duplicated.** One radiation and day-length function for
    the crop and the soil ET0, one crop ET0 used by the crop and by
-   `evapotranspiration_impl`.
+   `evapotranspiration_impl`, and one Penman-Monteith ET0 for the crop and
+   soil moisture, differing only in the stomata resistance passed in.
 7. **Then swappable**, like soil temperature and evapotranspiration: a
    component with declared inputs and outputs fits the `Module_Entry`
    machinery (integrated / driver / standalone, `how-to-use.md`). VOC
@@ -1102,7 +1110,7 @@ Three ways to handle it, from compatible to not:
 | Debug-build mass-balance asserts per component (water, N, C) | catches bugs early | yes |
 | Rate/state with demand limiting for soil NH4/NO2/NO3 | turns the call order into a decided priority | no |
 | Global rate/integrate split (above, 3) | results independent of the order | no |
-| Shared radiation and ET0 between crop and soil (section 6, step 6) | removes a duplicate | yes, if the formulas are identical |
+| Shared radiation and ET0 between crop and soil (section 6, step 6) | removes a duplicate | yes, done (phase G: `crop_radiation`, `fao56_et0`) |
 | Many sites per process, per-layer data as struct-of-arrays (`#soa`) | throughput for regional and HPC runs | per site yes, but a big restructuring |
 | A declarative model description generating structs, wiring and docs (Crop2ML taken all the way) | one source of truth | in principle, but replaces handwritten code |
 
