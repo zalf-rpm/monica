@@ -902,8 +902,8 @@ dual_kc_precomputation :: proc(
 
 	// Potential soil evaporation [mm d-1]
 	e_pot_dual_kc = et0 * ke
-	// Respect the hard cap from HERMES (6.5 mm/day applies to total, cap E too)
-	e_pot_dual_kc = min(e_pot_dual_kc, 6.5)
+	// Respect the cap from HERMES (6.5 mm/day by default, applies to total, cap E too)
+	e_pot_dual_kc = min(e_pot_dual_kc, sm.mod_params.max_potential_evapotranspiration)
 
 	sm.ke = ke
 
@@ -989,9 +989,9 @@ evapotranspiration :: proc(
 	sm.actual_evaporation = 0.0
 	sm.actual_transpiration = 0.0
 
-	// from HERMES:
-	if potential_evapotranspiration > 6.5 {
-		potential_evapotranspiration = 6.5
+	// from HERMES (6.5 mm by default)
+	if potential_evapotranspiration > sm.mod_params.max_potential_evapotranspiration {
+		potential_evapotranspiration = sm.mod_params.max_potential_evapotranspiration
 	}
 
 	if potential_evapotranspiration > 0.0 {

@@ -43,7 +43,7 @@ SOURCES := []string {
 	"Root_System", "Et0", "Water_Uptake", "N_Uptake", "Carbon", "Management", "Intercropping",
 	// the rest of the model
 	"weather", "site", "soil", "soil moisture", "species", "cultivar", "crop parameters",
-	"crop module parameters", "simulation parameters",
+	"crop module parameters", "soil moisture parameters", "simulation parameters",
 }
 
 @(test)

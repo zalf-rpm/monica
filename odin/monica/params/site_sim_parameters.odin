@@ -1086,6 +1086,7 @@ make_central_parameter_provider :: proc(a: Allocator) -> Central_Parameter_Provi
 	return Central_Parameter_Provider {
 		crop_params = make_crop_module_parameters(a),
 		env_params = make_environment_parameters(),
+		soil_moisture_mod_params = make_soil_moisture_module_parameters(),
 		soil_temperature_mod_params = make_soil_temperature_module_parameters(),
 		soil_organic_mod_params = make_soil_organic_module_parameters(),
 		sim_params = make_simulation_parameters(),

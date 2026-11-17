@@ -605,6 +605,7 @@ Input `Water_Uptake_In`:
 | `rooting_zone` | `int` | layer# | Root_System |  |  |
 | `transplant_efficiency` | `f64` | 0-1 | Management |  |  |
 | `water_deficit_response_on` | `bool` |  | simulation parameters |  |  |
+| `max_potential_evapotranspiration` | `f64` | mm d-1 | soil moisture parameters |  |  |
 | `max_effective_rooting_depth` | `f64` | m | site |  |  |
 
 ## N_Uptake

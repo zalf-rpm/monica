@@ -33,6 +33,7 @@ Input :: struct {
 	evaporation_zeta:                 f64 `unit:"1"`, // MONICA's soil moisture parameters ...
 	maximum_evaporation_impact_depth: f64 `unit:"layer#"`,
 	xsa_critical_soil_moisture:       f64 `unit:"1"`,
+	max_potential_evapotranspiration: f64 `unit:"mm d-1"`, // the cap, 6.5 mm by default
 	stomata_conductance_alpha:        f64 `unit:"1"`, // MONICA's crop module parameters
 	saturation_beta:                  f64 `unit:"1"`,
 	layer_thickness:                  []f64 `unit:"m"`,

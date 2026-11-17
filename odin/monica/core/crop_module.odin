@@ -71,6 +71,9 @@ Crop_Module :: struct {
 	mod_params:            ^p.Crop_Module_Parameters,
 	crop_params:           p.Crop_Parameters,
 	residue_params:        p.Crop_Residue_Parameters,
+	// NOTE(deviation): the soil moisture parameters' cap of the potential
+	// evapotranspiration (C++: the literal 6.5); set by the sowing workstep
+	max_potential_evapotranspiration: f64 `unit:"mm d-1"`,
 	// C++: kj::Own<CropParameters> perennial_crop_params - nil unless a
 	// Sowing workstep's separatePerennialCropParams is set (phase 6).
 	perennial_crop_params: ^p.Crop_Parameters,
@@ -131,6 +134,7 @@ make_crop_module_defaults :: proc() -> Crop_Module {
 		o3_w_stomatal_closure = 1.0,
 		intercropping_other_crop_height = -1,
 		intercropping_other_lait = -1,
+		max_potential_evapotranspiration = p.DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION,
 	}
 }
 

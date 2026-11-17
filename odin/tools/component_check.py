@@ -242,7 +242,8 @@ def cmd_check(model):
 
 
 EXTERNAL = ["weather", "site", "soil", "soil moisture", "species", "cultivar", "crop parameters",
-            "crop module parameters", "simulation parameters"]
+            "crop module parameters", "soil moisture parameters",
+            "simulation parameters"]
 
 
 def edges(model):

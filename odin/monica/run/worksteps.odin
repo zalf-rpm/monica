@@ -152,6 +152,7 @@ sowing_apply :: proc(
 			allocator,
 		)
 		model.current_crop_module = cm
+		cm.max_potential_evapotranspiration = model.soil_moisture.mod_params.max_potential_evapotranspiration
 
 		if s.separate_perennial_crop_params != nil {
 			model.current_crop_module.perennial_crop_params = new(p.Crop_Parameters, allocator)

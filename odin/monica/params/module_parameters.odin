@@ -69,8 +69,19 @@ Soil_Moisture_Module_Parameters :: struct {
 	maximum_evaporation_impact_depth:        f64,
 	max_percolation_rate:                    f64,
 	moisture_init_value:                     f64,
+	// NOTE(deviation): not in the C++, where the cap is the literal 6.5 (from HERMES).
+	// The potential evapotranspiration [mm d-1] is capped at this value: the crop's
+	// and the bare soil's, the dual Kc soil evaporation and the Crop2ML ET modules'.
+	max_potential_evapotranspiration:        f64 `unit:"mm d-1"`,
 }
-// all C++ defaults are 0.0, so the Odin zero value matches
+
+// HERMES' cap of the potential evapotranspiration, MONICA's literal 6.5 so far
+DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION :: 6.5 // [mm d-1]
+
+// all C++ defaults are 0.0, so the Odin zero value matches - except the cap
+make_soil_moisture_module_parameters :: proc() -> Soil_Moisture_Module_Parameters {
+	return {max_potential_evapotranspiration = DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION}
+}
 
 // C++: Errors soilmoisturemoduleparameters::merge(SoilMoistureModuleParameters*, Json)
 soil_moisture_module_parameters_merge :: proc(
@@ -114,6 +125,11 @@ soil_moisture_module_parameters_merge :: proc(
 	jx.set_double_value(&smp.maximum_evaporation_impact_depth, j, "MaximumEvaporationImpactDepth")
 	jx.set_double_value(&smp.max_percolation_rate, j, "MaxPercolationRate")
 	jx.set_double_value(&smp.moisture_init_value, j, "MoistureInitValue")
+	jx.set_double_value(
+		&smp.max_potential_evapotranspiration,
+		j,
+		"MaxPotentialEvapotranspiration",
+	)
 
 	return res
 }
@@ -149,6 +165,7 @@ soil_moisture_module_parameters_to_json :: proc(
 		{"MaximumEvaporationImpactDepth", jx.f(smp.maximum_evaporation_impact_depth)},
 		{"MaxPercolationRate", jx.f(smp.max_percolation_rate)},
 		{"MoistureInitValue", jx.f(smp.moisture_init_value)},
+		{"MaxPotentialEvapotranspiration", jx.f(smp.max_potential_evapotranspiration)},
 	)
 }
 
