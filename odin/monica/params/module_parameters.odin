@@ -73,14 +73,37 @@ Soil_Moisture_Module_Parameters :: struct {
 	// The potential evapotranspiration [mm d-1] is capped at this value: the crop's
 	// and the bare soil's, the dual Kc soil evaporation and the Crop2ML ET modules'.
 	max_potential_evapotranspiration:        f64 `unit:"mm d-1"`,
+	// NOTE(deviation): not in the C++, off by default (= the C++). With standing water
+	// on the surface, the water evaporates in place of the soil, not of the crop: only
+	// with the share of the potential that reaches the ground, (1 - soil coverage) x
+	// ET0 x 1.1 (capped), the soil evaporates from what is left once the water is gone,
+	// and the crop's transpiration is taken from the layers as the crop computed it.
+	// Off: the water evaporates with the whole potential x 1.1 / Kc and soil moisture
+	// replaces the crop's transpiration by coverage x evaporation reducer x what is
+	// left, which the crop module never learns about. Only MONICA's own ET (no
+	// Modules.Evapotranspiration).
+	pond_evaporation_by_coverage:            bool,
+	// NOTE(deviation): not in the C++, off by default (= the C++). The daily
+	// infiltration is limited by the free pore space down to infiltration_depth
+	// (instead of the top layer's), with the moisture deficit averaged over that
+	// depth, and fills those layers from the top; so it no longer depends on the
+	// layer thickness.
+	infiltration_by_depth:                   bool,
+	infiltration_depth:                      f64 `unit:"m"`,
 }
 
 // HERMES' cap of the potential evapotranspiration, MONICA's literal 6.5 so far
 DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION :: 6.5 // [mm d-1]
+// MONICA's original layer thickness, used with infiltration_by_depth
+DEFAULT_INFILTRATION_DEPTH :: 0.1 // [m]
 
 // all C++ defaults are 0.0, so the Odin zero value matches - except the cap
+// and the infiltration depth (both not in the C++)
 make_soil_moisture_module_parameters :: proc() -> Soil_Moisture_Module_Parameters {
-	return {max_potential_evapotranspiration = DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION}
+	return {
+		max_potential_evapotranspiration = DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION,
+		infiltration_depth = DEFAULT_INFILTRATION_DEPTH,
+	}
 }
 
 // C++: Errors soilmoisturemoduleparameters::merge(SoilMoistureModuleParameters*, Json)
@@ -130,6 +153,9 @@ soil_moisture_module_parameters_merge :: proc(
 		j,
 		"MaxPotentialEvapotranspiration",
 	)
+	jx.set_bool_value(&smp.pond_evaporation_by_coverage, j, "PondEvaporationByCoverage")
+	jx.set_bool_value(&smp.infiltration_by_depth, j, "InfiltrationByDepth")
+	jx.set_double_value(&smp.infiltration_depth, j, "InfiltrationDepth")
 
 	return res
 }
@@ -166,6 +192,9 @@ soil_moisture_module_parameters_to_json :: proc(
 		{"MaxPercolationRate", jx.f(smp.max_percolation_rate)},
 		{"MoistureInitValue", jx.f(smp.moisture_init_value)},
 		{"MaxPotentialEvapotranspiration", jx.f(smp.max_potential_evapotranspiration)},
+		{"PondEvaporationByCoverage", jx.b(smp.pond_evaporation_by_coverage)},
+		{"InfiltrationByDepth", jx.b(smp.infiltration_by_depth)},
+		{"InfiltrationDepth", jx.f(smp.infiltration_depth)},
 	)
 }
 
