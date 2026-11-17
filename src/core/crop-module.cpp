@@ -3888,8 +3888,8 @@ void CropModule::fc_CropWaterUptake(size_t vc_GroundwaterTable, double vw_GrossP
   vc_PotentialEvapotranspiration = vc_ReferenceEvapotranspiration * vc_KcFactor; // [mm]
 
   // from HERMES:
-  if (vc_PotentialEvapotranspiration > 6.5) {
-    vc_PotentialEvapotranspiration = 6.5;
+  if (vc_PotentialEvapotranspiration > _maxPotentialEvapotranspiration) {
+    vc_PotentialEvapotranspiration = _maxPotentialEvapotranspiration;
   }
 
   vc_RemainingEvapotranspiration = vc_PotentialEvapotranspiration; // [mm]

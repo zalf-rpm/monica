@@ -45,6 +45,8 @@ class SoilMoisture {
 public:
   SoilMoisture(MonicaModel& monica, const SoilMoistureModuleParameters& smPs);
 
+  const SoilMoistureModuleParameters& params() const { return _params; }
+
   SoilMoisture(MonicaModel& monica, mas::schema::model::monica::SoilMoistureModuleState::Reader reader,
                CropModule* cropModule = nullptr);
   void deserialize(mas::schema::model::monica::SoilMoistureModuleState::Reader reader);

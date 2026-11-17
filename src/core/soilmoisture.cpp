@@ -938,8 +938,8 @@ double SoilMoisture::dual_kc_precomputation(double windSpeed, double tmin, doubl
 
   // Potential soil evaporation [mm d-1]
   E_pot_dualKc = ET0 * Ke;
-  // Respect the hard cap from HERMES (6.5 mm/day applies to total, cap E too)
-  E_pot_dualKc = std::min(E_pot_dualKc, 6.5);
+  // Respect the cap from HERMES (6.5 mm/day by default, applies to total, cap E too)
+  E_pot_dualKc = std::min(E_pot_dualKc, _params.pm_MaxPotentialEvapotranspiration);
 
   vm_Ke = Ke;
 
@@ -1028,8 +1028,9 @@ void SoilMoisture::fm_Evapotranspiration(double vc_PercentageSoilCoverage, doubl
   vm_ActualEvaporation = 0.0;
   vm_ActualTranspiration = 0.0;
 
-  // from HERMES:
-  if (vm_PotentialEvapotranspiration > 6.5) vm_PotentialEvapotranspiration = 6.5;
+  // from HERMES (6.5 mm by default):
+  if (vm_PotentialEvapotranspiration > _params.pm_MaxPotentialEvapotranspiration)
+    vm_PotentialEvapotranspiration = _params.pm_MaxPotentialEvapotranspiration;
 
   if (vm_PotentialEvapotranspiration > 0.0) {
     // If surface is water-logged, subsequent evaporation from surface water sources

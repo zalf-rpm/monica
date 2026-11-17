@@ -293,6 +293,8 @@ void MonicaModel::seedCrop(mas::schema::model::monica::CropSpec::Reader reader) 
                                                    avgAirTemp);
                                               },
                                               _intercropping);
+    _currentCropModule->setMaxPotentialEvapotranspiration(
+        soilMoisture().params().pm_MaxPotentialEvapotranspiration);
 
     //if (crop->separatePerennialCropParameters())
     //  _currentCropModule->setPerennialCropParameters(crop->perennialCropParameters());
@@ -347,6 +349,8 @@ void MonicaModel::seedCrop(Crop* crop) {
                                                    avgAirTemp);
                                               },
                                               _intercropping);
+    _currentCropModule->setMaxPotentialEvapotranspiration(
+        soilMoisture().params().pm_MaxPotentialEvapotranspiration);
 
     if (crop->separatePerennialCropParameters())
       _currentCropModule->

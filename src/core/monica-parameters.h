@@ -846,6 +846,8 @@ struct DLL_API SoilMoistureModuleParameters : public Tools::Json11Serializable {
   double pm_MaximumEvaporationImpactDepth{0.0};
   double pm_MaxPercolationRate{0.0};
   double pm_MoistureInitValue{0.0};
+  //! cap of the potential evapotranspiration [mm d-1] (crop, bare soil, dual Kc soil evaporation), from HERMES
+  double pm_MaxPotentialEvapotranspiration{6.5};
 };
 
 
