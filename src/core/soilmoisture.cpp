@@ -895,8 +895,9 @@ void SoilMoisture::fm_Evapotranspiration(double vs_HeightNN,
   vm_ActualEvaporation = 0.0;
   vm_ActualTranspiration = 0.0;
 
-  // from HERMES:
-  if (potentialEvapotranspiration > 6.5) potentialEvapotranspiration = 6.5;
+  // from HERMES (6.5 mm by default):
+  if (potentialEvapotranspiration > _params.pm_MaxPotentialEvapotranspiration)
+    potentialEvapotranspiration = _params.pm_MaxPotentialEvapotranspiration;
 
   if (potentialEvapotranspiration > 0.0) {
     bool evaporationFromSurface = false;

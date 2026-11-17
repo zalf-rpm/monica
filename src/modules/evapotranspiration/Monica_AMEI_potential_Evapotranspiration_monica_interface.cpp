@@ -28,6 +28,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider& cpp) {
   KJ_ASSERT(_monica != nullptr);
   const auto sitePs = _monica->siteParameters();
   etComp.setheight_nn(sitePs.vs_HeightNN);
+  etComp._PotentialEvapotranspiration.setpotential_evapotranspiration_cap(
+      cpp.userSoilMoistureParameters.pm_MaxPotentialEvapotranspiration);
 }
 
 void MonicaInterface::run() {

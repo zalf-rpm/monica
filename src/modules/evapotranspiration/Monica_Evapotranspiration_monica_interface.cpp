@@ -36,6 +36,8 @@ void MonicaInterface::init(const monica::CentralParameterProvider& cpp) {
   //etComp.setstomata_resistance(100);
   //etComp.setevaporation_reduction_method(1);
   etComp.setxsa_critical_soil_moisture(cpp.userSoilMoistureParameters.pm_XSACriticalSoilMoisture);
+  etComp._PotentialEvapotranspiration.setpotential_evapotranspiration_cap(
+      cpp.userSoilMoistureParameters.pm_MaxPotentialEvapotranspiration);
   etComp.setlatitude(sitePs.vs_Latitude);
   etComp.setheight_nn(sitePs.vs_HeightNN);
   etComp.setno_of_soil_layers(sitePs.numberOfLayers);
