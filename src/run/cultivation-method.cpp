@@ -1184,6 +1184,8 @@ Irrigation::Irrigation(json11::Json j) {
 Errors Irrigation::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   set_double_value(_amount, j, "amount");
+  set_int_value(_atLayer, j, "atLayer");
+  set_double_value(_depth, j, "depth");
   if (j["parameters"].is_object()) {
     set_value_obj_value(_params, j, "parameters");
   }
@@ -1195,6 +1197,8 @@ json11::Json Irrigation::to_json() const {
     {"type", type()},
     {"date", date().toIsoDateString()},
     {"amount", _amount},
+    {"atLayer", _atLayer},
+    {"depth", _depth},
     {"parameters", _params}
   };
 }
@@ -1203,7 +1207,13 @@ bool Irrigation::apply(MonicaModel* model) {
   Workstep::apply(model);
 
   //cout << toString() << endl;
-  model->applyIrrigation(amount(), nitrateConcentration());
+  int layer = _atLayer - 1;
+  if (layer < 0 && _depth > 0)
+    layer = static_cast<int>(model->soilColumn().getLayerNumberForDepth(_depth));
+  if (layer >= 0)
+    model->applyIrrigationAtLayer(amount(), nitrateConcentration(), layer);
+  else
+    model->applyIrrigation(amount(), nitrateConcentration());
   // FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for today's ET calculation
   // LIMITATION: Auto-irrigation uses sim.json params or defaults (fw=1.0, isDrip=false).
   if (model->simulationParameters().dualKcMethod) {

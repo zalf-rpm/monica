@@ -263,6 +263,9 @@ public:
 
   void applyIrrigation(double amount, double nitrateConcentration);
 
+  //! subsurface irrigation (buried drip lines): water and nitrate directly into the layer
+  void applyIrrigationAtLayer(double amount, double nitrateConcentration, std::size_t layer);
+
   void deleteAOMPool();
 
   inline size_t vs_NumberOfLayers() const { return size(); }
