@@ -250,7 +250,10 @@ public:
 
   std::pair<bool, double> applyIrrigationViaTrigger(const AutomaticIrrigationParameters &aips);
 
-  void applyIrrigation(double amount, double nitrateConcentration, std::size_t atLayer = 0);
+  void applyIrrigation(double amount, double nitrateConcentration);
+
+  //! subsurface irrigation (buried drip lines): water and nitrate directly into the layer
+  void applyIrrigationAtLayer(double amount, double nitrateConcentration, std::size_t layer);
 
   void deleteAOMPool();
 

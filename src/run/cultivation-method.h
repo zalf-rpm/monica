@@ -574,7 +574,10 @@ public:
 
 private:
   double _amount{0};
-  std::size_t _atLayer{0};
+  // subsurface irrigation (buried drip lines): 1-based layer, 0 = at the surface;
+  // or the depth [m] of the layer, used if atLayer isn't given (0 = at the surface)
+  int _atLayer{0};
+  double _depth{0};
   IrrigationParameters _params;
 };
 

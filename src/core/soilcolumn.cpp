@@ -569,17 +569,42 @@ std::pair<bool, double> SoilColumn::applyIrrigationViaTrigger(const AutomaticIrr
  *
  * @author: Claas Nendel
  */
-void SoilColumn::applyIrrigation(double amount, double nitrateConcentration, std::size_t atLayer) {
-  assert(atLayer >= static_cast<std::size_t>(0) && atLayer < size());
+void SoilColumn::applyIrrigation(double amount, double nitrateConcentration) {
   // Adding irrigation water amount to surface water storage
   vs_SurfaceWaterStorage += amount; // [mm]
   double nitrateAddedViaIrrigation = // -> //[kg m-3]
       nitrateConcentration * // [mg dm-3]
       amount / //[dm3 m-2]
-      at(atLayer).vs_LayerThickness / 1000000.0; // [m]
+      at(0).vs_LayerThickness / 1000000.0; // [m]
 
   // adding N from irrigation water to top soil nitrate pool
-  at(atLayer).vs_SoilNO3 += nitrateAddedViaIrrigation;
+  at(0).vs_SoilNO3 += nitrateAddedViaIrrigation;
+}
+
+/**
+ * Subsurface irrigation (buried drip lines). The water goes straight into the layer's soil
+ * moisture - no surface water storage, so no infiltration limit, runoff or evaporation from the
+ * surface - and the nitrate into the same layer. Water above saturation goes on to the layers
+ * below, then to those above, and what is still left to the surface water storage. The soil
+ * moisture step redistributes it like any other water.
+ */
+void SoilColumn::applyIrrigationAtLayer(double amount, double nitrateConcentration, std::size_t layer) {
+  assert(layer < size());
+  auto &l = at(layer);
+  l.set_Vs_SoilMoisture_m3(l.get_Vs_SoilMoisture_m3() + amount / 1000.0 / l.vs_LayerThickness); // [mm] -> [m3 m-3]
+  l.vs_SoilNO3 += nitrateConcentration * amount / l.vs_LayerThickness / 1000000.0; // -> [kg m-3]
+
+  // moves the water above saturation [mm] in excess into the layer, returns what is still too much
+  auto spill = [](SoilLayer &lk, double excess) {
+    lk.set_Vs_SoilMoisture_m3(lk.get_Vs_SoilMoisture_m3() + excess / 1000.0 / lk.vs_LayerThickness);
+    double over = std::max(0.0, lk.get_Vs_SoilMoisture_m3() - lk.vs_Saturation());
+    lk.set_Vs_SoilMoisture_m3(lk.get_Vs_SoilMoisture_m3() - over);
+    return over * 1000.0 * lk.vs_LayerThickness;
+  };
+  double excess = spill(l, 0);
+  for (std::size_t k = layer + 1; k < size() && excess > 0; k++) excess = spill(at(k), excess);
+  for (int k = static_cast<int>(layer) - 1; k >= 0 && excess > 0; k--) excess = spill(at(k), excess);
+  vs_SurfaceWaterStorage += excess;
 }
 
 

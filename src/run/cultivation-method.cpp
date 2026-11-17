@@ -1061,27 +1061,30 @@ Irrigation::Irrigation(json11::Json j) {
 Errors Irrigation::merge(json11::Json j) {
   Errors res = Workstep::merge(j);
   set_double_value(_amount, j, "amount");
-  int atLayer = 0;
-  set_int_value(atLayer, j, "atLayer");
-  if (atLayer > 0) _atLayer = static_cast<std::size_t>(atLayer);
+  set_int_value(_atLayer, j, "atLayer");
+  set_double_value(_depth, j, "depth");
   if (j["parameters"].is_object()) set_value_obj_value(_params, j, "parameters");
   return res;
 }
 
 json11::Json Irrigation::to_json() const {
-  return json11::Json::object{
-      {"type",       type()},
-      {"date",       date().toIsoDateString()},
-      {"amount",     _amount},
-      {"atLayer", static_cast<int>(_atLayer)},
-      {"parameters", _params}};
+  return json11::Json::object{{"type", type()},    {"date", date().toIsoDateString()},
+                              {"amount", _amount}, {"atLayer", _atLayer},
+                              {"depth", _depth},   {"parameters", _params}};
 }
 
 bool Irrigation::apply(MonicaModel *model) {
   Workstep::apply(model);
 
-  //cout << toString() << endl;
-  model->applyIrrigation(amount(), nitrateConcentration(), _atLayer-1);
+  // cout << toString() << endl;
+  //  the layer used to arrive as the (unused) sulfate concentration
+  int layer = _atLayer - 1;
+  if (layer < 0 && _depth > 0)
+    layer = static_cast<int>(model->soilColumn().getLayerNumberForDepth(_depth));
+  if (layer >= 0)
+    model->applyIrrigationAtLayer(amount(), nitrateConcentration(), layer);
+  else
+    model->applyIrrigation(amount(), nitrateConcentration());
   model->addEvent("Irrigation");
 
   return true;

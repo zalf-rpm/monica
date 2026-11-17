@@ -145,6 +145,9 @@ public:
 
   void applyIrrigation(double amount, double nitrateConcentration = 0, double sulfateConcentration = 0);
 
+  //! subsurface irrigation, see SoilColumn::applyIrrigationAtLayer
+  void applyIrrigationAtLayer(double amount, double nitrateConcentration, int layer);
+
   void applyTillage(double depth);
 
   double get_AtmosphericCO2Concentration() const { return vw_AtmosphericCO2Concentration; }

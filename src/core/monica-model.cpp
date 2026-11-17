@@ -711,6 +711,16 @@ void MonicaModel::applyIrrigation(double amount, double nitrateConcentration,
   }
 }
 
+void MonicaModel::applyIrrigationAtLayer(double amount, double nitrateConcentration, int layer) {
+  if (!_simPs.p_UseAutomaticIrrigation) {
+    _soilColumn->applyIrrigationAtLayer(
+        amount, nitrateConcentration,
+        std::min(static_cast<size_t>(layer), _soilColumn->size() - 1));
+    _soilOrganic->addIrrigationWater(amount);
+    addDailySumIrrigationWater(amount);
+  }
+}
+
 /**
  * Applies tillage for a given soil depth. Tillage means in MONICA,
  * that for all effected soil layer the parameters are averaged.
