@@ -13,12 +13,12 @@
 // Climate_freeCString - confirmed zero references anywhere under src/).
 package climate
 
-import "core:os"
-import "core:strconv"
-import "core:strings"
 import d "../date"
 import jx "../jsonx"
 import tl "../tools"
+import "core:os"
+import "core:strconv"
+import "core:strings"
 
 // C++: std::map<Climate::ACD, std::function<double(double)>> CSVViaHeaderOptions::convertFn
 //
@@ -77,6 +77,12 @@ Csv_Via_Header_Options :: struct {
 	convert:                 map[string]Header_Convert_Spec,
 	convert_fn:              map[ACD]Csv_Convert,
 	date_pattern:            string,
+	// NOT in the C++: the climate's annual average temperature and the amplitude of its monthly
+	// averages [°C], -9999 = not given. Set on the read Data_Accessor (its tav/tamp), so
+	// data_accessor_get_tamp_and_tav returns them instead of calculating them from the data,
+	// which can't work for less than a year of data (a season's soil temperature modules).
+	tav:                     f64,
+	tamp:                    f64,
 	// not part of the JSON: the file only supplements data it is merged into
 	// (all but the first file in read_climate_data_from_csv_files_via_headers),
 	// so it doesn't need the otherwise required tmin, tmax, precip and
@@ -93,6 +99,8 @@ make_csv_via_header_options :: proc() -> Csv_Via_Header_Options {
 		line_no_of_header_line = -1,
 		line_no_of_data_start = -2,
 		line_no_of_data_end = -1,
+		tav = -9999,
+		tamp = -9999,
 	}
 }
 
@@ -114,7 +122,10 @@ csv_via_header_options_merge :: proc(
 			if o.convert == nil {
 				o.convert = make(map[string]Header_Convert_Spec, allocator)
 			}
-			o.convert[k] = Header_Convert_Spec{jx.string_value_of(items[1]), jx.number_value(items[2])}
+			o.convert[k] = Header_Convert_Spec {
+				jx.string_value_of(items[1]),
+				jx.number_value(items[2]),
+			}
 		} else if jx.is_array(v) && len(jx.array_items(v)) == 2 {
 			items := jx.array_items(v)
 			if jx.string_value_of(items[0]) == "pattern-date" {
@@ -132,8 +143,14 @@ csv_via_header_options_merge :: proc(
 	jx.set_iso_date_value(&o.end_date, j, "end-date")
 
 	jx.set_double_value(&o.latitude, j, "latitude")
+	jx.set_double_value(&o.tav, j, "tav")
+	jx.set_double_value(&o.tamp, j, "tamp")
 
-	o.line_no_of_data_start = jx.int_value_key_d(j, "line-no-of-data-start", o.line_no_of_data_start)
+	o.line_no_of_data_start = jx.int_value_key_d(
+		j,
+		"line-no-of-data-start",
+		o.line_no_of_data_start,
+	)
 
 	jx.set_string_vector(&o.header, j, "header")
 	if len(o.header) == 0 {
@@ -142,7 +159,11 @@ csv_via_header_options_merge :: proc(
 			"no-of-climate-file-header-lines",
 			o.no_of_header_lines,
 		)
-		o.line_no_of_header_line = jx.int_value_key_d(j, "line-no-of-header-line", o.line_no_of_header_line)
+		o.line_no_of_header_line = jx.int_value_key_d(
+			j,
+			"line-no-of-header-line",
+			o.line_no_of_header_line,
+		)
 		if o.line_no_of_header_line < 0 {
 			o.line_no_of_header_line = 1
 		}
@@ -173,7 +194,12 @@ csv_via_header_options_to_json :: proc(o: ^Csv_Via_Header_Options, a: Allocator)
 	header_names := make(jx.Object, 0, a)
 	for k, v in o.header_name_to_acd_name {
 		if spec, ok := o.convert[k]; ok {
-			header_names[strings.clone(k, a)] = jx.arr(a, jx.s(v, a), jx.s(spec.op, a), jx.f(spec.value))
+			header_names[strings.clone(k, a)] = jx.arr(
+				a,
+				jx.s(v, a),
+				jx.s(spec.op, a),
+				jx.f(spec.value),
+			)
 		} else {
 			header_names[strings.clone(k, a)] = jx.s(v, a)
 		}
@@ -182,7 +208,7 @@ csv_via_header_options_to_json :: proc(o: ^Csv_Via_Header_Options, a: Allocator)
 	start_iso := d.to_iso_date_string(o.start_date, "", a)
 	end_iso := d.to_iso_date_string(o.end_date, "", a)
 
-	return jx.obj(
+	j := jx.obj(
 		a,
 		{"type", jx.sl("CSVViaHeaderOptions")},
 		{"csv-separator", jx.s(o.separator, a)},
@@ -196,6 +222,26 @@ csv_via_header_options_to_json :: proc(o: ^Csv_Via_Header_Options, a: Allocator)
 		{"latitude", jx.f(o.latitude)},
 		{"header", prim_arr_string(o.header[:], a)},
 	)
+	// only if given, so that the JSON stays the C++'s otherwise
+	obj := j.(jx.Object)
+	if int(o.tav) != -9999 {
+		jx.obj_set(&obj, "tav", jx.f(o.tav), a)
+	}
+	if int(o.tamp) != -9999 {
+		jx.obj_set(&obj, "tamp", jx.f(o.tamp), a)
+	}
+	return jx.Value(obj)
+}
+
+// NOT in the C++: the options' tav/tamp, if given, onto the read climate data.
+@(private)
+apply_tav_tamp :: proc(res: ^tl.EResult(Data_Accessor), options: Csv_Via_Header_Options) {
+	if int(options.tav) != -9999 {
+		res.result.tav = options.tav
+	}
+	if int(options.tamp) != -9999 {
+		res.result.tamp = options.tamp
+	}
 }
 
 // C++: Tools::EResult<Climate::DataAccessor> Climate::readClimateDataFromCSVInputStreamViaHeaders(
@@ -240,7 +286,8 @@ read_climate_data_from_csv_lines_via_headers :: proc(
 		n2acd := name2acd(allocator)
 		for col_name in r {
 			tcn := tl.trim(col_name, " \t\f\v\n\r", allocator)
-			repl_col_name := tcn in options.header_name_to_acd_name ? options.header_name_to_acd_name[tcn] : ""
+			repl_col_name :=
+				tcn in options.header_name_to_acd_name ? options.header_name_to_acd_name[tcn] : ""
 			lookup_name := len(repl_col_name) == 0 ? tcn : repl_col_name
 			acd_found, found := n2acd[lookup_name]
 			append(&header, found ? acd_found : ACD.skip)
@@ -406,7 +453,11 @@ read_climate_data_from_csv_lines :: proc(
 			case .isoDate:
 				date = d.from_iso_date_string(field)
 			case .patternDate:
-				date = d.from_pattern_date_string(field, options.date_pattern, allocator = allocator)
+				date = d.from_pattern_date_string(
+					field,
+					options.date_pattern,
+					allocator = allocator,
+				)
 			case .deDate:
 				dmy := tl.split_string(field, ".", true, allocator)
 				if len(dmy) == 3 {
@@ -605,12 +656,14 @@ read_climate_data_from_csv_file_via_headers :: proc(
 	content := string(raw)
 	lines := tl.split_string(content, "\n", false, allocator)
 
-	return read_climate_data_from_csv_lines_via_headers(
+	res = read_climate_data_from_csv_lines_via_headers(
 		lines[:],
 		options,
 		strict_date_checking,
 		allocator,
 	)
+	apply_tav_tamp(&res, options)
+	return res
 }
 
 // C++: Tools::EResult<Climate::DataAccessor> Climate::readClimateDataFromCSVFilesViaHeaders(
@@ -678,7 +731,9 @@ read_climate_data_from_csv_string_via_headers :: proc(
 	allocator := context.allocator,
 ) -> tl.EResult(Data_Accessor) {
 	lines := tl.split_string(csv_string, "\n", false, allocator)
-	return read_climate_data_from_csv_lines_via_headers(lines[:], options, true, allocator)
+	res := read_climate_data_from_csv_lines_via_headers(lines[:], options, true, allocator)
+	apply_tav_tamp(&res, options)
+	return res
 }
 
 // C++: template<class Collection> J11Array Tools::toPrimJsonArray(const Collection&)

@@ -438,7 +438,12 @@ store_data_aggregate_results_obj :: proc(sd: ^Store_Data, allocator := context.a
 					jx.obj_set(&result, name, ivs[0], allocator)
 				}
 			} else {
-				jx.obj_set(&result, name, mio.apply_oid_op_json(oid.time_agg_op, ivs[:], allocator), allocator)
+				jx.obj_set(
+					&result,
+					name,
+					mio.apply_oid_op_json(oid.time_agg_op, ivs[:], allocator),
+					allocator,
+				)
 			}
 			clear(&sd.intermediate_results[i])
 		}
@@ -850,9 +855,10 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	}
 
 	model := core.make_monica_model(&env.params, allocator)
-	// NOTE(deviation): as the C++ AMEI branch (run-monica.cpp) for its modules
+	// as the C++ AMEI branch (run-monica.cpp) for its modules: the climate's
+	// tav/tamp if given (climate.csv-options), else calculated from the data
 	if core.soil_temperature_modules_configured(model) {
-		tamp, tav := clim.data_accessor_calc_tamp_and_tav(&env.climate_data, allocator)
+		tamp, tav := clim.data_accessor_get_tamp_and_tav(&env.climate_data, allocator)
 		core.soil_temperature_modules_set_tav_tamp(model, tav, tamp)
 	}
 	model.sim_params.start_date = clim.data_accessor_start_date(&env.climate_data)

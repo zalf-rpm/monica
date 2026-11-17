@@ -508,7 +508,12 @@ automatic_sowing_reinit :: proc(
 	// has to stay the earliest date (thus force current year) if there is a
 	// forced current (init) year, this will force both dates to this year
 	added_year1: bool
-	as.abs_latest_date, added_year1 = make_init_abs_date(as.latest_date, date, add_year, force_init_year)
+	as.abs_latest_date, added_year1 = make_init_abs_date(
+		as.latest_date,
+		date,
+		add_year,
+		force_init_year,
+	)
 	added_year2: bool
 	as.abs_earliest_date, added_year2 = make_init_abs_date(
 		as.earliest_date,
@@ -571,7 +576,7 @@ harvest_merge :: proc(h: ^Harvest_Data, j: jx.Value, allocator := context.alloca
 			if tl.to_lower(k, allocator) == organ_name && jx.is_object(v) {
 				sv := core.Harvest_Spec_Value {
 					export_percentage = 100.0,
-					incorporate      = true,
+					incorporate       = true,
 				}
 				jx.set_double_value(&sv.export_percentage, v, "export")
 				if h.spec.organ_to_spec_val == nil {
@@ -699,7 +704,12 @@ automatic_harvest_reinit :: proc(
 	ws.date = d.Date{}
 
 	added_year: bool
-	ah.abs_latest_date, added_year = make_init_abs_date(ah.latest_date, date, add_year, force_init_year)
+	ah.abs_latest_date, added_year = make_init_abs_date(
+		ah.latest_date,
+		date,
+		add_year,
+		force_init_year,
+	)
 
 	return added_year
 }
@@ -719,7 +729,7 @@ make_automatic_harvest_workstep :: proc(j: jx.Value, allocator := context.alloca
 		ahd.harvest.incorporate_into_layer_no = 1
 		ahd.harvest.opt_carb_mgmt_data = {
 			max_residue_recover_fraction = 1,
-			crop_usage                 = .Biomass_Production,
+			crop_usage                   = .Biomass_Production,
 		}
 	}
 	res := workstep_merge_common(ws, j)
@@ -1080,6 +1090,8 @@ make_tillage_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^W
 irrigation_merge :: proc(i: ^Irrigation_Data, j: jx.Value) -> tl.Errors {
 	res: tl.Errors
 	jx.set_double_value(&i.amount, j, "amount")
+	jx.set_int_value(&i.at_layer, j, "atLayer")
+	jx.set_double_value(&i.depth, j, "depth")
 	if jx.is_object(jx.get(j, "parameters")) {
 		_ = p.irrigation_parameters_merge(&i.params, jx.get(j, "parameters"))
 	}
@@ -1090,7 +1102,21 @@ irrigation_merge :: proc(i: ^Irrigation_Data, j: jx.Value) -> tl.Errors {
 irrigation_apply :: proc(i: ^Irrigation_Data, ws: ^Workstep, model: ^core.Monica_Model) -> bool {
 	workstep_apply_common(ws, model)
 
-	core.monica_model_apply_irrigation(model, i.amount, i.params.nitrate_concentration)
+	layer := i.at_layer - 1
+	if layer < 0 && i.depth > 0 {
+		layer = core.get_layer_number_for_depth(&model.soil_column, i.depth)
+	}
+	if layer >= 0 {
+		layer = min(layer, len(model.soil_column.layers) - 1)
+		core.monica_model_apply_irrigation_at_layer(
+			model,
+			i.amount,
+			i.params.nitrate_concentration,
+			layer,
+		)
+	} else {
+		core.monica_model_apply_irrigation(model, i.amount, i.params.nitrate_concentration)
+	}
 	// FAO-56 Dual Kc: push event-level fw and isDrip into SoilMoisture for
 	// today's ET calculation. LIMITATION: Auto-irrigation uses sim.json params
 	// or defaults (fw=1.0, isDrip=false).

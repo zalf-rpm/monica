@@ -163,7 +163,7 @@ soil_temperature_impl_names :: proc(allocator := context.allocator) -> []string 
 // made: make_monica_model makes the modules there, and make_soil_organic
 // changes the organic matter right after (plus the soil moisture, which the
 // step updates). tav/tamp are the climate
-// data's (clim.data_accessor_calc_tamp_and_tav) and left to the caller, as
+// data's (clim.data_accessor_get_tamp_and_tav) and left to the caller, as
 // are the daily values. Slices are allocated with `allocator`.
 soil_temperature_input_from_model :: proc(
 	model: ^Monica_Model,
@@ -341,7 +341,7 @@ soil_temperature_modules_configured :: proc(model: ^Monica_Model) -> bool {
 	return integrated || len(model.modules.soil_temperature_stepping) > 0
 }
 
-// The climate's tav/tamp (clim.data_accessor_calc_tamp_and_tav), as the C++
+// The climate's tav/tamp (clim.data_accessor_get_tamp_and_tav), as the C++
 // AMEI branch's run-monica.cpp hands them to MonicaModel::setTAMPandTAV.
 soil_temperature_modules_set_tav_tamp :: proc(model: ^Monica_Model, tav, tamp: f64) {
 	if m, ok := model.soil_temperature.(^Soil_Temperature_Module); ok {

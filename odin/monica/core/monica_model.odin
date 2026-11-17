@@ -311,6 +311,21 @@ monica_model_apply_irrigation :: proc(
 	}
 }
 
+// NOT in the C++ master: monica_model_apply_irrigation into a layer (subsurface
+// irrigation, see apply_irrigation_at_layer).
+monica_model_apply_irrigation_at_layer :: proc(
+	model: ^Monica_Model,
+	amount: f64,
+	nitrate_concentration: f64,
+	layer: int,
+) {
+	if !model.sim_params.use_automatic_irrigation {
+		apply_irrigation_at_layer(&model.soil_column, amount, nitrate_concentration, layer)
+		model.soil_organic.irrigation_amount += amount
+		monica_model_add_daily_sum_irrigation_water(model, amount)
+	}
+}
+
 // C++: void monica::monicamodel::applyTillage(MonicaModel*, double)
 monica_model_apply_tillage :: proc(model: ^Monica_Model, depth: f64) {
 	apply_tillage(&model.soil_column, depth)

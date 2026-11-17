@@ -29,13 +29,13 @@
 // other file in this port.
 package run
 
+import clim "../../support/climate"
+import d "../../support/date"
+import jx "../../support/jsonx"
+import tl "../../support/tools"
 import core "../core"
 import mio "../io"
 import p "../params"
-import d "../../support/date"
-import clim "../../support/climate"
-import jx "../../support/jsonx"
-import tl "../../support/tools"
 
 // ---------------------------------------------------------------------------
 // WorkstepType / WorkstepData / Workstep
@@ -197,8 +197,14 @@ Tillage_Data :: struct {
 
 // C++: struct IrrigationData
 Irrigation_Data :: struct {
-	amount: f64,
-	params: p.Irrigation_Parameters,
+	amount:   f64,
+	params:   p.Irrigation_Parameters,
+	// NOT in the C++ master (the AMEI branch's "atLayer", which never reached
+	// the soil column there): subsurface irrigation, e.g. buried drip lines.
+	// at_layer is 1-based, 0 = at the surface as usual; or the depth [m] of the
+	// layer, used if at_layer isn't given (0 = at the surface).
+	at_layer: int,
+	depth:    f64 `unit:"m"`,
 }
 
 // C++: struct AutomaticIrrigationData
@@ -269,8 +275,7 @@ Workstep :: struct {
 	is_active:                        bool, // C++ default: true
 	run_at_start_of_day:              bool, // C++ default: true
 	errors:                           tl.Errors,
-
-	data: Workstep_Data,
+	data:                             Workstep_Data,
 }
 
 // Heap-allocates a Workstep with the C++ in-class defaults applied
@@ -352,7 +357,10 @@ organ_name_from_id :: proc(organ_id: int) -> string {
 }
 
 // C++: bool workstep::isSoilMoistureOk(MonicaModel*, double, double)
-is_soil_moisture_ok :: proc(model: ^core.Monica_Model, min_percent_asw, max_percent_asw: f64) -> bool {
+is_soil_moisture_ok :: proc(
+	model: ^core.Monica_Model,
+	min_percent_asw, max_percent_asw: f64,
+) -> bool {
 	pwp := model.soil_column.layers[0].permanent_wilting_point
 	sm := max(0.0, model.soil_column.layers[0].soil_moisture_m3 - pwp)
 	asw := model.soil_column.layers[0].field_capacity - pwp
@@ -557,14 +565,20 @@ workstep_merge :: proc(ws: ^Workstep, j: jx.Value) -> tl.Errors {
 	case Cutting_Data:
 		tl.append_errors(&res, cutting_merge(&ws.data.(Cutting_Data), j))
 	case Mineral_Fertilization_Data:
-		tl.append_errors(&res, mineral_fertilization_merge(&ws.data.(Mineral_Fertilization_Data), j))
+		tl.append_errors(
+			&res,
+			mineral_fertilization_merge(&ws.data.(Mineral_Fertilization_Data), j),
+		)
 	case N_Demand_Fertilization_Data:
 		tl.append_errors(
 			&res,
 			n_demand_fertilization_merge(&ws.data.(N_Demand_Fertilization_Data), ws, j),
 		)
 	case Organic_Fertilization_Data:
-		tl.append_errors(&res, organic_fertilization_merge(&ws.data.(Organic_Fertilization_Data), j))
+		tl.append_errors(
+			&res,
+			organic_fertilization_merge(&ws.data.(Organic_Fertilization_Data), j),
+		)
 	case Tillage_Data:
 		tl.append_errors(&res, tillage_merge(&ws.data.(Tillage_Data), j))
 	case Irrigation_Data:
@@ -664,9 +678,21 @@ workstep_reinit :: proc(
 ) -> bool {
 	#partial switch workstep_type(ws) {
 	case .Automatic_Sowing:
-		return automatic_sowing_reinit(&ws.data.(Automatic_Sowing_Data), ws, date, add_year, force_init_year)
+		return automatic_sowing_reinit(
+			&ws.data.(Automatic_Sowing_Data),
+			ws,
+			date,
+			add_year,
+			force_init_year,
+		)
 	case .Automatic_Harvest:
-		return automatic_harvest_reinit(&ws.data.(Automatic_Harvest_Data), ws, date, add_year, force_init_year)
+		return automatic_harvest_reinit(
+			&ws.data.(Automatic_Harvest_Data),
+			ws,
+			date,
+			add_year,
+			force_init_year,
+		)
 	case .N_Demand_Fertilization:
 		return n_demand_fertilization_reinit(
 			&ws.data.(N_Demand_Fertilization_Data),
@@ -701,7 +727,10 @@ workstep_register_daily_function :: proc(
 	bool,
 ) {
 	if workstep_type(ws) == .Automatic_Sowing {
-		return automatic_sowing_register_daily_function(&ws.data.(Automatic_Sowing_Data), get_daily_values)
+		return automatic_sowing_register_daily_function(
+			&ws.data.(Automatic_Sowing_Data),
+			get_daily_values,
+		)
 	}
 	return nil, false
 }
@@ -728,15 +757,19 @@ make_workstep :: proc(j: jx.Value, allocator := context.allocator) -> ^Workstep 
 		return make_automatic_harvest_workstep(j, allocator)
 	case "Cutting":
 		return make_cutting_workstep(j, allocator)
-	case "MineralFertilization", "MineralFertiliserApplication": // deprecated name
+	case "MineralFertilization", "MineralFertiliserApplication":
+		// deprecated name
 		return make_mineral_fertilization_workstep(j, allocator)
 	case "NDemandFertilization":
 		return make_n_demand_fertilization_workstep(j, allocator)
-	case "OrganicFertilization", "OrganicFertiliserApplication": // deprecated name
+	case "OrganicFertilization", "OrganicFertiliserApplication":
+		// deprecated name
 		return make_organic_fertilization_workstep(j, allocator)
-	case "Tillage", "TillageApplication": // deprecated name
+	case "Tillage", "TillageApplication":
+		// deprecated name
 		return make_tillage_workstep(j, allocator)
-	case "Irrigation", "IrrigationApplication": // deprecated name
+	case "Irrigation", "IrrigationApplication":
+		// deprecated name
 		return make_irrigation_workstep(j, allocator)
 	case "AutomaticIrrigation":
 		return make_automatic_irrigation_workstep(j, allocator)

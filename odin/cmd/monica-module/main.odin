@@ -69,12 +69,18 @@ usage :: proc() {
 	for e in stm.modules {
 		append(&names, e.name)
 	}
-	fmt.eprintfln("SoilTemperature impls: %s", strings.join(names[:], ", ", context.temp_allocator))
+	fmt.eprintfln(
+		"SoilTemperature impls: %s",
+		strings.join(names[:], ", ", context.temp_allocator),
+	)
 	clear(&names)
 	for e in etm.modules {
 		append(&names, e.name)
 	}
-	fmt.eprintfln("Evapotranspiration impls: %s", strings.join(names[:], ", ", context.temp_allocator))
+	fmt.eprintfln(
+		"Evapotranspiration impls: %s",
+		strings.join(names[:], ", ", context.temp_allocator),
+	)
 }
 
 main :: proc() {
@@ -89,7 +95,10 @@ main :: proc() {
 		case "Evapotranspiration":
 			err = run_evapotranspiration(args[3], args[4], out_path)
 		case:
-			fmt.eprintfln("unknown process %q (known: SoilTemperature, Evapotranspiration)", args[2])
+			fmt.eprintfln(
+				"unknown process %q (known: SoilTemperature, Evapotranspiration)",
+				args[2],
+			)
 			os.exit(2)
 		}
 		if err != "" {
@@ -130,7 +139,11 @@ run_soil_temperature :: proc(impl, input_path, out_path: string) -> (err: string
 	if out_path == "" {
 		bufio.writer_init(&bw, os.to_stream(os.stdout), 1 << 16)
 	} else {
-		f, ferr := os.open(out_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, os.Permissions_Default_File)
+		f, ferr := os.open(
+			out_path,
+			os.O_WRONLY | os.O_CREATE | os.O_TRUNC,
+			os.Permissions_Default_File,
+		)
 		if ferr != nil {
 			return fmt.aprintf("can't write %s: %v", out_path, ferr)
 		}
@@ -233,7 +246,10 @@ read_input :: proc(path: string) -> (in_: stm.Input, days: []Day, err: string) {
 	in_.kc_factor_bare_soil = jx.double_value(j, "KcFactor")
 	in_.params = p.make_soil_temperature_module_parameters()
 	if jx.is_object(jx.get(j, "SoilTemperatureParameters")) {
-		_ = p.soil_temperature_module_parameters_merge(&in_.params, jx.get(j, "SoilTemperatureParameters"))
+		_ = p.soil_temperature_module_parameters_merge(
+			&in_.params,
+			jx.get(j, "SoilTemperatureParameters"),
+		)
 	}
 	layers := jx.array_items(jx.get(j, "Layers"))
 	n := len(layers)
@@ -397,7 +413,10 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 		return "can't read the sim's crop.json or site.json"
 	}
 	env_json := run.create_env_json_from_json_objects(cropr.result, siter.result, sim_v, a)
-	path_to_soil_dir := tl.fix_system_separator(tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a), a)
+	path_to_soil_dir := tl.fix_system_separator(
+		tl.replace_env_vars("${MONICA_PARAMETERS}/soil/", a),
+		a,
+	)
 	env: run.Env
 	if errs := run.env_merge(&env, env_json, path_to_soil_dir, a); tl.failure(errs) {
 		return fmt.aprintf("%v", errs.errors)
@@ -413,7 +432,7 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 	model := core.make_monica_model(&env.params, a)
 	in_ := model.modules.soil_temperature_stepping[0].input
 	da := &env.climate_data
-	in_.tamp, in_.tav = clim.data_accessor_calc_tamp_and_tav(da, a)
+	in_.tamp, in_.tav = clim.data_accessor_get_tamp_and_tav(da, a)
 
 	csv_path := strings.concatenate({strings.trim_suffix(input_path, ".json"), ".csv"}, a)
 	_, csv_name := tl.split_path_to_file(csv_path, a)
@@ -446,7 +465,10 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 		{"TAV", jx.f(in_.tav)},
 		{"TAMP", jx.f(in_.tamp)},
 		{"KcFactor", jx.f(in_.kc_factor_bare_soil)},
-		{"SoilTemperatureParameters", p.soil_temperature_module_parameters_to_json(&in_.params, a)},
+		{
+			"SoilTemperatureParameters",
+			p.soil_temperature_module_parameters_to_json(&in_.params, a),
+		},
 		{"Layers", jx.arr(a, ..layers[:])},
 		{"Daily", jx.s(csv_name, a)},
 	)
@@ -457,7 +479,10 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 	b := strings.builder_make(a)
 	// day_length, air_pressure and kc_factor as core.soil_temperature_daily
 	// has them; the daily Kc is MONICA's bare soil one without a crop
-	strings.write_string(&b, "date,tmin,tavg,tmax,globrad,precip,wind,day_length,air_pressure,kc_factor\n")
+	strings.write_string(
+		&b,
+		"date,tmin,tavg,tmax,globrad,precip,wind,day_length,air_pressure,kc_factor\n",
+	)
 	buf: [64]byte
 	write :: proc(b: ^strings.Builder, buf: []byte, v: f64) {
 		s := strconv.write_float(buf, v, 'g', 17, 64)
@@ -477,7 +502,11 @@ from_sim :: proc(sim_path, input_path: string) -> (err: string) {
 			buf[:],
 			has_daylength ? clim.data_accessor_data_for_timestep(da, .daylength, i) : d.day_lengths(in_.latitude, f64(d.julian_day(date))).astronomic_day_length,
 		)
-		write(&b, buf[:], has_airpress ? clim.data_accessor_data_for_timestep(da, .airpress, i) : 1010)
+		write(
+			&b,
+			buf[:],
+			has_airpress ? clim.data_accessor_data_for_timestep(da, .airpress, i) : 1010,
+		)
 		write(&b, buf[:], in_.kc_factor_bare_soil)
 		strings.write_string(&b, "\n")
 	}

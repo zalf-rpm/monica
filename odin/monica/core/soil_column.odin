@@ -13,11 +13,11 @@
 // Crop_To_Soil and Irrigation_Crop_Window (crop_to_soil.odin).
 package core
 
+import "../../support/cr_math"
 import tl "../../support/tools"
 import p "../params"
 import "../soil"
 import libc "core:c/libc"
-import "../../support/cr_math"
 
 // C++: struct monica::AOM_Properties
 Aom_Properties :: struct {
@@ -178,7 +178,10 @@ soil_moisture_pf :: proc(sl: ^Soil_Layer) -> f64 {
 		// the same library. See CONVENTIONS.md §1.
 		matric_head =
 			(1.0 / ps.alpha) *
-			cr_math.pow(cr_math.pow((ps.theta_s - ps.theta_r) / (sm - ps.theta_r), 1 / ps.m) - 1, 1 / ps.n)
+			cr_math.pow(
+				cr_math.pow((ps.theta_s - ps.theta_r) / (sm - ps.theta_r), 1 / ps.m) - 1,
+				1 / ps.n,
+			)
 	}
 	pf := cr_math.log10(matric_head)
 
@@ -430,13 +433,13 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 		append(
 			&sc.delayed_n_min_applications,
 			Delayed_N_Min_Application_Params {
-				fp                         = fertiliser_partition,
-				sampling_depth             = sampling_depth,
-				crop_n_target              = crop_n_target_value,
-				crop_n_target_30           = crop_n_target_value30,
+				fp = fertiliser_partition,
+				sampling_depth = sampling_depth,
+				crop_n_target = crop_n_target_value,
+				crop_n_target_30 = crop_n_target_value30,
 				fertilizer_min_application = fertiliser_min_application,
 				fertilizer_max_application = fertiliser_max_application,
-				top_dressing_delay         = top_dressing_delay,
+				top_dressing_delay = top_dressing_delay,
 			},
 		)
 		return 0.0
@@ -617,7 +620,9 @@ apply_irrigation_via_trigger :: proc(
 			added_irrigation_water = aips.amount
 		} else if aips.percent_nfc > 0.0 {
 			layer_depth_m = 0.0
-			for i := 0; i < len(sc.layers) && layer_depth_m < aips.critical_moisture_depth_m; i += 1 {
+			for i := 0;
+			    i < len(sc.layers) && layer_depth_m < aips.critical_moisture_depth_m;
+			    i += 1 {
 				li := &sc.layers[i]
 				smi := li.soil_moisture_m3
 				fci := li.field_capacity
@@ -658,6 +663,39 @@ apply_irrigation :: proc(sc: ^Soil_Column, amount: f64, nitrate_concentration: f
 
 	// adding N from irrigation water to top soil nitrate pool
 	sc.layers[0].soil_no3 += nitrate_added_via_irrigation
+}
+
+// NOT in the C++ master: subsurface irrigation (buried drip lines). The water
+// goes straight into the layer's soil moisture - no surface water storage, so
+// no infiltration limit, runoff or evaporation from the surface - and the
+// nitrate into the same layer. Water above saturation goes on to the layers
+// below, then to those above, and what is still left to the surface water
+// storage. The soil moisture step redistributes it like any other water.
+apply_irrigation_at_layer :: proc(
+	sc: ^Soil_Column,
+	amount: f64,
+	nitrate_concentration: f64,
+	layer: int,
+) {
+	l := &sc.layers[layer]
+	l.soil_moisture_m3 += amount / 1000.0 / l.layer_thickness_m // [mm] -> [m3 m-3]
+	l.soil_no3 += nitrate_concentration * amount / l.layer_thickness_m / 1000000.0 // [mg dm-3] * [dm3 m-2] -> [kg m-3]
+
+	// moves the water above saturation [mm] in `excess` into layer k, returns what is still too much
+	spill :: proc(lk: ^Soil_Layer, excess: f64) -> f64 {
+		lk.soil_moisture_m3 += excess / 1000.0 / lk.layer_thickness_m
+		over := max(0.0, lk.soil_moisture_m3 - lk.saturation)
+		lk.soil_moisture_m3 -= over
+		return over * 1000.0 * lk.layer_thickness_m
+	}
+	excess := spill(l, 0)
+	for k := layer + 1; k < len(sc.layers) && excess > 0; k += 1 {
+		excess = spill(&sc.layers[k], excess)
+	}
+	for k := layer - 1; k >= 0 && excess > 0; k -= 1 {
+		excess = spill(&sc.layers[k], excess)
+	}
+	sc.surface_water_storage += excess
 }
 
 // C++: void monica::soilcolumn::applyTillage(SoilColumn*, double)
