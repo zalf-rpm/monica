@@ -224,9 +224,10 @@ monica_model_apply_mineral_fertiliser :: proc(
 	model: ^Monica_Model,
 	partition: p.Mineral_Fertilizer_Parameters,
 	amount: f64,
+	layer := 0, // NOTE(deviation): the C++ always uses the top layer
 ) {
 	if !model.sim_params.use_n_min_mineral_fertilising_method {
-		apply_mineral_fertiliser(&model.soil_column, partition, amount)
+		apply_mineral_fertiliser(&model.soil_column, partition, amount, layer)
 		monica_model_add_daily_sum_fertiliser(model, amount)
 	}
 }

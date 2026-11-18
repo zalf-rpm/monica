@@ -170,6 +170,12 @@ Cutting_Data :: struct {
 Mineral_Fertilization_Data :: struct {
 	partition: p.Mineral_Fertilizer_Parameters,
 	amount:    f64,
+	// NOT in the C++: placed fertiliser, e.g. injected anhydrous ammonia.
+	// at_layer is 1-based, 0 = into the top layer as usual; or the depth [m]
+	// of the layer, used if at_layer isn't given (0 = the top layer). As
+	// Irrigation_Data's.
+	at_layer:  int,
+	depth:     f64 `unit:"m"`,
 }
 
 // C++: struct NDemandFertilizationData

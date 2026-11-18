@@ -873,6 +873,8 @@ mineral_fertilization_merge :: proc(mf: ^Mineral_Fertilization_Data, j: jx.Value
 		_ = p.mineral_fertilizer_parameters_merge(&mf.partition, jx.get(j, "partition"))
 	}
 	jx.set_double_value(&mf.amount, j, "amount")
+	jx.set_int_value(&mf.at_layer, j, "atLayer")
+	jx.set_double_value(&mf.depth, j, "depth")
 	return res
 }
 
@@ -883,7 +885,13 @@ mineral_fertilization_apply :: proc(
 	model: ^core.Monica_Model,
 ) -> bool {
 	workstep_apply_common(ws, model)
-	core.monica_model_apply_mineral_fertiliser(model, mf.partition, mf.amount)
+	// NOTE(deviation): atLayer/depth (not in the C++), see Mineral_Fertilization_Data
+	layer := mf.at_layer - 1
+	if layer < 0 && mf.depth > 0 {
+		layer = core.get_layer_number_for_depth(&model.soil_column, mf.depth)
+	}
+	layer = clamp(layer, 0, len(model.soil_column.layers) - 1)
+	core.monica_model_apply_mineral_fertiliser(model, mf.partition, mf.amount, layer)
 	model.current_events["MineralFertilization"] = true
 	return true
 }

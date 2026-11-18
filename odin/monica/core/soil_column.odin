@@ -403,12 +403,14 @@ apply_mineral_fertiliser :: proc(
 	sc: ^Soil_Column,
 	fp: p.Mineral_Fertilizer_Parameters,
 	amount: f64,
+	layer := 0, // NOTE(deviation): the C++ always uses the top layer
 ) {
+	l := &sc.layers[layer]
 	// [kg N ha-1 -> kg m-3]
-	kg_ha_to_kg_m3 := 10000.0 * sc.layers[0].layer_thickness_m
-	sc.layers[0].soil_no3 += amount * fp.no3 / kg_ha_to_kg_m3
-	sc.layers[0].soil_nh4 += amount * fp.nh4 / kg_ha_to_kg_m3
-	sc.layers[0].soil_carbamid += amount * fp.carbamid / kg_ha_to_kg_m3
+	kg_ha_to_kg_m3 := 10000.0 * l.layer_thickness_m
+	l.soil_no3 += amount * fp.no3 / kg_ha_to_kg_m3
+	l.soil_nh4 += amount * fp.nh4 / kg_ha_to_kg_m3
+	l.soil_carbamid += amount * fp.carbamid / kg_ha_to_kg_m3
 }
 
 // C++: double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(...)
