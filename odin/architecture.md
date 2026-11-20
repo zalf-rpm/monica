@@ -577,7 +577,7 @@ procedure.
 
 **`soil_organic.odin` (1676 lines): almost there.** It is already split into
 per-process procedures, run in order by `soil_organic_step`: urea hydrolysis,
-decomposition (`soil_organic_fo_mit`, 353 lines - the AOM/SOM/SMB pools),
+decomposition (`soil_organic_mit`, 353 lines - the AOM/SOM/SMB pools),
 volatilisation, nitrification, denitrification, N2O production, pool update;
 the moisture and temperature response functions are small and pure. For
 nitrification, denitrification and N2O there are already two models each
@@ -941,7 +941,7 @@ validated, not a restructuring.
 |---|---|
 | crop → soil water | the crop computes `transpiration[]` per layer, soil moisture subtracts it from the water content - a hand-over across components |
 | crop → soil NO3 | the crop computes `n_uptake_from_layer[]`, soil transport applies it |
-| soil organic carbon | decomposition (`soil_organic_fo_mit`) writes only deltas (`som_fast_delta`, `smb_slow_delta`, the AOM pools' deltas), `soil_organic_fo_pool_update` adds them to the pools at the end and computes the carbon balance - textbook rate/state within a component |
+| soil organic carbon | decomposition (`soil_organic_mit`) writes only deltas (`som_fast_delta`, `smb_slow_delta`, the AOM pools' deltas), `soil_organic_pool_update` adds them to the pools at the end and computes the carbon balance - textbook rate/state within a component |
 | crop biomass | `organ_growth_increment` and `organ_senescence_increment` are the rates, the organ biomass is updated from them in the same procedure |
 | temperature sums, vernalisation days | a daily increment added to a sum |
 

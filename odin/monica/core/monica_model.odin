@@ -33,11 +33,11 @@
 package core
 
 import clim "../../support/climate"
+import "../../support/cr_math"
 import d "../../support/date"
 import p "../params"
 import "../soil"
 import "core:slice"
-import "../../support/cr_math"
 
 // C++: struct monica::MonicaModel
 Monica_Model :: struct {
@@ -198,13 +198,11 @@ monica_model_add_daily_sum_org_fertiliser :: proc(
 	amount_fm: f64,
 	params: ^p.Organic_Matter_Parameters,
 ) {
-	aom_fast_factor :=
-		soil.PO_AOM_TO_C * params.part_aom_to_aom_fast / params.cn_ratio_aom_fast
-	aom_slow_factor :=
-		soil.PO_AOM_TO_C * params.part_aom_to_aom_slow / params.cn_ratio_aom_slow
+	aom_fast_factor := soil.AOM_TO_C * params.part_aom_to_aom_fast / params.cn_ratio_aom_fast
+	aom_slow_factor := soil.AOM_TO_C * params.part_aom_to_aom_slow / params.cn_ratio_aom_slow
 	som_factor :=
 		(1 - (params.part_aom_to_aom_fast + params.part_aom_to_aom_slow)) *
-		soil.PO_AOM_TO_C /
+		soil.AOM_TO_C /
 		model.soil_column.layers[0].soil_cn_ratio // TODO ask CN for correctness
 
 	conversion :=
@@ -532,7 +530,8 @@ monica_model_harvest_current_crop :: proc(
 						1000.0 *
 						opt_carb_mgmt_data.organic_fertilizer_heq -
 					model.site_params.soil_specific_humus_balance_correction
-				potential_humus_from_residues := residue_biomass / 1000.0 * opt_carb_mgmt_data.residue_heq
+				potential_humus_from_residues :=
+					residue_biomass / 1000.0 * opt_carb_mgmt_data.residue_heq
 
 				fraction_to_be_left_on_field := 0.0
 				if potential_humus_from_residues > 0 {
@@ -557,7 +556,8 @@ monica_model_harvest_current_crop :: proc(
 					residue_biomass - model.opt_carbon_returned_residues
 
 				// adjust it if technically unfeasible
-				max_exported_residues := residue_biomass * opt_carb_mgmt_data.max_residue_recover_fraction
+				max_exported_residues :=
+					residue_biomass * opt_carb_mgmt_data.max_residue_recover_fraction
 				if model.opt_carbon_exported_residues > max_exported_residues {
 					model.opt_carbon_exported_residues = max_exported_residues
 					model.opt_carbon_returned_residues =
