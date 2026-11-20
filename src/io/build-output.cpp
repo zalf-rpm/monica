@@ -373,7 +373,7 @@ BOTRes& monica::buildOutputTable() {
               return monica.cropGrowth() ? round(monica.cropGrowth()->get_OxygenDeficit(), 2) : 0.0;
             });
 
-      build({id++, "TimeUnderAnoxia", "0;1", "TimeUnderAnoxia"},
+      build({id++, "TimeUnderAnoxia", "d", "TimeUnderAnoxia"},
             [](const MonicaModel& monica, OId oid) {
               return monica.cropGrowth() ? round(monica.cropGrowth()->vc_TimeUnderAnoxia, 2) : 0.0;
             });
@@ -708,7 +708,7 @@ BOTRes& monica::buildOutputTable() {
               }, value);
             });
 
-      build({id++, "ActNupLayer", "KgN ha-1", "ActNUptakefromLayer"},
+      build({id++, "ActNupLayer", "kgN ha-1", "ActNUptakefromLayer"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
                 return monica.cropGrowth() ? monica.cropGrowth()->get_NUptakeFromLayer(i) * 10000.0 : 0.0;
@@ -1160,7 +1160,7 @@ BOTRes& monica::buildOutputTable() {
                                               3);
             });
 
-      build({id++, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate"},
+      build({id++, "SMB-CO2-ER", "kgC m-3 d-1", "soilOrganic.get_SMB_CO2EvolutionRate"},
             [](const MonicaModel& monica, OId oid) {
               auto nools = int(monica.soilColumn().vs_NumberOfOrganicLayers());
               oid.fromLayer = min(oid.fromLayer, nools - 1);
@@ -1403,7 +1403,7 @@ BOTRes& monica::buildOutputTable() {
                 return monica.soilOrganic().actDenitrificationRate(i);
               }, 6);
             });
-      build({id++, "rootDensity", "", "cropGrowth->vc_RootDensity"},
+      build({id++, "rootDensity", "m m-3", "cropGrowth->vc_RootDensity"},
             [](const MonicaModel& monica, OId oid) {
               return getComplexValues<double>(oid, [&](int i) {
                 return monica.cropGrowth() ? monica.cropGrowth()->getRootDensity(i) : 0.0;

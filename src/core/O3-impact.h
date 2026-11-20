@@ -24,7 +24,7 @@ namespace O3impact {
   
 struct O3_impact_params {
   double gamma1 = { 0.060 }; //ozone short-term damage coefficient, unitless
-  double gamma2 = { 0.0045 }; //ozone short-term damage coefficient, nmol m-2 s-1
+  double gamma2 = { 0.0045 }; //ozone short-term damage coefficient, (nmol m-2 s-1)-1
   double gamma3 = { 0.5 }; //ozone long-term damage coefficient, (�mol m-2)-1
   double upper_thr_stomatal = { 0.4 };
   double lower_thr_stomatal = { 1 };
@@ -37,7 +37,7 @@ struct O3_impact_in {
   double SWC; //soil water content, m3 m-3
   double ET0; //reference ET, mm d-1
   double O3a; //ambient O3 partial pressure, nbar or nmol mol-1
-  double gs; //stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
+  double gs; //stomatal conductance mol m-2 s-1 bar-1 (unit leaf area)
   int h; //hour of the day (0-23)
   double reldev; //relative development
   double GDD_flo; //GDD from emergence to flowering
@@ -47,7 +47,7 @@ struct O3_impact_in {
 };
 
 struct O3_impact_out {
-  double hourly_O3_up{ 0.0 }; //hourly O3 uptake, �mol m-2 h-1 (unit ground area)
+  double hourly_O3_up{ 0.0 }; //hourly O3 uptake: the hour's rate, umol m-2 s-1 (unit leaf area)
   double fO3s_d{ 1.0 }; //short term ozone induced reduction of Ac
   double fO3l{ 1.0 }; //long term ozone induced senescence
   double fLS{ 1.0 }; //leaf senescence reduction of Ac, modified by O3 cumulative uptake
