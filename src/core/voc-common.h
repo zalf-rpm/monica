@@ -139,11 +139,11 @@ struct CPData
     jv = reader.getJv();
   }
 
-  double kc{0}; //!< Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
-  double ko{0}; //!< Michaelis - Menten constant for O2 reaction of rubisco per canopy layer(umol mol - 1 ubar - 1)
-  double oi{0}; //!< species and layer specific intercellular concentration of CO2 (umol mol-1)
-  double ci{0}; //!< leaf internal O2 concentration per canopy layer(umol m - 2)
-  double comp{0}; //!< CO2 compensation point at 25oC per canopy layer (umol m-2)
+  double kc{0}; //!< Michaelis - Menten constant for CO2 reaction of rubisco per canopy layer (umol mol-1)
+  double ko{0}; //!< Michaelis - Menten constant for O2 reaction of rubisco per canopy layer (umol mol-1)
+  double oi{0}; //!< leaf internal O2 concentration per canopy layer (umol mol-1)
+  double ci{0}; //!< leaf intercellular CO2 concentration per canopy layer (umol mol-1)
+  double comp{0}; //!< CO2 compensation point at 25oC per canopy layer (umol mol-1)
   double vcMax{0}; //!< actual activity state of rubisco  per canopy layer (umol m-2 s-1)
   double jMax{0}; //!<  actual electron transport capacity per canopy layer(umol m - 2 s - 1)
   double jj{0}; //umol m-2 s-1 ... electron provision (unit leaf area)
@@ -483,8 +483,8 @@ struct LeafEmissions
     monoterp = reader.getMonoterp();
   }
 
-  double isoprene{0.0}; //!< isoprene emission (ug m-2ground h-1)
-  double monoterp{0.0}; //!< monoterpene emission (ug m-2ground h-1)
+  double isoprene{0.0}; //!< isoprene emission (ug gDW-1 h-1, per leaf dry weight)
+  double monoterp{0.0}; //!< monoterpene emission (ug gDW-1 h-1, per leaf dry weight)
 };
 
 } // namespace Voc

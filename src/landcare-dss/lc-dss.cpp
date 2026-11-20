@@ -223,7 +223,7 @@ const map<string, Result2>& monica::result2()
 	{"WaterContent", {153, "WaterContent", "%nFC", "soil water content"}},
 	{"CapillaryRise", {154, "CapillaryRise", "mm", "capillary rise"}},
 	{"PercolationRate",{155, "PercolationRate", "mm", "percolation rate"}},
-	{"SMB-CO2-ER", {156, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate"}},
+	{"SMB-CO2-ER", {156, "SMB-CO2-ER", "kgC m-3 d-1", "soilOrganic.get_SMB_CO2EvolutionRate"}},
 	{"Evapotranspiration", {157, "Evapotranspiration", "mm", "monica.getEvapotranspiration()"}},
 	{"Evaporation", {158, "Evaporation", "mm", "monica.getEvaporation()"}},
 	{"Transpiration", {159, "Transpiration", "mm", "monica.getTranspiration()"}}
