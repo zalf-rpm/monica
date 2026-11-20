@@ -66,9 +66,9 @@ mineral_fertilizer_parameters_to_json :: proc(
 
 // C++: struct monica::NMinApplicationParameters
 NMin_Application_Parameters :: struct {
-	min:           f64,
-	max:           f64,
-	delay_in_days: int,
+	min:           f64 `unit:"kg N ha-1" unit_guess:"high"`,
+	max:           f64 `unit:"kg N ha-1" unit_guess:"high"`,
+	delay_in_days: int `unit:"d" unit_guess:"high"`,
 }
 
 // C++: Errors nminapplicationparameters::merge(...)
@@ -108,7 +108,7 @@ Irrigation_Parameters :: struct {
 	nitrate_concentration: f64 `unit:"mg dm-3"`,
 	sulfate_concentration: f64 `unit:"mg dm-3"`,
 	is_drip_irrigation:    bool,
-	fw:                    f64, // fraction of wetted soil surface [0-1]
+	fw:                    f64 `unit:"0-1" unit_guess:"high"`, // fraction of wetted soil surface [0-1]
 }
 
 // C++ default: fw{1.0}
@@ -154,11 +154,11 @@ Automatic_Irrigation_Parameters :: struct {
 	using base:                         Irrigation_Parameters,
 	start_date:                         d.Date,
 	end_date:                           d.Date,
-	amount:                             f64,
-	percent_nfc:                        f64,
-	threshold:                          f64,
-	critical_moisture_depth_m:          f64,
-	min_days_between_irrigation_events: int,
+	amount:                             f64 `unit:"mm" unit_guess:"high"`,
+	percent_nfc:                        f64 `unit:"%" unit_guess:"high"`,
+	threshold:                          f64 `unit:"%" unit_guess:"high"`,
+	critical_moisture_depth_m:          f64 `unit:"m" unit_guess:"high"`,
+	min_days_between_irrigation_events: int `unit:"d" unit_guess:"high"`,
 }
 
 // C++ defaults: amount{-1}, percent_nfc{-1}, threshold{-1}, critical_moisture_depth_m{0.3}
@@ -245,7 +245,7 @@ automatic_irrigation_parameters_to_json :: proc(
 // std::map<string,Json> would have produced on output.
 Measured_Groundwater_Table_Information :: struct {
 	groundwater_information_available: bool,
-	groundwater_info:                  map[string]f64, // ISO date -> depth
+	groundwater_info:                  map[string]f64 `unit:"m" unit_guess:"medium"`, // ISO date -> depth
 }
 
 // C++: Errors measuredgroundwatertableinformation::merge(...)
@@ -325,19 +325,19 @@ get_groundwater_information :: proc(
 // data member here (plan-odin.md prep 2); pwp_fc_sat_function selects the method by
 // name at the point of use, via soil.pwp_fc_sat_method_from_name.
 Site_Parameters :: struct {
-	latitude:                               f64, // ZALF latitude
+	latitude:                               f64 `unit:"deg" unit_guess:"high"`, // ZALF latitude
 	slope:                                  f64 `unit:"m m-1"`,
 	height_nn:                              f64 `unit:"m"`,
 	groundwater_depth:                      f64 `unit:"m"`,
-	soil_cn_ratio:                          f64,
-	drainage_coeff:                         f64,
+	soil_cn_ratio:                          f64 `unit:"1" unit_guess:"high"`,
+	drainage_coeff:                         f64 `unit:"1" unit_guess:"low"`,
 	n_deposition:                           f64 `unit:"kg N ha-1 y-1"`,
 	max_effective_rooting_depth:            f64 `unit:"m"`,
 	impenetrable_layer_depth:               f64 `unit:"m"`,
-	soil_specific_humus_balance_correction: f64, // humus equivalents
-	bare_soil_kc_factor:                    f64,
-	number_of_layers:                       int,
-	layer_thickness:                        f64,
+	soil_specific_humus_balance_correction: f64 `unit:"Heq ha-1" unit_guess:"medium"`, // humus equivalents
+	bare_soil_kc_factor:                    f64 `unit:"1" unit_guess:"high"`,
+	number_of_layers:                       int `unit:"1" unit_guess:"high"`,
+	layer_thickness:                        f64 `unit:"m" unit_guess:"high"`,
 	soil_parameters:                        [dynamic]soil.Soil_Parameters,
 	init_soil_profile_spec:                 jx.Value, // the raw SoilProfileParameters array
 	pwp_fc_sat_function:                    string,
@@ -492,17 +492,17 @@ Simulation_Parameters :: struct {
 	n_min_user_params:                           NMin_Application_Parameters,
 	use_secondary_yields:                        bool,
 	use_automatic_harvest_trigger:               bool,
-	number_of_layers:                            int,
-	layer_thickness:                             f64,
-	start_pv_index:                              int,
-	julian_day_automatic_fertilising:            int,
+	number_of_layers:                            int `unit:"1" unit_guess:"high"`,
+	layer_thickness:                             f64 `unit:"m" unit_guess:"high"`,
+	start_pv_index:                              int `unit:"" unit_guess:"high"`,
+	julian_day_automatic_fertilising:            int `unit:"" unit_guess:"high"`,
 	serialize_monica_state_at_end:               bool,
 	serialize_monica_state_at_end_to_json:       bool,
 	path_to_serialization_at_end_file:           string,
 	load_serialized_monica_state_at_start:       bool,
 	deserialized_monica_state_from_json:         bool,
 	path_to_load_serialization_file:             string,
-	no_of_previous_days_serialized_climate_data: u64,
+	no_of_previous_days_serialized_climate_data: u64 `unit:"d" unit_guess:"high"`,
 	dual_kc_method:                              bool, // FAO-56 Dual Kc evaporation partitioning
 	modules:                                     Modules_Config, // NOTE(deviation): sim.json "Modules", see modules_config.odin
 }
@@ -662,23 +662,23 @@ simulation_parameters_to_json :: proc(sp: ^Simulation_Parameters, a: Allocator) 
 
 // C++: struct monica::CropModuleParameters
 Crop_Module_Parameters :: struct {
-	canopy_reflection_coefficient:                          f64,
-	reference_max_assimilation_rate:                        f64,
-	reference_leaf_area_index:                              f64,
-	maintenance_respiration_parameter1:                     f64,
-	maintenance_respiration_parameter2:                     f64,
-	minimum_n_concentration_root:                           f64,
+	canopy_reflection_coefficient:                          f64 `unit:"0-1" unit_guess:"high"`,
+	reference_max_assimilation_rate:                        f64 `unit:"kg CO2 ha-1 h-1" unit_guess:"high"`,
+	reference_leaf_area_index:                              f64 `unit:"m2 m-2" unit_guess:"high"`,
+	maintenance_respiration_parameter1:                     f64 `unit:"1" unit_guess:"low"`,
+	maintenance_respiration_parameter2:                     f64 `unit:"1" unit_guess:"low"`,
+	minimum_n_concentration_root:                           f64 `unit:"kg N kg DM-1" unit_guess:"high"`,
 	minimum_available_n:                                    f64 `unit:"kg m-2"`,
-	reference_albedo:                                       f64,
-	stomata_conductance_alpha:                              f64,
-	saturation_beta:                                        f64,
-	growth_respiration_redux:                               f64,
-	max_crop_n_demand:                                      f64,
-	growth_respiration_parameter1:                          f64,
-	growth_respiration_parameter2:                          f64,
-	tortuosity:                                             f64, // old AD
+	reference_albedo:                                       f64 `unit:"0-1" unit_guess:"high"`,
+	stomata_conductance_alpha:                              f64 `unit:"1" unit_guess:"medium"`,
+	saturation_beta:                                        f64 `unit:"1" unit_guess:"medium"`,
+	growth_respiration_redux:                               f64 `unit:"0-1" unit_guess:"medium"`,
+	max_crop_n_demand:                                      f64 `unit:"kg N ha-1 d-1" unit_guess:"medium"`,
+	growth_respiration_parameter1:                          f64 `unit:"1" unit_guess:"low"`,
+	growth_respiration_parameter2:                          f64 `unit:"°C" unit_guess:"medium"`,
+	tortuosity:                                             f64 `unit:"1" unit_guess:"medium"`, // old AD
 	adjust_root_depth_for_soil_props:                       bool,
-	time_under_anoxia_threshold:                            [dynamic]int,
+	time_under_anoxia_threshold:                            [dynamic]int `unit:"d" unit_guess:"high"`,
 	__enable_Phenology_WangEngelTemperatureResponse__:      bool,
 	__enable_Photosynthesis_WangEngelTemperatureResponse__: bool,
 	__enable_hourly_FvCB_photosynthesis__:                  bool,
@@ -689,10 +689,10 @@ Crop_Module_Parameters :: struct {
 	is_intercropping:                                       bool,
 	sequential_water_use:                                   bool,
 	two_way_sync:                                           bool,
-	intercropping_k_s:                                      f64,
-	intercropping_k_t:                                      f64,
-	intercropping_ph_redux:                                 f64,
-	intercropping_dvs_phr:                                  f64,
+	intercropping_k_s:                                      f64 `unit:"1" unit_guess:"low"`,
+	intercropping_k_t:                                      f64 `unit:"1" unit_guess:"low"`,
+	intercropping_ph_redux:                                 f64 `unit:"0-1" unit_guess:"low"`,
+	intercropping_dvs_phr:                                  f64 `unit:"" unit_guess:"low"`,
 	intercropping_auto_ph_redux:                            bool,
 	intercropping_reader_sr:                                string,
 	intercropping_writer_sr:                                string,
@@ -870,18 +870,18 @@ RCP :: enum {
 
 // C++: struct monica::EnvironmentParameters
 Environment_Parameters :: struct {
-	albedo:                      f64,
+	albedo:                      f64 `unit:"0-1" unit_guess:"high"`,
 	rcp:                         RCP,
-	atmospheric_co2:             f64,
-	atmospheric_co2s:            map[int]f64,
-	atmospheric_o3:              f64,
-	atmospheric_o3s:             map[int]f64,
-	wind_speed_height_m:         f64,
-	leaching_depth_m:            f64,
-	time_step:                   f64,
-	max_groundwater_depth_m:     f64,
-	min_groundwater_depth_m:     f64,
-	min_groundwater_depth_month: int,
+	atmospheric_co2:             f64 `unit:"ppm" unit_guess:"high"`,
+	atmospheric_co2s:            map[int]f64 `unit:"ppm" unit_guess:"high"`,
+	atmospheric_o3:              f64 `unit:"ppb" unit_guess:"high"`,
+	atmospheric_o3s:             map[int]f64 `unit:"ppb" unit_guess:"high"`,
+	wind_speed_height_m:         f64 `unit:"m" unit_guess:"high"`,
+	leaching_depth_m:            f64 `unit:"m" unit_guess:"high"`,
+	time_step:                   f64 `unit:"d" unit_guess:"high"`,
+	max_groundwater_depth_m:     f64 `unit:"m" unit_guess:"high"`,
+	min_groundwater_depth_m:     f64 `unit:"m" unit_guess:"high"`,
+	min_groundwater_depth_month: int `unit:"" unit_guess:"high"`,
 }
 
 // The C++ in-class initialisers

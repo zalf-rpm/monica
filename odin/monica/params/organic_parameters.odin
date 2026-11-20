@@ -12,9 +12,9 @@ import tl "../../support/tools"
 
 // C++: struct monica::YieldComponent
 Yield_Component :: struct {
-	organ_id:         int,
-	yield_percentage: f64,
-	yield_dry_matter: f64,
+	organ_id:         int `unit:"" unit_guess:"high"`,
+	yield_percentage: f64 `unit:"0-1" unit_guess:"high"`,
+	yield_dry_matter: f64 `unit:"kg DM kg FM-1" unit_guess:"high"`,
 }
 
 // C++ default: organId{-1}
@@ -59,7 +59,7 @@ Harvest_Time :: enum {
 // C++: struct monica::AutomaticHarvestParameters
 Automatic_Harvest_Parameters :: struct {
 	harvest_time:       Harvest_Time,
-	latest_harvest_doy: int,
+	latest_harvest_doy: int `unit:"" unit_guess:"high"`,
 }
 
 // C++ defaults: _harvestTime{unknown}, _latestHarvestDOY{-1}
@@ -110,9 +110,9 @@ automatic_harvest_parameters_to_json :: proc(
 
 // C++: struct monica::NMinCropParameters
 NMin_Crop_Parameters :: struct {
-	sampling_depth: f64,
-	n_target:       f64,
-	n_target30:     f64,
+	sampling_depth: f64 `unit:"m" unit_guess:"high"`,
+	n_target:       f64 `unit:"kg N ha-1" unit_guess:"high"`,
+	n_target30:     f64 `unit:"kg N ha-1" unit_guess:"high"`,
 }
 
 // C++: Errors nmincropparameters::merge(...)
@@ -152,8 +152,8 @@ Organic_Matter_Parameters :: struct {
 	aom_fast_dec_coeff_standard: f64 `unit:"d-1"`,
 	part_aom_to_aom_slow:        f64 `unit:"kg kg-1"`,
 	part_aom_to_aom_fast:        f64 `unit:"kg kg-1"`,
-	cn_ratio_aom_slow:           f64,
-	cn_ratio_aom_fast:           f64,
+	cn_ratio_aom_slow:           f64 `unit:"1" unit_guess:"high"`,
+	cn_ratio_aom_fast:           f64 `unit:"1" unit_guess:"high"`,
 	part_aom_slow_to_smb_slow:   f64 `unit:"kg kg-1"`,
 	part_aom_slow_to_smb_fast:   f64 `unit:"kg kg-1"`,
 	n_concentration:             f64 `unit:"kg N kg DM-1"`,

@@ -13,62 +13,62 @@ import "core:strings"
 // C++: struct monica::SpeciesParameters
 Species_Parameters :: struct {
 	species_id:                                  string,
-	carboxylation_pathway:                       int, // old TEMPTYP
-	default_radiation_use_efficiency:            f64,
-	part_biological_n_fixation:                  f64,
-	initial_kc_factor:                           f64, // old Kcini
-	luxury_n_coeff:                              f64,
-	max_crop_diameter:                           f64,
-	stage_at_max_height:                         f64,
-	stage_at_max_diameter:                       f64,
-	minimum_n_concentration:                     f64,
-	minimum_temperature_for_assimilation:        f64, // old MINTMP
-	optimum_temperature_for_assimilation:        f64,
-	maximum_temperature_for_assimilation:        f64,
-	n_concentration_aboveground_biomass:         f64, // initial value of old GEHOB
-	n_concentration_b0:                          f64,
-	n_concentration_pn:                          f64,
-	n_concentration_root:                        f64, // initial value to WUGEH
-	development_acceleration_by_nitrogen_stress: int,
-	field_condition_modifier:                    f64,
-	assimilate_reallocation:                     f64,
-	base_temperature:                            [dynamic]f64, // old BAS
-	organ_maintenance_respiration:               [dynamic]f64, // old MAIRT
-	organ_growth_respiration:                    [dynamic]f64, // old MAIRT
-	stage_max_root_n_concentration:              [dynamic]f64, // old WGMAX
-	initial_organ_biomass:                       [dynamic]f64,
-	critical_oxygen_content:                     [dynamic]f64, // old LUKRIT
-	stage_mobil_from_storage_coeff:              [dynamic]f64,
+	carboxylation_pathway:                       int `unit:"" unit_guess:"high"`, // old TEMPTYP
+	default_radiation_use_efficiency:            f64 `unit:"kg CO2 ha-1 h-1 (J m-2 s-1)-1" unit_guess:"low"`,
+	part_biological_n_fixation:                  f64 `unit:"0-1" unit_guess:"high"`,
+	initial_kc_factor:                           f64 `unit:"1" unit_guess:"high"`, // old Kcini
+	luxury_n_coeff:                              f64 `unit:"1" unit_guess:"medium"`,
+	max_crop_diameter:                           f64 `unit:"m" unit_guess:"high"`,
+	stage_at_max_height:                         f64 `unit:"" unit_guess:"high"`,
+	stage_at_max_diameter:                       f64 `unit:"" unit_guess:"high"`,
+	minimum_n_concentration:                     f64 `unit:"kg N kg DM-1" unit_guess:"medium"`,
+	minimum_temperature_for_assimilation:        f64 `unit:"°C" unit_guess:"high"`, // old MINTMP
+	optimum_temperature_for_assimilation:        f64 `unit:"°C" unit_guess:"high"`,
+	maximum_temperature_for_assimilation:        f64 `unit:"°C" unit_guess:"high"`,
+	n_concentration_aboveground_biomass:         f64 `unit:"kg N kg DM-1" unit_guess:"high"`, // initial value of old GEHOB
+	n_concentration_b0:                          f64 `unit:"1" unit_guess:"medium"`,
+	n_concentration_pn:                          f64 `unit:"1" unit_guess:"medium"`,
+	n_concentration_root:                        f64 `unit:"kg N kg DM-1" unit_guess:"high"`, // initial value to WUGEH
+	development_acceleration_by_nitrogen_stress: int `unit:"" unit_guess:"high"`,
+	field_condition_modifier:                    f64 `unit:"1" unit_guess:"high"`,
+	assimilate_reallocation:                     f64 `unit:"0-1" unit_guess:"medium"`,
+	base_temperature:                            [dynamic]f64 `unit:"°C" unit_guess:"high"`, // old BAS
+	organ_maintenance_respiration:               [dynamic]f64 `unit:"kg CH2O kg DM-1 d-1" unit_guess:"medium"`, // old MAIRT
+	organ_growth_respiration:                    [dynamic]f64 `unit:"kg CH2O kg DM-1" unit_guess:"medium"`, // old MAIRT
+	stage_max_root_n_concentration:              [dynamic]f64 `unit:"kg N kg DM-1" unit_guess:"medium"`, // old WGMAX
+	initial_organ_biomass:                       [dynamic]f64 `unit:"kg DM ha-1" unit_guess:"high"`,
+	critical_oxygen_content:                     [dynamic]f64 `unit:"m3 m-3" unit_guess:"medium"`, // old LUKRIT
+	stage_mobil_from_storage_coeff:              [dynamic]f64 `unit:"0-1" unit_guess:"medium"`,
 	aboveground_organ:                           [dynamic]bool, // old KOMP
 	storage_organ:                               [dynamic]bool,
-	sampling_depth:                              f64,
-	target_n_sampling_depth:                     f64,
-	target_n30:                                  f64,
-	max_n_uptake_param:                          f64,
-	root_distribution_param:                     f64,
+	sampling_depth:                              f64 `unit:"m" unit_guess:"high"`,
+	target_n_sampling_depth:                     f64 `unit:"kg N ha-1" unit_guess:"high"`,
+	target_n30:                                  f64 `unit:"kg N ha-1" unit_guess:"high"`,
+	max_n_uptake_param:                          f64 `unit:"kg N m-1 d-1" unit_guess:"medium"`,
+	root_distribution_param:                     f64 `unit:"1" unit_guess:"low"`,
 	plant_density:                               int `unit:"plants m-2"`,
-	root_growth_lag:                             f64,
-	minimum_temperature_root_growth:             f64,
-	initial_rooting_depth:                       f64,
-	root_penetration_rate:                       f64,
-	root_form_factor:                            f64,
-	specific_root_length:                        f64,
-	stage_after_cut:                             int, // stage number is zero-based
-	limiting_temperature_heat_stress:            f64,
-	cutting_delay_days:                          int,
-	drought_impact_on_fertility_factor:          f64,
-	ef_mono:                                     f64, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
-	ef_monos:                                    f64, // [ug gDW-1 h-1] Monoterpenes stored then emitted
-	ef_iso:                                      f64, // Isoprene emission factor
-	vcmax25:                                     f64, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
-	aekc:                                        f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
-	aeko:                                        f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
-	aevc:                                        f64, // activation energy for photosynthesis (J mol-1)
-	kc25:                                        f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
-	ko25:                                        f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
+	root_growth_lag:                             f64 `unit:"°C d" unit_guess:"medium"`,
+	minimum_temperature_root_growth:             f64 `unit:"°C" unit_guess:"high"`,
+	initial_rooting_depth:                       f64 `unit:"m" unit_guess:"high"`,
+	root_penetration_rate:                       f64 `unit:"m °C-1 d-1" unit_guess:"medium"`,
+	root_form_factor:                            f64 `unit:"1" unit_guess:"medium"`,
+	specific_root_length:                        f64 `unit:"m g-1" unit_guess:"medium"`,
+	stage_after_cut:                             int `unit:"" unit_guess:"high"`, // stage number is zero-based
+	limiting_temperature_heat_stress:            f64 `unit:"°C" unit_guess:"high"`,
+	cutting_delay_days:                          int `unit:"d" unit_guess:"high"`,
+	drought_impact_on_fertility_factor:          f64 `unit:"1" unit_guess:"medium"`,
+	ef_mono:                                     f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // [ug gDW-1 h-1] Monoterpenes emitted right after synthesis
+	ef_monos:                                    f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // [ug gDW-1 h-1] Monoterpenes stored then emitted
+	ef_iso:                                      f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // Isoprene emission factor
+	vcmax25:                                     f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // max RubP saturated rate of carboxylation at 25oC (umol m-2 s-1)
+	aekc:                                        f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
+	aeko:                                        f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
+	aevc:                                        f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for photosynthesis (J mol-1)
+	kc25:                                        f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
+	ko25:                                        f64 `unit:"mmol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
 	transition_stage_leaf_exp:                   int `unit:""`,
-	dormancy_start_doy:                          int, // start dormancy of perennial crops at that DOY (0 = unset)
-	dormancy_end_doy:                            int, // end dormancy, start accumulating temperature sums (0 = unset)
+	dormancy_start_doy:                          int `unit:"" unit_guess:"high"`, // start dormancy of perennial crops at that DOY (0 = unset)
+	dormancy_end_doy:                            int `unit:"" unit_guess:"high"`, // end dormancy, start accumulating temperature sums (0 = unset)
 }
 
 // C++ in-class initialisers
@@ -272,42 +272,42 @@ Cultivar_Parameters :: struct {
 	cultivar_id:                       string,
 	description:                       string,
 	perennial:                         bool,
-	max_assimilation_rate:             f64, // old MAXAMAX
-	light_extinction_coefficient:      f64,
+	max_assimilation_rate:             f64 `unit:"kg CO2 ha-1 h-1" unit_guess:"high"`, // old MAXAMAX
+	light_extinction_coefficient:      f64 `unit:"1" unit_guess:"high"`,
 	max_crop_height:                   f64 `unit:"m"`,
-	residue_n_ratio:                   f64,
-	lt50_cultivar:                     f64,
-	crop_height_p1:                    f64,
-	crop_height_p2:                    f64,
+	residue_n_ratio:                   f64 `unit:"1" unit_guess:"medium"`,
+	lt50_cultivar:                     f64 `unit:"°C" unit_guess:"high"`,
+	crop_height_p1:                    f64 `unit:"1" unit_guess:"medium"`,
+	crop_height_p2:                    f64 `unit:"1" unit_guess:"medium"`,
 	crop_specific_max_rooting_depth:   f64 `unit:"m"`, // old WUMAXPF
-	assimilate_partitioning_coeff:     [dynamic][dynamic]f64, // old PRO
-	organ_senescence_rate:             [dynamic][dynamic]f64, // old DEAD
+	assimilate_partitioning_coeff:     [dynamic][dynamic]f64 `unit:"0-1" unit_guess:"high"`, // old PRO
+	organ_senescence_rate:             [dynamic][dynamic]f64 `unit:"d-1" unit_guess:"medium"`, // old DEAD
 	base_daylength:                    [dynamic]f64 `unit:"h"`, // old DLBAS
 	optimum_temperature:               [dynamic]f64 `unit:"°C"`,
 	daylength_requirement:             [dynamic]f64 `unit:"h"`, // old DEC
-	drought_stress_threshold:          [dynamic]f64, // old DRYswell
+	drought_stress_threshold:          [dynamic]f64 `unit:"0-1" unit_guess:"high"`, // old DRYswell
 	specific_leaf_area:                [dynamic]f64 `unit:"ha kg-1"`, // old LAIFKT
 	stage_kc_factor:                   [dynamic]f64 `unit:"1"`, // old Kc
 	stage_temperature_sum:             [dynamic]f64 `unit:"°C d"`, // old TSUM
-	vernalisation_requirement:         [dynamic]f64, // old VSCHWELL
-	heat_sum_irrigation_start:         f64,
-	heat_sum_irrigation_end:           f64,
+	vernalisation_requirement:         [dynamic]f64 `unit:"d" unit_guess:"high"`, // old VSCHWELL
+	heat_sum_irrigation_start:         f64 `unit:"°C d" unit_guess:"high"`,
+	heat_sum_irrigation_end:           f64 `unit:"°C d" unit_guess:"high"`,
 	critical_temperature_heat_stress:  f64 `unit:"°C"`,
 	begin_sensitive_phase_heat_stress: f64 `unit:"°C d"`,
 	end_sensitive_phase_heat_stress:   f64 `unit:"°C d"`,
-	frost_hardening:                   f64,
-	frost_dehardening:                 f64,
-	low_temperature_exposure:          f64,
-	respiratory_stress:                f64,
-	latest_harvest_doy:                int,
+	frost_hardening:                   f64 `unit:"1" unit_guess:"low"`,
+	frost_dehardening:                 f64 `unit:"1" unit_guess:"low"`,
+	low_temperature_exposure:          f64 `unit:"1" unit_guess:"low"`,
+	respiratory_stress:                f64 `unit:"1" unit_guess:"low"`,
+	latest_harvest_doy:                int `unit:"" unit_guess:"high"`,
 	organ_ids_for_primary_yield:       [dynamic]Yield_Component,
 	organ_ids_for_secondary_yield:     [dynamic]Yield_Component,
 	organ_ids_for_cutting:             [dynamic]Yield_Component,
-	early_ref_leaf_exp:                f64, // 12 = wheat (first guess)
-	ref_leaf_exp:                      f64, // 20 = wheat, 22 = maize (first guess)
-	min_temp_dev_we:                   f64,
-	opt_temp_dev_we:                   f64,
-	max_temp_dev_we:                   f64,
+	early_ref_leaf_exp:                f64 `unit:"°C" unit_guess:"medium"`, // 12 = wheat (first guess)
+	ref_leaf_exp:                      f64 `unit:"°C" unit_guess:"medium"`, // 20 = wheat, 22 = maize (first guess)
+	min_temp_dev_we:                   f64 `unit:"°C" unit_guess:"high"`,
+	opt_temp_dev_we:                   f64 `unit:"°C" unit_guess:"high"`,
+	max_temp_dev_we:                   f64 `unit:"°C" unit_guess:"high"`,
 	winter_crop:                       bool,
 }
 
