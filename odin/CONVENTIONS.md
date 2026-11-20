@@ -291,8 +291,8 @@ enum. Write units like MONICA's output table (`"kgN ha-1"`, `"m3 m-3"`, `"mm"` f
 quantity (flags, categories). Don't repeat the unit in the comment.
 
 Legacy output names keep the unit of the output table (`build_output.odin`, `output_paths.odin`),
-so existing outputs stay byte-identical; some of those are wrong (e.g. `RootWaUptak` in
-`KgN ha-1`), the tags aren't. `tests/output_units_calc_test.odin` checks that every field behind a
+which must match the C++ table (`src/io/build-output.cpp`) for the outputs to stay byte-identical;
+a wrong unit there is fixed in both (and in MONICA master and AMEI), not kept. `tests/output_units_calc_test.odin` checks that every field behind a
 legacy alias and every field of the modules' `Input`/`Output` structs has a tag. The parameter
 structs (`monica/params`) carry the units documented in `monica-parameters` (`[value, "unit"]`)
 or in the C++ header `monica-parameters.h`; the others - 203, mostly crop species and cultivar

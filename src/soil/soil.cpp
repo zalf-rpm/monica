@@ -528,9 +528,9 @@ EResult<SoilPMs> Soil::createSoilPMs(const std::function<Errors(SoilParameters *
 
 namespace {
 struct RPSCDRes {
-  double sat{0.0}; // [m3 m-3]
-  double fc{0.0};  // [m3 m-3]
-  double pwp{0.0}; // [m3 m-3]
+  double sat{0.0}; // [vol%]
+  double fc{0.0};  // [vol%]
+  double pwp{0.0}; // [vol%]
   bool unset{true};
 };
 

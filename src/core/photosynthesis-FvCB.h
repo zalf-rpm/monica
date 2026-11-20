@@ -56,13 +56,13 @@ struct FvCB_canopy_hourly_in {
 struct FvCB_leaf_fraction {
   double LAI;    // m2 m-2
   double gs;     // mol m-2 s-1 bar-1 (unit ground area)
-  double kc;     // �mol mol-1 mbar-1 ... Michaelis - Menten constant for CO2
+  double kc;     // umol mol-1 ... Michaelis - Menten constant for CO2
                  // reaction of rubisco per canopy layer
-  double ko;     // �mol mol-1 mbar-1 ... Michaelis - Menten constant for O2
+  double ko;     // mmol mol-1 ... Michaelis - Menten constant for O2
                  // reaction of rubisco per canopy layer
-  double oi;     // �mol m-2 ... leaf internal O2 concentration per canopy layer
-  double ci;     // �mol m-2 ... leaf intercellular CO2 concentration per canopy layer
-  double cc;     // �mol m-2 ... leaf chloroplast CO2 concentration per canopy layer
+  double oi;     // mmol mol-1 ... leaf internal O2 concentration per canopy layer
+  double ci;     // umol mol-1 ... leaf intercellular CO2 concentration per canopy layer
+  double cc;     // umol mol-1 ... leaf chloroplast CO2 concentration per canopy layer
   double comp;   // �mol mol-1 ... CCO2 compensation point at 25oC per canopy
                  // layer
   double vcMax;  // �mol m-2 s-1 ... actual activity state of rubisco  (unit leaf

@@ -73,11 +73,11 @@ VOC_TK25: f64 : 298.16
 
 // C++: struct Voc::CPData - crop photosynthesis result variables
 Voc_Cp_Data :: struct {
-	kc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten const for CO2 reaction of rubisco per canopy layer (umol mol-1 ubar-1)
-	ko:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten const for O2 reaction of rubisco per canopy layer (umol mol-1 ubar-1)
-	oi:     f64 `unit:"umol mol-1" unit_guess:"high"`, // species and layer specific intercellular concentration of CO2 (umol mol-1)
-	ci:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf internal O2 concentration per canopy layer (umol m-2)
-	comp:   f64 `unit:"umol mol-1" unit_guess:"high"`, // CO2 compensation point at 25oC per canopy layer (umol m-2)
+	kc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten const for CO2 reaction of rubisco per canopy layer (umol mol-1)
+	ko:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten const for O2 reaction of rubisco per canopy layer (umol mol-1)
+	oi:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf internal O2 concentration per canopy layer (umol mol-1)
+	ci:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf intercellular CO2 concentration per canopy layer (umol mol-1)
+	comp:   f64 `unit:"umol mol-1" unit_guess:"high"`, // CO2 compensation point at 25oC per canopy layer (umol mol-1)
 	vc_max: f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // actual activity state of rubisco per canopy layer (umol m-2 s-1)
 	j_max:  f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // actual electron transport capacity per canopy layer (umol m-2 s-1)
 	jj:     f64 `unit:"umol m-2 s-1" unit_guess:"medium"`, // electron provision (unit leaf area), umol m-2 s-1
@@ -237,6 +237,6 @@ Voc_Leaf_Emission_T :: struct {
 
 // C++: struct Voc::LeafEmissions
 Voc_Leaf_Emissions :: struct {
-	isoprene: f64 `unit:"ug gDW-1 h-1" unit_guess:"medium"`, // isoprene emission (ug m-2ground h-1)
-	monoterp: f64 `unit:"ug gDW-1 h-1" unit_guess:"medium"`, // monoterpene emission (ug m-2ground h-1)
+	isoprene: f64 `unit:"ug gDW-1 h-1" unit_guess:"medium"`, // isoprene emission (ug gDW-1 h-1, per leaf dry weight)
+	monoterp: f64 `unit:"ug gDW-1 h-1" unit_guess:"medium"`, // monoterpene emission (ug gDW-1 h-1, per leaf dry weight)
 }

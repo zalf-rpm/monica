@@ -13,7 +13,7 @@ import "../../support/cr_math"
 // C++: struct O3impact::O3_impact_params
 O3_Impact_Params :: struct {
 	gamma1:             f64 `unit:"1" unit_guess:"high"`, // ozone short-term damage coefficient, unitless
-	gamma2:             f64 `unit:"m2 s nmol-1" unit_guess:"medium"`, // ozone short-term damage coefficient, nmol m-2 s-1
+	gamma2:             f64 `unit:"m2 s nmol-1" unit_guess:"medium"`, // ozone short-term damage coefficient, (nmol m-2 s-1)-1
 	gamma3:             f64 `unit:"m2 umol-1" unit_guess:"high"`, // ozone long-term damage coefficient, (umol m-2)-1
 	upper_thr_stomatal: f64 `unit:"0-1" unit_guess:"high"`,
 	lower_thr_stomatal: f64 `unit:"0-1" unit_guess:"high"`,
@@ -40,7 +40,7 @@ O3_Impact_In :: struct {
 	swc:          f64 `unit:"m3 m-3" unit_guess:"high"`, // soil water content, m3 m-3
 	et0:          f64 `unit:"mm d-1" unit_guess:"high"`, // reference ET, mm d-1
 	o3a:          f64 `unit:"ppb" unit_guess:"high"`, // ambient O3 partial pressure, nbar or nmol mol-1
-	gs:           f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"medium"`, // stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
+	gs:           f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"medium"`, // stomatal conductance mol m-2 s-1 bar-1 (unit leaf area)
 	h:            int `unit:"h" unit_guess:"high"`, // hour of the day (0-23)
 	reldev:       f64 `unit:"0-1" unit_guess:"high"`, // relative development
 	gdd_flo:      f64 `unit:"°C d" unit_guess:"high"`, // GDD from emergence to flowering
@@ -51,7 +51,7 @@ O3_Impact_In :: struct {
 
 // C++: struct O3impact::O3_impact_out
 O3_Impact_Out :: struct {
-	hourly_o3_up: f64 `unit:"umol m-2 h-1" unit_guess:"medium"`, // hourly O3 uptake, umol m-2 h-1 (unit ground area)
+	hourly_o3_up: f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // hourly O3 uptake: the hour's rate, umol m-2 s-1 (unit leaf area)
 	f_o3s_d:      f64 `unit:"0-1" unit_guess:"high"`, // short term ozone induced reduction of Ac
 	f_o3l:        f64 `unit:"0-1" unit_guess:"high"`, // long term ozone induced senescence
 	f_ls:         f64 `unit:"0-1" unit_guess:"high"`, // leaf senescence reduction of Ac, modified by O3 cumulative uptake

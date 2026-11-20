@@ -110,12 +110,12 @@ Fvcb_Canopy_Hourly_In :: struct {
 Fvcb_Leaf_Fraction :: struct {
 	lai:    f64 `unit:"m2 m-2" unit_guess:"high"`, // m2 m-2
 	gs:     f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"medium"`, // mol m-2 s-1 bar-1 (unit ground area)
-	kc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // umol mol-1 mbar-1
-	ko:     f64 `unit:"mmol mol-1" unit_guess:"high"`, // umol mol-1 mbar-1
-	oi:     f64 `unit:"mmol mol-1" unit_guess:"high"`, // umol m-2
-	ci:     f64 `unit:"umol mol-1" unit_guess:"high"`, // umol m-2
-	cc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // umol m-2
-	comp:   f64 `unit:"umol mol-1" unit_guess:"high"`, // umol mol-1
+	kc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for CO2
+	ko:     f64 `unit:"mmol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for O2
+	oi:     f64 `unit:"mmol mol-1" unit_guess:"high"`, // leaf internal O2 concentration
+	ci:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf intercellular CO2 concentration
+	cc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf chloroplast CO2 concentration
+	comp:   f64 `unit:"umol mol-1" unit_guess:"high"`, // CO2 compensation point
 	vc_max: f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
 	j_max:  f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
 	rad:    f64 `unit:"W m-2" unit_guess:"high"`, // W m-2

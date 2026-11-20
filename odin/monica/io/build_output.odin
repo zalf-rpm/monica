@@ -1567,7 +1567,7 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	build(39, "NPP-Organs", "kgC ha-1", "organ specific NPP", of_npp_organs)
 	build(40, "Ra-Organs", "kgC ha-1", "organ specific autotrophic respiration", of_ra_organs)
 	build(41, "OrgGreenBiom", "kgDM ha-1", "get_OrganGreenBiomass(i)", of_org_green_biom)
-	build(42, "ActNupLayer", "KgN ha-1", "ActNUptakefromLayer", of_act_nup_layer)
+	build(42, "ActNupLayer", "kgN ha-1", "ActNUptakefromLayer", of_act_nup_layer)
 	build(
 		43,
 		"actammoxrate",
@@ -1583,7 +1583,7 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	build(49, "Co", "kgC m-3", "", of_co)
 	build(50, "Nmin", "kgN ha-1", "NetNMineralisationRate", of_nmin)
 	build(51, "OrgN", "kg N m-3", "get_Organic_N", of_org_n)
-	build(52, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate", of_smb_co2_er)
+	build(52, "SMB-CO2-ER", "kgC m-3 d-1", "soilOrganic.get_SMB_CO2EvolutionRate", of_smb_co2_er)
 	build(53, "SMBf", "kgC m-3", "get_SMB_Fast", of_smbf)
 	build(54, "SMBs", "kgC m-3", "get_SMB_Slow", of_smbs)
 	build(55, "SOMf", "kgC m-3", "get_SOM_Fast", of_somf)

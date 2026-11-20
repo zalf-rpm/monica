@@ -41,11 +41,11 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
   [`Species_Parameters.max_n_uptake_param`](monica/params/crop_parameters.odin#L47) is per metre of root (kg N m-1 d-1, not per ha), and
   [`Soil_Moisture_Module_Parameters.xsa_critical_soil_moisture`](monica/params/module_parameters.odin#L68) is a factor on field capacity
   ("1", not m3 m-3).
-- **Output units that look wrong** (legacy names, kept for byte-identical outputs, §9a):
+- **Output units that looked wrong** *(resolved 2026-11-20: fixed in the Odin and C++ output tables, in MONICA master and AMEI too)*:
   [`RootWaUptak`](monica/io/output_paths.odin#L176) "KgN ha-1" reads transpiration (mm); [`TimeUnderAnoxia`](monica/io/output_paths.odin#L209) "0;1" is a number of
   days; [`rootDensity`](monica/io/output_paths.odin#L171) has no unit (m m-3); [`SMB-CO2-ER`](monica/io/build_output.odin#L1586) has none (kgC m-3 d-1); [`ActNupLayer`](monica/io/build_output.odin#L1570)
-  is spelled "KgN ha-1".
-- **Comments with wrong units.** [`Fvcb_Leaf_Fraction`](monica/core/photosynthesis_fvcb.odin#L110): [`oi`](monica/core/photosynthesis_fvcb.odin#L115), [`ci`](monica/core/photosynthesis_fvcb.odin#L116), [`cc`](monica/core/photosynthesis_fvcb.odin#L117) labelled "umol m-2"
+  is spelled "KgN ha-1". Now "mm", "d", "m m-3", "kgC m-3 d-1" and "kgN ha-1".
+- **Comments with wrong units** *(resolved 2026-11-20 in Odin and in the C++ of all three versions; the C++ of [`Rpscd_Res`](monica/soil/soil_tables.odin#L102) is in the mas_cpp_misc submodule in master and AMEI, fixed only here ([`soil.cpp:531`](../src/soil/soil.cpp#L531)); no "[m]" comment on [`Soil_Temperature.b`](monica/core/soil_temperature.odin#L39) exists in any version)*. [`Fvcb_Leaf_Fraction`](monica/core/photosynthesis_fvcb.odin#L110): [`oi`](monica/core/photosynthesis_fvcb.odin#L115), [`ci`](monica/core/photosynthesis_fvcb.odin#L116), [`cc`](monica/core/photosynthesis_fvcb.odin#L117) labelled "umol m-2"
   (are mmol mol-1, umol mol-1, umol mol-1), [`kc`](monica/core/photosynthesis_fvcb.odin#L113)/[`ko`](monica/core/photosynthesis_fvcb.odin#L114) "umol mol-1 mbar-1"; [`Voc_Cp_Data`](monica/core/voc_common.odin#L75):
   [`oi`](monica/core/voc_common.odin#L78)/[`ci`](monica/core/voc_common.odin#L79) comments swapped; [`Voc_Leaf_Emissions`](monica/core/voc_common.odin#L239): "ug m-2ground h-1" for values per g leaf dry
   weight; [`Soil_Temperature.b`](monica/core/soil_temperature.odin#L39) "[m]" for a value in m-1; [`O3_Impact_Params.gamma2`](monica/core/o3_impact.odin#L16)
@@ -342,7 +342,7 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
 | [ ] | [`O3_Impact_In.swc`](monica/core/o3_impact.odin#L40) | 40 | `f64` | `m3 m-3` | high | comment m3 m-3; avg of soil_moisture_m3, crop_o3.odin:61 |
 | [ ] | [`O3_Impact_In.et0`](monica/core/o3_impact.odin#L41) | 41 | `f64` | `mm d-1` | high | comment mm d-1; from reference_et0 (daily, tagged mm), crop_o3.odin:62; Raes adj uses (5-et0) |
 | [ ] | [`O3_Impact_In.o3a`](monica/core/o3_impact.odin#L42) | 42 | `f64` | `ppb` | high | from atmospheric_o3_concentration `unit:"ppb"`, crop_o3.odin:63; comment nbar or nmol mol-1 |
-| [ ] | [`O3_Impact_In.gs`](monica/core/o3_impact.odin#L43) | 43 | `f64` | `mol m-2 s-1 bar-1` | medium | comment says ground area, but crop_o3.odin:52-55 divides gs by LAI -> per leaf area; inconsistent |
+| [ ] | [`O3_Impact_In.gs`](monica/core/o3_impact.odin#L43) | 43 | `f64` | `mol m-2 s-1 bar-1` | medium | crop_o3.odin:52-55 divides gs by LAI -> per leaf area; comment fixed (2026-11-20) |
 | [ ] | [`O3_Impact_In.h`](monica/core/o3_impact.odin#L44) | 44 | `int` | `h` | high | hour of day 0-23, from O3_Hourly_In.hour `unit:"h"`; h==0 resets daily damage |
 | [ ] | [`O3_Impact_In.reldev`](monica/core/o3_impact.odin#L45) | 45 | `f64` | `0-1` | high | from relative_total_development `unit:"0-1"`, crop_o3.odin:66 |
 | [ ] | [`O3_Impact_In.gdd_flo`](monica/core/o3_impact.odin#L46) | 46 | `f64` | `°C d` | high | from temperature_sum_to_flowering `unit:"°C d"`, crop_o3.odin:67 |
@@ -354,7 +354,7 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`O3_Impact_Out.hourly_o3_up`](monica/core/o3_impact.odin#L54) | 54 | `f64` | `umol m-2 h-1` | medium | comment umol m-2 h-1, but code is nmol m-2 s-1 /1000 without *3600 (o3_impact.odin:209): numerically µmol m-2 s-1 |
+| [ ] | [`O3_Impact_Out.hourly_o3_up`](monica/core/o3_impact.odin#L54) | 54 | `f64` | `umol m-2 s-1` | high | comment umol m-2 h-1, but code is nmol m-2 s-1 /1000 without *3600 (o3_impact.odin:209): numerically µmol m-2 s-1; tag and comment now umol m-2 s-1 (2026-11-20) |
 | [ ] | [`O3_Impact_Out.f_o3s_d`](monica/core/o3_impact.odin#L55) | 55 | `f64` | `0-1` | high | product of 0..1 hourly reduction factors, o3_impact.odin:213; stored as o3_short_term_damage 0-1 |
 | [ ] | [`O3_Impact_Out.f_o3l`](monica/core/o3_impact.odin#L56) | 56 | `f64` | `0-1` | high | max(0.5, 1-gamma3*O3_tot_up), o3_impact.odin:122 |
 | [ ] | [`O3_Impact_Out.f_ls`](monica/core/o3_impact.odin#L57) | 57 | `f64` | `0-1` | high | between 0.6 and 1, o3_impact.odin:132-142; multiplies vcmax_25 |
