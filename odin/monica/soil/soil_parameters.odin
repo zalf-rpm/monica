@@ -13,10 +13,10 @@
 // soil_pwp_fc_sat.odin) - observably identical, no closures needed.
 package soil
 
-import "base:runtime"
-import "core:strings"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
+import "base:runtime"
+import "core:strings"
 
 Allocator :: runtime.Allocator
 
@@ -69,7 +69,6 @@ Soil_Parameters :: struct {
 	soil_nitrate:             f64 `unit:"kgN m-3" unit_guess:"high"`, // [kg NO3-N m-3]
 	soil_cn_ratio:            f64 `unit:"1" unit_guess:"high"`,
 	soil_moisture_percent_fc: f64 `unit:"%" unit_guess:"high"`,
-
 	thickness:                f64 `unit:"m" unit_guess:"high"`, // layer thickness in m
 
 	// Raw/override values; -1 means "unset" and the resolved value has to be
@@ -143,7 +142,7 @@ soil_bulk_density :: proc(sp: ^Soil_Parameters) -> f64 {
 // C++: double soilparameters::soilOrganicCarbon(const SoilParameters*)
 soil_organic_carbon :: proc(sp: ^Soil_Parameters) -> f64 {
 	if sp.soil_organic_carbon < 0 {
-		return sp.soil_organic_matter * PO_SOM_TO_C
+		return sp.soil_organic_matter * SOM_TO_C
 	}
 	return sp.soil_organic_carbon
 }
@@ -151,7 +150,7 @@ soil_organic_carbon :: proc(sp: ^Soil_Parameters) -> f64 {
 // C++: double soilparameters::soilOrganicMatter(const SoilParameters*)
 soil_organic_matter :: proc(sp: ^Soil_Parameters) -> f64 {
 	if sp.soil_organic_matter < 0 {
-		return sp.soil_organic_carbon / PO_SOM_TO_C
+		return sp.soil_organic_carbon / SOM_TO_C
 	}
 	return sp.soil_organic_matter
 }
@@ -222,12 +221,7 @@ soil_parameters_merge :: proc(
 		"FieldCapacity",
 		jx.transform_if_percent(j, "FieldCapacity"),
 	)
-	jx.set_double_value(
-		&sp.saturation,
-		j,
-		"PoreVolume",
-		jx.transform_if_percent(j, "PoreVolume"),
-	)
+	jx.set_double_value(&sp.saturation, j, "PoreVolume", jx.transform_if_percent(j, "PoreVolume"))
 	jx.set_double_value(
 		&sp.permanent_wilting_point,
 		j,
@@ -282,7 +276,10 @@ soil_parameters_merge :: proc(
 		sp.soil_stone_content = min(sp.soil_stone_content, 0.8)
 	}
 
-	tl.append_errors(&es, apply_pwp_fc_sat_method(method, sp, layer_no, path_to_soil_dir, allocator))
+	tl.append_errors(
+		&es,
+		apply_pwp_fc_sat_method(method, sp, layer_no, path_to_soil_dir, allocator),
+	)
 
 	// restrict FC, PWP and SAT else the water transport algorithm gets instable
 	if sp.field_capacity < 0.05 {
@@ -327,11 +324,7 @@ soil_parameters_merge :: proc(
 		tl.append_errorf(&es, "pH value (%g) is out of bounds [0, 14].", sp.soil_ph)
 	}
 	if sp.soil_stone_content < 0 || sp.soil_stone_content > 1.0 {
-		tl.append_errorf(
-			&es,
-			"Sceleton (%g) is out of bounds [0, 1].",
-			sp.soil_stone_content,
-		)
+		tl.append_errorf(&es, "Sceleton (%g) is out of bounds [0, 1].", sp.soil_stone_content)
 	}
 	if sp.field_capacity < 0 || sp.field_capacity > 1.0 {
 		tl.append_errorf(&es, "FieldCapacity (%g) is out of bounds [0, 1].", sp.field_capacity)
@@ -367,16 +360,14 @@ soil_parameters_merge :: proc(
 			sp.soil_bulk_density,
 		)
 	}
-	if sp.soil_organic_matter < 0 &&
-	   (sp.soil_organic_carbon < 0 || sp.soil_organic_carbon > 1.0) {
+	if sp.soil_organic_matter < 0 && (sp.soil_organic_carbon < 0 || sp.soil_organic_carbon > 1.0) {
 		tl.append_errorf(
 			&es,
 			"SoilOrganicCarbon content (%g) is out of bounds [0, 1].",
 			sp.soil_organic_carbon,
 		)
 	}
-	if sp.soil_organic_carbon < 0 &&
-	   (sp.soil_organic_matter < 0 || sp.soil_organic_matter > 1.0) {
+	if sp.soil_organic_carbon < 0 && (sp.soil_organic_matter < 0 || sp.soil_organic_matter > 1.0) {
 		tl.append_errorf(
 			&es,
 			"SoilOrganicMatter content (%g) is out of bounds [0, 1].",
@@ -458,7 +449,12 @@ create_equal_sized_soil_pms :: proc(
 			)
 			append(&soil_pms, sps)
 			if tl.failure(es) {
-				tl.append_errorf(&errors, "Config-layer:%d Monica-layer:%d:", spi + 1, layer_count + i)
+				tl.append_errorf(
+					&errors,
+					"Config-layer:%d Monica-layer:%d:",
+					spi + 1,
+					layer_count + i,
+				)
 				tl.append_errors(&errors, es)
 			}
 		}

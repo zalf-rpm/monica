@@ -219,7 +219,7 @@ soil_bulk_density :: proc(sl: ^Soil_Layer) -> f64 {
 // C++: double soillayer::soilOrganicCarbon(const SoilLayer*)
 soil_organic_carbon :: proc(sl: ^Soil_Layer) -> f64 {
 	if sl.soil_organic_carbon < 0 {
-		return sl.soil_organic_matter * soil.PO_SOM_TO_C
+		return sl.soil_organic_matter * soil.SOM_TO_C
 	}
 	return sl.soil_organic_carbon
 }
@@ -227,7 +227,7 @@ soil_organic_carbon :: proc(sl: ^Soil_Layer) -> f64 {
 // C++: double soillayer::soilOrganicMatter(const SoilLayer*)
 soil_organic_matter :: proc(sl: ^Soil_Layer) -> f64 {
 	if sl.soil_organic_matter < 0 {
-		return sl.soil_organic_carbon / soil.PO_SOM_TO_C
+		return sl.soil_organic_carbon / soil.SOM_TO_C
 	}
 	return sl.soil_organic_matter
 }

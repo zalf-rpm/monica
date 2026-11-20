@@ -434,7 +434,7 @@ Not bit-compatible: it is validated, not diffed.
   Off is the C++'s in-place path, unchanged: the refactoring gate passes
   (fixtures, C++, extra scenarios byte-identical), so CI keeps its exact
   check, and one binary runs both variants for comparisons.
-- **I1.** Each process procedure (`soil_organic_fo_urea`, `_mit`,
+- **I1.** Each process procedure (`soil_organic_urea`, `_mit`,
   `_volatilisation`, both nitrification and both denitrification models) takes
   an optional `^Mineral_N_Rates`: nil = in place as before, non-nil = record its
   demand from the unchanged start-of-step state. One implementation of each
