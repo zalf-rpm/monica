@@ -8,7 +8,7 @@ package core
 Crop_Carbon :: struct {
 	gross_primary_production: f64 `unit:"kgC ha-1"`,
 	net_primary_production:   f64 `unit:"kgC ha-1"`,
-	respiration:              f64,
+	respiration:              f64 `unit:"kgC ha-1" unit_guess:"high"`,
 }
 
 // What carbon_step reads on a day.

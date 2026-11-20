@@ -22,7 +22,7 @@ Monica_Soil_Temp :: struct {
 	r:             mst.Soil_Temperature_Comp_Rate,
 	a:             mst.Soil_Temperature_Comp_Auxiliary,
 	ex:            mst.Soil_Temperature_Comp_Exogenous,
-	no_of_layers:  int,
+	no_of_layers:  int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_monica_soil_temp :: proc(allocator: Allocator) -> Module {

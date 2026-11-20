@@ -73,66 +73,66 @@ VOC_TK25: f64 : 298.16
 
 // C++: struct Voc::CPData - crop photosynthesis result variables
 Voc_Cp_Data :: struct {
-	kc:     f64, // Michaelis-Menten const for CO2 reaction of rubisco per canopy layer (umol mol-1 ubar-1)
-	ko:     f64, // Michaelis-Menten const for O2 reaction of rubisco per canopy layer (umol mol-1 ubar-1)
-	oi:     f64, // species and layer specific intercellular concentration of CO2 (umol mol-1)
-	ci:     f64, // leaf internal O2 concentration per canopy layer (umol m-2)
-	comp:   f64, // CO2 compensation point at 25oC per canopy layer (umol m-2)
-	vc_max: f64, // actual activity state of rubisco per canopy layer (umol m-2 s-1)
-	j_max:  f64, // actual electron transport capacity per canopy layer (umol m-2 s-1)
-	jj:     f64, // electron provision (unit leaf area), umol m-2 s-1
-	jj1000: f64, // electron provision (unit leaf area) under normalized conditions, umol m-2 s-1
-	jv:     f64, // used electron transport for photosynthesis (unit leaf area), umol m-2 s-1
+	kc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten const for CO2 reaction of rubisco per canopy layer (umol mol-1 ubar-1)
+	ko:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten const for O2 reaction of rubisco per canopy layer (umol mol-1 ubar-1)
+	oi:     f64 `unit:"umol mol-1" unit_guess:"high"`, // species and layer specific intercellular concentration of CO2 (umol mol-1)
+	ci:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf internal O2 concentration per canopy layer (umol m-2)
+	comp:   f64 `unit:"umol mol-1" unit_guess:"high"`, // CO2 compensation point at 25oC per canopy layer (umol m-2)
+	vc_max: f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // actual activity state of rubisco per canopy layer (umol m-2 s-1)
+	j_max:  f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // actual electron transport capacity per canopy layer (umol m-2 s-1)
+	jj:     f64 `unit:"umol m-2 s-1" unit_guess:"medium"`, // electron provision (unit leaf area), umol m-2 s-1
+	jj1000: f64 `unit:"umol m-2 s-1" unit_guess:"medium"`, // electron provision (unit leaf area) under normalized conditions, umol m-2 s-1
+	jv:     f64 `unit:"umol m-2 s-1" unit_guess:"medium"`, // used electron transport for photosynthesis (unit leaf area), umol m-2 s-1
 }
 
 // C++: struct Voc::SpeciesData
 Voc_Species_Data :: struct {
-	id:       int,
+	id:       int `unit:"" unit_guess:"high"`,
 
 	// common
-	ef_monos: f64, // emission rate of stored terpenes under standard conditions (ug gDW-1 h-1)
-	ef_mono:  f64, // monoterpene emission rate under standard conditions (ug gDW-1 h-1)
-	ef_iso:   f64, // isoprene emission rate under standard conditions (ug gDW-1 h-1)
+	ef_monos: f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // emission rate of stored terpenes under standard conditions (ug gDW-1 h-1)
+	ef_mono:  f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // monoterpene emission rate under standard conditions (ug gDW-1 h-1)
+	ef_iso:   f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // isoprene emission rate under standard conditions (ug gDW-1 h-1)
 
 	// jjv
-	theta:    f64, // curvature parameter
-	fage:     f64, // relative decrease of emission synthesis per foliage age class
-	ct_is:    f64, // scaling constant for temperature sensitivity of isoprene synthase
-	ct_mt:    f64, // scaling constant for temperature sensitivity
+	theta:    f64 `unit:"1" unit_guess:"high"`, // curvature parameter
+	fage:     f64 `unit:"1" unit_guess:"medium"`, // relative decrease of emission synthesis per foliage age class
+	ct_is:    f64 `unit:"1" unit_guess:"high"`, // scaling constant for temperature sensitivity of isoprene synthase
+	ct_mt:    f64 `unit:"1" unit_guess:"high"`, // scaling constant for temperature sensitivity
 
-	ha_is:    f64, // activation energy for isoprene synthase (J mol-1)
-	ha_mt:    f64, // activation energy for GDP synthase (J mol-1)
+	ha_is:    f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for isoprene synthase (J mol-1)
+	ha_mt:    f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for GDP synthase (J mol-1)
 
-	ds_is:    f64, // entropy term for isoprene synthase sensitivity to temperature (J:mol-1:K-1)
-	ds_mt:    f64, // entropy term for GDP synthase sensitivity to temperature (J:mol-1:K-1)
-	hd_is:    f64, // deactivation energy for isoprene synthase (J mol-1)
-	hd_mt:    f64, // deactivation energy for monoterpene synthase (J mol-1)
+	ds_is:    f64 `unit:"J mol-1 K-1" unit_guess:"high"`, // entropy term for isoprene synthase sensitivity to temperature (J:mol-1:K-1)
+	ds_mt:    f64 `unit:"J mol-1 K-1" unit_guess:"high"`, // entropy term for GDP synthase sensitivity to temperature (J:mol-1:K-1)
+	hd_is:    f64 `unit:"J mol-1" unit_guess:"high"`, // deactivation energy for isoprene synthase (J mol-1)
+	hd_mt:    f64 `unit:"J mol-1" unit_guess:"high"`, // deactivation energy for monoterpene synthase (J mol-1)
 
-	hdj:      f64, // curvature parameter of jMax (J mol-1)
-	sdj:      f64, // electron transport temperature response parameter
+	hdj:      f64 `unit:"J mol-1" unit_guess:"medium"`, // curvature parameter of jMax (J mol-1)
+	sdj:      f64 `unit:"J mol-1 K-1" unit_guess:"medium"`, // electron transport temperature response parameter
 
-	kc25:     f64, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
-	ko25:     f64, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
-	vcmax25:  f64, // maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
-	qjvc:     f64, // relation between maximum electron transport rate and RubP saturated rate of carboxylation
+	kc25:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for CO2 at 25oC (umol mol-1 ubar-1)
+	ko25:     f64 `unit:"mmol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for O2 at 25oC (mmol mol-1 mbar-1)
+	vcmax25:  f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // maximum RubP saturated rate of carboxylation at 25oC for sun leaves (umol m-2 s-1)
+	qjvc:     f64 `unit:"1" unit_guess:"medium"`, // relation between maximum electron transport rate and RubP saturated rate of carboxylation
 
-	aekc:     f64, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
-	aeko:     f64, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
-	aejm:     f64, // activation energy for electron transport (J mol-1)
-	aevc:     f64, // activation energy for photosynthesis (J mol-1)
-	slamin:   f64, // specific leaf area under full light (m2 kg-1)
+	aekc:     f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for Michaelis-Menten constant for CO2 (J mol-1)
+	aeko:     f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for Michaelis-Menten constant for O2 (J mol-1)
+	aejm:     f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for electron transport (J mol-1)
+	aevc:     f64 `unit:"J mol-1" unit_guess:"high"`, // activation energy for photosynthesis (J mol-1)
+	slamin:   f64 `unit:"m2 kg-1" unit_guess:"medium"`, // specific leaf area under full light (m2 kg-1)
 
-	scale_i:  f64,
-	scale_m:  f64,
+	scale_i:  f64 `unit:"1" unit_guess:"high"`,
+	scale_m:  f64 `unit:"1" unit_guess:"high"`,
 
 	// species and canopy layer specific foliage biomass (dry weight)
-	m_fol:    f64,
+	m_fol:    f64 `unit:"kg m-2" unit_guess:"high"`,
 
 	// species specific leaf area index
-	lai:      f64,
+	lai:      f64 `unit:"m2 m-2" unit_guess:"high"`,
 
 	// specific foliage area (m2 kgDW-1)
-	sla:      f64,
+	sla:      f64 `unit:"m2 kg-1" unit_guess:"high"`,
 }
 
 // C++ in-class initialisers: THETA{0.9}, FAGE{1.0}, HD_IS{284600.0},
@@ -165,18 +165,18 @@ make_voc_species_data :: proc() -> Voc_Species_Data {
 // C++: struct Voc::MicroClimateData
 Voc_Micro_Climate_Data :: struct {
 	// common
-	rad:                     f64, // radiation per canopy layer (W m-2)
-	rad24:                   f64, // radiation regime over the last 24 hours (W m-2)
-	rad240:                  f64, // radiation regime over the last 10 days (W m-2)
-	t_fol:                   f64, // foliage temperature per canopy layer (oC)
-	t_fol24:                 f64, // temperature regime over the last 24 hours
-	t_fol240:                f64, // temperature regime over the last 10 days
+	rad:                     f64 `unit:"W m-2" unit_guess:"high"`, // radiation per canopy layer (W m-2)
+	rad24:                   f64 `unit:"W m-2" unit_guess:"high"`, // radiation regime over the last 24 hours (W m-2)
+	rad240:                  f64 `unit:"W m-2" unit_guess:"high"`, // radiation regime over the last 10 days (W m-2)
+	t_fol:                   f64 `unit:"°C" unit_guess:"high"`, // foliage temperature per canopy layer (oC)
+	t_fol24:                 f64 `unit:"°C" unit_guess:"high"`, // temperature regime over the last 24 hours
+	t_fol240:                f64 `unit:"°C" unit_guess:"high"`, // temperature regime over the last 10 days
 
 	// jjv
-	sunlitfoliagefraction:   f64, // fraction of sunlit foliage per canopy layer
-	sunlitfoliagefraction24: f64, // fraction of sunlit foliage over the past 24 hours per canopy layer
+	sunlitfoliagefraction:   f64 `unit:"0-1" unit_guess:"medium"`, // fraction of sunlit foliage per canopy layer
+	sunlitfoliagefraction24: f64 `unit:"0-1" unit_guess:"medium"`, // fraction of sunlit foliage over the past 24 hours per canopy layer
 
-	co2concentration:        f64,
+	co2concentration:        f64 `unit:"ppm" unit_guess:"high"`,
 }
 
 // C++: struct Voc::Emissions
@@ -208,27 +208,27 @@ voc_emissions_add :: proc(ems: ^Voc_Emissions, other: ^Voc_Emissions, allocator 
 
 // C++: struct Voc::photosynth_t
 Voc_Photosynth_T :: struct {
-	par:    f64, // photosynthetic active radiation (umol m-2 s-1)
-	par24:  f64, // 1 day aggregated photosynthetic active radiation (umol m-2 s-1)
-	par240: f64, // 10 days aggregated photosynthetic active radiation (umol m-2 s-1)
+	par:    f64 `unit:"umol m-2 s-1" unit_guess:"medium"`, // photosynthetic active radiation (umol m-2 s-1)
+	par24:  f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // 1 day aggregated photosynthetic active radiation (umol m-2 s-1)
+	par240: f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // 10 days aggregated photosynthetic active radiation (umol m-2 s-1)
 }
 
 // C++: struct Voc::foliage_t
 Voc_Foliage_T :: struct {
-	temp_k:    f64, // foliage temperature within a canopy layer (K)
-	temp_k24:  f64, // 1 day aggregated foliage temperature within a canopy layer (K)
-	temp_k240: f64, // 10 days aggregated foliage temperature within a canopy layer (K)
+	temp_k:    f64 `unit:"K" unit_guess:"high"`, // foliage temperature within a canopy layer (K)
+	temp_k24:  f64 `unit:"K" unit_guess:"high"`, // 1 day aggregated foliage temperature within a canopy layer (K)
+	temp_k240: f64 `unit:"K" unit_guess:"high"`, // 10 days aggregated foliage temperature within a canopy layer (K)
 }
 
 // C++: struct Voc::enzyme_activity_t
 Voc_Enzyme_Activity_T :: struct {
-	ef_iso:  f64, // emission factor of isoprene (ug gDW-1 h-1)
-	ef_mono: f64, // emission factor of monoterpenes (ug gDW-1 h-1)
+	ef_iso:  f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // emission factor of isoprene (ug gDW-1 h-1)
+	ef_mono: f64 `unit:"ug gDW-1 h-1" unit_guess:"high"`, // emission factor of monoterpenes (ug gDW-1 h-1)
 }
 
 // C++: struct Voc::leaf_emission_t
 Voc_Leaf_Emission_T :: struct {
-	foliage_layer: int, // C++ size_t
+	foliage_layer: int `unit:"" unit_guess:"high"`, // C++ size_t
 
 	pho:     Voc_Photosynth_T,
 	fol:     Voc_Foliage_T,
@@ -237,6 +237,6 @@ Voc_Leaf_Emission_T :: struct {
 
 // C++: struct Voc::LeafEmissions
 Voc_Leaf_Emissions :: struct {
-	isoprene: f64, // isoprene emission (ug m-2ground h-1)
-	monoterp: f64, // monoterpene emission (ug m-2ground h-1)
+	isoprene: f64 `unit:"ug gDW-1 h-1" unit_guess:"medium"`, // isoprene emission (ug m-2ground h-1)
+	monoterp: f64 `unit:"ug gDW-1 h-1" unit_guess:"medium"`, // monoterpene emission (ug m-2ground h-1)
 }

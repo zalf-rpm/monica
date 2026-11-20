@@ -23,23 +23,23 @@ import libc "core:c/libc"
 Aom_Properties :: struct {
 	aom_slow:                      f64 `unit:"kgC m-3"`, // C in slowly decomposing AOM pool
 	aom_fast:                      f64 `unit:"kgC m-3"`, // C in rapidly decomposing AOM pool
-	aom_slow_dec_rate_to_smb_slow: f64,
-	aom_slow_dec_rate_to_smb_fast: f64,
-	aom_fast_dec_rate_to_smb_slow: f64,
-	aom_fast_dec_rate_to_smb_fast: f64,
-	aom_slow_dec_coeff:            f64,
-	aom_fast_dec_coeff:            f64,
-	aom_slow_dec_coeff_standard:   f64,
-	aom_fast_dec_coeff_standard:   f64,
-	part_aom_slow_to_smb_slow:     f64,
-	part_aom_slow_to_smb_fast:     f64,
+	aom_slow_dec_rate_to_smb_slow: f64 `unit:"kgC m-3 d-1" unit_guess:"high"`,
+	aom_slow_dec_rate_to_smb_fast: f64 `unit:"kgC m-3 d-1" unit_guess:"high"`,
+	aom_fast_dec_rate_to_smb_slow: f64 `unit:"kgC m-3 d-1" unit_guess:"low"`,
+	aom_fast_dec_rate_to_smb_fast: f64 `unit:"kgC m-3 d-1" unit_guess:"high"`,
+	aom_slow_dec_coeff:            f64 `unit:"d-1" unit_guess:"high"`,
+	aom_fast_dec_coeff:            f64 `unit:"d-1" unit_guess:"high"`,
+	aom_slow_dec_coeff_standard:   f64 `unit:"d-1" unit_guess:"high"`,
+	aom_fast_dec_coeff_standard:   f64 `unit:"d-1" unit_guess:"high"`,
+	part_aom_slow_to_smb_slow:     f64 `unit:"0-1" unit_guess:"high"`,
+	part_aom_slow_to_smb_fast:     f64 `unit:"0-1" unit_guess:"high"`,
 	cn_ratio_aom_slow:             f64 `unit:"1"`,
 	cn_ratio_aom_fast:             f64 `unit:"1"`,
-	days_after_application:        int,
-	aom_dry_matter_content:        f64,
-	aom_nh4_content:               f64,
-	aom_slow_delta:                f64,
-	aom_fast_delta:                f64,
+	days_after_application:        int `unit:"d" unit_guess:"high"`,
+	aom_dry_matter_content:        f64 `unit:"kg DM kg FM-1" unit_guess:"high"`,
+	aom_nh4_content:               f64 `unit:"kgN kgDM-1" unit_guess:"high"`,
+	aom_slow_delta:                f64 `unit:"kgC m-3" unit_guess:"high"`,
+	aom_fast_delta:                f64 `unit:"kgC m-3" unit_guess:"high"`,
 	incorporation:                 bool,
 	no_volatilization:             bool,
 }
@@ -81,8 +81,8 @@ Soil_Layer :: struct {
 	soil_texture:             string,
 	soil_ammonium:            f64 `unit:"kgN m-3"`,
 	soil_nitrate:             f64 `unit:"kgN m-3"`,
-	soil_cn_ratio:            f64,
-	soil_moisture_percent_fc: f64,
+	soil_cn_ratio:            f64 `unit:"1" unit_guess:"high"`,
+	soil_moisture_percent_fc: f64 `unit:"%" unit_guess:"high"`,
 	// Raw/override values; -1 means "unset" and the resolved value has to be
 	// computed via the corresponding soil_xyz() proc below.
 	soil_raw_density:         f64 `unit:"kg m-3"`,
@@ -235,12 +235,12 @@ soil_organic_matter :: proc(sl: ^Soil_Layer) -> f64 {
 // C++: struct monica::SoilColumn::DelayedNMinApplicationParams
 Delayed_N_Min_Application_Params :: struct {
 	fp:                         p.Mineral_Fertilizer_Parameters,
-	sampling_depth:             f64,
-	crop_n_target:              f64,
-	crop_n_target_30:           f64,
-	fertilizer_min_application: f64,
-	fertilizer_max_application: f64,
-	top_dressing_delay:         int,
+	sampling_depth:             f64 `unit:"m" unit_guess:"high"`,
+	crop_n_target:              f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	crop_n_target_30:           f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	fertilizer_min_application: f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	fertilizer_max_application: f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	top_dressing_delay:         int `unit:"d" unit_guess:"high"`,
 }
 
 // C++: struct monica::SoilColumn
@@ -248,16 +248,16 @@ Soil_Column :: struct {
 	layers:                      [dynamic]Soil_Layer,
 	surface_water_storage:       f64 `unit:"mm"`,
 	// vs_InterceptionStorage:    f64, // [mm]
-	groundwater_table_layer_idx: int,
+	groundwater_table_layer_idx: int `unit:"layer#" unit_guess:"high"`,
 	flux_at_lower_boundary:      f64 `unit:"mm"`,
 	crop_n_uptake:               f64 `unit:"kgN m-2"`,
 	soil_surface_temperature:    f64 `unit:"°C"`,
-	snow_depth_mm:               f64,
-	max_mineralisation_depth_m:  f64,
-	number_of_organic_layers:    int,
-	top_dressing:                f64,
+	snow_depth_mm:               f64 `unit:"mm" unit_guess:"high"`,
+	max_mineralisation_depth_m:  f64 `unit:"m" unit_guess:"high"`,
+	number_of_organic_layers:    int `unit:"layer#" unit_guess:"high"`,
+	top_dressing:                f64 `unit:"kgN ha-1" unit_guess:"high"`,
 	top_dressing_partition:      p.Mineral_Fertilizer_Parameters,
-	top_dressing_delay:          int,
+	top_dressing_delay:          int `unit:"d" unit_guess:"high"`,
 	delayed_n_min_applications:  [dynamic]Delayed_N_Min_Application_Params,
 }
 

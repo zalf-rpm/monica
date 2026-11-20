@@ -14,14 +14,14 @@ import "../../support/cr_math"
 Crop_Stress :: struct {
 	oxygen_deficit:                      f64 `unit:"0-1"`, //! old LURED
 	time_under_anoxia:                   int `unit:"d"`,
-	time_under_anoxia_threshold_default: int,
+	time_under_anoxia_threshold_default: int `unit:"d" unit_guess:"high"`,
 	crop_heat_redux:                     f64 `unit:"0-1"`,
-	days_after_begin_flowering:          int,
-	total_crop_heat_impact:              f64,
+	days_after_begin_flowering:          int `unit:"d" unit_guess:"high"`,
+	total_crop_heat_impact:              f64 `unit:"0-1" unit_guess:"medium"`,
 	crop_frost_redux:                    f64 `unit:"0-1"`,
 	lt50:                                f64 `unit:"°C"`,
-	lt50_m:                              f64,
-	drought_impact_on_fertility:         f64,
+	lt50_m:                              f64 `unit:"°C" unit_guess:"high"`,
+	drought_impact_on_fertility:         f64 `unit:"0-1" unit_guess:"high"`,
 }
 
 Oxygen_Deficiency_In :: struct {

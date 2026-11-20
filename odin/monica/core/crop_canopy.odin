@@ -16,16 +16,16 @@ import "../../support/cr_math"
 // fc_crop_green_area, fc_soil_coverage, fc_kc_factor, the dual-Kc block in the step).
 Crop_Canopy :: struct {
 	crop_height:      f64 `unit:"m"`,
-	crop_diameter:    f64,
+	crop_diameter:    f64 `unit:"m" unit_guess:"high"`,
 	leaf_area_index:  f64 `unit:"m2 m-2"`, //! old LAI
-	green_area_index: f64,
-	soil_coverage:    f64,
+	green_area_index: f64 `unit:"m2 m-2" unit_guess:"high"`,
+	soil_coverage:    f64 `unit:"0-1" unit_guess:"high"`,
 	kc_factor:        f64 `unit:"1"`, //! old FKc
 	// vs_soil_specific_max_rooting_depth:      f64,
 	kcb_factor:       f64 `unit:"1"`, // Current daily Kcb (output of GDD-based 4-phase interpolation)
-	kcb_ini:          f64, // Initial/germination phase Kcb (flat, Phase 1)
-	kcb_mid:          f64, // Mid-season plateau Kcb (Phase 3)
-	kcb_end:          f64, // End of late-season Kcb target (Phase 4)
+	kcb_ini:          f64 `unit:"1" unit_guess:"high"`, // Initial/germination phase Kcb (flat, Phase 1)
+	kcb_mid:          f64 `unit:"1" unit_guess:"high"`, // Mid-season plateau Kcb (Phase 3)
+	kcb_end:          f64 `unit:"1" unit_guess:"high"`, // End of late-season Kcb target (Phase 4)
 }
 
 // What canopy_kc_factor and canopy_kcb_factor read on a day.

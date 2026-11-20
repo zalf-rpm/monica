@@ -24,7 +24,7 @@ Monica_Et :: struct {
 	r:            et.Et_Rate,
 	a:            et.Et_Auxiliary,
 	ex:           et.Et_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_monica_et :: proc(allocator: Allocator) -> Module {

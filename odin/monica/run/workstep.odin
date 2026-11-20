@@ -71,8 +71,8 @@ Sowing_Data :: struct {
 	crop_params:                    p.Crop_Parameters,
 	separate_perennial_crop_params: ^p.Crop_Parameters,
 	residue_params:                 p.Crop_Residue_Parameters,
-	plant_density:                  int, // C++ default: -1
-	initial_kcb:                    f64, // C++ default: 0.15 - FAO-56 Dual Kc initial Kcb at planting
+	plant_density:                  int `unit:"plants m-2" unit_guess:"high"`, // C++ default: -1
+	initial_kcb:                    f64 `unit:"1" unit_guess:"high"`, // C++ default: 0.15 - FAO-56 Dual Kc initial Kcb at planting
 }
 
 // C++: struct TransplantData : SowingData
@@ -92,13 +92,13 @@ Sowing_Data :: struct {
 // simply doesn't repeat sowing_merge's already-done "initialKcb" parse.
 Transplant_Data :: struct {
 	using sowing:          Sowing_Data,
-	initial_stage:         int, // C++ default: 2 (size_t)
-	initial_gdd:           f64,
-	init_root_mass:        f64,
-	init_leaf_mass:        f64,
-	init_shoot_mass:       f64,
-	init_lai:              f64,
-	post_transplant_delay: int,
+	initial_stage:         int `unit:"" unit_guess:"high"`, // C++ default: 2 (size_t)
+	initial_gdd:           f64 `unit:"°C d" unit_guess:"high"`,
+	init_root_mass:        f64 `unit:"kgDM ha-1" unit_guess:"medium"`,
+	init_leaf_mass:        f64 `unit:"kgDM ha-1" unit_guess:"medium"`,
+	init_shoot_mass:       f64 `unit:"kgDM ha-1" unit_guess:"medium"`,
+	init_lai:              f64 `unit:"m2 m-2" unit_guess:"high"`,
+	post_transplant_delay: int `unit:"d" unit_guess:"high"`,
 }
 
 // C++: struct AutomaticSowingData : SowingData
@@ -117,18 +117,18 @@ Automatic_Sowing_Data :: struct {
 	earliest_date:                 d.Date,
 	latest_date:                   d.Date,
 	abs_latest_date:               d.Date,
-	min_temp_threshold:            f64,
-	days_in_temp_window:           int,
-	min_percent_asw:               f64,
-	max_percent_asw:               f64, // C++ default: 100
-	max_3day_precip_sum:           f64,
-	max_current_day_precip_sum:    f64,
-	temp_sum_above_base_temp:      f64,
-	base_temp:                     f64,
+	min_temp_threshold:            f64 `unit:"°C" unit_guess:"high"`,
+	days_in_temp_window:           int `unit:"d" unit_guess:"high"`,
+	min_percent_asw:               f64 `unit:"%" unit_guess:"high"`,
+	max_percent_asw:               f64 `unit:"%" unit_guess:"high"`, // C++ default: 100
+	max_3day_precip_sum:           f64 `unit:"mm" unit_guess:"high"`,
+	max_current_day_precip_sum:    f64 `unit:"mm" unit_guess:"high"`,
+	temp_sum_above_base_temp:      f64 `unit:"°C d" unit_guess:"high"`,
+	base_temp:                     f64 `unit:"°C" unit_guess:"high"`,
 	check_for_soil_temperature:    bool,
-	soil_depth_for_averaging:      f64, // C++ default: 0.30
-	days_in_soil_temp_window:      int,
-	sowing_if_above_avg_soil_temp: f64,
+	soil_depth_for_averaging:      f64 `unit:"m" unit_guess:"high"`, // C++ default: 0.30
+	days_in_soil_temp_window:      int `unit:"d" unit_guess:"high"`,
+	sowing_if_above_avg_soil_temp: f64 `unit:"°C" unit_guess:"high"`,
 	get_avg_soil_temps:            proc() -> [dynamic]f64,
 	in_sowing_range:               bool,
 	crop_seeded:                   bool,
@@ -140,7 +140,7 @@ Harvest_Data :: struct {
 	exported:                  bool, // C++ default: true
 	spec:                      core.Harvest_Spec,
 	opt_carb_mgmt_data:        core.Harvest_Opt_Carbon_Management_Data,
-	incorporate_into_layer_no: int, // C++ default: 1
+	incorporate_into_layer_no: int `unit:"layer#" unit_guess:"medium"`, // C++ default: 1
 }
 
 // C++: struct AutomaticHarvestData : HarvestData
@@ -149,10 +149,10 @@ Automatic_Harvest_Data :: struct {
 	harvest_time:               string, // C++ default: "maturity"
 	latest_date:                d.Date,
 	abs_latest_date:            d.Date,
-	min_percent_asw:            f64,
-	max_percent_asw:            f64, // C++ default: 999
-	max_3day_precip_sum:        f64, // C++ default: 9999
-	max_current_day_precip_sum: f64, // C++ default: 9999
+	min_percent_asw:            f64 `unit:"%" unit_guess:"high"`,
+	max_percent_asw:            f64 `unit:"%" unit_guess:"high"`, // C++ default: 999
+	max_3day_precip_sum:        f64 `unit:"mm" unit_guess:"high"`, // C++ default: 9999
+	max_current_day_precip_sum: f64 `unit:"mm" unit_guess:"high"`, // C++ default: 9999
 	crop_harvested:             bool,
 }
 
@@ -163,18 +163,18 @@ Cutting_Data :: struct {
 	organ_id_2_cutting_spec:            map[int]core.Cutting_Value,
 	organ_id_2_biom_after_cutting:      map[int]f64,
 	organ_id_2_export_fraction:         map[int]f64,
-	cut_max_assimilation_rate_fraction: f64, // C++ default: 1.0
+	cut_max_assimilation_rate_fraction: f64 `unit:"0-1" unit_guess:"high"`, // C++ default: 1.0
 }
 
 // C++: struct MineralFertilizationData
 Mineral_Fertilization_Data :: struct {
 	partition: p.Mineral_Fertilizer_Parameters,
-	amount:    f64,
+	amount:    f64 `unit:"kgN ha-1" unit_guess:"high"`,
 	// NOT in the C++: placed fertiliser, e.g. injected anhydrous ammonia.
 	// at_layer is 1-based, 0 = into the top layer as usual; or the depth [m]
 	// of the layer, used if at_layer isn't given (0 = the top layer). As
 	// Irrigation_Data's.
-	at_layer:  int,
+	at_layer:  int `unit:"layer#" unit_guess:"medium"`,
 	depth:     f64 `unit:"m"`,
 }
 
@@ -182,34 +182,34 @@ Mineral_Fertilization_Data :: struct {
 N_Demand_Fertilization_Data :: struct {
 	initial_date:       d.Date,
 	partition:          p.Mineral_Fertilizer_Parameters,
-	n_demand:           f64,
-	depth:              f64,
-	stage:              int, // C++ default: 1
+	n_demand:           f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	depth:              f64 `unit:"m" unit_guess:"high"`,
+	stage:              int `unit:"" unit_guess:"high"`, // C++ default: 1
 	applied_fertilizer: bool,
 }
 
 // C++: struct OrganicFertilizationData
 Organic_Fertilization_Data :: struct {
 	params:                    p.Organic_Matter_Parameters,
-	amount:                    f64,
+	amount:                    f64 `unit:"kgFM ha-1" unit_guess:"high"`,
 	incorporation:             bool,
-	incorporate_into_layer_no: int, // C++ default: 1
+	incorporate_into_layer_no: int `unit:"layer#" unit_guess:"medium"`, // C++ default: 1
 }
 
 // C++: struct TillageData
 Tillage_Data :: struct {
-	depth: f64, // C++ default: 0.3
+	depth: f64 `unit:"m" unit_guess:"high"`, // C++ default: 0.3
 }
 
 // C++: struct IrrigationData
 Irrigation_Data :: struct {
-	amount:   f64,
+	amount:   f64 `unit:"mm" unit_guess:"high"`,
 	params:   p.Irrigation_Parameters,
 	// NOT in the C++ master (the AMEI branch's "atLayer", which never reached
 	// the soil column there): subsurface irrigation, e.g. buried drip lines.
 	// at_layer is 1-based, 0 = at the surface as usual; or the depth [m] of the
 	// layer, used if at_layer isn't given (0 = at the surface).
-	at_layer: int,
+	at_layer: int `unit:"layer#" unit_guess:"medium"`,
 	depth:    f64 `unit:"m"`,
 }
 
@@ -218,8 +218,8 @@ Automatic_Irrigation_Data :: struct {
 	abs_start_date: d.Date,
 	abs_end_date:   d.Date,
 	irrigate_crop:  bool,
-	start_stage:    int, // C++ default: -1
-	end_stage:      int, // C++ default: -1
+	start_stage:    int `unit:"" unit_guess:"high"`, // C++ default: -1
+	end_stage:      int `unit:"" unit_guess:"high"`, // C++ default: -1
 	params:         p.Automatic_Irrigation_Parameters,
 	done:           bool,
 	crop_planted:   bool,
@@ -274,9 +274,9 @@ Workstep_Data :: union {
 Workstep :: struct {
 	date:                             d.Date,
 	abs_date:                         d.Date,
-	apply_no_of_days_after_event:     int,
+	apply_no_of_days_after_event:     int `unit:"d" unit_guess:"high"`,
 	after_event:                      string,
-	days_after_event_count:           int,
+	days_after_event_count:           int `unit:"d" unit_guess:"high"`,
 	days_after_event_count_activated: bool,
 	is_active:                        bool, // C++ default: true
 	run_at_start_of_day:              bool, // C++ default: true

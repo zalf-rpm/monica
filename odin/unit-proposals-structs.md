@@ -1,4 +1,4 @@
-# Unit proposals for the other structs — AUTO-GENERATED, NOT REVIEWED
+# Unit proposals for the other structs — applied, as guesses
 
 > **Every unit in this file is a machine-made guess** (Claude, 2026-11-20), not documentation.
 > They cover the 423 numeric fields of the structs in `odin/monica` outside `monica/params`
@@ -15,12 +15,12 @@ a best guess. Units follow `CONVENTIONS.md` §9a: `"0-1"` fractions, `"1"` other
 numbers, `""` no quantity (flags, categories, stage numbers), `"layer#"` layer indices and counts,
 `"d"` counts of days; arrays get the unit of an element.
 
-**To apply**, as for the parameters: tick rows (or take all) and
-
-    python odin/tools/apply_unit_proposals.py --file odin/unit-proposals-structs.md [--all] [--write]
-
-which writes `unit:"..." unit_guess:"<confidence>"`; reviewing a field later means correcting
-`unit` and deleting `unit_guess`.
+All 423 are in the code since 2026-11-20
+(`tools/apply_unit_proposals.py --file odin/unit-proposals-structs.md --all --write`), as
+`unit:"..." unit_guess:"<confidence>"`. **To review** a field: correct `unit` in the code if
+needed and delete its `unit_guess` tag; `grep -rn 'unit_guess:"low"' odin/monica` lists what
+is left. The tables are the record of why each unit was guessed (the `ok` column is no longer
+used).
 
 The field names link to their declarations (`#L<line>`); after code changes, refresh the links
 with `python odin/tools/link_unit_proposals.py`.

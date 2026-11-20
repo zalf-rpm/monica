@@ -61,8 +61,8 @@ Monica_Model :: struct {
 	// stores the daily sum of applied fertiliser
 	daily_sum_fertiliser:            f64 `unit:"kgN ha-1"`, // mineral N
 	daily_sum_org_fertiliser:        f64 `unit:"kgN ha-1"`, // organic N
-	daily_sum_organic_fertilizer_dm: f64,
-	sum_organic_fertilizer_dm:       f64,
+	daily_sum_organic_fertilizer_dm: f64 `unit:"kgDM ha-1" unit_guess:"high"`,
+	sum_organic_fertilizer_dm:       f64 `unit:"kgDM ha-1" unit_guess:"high"`,
 	humus_balance_carry_over:        f64 `unit:"Heq-NRW ha-1"`,
 	daily_sum_irrigation_water:      f64 `unit:"mm"`,
 	opt_carbon_exported_residues:    f64 `unit:"kgDM ha-1"`,
@@ -72,11 +72,11 @@ Monica_Model :: struct {
 	current_events:                  map[string]bool,
 	previous_days_events:            map[string]bool,
 	clear_crop_upon_next_day:        bool,
-	days_with_crop:                  int,
-	accu_n_stress:                   f64,
-	accu_water_stress:               f64,
-	accu_heat_stress:                f64,
-	accu_oxygen_stress:              f64,
+	days_with_crop:                  int `unit:"d" unit_guess:"high"`,
+	accu_n_stress:                   f64 `unit:"1" unit_guess:"low"`,
+	accu_water_stress:               f64 `unit:"1" unit_guess:"low"`,
+	accu_heat_stress:                f64 `unit:"1" unit_guess:"low"`,
+	accu_oxygen_stress:              f64 `unit:"1" unit_guess:"low"`,
 	atmospheric_co2_concentration:   f64 `unit:"ppm"`,
 	atmospheric_o3_concentration:    f64 `unit:"ppb"`,
 	groundwater_depth_m:             f64 `unit:"m"`,
@@ -455,7 +455,7 @@ Harvest_Crop_Usage :: enum {
 
 // C++: struct HarvestData::Spec::Value
 Harvest_Spec_Value :: struct {
-	export_percentage: f64, // C++ in-class default: 100.0
+	export_percentage: f64 `unit:"%" unit_guess:"high"`, // C++ in-class default: 100.0
 	incorporate:       bool, // C++ in-class default: true
 }
 
@@ -467,11 +467,11 @@ Harvest_Spec :: struct {
 // C++: struct HarvestData::OptCarbonManagementData
 Harvest_Opt_Carbon_Management_Data :: struct {
 	opt_carbon_conservation:      bool,
-	crop_impact_on_humus_balance: f64,
-	max_residue_recover_fraction: f64, // C++ in-class default: 1
+	crop_impact_on_humus_balance: f64 `unit:"Heq-NRW ha-1" unit_guess:"medium"`,
+	max_residue_recover_fraction: f64 `unit:"0-1" unit_guess:"high"`, // C++ in-class default: 1
 	crop_usage:                   Harvest_Crop_Usage, // C++ in-class default: biomassProduction
-	residue_heq:                  f64,
-	organic_fertilizer_heq:       f64,
+	residue_heq:                  f64 `unit:"Heq-NRW tDM-1" unit_guess:"medium"`,
+	organic_fertilizer_heq:       f64 `unit:"Heq-NRW tDM-1" unit_guess:"medium"`,
 }
 
 // C++ in-class defaults for OptCarbonManagementData

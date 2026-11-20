@@ -19,19 +19,19 @@ import tl "../../support/tools"
 
 // C++: struct Soil::VanGenuchtenParams
 Van_Genuchten_Params :: struct {
-	theta_r:                                 f64,
-	theta_s:                                 f64,
-	alpha:                                   f64,
-	m:                                       f64,
-	n:                                       f64,
-	volumetric_water_content_at_matric_head: f64,
+	theta_r:                                 f64 `unit:"m3 m-3" unit_guess:"high"`,
+	theta_s:                                 f64 `unit:"m3 m-3" unit_guess:"high"`,
+	alpha:                                   f64 `unit:"cm-1" unit_guess:"medium"`,
+	m:                                       f64 `unit:"1" unit_guess:"high"`,
+	n:                                       f64 `unit:"1" unit_guess:"high"`,
+	volumetric_water_content_at_matric_head: f64 `unit:"m3 m-3" unit_guess:"high"`,
 }
 
 // C++: struct FcSatPwp (anonymous namespace)
 Fc_Sat_Pwp :: struct {
-	fc:  f64,
-	sat: f64,
-	pwp: f64,
+	fc:  f64 `unit:"m3 m-3" unit_guess:"high"`,
+	sat: f64 `unit:"m3 m-3" unit_guess:"high"`,
+	pwp: f64 `unit:"m3 m-3" unit_guess:"high"`,
 }
 
 // C++: EResult<FcSatPwp> fcSatPwpFromKA5textureClass(pathToSoilDir, texture,

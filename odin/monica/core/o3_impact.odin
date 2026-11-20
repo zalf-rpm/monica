@@ -12,12 +12,12 @@ import "../../support/cr_math"
 
 // C++: struct O3impact::O3_impact_params
 O3_Impact_Params :: struct {
-	gamma1:             f64, // ozone short-term damage coefficient, unitless
-	gamma2:             f64, // ozone short-term damage coefficient, nmol m-2 s-1
-	gamma3:             f64, // ozone long-term damage coefficient, (umol m-2)-1
-	upper_thr_stomatal: f64,
-	lower_thr_stomatal: f64,
-	fshape_stomatal:    f64,
+	gamma1:             f64 `unit:"1" unit_guess:"high"`, // ozone short-term damage coefficient, unitless
+	gamma2:             f64 `unit:"m2 s nmol-1" unit_guess:"medium"`, // ozone short-term damage coefficient, nmol m-2 s-1
+	gamma3:             f64 `unit:"m2 umol-1" unit_guess:"high"`, // ozone long-term damage coefficient, (umol m-2)-1
+	upper_thr_stomatal: f64 `unit:"0-1" unit_guess:"high"`,
+	lower_thr_stomatal: f64 `unit:"0-1" unit_guess:"high"`,
+	fshape_stomatal:    f64 `unit:"1" unit_guess:"high"`,
 }
 
 // C++ in-class initialisers: gamma1{0.060}, gamma2{0.0045}, gamma3{0.5},
@@ -35,27 +35,27 @@ make_o3_impact_params :: proc() -> O3_Impact_Params {
 
 // C++: struct O3impact::O3_impact_in
 O3_Impact_In :: struct {
-	fc:           f64, // field capacity, m3 m-3
-	wp:           f64, // wilting point, m3 m-3
-	swc:          f64, // soil water content, m3 m-3
-	et0:          f64, // reference ET, mm d-1
-	o3a:          f64, // ambient O3 partial pressure, nbar or nmol mol-1
-	gs:           f64, // stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
-	h:            int, // hour of the day (0-23)
-	reldev:       f64, // relative development
-	gdd_flo:      f64, // GDD from emergence to flowering
-	gdd_mat:      f64, // GDD from emergence to maturity
-	f_o3s_d_prev: f64, // short term ozone induced reduction of Ac of the previous time step
-	sum_o3_up:    f64, // cumulated O3 uptake, umol m-2 (unit ground area)
+	fc:           f64 `unit:"m3 m-3" unit_guess:"high"`, // field capacity, m3 m-3
+	wp:           f64 `unit:"m3 m-3" unit_guess:"high"`, // wilting point, m3 m-3
+	swc:          f64 `unit:"m3 m-3" unit_guess:"high"`, // soil water content, m3 m-3
+	et0:          f64 `unit:"mm d-1" unit_guess:"high"`, // reference ET, mm d-1
+	o3a:          f64 `unit:"ppb" unit_guess:"high"`, // ambient O3 partial pressure, nbar or nmol mol-1
+	gs:           f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"medium"`, // stomatal conductance mol m-2 s-1 bar-1 (unit ground area)
+	h:            int `unit:"h" unit_guess:"high"`, // hour of the day (0-23)
+	reldev:       f64 `unit:"0-1" unit_guess:"high"`, // relative development
+	gdd_flo:      f64 `unit:"°C d" unit_guess:"high"`, // GDD from emergence to flowering
+	gdd_mat:      f64 `unit:"°C d" unit_guess:"high"`, // GDD from emergence to maturity
+	f_o3s_d_prev: f64 `unit:"0-1" unit_guess:"high"`, // short term ozone induced reduction of Ac of the previous time step
+	sum_o3_up:    f64 `unit:"umol m-2" unit_guess:"high"`, // cumulated O3 uptake, umol m-2 (unit ground area)
 }
 
 // C++: struct O3impact::O3_impact_out
 O3_Impact_Out :: struct {
-	hourly_o3_up: f64, // hourly O3 uptake, umol m-2 h-1 (unit ground area)
-	f_o3s_d:      f64, // short term ozone induced reduction of Ac
-	f_o3l:        f64, // long term ozone induced senescence
-	f_ls:         f64, // leaf senescence reduction of Ac, modified by O3 cumulative uptake
-	ws_st_clos:   f64, // water deficit factor for stomatal closure
+	hourly_o3_up: f64 `unit:"umol m-2 h-1" unit_guess:"medium"`, // hourly O3 uptake, umol m-2 h-1 (unit ground area)
+	f_o3s_d:      f64 `unit:"0-1" unit_guess:"high"`, // short term ozone induced reduction of Ac
+	f_o3l:        f64 `unit:"0-1" unit_guess:"high"`, // long term ozone induced senescence
+	f_ls:         f64 `unit:"0-1" unit_guess:"high"`, // leaf senescence reduction of Ac, modified by O3 cumulative uptake
+	ws_st_clos:   f64 `unit:"0-1" unit_guess:"high"`, // water deficit factor for stomatal closure
 }
 
 // C++ in-class initialisers: fO3s_d{1.0}, fO3l{1.0}, fLS{1.0}, WS_st_clos{1.0}

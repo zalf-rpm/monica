@@ -298,8 +298,10 @@ structs (`monica/params`) carry the units documented in `monica-parameters` (`[v
 or in the C++ header `monica-parameters.h`; the others - 203, mostly crop species and cultivar
 parameters - carry a guessed unit, marked with a second tag
 `unit_guess:"high"|"medium"|"low"` (the confidence; `unit-proposals.md` gives the reasoning).
-Reviewing one means correcting `unit` if needed and deleting `unit_guess`; the mark is never
-printed. Not tagged yet: most other fields - `unit-proposals-structs.md` has proposals for them. The generated Crop2ML packages (`odin/amei/`) get theirs from the
+The other structs' numeric fields carry guessed units the same way (423 fields,
+`unit-proposals-structs.md`); untagged are only the infrastructure packages (`capnp`, `io`,
+`trace`) and non-numeric fields. Reviewing a guess means correcting `unit` if needed and deleting
+`unit_guess`; the mark is never printed, the unit is (in units rows) like any other. The generated Crop2ML packages (`odin/amei/`) get theirs from the
 XML (`plan-crop2ml-modules.md` §2).
 
 An object-form output column may override the unit (`"unit"`) and transform the value

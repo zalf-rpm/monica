@@ -18,7 +18,7 @@ Bioma_Parton_Swat :: struct {
 	r:            bps.Surface_Parton_Soil_Swatc_Rate,
 	a:            bps.Surface_Parton_Soil_Swatc_Auxiliary,
 	ex:           bps.Surface_Parton_Soil_Swatc_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_bioma_parton_swat :: proc(allocator: Allocator) -> Module {

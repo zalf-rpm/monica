@@ -12,20 +12,20 @@ import "core:slice"
 // Growth and partitioning: organ biomass, senescence, reserves, N demand (first part of
 // fc_crop_dry_matter).
 Crop_Growth :: struct {
-	organ_biomass:                  [dynamic]f64, //! old WORG
-	organ_green_biomass:            [dynamic]f64,
-	organ_dead_biomass:             [dynamic]f64, //! old WDORG
+	organ_biomass:                  [dynamic]f64 `unit:"kgDM ha-1" unit_guess:"high"`, //! old WORG
+	organ_green_biomass:            [dynamic]f64 `unit:"kgDM ha-1" unit_guess:"high"`,
+	organ_dead_biomass:             [dynamic]f64 `unit:"kgDM ha-1" unit_guess:"high"`, //! old WDORG
 	organ_growth_increment:         [dynamic]f64 `unit:"kgDM ha-1"`, //! old GORG
-	organ_senescence_increment:     [dynamic]f64, //! old DGORG
+	organ_senescence_increment:     [dynamic]f64 `unit:"kgDM ha-1" unit_guess:"high"`, //! old DGORG
 	aboveground_biomass:            f64 `unit:"kgDM ha-1"`, //! old OBMAS
-	aboveground_biomass_old:        f64, //! old OBALT
-	belowground_biomass:            f64,
-	belowground_biomass_old:        f64,
-	total_biomass:                  f64,
-	reserve_assimilate_pool:        f64, //! old ASPOO
+	aboveground_biomass_old:        f64 `unit:"kgDM ha-1" unit_guess:"high"`, //! old OBALT
+	belowground_biomass:            f64 `unit:"kgDM ha-1" unit_guess:"high"`,
+	belowground_biomass_old:        f64 `unit:"kgDM ha-1" unit_guess:"high"`,
+	total_biomass:                  f64 `unit:"kgDM ha-1" unit_guess:"high"`,
+	reserve_assimilate_pool:        f64 `unit:"kgCH2O ha-1" unit_guess:"low"`, //! old ASPOO
 	net_photosynthesis:             f64 `unit:"kgCH2O ha-1"`, //! old GTW
-	crop_n_demand:                  f64, //! old DTGESN
-	max_n_uptake:                   f64, //! old MAXUP
+	crop_n_demand:                  f64 `unit:"kgN m-2" unit_guess:"medium"`, //! old DTGESN
+	max_n_uptake:                   f64 `unit:"kgN m-1 d-1" unit_guess:"medium"`, //! old MAXUP
 	assimilate_part_coeffs_reduced: bool,
 	dying_out:                      bool,
 }

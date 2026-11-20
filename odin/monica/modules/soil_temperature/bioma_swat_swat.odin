@@ -18,7 +18,7 @@ Bioma_Swat_Swat :: struct {
 	r:            bss.Surface_Swat_Soil_Swatc_Rate,
 	a:            bss.Surface_Swat_Soil_Swatc_Auxiliary,
 	ex:           bss.Surface_Swat_Soil_Swatc_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_bioma_swat_swat :: proc(allocator: Allocator) -> Module {

@@ -26,7 +26,7 @@ Apsim_Campbell :: struct {
 	r:            apsim.Soiltemp_Rate,
 	a:            apsim.Soiltemp_Auxiliary,
 	ex:           apsim.Soiltemp_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_apsim_campbell :: proc(allocator: Allocator) -> Module {

@@ -14,8 +14,8 @@ Crop_N_Status :: struct {
 	target_n_concentration:                  f64 `unit:"kgN kgDM-1"`, //! old GEHMAX
 	crop_n_redux:                            f64 `unit:"0-1"`, //! old REDUK
 	root_n_redux:                            f64 `unit:"0-1"`, //! old REDWU
-	n_concentration_aboveground_biomass_old: f64, //! old GEHALT
-	n_concentration_root_old:                f64, //! old
+	n_concentration_aboveground_biomass_old: f64 `unit:"kgN kgDM-1" unit_guess:"high"`, //! old GEHALT
+	n_concentration_root_old:                f64 `unit:"kgN kgDM-1" unit_guess:"high"`, //! old
 }
 
 // What n_status_step reads: yesterday's biomass and N concentrations -

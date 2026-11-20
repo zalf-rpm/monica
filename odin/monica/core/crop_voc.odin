@@ -10,14 +10,14 @@ import p "../params"
 
 // VOC emissions: the 24/240-step buffers and the emissions (only reported).
 Crop_Voc :: struct {
-	step_size24:                 int,
-	step_size240:                int,
-	rad24:                       [dynamic]f64,
-	rad240:                      [dynamic]f64,
-	tfol24:                      [dynamic]f64,
-	tfol240:                     [dynamic]f64,
-	index24:                     int,
-	index240:                    int,
+	step_size24:                 int `unit:"" unit_guess:"high"`,
+	step_size240:                int `unit:"" unit_guess:"high"`,
+	rad24:                       [dynamic]f64 `unit:"W m-2" unit_guess:"high"`,
+	rad240:                      [dynamic]f64 `unit:"W m-2" unit_guess:"high"`,
+	tfol24:                      [dynamic]f64 `unit:"°C" unit_guess:"high"`,
+	tfol240:                     [dynamic]f64 `unit:"°C" unit_guess:"high"`,
+	index24:                     int `unit:"" unit_guess:"high"`,
+	index240:                    int `unit:"" unit_guess:"high"`,
 	full24:                      bool,
 	full240:                     bool,
 	guenther_emissions:          Voc_Emissions,

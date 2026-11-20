@@ -17,7 +17,7 @@ Dssat_Epicst :: struct {
 	r:            epic.Stemp_Epic_Rate,
 	a:            epic.Stemp_Epic_Auxiliary,
 	ex:           epic.Stemp_Epic_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_dssat_epicst :: proc(allocator: Allocator) -> Module {
