@@ -456,7 +456,7 @@ State `Crop_Growth`:
 | `total_biomass` | `f64` | kgDM ha-1 |
 | `reserve_assimilate_pool` | `f64` | kgCH2O ha-1 |
 | `net_photosynthesis` | `f64` | kgCH2O ha-1 |
-| `crop_n_demand` | `f64` | kgN m-2 |
+| `crop_n_demand` | `f64` | kgN ha-1 |
 | `max_n_uptake` | `f64` | kgN m-1 d-1 |
 | `assimilate_part_coeffs_reduced` | `bool` |  |
 | `dying_out` | `bool` |  |

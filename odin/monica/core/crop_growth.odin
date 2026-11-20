@@ -24,7 +24,7 @@ Crop_Growth :: struct {
 	total_biomass:                  f64 `unit:"kgDM ha-1" unit_guess:"high"`,
 	reserve_assimilate_pool:        f64 `unit:"kgCH2O ha-1" unit_guess:"low"`, //! old ASPOO
 	net_photosynthesis:             f64 `unit:"kgCH2O ha-1"`, //! old GTW
-	crop_n_demand:                  f64 `unit:"kgN m-2" unit_guess:"medium"`, //! old DTGESN
+	crop_n_demand:                  f64 `unit:"kgN ha-1"`, //! old DTGESN
 	max_n_uptake:                   f64 `unit:"kgN m-1 d-1" unit_guess:"medium"`, //! old MAXUP
 	assimilate_part_coeffs_reduced: bool,
 	dying_out:                      bool,
@@ -237,17 +237,20 @@ growth_step :: proc(
 
 		g.organ_biomass[i_organ] += g.organ_growth_increment[i_organ] * input.time_step // [kg CH2O ha-1]
 		if i_organ == input.storage_organ {
-			g.organ_dead_biomass[i_organ] += g.organ_senescence_increment[i_organ] * input.time_step
+			g.organ_dead_biomass[i_organ] +=
+				g.organ_senescence_increment[i_organ] * input.time_step
 		} else {
 			// root, shoot, leaf
 			reallocation_rate :=
 				assimilate_reallocation * g.organ_senescence_increment[i_organ] * input.time_step
 			g.organ_biomass[input.storage_organ] += reallocation_rate
-			daily_dead_biomass_increment := g.organ_senescence_increment[i_organ] - reallocation_rate
+			daily_dead_biomass_increment :=
+				g.organ_senescence_increment[i_organ] - reallocation_rate
 
 			if i_organ == Organ_Root {
 				g.organ_biomass[Organ_Root] -= g.organ_senescence_increment[Organ_Root]
-				total_biomass_n_content -= daily_dead_biomass_increment * input.n_concentration_root
+				total_biomass_n_content -=
+					daily_dead_biomass_increment * input.n_concentration_root
 				daily_dead_root_biomass_increment = daily_dead_biomass_increment
 			} else {
 				// shoot or leaf
@@ -256,8 +259,7 @@ growth_step :: proc(
 			}
 		}
 
-		g.organ_green_biomass[i_organ] =
-			g.organ_biomass[i_organ] - g.organ_dead_biomass[i_organ]
+		g.organ_green_biomass[i_organ] = g.organ_biomass[i_organ] - g.organ_dead_biomass[i_organ]
 		if g.organ_green_biomass[i_organ] < 0.0 {
 			g.organ_dead_biomass[i_organ] = g.organ_biomass[i_organ]
 			g.organ_green_biomass[i_organ] = 0.0
@@ -283,7 +285,8 @@ growth_step :: proc(
 				input.current_temperature_sum[input.developmental_stage] /
 				stage_temperature_sum[input.developmental_stage] // [kg kg-1]
 	} else {
-		max_root_n_concentration = species_ps.stage_max_root_n_concentration[input.developmental_stage]
+		max_root_n_concentration =
+			species_ps.stage_max_root_n_concentration[input.developmental_stage]
 	}
 
 	g.crop_n_demand =
@@ -340,9 +343,7 @@ growth_limit_n_demand :: proc(g: ^Crop_Growth, ps: ^p.Crop_Parameters, input: Gr
 		(input.current_total_temperature_sum / input.total_temperature_sum) // [kg m root-1]
 
 	if (g.crop_n_demand / 10000.0) > (input.total_root_length * g.max_n_uptake * input.time_step) {
-		g.crop_n_demand = input.total_root_length * g.max_n_uptake * input.time_step // [kg m-2]
-	} else {
-		g.crop_n_demand = g.crop_n_demand / 10000.0 // [kg ha-1 -> kg m-2]
+		g.crop_n_demand = input.total_root_length * g.max_n_uptake * input.time_step * 10000.0 // [kg ha-1]
 	}
 }
 

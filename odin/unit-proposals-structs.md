@@ -34,8 +34,8 @@ The scan reads every use of these fields, and noticed things that aren't unit qu
 The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes them).
 
 - **Fields whose unit changes during a step.** [`Crop_Growth.crop_n_demand`](monica/core/crop_growth.odin#L27): kgN ha-1 in
-  [`growth_step`](monica/core/crop_growth.odin#L86), divided by 10000 into kgN m-2 in [`growth_limit_n_demand`](monica/core/crop_growth.odin#L334); the final value is
-  kgN m-2 (the [`PotNup`](monica/io/build_output.odin#L1510) output multiplies by 10000) **(checked)**. [`Soil_Temperature.solution`](monica/core/soil_temperature.odin#L47)
+  [`growth_step`](monica/core/crop_growth.odin#L86), divided by 10000 into kgN m-2 in [`growth_limit_n_demand`](monica/core/crop_growth.odin#L337); the final value is
+  kgN m-2 (the [`PotNup`](monica/io/build_output.odin#L1561) output multiplies by 10000) **(checked)**. *Resolved (2026-11-20): [`Crop_Growth.crop_n_demand`](monica/core/crop_growth.odin#L27) stays in kgN ha-1; the N uptake converts its input to kgN m-2 ([`n_uptake_in`](monica/core/crop_n_uptake.odin#L53)), the [`PotNup`](monica/io/build_output.odin#L1561) output no longer multiplies.* [`Soil_Temperature.solution`](monica/core/soil_temperature.odin#L47)
   holds a right-hand side in J m-2, then the solved temperatures in °C.
 - **Parameter tags corrected** (in [`unit-proposals.md`](unit-proposals.md) and the code, 2026-11-20) **(checked)**:
   [`Species_Parameters.max_n_uptake_param`](monica/params/crop_parameters.odin#L47) is per metre of root (kg N m-1 d-1, not per ha), and
@@ -43,7 +43,7 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
   ("1", not m3 m-3).
 - **Output units that look wrong** (legacy names, kept for byte-identical outputs, §9a):
   [`RootWaUptak`](monica/io/output_paths.odin#L176) "KgN ha-1" reads transpiration (mm); [`TimeUnderAnoxia`](monica/io/output_paths.odin#L209) "0;1" is a number of
-  days; [`rootDensity`](monica/io/output_paths.odin#L171) has no unit (m m-3); [`SMB-CO2-ER`](monica/io/build_output.odin#L1529) has none (kgC m-3 d-1); [`ActNupLayer`](monica/io/build_output.odin#L1519)
+  days; [`rootDensity`](monica/io/output_paths.odin#L171) has no unit (m m-3); [`SMB-CO2-ER`](monica/io/build_output.odin#L1586) has none (kgC m-3 d-1); [`ActNupLayer`](monica/io/build_output.odin#L1570)
   is spelled "KgN ha-1".
 - **Comments with wrong units.** [`Fvcb_Leaf_Fraction`](monica/core/photosynthesis_fvcb.odin#L110): [`oi`](monica/core/photosynthesis_fvcb.odin#L115), [`ci`](monica/core/photosynthesis_fvcb.odin#L116), [`cc`](monica/core/photosynthesis_fvcb.odin#L117) labelled "umol m-2"
   (are mmol mol-1, umol mol-1, umol mol-1), [`kc`](monica/core/photosynthesis_fvcb.odin#L113)/[`ko`](monica/core/photosynthesis_fvcb.odin#L114) "umol mol-1 mbar-1"; [`Voc_Cp_Data`](monica/core/voc_common.odin#L75):
@@ -60,7 +60,7 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
   [`Soil_Organic.net_n_mineralisation_rate`](monica/core/soil_organic.odin#L43) uses layer 0's thickness for every layer.
   [`Crop_Root_System.total_root_length`](monica/core/crop_root_system.odin#L25) is computed differently at initialisation/transplant
   than daily (the C++ has a todo there). [`Crop_Photosynthesis.fraction_of_intercepted_radiation2`](monica/core/crop_photosynthesis.odin#L34) is
-  never set but read by the [`LightInterception2`](monica/io/build_output.odin#L1507) output.
+  never set but read by the [`LightInterception2`](monica/io/build_output.odin#L1554) output.
   [`Crop_Photosynthesis.gross_photosynthesis_reference_mol`](monica/core/crop_photosynthesis.odin#L22) is tagged "mol m-2 s-1" in
   [`Crop_Et0_In`](monica/core/crop_et0.odin#L17) and "µmol m-2 s-1" in the ET module's input, and its 22414 factor fits neither
   exactly. Automatic sowing reads JSON [`max-3d-precip`](monica/run/worksteps.odin#L321) but writes [`max-3d-precip-sum`](monica/run/worksteps.odin#L647).
@@ -122,7 +122,7 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
 | [ ] | [`Crop_Growth.belowground_biomass_old`](monica/core/crop_growth.odin#L23) | 23 | `f64` | `kgDM ha-1` | high | yesterday's belowground_biomass, crop_growth.odin:132; N_Uptake_In tag kgDM ha-1 |
 | [ ] | [`Crop_Growth.total_biomass`](monica/core/crop_growth.odin#L24) | 24 | `f64` | `kgDM ha-1` | high | sum of organ_biomass (kgDM ha-1), crop_growth.odin:272 |
 | [ ] | [`Crop_Growth.reserve_assimilate_pool`](monica/core/crop_growth.odin#L25) | 25 | `f64` | `kgCH2O ha-1` | low | only ever set to 0 (crop_growth.odin:128/276), never read; assimilate pool by name |
-| [ ] | [`Crop_Growth.crop_n_demand`](monica/core/crop_growth.odin#L27) | 27 | `f64` | `kgN m-2` | medium | INCONSISTENT: kgN ha-1 in growth_step (:289), converted to kgN m-2 in growth_limit_n_demand (:343); output PotNup *10000 |
+| [ ] | [`Crop_Growth.crop_n_demand`](monica/core/crop_growth.odin#L27) | 27 | `f64` | `kgN ha-1` | high | resolved 2026-11-20: kept in kgN ha-1 (was kgN ha-1 in growth_step, kgN m-2 after growth_limit_n_demand); the N uptake converts |
 | [ ] | [`Crop_Growth.max_n_uptake`](monica/core/crop_growth.odin#L28) | 28 | `f64` | `kgN m-1 d-1` | medium | total_root_length (m m-2) * max_n_uptake * time_step compared to kgN m-2, crop_growth.odin:342; param tag kg N ha-1 d-1 wrong |
 
 ## `Crop_Management` (monica/core/crop_management.odin)

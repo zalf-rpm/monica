@@ -55,7 +55,7 @@ n_uptake_in :: proc(cm: ^Crop_Module) -> N_Uptake_In {
 		groundwater_table_layer_idx = cm.soil_column.groundwater_table_layer_idx,
 		soil_layers = cm.soil_column.layers[:],
 		transpiration = cm.transpiration[:],
-		crop_n_demand = cm.crop_n_demand,
+		crop_n_demand = cm.crop_n_demand / 10000.0, // Crop_Growth keeps kgN ha-1, the N uptake works per m2
 		aboveground_biomass = cm.aboveground_biomass,
 		aboveground_biomass_old = cm.aboveground_biomass_old,
 		belowground_biomass = cm.belowground_biomass,

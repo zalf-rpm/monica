@@ -744,10 +744,14 @@ clamp_to_organic_layers :: proc(model: ^core.Monica_Model, oid_in: OId) -> OId {
 @(private)
 organ_in_crop :: proc(model: ^core.Monica_Model, oid_in: OId) -> bool {
 	oid := oid_in
-	return oid_is_organ(&oid) &&
+	return(
+		oid_is_organ(&oid) &&
 		model.current_crop_module != nil &&
-		p.species_parameters_number_of_organs(&model.current_crop_module.crop_params.species_params) >
-			int(oid.organ)
+		p.species_parameters_number_of_organs(
+			&model.current_crop_module.crop_params.species_params,
+		) >
+			int(oid.organ) \
+	)
 }
 
 @(private)
@@ -803,7 +807,9 @@ of_grain_n :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 of_light_interception1 :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.current_crop_module != nil {
-		return jx.f(tl.round(core.get_fraction_of_intercepted_radiation1(model.current_crop_module), 5))
+		return jx.f(
+			tl.round(core.get_fraction_of_intercepted_radiation1(model.current_crop_module), 5),
+		)
 	}
 	return jx.f(0.0)
 }
@@ -811,7 +817,9 @@ of_light_interception1 :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value 
 @(private)
 of_light_interception2 :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.current_crop_module != nil {
-		return jx.f(tl.round(core.get_fraction_of_intercepted_radiation2(model.current_crop_module), 5))
+		return jx.f(
+			tl.round(core.get_fraction_of_intercepted_radiation2(model.current_crop_module), 5),
+		)
 	}
 	return jx.f(0.0)
 }
@@ -841,7 +849,7 @@ of_nstress :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 of_pot_nup :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if model.current_crop_module != nil {
-		return jx.f(tl.round(model.current_crop_module.crop_n_demand * 10000.0, 2))
+		return jx.f(tl.round(model.current_crop_module.crop_n_demand, 2))
 	}
 	return jx.f(0.0)
 }
@@ -889,7 +897,9 @@ of_yield_nc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 of_npp_organs :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if organ_in_crop(model, oid) {
-		return jx.f(tl.round(core.get_organ_specific_npp(model.current_crop_module, int(oid.organ)), 4))
+		return jx.f(
+			tl.round(core.get_organ_specific_npp(model.current_crop_module, int(oid.organ)), 4),
+		)
 	}
 	return jx.f(0.0)
 }
@@ -898,7 +908,10 @@ of_npp_organs :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 of_ra_organs :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	if organ_in_crop(model, oid) {
 		return jx.f(
-			tl.round(core.get_organ_specific_total_respired(model.current_crop_module, int(oid.organ)), 4),
+			tl.round(
+				core.get_organ_specific_total_respired(model.current_crop_module, int(oid.organ)),
+				4,
+			),
 		)
 	}
 	return jx.f(0.0)
@@ -932,7 +945,12 @@ actammoxrate_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
 
 @(private)
 of_actammoxrate :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return get_complex_values(model, clamp_to_organic_layers(model, oid), actammoxrate_get_value, 6)
+	return get_complex_values(
+		model,
+		clamp_to_organic_layers(model, oid),
+		actammoxrate_get_value,
+		6,
+	)
 }
 
 @(private)
@@ -942,7 +960,12 @@ actdenitrate_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
 
 @(private)
 of_actdenitrate :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
-	return get_complex_values(model, clamp_to_organic_layers(model, oid), actdenitrate_get_value, 6)
+	return get_complex_values(
+		model,
+		clamp_to_organic_layers(model, oid),
+		actdenitrate_get_value,
+		6,
+	)
 }
 
 @(private)
@@ -1102,8 +1125,10 @@ of_awc :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 // C++ reads soilMoisture->soilColumn - the same SoilColumn as monica.soilColumn.
 @(private)
 pasw_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
-	return model.soil_moisture.soil_column.layers[i].soil_moisture_m3 -
-		model.soil_column.layers[i].permanent_wilting_point
+	return(
+		model.soil_moisture.soil_column.layers[i].soil_moisture_m3 -
+		model.soil_column.layers[i].permanent_wilting_point \
+	)
 }
 
 @(private)
@@ -1137,7 +1162,12 @@ of_silt :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 soc_x_y_get_value :: proc(model: ^core.Monica_Model, i: int) -> f64 {
 	layer := &model.soil_column.layers[i]
-	return core.soil_organic_carbon(layer) * core.soil_bulk_density(layer) * layer.layer_thickness_m * 1000
+	return(
+		core.soil_organic_carbon(layer) *
+		core.soil_bulk_density(layer) *
+		layer.layer_thickness_m *
+		1000 \
+	)
 }
 
 @(private)
@@ -1148,7 +1178,10 @@ of_soc_x_y :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 @(private)
 of_pot_et :: proc(model: ^core.Monica_Model, oid: OId) -> jx.Value {
 	return jx.f(
-		tl.round(model.soil_moisture.reference_evapotranspiration * model.soil_moisture.kc_factor, 1),
+		tl.round(
+			model.soil_moisture.reference_evapotranspiration * model.soil_moisture.kc_factor,
+			1,
+		),
 	)
 }
 
@@ -1497,14 +1530,32 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	// The rest of the C++ table's computed outputs; names, units and
 	// descriptions exactly as in src/io/build-output.cpp.
 	build(22, "Count", "", "output 1 for counting things", of_count)
-	build(23, "days-since-start", "", "output number of days since simulation start", of_days_since_start)
+	build(
+		23,
+		"days-since-start",
+		"",
+		"output number of days since simulation start",
+		of_days_since_start,
+	)
 	build(24, "Month", "", "output current Month", of_month)
 	build(25, "Tmax>=40", "0|1", "if Tmax >= 40°C then 1 else 0", of_tmax_ge_40)
 	build(26, "AbBiomN", "kgN ha-1", "AbovegroundBiomassNContent", of_ab_biom_n)
 	build(27, "EffRootDep", "m", "Effective RootingDepth", of_eff_root_dep)
 	build(28, "GrainN", "kg ha-1", "get_FruitBiomassNContent", of_grain_n)
-	build(29, "LightInterception1", "", "LightInterception of single crop or top layer of taller crop", of_light_interception1)
-	build(30, "LightInterception2", "", "LightInterception of lower layer of taller crop", of_light_interception2)
+	build(
+		29,
+		"LightInterception1",
+		"",
+		"LightInterception of single crop or top layer of taller crop",
+		of_light_interception1,
+	)
+	build(
+		30,
+		"LightInterception2",
+		"",
+		"LightInterception of lower layer of taller crop",
+		of_light_interception2,
+	)
 	build(31, "Nresid", "kg N ha-1", "Nitrogen content in crop residues", of_nresid)
 	build(32, "Nstress", "-", "NitrogenStressIndex", of_nstress)
 	build(33, "PotNup", "kgN ha-1", "PotNUptake", of_pot_nup)
@@ -1517,7 +1568,13 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	build(40, "Ra-Organs", "kgC ha-1", "organ specific autotrophic respiration", of_ra_organs)
 	build(41, "OrgGreenBiom", "kgDM ha-1", "get_OrganGreenBiomass(i)", of_org_green_biom)
 	build(42, "ActNupLayer", "KgN ha-1", "ActNUptakefromLayer", of_act_nup_layer)
-	build(43, "actammoxrate", "kgN/m3/d", "actual ammonia oxidation rate in layer", of_actammoxrate)
+	build(
+		43,
+		"actammoxrate",
+		"kgN/m3/d",
+		"actual ammonia oxidation rate in layer",
+		of_actammoxrate,
+	)
 	build(44, "actdenitrate", "kgN/m3/d", "actual denitrification rate in layer", of_actdenitrate)
 	build(45, "actnitrate", "kgN/m3/d", "actual nitrification rate in layer", of_actnitrate)
 	build(46, "AOMf", "kgC m-3", "get_AOM_FastSum", of_aomf)
@@ -1537,10 +1594,22 @@ build_output_table :: proc(allocator := context.allocator) -> ^BOT_Res {
 	build(60, "Rh", "kgC ha-", "Rh", of_rh)
 	build(61, "AWC", "m3 m-3", "available water capacity", of_awc)
 	build(62, "PASW", "m3 m-3", "PASW", of_pasw)
-	build(63, "WaterContent", "fraction nFC", "soil water content in % of available soil water", of_water_content)
+	build(
+		63,
+		"WaterContent",
+		"fraction nFC",
+		"soil water content in % of available soil water",
+		of_water_content,
+	)
 	build(64, "Silt", "kg kg-1", "Soil silt content", of_silt)
 	build(65, "SOC-X-Y", "gC m-2", "SOC-X-Y", of_soc_x_y)
-	build(66, "Pot_ET", "mm", "potential evapotranspiration = ET0 * Kc = the plants water use", of_pot_et)
+	build(
+		66,
+		"Pot_ET",
+		"mm",
+		"potential evapotranspiration = ET0 * Kc = the plants water use",
+		of_pot_et,
+	)
 
 	g_output_table_built = true
 	return &g_output_table
