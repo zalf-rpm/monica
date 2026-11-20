@@ -53,10 +53,10 @@ voc_jjv_gamma_ph_grote2014 :: proc(comp, ci, jj, jv: f64) -> f64 {
 // C++: struct GammaEnRes (file-local)
 @(private)
 Voc_Jjv_Gamma_En_Res :: struct {
-	en_iso:      f64, // activity factor related to enzyme activity (isoprene synthase)
-	en_mono:     f64, // activity factor related to enzyme activity (monoterpene synthase)
-	ennorm_iso:  f64, // normalized activity factor related to enzyme activity (isoprene synthase)
-	ennorm_mono: f64, // normalized activity factor related to enzyme activity (monoterpene synthase)
+	en_iso:      f64 `unit:"1" unit_guess:"high"`, // activity factor related to enzyme activity (isoprene synthase)
+	en_mono:     f64 `unit:"1" unit_guess:"high"`, // activity factor related to enzyme activity (monoterpene synthase)
+	ennorm_iso:  f64 `unit:"1" unit_guess:"high"`, // normalized activity factor related to enzyme activity (isoprene synthase)
+	ennorm_mono: f64 `unit:"1" unit_guess:"high"`, // normalized activity factor related to enzyme activity (monoterpene synthase)
 }
 
 // C++: GammaEnRes gamma_EN(double, double, const SpeciesData&)

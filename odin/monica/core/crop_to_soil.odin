@@ -24,9 +24,9 @@ import "core:fmt"
 Crop_To_Soil :: struct {
 	has_crop:                     bool,
 	being_cleared:                bool,
-	developmental_stage:          int,
+	developmental_stage:          int `unit:"" unit_guess:"high"`,
 	// canopy - soil moisture, soil temperature
-	soil_coverage:                f64,
+	soil_coverage:                f64 `unit:"0-1" unit_guess:"high"`,
 	kc_factor:                    f64 `unit:"1"`,
 	kcb_factor:                   f64 `unit:"1"`,
 	crop_height:                  f64 `unit:"m"`,
@@ -34,14 +34,15 @@ Crop_To_Soil :: struct {
 	aboveground_biomass:          f64 `unit:"kgDM ha-1"`,
 	// water - soil moisture
 	reference_evapotranspiration: f64 `unit:"mm"`,
+	net_radiation:                f64 `unit:"MJ m-2"`, // of reference_evapotranspiration
 	remaining_evapotranspiration: f64 `unit:"mm"`,
-	net_precipitation:            f64,
+	net_precipitation:            f64 `unit:"mm" unit_guess:"high"`,
 	evaporated_from_intercept:    f64 `unit:"mm"`,
 	rooting_depth:                int `unit:"layer#"`,
 	// per layer; views of the crop's arrays (valid for the day they are filled)
 	transpiration:                []f64 `unit:"mm"`,
 	// nitrogen - soil transport; per layer, a view like transpiration
-	n_uptake_from_layer:          []f64,
+	n_uptake_from_layer:          []f64 `unit:"kgN m-2" unit_guess:"high"`,
 	// carbon - soil organic
 	net_primary_production:       f64 `unit:"kgC ha-1"`,
 }
@@ -60,6 +61,7 @@ crop_to_soil_of :: proc(cm: ^Crop_Module, being_cleared: bool) -> (cts: Crop_To_
 	cts.leaf_area_index = cm.leaf_area_index
 	cts.aboveground_biomass = cm.aboveground_biomass
 	cts.reference_evapotranspiration = cm.reference_evapotranspiration
+	cts.net_radiation = cm.et0.net_radiation
 	cts.remaining_evapotranspiration = cm.remaining_evapotranspiration
 	cts.net_precipitation = cm.net_precipitation
 	cts.evaporated_from_intercept = cm.evaporated_from_intercept
@@ -101,7 +103,7 @@ Crop_Events :: struct {
 	anthesis:               bool,
 	maturity:               bool,
 	cereal_stem_elongation: bool,
-	stage:                  int, // "Stage-<stage>" (1-based) on a stage change or right after sowing; 0: none
+	stage:                  int `unit:"" unit_guess:"high"`, // "Stage-<stage>" (1-based) on a stage change or right after sowing; 0: none
 }
 
 // The C++ event names, in the order the C++ step fires them. "Stage-<n>" is
@@ -121,8 +123,8 @@ crop_event_names :: proc(e: Crop_Events) -> (names: [5]string, n: int) {
 // crop step doesn't change soil moisture, so taking it before the step reads
 // the same values the callback read during it.
 Snow_For_Crop :: struct {
-	snow_depth:  f64,
-	frost_depth: f64,
+	snow_depth:  f64 `unit:"mm" unit_guess:"high"`,
+	frost_depth: f64 `unit:"m" unit_guess:"high"`,
 }
 
 snow_for_crop :: proc(sm: ^Soil_Moisture) -> Snow_For_Crop {

@@ -17,7 +17,7 @@ Stics :: struct {
 	r:            stics.Soil_Temp_Rate,
 	a:            stics.Soil_Temp_Auxiliary,
 	ex:           stics.Soil_Temp_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_stics :: proc(allocator: Allocator) -> Module {

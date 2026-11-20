@@ -85,7 +85,7 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, P + ".vc_OrganGreenBiomass", cm.organ_green_biomass)
 	tr.dump(t, P + ".vc_RootBiomass", cm.root_biomass)
 	tr.dump(t, P + ".vc_TotalBiomassNContent", cm.total_biomass_n_content)
-	tr.dump(t, P + ".vc_CropNDemand", cm.crop_n_demand)
+	tr.dump(t, P + ".vc_CropNDemand", cm.crop_n_demand / 10000.0) // C++: kgN m-2 after the step
 	tr.dump(t, P + ".vc_MaxRootingDepth", cm.max_rooting_depth)
 	tr.dump(t, P + ".vc_RootingDepth_m", cm.rooting_depth_m)
 	tr.dump(t, P + ".vc_RootingDepth", cm.rooting_depth)

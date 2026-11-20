@@ -185,8 +185,8 @@ O3_impact_out O3impact::O3_impact_hourly(O3_impact_in in, O3_impact_params par,
   }
 
   double inst_O3_up = O3_uptake(in.O3a, in.gs, out.WS_st_clos); // nmol m-2 s-1
-  out.hourly_O3_up += inst_O3_up / 1000; // from nmol to �mol //* 3.6; //3.6 converts from nmol
-                                         // to �mol and from s-1 to h-1
+  out.hourly_O3_up += inst_O3_up / 1000; // from nmol to umol //* 3.6; //3.6 converts from nmol
+                                         // to umol and from s-1 to h-1
   double fO3s_h = hourly_O3_reduction_Ac(inst_O3_up, par.gamma1, par.gamma2);
 
   // short term O3 effect on Ac

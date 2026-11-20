@@ -121,22 +121,22 @@ State `Crop_Phenology`:
 |---|---|---|
 | `developmental_stage` | `int` |  |
 | `final_developmental_stage` | `int` |  |
-| `current_temperature_sum` | `[dynamic]f64` |  |
+| `current_temperature_sum` | `[dynamic]f64` | °C d |
 | `current_total_temperature_sum` | `f64` | °C d |
-| `total_temperature_sum` | `f64` |  |
-| `temperature_sum_to_flowering` | `f64` |  |
+| `total_temperature_sum` | `f64` | °C d |
+| `temperature_sum_to_flowering` | `f64` | °C d |
 | `relative_total_development` | `f64` | 0-1 |
 | `daylength_factor` | `f64` | 0-1 |
 | `vernalisation_factor` | `f64` | 0-1 |
-| `vernalisation_days` | `f64` |  |
+| `vernalisation_days` | `f64` | d |
 | `growth_cycle_ended` | `bool` |  |
 | `perennial_crop_dormancy_period_end_date` | `d.Date` |  |
-| `no_of_crop_steps` | `int` |  |
+| `no_of_crop_steps` | `int` | d |
 | `stem_elongation_event_fired` | `bool` |  |
 | `anthesis_day` | `int` |  |
 | `maturity_day` | `int` |  |
 | `maturity_reached` | `bool` |  |
-| `time_step` | `f64` |  |
+| `time_step` | `f64` | d |
 
 Input `Daylength_Factor_In`:
 
@@ -197,15 +197,15 @@ State `Crop_Canopy`:
 | Field | Type | Unit |
 |---|---|---|
 | `crop_height` | `f64` | m |
-| `crop_diameter` | `f64` |  |
+| `crop_diameter` | `f64` | m |
 | `leaf_area_index` | `f64` | m2 m-2 |
-| `green_area_index` | `f64` |  |
-| `soil_coverage` | `f64` |  |
+| `green_area_index` | `f64` | m2 m-2 |
+| `soil_coverage` | `f64` | 0-1 |
 | `kc_factor` | `f64` | 1 |
 | `kcb_factor` | `f64` | 1 |
-| `kcb_ini` | `f64` |  |
-| `kcb_mid` | `f64` |  |
-| `kcb_end` | `f64` |  |
+| `kcb_ini` | `f64` | 1 |
+| `kcb_mid` | `f64` | 1 |
+| `kcb_end` | `f64` | 1 |
 
 Input `Canopy_Growth_In`:
 
@@ -238,23 +238,23 @@ State `Crop_Photosynthesis`:
 | Field | Type | Unit |
 |---|---|---|
 | `co2_method` | `int` |  |
-| `assimilation_rate` | `f64` |  |
+| `assimilation_rate` | `f64` | kg CO2 ha-1 h-1 |
 | `gross_photosynthesis` | `f64` | kgCH2O ha-1 |
-| `gross_photosynthesis_mol` | `f64` |  |
-| `gross_photosynthesis_reference_mol` | `f64` |  |
-| `gross_assimilates` | `f64` |  |
+| `gross_photosynthesis_mol` | `f64` | mol m-2 s-1 |
+| `gross_photosynthesis_reference_mol` | `f64` | mol m-2 s-1 |
+| `gross_assimilates` | `f64` | kgCH2O ha-1 |
 | `assimilates` | `f64` | kgCH2O ha-1 |
 | `growth_respiration_as` | `f64` | kgCH2O ha-1 |
 | `maintenance_respiration_as` | `f64` | kgCH2O ha-1 |
-| `net_maintenance_respiration` | `f64` |  |
-| `total_respired` | `f64` |  |
-| `sunlit_leaf_area_index` | `[dynamic]f64` |  |
-| `shaded_leaf_area_index` | `[dynamic]f64` |  |
-| `k_tkc` | `f64` |  |
-| `k_tko` | `f64` |  |
-| `fraction_of_intercepted_radiation1` | `f64` |  |
-| `fraction_of_intercepted_radiation2` | `f64` |  |
-| `max_assimilation_rate` | `f64` |  |
+| `net_maintenance_respiration` | `f64` | kgCH2O ha-1 |
+| `total_respired` | `f64` | kgCH2O ha-1 |
+| `sunlit_leaf_area_index` | `[dynamic]f64` | m2 m-2 |
+| `shaded_leaf_area_index` | `[dynamic]f64` | m2 m-2 |
+| `k_tkc` | `f64` | 1 |
+| `k_tko` | `f64` | 1 |
+| `fraction_of_intercepted_radiation1` | `f64` | 0-1 |
+| `fraction_of_intercepted_radiation2` | `f64` | 0-1 |
+| `max_assimilation_rate` | `f64` | kg CO2 ha-1 h-1 |
 
 Input `Photosynthesis_In`:
 
@@ -296,7 +296,7 @@ State `Crop_O3`:
 |---|---|---|
 | `o3_short_term_damage` | `f64` | 0-1 |
 | `o3_long_term_damage` | `f64` | 0-1 |
-| `o3_senescence` | `f64` |  |
+| `o3_senescence` | `f64` | 0-1 |
 | `o3_sum_uptake` | `f64` | µmol m-2 |
 | `o3_w_stomatal_closure` | `f64` | 0-1 |
 
@@ -326,10 +326,10 @@ State `Crop_Voc`:
 |---|---|---|
 | `step_size24` | `int` |  |
 | `step_size240` | `int` |  |
-| `rad24` | `[dynamic]f64` |  |
-| `rad240` | `[dynamic]f64` |  |
-| `tfol24` | `[dynamic]f64` |  |
-| `tfol240` | `[dynamic]f64` |  |
+| `rad24` | `[dynamic]f64` | W m-2 |
+| `rad240` | `[dynamic]f64` | W m-2 |
+| `tfol24` | `[dynamic]f64` | °C |
+| `tfol240` | `[dynamic]f64` | °C |
 | `index24` | `int` |  |
 | `index240` | `int` |  |
 | `full24` | `bool` |  |
@@ -361,14 +361,14 @@ State `Crop_Stress`:
 |---|---|---|
 | `oxygen_deficit` | `f64` | 0-1 |
 | `time_under_anoxia` | `int` | d |
-| `time_under_anoxia_threshold_default` | `int` |  |
+| `time_under_anoxia_threshold_default` | `int` | d |
 | `crop_heat_redux` | `f64` | 0-1 |
-| `days_after_begin_flowering` | `int` |  |
-| `total_crop_heat_impact` | `f64` |  |
+| `days_after_begin_flowering` | `int` | d |
+| `total_crop_heat_impact` | `f64` | 0-1 |
 | `crop_frost_redux` | `f64` | 0-1 |
 | `lt50` | `f64` | °C |
-| `lt50_m` | `f64` |  |
-| `drought_impact_on_fertility` | `f64` |  |
+| `lt50_m` | `f64` | °C |
+| `drought_impact_on_fertility` | `f64` | 0-1 |
 
 Input `Drought_Impact_In`:
 
@@ -423,8 +423,8 @@ State `Crop_N_Status`:
 | `target_n_concentration` | `f64` | kgN kgDM-1 |
 | `crop_n_redux` | `f64` | 0-1 |
 | `root_n_redux` | `f64` | 0-1 |
-| `n_concentration_aboveground_biomass_old` | `f64` |  |
-| `n_concentration_root_old` | `f64` |  |
+| `n_concentration_aboveground_biomass_old` | `f64` | kgN kgDM-1 |
+| `n_concentration_root_old` | `f64` | kgN kgDM-1 |
 
 Input `N_Status_In`:
 
@@ -444,20 +444,20 @@ State `Crop_Growth`:
 
 | Field | Type | Unit |
 |---|---|---|
-| `organ_biomass` | `[dynamic]f64` |  |
-| `organ_green_biomass` | `[dynamic]f64` |  |
-| `organ_dead_biomass` | `[dynamic]f64` |  |
+| `organ_biomass` | `[dynamic]f64` | kgDM ha-1 |
+| `organ_green_biomass` | `[dynamic]f64` | kgDM ha-1 |
+| `organ_dead_biomass` | `[dynamic]f64` | kgDM ha-1 |
 | `organ_growth_increment` | `[dynamic]f64` | kgDM ha-1 |
-| `organ_senescence_increment` | `[dynamic]f64` |  |
+| `organ_senescence_increment` | `[dynamic]f64` | kgDM ha-1 |
 | `aboveground_biomass` | `f64` | kgDM ha-1 |
-| `aboveground_biomass_old` | `f64` |  |
-| `belowground_biomass` | `f64` |  |
-| `belowground_biomass_old` | `f64` |  |
-| `total_biomass` | `f64` |  |
-| `reserve_assimilate_pool` | `f64` |  |
+| `aboveground_biomass_old` | `f64` | kgDM ha-1 |
+| `belowground_biomass` | `f64` | kgDM ha-1 |
+| `belowground_biomass_old` | `f64` | kgDM ha-1 |
+| `total_biomass` | `f64` | kgDM ha-1 |
+| `reserve_assimilate_pool` | `f64` | kgCH2O ha-1 |
 | `net_photosynthesis` | `f64` | kgCH2O ha-1 |
-| `crop_n_demand` | `f64` |  |
-| `max_n_uptake` | `f64` |  |
+| `crop_n_demand` | `f64` | kgN ha-1 |
+| `max_n_uptake` | `f64` | kgN m-1 d-1 |
 | `assimilate_part_coeffs_reduced` | `bool` |  |
 | `dying_out` | `bool` |  |
 
@@ -499,16 +499,16 @@ State `Crop_Root_System`:
 | Field | Type | Unit |
 |---|---|---|
 | `rooting_depth` | `int` | layer# |
-| `rooting_depth_m` | `f64` |  |
+| `rooting_depth_m` | `f64` | m |
 | `rooting_zone` | `int` | layer# |
-| `max_rooting_depth` | `f64` |  |
-| `soil_specific_max_rooting_depth` | `f64` |  |
-| `root_biomass` | `f64` |  |
-| `root_biomass_old` | `f64` |  |
-| `root_density` | `[dynamic]f64` |  |
-| `root_diameter` | `[dynamic]f64` |  |
-| `total_root_length` | `f64` |  |
-| `current_total_temperature_sum_root` | `f64` |  |
+| `max_rooting_depth` | `f64` | m |
+| `soil_specific_max_rooting_depth` | `f64` | m |
+| `root_biomass` | `f64` | kgDM ha-1 |
+| `root_biomass_old` | `f64` | kgDM ha-1 |
+| `root_density` | `[dynamic]f64` | m m-3 |
+| `root_diameter` | `[dynamic]f64` | m |
+| `total_root_length` | `f64` | m m-2 |
+| `current_total_temperature_sum_root` | `f64` | °C d |
 
 Input `Root_System_In`:
 
@@ -538,6 +538,7 @@ State `Crop_Et0`:
 |---|---|---|
 | `reference_evapotranspiration` | `f64` | mm |
 | `stomata_resistance` | `f64` | s m-1 |
+| `net_radiation` | `f64` | MJ m-2 |
 
 Input `Crop_Et0_In`:
 
@@ -566,22 +567,22 @@ State `Crop_Water_Uptake`:
 
 | Field | Type | Unit |
 |---|---|---|
-| `interception_storage` | `f64` |  |
-| `net_precipitation` | `f64` |  |
+| `interception_storage` | `f64` | mm |
+| `net_precipitation` | `f64` | mm |
 | `evaporated_from_intercept` | `f64` | mm |
 | `remaining_evapotranspiration` | `f64` | mm |
-| `potential_transpiration` | `f64` |  |
+| `potential_transpiration` | `f64` | mm |
 | `actual_transpiration` | `f64` | mm |
 | `transpiration` | `[dynamic]f64` | mm |
-| `transpiration_redux` | `[dynamic]f64` |  |
-| `root_effectivity` | `[dynamic]f64` |  |
-| `crop_water_uptake` | `[dynamic]f64` |  |
+| `transpiration_redux` | `[dynamic]f64` | 0-1 |
+| `root_effectivity` | `[dynamic]f64` | 0-1 |
+| `crop_water_uptake` | `[dynamic]f64` | mm |
 | `transpiration_deficit` | `f64` | 0-1 |
 | `potential_transpiration_deficit` | `f64` | 0-1 |
 | `actual_transpiration_deficit` | `f64` | 0-1 |
 | `transpiration_reduced` | `f64` | mm |
-| `accumulated_et_a` | `f64` |  |
-| `accumulated_transpiration` | `f64` |  |
+| `accumulated_et_a` | `f64` | mm |
+| `accumulated_transpiration` | `f64` | mm |
 
 Input `Water_Uptake_In`:
 
@@ -604,6 +605,7 @@ Input `Water_Uptake_In`:
 | `rooting_zone` | `int` | layer# | Root_System |  |  |
 | `transplant_efficiency` | `f64` | 0-1 | Management |  |  |
 | `water_deficit_response_on` | `bool` |  | simulation parameters |  |  |
+| `max_potential_evapotranspiration` | `f64` | mm d-1 | soil moisture parameters |  |  |
 | `max_effective_rooting_depth` | `f64` | m | site |  |  |
 
 ## N_Uptake
@@ -614,15 +616,15 @@ State `Crop_N_Uptake`:
 
 | Field | Type | Unit |
 |---|---|---|
-| `n_uptake_from_layer` | `[dynamic]f64` |  |
+| `n_uptake_from_layer` | `[dynamic]f64` | kgN m-2 |
 | `fixed_n` | `f64` | kgN ha-1 |
 | `n_concentration_aboveground_biomass` | `f64` | kgN kgDM-1 |
 | `n_concentration_root` | `f64` | kgN kgDM-1 |
 | `total_biomass_n_content` | `f64` | kgN ha-1 |
-| `total_n_input` | `f64` |  |
+| `total_n_input` | `f64` | kgN ha-1 |
 | `total_n_uptake` | `f64` | kgN ha-1 |
 | `sum_total_n_uptake` | `f64` | kgN ha-1 |
-| `n_content_deficit` | `f64` |  |
+| `n_content_deficit` | `f64` | kgN ha-1 |
 
 Input `N_Uptake_In`:
 
@@ -660,7 +662,7 @@ State `Crop_Carbon`:
 |---|---|---|
 | `gross_primary_production` | `f64` | kgC ha-1 |
 | `net_primary_production` | `f64` | kgC ha-1 |
-| `respiration` | `f64` |  |
+| `respiration` | `f64` | kgC ha-1 |
 
 Input `Carbon_In`:
 
@@ -677,10 +679,10 @@ State `Crop_Management`:
 
 | Field | Type | Unit |
 |---|---|---|
-| `transplant_shock_duration` | `int` |  |
-| `days_since_transplant` | `int` |  |
-| `transplant_efficiency` | `f64` |  |
-| `cutting_delay_days` | `int` |  |
+| `transplant_shock_duration` | `int` | d |
+| `days_since_transplant` | `int` | d |
+| `transplant_efficiency` | `f64` | 0-1 |
+| `cutting_delay_days` | `int` | d |
 | `exported_cut_biomass` | `f64` | kgDM ha-1 |
 | `sum_exported_cut_biomass` | `f64` | kgDM ha-1 |
 | `residue_cut_biomass` | `f64` | kgDM ha-1 |

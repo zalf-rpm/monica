@@ -94,7 +94,7 @@ dump_crop_module_biomass :: proc(t: ^tr.Tracer, path: string, cm: ^core.Crop_Mod
 	tr.dump(t, jn(path, "vc_OrganSenescenceIncrement"), cm.organ_senescence_increment)
 	tr.dump(t, jn(path, "vc_RootBiomass"), cm.root_biomass)
 	tr.dump(t, jn(path, "vc_TotalBiomassNContent"), cm.total_biomass_n_content)
-	tr.dump(t, jn(path, "vc_CropNDemand"), cm.crop_n_demand)
+	tr.dump(t, jn(path, "vc_CropNDemand"), cm.crop_n_demand / 10000.0) // C++: kgN m-2 after the step
 
 	tr.dump(t, jn(path, "vc_MaxRootingDepth"), cm.max_rooting_depth)
 	tr.dump(t, jn(path, "vc_RootingDepth_m"), cm.rooting_depth_m)

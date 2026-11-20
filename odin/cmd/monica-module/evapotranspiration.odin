@@ -6,7 +6,8 @@
 // soil_moisture_i, evaporation_i, transpiration_i, evapotranspiration_i), with
 // 17 significant digits.
 //
-// The input file, in MONICA's units; every value is optional (default 0):
+// The input file, in MONICA's units; every value is optional (default 0, the
+// cap of the potential evapotranspiration 6.5 mm as MONICA's):
 //
 //   {
 //     "Latitude": 52.8, "HeightNN": 50,           // [deg], [m]
@@ -14,6 +15,7 @@
 //     "StomataConductanceAlpha": 40, "SaturationBeta": 2.5,
 //     "EvaporationZeta": 40,                      // ... and soil moisture parameters
 //     "MaximumEvaporationImpactDepth": 5, "XSACriticalSoilMoisture": 0.1,
+//     "MaxPotentialEvapotranspiration": 6.5,      // [mm d-1]
 //     "Layers": [{"Thickness": 0.1,               // [m]
 //                 "PermanentWiltingPoint": 0.05, "FieldCapacity": 0.2,
 //                 "SoilMoisture": 0.15}],         // [m3 m-3]; only for modules that need them
@@ -34,6 +36,7 @@
 package monica_module
 
 import etm "../../monica/modules/evapotranspiration"
+import p "../../monica/params"
 import d "../../support/date"
 import jx "../../support/jsonx"
 import tl "../../support/tools"
@@ -170,6 +173,8 @@ read_et_input :: proc(path: string, inputs: []string = nil) -> (in_: etm.Input, 
 	in_.evaporation_zeta = jx.double_value(j, "EvaporationZeta")
 	in_.maximum_evaporation_impact_depth = jx.double_value(j, "MaximumEvaporationImpactDepth")
 	in_.xsa_critical_soil_moisture = jx.double_value(j, "XSACriticalSoilMoisture")
+	in_.max_potential_evapotranspiration = p.DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION
+	jx.set_double_value(&in_.max_potential_evapotranspiration, j, "MaxPotentialEvapotranspiration")
 	in_.stomata_conductance_alpha = jx.double_value(j, "StomataConductanceAlpha")
 	in_.saturation_beta = jx.double_value(j, "SaturationBeta")
 	layers := jx.array_items(jx.get(j, "Layers"))

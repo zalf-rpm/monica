@@ -85,6 +85,7 @@ make_evapotranspiration_module :: proc(
 	in_.evaporation_zeta = smp.evaporation_zeta
 	in_.maximum_evaporation_impact_depth = smp.maximum_evaporation_impact_depth
 	in_.xsa_critical_soil_moisture = smp.xsa_critical_soil_moisture
+	in_.max_potential_evapotranspiration = smp.max_potential_evapotranspiration
 	in_.stomata_conductance_alpha = model.crop_mod_params.stomata_conductance_alpha
 	in_.saturation_beta = model.crop_mod_params.saturation_beta
 	n := len(model.soil_column.layers)

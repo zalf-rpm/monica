@@ -24,7 +24,7 @@ Monica_Et :: struct {
 	r:            et.Et_Rate,
 	a:            et.Et_Auxiliary,
 	ex:           et.Et_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_monica_et :: proc(allocator: Allocator) -> Module {
@@ -55,6 +55,8 @@ monica_et_init :: proc(b: ^Monica_Et, in_: ^Input, allocator := context.allocato
 	et.et_component_set_evaporation_zeta(c, in_.evaporation_zeta)
 	et.et_component_set_maximum_evaporation_impact_depth(c, in_.maximum_evaporation_impact_depth)
 	et.et_component_set_xsa_critical_soil_moisture(c, in_.xsa_critical_soil_moisture)
+	// no setter in the generated component (a constant there, 6.5)
+	c.potential_evapotranspiration.potential_evapotranspiration_cap = in_.max_potential_evapotranspiration
 	et.et_component_set_stomata_conductance_alpha(c, in_.stomata_conductance_alpha)
 	et.et_component_set_saturation_beta(c, in_.saturation_beta)
 	et.et_component_set_no_of_soil_layers(c, n)

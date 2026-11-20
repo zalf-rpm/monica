@@ -10,15 +10,15 @@ import "../../support/cr_math"
 Frost_Component :: struct {
 	soil_column:                          ^Soil_Column,
 	frost_depth:                          f64 `unit:"m"`,
-	accumulated_frost_depth:              f64,
-	negative_degree_days:                 f64, // negative degree-days under snow
+	accumulated_frost_depth:              f64 `unit:"m" unit_guess:"medium"`,
+	negative_degree_days:                 f64 `unit:"°C d" unit_guess:"high"`, // negative degree-days under snow
 	thaw_depth:                           f64 `unit:"m"`,
-	frost_days:                           int,
-	lambda_redux:                         [dynamic]f64, // reduction factor for Lambda []
-	temperature_under_snow:               f64,
-	hydraulic_conductivity_redux:         f64,
-	time_step:                            f64,
-	initial_hydraulic_conductivity_redux: f64,
+	frost_days:                           int `unit:"d" unit_guess:"high"`,
+	lambda_redux:                         [dynamic]f64 `unit:"0-1" unit_guess:"high"`, // reduction factor for Lambda []
+	temperature_under_snow:               f64 `unit:"°C" unit_guess:"high"`,
+	hydraulic_conductivity_redux:         f64 `unit:"0-1" unit_guess:"high"`,
+	time_step:                            f64 `unit:"d" unit_guess:"high"`,
+	initial_hydraulic_conductivity_redux: f64 `unit:"0-1" unit_guess:"high"`,
 }
 
 // C++: void monica::frostcomponent::initialize(FrostComponent*, SoilColumn*,

@@ -537,13 +537,13 @@ data_accessor_set_tamp_and_tav :: proc(da: ^Data_Accessor, tamp, tav: f64) {
 
 // C++: pair<double,double> DataAccessor::calcTAMPandTAV() const
 //
-// NOTE(c++-quirk): the accumulated sum/count for the LAST month present in the
-// date range is only flushed into month2avgs on a month change mid-loop, never
-// after the loop ends - so the final month's partial average never lands in
-// month2avgs (unless a later, different year's occurrence of that same month
-// number flushes it, which averages across an unrelated stretch of days
-// alongside it). Reproduced exactly; this is dead code today (see the package
-// comment) but ported faithfully per CONVENTIONS.
+// NOTE(deviation): two C++ bugs fixed, as only the soil temperature modules (not
+// in the C++ master) use this. The C++ never flushes the last month's sum into
+// month2avgs, and it averages over all 12 months, a month without data counting
+// as 0 °C: a December-May season came out as TAV 5.4 °C, TAMP 18 °C instead of
+// 21 and 11.1 °C (Maricopa). Here the last month counts, and TAV and TAMP are
+// over the months that have data only. Less than a year of data still gives
+// only that part of the year's average: pass tav/tamp then (climate.csv-options).
 data_accessor_calc_tamp_and_tav :: proc(
 	da: ^Data_Accessor,
 	allocator := context.allocator,
@@ -558,18 +558,15 @@ data_accessor_calc_tamp_and_tav :: proc(
 	sum: f64 = 0
 	count := 0
 	prev_month := 0
-	for i in 0 ..< data_accessor_no_of_steps_possible(da) {
+	n := data_accessor_no_of_steps_possible(da)
+	for i in 0 ..< n {
 		dt := data_accessor_date_for_step(da, i)
 		current_month := int(d.month(dt))
 		if prev_month == 0 {
 			prev_month = current_month
 		}
 		if current_month != prev_month {
-			if count > 0 {
-				append(&month2avgs[prev_month], sum / f64(count))
-			} else {
-				append(&month2avgs[prev_month], 0)
-			}
+			append(&month2avgs[prev_month], sum / f64(count))
 			sum = 0
 			count = 0
 			prev_month = current_month
@@ -577,9 +574,17 @@ data_accessor_calc_tamp_and_tav :: proc(
 		sum += data_accessor_data_for_timestep(da, .tavg, i)
 		count += 1
 	}
+	if count > 0 {
+		append(&month2avgs[prev_month], sum / f64(count))
+	}
 	monthly_avgs := make([dynamic]f64, 0, 12, allocator)
 	for i in 1 ..= 12 {
-		append(&monthly_avgs, tl.average(month2avgs[i][:]))
+		if len(month2avgs[i]) > 0 {
+			append(&monthly_avgs, tl.average(month2avgs[i][:]))
+		}
+	}
+	if len(monthly_avgs) == 0 {
+		return 0, 0
 	}
 	mn, mx := tl.min_max(monthly_avgs[:])
 	return mx - mn, tl.average(monthly_avgs[:])

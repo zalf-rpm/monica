@@ -16,7 +16,7 @@ Cultivation_Method :: struct {
 	all_worksteps:                [dynamic]^Workstep,
 	all_abs_worksteps:            [dynamic]^Workstep,
 	unfinished_dynamic_worksteps: [dynamic]^Workstep,
-	custom_id:                    int,
+	custom_id:                    int `unit:"" unit_guess:"high"`,
 	name:                         string,
 	can_be_skipped:               bool,
 	is_cover_crop:                bool,

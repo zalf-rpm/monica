@@ -13,17 +13,17 @@ import "../../support/cr_math"
 // (root_system_step).
 Crop_Root_System :: struct {
 	rooting_depth:                      int `unit:"layer#"`, // C++ size_t, //! old WURZ
-	rooting_depth_m:                    f64,
+	rooting_depth_m:                    f64 `unit:"m" unit_guess:"high"`,
 	rooting_zone:                       int `unit:"layer#"`, // C++ size_t
-	max_rooting_depth:                  f64, //! old WURM
+	max_rooting_depth:                  f64 `unit:"m" unit_guess:"high"`, //! old WURM
 	// vs_soil_mineral_n_content:               [dynamic]f64, //! old C1
-	soil_specific_max_rooting_depth:    f64, //! old WURZMAX [m]
-	root_biomass:                       f64, //! old WUMAS
-	root_biomass_old:                   f64, //! old WUMALT
-	root_density:                       [dynamic]f64, //! old WUDICH
-	root_diameter:                      [dynamic]f64, //! old WRAD
-	total_root_length:                  f64, //! old WULAEN
-	current_total_temperature_sum_root: f64,
+	soil_specific_max_rooting_depth:    f64 `unit:"m" unit_guess:"medium"`, //! old WURZMAX [m]
+	root_biomass:                       f64 `unit:"kgDM ha-1" unit_guess:"high"`, //! old WUMAS
+	root_biomass_old:                   f64 `unit:"kgDM ha-1" unit_guess:"high"`, //! old WUMALT
+	root_density:                       [dynamic]f64 `unit:"m m-3" unit_guess:"high"`, //! old WUDICH
+	root_diameter:                      [dynamic]f64 `unit:"m" unit_guess:"high"`, //! old WRAD
+	total_root_length:                  f64 `unit:"m m-2" unit_guess:"medium"`, //! old WULAEN
+	current_total_temperature_sum_root: f64 `unit:"°C d" unit_guess:"high"`,
 }
 
 // What root_system_step reads on a day.

@@ -433,7 +433,7 @@ BOTRes &monica::buildOutputTable() {
                    : 0.0;
       });
 
-      build({id++, "TimeUnderAnoxia", "0;1", "TimeUnderAnoxia"},
+      build({id++, "TimeUnderAnoxia", "d", "TimeUnderAnoxia"},
             [](const MonicaModel &monica, OId oid) {
               return monica.currentCropModule.get()
                          ? round(monica.currentCropModule.get()->vc_TimeUnderAnoxia, 2)
@@ -699,7 +699,7 @@ BOTRes &monica::buildOutputTable() {
                    : 0.0;
       });
 
-      build({id++, "RootWaUptak", "KgN ha-1", "RootWatUptakefromLayer"},
+      build({id++, "RootWaUptak", "mm", "RootWatUptakefromLayer"},
             [](const MonicaModel &monica, OId oid) {
               return getComplexValues<double>(
                   oid,
@@ -870,7 +870,7 @@ BOTRes &monica::buildOutputTable() {
                 value);
           });
 
-      build({id++, "ActNupLayer", "KgN ha-1", "ActNUptakefromLayer"},
+      build({id++, "ActNupLayer", "kgN ha-1", "ActNUptakefromLayer"},
             [](const MonicaModel &monica, OId oid) {
               return getComplexValues<double>(
                   oid,
@@ -1343,7 +1343,7 @@ BOTRes &monica::buildOutputTable() {
                   oid, [&](int i) { return monica.soilMoisture->vm_PercolationRate.at(i); }, 3);
             });
 
-      build({id++, "SMB-CO2-ER", "", "soilOrganic.get_SMB_CO2EvolutionRate"},
+      build({id++, "SMB-CO2-ER", "kgC m-3 d-1", "soilOrganic.get_SMB_CO2EvolutionRate"},
             [](const MonicaModel &monica, OId oid) {
               auto nools = int(soilcolumn::numberOfOrganicLayers(monica.soilColumn.get()));
               oid.fromLayer = min(oid.fromLayer, nools - 1);
@@ -1602,7 +1602,7 @@ BOTRes &monica::buildOutputTable() {
               return getComplexValues<double>(
                   oid, [&](int i) { return monica.soilOrganic->vo_ActDenitrificationRate[i]; }, 6);
             });
-      build({id++, "rootDensity", "", "cropGrowth->vc_RootDensity"},
+      build({id++, "rootDensity", "m m-3", "cropGrowth->vc_RootDensity"},
             [](const MonicaModel &monica, OId oid) {
               return getComplexValues<double>(
                   oid,
@@ -1622,6 +1622,12 @@ BOTRes &monica::buildOutputTable() {
             [](const MonicaModel &monica, OId oid) {
               return getComplexValues<double>(
                   oid, [&](int i) { return monica.soilMoisture->vm_WaterFlux.at(i); }, 1);
+            });
+
+      // from the AMEI branch (not in master); with a crop the net radiation of the crop's ET0
+      build({id++, "net_radiation", "MJ m-2", "Net radiation of the reference evapotranspiration"},
+            [](const MonicaModel &monica, OId oid) {
+              return round(monica.soilMoisture->vw_NetRadiation, 3);
             });
 
       tableBuilt = true;

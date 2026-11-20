@@ -15,27 +15,27 @@ import "../../support/cr_math"
 
 // Photosynthesis and respiration (fc_crop_photosynthesis, classic or FvCB).
 Crop_Photosynthesis :: struct {
-	co2_method:                         int,
-	assimilation_rate:                  f64, //! old AMAX
+	co2_method:                         int `unit:"" unit_guess:"high"`,
+	assimilation_rate:                  f64 `unit:"kg CO2 ha-1 h-1" unit_guess:"high"`, //! old AMAX
 	gross_photosynthesis:               f64 `unit:"kgCH2O ha-1"`, //! old GPHOT
-	gross_photosynthesis_mol:           f64,
-	gross_photosynthesis_reference_mol: f64,
-	gross_assimilates:                  f64,
+	gross_photosynthesis_mol:           f64 `unit:"mol m-2 s-1" unit_guess:"medium"`,
+	gross_photosynthesis_reference_mol: f64 `unit:"mol m-2 s-1" unit_guess:"medium"`,
+	gross_assimilates:                  f64 `unit:"kgCH2O ha-1" unit_guess:"high"`,
 	assimilates:                        f64 `unit:"kgCH2O ha-1"`,
 	growth_respiration_as:              f64 `unit:"kgCH2O ha-1"`,
 	maintenance_respiration_as:         f64 `unit:"kgCH2O ha-1"`,
-	net_maintenance_respiration:        f64, //! old MAINT
-	total_respired:                     f64,
-	sunlit_leaf_area_index:             [dynamic]f64,
-	shaded_leaf_area_index:             [dynamic]f64,
-	k_tkc:                              f64, // old KTkc
-	k_tko:                              f64, // old KTkc
-	fraction_of_intercepted_radiation1: f64,
-	fraction_of_intercepted_radiation2: f64,
+	net_maintenance_respiration:        f64 `unit:"kgCH2O ha-1" unit_guess:"high"`, //! old MAINT
+	total_respired:                     f64 `unit:"kgCH2O ha-1" unit_guess:"high"`,
+	sunlit_leaf_area_index:             [dynamic]f64 `unit:"m2 m-2" unit_guess:"high"`,
+	shaded_leaf_area_index:             [dynamic]f64 `unit:"m2 m-2" unit_guess:"high"`,
+	k_tkc:                              f64 `unit:"1" unit_guess:"high"`, // old KTkc
+	k_tko:                              f64 `unit:"1" unit_guess:"high"`, // old KTkc
+	fraction_of_intercepted_radiation1: f64 `unit:"0-1" unit_guess:"high"`,
+	fraction_of_intercepted_radiation2: f64 `unit:"0-1" unit_guess:"medium"`,
 	// the cultivar's MaxAssimilationRate, reduced by each cutting (photosynthesis_cut)
 	// and reset when a perennial's parameters are replaced - the C++ multiplies the
 	// parameter itself
-	max_assimilation_rate:              f64,
+	max_assimilation_rate:              f64 `unit:"kg CO2 ha-1 h-1" unit_guess:"high"`,
 }
 
 // What photosynthesis_step reads on a day.

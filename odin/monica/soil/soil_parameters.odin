@@ -56,31 +56,31 @@ pwp_fc_sat_method_from_name :: proc(name: string) -> (Pwp_Fc_Sat_Method, bool) {
 // C++: struct Soil::SoilParameters (data members only - see the package comment
 // for calculateAndSetPwpFcSat)
 Soil_Parameters :: struct {
-	soil_sand_content:        f64, // [kg kg-1]
-	soil_clay_content:        f64, // [kg kg-1] (Ton)
-	soil_ph:                  f64,
-	soil_stone_content:       f64, // [m3 m-3]
-	lambda:                   f64,
-	field_capacity:           f64, // [m3 m-3]
-	saturation:               f64, // [m3 m-3]
-	permanent_wilting_point:  f64, // [m3 m-3]
+	soil_sand_content:        f64 `unit:"kg kg-1" unit_guess:"high"`, // [kg kg-1]
+	soil_clay_content:        f64 `unit:"kg kg-1" unit_guess:"high"`, // [kg kg-1] (Ton)
+	soil_ph:                  f64 `unit:"1" unit_guess:"high"`,
+	soil_stone_content:       f64 `unit:"m3 m-3" unit_guess:"high"`, // [m3 m-3]
+	lambda:                   f64 `unit:"1" unit_guess:"medium"`,
+	field_capacity:           f64 `unit:"m3 m-3" unit_guess:"high"`, // [m3 m-3]
+	saturation:               f64 `unit:"m3 m-3" unit_guess:"high"`, // [m3 m-3]
+	permanent_wilting_point:  f64 `unit:"m3 m-3" unit_guess:"high"`, // [m3 m-3]
 	soil_texture:             string,
-	soil_ammonium:            f64, // [kg NH4-N m-3]
-	soil_nitrate:             f64, // [kg NO3-N m-3]
-	soil_cn_ratio:            f64,
-	soil_moisture_percent_fc: f64,
+	soil_ammonium:            f64 `unit:"kgN m-3" unit_guess:"high"`, // [kg NH4-N m-3]
+	soil_nitrate:             f64 `unit:"kgN m-3" unit_guess:"high"`, // [kg NO3-N m-3]
+	soil_cn_ratio:            f64 `unit:"1" unit_guess:"high"`,
+	soil_moisture_percent_fc: f64 `unit:"%" unit_guess:"high"`,
 
-	thickness:                f64, // layer thickness in m
+	thickness:                f64 `unit:"m" unit_guess:"high"`, // layer thickness in m
 
 	// Raw/override values; -1 means "unset" and the resolved value has to be
 	// computed via the corresponding soil_xyz() proc below (e.g. from the other
 	// value + clay content, or from organic carbon<->matter conversion). Read/
 	// write the override directly if that's really what's needed, otherwise use
 	// the resolved getter.
-	soil_raw_density:         f64, // [kg m-3]
-	soil_bulk_density:        f64, // [kg m-3]
-	soil_organic_carbon:      f64, // [kg kg-1]
-	soil_organic_matter:      f64, // [kg kg-1]
+	soil_raw_density:         f64 `unit:"kg m-3" unit_guess:"high"`, // [kg m-3]
+	soil_bulk_density:        f64 `unit:"kg m-3" unit_guess:"high"`, // [kg m-3]
+	soil_organic_carbon:      f64 `unit:"kg kg-1" unit_guess:"high"`, // [kg kg-1]
+	soil_organic_matter:      f64 `unit:"kg kg-1" unit_guess:"high"`, // [kg kg-1]
 }
 
 // C++ in-class initialisers

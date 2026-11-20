@@ -41,7 +41,7 @@ Soil_Moisture :: struct {
 	mod_params:                   p.Soil_Moisture_Module_Parameters,
 	env_params:                   ^p.Environment_Parameters,
 	crop_mod_params:              ^p.Crop_Module_Parameters,
-	no_of_soil_layers:            int,
+	no_of_soil_layers:            int `unit:"layer#" unit_guess:"high"`,
 	actual_evaporation:           f64 `unit:"mm"`,
 	actual_evapotranspiration:    f64 `unit:"mm"`,
 	actual_transpiration:         f64 `unit:"mm"`,
@@ -50,18 +50,18 @@ Soil_Moisture :: struct {
 	capillary_water70:            [dynamic]f64 `unit:"mm"`,
 	evaporation:                  [dynamic]f64 `unit:"mm"`,
 	evapotranspiration:           [dynamic]f64 `unit:"mm"`,
-	field_capacity_below_m3_m3:   f64,
-	gravitational_water:          [dynamic]f64,
-	groundwater_added:            f64,
-	groundwater_table_layer:      int, // C++ size_t
+	field_capacity_below_m3_m3:   f64 `unit:"m3 m-3" unit_guess:"high"`,
+	gravitational_water:          [dynamic]f64 `unit:"mm" unit_guess:"high"`,
+	groundwater_added:            f64 `unit:"mm" unit_guess:"high"`,
+	groundwater_table_layer:      int `unit:"layer#" unit_guess:"high"`, // C++ size_t
 	heat_conductivity:            [dynamic]f64 `unit:"J m-1 d-1"`,
 	infiltration:                 f64 `unit:"mm"`,
-	interception:                 f64,
+	interception:                 f64 `unit:"mm" unit_guess:"low"`,
 	kc_factor:                    f64 `unit:"1"`,
-	lambda_below:                 f64,
-	layer_thickness_m:            f64,
-	leaching_depth_layer_idx:     int,
-	net_precipitation_mm:         f64,
+	lambda_below:                 f64 `unit:"1" unit_guess:"high"`,
+	layer_thickness_m:            f64 `unit:"m" unit_guess:"high"`,
+	leaching_depth_layer_idx:     int `unit:"layer#" unit_guess:"high"`,
+	net_precipitation_mm:         f64 `unit:"mm" unit_guess:"high"`,
 	last_wetting_was_rain:        bool,
 	ke:                           f64 `unit:"1"`,
 	irrig_fw_event:               f64 `unit:"0-1"`,
@@ -71,16 +71,16 @@ Soil_Moisture :: struct {
 	percolation_rate:             [dynamic]f64 `unit:"mm d-1"`,
 	reference_evapotranspiration: f64 `unit:"mm"`,
 	residual_evapotranspiration:  [dynamic]f64 `unit:"mm"`,
-	soil_moisture_below_m3_m3:    f64,
-	soil_moisture_crit:           f64,
+	soil_moisture_below_m3_m3:    f64 `unit:"m3 m-3" unit_guess:"high"`,
+	soil_moisture_crit:           f64 `unit:"m3 m-3" unit_guess:"low"`,
 	soil_moisture_deficit:        f64 `unit:"m3 m-3"`,
-	pore_volume_below_m3_m3:      f64,
+	pore_volume_below_m3_m3:      f64 `unit:"m3 m-3" unit_guess:"high"`,
 	surface_run_off:              f64 `unit:"mm"`,
-	sum_surface_run_off:          f64,
-	total_water_removal:          f64,
+	sum_surface_run_off:          f64 `unit:"mm" unit_guess:"high"`,
+	total_water_removal:          f64 `unit:"m3" unit_guess:"low"`,
 	transpiration:                [dynamic]f64 `unit:"mm"`,
-	water_flux_below:             f64,
-	xsa_critical_soil_moisture:   f64,
+	water_flux_below:             f64 `unit:"mm" unit_guess:"high"`,
+	xsa_critical_soil_moisture:   f64 `unit:"0-1" unit_guess:"medium"`,
 	snow_component:               Snow_Component,
 	frost_component:              Frost_Component,
 }
@@ -227,7 +227,10 @@ soil_moisture_step :: proc(
 	calc_soil_frost(&sm.frost_component, avg_air_temp_deg_c, sm.snow_component.snow_depth)
 
 	// calculates infiltration of water from surface
-	infiltration(sm, sm.snow_component.water_to_infiltrate)
+	// NOTE(deviation): with infiltration_by_depth, what went straight into the
+	// layers below the top one (see infiltration)
+	deep_fill: [MAX_INFILTRATION_LAYERS]f64
+	infiltration(sm, sm.snow_component.water_to_infiltrate, deep_fill[:])
 
 	if 0.0 < groundwater_depth_m && groundwater_depth_m <= 10.0 {
 		percolation_with_groundwater(sm, oscill_ground_water_layer)
@@ -235,6 +238,16 @@ soil_moisture_step :: proc(
 	} else {
 		percolation_without_groundwater(sm)
 		backwater_replenishment(sm)
+	}
+
+	// the water that went straight into deeper layers passed the upper
+	// boundaries of the layers it went to (soil transport moves solutes with it)
+	if sm.mod_params.infiltration_by_depth {
+		passed := 0.0
+		for j := min(MAX_INFILTRATION_LAYERS, sm.no_of_soil_layers) - 1; j >= 1; j -= 1 {
+			passed += deep_fill[j]
+			sc.layers[j].soil_water_flux += passed
+		}
 	}
 
 	// NOTE(deviation): evapotranspiration modules (evapotranspiration_impl.odin)
@@ -279,8 +292,24 @@ soil_moisture_step :: proc(
 	capillary_rise(sm, crop)
 }
 
+// the most layers infiltration_by_depth fills directly
+MAX_INFILTRATION_LAYERS :: 32
+
+// NOTE(deviation): the number of layers down to mod_params.infiltration_depth
+// (at least the top one)
+infiltration_layers :: proc(sm: ^Soil_Moisture) -> int {
+	n := int(sm.mod_params.infiltration_depth / sm.layer_thickness_m + 0.5)
+	return clamp(n, 1, min(sm.no_of_soil_layers, MAX_INFILTRATION_LAYERS))
+}
+
 // C++: void monica::soilmoisture::infiltration(SoilMoisture*, double)
-infiltration :: proc(sm: ^Soil_Moisture, water_to_infiltrate: f64) {
+//
+// NOTE(deviation): with mod_params.infiltration_by_depth the infiltration is
+// limited by the free pore space down to infiltration_depth instead of the top
+// layer's, the moisture deficit is the mean over that depth, and the water
+// fills these layers from the top; deep_fill gets what went into each layer
+// below the top one. Off, the C++.
+infiltration :: proc(sm: ^Soil_Moisture, water_to_infiltrate: f64, deep_fill: []f64 = nil) {
 	sc := sm.soil_column
 	scl_0 := &sc.layers[0]
 
@@ -295,6 +324,21 @@ infiltration :: proc(sm: ^Soil_Moisture, water_to_infiltrate: f64) {
 	sc.surface_water_storage += water_to_infiltrate
 
 	sm.soil_moisture_deficit = (scl_0.saturation - scl_0.soil_moisture_m3) / scl_0.saturation
+	// the free pore space the day's infiltration may fill [mm]
+	free_pore_space := (scl_0.saturation - scl_0.soil_moisture_m3) * 1000.0 * sm.layer_thickness_m
+	by_depth := sm.mod_params.infiltration_by_depth
+	n_inf := 1
+	if by_depth {
+		n_inf = infiltration_layers(sm)
+		free_pore_space = 0.0
+		pore_volume := 0.0
+		for i in 0 ..< n_inf {
+			l := sc.layers[i]
+			free_pore_space += max(0.0, l.saturation - l.soil_moisture_m3) * 1000.0 * sm.layer_thickness_m
+			pore_volume += l.saturation * 1000.0 * sm.layer_thickness_m
+		}
+		sm.soil_moisture_deficit = free_pore_space / pore_volume
+	}
 	reduced_hydraulic_conductivity :=
 		sm.mod_params.saturated_hydraulic_conductivity *
 		sm.mod_params.hydraulic_conductivity_redux
@@ -308,10 +352,7 @@ infiltration :: proc(sm: ^Soil_Moisture, water_to_infiltrate: f64) {
 
 		sm.infiltration = min(sc.surface_water_storage, potential_infiltration)
 
-		sm.infiltration = min(
-			sm.infiltration,
-			((scl_0.saturation - scl_0.soil_moisture_m3) * 1000.0 * sm.layer_thickness_m),
-		)
+		sm.infiltration = min(sm.infiltration, free_pore_space)
 
 		sm.infiltration = max(0.0, sm.infiltration)
 	} else {
@@ -342,7 +383,24 @@ infiltration :: proc(sm: ^Soil_Moisture, water_to_infiltrate: f64) {
 		sc.surface_water_storage -= sm.surface_run_off
 	}
 
-	scl_0.soil_moisture_m3 += (sm.infiltration / 1000.0 / sm.layer_thickness_m)
+	if by_depth {
+		// fill the layers from the top, each up to its saturation
+		left := sm.infiltration
+		for i in 0 ..< n_inf {
+			l := &sc.layers[i]
+			add := left
+			if i < n_inf - 1 {
+				add = min(left, max(0.0, l.saturation - l.soil_moisture_m3) * 1000.0 * sm.layer_thickness_m)
+			}
+			l.soil_moisture_m3 += add / 1000.0 / sm.layer_thickness_m
+			if i > 0 && i < len(deep_fill) {
+				deep_fill[i] = add
+			}
+			left -= add
+		}
+	} else {
+		scl_0.soil_moisture_m3 += (sm.infiltration / 1000.0 / sm.layer_thickness_m)
+	}
 
 	scl_0.soil_water_flux = sm.infiltration
 
@@ -902,8 +960,8 @@ dual_kc_precomputation :: proc(
 
 	// Potential soil evaporation [mm d-1]
 	e_pot_dual_kc = et0 * ke
-	// Respect the hard cap from HERMES (6.5 mm/day applies to total, cap E too)
-	e_pot_dual_kc = min(e_pot_dual_kc, 6.5)
+	// Respect the cap from HERMES (6.5 mm/day by default, applies to total, cap E too)
+	e_pot_dual_kc = min(e_pot_dual_kc, sm.mod_params.max_potential_evapotranspiration)
 
 	sm.ke = ke
 
@@ -958,6 +1016,8 @@ evapotranspiration :: proc(
 	if developmental_stage > 0 {
 		if reference_evapotranspiration_mm < 0.0 {
 			sm.reference_evapotranspiration = crop.reference_evapotranspiration
+			// the net radiation of that ET0, so the output follows the crop as well
+			sm.net_radiation = crop.net_radiation
 		} else {
 			sm.reference_evapotranspiration = reference_evapotranspiration_mm
 		}
@@ -987,14 +1047,38 @@ evapotranspiration :: proc(
 	sm.actual_evaporation = 0.0
 	sm.actual_transpiration = 0.0
 
-	// from HERMES:
-	if potential_evapotranspiration > 6.5 {
-		potential_evapotranspiration = 6.5
+	// from HERMES (6.5 mm by default)
+	if potential_evapotranspiration > sm.mod_params.max_potential_evapotranspiration {
+		potential_evapotranspiration = sm.mod_params.max_potential_evapotranspiration
 	}
 
+	// the share of the soil evaporation left once standing water has evaporated
+	// (pond_evaporation_by_coverage; 1 otherwise)
+	soil_evaporation_share := 1.0
+
 	if potential_evapotranspiration > 0.0 {
-		// If surface is water-logged, subsequent evaporation from surface water sources
-		if sc.surface_water_storage > 0.0 {
+		if sc.surface_water_storage > 0.0 && sm.mod_params.pond_evaporation_by_coverage {
+			// NOTE(deviation): the standing water takes the soil's place, not the
+			// crop's: it gets the share of the potential that reaches the ground,
+			// as open water (Kc 1.1, capped); the soil evaporates only from what
+			// the water leaves, and the crop's transpiration stays as the crop
+			// computed it (no evaporation_from_surface override below).
+			ground_share := 1.0 - clamp(sm.soil_coverage_percent, 0.0, 1.0)
+			pond_potential :=
+				ground_share *
+				min(
+					potential_evapotranspiration * 1.1 / sm.kc_factor,
+					sm.mod_params.max_potential_evapotranspiration,
+				)
+			if snow_depth <= 0.0 {
+				sm.evaporated_from_surface = min(sc.surface_water_storage, pond_potential)
+				sc.surface_water_storage -= sm.evaporated_from_surface
+			}
+			if pond_potential > 0.0 {
+				soil_evaporation_share = 1.0 - sm.evaporated_from_surface / pond_potential
+			}
+		} else if sc.surface_water_storage > 0.0 {
+			// If surface is water-logged, subsequent evaporation from surface water sources
 			evaporation_from_surface = true
 			// Water surface evaporates with Kc = 1.1.
 			potential_evapotranspiration = potential_evapotranspiration * (1.1 / sm.kc_factor)
@@ -1099,6 +1183,9 @@ evapotranspiration :: proc(
 
 					// Transpiration is capped in case potential ET after surface
 					// and interception evaporation has occurred on same day
+					// NOTE(deviation): never with pond_evaporation_by_coverage, whose
+					// branch above leaves evaporation_from_surface false, so the crop's
+					// transpiration stays
 					if evaporation_from_surface {
 						sm.transpiration[i_layer] =
 							sm.soil_coverage_percent * e_reducer * potential_evapotranspiration
@@ -1113,6 +1200,7 @@ evapotranspiration :: proc(
 					sm.transpiration[i_layer] = 0.0
 				}
 
+				sm.evaporation[i_layer] *= soil_evaporation_share
 				sm.evapotranspiration[i_layer] =
 					sm.evaporation[i_layer] + sm.transpiration[i_layer]
 				scl_i.soil_moisture_m3 -=

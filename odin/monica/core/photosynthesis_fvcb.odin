@@ -83,11 +83,11 @@ fvcb_delta_h_bernacchi :: proc(k: Fvcb_Model_Const) -> f64 {
 
 // C++: struct FvCB::FvCB_canopy_hourly_params
 Fvcb_Canopy_Hourly_Params :: struct {
-	vcmax_25: f64,
-	kn:       f64, // coefficient of leaf nitrogen allocation
-	gb:       f64, // boundary layer conductance, mol m-2 s-1 bar-1
-	g0:       f64, // residual stomatal conductance, mol m-2 s-1 bar-1
-	gm_25:    f64, // mesophyll conductance (C3) at 25degC, mol m-2 s-1 bar-1
+	vcmax_25: f64 `unit:"umol m-2 s-1" unit_guess:"high"`,
+	kn:       f64 `unit:"1" unit_guess:"high"`, // coefficient of leaf nitrogen allocation
+	gb:       f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"high"`, // boundary layer conductance, mol m-2 s-1 bar-1
+	g0:       f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"high"`, // residual stomatal conductance, mol m-2 s-1 bar-1
+	gm_25:    f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"medium"`, // mesophyll conductance (C3) at 25degC, mol m-2 s-1 bar-1
 }
 
 // C++ in-class initialisers: kn{0.713}, gb{1.5}, g0{0.01}, gm_25{0.10125}
@@ -97,39 +97,39 @@ make_fvcb_canopy_hourly_params :: proc() -> Fvcb_Canopy_Hourly_Params {
 
 // C++: struct FvCB::FvCB_canopy_hourly_in
 Fvcb_Canopy_Hourly_In :: struct {
-	global_rad:     f64, // MJ m-2 h-1
-	extra_terr_rad: f64, // MJ m-2 h-1
-	solar_el:       f64, // radians
-	lai:            f64, // m2 m-2
-	leaf_temp:      f64, // degC
-	vpd:            f64, // KPa
-	ca:             f64, // ambient CO2 partial pressure, ubar or umol mol-1
+	global_rad:     f64 `unit:"MJ m-2 h-1" unit_guess:"high"`, // MJ m-2 h-1
+	extra_terr_rad: f64 `unit:"MJ m-2 h-1" unit_guess:"high"`, // MJ m-2 h-1
+	solar_el:       f64 `unit:"rad" unit_guess:"high"`, // radians
+	lai:            f64 `unit:"m2 m-2" unit_guess:"high"`, // m2 m-2
+	leaf_temp:      f64 `unit:"°C" unit_guess:"high"`, // degC
+	vpd:            f64 `unit:"kPa" unit_guess:"high"`, // KPa
+	ca:             f64 `unit:"ppm" unit_guess:"high"`, // ambient CO2 partial pressure, ubar or umol mol-1
 }
 
 // C++: struct FvCB::FvCB_leaf_fraction
 Fvcb_Leaf_Fraction :: struct {
-	lai:    f64, // m2 m-2
-	gs:     f64, // mol m-2 s-1 bar-1 (unit ground area)
-	kc:     f64, // umol mol-1 mbar-1
-	ko:     f64, // umol mol-1 mbar-1
-	oi:     f64, // umol m-2
-	ci:     f64, // umol m-2
-	cc:     f64, // umol m-2
-	comp:   f64, // umol mol-1
-	vc_max: f64, // umol m-2 s-1
-	j_max:  f64, // umol m-2 s-1
-	rad:    f64, // W m-2
-	jj:     f64, // umol m-2 s-1
-	jv:     f64, // umol m-2 s-1
-	jj1000: f64, // umol m-2 s-1
+	lai:    f64 `unit:"m2 m-2" unit_guess:"high"`, // m2 m-2
+	gs:     f64 `unit:"mol m-2 s-1 bar-1" unit_guess:"medium"`, // mol m-2 s-1 bar-1 (unit ground area)
+	kc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for CO2
+	ko:     f64 `unit:"mmol mol-1" unit_guess:"high"`, // Michaelis-Menten constant for O2
+	oi:     f64 `unit:"mmol mol-1" unit_guess:"high"`, // leaf internal O2 concentration
+	ci:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf intercellular CO2 concentration
+	cc:     f64 `unit:"umol mol-1" unit_guess:"high"`, // leaf chloroplast CO2 concentration
+	comp:   f64 `unit:"umol mol-1" unit_guess:"high"`, // CO2 compensation point
+	vc_max: f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
+	j_max:  f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
+	rad:    f64 `unit:"W m-2" unit_guess:"high"`, // W m-2
+	jj:     f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
+	jv:     f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
+	jj1000: f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
 }
 
 // C++: struct FvCB::FvCB_canopy_hourly_out
 Fvcb_Canopy_Hourly_Out :: struct {
-	canopy_net_photos:   f64, // umol CO2 m-2 h-1
-	canopy_resp:         f64, // umol CO2 m-2 h-1
-	canopy_gross_photos: f64, // umol CO2 m-2 h-1
-	jmax_c:              f64, // umol m-2 s-1
+	canopy_net_photos:   f64 `unit:"umol m-2 h-1" unit_guess:"high"`, // umol CO2 m-2 h-1
+	canopy_resp:         f64 `unit:"umol m-2 h-1" unit_guess:"high"`, // umol CO2 m-2 h-1
+	canopy_gross_photos: f64 `unit:"umol m-2 h-1" unit_guess:"high"`, // umol CO2 m-2 h-1
+	jmax_c:              f64 `unit:"umol m-2 s-1" unit_guess:"high"`, // umol m-2 s-1
 	sunlit:              Fvcb_Leaf_Fraction,
 	shaded:              Fvcb_Leaf_Fraction,
 }
@@ -431,9 +431,9 @@ fvcb_x_electron :: proc(j, gamma: f64) -> (x1: f64, x2: f64) {
 
 @(private)
 Fvcb_Lumped_Coeffs :: struct {
-	p:   f64,
-	q:   f64,
-	psi: f64,
+	p:   f64 `unit:"umol m-2 s-1" unit_guess:"medium"`,
+	q:   f64 `unit:"umol2 m-4 s-2" unit_guess:"medium"`,
+	psi: f64 `unit:"rad" unit_guess:"high"`,
 }
 
 @(private)

@@ -10,7 +10,7 @@ package core
 Crop_O3 :: struct {
 	o3_short_term_damage:  f64 `unit:"0-1"`,
 	o3_long_term_damage:   f64 `unit:"0-1"`,
-	o3_senescence:         f64,
+	o3_senescence:         f64 `unit:"0-1" unit_guess:"high"`,
 	o3_sum_uptake:         f64 `unit:"µmol m-2"`,
 	o3_w_stomatal_closure: f64 `unit:"0-1"`,
 }

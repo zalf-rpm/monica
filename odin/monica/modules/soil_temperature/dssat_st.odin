@@ -18,7 +18,7 @@ Dssat_St :: struct {
 	r:            dst.Stemp_Rate,
 	a:            dst.Stemp_Auxiliary,
 	ex:           dst.Stemp_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_dssat_st :: proc(allocator: Allocator) -> Module {

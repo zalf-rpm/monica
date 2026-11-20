@@ -57,9 +57,9 @@ Organ_Sugar :: 5
 // type. Owner = the procedure that computes a field; which procedures still
 // write another group's fields is listed in architecture.md.
 Crop_Module :: struct {
-	no_of_organs:          int, // C++ size_t
-	no_of_dev_stages:      int, // C++ size_t
-	storage_organ:         int, // index of the species' storage organ, set when the crop is made
+	no_of_organs:          int `unit:"" unit_guess:"high"`, // C++ size_t
+	no_of_dev_stages:      int `unit:"" unit_guess:"high"`, // C++ size_t
+	storage_organ:         int `unit:"" unit_guess:"high"`, // index of the species' storage organ, set when the crop is made
 	// C++: Intercropping *intercropping - Intercropping itself is dropped
 	// (Cap'n Proto RPC, see plan-odin.md's dropped table); every real use of
 	// this field is behind `if (isIntercropping)`, always false in every
@@ -71,6 +71,9 @@ Crop_Module :: struct {
 	mod_params:            ^p.Crop_Module_Parameters,
 	crop_params:           p.Crop_Parameters,
 	residue_params:        p.Crop_Residue_Parameters,
+	// NOTE(deviation): the soil moisture parameters' cap of the potential
+	// evapotranspiration (C++: the literal 6.5); set by the sowing workstep
+	max_potential_evapotranspiration: f64 `unit:"mm d-1"`,
 	// C++: kj::Own<CropParameters> perennial_crop_params - nil unless a
 	// Sowing workstep's separatePerennialCropParams is set (phase 6).
 	perennial_crop_params: ^p.Crop_Parameters,
@@ -97,8 +100,8 @@ Crop_Module :: struct {
 
 // Intercropping: the other crop's height and LAI (set_other_crop_height_and_lait).
 Crop_Intercropping :: struct {
-	intercropping_other_crop_height: f64,
-	intercropping_other_lait:        f64,
+	intercropping_other_crop_height: f64 `unit:"m" unit_guess:"high"`,
+	intercropping_other_lait:        f64 `unit:"m2 m-2" unit_guess:"medium"`,
 }
 
 // C++ in-class initialisers
@@ -131,6 +134,7 @@ make_crop_module_defaults :: proc() -> Crop_Module {
 		o3_w_stomatal_closure = 1.0,
 		intercropping_other_crop_height = -1,
 		intercropping_other_lait = -1,
+		max_potential_evapotranspiration = p.DEFAULT_MAX_POTENTIAL_EVAPOTRANSPIRATION,
 	}
 }
 
@@ -1002,6 +1006,7 @@ crop_module_step :: proc(
 			)
 			cm.reference_evapotranspiration = et0
 			cm.stomata_resistance = terms.stomata_resistance
+			cm.et0.net_radiation = terms.net_radiation
 		} else {
 			// use reference evapotranspiration from climate file
 			cm.reference_evapotranspiration = reference_evapotranspiration
@@ -1222,7 +1227,7 @@ Cutting_Cl :: enum {
 
 // C++: struct CuttingData::Value
 Cutting_Value :: struct {
-	value:       f64,
+	value:       f64 `unit:"" unit_guess:"low"`,
 	unit:        Cutting_Unit, // C++ in-class default: percentage
 	cut_or_left: Cutting_Cl, // C++ in-class default: cut
 }

@@ -100,9 +100,9 @@ read_capillary_rise_rates :: proc(allocator := context.allocator) -> ^Capillary_
 // nothing ever reads this field (not fcSatPwpFromKA5textureClass, not its
 // callers).
 Rpscd_Res :: struct {
-	sat: f64, // [m3 m-3]
-	fc:  f64, // [m3 m-3]
-	pwp: f64, // [m3 m-3]
+	sat: f64 `unit:"%" unit_guess:"high"`, // [vol%]
+	fc:  f64 `unit:"%" unit_guess:"high"`, // [vol%]
+	pwp: f64 `unit:"%" unit_guess:"high"`, // [vol%]
 }
 
 @(private)

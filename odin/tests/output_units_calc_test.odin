@@ -91,7 +91,8 @@ test_output_units :: proc(t: ^testing.T) {
 		{`"climate_data.#last.tavg"`, "°C"},
 		{`"climate_data.#last.globrad"`, "MJ m-2"},
 		{`"soil_column.layers.#len"`, "1"},
-		{`"soil_moisture.groundwater_added"`, ""}, // no tag yet
+		{`"soil_moisture.groundwater_added"`, "mm"}, // a guessed unit (unit_guess) is printed like any other
+		{`"soil_moisture.last_wetting_was_rain"`, ""}, // no tag
 		// parameters: units from monica-parameters and the C++ header
 		{`"site_params.n_deposition"`, "kg N ha-1 y-1"},
 		{`"crop_mod_params.minimum_available_n"`, "kg m-2"},

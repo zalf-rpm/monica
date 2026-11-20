@@ -10,10 +10,10 @@ import p "../params"
 
 // Management state: transplant shock, cutting (force_transplant_state, apply_cutting).
 Crop_Management :: struct {
-	transplant_shock_duration: int,
-	days_since_transplant:     int,
-	transplant_efficiency:     f64,
-	cutting_delay_days:        int,
+	transplant_shock_duration: int `unit:"d" unit_guess:"high"`,
+	days_since_transplant:     int `unit:"d" unit_guess:"high"`,
+	transplant_efficiency:     f64 `unit:"0-1" unit_guess:"high"`,
+	cutting_delay_days:        int `unit:"d" unit_guess:"high"`,
 	exported_cut_biomass:      f64 `unit:"kgDM ha-1"`,
 	sum_exported_cut_biomass:  f64 `unit:"kgDM ha-1"`,
 	residue_cut_biomass:       f64 `unit:"kgDM ha-1"`,

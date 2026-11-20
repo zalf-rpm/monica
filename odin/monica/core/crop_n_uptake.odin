@@ -12,15 +12,15 @@ import "../../support/cr_math"
 
 // N uptake: per layer, fixation, N contents (fc_crop_n_uptake).
 Crop_N_Uptake :: struct {
-	n_uptake_from_layer:                 [dynamic]f64, //! old PE
+	n_uptake_from_layer:                 [dynamic]f64 `unit:"kgN m-2" unit_guess:"high"`, //! old PE
 	fixed_n:                             f64 `unit:"kgN ha-1"`,
 	n_concentration_aboveground_biomass: f64 `unit:"kgN kgDM-1"`, //! old GEHOB
 	n_concentration_root:                f64 `unit:"kgN kgDM-1"`, //! old WUGEH
 	total_biomass_n_content:             f64 `unit:"kgN ha-1"`, //! old PESUM
-	total_n_input:                       f64,
+	total_n_input:                       f64 `unit:"kgN ha-1" unit_guess:"high"`,
 	total_n_uptake:                      f64 `unit:"kgN ha-1"`, //! old SUMPE
 	sum_total_n_uptake:                  f64 `unit:"kgN ha-1"`, //! summation of all calculated NUptake; needed for sensitivity analysis
-	n_content_deficit:                   f64,
+	n_content_deficit:                   f64 `unit:"kgN ha-1" unit_guess:"low"`,
 }
 
 // What n_uptake_step reads on a day.
@@ -55,7 +55,7 @@ n_uptake_in :: proc(cm: ^Crop_Module) -> N_Uptake_In {
 		groundwater_table_layer_idx = cm.soil_column.groundwater_table_layer_idx,
 		soil_layers = cm.soil_column.layers[:],
 		transpiration = cm.transpiration[:],
-		crop_n_demand = cm.crop_n_demand,
+		crop_n_demand = cm.crop_n_demand / 10000.0, // Crop_Growth keeps kgN ha-1, the N uptake works per m2
 		aboveground_biomass = cm.aboveground_biomass,
 		aboveground_biomass_old = cm.aboveground_biomass_old,
 		belowground_biomass = cm.belowground_biomass,

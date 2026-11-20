@@ -291,12 +291,17 @@ enum. Write units like MONICA's output table (`"kgN ha-1"`, `"m3 m-3"`, `"mm"` f
 quantity (flags, categories). Don't repeat the unit in the comment.
 
 Legacy output names keep the unit of the output table (`build_output.odin`, `output_paths.odin`),
-so existing outputs stay byte-identical; some of those are wrong (e.g. `RootWaUptak` in
-`KgN ha-1`), the tags aren't. `tests/output_units_calc_test.odin` checks that every field behind a
+which must match the C++ table (`src/io/build-output.cpp`) for the outputs to stay byte-identical;
+a wrong unit there is fixed in both (and in MONICA master and AMEI), not kept. `tests/output_units_calc_test.odin` checks that every field behind a
 legacy alias and every field of the modules' `Input`/`Output` structs has a tag. The parameter
 structs (`monica/params`) carry the units documented in `monica-parameters` (`[value, "unit"]`)
-or in the C++ header `monica-parameters.h` - 84 of 287 numeric fields; the rest, mostly crop species
-and cultivar parameters, have no documented unit yet. Not tagged yet either: most other fields. The generated Crop2ML packages (`odin/amei/`) get theirs from the
+or in the C++ header `monica-parameters.h`; the others - 203, mostly crop species and cultivar
+parameters - carry a guessed unit, marked with a second tag
+`unit_guess:"high"|"medium"|"low"` (the confidence; `unit-proposals.md` gives the reasoning).
+The other structs' numeric fields carry guessed units the same way (423 fields,
+`unit-proposals-structs.md`); untagged are only the infrastructure packages (`capnp`, `io`,
+`trace`) and non-numeric fields. Reviewing a guess means correcting `unit` if needed and deleting
+`unit_guess`; the mark is never printed, the unit is (in units rows) like any other. The generated Crop2ML packages (`odin/amei/`) get theirs from the
 XML (`plan-crop2ml-modules.md` §2).
 
 An object-form output column may override the unit (`"unit"`) and transform the value

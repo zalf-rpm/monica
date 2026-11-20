@@ -11,22 +11,22 @@ import libc "core:c/libc"
 // Water uptake: interception, potential and actual transpiration per layer, water stress
 // (fc_crop_water_uptake).
 Crop_Water_Uptake :: struct {
-	interception_storage:            f64,
-	net_precipitation:               f64,
+	interception_storage:            f64 `unit:"mm" unit_guess:"high"`,
+	net_precipitation:               f64 `unit:"mm" unit_guess:"high"`,
 	evaporated_from_intercept:       f64 `unit:"mm"`,
 	remaining_evapotranspiration:    f64 `unit:"mm"`,
-	potential_transpiration:         f64,
+	potential_transpiration:         f64 `unit:"mm" unit_guess:"high"`,
 	actual_transpiration:            f64 `unit:"mm"`,
 	transpiration:                   [dynamic]f64 `unit:"mm"`, //! old TP
-	transpiration_redux:             [dynamic]f64, //! old TRRED
-	root_effectivity:                [dynamic]f64, //! old WUEFF
-	crop_water_uptake:               [dynamic]f64, //! old TP
+	transpiration_redux:             [dynamic]f64 `unit:"0-1" unit_guess:"high"`, //! old TRRED
+	root_effectivity:                [dynamic]f64 `unit:"0-1" unit_guess:"high"`, //! old WUEFF
+	crop_water_uptake:               [dynamic]f64 `unit:"mm" unit_guess:"low"`, //! old TP
 	transpiration_deficit:           f64 `unit:"0-1"`, //! old TRREL
 	potential_transpiration_deficit: f64 `unit:"0-1"`,
 	actual_transpiration_deficit:    f64 `unit:"0-1"`,
 	transpiration_reduced:           f64 `unit:"mm"`,
-	accumulated_et_a:                f64,
-	accumulated_transpiration:       f64,
+	accumulated_et_a:                f64 `unit:"mm" unit_guess:"medium"`,
+	accumulated_transpiration:       f64 `unit:"mm" unit_guess:"medium"`,
 }
 
 // What water_uptake_step reads on a day.
@@ -48,6 +48,7 @@ Water_Uptake_In :: struct {
 	rooting_zone:                  int `unit:"layer#" src:"Root_System"`,
 	transplant_efficiency:         f64 `unit:"0-1" src:"Management"`,
 	water_deficit_response_on:     bool `unit:"" src:"simulation parameters"`,
+	max_potential_evapotranspiration: f64 `unit:"mm d-1" src:"soil moisture parameters"`,
 	max_effective_rooting_depth:   f64 `unit:"m" src:"site"`,
 }
 
@@ -72,6 +73,7 @@ water_uptake_in :: proc(cm: ^Crop_Module, gross_precipitation: f64) -> Water_Upt
 		rooting_zone = cm.rooting_zone,
 		transplant_efficiency = cm.transplant_efficiency,
 		water_deficit_response_on = cm.sim_params.water_deficit_response_on,
+		max_potential_evapotranspiration = cm.max_potential_evapotranspiration,
 		max_effective_rooting_depth = cm.site_params.max_effective_rooting_depth,
 	}
 }
@@ -139,9 +141,9 @@ water_uptake_step :: proc(w: ^Crop_Water_Uptake, input: Water_Uptake_In) {
 	// --- Transpiration ---
 	potential_evapotranspiration = input.reference_evapotranspiration * input.kc_factor // [mm]
 
-	// from HERMES
-	if potential_evapotranspiration > 6.5 {
-		potential_evapotranspiration = 6.5
+	// from HERMES (6.5 mm by default)
+	if potential_evapotranspiration > input.max_potential_evapotranspiration {
+		potential_evapotranspiration = input.max_potential_evapotranspiration
 	}
 
 	w.remaining_evapotranspiration = potential_evapotranspiration // [mm]

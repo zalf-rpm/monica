@@ -13,33 +13,33 @@
 // Crop_To_Soil and Irrigation_Crop_Window (crop_to_soil.odin).
 package core
 
+import "../../support/cr_math"
 import tl "../../support/tools"
 import p "../params"
 import "../soil"
 import libc "core:c/libc"
-import "../../support/cr_math"
 
 // C++: struct monica::AOM_Properties
 Aom_Properties :: struct {
 	aom_slow:                      f64 `unit:"kgC m-3"`, // C in slowly decomposing AOM pool
 	aom_fast:                      f64 `unit:"kgC m-3"`, // C in rapidly decomposing AOM pool
-	aom_slow_dec_rate_to_smb_slow: f64,
-	aom_slow_dec_rate_to_smb_fast: f64,
-	aom_fast_dec_rate_to_smb_slow: f64,
-	aom_fast_dec_rate_to_smb_fast: f64,
-	aom_slow_dec_coeff:            f64,
-	aom_fast_dec_coeff:            f64,
-	aom_slow_dec_coeff_standard:   f64,
-	aom_fast_dec_coeff_standard:   f64,
-	part_aom_slow_to_smb_slow:     f64,
-	part_aom_slow_to_smb_fast:     f64,
+	aom_slow_dec_rate_to_smb_slow: f64 `unit:"kgC m-3 d-1" unit_guess:"high"`,
+	aom_slow_dec_rate_to_smb_fast: f64 `unit:"kgC m-3 d-1" unit_guess:"high"`,
+	aom_fast_dec_rate_to_smb_slow: f64 `unit:"kgC m-3 d-1" unit_guess:"low"`,
+	aom_fast_dec_rate_to_smb_fast: f64 `unit:"kgC m-3 d-1" unit_guess:"high"`,
+	aom_slow_dec_coeff:            f64 `unit:"d-1" unit_guess:"high"`,
+	aom_fast_dec_coeff:            f64 `unit:"d-1" unit_guess:"high"`,
+	aom_slow_dec_coeff_standard:   f64 `unit:"d-1" unit_guess:"high"`,
+	aom_fast_dec_coeff_standard:   f64 `unit:"d-1" unit_guess:"high"`,
+	part_aom_slow_to_smb_slow:     f64 `unit:"0-1" unit_guess:"high"`,
+	part_aom_slow_to_smb_fast:     f64 `unit:"0-1" unit_guess:"high"`,
 	cn_ratio_aom_slow:             f64 `unit:"1"`,
 	cn_ratio_aom_fast:             f64 `unit:"1"`,
-	days_after_application:        int,
-	aom_dry_matter_content:        f64,
-	aom_nh4_content:               f64,
-	aom_slow_delta:                f64,
-	aom_fast_delta:                f64,
+	days_after_application:        int `unit:"d" unit_guess:"high"`,
+	aom_dry_matter_content:        f64 `unit:"kg DM kg FM-1" unit_guess:"high"`,
+	aom_nh4_content:               f64 `unit:"kgN kgDM-1" unit_guess:"high"`,
+	aom_slow_delta:                f64 `unit:"kgC m-3" unit_guess:"high"`,
+	aom_fast_delta:                f64 `unit:"kgC m-3" unit_guess:"high"`,
 	incorporation:                 bool,
 	no_volatilization:             bool,
 }
@@ -81,8 +81,8 @@ Soil_Layer :: struct {
 	soil_texture:             string,
 	soil_ammonium:            f64 `unit:"kgN m-3"`,
 	soil_nitrate:             f64 `unit:"kgN m-3"`,
-	soil_cn_ratio:            f64,
-	soil_moisture_percent_fc: f64,
+	soil_cn_ratio:            f64 `unit:"1" unit_guess:"high"`,
+	soil_moisture_percent_fc: f64 `unit:"%" unit_guess:"high"`,
 	// Raw/override values; -1 means "unset" and the resolved value has to be
 	// computed via the corresponding soil_xyz() proc below.
 	soil_raw_density:         f64 `unit:"kg m-3"`,
@@ -178,7 +178,10 @@ soil_moisture_pf :: proc(sl: ^Soil_Layer) -> f64 {
 		// the same library. See CONVENTIONS.md §1.
 		matric_head =
 			(1.0 / ps.alpha) *
-			cr_math.pow(cr_math.pow((ps.theta_s - ps.theta_r) / (sm - ps.theta_r), 1 / ps.m) - 1, 1 / ps.n)
+			cr_math.pow(
+				cr_math.pow((ps.theta_s - ps.theta_r) / (sm - ps.theta_r), 1 / ps.m) - 1,
+				1 / ps.n,
+			)
 	}
 	pf := cr_math.log10(matric_head)
 
@@ -232,12 +235,12 @@ soil_organic_matter :: proc(sl: ^Soil_Layer) -> f64 {
 // C++: struct monica::SoilColumn::DelayedNMinApplicationParams
 Delayed_N_Min_Application_Params :: struct {
 	fp:                         p.Mineral_Fertilizer_Parameters,
-	sampling_depth:             f64,
-	crop_n_target:              f64,
-	crop_n_target_30:           f64,
-	fertilizer_min_application: f64,
-	fertilizer_max_application: f64,
-	top_dressing_delay:         int,
+	sampling_depth:             f64 `unit:"m" unit_guess:"high"`,
+	crop_n_target:              f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	crop_n_target_30:           f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	fertilizer_min_application: f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	fertilizer_max_application: f64 `unit:"kgN ha-1" unit_guess:"high"`,
+	top_dressing_delay:         int `unit:"d" unit_guess:"high"`,
 }
 
 // C++: struct monica::SoilColumn
@@ -245,16 +248,16 @@ Soil_Column :: struct {
 	layers:                      [dynamic]Soil_Layer,
 	surface_water_storage:       f64 `unit:"mm"`,
 	// vs_InterceptionStorage:    f64, // [mm]
-	groundwater_table_layer_idx: int,
+	groundwater_table_layer_idx: int `unit:"layer#" unit_guess:"high"`,
 	flux_at_lower_boundary:      f64 `unit:"mm"`,
 	crop_n_uptake:               f64 `unit:"kgN m-2"`,
 	soil_surface_temperature:    f64 `unit:"°C"`,
-	snow_depth_mm:               f64,
-	max_mineralisation_depth_m:  f64,
-	number_of_organic_layers:    int,
-	top_dressing:                f64,
+	snow_depth_mm:               f64 `unit:"mm" unit_guess:"high"`,
+	max_mineralisation_depth_m:  f64 `unit:"m" unit_guess:"high"`,
+	number_of_organic_layers:    int `unit:"layer#" unit_guess:"high"`,
+	top_dressing:                f64 `unit:"kgN ha-1" unit_guess:"high"`,
 	top_dressing_partition:      p.Mineral_Fertilizer_Parameters,
-	top_dressing_delay:          int,
+	top_dressing_delay:          int `unit:"d" unit_guess:"high"`,
 	delayed_n_min_applications:  [dynamic]Delayed_N_Min_Application_Params,
 }
 
@@ -400,12 +403,14 @@ apply_mineral_fertiliser :: proc(
 	sc: ^Soil_Column,
 	fp: p.Mineral_Fertilizer_Parameters,
 	amount: f64,
+	layer := 0, // NOTE(deviation): the C++ always uses the top layer
 ) {
+	l := &sc.layers[layer]
 	// [kg N ha-1 -> kg m-3]
-	kg_ha_to_kg_m3 := 10000.0 * sc.layers[0].layer_thickness_m
-	sc.layers[0].soil_no3 += amount * fp.no3 / kg_ha_to_kg_m3
-	sc.layers[0].soil_nh4 += amount * fp.nh4 / kg_ha_to_kg_m3
-	sc.layers[0].soil_carbamid += amount * fp.carbamid / kg_ha_to_kg_m3
+	kg_ha_to_kg_m3 := 10000.0 * l.layer_thickness_m
+	l.soil_no3 += amount * fp.no3 / kg_ha_to_kg_m3
+	l.soil_nh4 += amount * fp.nh4 / kg_ha_to_kg_m3
+	l.soil_carbamid += amount * fp.carbamid / kg_ha_to_kg_m3
 }
 
 // C++: double monica::soilcolumn::applyMineralFertiliserViaNMinMethod(...)
@@ -430,13 +435,13 @@ apply_mineral_fertiliser_via_n_min_method :: proc(
 		append(
 			&sc.delayed_n_min_applications,
 			Delayed_N_Min_Application_Params {
-				fp                         = fertiliser_partition,
-				sampling_depth             = sampling_depth,
-				crop_n_target              = crop_n_target_value,
-				crop_n_target_30           = crop_n_target_value30,
+				fp = fertiliser_partition,
+				sampling_depth = sampling_depth,
+				crop_n_target = crop_n_target_value,
+				crop_n_target_30 = crop_n_target_value30,
 				fertilizer_min_application = fertiliser_min_application,
 				fertilizer_max_application = fertiliser_max_application,
-				top_dressing_delay         = top_dressing_delay,
+				top_dressing_delay = top_dressing_delay,
 			},
 		)
 		return 0.0
@@ -617,7 +622,9 @@ apply_irrigation_via_trigger :: proc(
 			added_irrigation_water = aips.amount
 		} else if aips.percent_nfc > 0.0 {
 			layer_depth_m = 0.0
-			for i := 0; i < len(sc.layers) && layer_depth_m < aips.critical_moisture_depth_m; i += 1 {
+			for i := 0;
+			    i < len(sc.layers) && layer_depth_m < aips.critical_moisture_depth_m;
+			    i += 1 {
 				li := &sc.layers[i]
 				smi := li.soil_moisture_m3
 				fci := li.field_capacity
@@ -658,6 +665,39 @@ apply_irrigation :: proc(sc: ^Soil_Column, amount: f64, nitrate_concentration: f
 
 	// adding N from irrigation water to top soil nitrate pool
 	sc.layers[0].soil_no3 += nitrate_added_via_irrigation
+}
+
+// NOT in the C++ master: subsurface irrigation (buried drip lines). The water
+// goes straight into the layer's soil moisture - no surface water storage, so
+// no infiltration limit, runoff or evaporation from the surface - and the
+// nitrate into the same layer. Water above saturation goes on to the layers
+// below, then to those above, and what is still left to the surface water
+// storage. The soil moisture step redistributes it like any other water.
+apply_irrigation_at_layer :: proc(
+	sc: ^Soil_Column,
+	amount: f64,
+	nitrate_concentration: f64,
+	layer: int,
+) {
+	l := &sc.layers[layer]
+	l.soil_moisture_m3 += amount / 1000.0 / l.layer_thickness_m // [mm] -> [m3 m-3]
+	l.soil_no3 += nitrate_concentration * amount / l.layer_thickness_m / 1000000.0 // [mg dm-3] * [dm3 m-2] -> [kg m-3]
+
+	// moves the water above saturation [mm] in `excess` into layer k, returns what is still too much
+	spill :: proc(lk: ^Soil_Layer, excess: f64) -> f64 {
+		lk.soil_moisture_m3 += excess / 1000.0 / lk.layer_thickness_m
+		over := max(0.0, lk.soil_moisture_m3 - lk.saturation)
+		lk.soil_moisture_m3 -= over
+		return over * 1000.0 * lk.layer_thickness_m
+	}
+	excess := spill(l, 0)
+	for k := layer + 1; k < len(sc.layers) && excess > 0; k += 1 {
+		excess = spill(&sc.layers[k], excess)
+	}
+	for k := layer - 1; k >= 0 && excess > 0; k -= 1 {
+		excess = spill(&sc.layers[k], excess)
+	}
+	sc.surface_water_storage += excess
 }
 
 // C++: void monica::soilcolumn::applyTillage(SoilColumn*, double)

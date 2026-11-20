@@ -55,7 +55,7 @@ dump_crop_module :: proc(t: ^tr.Tracer, cm: ^core.Crop_Module) {
 	tr.dump(t, "cropModule.vc_CropFrostRedux", cm.crop_frost_redux)
 	tr.dump(t, "cropModule.vc_CropHeatRedux", cm.crop_heat_redux)
 	tr.dump(t, "cropModule.vc_CropHeight", cm.crop_height)
-	tr.dump(t, "cropModule.vc_CropNDemand", cm.crop_n_demand)
+	tr.dump(t, "cropModule.vc_CropNDemand", cm.crop_n_demand / 10000.0) // C++: kgN m-2 after the step
 	tr.dump(t, "cropModule.vc_CropNRedux", cm.crop_n_redux)
 	tr.dump(t, "cropModule.vc_CropWaterUptake", cm.crop_water_uptake)
 	tr.dump(t, "cropModule.vc_CurrentTemperatureSum", cm.current_temperature_sum)

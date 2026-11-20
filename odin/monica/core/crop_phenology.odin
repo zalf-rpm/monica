@@ -12,24 +12,24 @@ import "../../support/cr_math"
 // Phenology: stage, temperature sums, vernalisation, day length factor, dormancy and the events
 // (fc_crop_developmental_stage, fc_daylength_factor, fc_vernalisation_factor, set_stage, the step).
 Crop_Phenology :: struct {
-	developmental_stage:                     int, // C++ size_t, //! old INTWICK
-	final_developmental_stage:               int, // C++ size_t
-	current_temperature_sum:                 [dynamic]f64, //! old SUM
+	developmental_stage:                     int `unit:"" unit_guess:"high"`, // C++ size_t, //! old INTWICK
+	final_developmental_stage:               int `unit:"" unit_guess:"high"`, // C++ size_t
+	current_temperature_sum:                 [dynamic]f64 `unit:"°C d" unit_guess:"high"`, //! old SUM
 	current_total_temperature_sum:           f64 `unit:"°C d"`, //! old FP
-	total_temperature_sum:                   f64,
-	temperature_sum_to_flowering:            f64,
+	total_temperature_sum:                   f64 `unit:"°C d" unit_guess:"high"`,
+	temperature_sum_to_flowering:            f64 `unit:"°C d" unit_guess:"high"`,
 	relative_total_development:              f64 `unit:"0-1"`,
 	daylength_factor:                        f64 `unit:"0-1"`, //! old DAYL
 	vernalisation_factor:                    f64 `unit:"0-1"`, //! old FV
-	vernalisation_days:                      f64,
+	vernalisation_days:                      f64 `unit:"d" unit_guess:"high"`,
 	growth_cycle_ended:                      bool,
 	perennial_crop_dormancy_period_end_date: d.Date,
-	no_of_crop_steps:                        int,
+	no_of_crop_steps:                        int `unit:"d" unit_guess:"medium"`,
 	stem_elongation_event_fired:             bool,
-	anthesis_day:                            int,
-	maturity_day:                            int,
+	anthesis_day:                            int `unit:"" unit_guess:"high"`,
+	maturity_day:                            int `unit:"" unit_guess:"high"`,
 	maturity_reached:                        bool,
-	time_step:                               f64, //! old dt
+	time_step:                               f64 `unit:"d" unit_guess:"high"`, //! old dt
 }
 
 // What phenology_development reads on a day.

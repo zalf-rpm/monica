@@ -24,7 +24,7 @@ package core
 //   dynamic array's memory, a deep copy allocate).
 Crop_Carry_Over :: struct {
 	// phenology, read by oxygen deficiency (and its parameter index)
-	developmental_stage:                 int,
+	developmental_stage:                 int `unit:"" unit_guess:"high"`,
 	// water uptake's transpiration_deficit, read by development and photosynthesis
 	water_stress:                        f64 `unit:"0-1"`,
 	// crop N status's crop_n_redux, read by development and photosynthesis
@@ -38,14 +38,14 @@ Crop_Carry_Over :: struct {
 	rooting_depth:                       int `unit:"layer#"`,
 	// growth's leaf increments, read by the green area
 	leaf_growth_increment:               f64 `unit:"kgDM ha-1"`,
-	leaf_senescence_increment:           f64,
+	leaf_senescence_increment:           f64 `unit:"kgDM ha-1" unit_guess:"high"`,
 	// the crop's ET0, read by photosynthesis (O3 uptake)
 	reference_evapotranspiration:        f64 `unit:"mm"`,
 	// the crop size's, read for the intercropping height reduction
 	crop_height:                         f64 `unit:"m"`,
 	// growth's and N uptake's, read by crop N status (and root N by growth)
 	aboveground_biomass:                 f64 `unit:"kgDM ha-1"`,
-	belowground_biomass:                 f64,
+	belowground_biomass:                 f64 `unit:"kgDM ha-1" unit_guess:"high"`,
 	n_concentration_aboveground_biomass: f64 `unit:"kgN kgDM-1"`,
 	n_concentration_root:                f64 `unit:"kgN kgDM-1"`,
 }

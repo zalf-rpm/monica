@@ -24,7 +24,7 @@ Simplace :: struct {
 	r:            simp.Soil_Temperature_Rate,
 	a:            simp.Soil_Temperature_Auxiliary,
 	ex:           simp.Soil_Temperature_Exogenous,
-	no_of_layers: int,
+	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
 make_simplace :: proc(allocator: Allocator) -> Module {
