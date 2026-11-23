@@ -339,11 +339,14 @@ soil_parameters_merge :: proc(
 			sp.permanent_wilting_point,
 		)
 	}
-	if sp.soil_moisture_percent_fc < 0 || sp.soil_moisture_percent_fc > 100 {
+	// initial moisture may be above field capacity, up to saturation (= PoreVolume / FC * 100 %)
+	max_percent_fc := sp.field_capacity > 0 ? sp.saturation / sp.field_capacity * 100 : 100
+	if sp.soil_moisture_percent_fc < 0 || sp.soil_moisture_percent_fc > max_percent_fc {
 		tl.append_errorf(
 			&es,
-			"SoilMoisturePercentFC (%g) is out of bounds [0, 100].",
+			"SoilMoisturePercentFC (%g) is out of bounds [0, %g] (0 to saturation).",
 			sp.soil_moisture_percent_fc,
+			max_percent_fc,
 		)
 	}
 	if sp.soil_bulk_density < 0 && (sp.soil_raw_density < 0 || sp.soil_raw_density > 2000) {

@@ -227,10 +227,11 @@ Errors soilparameters::merge(SoilParameters *sp, json11::Json j) {
         kj::str("PermanentWiltingPoint (", vs_PermanentWiltingPoint, ") is out of bounds [0, 1].")
             .cStr());
   }
-  if (vs_SoilMoisturePercentFC < 0 || vs_SoilMoisturePercentFC > 100) {
-    es.appendError(
-        kj::str("SoilMoisturePercentFC (", vs_SoilMoisturePercentFC, ") is out of bounds [0, 100].")
-            .cStr());
+  // initial moisture may be above field capacity, up to saturation (= PoreVolume / FC * 100 %)
+  double maxPercentFC = vs_FieldCapacity > 0 ? vs_Saturation / vs_FieldCapacity * 100 : 100;
+  if (vs_SoilMoisturePercentFC < 0 || vs_SoilMoisturePercentFC > maxPercentFC) {
+    es.appendError(kj::str("SoilMoisturePercentFC (", vs_SoilMoisturePercentFC, ") is out of bounds [0, ",
+                           maxPercentFC, "] (0 to saturation).").cStr());
   }
   if (_vs_SoilBulkDensity < 0 && (_vs_SoilRawDensity < 0 || _vs_SoilRawDensity > 2000)) {
     es.appendWarning(
