@@ -835,7 +835,8 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
 
   res.append(IrrigationParameters::merge(j["irrigationParameters"]));
   set_iso_date_value(startDate, j, "startDate");
-  set_iso_date_value(endDate, j, "stopDate");
+  set_iso_date_value(endDate, j, "endDate");
+  set_iso_date_value(endDate, j, "stopDate"); // compatibility, if there is a stopDate use this one
   set_double_value(amount, j, "amount");
   set_double_value(percentNFC, j, "set_to_%nFC");
   set_double_value(threshold, j, "threshold", transformIfPercent(j, "threshold"));
@@ -848,15 +849,14 @@ Errors AutomaticIrrigationParameters::merge(json11::Json j) {
 }
 
 json11::Json AutomaticIrrigationParameters::to_json() const {
-  auto o = json11::Json::object
-  {
-    {"type", "AutomaticIrrigationParameters"},
-    {"startDate", startDate.toIsoDateString()},
-    {"irrigationParameters", IrrigationParameters::to_json()},
-    {"trigger_if_nFC_below_%", J11Array{threshold * 100.0, "%"}},
-    {"calc_nFC_until_depth_m", J11Array{criticalMoistureDepthM, "m"}},
-    {"minDaysBetweenIrrigationEvents", J11Array{minDaysBetweenIrrigationEvents, "d"}}
-  };
+  auto o = json11::Json::object{
+      {"type", "AutomaticIrrigationParameters"},
+      {"startDate", startDate.toIsoDateString()},
+      {"endDate", endDate.toIsoDateString()},
+      {"irrigationParameters", IrrigationParameters::to_json()},
+      {"trigger_if_nFC_below_%", J11Array{threshold * 100.0, "%"}},
+      {"calc_nFC_until_depth_m", J11Array{criticalMoistureDepthM, "m"}},
+      {"minDaysBetweenIrrigationEvents", J11Array{minDaysBetweenIrrigationEvents, "d"}}};
   if (amount > 0) o["amount"] = J11Array{amount, "mm"};
   else o["set_to_%nFC"] = J11Array{percentNFC, "%"};
   return o;

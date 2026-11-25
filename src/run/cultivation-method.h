@@ -651,7 +651,7 @@ public:
 private:
   Tools::Date absStartDate;
   Tools::Date absEndDate;
-  bool irrigateCrop{false};
+  bool irrigateWhenCrop{false};
   int startStage{-1};
   int endStage{-1};
   AutomaticIrrigationParameters params;

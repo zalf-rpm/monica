@@ -1239,17 +1239,31 @@ Errors AutomaticIrrigation::merge(json11::Json j) {
 
   set_int_value(startStage, j, "startStage");
   // 1-based stages (user side) -> 0-based stages (model side)
-  if (startStage > -1) startStage = std::max(0, startStage--);
+  if (startStage > -1) {
+    startStage = std::max(0, startStage - 1);
+  }
 
   set_int_value(endStage, j, "endStage");
   // 1-based stages (user side) -> 0-based stages (model side)
-  if (endStage > -1) endStage = std::min(7, endStage--);
+  if (endStage > -1) {
+    endStage = std::min(7, endStage - 1);
+  }
 
-  set_bool_value(irrigateCrop, j, "irrigateCrop");
-  if (startStage > -1 || endStage > -1) irrigateCrop = true;
+  set_bool_value(irrigateWhenCrop, j, "irrigateWhenCrop");
+  set_bool_value(irrigateWhenCrop, j, "irrigateCrop"); // keep old name for compat reasons
+  if (startStage > -1 || endStage > -1) {
+    irrigateWhenCrop = true;
+  }
 
   if (j["parameters"].is_object()) {
     set_value_obj_value(params, j, "parameters");
+  }
+
+  if (!irrigateWhenCrop && !params.endDate.isValid()) {
+    res.appendWarning(
+        "Warning: AutomaticIrrigation has not set endDate and "
+        "irrigateWhenCrop=false, so the automatic workstep won't be able to finish and only the "
+        "first iteration of the cultivation method where this workstep appears will run!");
   }
 
   return res;
@@ -1257,10 +1271,7 @@ Errors AutomaticIrrigation::merge(json11::Json j) {
 
 json11::Json AutomaticIrrigation::to_json() const {
   auto o = json11::Json::object{
-    {"type", type()},
-    {"irrigateCrop", irrigateCrop},
-    {"parameters", params.to_json()}
-  };
+      {"type", type()}, {"irrigateWhenCrop", irrigateWhenCrop}, {"parameters", params.to_json()}};
   if (startStage > -1) o["startStage"] = startStage + 1;
   if (endStage > -1) o["endStage"] = endStage + 1;
   return o;
@@ -1301,10 +1312,12 @@ bool AutomaticIrrigation::condition(MonicaModel* model) {
     if (date > absEndDate) done = true;
   }
   if (!dateConditionMet) return done;
+  if (!irrigateWhenCrop)
+    return true; // dates only; done is set via endDate above
 
   // meet the correct crop stage
   auto cropConditionMet = dateConditionMet;
-  if (const auto cg = model->cropGrowth(); cg && irrigateCrop) {
+  if (const auto cg = model->cropGrowth(); cg && irrigateWhenCrop) {
     cropPlanted = true;
     const auto stage = cg->get_DevelopmentalStage();
     if (startStage > -1 && endStage > -1) {
