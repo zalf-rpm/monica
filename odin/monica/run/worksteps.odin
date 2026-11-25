@@ -1159,29 +1159,34 @@ automatic_irrigation_merge :: proc(ai: ^Automatic_Irrigation_Data, j: jx.Value) 
 	res: tl.Errors
 
 	jx.set_int_value(&ai.start_stage, j, "startStage")
-	// NOTE(c++-quirk): 1-based stages (user side) -> 0-based stages (model
-	// side). The C++ does `startStage = max(0, startStage--)` - the
-	// post-decrement's side effect (decrementing startStage by one) is
-	// immediately overwritten by the assignment right after it, so the
-	// decrement is a complete no-op. Net effect is exactly `startStage =
-	// max(0, startStage)`; reproduced without the pointless decrement.
+	// 1-based stages (user side) -> 0-based stages (model side)
 	if ai.start_stage > -1 {
-		ai.start_stage = max(0, ai.start_stage)
+		ai.start_stage = max(0, ai.start_stage - 1)
 	}
 
 	jx.set_int_value(&ai.end_stage, j, "endStage")
-	// same clobbered-decrement non-effect as startStage above
+	// 1-based stages (user side) -> 0-based stages (model side)
 	if ai.end_stage > -1 {
-		ai.end_stage = min(7, ai.end_stage)
+		ai.end_stage = min(7, ai.end_stage - 1)
 	}
 
-	jx.set_bool_value(&ai.irrigate_crop, j, "irrigateCrop")
+	jx.set_bool_value(&ai.irrigate_when_crop, j, "irrigateWhenCrop")
+	jx.set_bool_value(&ai.irrigate_when_crop, j, "irrigateCrop") // keep old name for compat reasons
 	if ai.start_stage > -1 || ai.end_stage > -1 {
-		ai.irrigate_crop = true
+		ai.irrigate_when_crop = true
 	}
 
 	if jx.is_object(jx.get(j, "parameters")) {
 		_ = p.automatic_irrigation_parameters_merge(&ai.params, jx.get(j, "parameters"))
+	}
+
+	if !ai.irrigate_when_crop && !d.is_valid(ai.params.end_date) {
+		tl.append_warning(
+			&res,
+			"Warning: AutomaticIrrigation has not set endDate and " +
+			"irrigateWhenCrop=false, so the automatic workstep won't be able to finish and only the " +
+			"first iteration of the cultivation method where this workstep appears will run!",
+		)
 	}
 
 	return res
@@ -1238,11 +1243,14 @@ automatic_irrigation_condition :: proc(
 	if !date_condition_met {
 		return ai.done
 	}
+	if !ai.irrigate_when_crop {
+		return true // dates only; done is set via endDate above
+	}
 
 	// meet the correct crop stage
 	crop_condition_met := date_condition_met
 	cg := model.current_crop_module
-	if cg != nil && ai.irrigate_crop {
+	if cg != nil && ai.irrigate_when_crop {
 		ai.crop_planted = true
 		stage := cg.developmental_stage
 		if ai.start_stage > -1 && ai.end_stage > -1 {

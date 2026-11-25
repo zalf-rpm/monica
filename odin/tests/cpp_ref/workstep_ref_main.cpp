@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
     auto &aid = std::get<AutomaticIrrigationData>(wsAI->data);
     trace::line_int("wsAI.startStage", aid.startStage);
     trace::line_int("wsAI.endStage", aid.endStage);
-    trace::line_bool("wsAI.irrigateCrop", aid.irrigateCrop);
+    trace::line_bool("wsAI.irrigateWhenCrop", aid.irrigateWhenCrop);
     trace::line_f64("wsAI.params.amount", aid.params.amount);
     trace::line_f64("wsAI.params.threshold", aid.params.threshold);
   }

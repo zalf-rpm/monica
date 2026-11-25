@@ -479,7 +479,9 @@ validation per step is **build-only**, not a regression run.
     result is exactly `startStage = std::max(0, startStage)`, decrement-free. Verified by careful
     sequencing analysis (C++17 guarantees the RHS, including the `--`'s side effect, fully evaluates
     before the assignment). Almost certainly an original bug (probably meant `--startStage` or
-    `startStage - 1`), preserved literally with an explanatory comment, not fixed. Only one field-less
+    `startStage - 1`), preserved literally with an explanatory comment, not fixed. *(Fixed later
+    (2026-11, master f66e0661, ported here): now `startStage - 1`/`endStage - 1`; at the same time
+    `irrigateCrop` became `irrigateWhenCrop` and `irrigateWhenCrop=false` irrigates by dates only.)* Only one field-less
     constructor exists for this subtype (default + JSON, no field-based overload), so only
     `makeAutomaticIrrigationWorkstep(json11::Json)` was added (default aggregate-init already covers
     the no-args case, no separate factory needed, matching precedent from earlier plans).

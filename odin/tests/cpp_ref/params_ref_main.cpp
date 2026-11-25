@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
     DUMP("merged-NMinApplication", nminapplicationparameters::to_json(&p));
   }
   {
-    // exercises the endDate-from-"stopDate" quirk, the threshold double-write,
+    // exercises endDate via its old name "stopDate", the threshold double-write,
     // and the unit transforms
     std::string err;
     auto j = json11::Json::parse(
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
     AutomaticIrrigationParameters p;
     automaticirrigationparameters::merge(&p, j);
     DUMP("merged-AutomaticIrrigation", automaticirrigationparameters::to_json(&p));
-    // endDate is not emitted by to_json, so check it separately
+    // endDate is in to_json now as well; checked here once more as a plain date
     printf("merged-AutomaticIrrigation-endDate\t%s\n", p.endDate.toIsoDateString().c_str());
   }
   {

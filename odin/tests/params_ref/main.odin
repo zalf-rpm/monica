@@ -162,7 +162,7 @@ main :: proc() {
 		dump("merged-NMinApplication", p.nmin_application_parameters_to_json(&v, a), a)
 	}
 	{
-		// exercises the endDate-from-"stopDate" quirk, the threshold double-write,
+		// exercises endDate via its old name "stopDate", the threshold double-write,
 		// and the unit transforms
 		j := parse(
 			`{"irrigationParameters": {"nitrateConcentration": [5, "mg dm-3"], "fw": 0.7},
@@ -176,7 +176,7 @@ main :: proc() {
 		v := p.make_automatic_irrigation_parameters()
 		_ = p.automatic_irrigation_parameters_merge(&v, j)
 		dump("merged-AutomaticIrrigation", p.automatic_irrigation_parameters_to_json(&v, a), a)
-		// endDate is not emitted by to_json, so check it separately
+		// endDate is in to_json now as well; checked here once more as a plain date
 		fmt.printf(
 			"merged-AutomaticIrrigation-endDate\t%s\n",
 			d.to_iso_date_string(v.end_date, "", a),

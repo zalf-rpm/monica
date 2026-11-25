@@ -41,27 +41,28 @@ Errors workstep::merge(AutomaticIrrigationData *ai, json11::Json j) {
 
   set_int_value(ai->startStage, j, "startStage");
   // 1-based stages (user side) -> 0-based stages (model side)
-  // NOTE: `startStage--` here is clobbered by the assignment right after it
-  // (the post-decrement's side effect sets startStage to startStage-1, but that
-  // gets immediately overwritten by `startStage = std::max(0, <old value>)`) -
-  // net effect is exactly `startStage = max(0, startStage)`, the decrement is a
-  // no-op. Almost certainly an original bug (probably meant `--startStage` or
-  // `startStage - 1`), but preserved literally as a straight translation, not
-  // fixed.
   if (ai->startStage > -1)
-    ai->startStage = std::max(0, ai->startStage--);
+    ai->startStage = std::max(0, ai->startStage - 1);
 
   set_int_value(ai->endStage, j, "endStage");
-  // same clobbered-decrement non-effect as startStage above
+  // 1-based stages (user side) -> 0-based stages (model side)
   if (ai->endStage > -1)
-    ai->endStage = std::min(7, ai->endStage--);
+    ai->endStage = std::min(7, ai->endStage - 1);
 
-  set_bool_value(ai->irrigateCrop, j, "irrigateCrop");
+  set_bool_value(ai->irrigateWhenCrop, j, "irrigateWhenCrop");
+  set_bool_value(ai->irrigateWhenCrop, j, "irrigateCrop"); // keep old name for compat reasons
   if (ai->startStage > -1 || ai->endStage > -1)
-    ai->irrigateCrop = true;
+    ai->irrigateWhenCrop = true;
 
   if (j["parameters"].is_object()) {
     automaticirrigationparameters::merge(&ai->params, j["parameters"]);
+  }
+
+  if (!ai->irrigateWhenCrop && !ai->params.endDate.isValid()) {
+    res.appendWarning(
+        "Warning: AutomaticIrrigation has not set endDate and "
+        "irrigateWhenCrop=false, so the automatic workstep won't be able to finish and only the "
+        "first iteration of the cultivation method where this workstep appears will run!");
   }
 
   return res;
@@ -70,7 +71,7 @@ Errors workstep::merge(AutomaticIrrigationData *ai, json11::Json j) {
 json11::Json workstep::to_json(const AutomaticIrrigationData *ai) {
   auto o =
       json11::Json::object{{"type", "AutomaticIrrigation"},
-                           {"irrigateCrop", ai->irrigateCrop},
+                           {"irrigateWhenCrop", ai->irrigateWhenCrop},
                            {"parameters", automaticirrigationparameters::to_json(&ai->params)}};
   if (ai->startStage > -1)
     o["startStage"] = ai->startStage + 1;
@@ -118,10 +119,12 @@ bool workstep::condition(AutomaticIrrigationData *ai, MonicaModel *model) {
   }
   if (!dateConditionMet)
     return ai->done;
+  if (!ai->irrigateWhenCrop)
+    return true; // dates only; done is set via endDate above
 
   // meet the correct crop stage
   auto cropConditionMet = dateConditionMet;
-  if (const auto *cg = model->currentCropModule.get(); cg && ai->irrigateCrop) {
+  if (const auto *cg = model->currentCropModule.get(); cg && ai->irrigateWhenCrop) {
     ai->cropPlanted = true;
     const auto stage = cg->vc_DevelopmentalStage;
     if (ai->startStage > -1 && ai->endStage > -1) {

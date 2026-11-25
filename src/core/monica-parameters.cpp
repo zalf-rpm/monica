@@ -921,7 +921,8 @@ Errors automaticirrigationparameters::merge(AutomaticIrrigationParameters *aip, 
 
   res.append(irrigationparameters::merge(aip, j["irrigationParameters"]));
   set_iso_date_value(aip->startDate, j, "startDate");
-  set_iso_date_value(aip->endDate, j, "stopDate");
+  set_iso_date_value(aip->endDate, j, "endDate");
+  set_iso_date_value(aip->endDate, j, "stopDate"); // compatibility, if there is a stopDate use this one
   set_double_value(aip->amount, j, "amount");
   set_double_value(aip->percentNFC, j, "set_to_%nFC");
   set_double_value(aip->threshold, j, "threshold", transformIfPercent(j, "threshold"));
@@ -937,6 +938,7 @@ json11::Json automaticirrigationparameters::to_json(const AutomaticIrrigationPar
   auto o = json11::Json::object{
       {"type", "AutomaticIrrigationParameters"},
       {"startDate", aip->startDate.toIsoDateString()},
+      {"endDate", aip->endDate.toIsoDateString()},
       {"irrigationParameters", irrigationparameters::to_json(aip)},
       {"trigger_if_nFC_below_%", J11Array{aip->threshold * 100.0, "%"}},
       {"calc_nFC_until_depth_m", J11Array{aip->criticalMoistureDepthM, "m"}},

@@ -215,14 +215,14 @@ Irrigation_Data :: struct {
 
 // C++: struct AutomaticIrrigationData
 Automatic_Irrigation_Data :: struct {
-	abs_start_date: d.Date,
-	abs_end_date:   d.Date,
-	irrigate_crop:  bool,
-	start_stage:    int `unit:"" unit_guess:"high"`, // C++ default: -1
-	end_stage:      int `unit:"" unit_guess:"high"`, // C++ default: -1
-	params:         p.Automatic_Irrigation_Parameters,
-	done:           bool,
-	crop_planted:   bool,
+	abs_start_date:     d.Date,
+	abs_end_date:       d.Date,
+	irrigate_when_crop: bool,
+	start_stage:        int `unit:"" unit_guess:"high"`, // C++ default: -1
+	end_stage:          int `unit:"" unit_guess:"high"`, // C++ default: -1
+	params:             p.Automatic_Irrigation_Parameters,
+	done:               bool,
+	crop_planted:       bool,
 }
 
 // C++: std::function<json11::Json(const MonicaModel*)> SetValueData::getValue

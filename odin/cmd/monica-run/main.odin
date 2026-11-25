@@ -220,7 +220,7 @@ main :: proc() {
 
 	env: run.Env
 	merge_errs := run.env_merge(&env, env_json, path_to_soil_dir, a)
-	tl.print_possible_errors(merge_errs)
+	tl.print_possible_errors(merge_errs, debug) // like the C++: warnings only with -d
 	if tl.failure(merge_errs) {
 		os.exit(1)
 	}

@@ -174,8 +174,8 @@ make_automatic_irrigation_parameters :: proc() -> Automatic_Irrigation_Parameter
 
 // C++: Errors automaticirrigationparameters::merge(...)
 //
-// NOTE(c++-quirk): end_date is read from the key "stopDate", not "endDate"; and
-// `threshold` is written twice - first from "threshold" (percent-transformed),
+// end_date is read from "endDate", or from the old name "stopDate" (which wins
+// if both are given). NOTE(c++-quirk): `threshold` is written twice - first from "threshold" (percent-transformed),
 // then unconditionally from "trigger_if_nFC_below_%" divided by 100, so the
 // latter wins whenever it is present. Both reproduced.
 automatic_irrigation_parameters_merge :: proc(
@@ -188,7 +188,8 @@ automatic_irrigation_parameters_merge :: proc(
 	tl.append_errors(&res, e)
 
 	jx.set_iso_date_value(&aip.start_date, j, "startDate")
-	jx.set_iso_date_value(&aip.end_date, j, "stopDate")
+	jx.set_iso_date_value(&aip.end_date, j, "endDate")
+	jx.set_iso_date_value(&aip.end_date, j, "stopDate") // compatibility, if there is a stopDate use this one
 	jx.set_double_value(&aip.amount, j, "amount")
 	jx.set_double_value(&aip.percent_nfc, j, "set_to_%nFC")
 	jx.set_double_value(&aip.threshold, j, "threshold", jx.transform_if_percent(j, "threshold"))
@@ -205,18 +206,17 @@ automatic_irrigation_parameters_merge :: proc(
 }
 
 // C++: json11::Json automaticirrigationparameters::to_json(...)
-//
-// NOTE(c++-quirk): end_date is not emitted at all, so a to_json/merge round trip
-// loses it. Reproduced.
 automatic_irrigation_parameters_to_json :: proc(
 	aip: ^Automatic_Irrigation_Parameters,
 	a: Allocator,
 ) -> jx.Value {
 	iso := d.to_iso_date_string(aip.start_date, "", a)
+	end_iso := d.to_iso_date_string(aip.end_date, "", a)
 	o := jx.obj(
 		a,
 		{"type", jx.sl("AutomaticIrrigationParameters")},
 		{"startDate", jx.s(iso, a)},
+		{"endDate", jx.s(end_iso, a)},
 		{"irrigationParameters", irrigation_parameters_to_json(&aip.base, a)},
 		{"trigger_if_nFC_below_%", jx.vu(aip.threshold * 100.0, "%", a)},
 		{"calc_nFC_until_depth_m", jx.vu(aip.critical_moisture_depth_m, "m", a)},

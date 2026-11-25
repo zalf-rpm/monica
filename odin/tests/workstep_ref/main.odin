@@ -332,7 +332,7 @@ main :: proc() {
 		aid := &ws_ai.data.(run.Automatic_Irrigation_Data)
 		tr.dump(&t, "wsAI.startStage", aid.start_stage)
 		tr.dump(&t, "wsAI.endStage", aid.end_stage)
-		tr.dump(&t, "wsAI.irrigateCrop", aid.irrigate_crop)
+		tr.dump(&t, "wsAI.irrigateWhenCrop", aid.irrigate_when_crop)
 		tr.dump(&t, "wsAI.params.amount", aid.params.amount)
 		tr.dump(&t, "wsAI.params.threshold", aid.params.threshold)
 	}

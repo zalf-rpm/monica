@@ -902,7 +902,7 @@ aliases that were only read a few times outside loops were inlined (`vs_Latitude
 | --- | --- |
 | `absStartDate` | `abs_start_date` |
 | `absEndDate` | `abs_end_date` |
-| `irrigateCrop` | `irrigate_crop` |
+| `irrigateWhenCrop` | `irrigate_when_crop` |
 | `startStage` | `start_stage` |
 | `endStage` | `end_stage` |
 | `cropPlanted` | `crop_planted` |
