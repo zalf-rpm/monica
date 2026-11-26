@@ -22,7 +22,8 @@
 //     "Daily": "input.csv"                        // relative to the input file
 //   }
 //
-// Monica_AMEI_potential_Evapotranspiration needs only HeightNN, and no Layers.
+// Monica_AMEI_potential_Evapotranspiration and Monica_Reference_Evapotranspiration
+// need only HeightNN, and no Layers.
 //
 // The daily CSV has a header row; columns by name: date (ISO), and the fields
 // of monica/modules/evapotranspiration's Daily (julian_day defaults to the
@@ -30,9 +31,11 @@
 // [m s-1], wind_speed_height [m], kc_factor, developmental_stage (0 without a
 // crop), crop_remaining_evapotranspiration [mm], vapor_pressure,
 // saturated_vapor_pressure [kPa], stomata_resistance [s m-1], net_radiation
-// [MJ m-2]. A missing column is 0 and named on stderr. For modules with
-// layers also soil_moisture_1 ... soil_moisture_<n> [m3 m-3] (default: the
-// layers' SoilMoisture) and crop_transpiration_1 ... [mm] (default 0).
+// [MJ m-2]; Monica_Reference_Evapotranspiration the same without kc_factor,
+// developmental_stage and crop_remaining_evapotranspiration. A missing
+// column is 0 and named on stderr. For modules with layers also
+// soil_moisture_1 ... soil_moisture_<n> [m3 m-3] (default: the layers'
+// SoilMoisture) and crop_transpiration_1 ... [mm] (default 0).
 package monica_module
 
 import etm "../../monica/modules/evapotranspiration"

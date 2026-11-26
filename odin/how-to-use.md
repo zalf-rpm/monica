@@ -65,6 +65,7 @@ day by day and writes its outputs. The input format is in
 
     monica-module run SoilTemperature DSSAT_ST_standalone input.json out.csv
     monica-module run Evapotranspiration Monica_AMEI_potential_Evapotranspiration input.json out.csv
+    monica-module run Evapotranspiration Monica_Reference_Evapotranspiration input.json out.csv
     monica-module from-sim sim.json input.json      # soil temperature input from a MONICA sim
 
 For soil temperature, `internal` runs MONICA's own soil temperature code
@@ -80,6 +81,7 @@ profile, climate).
 | evapotranspiration | MONICA's own (`internal`) | default | - | - |
 | evapotranspiration | `Monica_Evapotranspiration` (MONICA's own as a Crop2ML package) | yes, not with `"evapotranspiration-method": "FAO-56-Dual"` | yes | yes |
 | evapotranspiration | `Monica_AMEI_potential_Evapotranspiration` (only ET0 and potential ET) | no - it has no evaporation, transpiration or soil water | yes | yes |
+| evapotranspiration | `Monica_Reference_Evapotranspiration` (only ET0) | no - as above | yes | yes |
 
 `Monica_SoilTemp` and `Monica_Evapotranspiration` are MONICA's own code as
 Crop2ML packages: integrated, they give MONICA's own results (checked by
@@ -92,7 +94,8 @@ Crop2ML packages: integrated, they give MONICA's own results (checked by
   "SoilTemperature": {"impl": "DSSAT_ST_standalone", "mode": "integrated"},
   "SoilTemperatureDrivers": ["Monica_SoilTemp", "ApsimCampbell"],
   "Evapotranspiration": {"impl": "internal"},
-  "EvapotranspirationDrivers": ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration"]
+  "EvapotranspirationDrivers": ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration",
+                                "Monica_Reference_Evapotranspiration"]
 }
 ```
 

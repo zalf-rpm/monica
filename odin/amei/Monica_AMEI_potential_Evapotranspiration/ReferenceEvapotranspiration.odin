@@ -65,7 +65,7 @@ destroy_reference_evapotranspiration :: proc(m: ^Reference_Evapotranspiration) {
 //                           ** variablecategory : exogenous
 //                           ** datatype : DOUBLE
 //                           ** max : 9999
-//                           ** min : -9999
+//                           ** min : 0.1
 //                           ** default : 2
 //                           ** unit : m
 //             * name: net_radiation
@@ -75,6 +75,7 @@ destroy_reference_evapotranspiration :: proc(m: ^Reference_Evapotranspiration) {
 //                           ** datatype : DOUBLE
 //                           ** max :
 //                           ** min : 0
+//                           ** default : 0
 //                           ** unit : MJ/m2
 //             * name: stomata_resistance
 //                           ** description : stomata resistance (FAO default value is 100)

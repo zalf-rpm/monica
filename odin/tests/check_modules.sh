@@ -54,10 +54,14 @@ RUN=build/monica-run
 [ "${OS:-}" = Windows_NT ] && RUN=$RUN.exe
 python tests/check_drivers.py --monica-run "$RUN" --monica-module "$EXE" --work build/check-drivers || rc=1
 
-# the evapotranspiration module check_drivers.py ran standalone, against the generated Python
+# the evapotranspiration modules check_drivers.py ran standalone, against the generated Python
 D=build/check-drivers
 "$PIXI" run "${PYCROPML_ENV[@]}" python tools/module_reference.py Monica_AMEI_potential_Evapotranspiration \
   "$D/pot-et-standalone.json" "$D/pot-et-standalone-py.csv"
 echo -n "Monica_AMEI_potential_Evapotranspiration Odin vs Python: "
 python tools/module_reference.py --compare "$D/pot-et-standalone-py.csv" "$D/pot-et-standalone-out.csv" || rc=1
+"$PIXI" run "${PYCROPML_ENV[@]}" python tools/module_reference.py Monica_Reference_Evapotranspiration \
+  "$D/ref-et-standalone.json" "$D/ref-et-standalone-py.csv"
+echo -n "Monica_Reference_Evapotranspiration Odin vs Python: "
+python tools/module_reference.py --compare "$D/ref-et-standalone-py.csv" "$D/ref-et-standalone-out.csv" || rc=1
 exit "$rc"

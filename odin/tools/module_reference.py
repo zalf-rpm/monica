@@ -310,6 +310,8 @@ MODULES = {
     "Stics_soil_temperature": ("SoilTemperatureModels", stics),
     "Monica_AMEI_potential_Evapotranspiration": ("EvapoTranspirationModels",
                                                  lambda j, ls, d0: monica_amei_pot_et(j, ls)),
+    "Monica_Reference_Evapotranspiration": ("EvapoTranspirationModels",
+                                            lambda j, ls, d0: monica_ref_et(j, ls)),
 }
 
 
@@ -330,6 +332,24 @@ def monica_amei_pot_et(j, layers):
         }
 
     columns = ["reference_evapotranspiration", "potential_evapotranspiration", "saturation_vapor_pressure_deficit"]
+    return params, daily, lambda env, n: [env[c] for c in columns], columns
+
+
+def monica_ref_et(j, layers):
+    """monica/modules/evapotranspiration/monica_ref_et.odin"""
+    params = {"height_nn": j.get("HeightNN", 0.0)}
+
+    def daily(day):
+        return {
+            "mean_air_temperature": day.get("tavg", 0.0), "wind_speed": day.get("wind", 0.0),
+            "wind_speed_height": day.get("wind_speed_height", 0.0),
+            "stomata_resistance": day.get("stomata_resistance", 0.0),
+            "net_radiation": day.get("net_radiation", 0.0),
+            "saturation_vapor_pressure_deficit":
+                day.get("saturated_vapor_pressure", 0.0) - day.get("vapor_pressure", 0.0),
+        }
+
+    columns = ["reference_evapotranspiration", "saturation_vapor_pressure_deficit"]
     return params, daily, lambda env, n: [env[c] for c in columns], columns
 
 

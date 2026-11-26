@@ -8,12 +8,13 @@
 // capillary rise. Unlike soil temperature it changes MONICA's state: the soil
 // moisture and the surface water storage come in and go out again.
 //
-// Two modules: Monica_Evapotranspiration, MONICA's whole evapotranspiration,
-// and Monica_AMEI_potential_Evapotranspiration, just its ET0 and potential ET
+// Three modules: Monica_Evapotranspiration, MONICA's whole evapotranspiration,
+// Monica_AMEI_potential_Evapotranspiration, just its ET0 and potential ET
 // from intermediates (vapour pressures, net radiation, stomata resistance)
 // that are inputs here - from outside standalone, from MONICA's own ET0 as a
 // driver (core/evapotranspiration_impl.odin). It can't replace MONICA's own,
 // which also has to give the evaporation, transpiration and soil water.
+// Monica_Reference_Evapotranspiration is the same with only the ET0.
 //
 // A new module (R3): as in monica/modules/soil_temperature, its file with a
 // constant Module_Entry at the end, plus one line each in Module and `modules`.
@@ -108,6 +109,7 @@ make_output :: proc(no_of_layers: int, allocator := context.allocator) -> Output
 Module :: union {
 	^Monica_Et,
 	^Monica_Amei_Pot_Et,
+	^Monica_Ref_Et,
 }
 
 // A module's table row, as in monica/modules/soil_temperature.
@@ -138,6 +140,7 @@ Module_Entry :: struct {
 modules := [?]Module_Entry {
 	monica_et_entry,
 	monica_amei_pot_et_entry,
+	monica_ref_et_entry,
 }
 
 find_module :: proc(name: string) -> (Module_Entry, bool) {

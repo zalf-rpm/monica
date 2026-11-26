@@ -55,9 +55,9 @@
       },
       "EvapoTranspirationModels": {
         "url": "https://github.com/AgriculturalModelExchangeInitiative/EvapoTranspirationModels.git",
-        "commit": "84a97ba662c5f8b43514144b2b8317b09b0c96eb",
+        "commit": "7d328e8c64aac9b15fa1151656c7847e8b1df49e",
         "path": "Monica",
-        "packages": ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration"]
+        "packages": ["Monica_Evapotranspiration", "Monica_AMEI_potential_Evapotranspiration", "Monica_Reference_Evapotranspiration"]
       }
     }
   }

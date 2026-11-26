@@ -720,6 +720,18 @@ from MONICA):
 * Not done: integrated with MONICA's own evaporation and transpiration using the module's ET0 and
   potential ET - a mode the current design doesn't have.
 
+Monica_Reference_Evapotranspiration, 2026-11-26 (only the ET0, from the same intermediates; the
+package takes the saturation deficit, which the binding calculates from the two vapour pressures
+as MONICA does):
+
+* EvapoTranspirationModels pinned at 7d328e8 (the new package; the other two packages' sources
+  changed only in min/default metadata, their generated Odin only in comments).
+* Binding `monica/modules/evapotranspiration/monica_ref_et.odin`, a driver only, as
+  Monica_AMEI_potential_Evapotranspiration; the new module needed its package, its binding, one
+  union entry and one table row (R3).
+* Checks: refused integrated; as a driver on sim-min its ET0 == MONICA's (2557 days); standalone
+  on the driver's inputs == the driver; Odin == the generated Python (5114 of 5114 values).
+
 **Phase 6: a second process as a module (optional, proves R3).** E.g. move evapotranspiration's
 internal code behind its own union like soil temperature in phase 1, then write a small
 hand-written variant as the "PhD student" test case. Check: R1, R2, and that the variant needed
