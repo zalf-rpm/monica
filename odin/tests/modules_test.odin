@@ -1,5 +1,6 @@
-// The module tables (monica/modules/<process>): a module is its file, a line in
-// the Module union and a row in `modules` (R3, plan-crop2ml-modules.md phase 6).
+// The module tables (monica/modules/<process>): a module is its binding package
+// with a Module_Entry, registered by core/builtin_modules.odin (R3,
+// plan-crop2ml-modules.md phase 6, plan-module-plugins.md).
 // The rows carry the procedures MONICA calls, so a row with a forgotten
 // procedure, a missing row or one copied with another module's type would
 // only show at run time. These tests show it here.
@@ -12,20 +13,13 @@ import etm "../monica/modules/evapotranspiration"
 import pl "../monica/modules/plugin"
 import stm "../monica/modules/soil_temperature"
 
-// Every row complete, names unique, one row per union variant (but the plugin
-// modules' ^pl.Instance, which has none) and each row making its own variant.
+// Every row complete, names unique, and each row's `make` making a module of
+// the row's `type`, distinct from the other rows'.
 @(private = "file")
-check_table :: proc(t: ^testing.T, table: string, module_type: typeid, rows: []$E, make_variant: proc(e: E) -> typeid) {
-	variants := runtime.type_info_base(type_info_of(module_type)).variant.(runtime.Type_Info_Union).variants
-	builtin := 0
-	for v in variants {
-		if v.id != ^pl.Instance {
-			builtin += 1
-		}
-	}
-	testing.expectf(t, len(rows) == builtin, "%s: %d rows for %d union variants", table, len(rows), builtin)
+check_table :: proc(t: ^testing.T, table: string, rows: []$E, make_type: proc(e: E) -> typeid) {
+	testing.expectf(t, len(rows) > 0, "%s: no built-in modules registered", table)
 	seen_names := make(map[string]bool, context.temp_allocator)
-	seen_variants := make(map[typeid]string, context.temp_allocator)
+	seen_types := make(map[typeid]string, context.temp_allocator)
 	for &row in rows {
 		name := reflect.struct_field_value_by_name(row, "name").(string)
 		for f in reflect.struct_fields_zipped(E) {
@@ -36,29 +30,31 @@ check_table :: proc(t: ^testing.T, table: string, module_type: typeid, rows: []$
 		}
 		testing.expectf(t, !seen_names[name], "%s: %q twice", table, name)
 		seen_names[name] = true
-		v := make_variant(row)
-		if other, dup := seen_variants[v]; dup {
-			testing.expectf(t, false, "%s: %q and %q make the same variant %v", table, name, other, v)
+		type := reflect.struct_field_value_by_name(row, "type").(typeid)
+		made := make_type(row)
+		testing.expectf(t, made == type, "%s: %q makes a %v, its row says %v", table, name, made, type)
+		if other, dup := seen_types[type]; dup {
+			testing.expectf(t, false, "%s: %q and %q have the same type %v", table, name, other, type)
 		}
-		seen_variants[v] = name
+		seen_types[type] = name
 	}
 }
 
 @(test)
 test_soil_temperature_module_table :: proc(t: ^testing.T) {
-	check_table(t, "soil_temperature", stm.Module, stm.modules[:], proc(e: stm.Module_Entry) -> typeid {
+	check_table(t, "soil_temperature", stm.modules[:], proc(e: stm.Module_Entry) -> typeid {
 		m := e.make(context.allocator)
 		defer e.destroy(m, context.allocator)
-		return reflect.union_variant_typeid(m)
+		return m.type
 	})
 }
 
 @(test)
 test_evapotranspiration_module_table :: proc(t: ^testing.T) {
-	check_table(t, "evapotranspiration", etm.Module, etm.modules[:], proc(e: etm.Module_Entry) -> typeid {
+	check_table(t, "evapotranspiration", etm.modules[:], proc(e: etm.Module_Entry) -> typeid {
 		m := e.make(context.allocator)
 		defer e.destroy(m, context.allocator)
-		return reflect.union_variant_typeid(m)
+		return m.type
 	})
 }
 

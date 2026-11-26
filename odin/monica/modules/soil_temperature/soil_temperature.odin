@@ -7,9 +7,10 @@
 // model is core's job (soil_temperature_impl.odin), reading one from a file
 // cmd/monica-module's.
 //
-// A new module (R3) is a file like monica_soiltemp.odin - its struct, its
-// make/init/step/destroy and a constant Module_Entry, the table row, at its
-// end - plus one line in the Module union and one in `modules` below.
+// A module (R3) is a package like monica_soiltemp/ - its struct, its
+// make/init/step/destroy and a constant Module_Entry at its end. It is built
+// into MONICA by a line in core/builtin_modules.odin, which registers it here
+// (`modules`), or into a plugin library (plugins.odin, plan-module-plugins.md).
 package soil_temperature
 
 import p "../../params"
@@ -82,26 +83,20 @@ destroy_output :: proc(o: ^Output, allocator := context.allocator) {
 	delete(o.layer_temperature, allocator)
 }
 
-// One variant per module. The union, not a plain pointer, so that output paths
-// can reach a module's own state by its type (e.g. module.Dssat_St.s.srftemp).
-// A module from a plugin library is a ^pl.Instance (plugins.odin).
-Module :: union {
-	^Monica_Soil_Temp,
-	^Dssat_St,
-	^Dssat_Epicst,
-	^Apsim_Campbell,
-	^Bioma_Parton_Swat,
-	^Bioma_Swat_Swat,
-	^Simplace,
-	^Sq,
-	^Stics,
-	^pl.Instance,
+// A module: a pointer to its binding's struct, and that struct's type, for
+// output paths into the module's own state (e.g. module.Dssat_St.s.srftemp,
+// resolved through reflectpath's foreign types, core/module_paths.odin). A
+// plugin's module is a ^pl.Instance (plugins.odin).
+Module :: struct {
+	data: rawptr,
+	type: typeid,
 }
 
 // A module's table row: its name and what MONICA calls. Each procedure gets the
-// Module made by `make` and asserts its own variant (m.(^Dssat_St)).
+// Module made by `make` and casts its data ((^Dssat_St)(m.data)).
 Module_Entry :: struct {
 	name:    string, // as in sim.json and the Crop2ML package
+	type:    typeid, // the struct `make` makes
 	make:    proc(allocator: Allocator) -> Module,
 	// in_'s daily values are those of the first day: the modules' init reads
 	// them, as in the C++ AMEI adapters, which call init right before the
@@ -116,17 +111,14 @@ Module_Entry :: struct {
 	plugin:  ^pl.Module_Info,
 }
 
-@(rodata)
-modules := [?]Module_Entry {
-	monica_soil_temp_entry,
-	dssat_st_entry,
-	dssat_epicst_entry,
-	apsim_campbell_entry,
-	bioma_parton_swat_entry,
-	bioma_swat_swat_entry,
-	simplace_entry,
-	sq_entry,
-	stics_entry,
+// The built-in modules, registered at startup (core/builtin_modules.odin).
+modules: [dynamic]Module_Entry
+
+register_builtin :: proc(e: Module_Entry) {
+	if modules == nil {
+		modules = make([dynamic]Module_Entry, runtime.heap_allocator())
+	}
+	append(&modules, e)
 }
 
 // A built-in module, or one of a loaded plugin (plugins.odin).
@@ -141,7 +133,6 @@ find_module :: proc(name: string) -> (Module_Entry, bool) {
 
 // Whole centimetres, rounded; the C++ AMEI adapters truncated
 // (int(0.29 * 100) is 28).
-@(private)
 thickness_cm :: proc(m: f64) -> f64 {
 	return f64(int(m * 100.0 + 0.5))
 }

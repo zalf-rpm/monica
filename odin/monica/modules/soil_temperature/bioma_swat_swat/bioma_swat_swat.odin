@@ -7,10 +7,11 @@
 // BiomaSurfacePartonSoilSWATC (bioma_parton_swat.odin), plus MONICA's
 // environment albedo and the snow's water equivalent; the above-ground
 // biomass goes into the auxiliary struct, where this package has it.
-package soil_temperature
+package st_bioma_swat_swat
 
-import c2m "../crop2ml"
-import bss "../../../amei/BiomaSurfaceSWATSoilSWATC"
+import stm ".."
+import c2m "../../crop2ml"
+import bss "../../../../amei/BiomaSurfaceSWATSoilSWATC"
 
 Bioma_Swat_Swat :: struct {
 	c:            bss.Surface_Swat_Soil_Swatc_Component,
@@ -21,10 +22,10 @@ Bioma_Swat_Swat :: struct {
 	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_bioma_swat_swat :: proc(allocator: Allocator) -> Module {
+make_bioma_swat_swat :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Bioma_Swat_Swat, allocator)
 	b.c = bss.make_surface_swat_soil_swatc_component(allocator)
-	return b
+	return stm.Module{data = b, type = Bioma_Swat_Swat}
 }
 
 destroy_bioma_swat_swat :: proc(b: ^Bioma_Swat_Swat, allocator := context.allocator) {
@@ -38,7 +39,7 @@ destroy_bioma_swat_swat :: proc(b: ^Bioma_Swat_Swat, allocator := context.alloca
 	free(b)
 }
 
-bioma_swat_swat_init :: proc(b: ^Bioma_Swat_Swat, in_: ^Input, allocator := context.allocator) {
+bioma_swat_swat_init :: proc(b: ^Bioma_Swat_Swat, in_: ^stm.Input, allocator := context.allocator) {
 	context.allocator = allocator
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
@@ -59,7 +60,7 @@ bioma_swat_swat_init :: proc(b: ^Bioma_Swat_Swat, in_: ^Input, allocator := cont
 	bss.surface_swat_soil_swatc_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-bioma_swat_swat_step :: proc(b: ^Bioma_Swat_Swat, in_: ^Input, out: ^Output, allocator := context.allocator) {
+bioma_swat_swat_step :: proc(b: ^Bioma_Swat_Swat, in_: ^stm.Input, out: ^stm.Output, allocator := context.allocator) {
 	bioma_swat_swat_exogenous(b, in_)
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	bss.surface_swat_soil_swatc_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
@@ -68,7 +69,7 @@ bioma_swat_swat_step :: proc(b: ^Bioma_Swat_Swat, in_: ^Input, out: ^Output, all
 }
 
 @(private = "file")
-bioma_swat_swat_exogenous :: proc(b: ^Bioma_Swat_Swat, in_: ^Input) {
+bioma_swat_swat_exogenous :: proc(b: ^Bioma_Swat_Swat, in_: ^stm.Input) {
 	b.ex.air_temperature_minimum = in_.tmin
 	b.ex.air_temperature_maximum = in_.tmax
 	b.ex.global_solar_radiation = in_.globrad
@@ -81,10 +82,11 @@ bioma_swat_swat_exogenous :: proc(b: ^Bioma_Swat_Swat, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-bioma_swat_swat_entry :: Module_Entry {
+bioma_swat_swat_entry :: stm.Module_Entry {
 	name    = "BiomaSurfaceSWATSoilSWATC",
+	type    = Bioma_Swat_Swat,
 	make    = make_bioma_swat_swat,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {bioma_swat_swat_init(m.(^Bioma_Swat_Swat), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {bioma_swat_swat_step(m.(^Bioma_Swat_Swat), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_bioma_swat_swat(m.(^Bioma_Swat_Swat), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {bioma_swat_swat_init((^Bioma_Swat_Swat)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {bioma_swat_swat_step((^Bioma_Swat_Swat)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_bioma_swat_swat((^Bioma_Swat_Swat)(m.data), a)},
 }

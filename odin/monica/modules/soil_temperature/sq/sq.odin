@@ -6,10 +6,11 @@
 // 2.454; the day length; the climate's annual average temperature; no soil
 // heat flux (it would come from SiriusQuality's energy balance). The mean of
 // the minimum and maximum is the surface's and every layer's temperature.
-package soil_temperature
+package st_sq
 
-import c2m "../crop2ml"
-import sq "../../../amei/SQ_Soil_Temperature"
+import stm ".."
+import c2m "../../crop2ml"
+import sq "../../../../amei/SQ_Soil_Temperature"
 
 Sq :: struct {
 	c:     sq.Soil_Temperature_Component,
@@ -19,10 +20,10 @@ Sq :: struct {
 	ex:    sq.Soil_Temperature_Exogenous,
 }
 
-make_sq :: proc(allocator: Allocator) -> Module {
+make_sq :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Sq, allocator)
 	b.c = sq.make_soil_temperature_component(allocator)
-	return b
+	return stm.Module{data = b, type = Sq}
 }
 
 destroy_sq :: proc(b: ^Sq, allocator := context.allocator) {
@@ -36,7 +37,7 @@ destroy_sq :: proc(b: ^Sq, allocator := context.allocator) {
 	free(b)
 }
 
-sq_init :: proc(b: ^Sq, in_: ^Input, allocator := context.allocator) {
+sq_init :: proc(b: ^Sq, in_: ^stm.Input, allocator := context.allocator) {
 	c := &b.c
 	sq.soil_temperature_component_set_a(c, 0.5)
 	sq.soil_temperature_component_set_b(c, 1.81)
@@ -46,7 +47,7 @@ sq_init :: proc(b: ^Sq, in_: ^Input, allocator := context.allocator) {
 	sq.soil_temperature_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-sq_step :: proc(b: ^Sq, in_: ^Input, out: ^Output, allocator := context.allocator) {
+sq_step :: proc(b: ^Sq, in_: ^stm.Input, out: ^stm.Output, allocator := context.allocator) {
 	sq_exogenous(b, in_)
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	sq.soil_temperature_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
@@ -58,7 +59,7 @@ sq_step :: proc(b: ^Sq, in_: ^Input, out: ^Output, allocator := context.allocato
 }
 
 @(private = "file")
-sq_exogenous :: proc(b: ^Sq, in_: ^Input) {
+sq_exogenous :: proc(b: ^Sq, in_: ^stm.Input) {
 	b.ex.day_length = in_.day_length
 	b.ex.max_t_air = in_.tmax
 	b.ex.min_t_air = in_.tmin
@@ -68,10 +69,11 @@ sq_exogenous :: proc(b: ^Sq, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-sq_entry :: Module_Entry {
+sq_entry :: stm.Module_Entry {
 	name    = "SQ_Soil_Temperature",
+	type    = Sq,
 	make    = make_sq,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {sq_init(m.(^Sq), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {sq_step(m.(^Sq), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_sq(m.(^Sq), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {sq_init((^Sq)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {sq_step((^Sq)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_sq((^Sq)(m.data), a)},
 }

@@ -12,7 +12,8 @@
 //
 // "Plugins": shared libraries with more modules (plan-module-plugins.md),
 // loaded before the names are checked; paths relative to the working
-// directory.
+// directory, ${VAR}s replaced, without an extension the platform's (.so,
+// .dll) added.
 //
 // Absent means MONICA's own implementations, exactly as without this section.
 // Only the shape is checked here; whether a name exists is the business of the

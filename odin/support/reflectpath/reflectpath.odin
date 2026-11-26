@@ -52,6 +52,12 @@
 //     maps.
 //   - #len must be the last segment.
 //
+// Foreign types: a type registered with register_foreign (MONICA's modules,
+// whose state may live in another library) ends the walk; the rest of the
+// path, from the segment after it, is compiled and read by its hooks, given
+// the last string map key before it (the module's name). A foreign path is
+// read-only: resolve hands back a copy of the value, as f64.
+//
 // Units: a field's unit is its `unit` struct tag, on the declaration itself,
 //
 //   actual_evaporation: f64 `unit:"mm"`,
@@ -92,6 +98,7 @@ Step_Kind :: enum u8 {
 	MAP_KEY, // hashed lookup with a compile-time-encoded key
 	LAST, // ptr = data + (n-1)*elem_size
 	FIRST, // ptr = data + 0
+	FOREIGN, // terminal: the rest of the path, read by a registered hook
 }
 
 Step :: struct {
@@ -111,6 +118,7 @@ Step :: struct {
 	key_type:   typeid, // MAP_KEY
 	map_info:   ^runtime.Map_Info, // MAP_KEY
 	name:       string, // diagnostics only; points into Path_Plan.src
+	foreign_:   ^Foreign, // FOREIGN
 }
 
 Path_Plan :: struct {
@@ -128,6 +136,34 @@ Path_Plan :: struct {
 	// that points at real memory rather than at one of its own locals. This
 	// is why resolve takes ^Path_Plan and not Path_Plan.
 	len_scratch: int,
+	// the same for a FOREIGN step's value
+	f64_scratch: f64,
+}
+
+// The rest of a path past a foreign type, compiled by its hook: `read` gets
+// `handle` and the foreign value's address.
+Foreign :: struct {
+	handle:   rawptr,
+	read:     proc(handle: rawptr, value: rawptr, open_index: int) -> (f64, bool),
+	open:     bool, // the rest leaves an array open (an OPEN dimension)
+	unit:     string,
+	has_unit: bool,
+}
+
+// Compiles `rest` (the path after the foreign value, "" for none) for the
+// value reached through the map key `key` ("" if there was none); `err` set:
+// the path is wrong.
+Foreign_Compile :: #type proc(key: string, rest: string, allocator: runtime.Allocator) -> (f: Foreign, err: string)
+
+@(private = "file")
+foreign_types: map[typeid]Foreign_Compile
+
+// Registers the hook for `T`, once at startup (not thread-safe).
+register_foreign :: proc(T: typeid, compile: Foreign_Compile) {
+	if foreign_types == nil {
+		foreign_types = make(map[typeid]Foreign_Compile, 4, runtime.heap_allocator())
+	}
+	foreign_types[T] = compile
 }
 
 Error_Kind :: enum {
@@ -143,6 +179,7 @@ Error_Kind :: enum {
 	UNKNOWN_MAP_KEY,
 	UNSUPPORTED_KEY_TYPE,
 	OUT_OF_MEMORY,
+	FOREIGN_PATH, // a foreign type's hook refused the rest of the path
 }
 
 Compile_Error :: struct {
@@ -193,8 +230,9 @@ compile :: proc(
 	steps := make([dynamic]Step, 0, len(segs) + 4, allocator)
 	cur := root
 	terminated := false
+	last_key := "" // the last string map key, for a foreign type's hook
 
-	seg_loop: for seg in segs {
+	seg_loop: for seg, si in segs {
 		if terminated {
 			return plan, mkerr(.LEN_NOT_TERMINAL, seg, "#len must be the last segment", allocator)
 		}
@@ -204,6 +242,31 @@ compile :: proc(
 		// and then re-applies the segment to the element type.
 		seg_steps: for {
 			cur = peel(&steps, cur)
+			if hook, is_foreign := foreign_types[cur]; is_foreign {
+				rest := strings.join(segs[si:], ".", allocator)
+				f, ferr := hook(last_key, rest, allocator)
+				if ferr != "" {
+					return plan, mkerr(.FOREIGN_PATH, seg, ferr, allocator)
+				}
+				if f.open {
+					if plan.open_step >= 0 {
+						return plan, mkerr(
+							.TWO_OPEN_DIMENSIONS,
+							seg,
+							"a path may leave at most one array unindexed",
+							allocator,
+						)
+					}
+					plan.open_step = len(steps)
+				}
+				ff := new(Foreign, allocator)
+				ff^ = f
+				append(&steps, Step{kind = .FOREIGN, type = typeid_of(f64), name = seg, foreign_ = ff})
+				plan.unit, plan.has_unit = f.unit, f.has_unit
+				plan.steps = steps[:]
+				plan.leaf = typeid_of(f64)
+				return plan, Compile_Error{}
+			}
 			ti := runtime.type_info_base(type_info_of(cur))
 
 			ck, elem, esz, cnt := container_of(ti)
@@ -317,6 +380,9 @@ compile :: proc(
 						),
 						allocator,
 					)
+				}
+				if _, is_string := runtime.type_info_base(info.key).variant.(runtime.Type_Info_String); is_string {
+					last_key = seg
 				}
 				append(
 					&steps,
@@ -464,6 +530,14 @@ resolve :: proc(plan: ^Path_Plan, root: any, open_index := 0) -> (out: any, ok: 
 			plan.len_scratch = n
 			return any{&plan.len_scratch, plan.leaf}, true
 		}
+		if s.kind == .FOREIGN {
+			v, fok := s.foreign_.read(s.foreign_.handle, ptr, open_index)
+			if !fok {
+				return
+			}
+			plan.f64_scratch = v
+			return any{&plan.f64_scratch, typeid_of(f64)}, true
+		}
 		p, step_ok := apply_step(s, ptr, open_index)
 		if !step_ok {
 			return
@@ -551,6 +625,9 @@ open_length :: proc(plan: ^Path_Plan, root: any) -> int {
 		ptr = p
 	}
 	s := &plan.steps[plan.open_step]
+	if s.kind == .FOREIGN {
+		return 0 // not known here; the caller's layer range decides
+	}
 	_, n := container_data_len(ptr, s.container, s.count)
 	return n
 }
@@ -610,7 +687,7 @@ apply_step :: proc(s: ^Step, ptr: rawptr, open_index: int) -> (rawptr, bool) {
 		v := runtime.__dynamic_map_get(rm, s.map_info, h, kp)
 		return v, v != nil
 
-	case .LEN:
+	case .LEN, .FOREIGN:
 	// handled by the caller, which owns the scratch slot
 	}
 	return nil, false

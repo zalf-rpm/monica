@@ -15,10 +15,11 @@
 //     metres where the module expects mm
 //   - the soil albedo (waterBalance_Salb) is MONICA's environment albedo; the
 //     adapter left it at 0 outside its sensitivity build, which used the site's
-package soil_temperature
+package st_apsim_campbell
 
-import c2m "../crop2ml"
-import apsim "../../../amei/ApsimCampbell"
+import stm ".."
+import c2m "../../crop2ml"
+import apsim "../../../../amei/ApsimCampbell"
 
 Apsim_Campbell :: struct {
 	c:            apsim.Soiltemp_Component,
@@ -29,10 +30,10 @@ Apsim_Campbell :: struct {
 	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_apsim_campbell :: proc(allocator: Allocator) -> Module {
+make_apsim_campbell :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Apsim_Campbell, allocator)
 	b.c = apsim.make_soiltemp_component(allocator)
-	return b
+	return stm.Module{data = b, type = Apsim_Campbell}
 }
 
 destroy_apsim_campbell :: proc(b: ^Apsim_Campbell, allocator := context.allocator) {
@@ -46,7 +47,7 @@ destroy_apsim_campbell :: proc(b: ^Apsim_Campbell, allocator := context.allocato
 	free(b)
 }
 
-apsim_campbell_init :: proc(b: ^Apsim_Campbell, in_: ^Input, allocator := context.allocator) {
+apsim_campbell_init :: proc(b: ^Apsim_Campbell, in_: ^stm.Input, allocator := context.allocator) {
 	context.allocator = allocator
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
@@ -90,7 +91,7 @@ apsim_campbell_init :: proc(b: ^Apsim_Campbell, in_: ^Input, allocator := contex
 	apsim.soiltemp_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-apsim_campbell_step :: proc(b: ^Apsim_Campbell, in_: ^Input, out: ^Output, allocator := context.allocator) {
+apsim_campbell_step :: proc(b: ^Apsim_Campbell, in_: ^stm.Input, out: ^stm.Output, allocator := context.allocator) {
 	apsim_campbell_exogenous(b, in_)
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	apsim.soiltemp_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
@@ -99,7 +100,7 @@ apsim_campbell_step :: proc(b: ^Apsim_Campbell, in_: ^Input, out: ^Output, alloc
 }
 
 @(private = "file")
-apsim_campbell_exogenous :: proc(b: ^Apsim_Campbell, in_: ^Input) {
+apsim_campbell_exogenous :: proc(b: ^Apsim_Campbell, in_: ^stm.Input) {
 	ex := &b.ex
 	ex.weather_min_t = in_.tmin
 	ex.weather_max_t = in_.tmax
@@ -120,10 +121,11 @@ apsim_campbell_exogenous :: proc(b: ^Apsim_Campbell, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-apsim_campbell_entry :: Module_Entry {
+apsim_campbell_entry :: stm.Module_Entry {
 	name    = "ApsimCampbell",
+	type    = Apsim_Campbell,
 	make    = make_apsim_campbell,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {apsim_campbell_init(m.(^Apsim_Campbell), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {apsim_campbell_step(m.(^Apsim_Campbell), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_apsim_campbell(m.(^Apsim_Campbell), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {apsim_campbell_init((^Apsim_Campbell)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {apsim_campbell_step((^Apsim_Campbell)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_apsim_campbell((^Apsim_Campbell)(m.data), a)},
 }

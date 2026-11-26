@@ -85,7 +85,9 @@ profile, climate).
 
 `Monica_SoilTemp` and `Monica_Evapotranspiration` are MONICA's own code as
 Crop2ML packages: integrated, they give MONICA's own results (checked by
-`tests/check_drivers.py`).
+`tests/check_drivers.py`). They are built into MONICA; all the others are in
+the plugin library `plugins/amei` (next section), which the Nix package and the
+Docker image load by default.
 
 ## Configuration (sim.json)
 
@@ -112,27 +114,35 @@ output columns below.
 
 A module doesn't have to be compiled into MONICA: it can come from a shared
 library (`.so`, `.dll`) loaded at startup, and then works like a built-in one -
-as a driver, integrated, standalone in `monica-module`
-(`plan-module-plugins.md`).
+as a driver, integrated, standalone in `monica-module`, with the same results
+to the bit (`plan-module-plugins.md`). The AMEI modules are such a library:
+
+    pixi run python tools/odinw.py build-plugin amei     # -> build/plugins/amei.so (.dll)
 
 ```json
 "Modules": {
-  "SoilTemperatureDrivers": ["My_Soil_Temperature"],
-  "Plugins": ["build/plugins/my_modules.so"]
+  "SoilTemperature": {"impl": "DSSAT_ST_standalone"},
+  "Plugins": ["../../odin/build/plugins/amei"]
 }
 ```
 
-or `MONICA_MODULE_PLUGINS=build/plugins/my_modules.so` (several separated
-like PATH), for every MONICA executable. Paths are relative to the working
-directory. A plugin is a package in `plugins/<name>/` (see
-`tests/plugins/test_modules/` for one with two modules), built with
+or `MONICA_MODULE_PLUGINS=<odin>/build/plugins/amei.so` (several separated
+like PATH), for every MONICA executable; the Nix package and the Docker image
+set it to their copy. Paths in `Plugins` are relative to the working directory,
+`${VAR}`s are replaced, and without an extension the platform's is added (one
+sim.json for Linux and Windows). The same library under two paths is loaded
+once; two *different* libraries with a module of the same name are refused
+(e.g. the Nix package's AMEI plugin and a `Plugins` entry naming your own
+build: drop one, or set `MONICA_MODULE_PLUGINS=` empty).
 
-    pixi run python tools/odinw.py build-plugin <name>
-
-into `build/plugins/`, with the same Odin and from the same source tree as
-MONICA: a plugin built against another version of a process's `Input`/`Output`
-is refused, as is one whose module has a built-in module's name. For now,
-output paths reach a plugin module's `input` and `output`, not its own state.
+A module is a binding package in `monica/modules/<process>/<name>/`. Which ones
+are built into MONICA is the list in `monica/core/builtin_modules.odin`; a
+plugin is a package in `plugins/<name>/` listing the binding packages it
+contains (`plugins/amei/plugin.odin`), built with the same Odin and from the
+same source tree as MONICA: a plugin built against another version of a
+process's `Input`/`Output` is refused, as is one whose module has a built-in
+module's name. Paths into a module's own state
+(`modules.<process>_drivers.<name>.module...`) work for both kinds.
 
 ## Getting the results out
 

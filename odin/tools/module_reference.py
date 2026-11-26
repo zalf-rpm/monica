@@ -80,7 +80,7 @@ def thickness_cm(m):
 # temperature ones (surface, then one per layer).
 
 def monica_soiltemp(j, layers):
-    """monica/modules/soil_temperature/monica_soiltemp.odin"""
+    """monica/modules/soil_temperature/monica_soiltemp/monica_soiltemp.odin"""
     ps = {"NTau": 0, "InitialSurfaceTemperature": 0, "BaseTemperature": 0, "QuartzRawDensity": 0,
           "DensityAir": 0, "DensityWater": 0, "DensityHumus": 0, "SpecificHeatCapacityAir": 0,
           "SpecificHeatCapacityQuartz": 0, "SpecificHeatCapacityWater": 0,
@@ -124,7 +124,7 @@ def monica_soiltemp(j, layers):
 
 
 def dssat_st_standalone(j, layers):
-    """monica/modules/soil_temperature/dssat_st.odin"""
+    """monica/modules/soil_temperature/dssat_st/dssat_st.odin"""
     n = len(layers)
     dlayr = [thickness_cm(l["Thickness"]) for l in layers]
     ds, depth = [], 0.0
@@ -151,7 +151,7 @@ def dssat_st_standalone(j, layers):
 
 
 def dssat_epicst_standalone(j, layers):
-    """monica/modules/soil_temperature/dssat_epicst.odin"""
+    """monica/modules/soil_temperature/dssat_epicst/dssat_epicst.odin"""
     n = len(layers)
     dlayr = [thickness_cm(l["Thickness"]) for l in layers]
     ds, depth = [], 0.0
@@ -180,7 +180,7 @@ def dssat_epicst_standalone(j, layers):
 
 
 def apsim_campbell(j, layers):
-    """monica/modules/soil_temperature/apsim_campbell.odin"""
+    """monica/modules/soil_temperature/apsim_campbell/apsim_campbell.odin"""
     params = {
         "ps": 2.63, "pom": 1.3,
         "soilConstituentNames": ["Rocks", "OrganicMatter", "Sand", "Silt", "Clay", "Water", "Ice", "Air"],
@@ -240,7 +240,7 @@ def bioma(j, layers, swat_surface):
 
 
 def simplace(j, layers, first_day):
-    """monica/modules/soil_temperature/simplace.odin"""
+    """monica/modules/soil_temperature/simplace/simplace.odin"""
     n = len(layers)
     depths, depth, bd = [], 0.0, 0.0
     for l in layers:
@@ -271,7 +271,7 @@ def simplace(j, layers, first_day):
 
 
 def sq(j, layers):
-    """monica/modules/soil_temperature/sq.odin"""
+    """monica/modules/soil_temperature/sq/sq.odin"""
     params = {"a": 0.5, "b": 1.81, "c": 0.49, "lambda_": 2.454}
 
     def daily(day):
@@ -286,7 +286,7 @@ def sq(j, layers):
 
 
 def stics(j, layers, first_day):
-    """monica/modules/soil_temperature/stics.odin"""
+    """monica/modules/soil_temperature/stics/stics.odin"""
     params = {"layer_thick": [int(thickness_cm(l["Thickness"])) for l in layers],
               "air_temp_day1": first_day["tavg"]}
 
@@ -316,7 +316,7 @@ MODULES = {
 
 
 def monica_amei_pot_et(j, layers):
-    """monica/modules/evapotranspiration/monica_amei_pot_et.odin"""
+    """monica/modules/evapotranspiration/monica_amei_pot_et/monica_amei_pot_et.odin"""
     params = {"height_nn": j.get("HeightNN", 0.0)}
 
     def daily(day):
@@ -336,7 +336,7 @@ def monica_amei_pot_et(j, layers):
 
 
 def monica_ref_et(j, layers):
-    """monica/modules/evapotranspiration/monica_ref_et.odin"""
+    """monica/modules/evapotranspiration/monica_ref_et/monica_ref_et.odin"""
     params = {"height_nn": j.get("HeightNN", 0.0)}
 
     def daily(day):

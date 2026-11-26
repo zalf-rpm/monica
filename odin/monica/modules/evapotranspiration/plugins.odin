@@ -12,6 +12,7 @@
 package evapotranspiration
 
 import pl "../plugin"
+import rp "../../../support/reflectpath"
 import "base:runtime"
 import "core:mem"
 import "core:strings"
@@ -34,7 +35,7 @@ register :: proc "contextless" () {
 // Makes a module of either kind (a plugin entry has no `make`).
 make_module :: proc(e: Module_Entry, allocator := context.allocator) -> Module {
 	if e.plugin != nil {
-		return pl.make_instance(e.plugin, allocator)
+		return Module{data = pl.make_instance(e.plugin, allocator), type = pl.Instance}
 	}
 	return e.make(allocator)
 }
@@ -59,11 +60,11 @@ find_plugin_module :: proc(name: string) -> (Module_Entry, bool) {
 	}
 	return Module_Entry {
 			name = m.name,
-			init = proc(m: Module, in_: ^Input, a: Allocator) {pl.init_instance(m.(^pl.Instance), in_)},
+			init = proc(m: Module, in_: ^Input, a: Allocator) {pl.init_instance((^pl.Instance)(m.data), in_)},
 			step = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {
-				pl.step_instance(m.(^pl.Instance), in_, out)
+				pl.step_instance((^pl.Instance)(m.data), in_, out)
 			},
-			destroy = proc(m: Module, a: Allocator) {pl.destroy_instance(m.(^pl.Instance), a)},
+			destroy = proc(m: Module, a: Allocator) {pl.destroy_instance((^pl.Instance)(m.data), a)},
 			integrated = m.integrated,
 			inputs = m.inputs,
 			outputs = m.outputs,
@@ -103,6 +104,8 @@ plugin_module_info :: proc(entry: ^Module_Entry, name := "") -> pl.Module_Info {
 		init = plugin_init,
 		step = plugin_step,
 		destroy = plugin_destroy,
+		path_compile = plugin_path_compile,
+		path_read = plugin_path_read,
 		user = entry,
 	}
 }
@@ -157,4 +160,28 @@ plugin_destroy :: proc "c" (instance: rawptr) {
 	pi.entry.destroy(pi.module, context.allocator)
 	mem.dynamic_arena_destroy(&pi.scratch)
 	free(pi)
+}
+
+@(private = "file")
+plugin_path_compile :: proc "c" (info: ^pl.Module_Info, path: cstring, out: ^pl.Path_Info) -> rawptr {
+	context = runtime.default_context()
+	e := (^Module_Entry)(info.user)
+	plan, err := pl.compile_module_path(e.type, string(path))
+	if err != "" {
+		out.error = strings.clone_to_cstring(err)
+		return nil
+	}
+	out.open = b8(plan.open_step >= 0)
+	out.has_unit = b8(plan.has_unit)
+	out.unit = strings.clone_to_cstring(plan.unit)
+	return plan
+}
+
+@(private = "file")
+plugin_path_read :: proc "c" (instance: rawptr, path: rawptr, open_index: i32, value: ^f64) -> b8 {
+	context = runtime.default_context()
+	pi := (^Plugin_Instance)(instance)
+	v, ok := pl.read_module_path((^rp.Path_Plan)(path), pi.module.data, int(open_index))
+	value^ = v
+	return b8(ok)
 }

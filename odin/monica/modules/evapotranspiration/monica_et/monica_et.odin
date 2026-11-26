@@ -13,10 +13,11 @@
 // photosynthesis and carboxylation pathway, stomata conductance alpha and
 // saturation beta (which the module's stomata resistance needs with a crop),
 // and the fixed stomata resistance without one, MONICA's 100 s m-1.
-package evapotranspiration
+package et_monica_et
 
-import c2m "../crop2ml"
-import et "../../../amei/Monica_Evapotranspiration"
+import etm ".."
+import c2m "../../crop2ml"
+import et "../../../../amei/Monica_Evapotranspiration"
 
 Monica_Et :: struct {
 	c:            et.Et_Component,
@@ -27,10 +28,10 @@ Monica_Et :: struct {
 	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_monica_et :: proc(allocator: Allocator) -> Module {
+make_monica_et :: proc(allocator: etm.Allocator) -> etm.Module {
 	b := new(Monica_Et, allocator)
 	b.c = et.make_et_component(allocator)
-	return b
+	return etm.Module{data = b, type = Monica_Et}
 }
 
 destroy_monica_et :: proc(b: ^Monica_Et, allocator := context.allocator) {
@@ -44,7 +45,7 @@ destroy_monica_et :: proc(b: ^Monica_Et, allocator := context.allocator) {
 	free(b)
 }
 
-monica_et_init :: proc(b: ^Monica_Et, in_: ^Input, allocator := context.allocator) {
+monica_et_init :: proc(b: ^Monica_Et, in_: ^etm.Input, allocator := context.allocator) {
 	context.allocator = allocator
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
@@ -76,7 +77,7 @@ monica_et_init :: proc(b: ^Monica_Et, in_: ^Input, allocator := context.allocato
 	et.et_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-monica_et_step :: proc(b: ^Monica_Et, in_: ^Input, out: ^Output, allocator := context.allocator) {
+monica_et_step :: proc(b: ^Monica_Et, in_: ^etm.Input, out: ^etm.Output, allocator := context.allocator) {
 	monica_et_inputs(b, in_)
 	n := b.no_of_layers
 	// wilting point and field capacity as MONICA has them today; into the
@@ -107,7 +108,7 @@ monica_et_step :: proc(b: ^Monica_Et, in_: ^Input, out: ^Output, allocator := co
 }
 
 @(private = "file")
-monica_et_inputs :: proc(b: ^Monica_Et, in_: ^Input) {
+monica_et_inputs :: proc(b: ^Monica_Et, in_: ^etm.Input) {
 	c := &b.c
 	et.et_component_set_carboxylation_pathway(c, in_.carboxylation_pathway)
 	ex := &b.ex
@@ -137,12 +138,13 @@ monica_et_inputs :: proc(b: ^Monica_Et, in_: ^Input) {
 }
 
 // The table row (evapotranspiration.odin's `modules`)
-monica_et_entry :: Module_Entry {
+monica_et_entry :: etm.Module_Entry {
 	name    = "Monica_Evapotranspiration",
+	type    = Monica_Et,
 	make    = make_monica_et,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {monica_et_init(m.(^Monica_Et), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {monica_et_step(m.(^Monica_Et), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_monica_et(m.(^Monica_Et), a)},
+	init    = proc(m: etm.Module, in_: ^etm.Input, a: etm.Allocator) {monica_et_init((^Monica_Et)(m.data), in_, a)},
+	step    = proc(m: etm.Module, in_: ^etm.Input, out: ^etm.Output, a: etm.Allocator) {monica_et_step((^Monica_Et)(m.data), in_, out, a)},
+	destroy = proc(m: etm.Module, a: etm.Allocator) {destroy_monica_et((^Monica_Et)(m.data), a)},
 	integrated = true,
 	needs_layers = true,
 }

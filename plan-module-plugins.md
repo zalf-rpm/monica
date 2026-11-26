@@ -88,7 +88,8 @@ process and name) and `layout_hash`. It imports no process package; the process 
 ## Plugin side
 
 - Each process package gets `plugin_module_info(entry, name)` and the `"c"` procedures wrapping a
-  `Module_Entry` (dead code in MONICA itself, linked only into plugins).
+  `Module_Entry` (dead code in MONICA itself, linked only into plugins). (Step 2 changed the
+  module representation, see there.)
 - A plugin is a package in `odin/plugins/<name>/` with the exported `monica_module_plugin`,
   listing the `Module_Entry`s it contains. It imports the process package(s) and its binding(s).
 - Built with `python tools/odinw.py build-plugin <name>` into `build/plugins/`
@@ -116,12 +117,35 @@ process and name) and `layout_hash`. It imports no process package; the process 
    integrated byte-identical, through `Modules.Plugins` and `MONICA_MODULE_PLUGINS`;
    `monica-module` standalone identical; MONICA's outputs without plugins unchanged (66 suite
    simulations). Any load error fails the run, also one in a module the run doesn't use.
-2. **Then**:
-   - paths into a plugin module's state: the plugin compiles and reads them itself (it contains
-     `support/reflectpath` too) behind two more exported procedures;
-   - choosing at build time which bindings are built in (a binding file in the process package or
-     in a plugin package), moving the experimental AMEI modules out of MONICA;
-   - which plugins the Nix and Docker builds ship.
+2. **Modules out of MONICA** - done 2026-11-26:
+   - **Bindings as packages.** Each binding is its own package,
+     `monica/modules/<process>/<name>/`, importing only its process's interface. The process
+     package has no union of module types any more: `Module` is `{data: rawptr, type: typeid}`
+     (the binding's struct), `Module_Entry` got `type`, and the built-in table is filled at
+     startup (`register_builtin`). Bindings changed only mechanically (`m.(^T)` ->
+     `(^T)(m.data)`, `make` returns `Module{b, T}`, names qualified).
+   - **Built in or plugin** is a line in `monica/core/builtin_modules.odin` or in a plugin
+     package. Built in: MONICA's own two (`Monica_SoilTemp`, `Monica_Evapotranspiration`), which
+     the checks compare MONICA with. Everything else is in `plugins/amei`.
+   - **Paths into a module's state** keep their form (`...drivers.<name>.module.Dssat_St.s.srftemp`):
+     `reflectpath` got *foreign types* (`register_foreign`): at a registered type the rest of the
+     path goes to a hook, with the last string map key (the driver's name). MONICA's hooks
+     (`core/module_paths.odin`) compile it against the binding's struct - in MONICA for a built-in
+     module, in the plugin for a plugin's (ABI 2: `path_compile`, `path_read`; both use
+     `plugin.compile_module_path`). Read-only; unit and layer dimension come from the module's
+     types. Only through a driver (the integrated module has no name in the path).
+   - **Paths of libraries**: `${VAR}`s replaced, the platform's extension added when there is
+     none (one sim.json for Linux and Windows). The same library under two paths is loaded once;
+     two libraries with a module of the same name are refused.
+   - **Nix and Docker** build `plugins/amei` and set `MONICA_MODULE_PLUGINS` to it by default, so
+     the packaged MONICA has the AMEI modules as before. `sim-min-amei.json` names the pixi
+     build's (`../../odin/build/plugins/amei`).
+   - Checks: `check_modules.sh` runs every AMEI module from the plugin (Odin == generated Python
+     as before, drivers/integrated as before, `module.Dssat_St.s.srftemp` through the plugin);
+     `check_plugins.py` with MONICA's built-in two as twins (drivers, integrated, state paths with
+     a layer dimension and the plugin's unit, standalone), the AMEI plugin (extension-less path,
+     twice under two paths, unknown without it). MONICA's outputs unchanged (66 suite
+     simulations); the Nix package built and ran an AMEI module without `Plugins`.
 
 ## Not planned
 

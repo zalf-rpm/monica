@@ -6,10 +6,11 @@
 // (rounded here, truncated there - thickness_cm), the first day's mean
 // temperature; the air temperatures stand in for the canopy's. The first
 // value of the 1 cm profile is the surface temperature.
-package soil_temperature
+package st_stics
 
-import c2m "../crop2ml"
-import stics "../../../amei/Stics_soil_temperature"
+import stm ".."
+import c2m "../../crop2ml"
+import stics "../../../../amei/Stics_soil_temperature"
 
 Stics :: struct {
 	c:            stics.Soil_Temp_Component,
@@ -20,10 +21,10 @@ Stics :: struct {
 	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_stics :: proc(allocator: Allocator) -> Module {
+make_stics :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Stics, allocator)
 	b.c = stics.make_soil_temp_component(allocator)
-	return b
+	return stm.Module{data = b, type = Stics}
 }
 
 destroy_stics :: proc(b: ^Stics, allocator := context.allocator) {
@@ -37,13 +38,13 @@ destroy_stics :: proc(b: ^Stics, allocator := context.allocator) {
 	free(b)
 }
 
-stics_init :: proc(b: ^Stics, in_: ^Input, allocator := context.allocator) {
+stics_init :: proc(b: ^Stics, in_: ^stm.Input, allocator := context.allocator) {
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
 	c := &b.c
 	thick := make([]int, n, context.temp_allocator)
 	for i in 0 ..< n {
-		thick[i] = int(thickness_cm(in_.layer_thickness[i]))
+		thick[i] = int(stm.thickness_cm(in_.layer_thickness[i]))
 	}
 	stics.soil_temp_component_set_layer_thick(c, thick, allocator)
 	stics.soil_temp_component_set_air_temp_day1(c, in_.tavg)
@@ -51,7 +52,7 @@ stics_init :: proc(b: ^Stics, in_: ^Input, allocator := context.allocator) {
 	stics.soil_temp_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-stics_step :: proc(b: ^Stics, in_: ^Input, out: ^Output, allocator := context.allocator) {
+stics_step :: proc(b: ^Stics, in_: ^stm.Input, out: ^stm.Output, allocator := context.allocator) {
 	stics_exogenous(b, in_)
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	stics.soil_temp_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
@@ -60,7 +61,7 @@ stics_step :: proc(b: ^Stics, in_: ^Input, out: ^Output, allocator := context.al
 }
 
 @(private = "file")
-stics_exogenous :: proc(b: ^Stics, in_: ^Input) {
+stics_exogenous :: proc(b: ^Stics, in_: ^stm.Input) {
 	b.ex.min_temp = in_.tmin
 	b.ex.max_temp = in_.tmax
 	b.ex.min_canopy_temp = in_.tmin
@@ -69,10 +70,11 @@ stics_exogenous :: proc(b: ^Stics, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-stics_entry :: Module_Entry {
+stics_entry :: stm.Module_Entry {
 	name    = "Stics_soil_temperature",
+	type    = Stics,
 	make    = make_stics,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {stics_init(m.(^Stics), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {stics_step(m.(^Stics), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_stics(m.(^Stics), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {stics_init((^Stics)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {stics_step((^Stics)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_stics((^Stics)(m.data), a)},
 }

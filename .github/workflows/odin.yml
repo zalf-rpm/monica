@@ -180,7 +180,7 @@ jobs:
         shell: bash
         working-directory: monica/odin
         run: |
-          pixi run python tools/odinw.py build-plugin test_modules test_broken
+          pixi run python tools/odinw.py build-plugin test_modules test_broken amei
           MONICA_PARAMETERS="$GITHUB_WORKSPACE/cpp/monica-parameters" \
             pixi run python tests/check_plugins.py --build build --work build/check-plugins
 

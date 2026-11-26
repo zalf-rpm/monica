@@ -7,10 +7,11 @@
 // bulk density kg m-3 -> t m-3, the profile depth, lag coefficient 0.8, the
 // climate's annual average temperature. The volumetric water content is the
 // soil moisture minus the wilting point, as the adapter has it.
-package soil_temperature
+package st_bioma_parton_swat
 
-import c2m "../crop2ml"
-import bps "../../../amei/BiomaSurfacePartonSoilSWATC"
+import stm ".."
+import c2m "../../crop2ml"
+import bps "../../../../amei/BiomaSurfacePartonSoilSWATC"
 
 Bioma_Parton_Swat :: struct {
 	c:            bps.Surface_Parton_Soil_Swatc_Component,
@@ -21,10 +22,10 @@ Bioma_Parton_Swat :: struct {
 	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_bioma_parton_swat :: proc(allocator: Allocator) -> Module {
+make_bioma_parton_swat :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Bioma_Parton_Swat, allocator)
 	b.c = bps.make_surface_parton_soil_swatc_component(allocator)
-	return b
+	return stm.Module{data = b, type = Bioma_Parton_Swat}
 }
 
 destroy_bioma_parton_swat :: proc(b: ^Bioma_Parton_Swat, allocator := context.allocator) {
@@ -38,7 +39,7 @@ destroy_bioma_parton_swat :: proc(b: ^Bioma_Parton_Swat, allocator := context.al
 	free(b)
 }
 
-bioma_parton_swat_init :: proc(b: ^Bioma_Parton_Swat, in_: ^Input, allocator := context.allocator) {
+bioma_parton_swat_init :: proc(b: ^Bioma_Parton_Swat, in_: ^stm.Input, allocator := context.allocator) {
 	context.allocator = allocator
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
@@ -59,7 +60,7 @@ bioma_parton_swat_init :: proc(b: ^Bioma_Parton_Swat, in_: ^Input, allocator := 
 	bps.surface_parton_soil_swatc_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-bioma_parton_swat_step :: proc(b: ^Bioma_Parton_Swat, in_: ^Input, out: ^Output, allocator := context.allocator) {
+bioma_parton_swat_step :: proc(b: ^Bioma_Parton_Swat, in_: ^stm.Input, out: ^stm.Output, allocator := context.allocator) {
 	bioma_parton_swat_exogenous(b, in_)
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	bps.surface_parton_soil_swatc_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
@@ -68,7 +69,7 @@ bioma_parton_swat_step :: proc(b: ^Bioma_Parton_Swat, in_: ^Input, out: ^Output,
 }
 
 @(private = "file")
-bioma_parton_swat_exogenous :: proc(b: ^Bioma_Parton_Swat, in_: ^Input) {
+bioma_parton_swat_exogenous :: proc(b: ^Bioma_Parton_Swat, in_: ^stm.Input) {
 	b.ex.air_temperature_minimum = in_.tmin
 	b.ex.air_temperature_maximum = in_.tmax
 	b.ex.global_solar_radiation = in_.globrad
@@ -80,10 +81,11 @@ bioma_parton_swat_exogenous :: proc(b: ^Bioma_Parton_Swat, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-bioma_parton_swat_entry :: Module_Entry {
+bioma_parton_swat_entry :: stm.Module_Entry {
 	name    = "BiomaSurfacePartonSoilSWATC",
+	type    = Bioma_Parton_Swat,
 	make    = make_bioma_parton_swat,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {bioma_parton_swat_init(m.(^Bioma_Parton_Swat), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {bioma_parton_swat_step(m.(^Bioma_Parton_Swat), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_bioma_parton_swat(m.(^Bioma_Parton_Swat), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {bioma_parton_swat_init((^Bioma_Parton_Swat)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {bioma_parton_swat_step((^Bioma_Parton_Swat)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_bioma_parton_swat((^Bioma_Parton_Swat)(m.data), a)},
 }

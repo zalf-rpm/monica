@@ -64,7 +64,8 @@ RUN cmake -S support/capnp/shim_dynamic -B support/capnp/shim_dynamic/build -G N
 # byte-identical comparison against C++ validates. --build-arg
 # ODIN_BUILD_FLAGS=--release for -o:speed.
 ARG ODIN_BUILD_FLAGS=
-RUN python3 tools/odinw.py build ${ODIN_BUILD_FLAGS}
+RUN python3 tools/odinw.py build ${ODIN_BUILD_FLAGS} \
+    && python3 tools/odinw.py build-plugin amei ${ODIN_BUILD_FLAGS}
 
 # Soil tables. The Odin port reads the .json variants, not .sercapnp.
 ARG MONICA_PARAMETERS_REF=master
@@ -86,6 +87,8 @@ ENV MONICA_WORK=/monica_data
 ENV MONICA_HOME=${monica_dir}
 ENV MONICA_PARAMETERS=${monica_dir}
 ENV MONICA_CAPNP_SCHEMA_DIR=${monica_dir}/capnp_schemas
+# the AMEI modules, a plugin library (plan-module-plugins.md), for every run
+ENV MONICA_MODULE_PLUGINS=${monica_dir}/plugins/amei.so
 ENV monica_autostart_proxies=true
 ENV monica_autostart_worker=true
 ENV monica_auto_restart_proxies=true
@@ -105,6 +108,7 @@ COPY docker/start_monica_supervisor.sh /start.sh
 # Binaries plus libmas_capnp_dynamic_shim.so next to them (found via the
 # $ORIGIN rpath odinw.py links with).
 COPY --from=build /src/odin/build/monica-* /src/odin/build/libmas_capnp_dynamic_shim.so ${monica_dir}/
+COPY --from=build /src/odin/build/plugins/amei.so ${monica_dir}/plugins/
 COPY --from=build /src/monica-parameters/soil/*.json ${monica_dir}/soil/
 COPY --from=build /src/odin/support/capnp/shim/external/mas_capnproto_schemas/zalfmas_capnp_schemas ${MONICA_CAPNP_SCHEMA_DIR}
 

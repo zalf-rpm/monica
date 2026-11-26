@@ -13,10 +13,11 @@
 //
 // The package declares the initial snow water content in percent; the
 // adapter passes mm, which is what the module computes with.
-package soil_temperature
+package st_simplace
 
-import c2m "../crop2ml"
-import simp "../../../amei/Simplace_Soil_Temperature"
+import stm ".."
+import c2m "../../crop2ml"
+import simp "../../../../amei/Simplace_Soil_Temperature"
 
 Simplace :: struct {
 	c:            simp.Soil_Temperature_Component,
@@ -27,10 +28,10 @@ Simplace :: struct {
 	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_simplace :: proc(allocator: Allocator) -> Module {
+make_simplace :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Simplace, allocator)
 	b.c = simp.make_soil_temperature_component(allocator)
-	return b
+	return stm.Module{data = b, type = Simplace}
 }
 
 destroy_simplace :: proc(b: ^Simplace, allocator := context.allocator) {
@@ -44,7 +45,7 @@ destroy_simplace :: proc(b: ^Simplace, allocator := context.allocator) {
 	free(b)
 }
 
-simplace_init :: proc(b: ^Simplace, in_: ^Input, allocator := context.allocator) {
+simplace_init :: proc(b: ^Simplace, in_: ^stm.Input, allocator := context.allocator) {
 	context.allocator = allocator
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
@@ -71,7 +72,7 @@ simplace_init :: proc(b: ^Simplace, in_: ^Input, allocator := context.allocator)
 	simp.soil_temperature_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-simplace_step :: proc(b: ^Simplace, in_: ^Input, out: ^Output, allocator := context.allocator) {
+simplace_step :: proc(b: ^Simplace, in_: ^stm.Input, out: ^stm.Output, allocator := context.allocator) {
 	simplace_exogenous(b, in_)
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	simp.soil_temperature_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
@@ -80,7 +81,7 @@ simplace_step :: proc(b: ^Simplace, in_: ^Input, out: ^Output, allocator := cont
 }
 
 @(private = "file")
-simplace_exogenous :: proc(b: ^Simplace, in_: ^Input) {
+simplace_exogenous :: proc(b: ^Simplace, in_: ^stm.Input) {
 	ex := &b.ex
 	ex.i_air_temperature_min = in_.tmin
 	ex.i_air_temperature_max = in_.tmax
@@ -97,10 +98,11 @@ simplace_exogenous :: proc(b: ^Simplace, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-simplace_entry :: Module_Entry {
+simplace_entry :: stm.Module_Entry {
 	name    = "Simplace_Soil_Temperature",
+	type    = Simplace,
 	make    = make_simplace,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {simplace_init(m.(^Simplace), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {simplace_step(m.(^Simplace), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_simplace(m.(^Simplace), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {simplace_init((^Simplace)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {simplace_step((^Simplace)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_simplace((^Simplace)(m.data), a)},
 }

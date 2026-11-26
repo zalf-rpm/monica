@@ -311,16 +311,16 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Harvest_Spec_Value.export_percentage`](monica/core/monica_model.odin#L458) | 458 | `f64` | `%` | high | organ_biomass * export_percentage / 100, monica_model.odin:616; default 100 |
+| [ ] | [`Harvest_Spec_Value.export_percentage`](monica/core/monica_model.odin#L456) | 456 | `f64` | `%` | high | organ_biomass * export_percentage / 100, monica_model.odin:616; default 100 |
 
 ## `Harvest_Opt_Carbon_Management_Data` (monica/core/monica_model.odin)
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Harvest_Opt_Carbon_Management_Data.crop_impact_on_humus_balance`](monica/core/monica_model.odin#L470) | 470 | `f64` | `Heq-NRW ha-1` | medium | added to humus_balance_carry_over (Heq-NRW ha-1), monica_model.odin:526-531 |
-| [ ] | [`Harvest_Opt_Carbon_Management_Data.max_residue_recover_fraction`](monica/core/monica_model.odin#L471) | 471 | `f64` | `0-1` | high | residue_biomass * fraction = max exported residues, monica_model.odin:560; default 1 |
-| [ ] | [`Harvest_Opt_Carbon_Management_Data.residue_heq`](monica/core/monica_model.odin#L473) | 473 | `f64` | `Heq-NRW tDM-1` | medium | residue_biomass (kgDM ha-1)/1000 * residue_heq -> humus balance (Heq-NRW ha-1), monica_model.odin:535 |
-| [ ] | [`Harvest_Opt_Carbon_Management_Data.organic_fertilizer_heq`](monica/core/monica_model.odin#L474) | 474 | `f64` | `Heq-NRW tDM-1` | medium | org. fertiliser DM (kg ha-1)/1000 * heq -> humus balance (Heq-NRW ha-1), monica_model.odin:531 |
+| [ ] | [`Harvest_Opt_Carbon_Management_Data.crop_impact_on_humus_balance`](monica/core/monica_model.odin#L468) | 468 | `f64` | `Heq-NRW ha-1` | medium | added to humus_balance_carry_over (Heq-NRW ha-1), monica_model.odin:526-531 |
+| [ ] | [`Harvest_Opt_Carbon_Management_Data.max_residue_recover_fraction`](monica/core/monica_model.odin#L469) | 469 | `f64` | `0-1` | high | residue_biomass * fraction = max exported residues, monica_model.odin:560; default 1 |
+| [ ] | [`Harvest_Opt_Carbon_Management_Data.residue_heq`](monica/core/monica_model.odin#L471) | 471 | `f64` | `Heq-NRW tDM-1` | medium | residue_biomass (kgDM ha-1)/1000 * residue_heq -> humus balance (Heq-NRW ha-1), monica_model.odin:535 |
+| [ ] | [`Harvest_Opt_Carbon_Management_Data.organic_fertilizer_heq`](monica/core/monica_model.odin#L472) | 472 | `f64` | `Heq-NRW tDM-1` | medium | org. fertiliser DM (kg ha-1)/1000 * heq -> humus balance (Heq-NRW ha-1), monica_model.odin:531 |
 
 ## `O3_Impact_Params` (monica/core/o3_impact.odin)
 
@@ -678,59 +678,59 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
 | [ ] | [`Voc_Jjv_Gamma_En_Res.ennorm_iso`](monica/core/voc_jjv.odin#L58) | 58 | `f64` | `1` | high | same formula at reference temperature; only ratio en/ennorm used |
 | [ ] | [`Voc_Jjv_Gamma_En_Res.ennorm_mono`](monica/core/voc_jjv.odin#L59) | 59 | `f64` | `1` | high | same formula at reference temperature; only ratio en/ennorm used |
 
-## `Monica_Et` (monica/modules/evapotranspiration/monica_et.odin)
+## `Monica_Et` (monica/modules/evapotranspiration/monica_et/monica_et.odin)
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Monica_Et.no_of_layers`](monica/modules/evapotranspiration/monica_et.odin#L27) | 27 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, monica_et.odin |
+| [ ] | [`Monica_Et.no_of_layers`](monica/modules/evapotranspiration/monica_et/monica_et.odin#L28) | 28 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, monica_et.odin |
 
-## `Apsim_Campbell` (monica/modules/soil_temperature/apsim_campbell.odin)
-
-| ok | field | line | type | proposed unit | confidence | basis |
-| --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Apsim_Campbell.no_of_layers`](monica/modules/soil_temperature/apsim_campbell.odin#L29) | 29 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, apsim_campbell.odin |
-
-## `Bioma_Parton_Swat` (monica/modules/soil_temperature/bioma_parton_swat.odin)
+## `Apsim_Campbell` (monica/modules/soil_temperature/apsim_campbell/apsim_campbell.odin)
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Bioma_Parton_Swat.no_of_layers`](monica/modules/soil_temperature/bioma_parton_swat.odin#L21) | 21 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, bioma_parton_swat.odin |
+| [ ] | [`Apsim_Campbell.no_of_layers`](monica/modules/soil_temperature/apsim_campbell/apsim_campbell.odin#L30) | 30 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, apsim_campbell.odin |
 
-## `Bioma_Swat_Swat` (monica/modules/soil_temperature/bioma_swat_swat.odin)
-
-| ok | field | line | type | proposed unit | confidence | basis |
-| --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Bioma_Swat_Swat.no_of_layers`](monica/modules/soil_temperature/bioma_swat_swat.odin#L21) | 21 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, bioma_swat_swat.odin |
-
-## `Dssat_Epicst` (monica/modules/soil_temperature/dssat_epicst.odin)
+## `Bioma_Parton_Swat` (monica/modules/soil_temperature/bioma_parton_swat/bioma_parton_swat.odin)
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Dssat_Epicst.no_of_layers`](monica/modules/soil_temperature/dssat_epicst.odin#L20) | 20 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, dssat_epicst.odin |
+| [ ] | [`Bioma_Parton_Swat.no_of_layers`](monica/modules/soil_temperature/bioma_parton_swat/bioma_parton_swat.odin#L22) | 22 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, bioma_parton_swat.odin |
 
-## `Dssat_St` (monica/modules/soil_temperature/dssat_st.odin)
-
-| ok | field | line | type | proposed unit | confidence | basis |
-| --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Dssat_St.no_of_layers`](monica/modules/soil_temperature/dssat_st.odin#L21) | 21 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, dssat_st.odin |
-
-## `Monica_Soil_Temp` (monica/modules/soil_temperature/monica_soiltemp.odin)
+## `Bioma_Swat_Swat` (monica/modules/soil_temperature/bioma_swat_swat/bioma_swat_swat.odin)
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Monica_Soil_Temp.no_of_layers`](monica/modules/soil_temperature/monica_soiltemp.odin#L25) | 25 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, monica_soiltemp.odin |
+| [ ] | [`Bioma_Swat_Swat.no_of_layers`](monica/modules/soil_temperature/bioma_swat_swat/bioma_swat_swat.odin#L22) | 22 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, bioma_swat_swat.odin |
 
-## `Simplace` (monica/modules/soil_temperature/simplace.odin)
-
-| ok | field | line | type | proposed unit | confidence | basis |
-| --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Simplace.no_of_layers`](monica/modules/soil_temperature/simplace.odin#L27) | 27 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, simplace.odin |
-
-## `Stics` (monica/modules/soil_temperature/stics.odin)
+## `Dssat_Epicst` (monica/modules/soil_temperature/dssat_epicst/dssat_epicst.odin)
 
 | ok | field | line | type | proposed unit | confidence | basis |
 | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | [`Stics.no_of_layers`](monica/modules/soil_temperature/stics.odin#L20) | 20 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, stics.odin |
+| [ ] | [`Dssat_Epicst.no_of_layers`](monica/modules/soil_temperature/dssat_epicst/dssat_epicst.odin#L21) | 21 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, dssat_epicst.odin |
+
+## `Dssat_St` (monica/modules/soil_temperature/dssat_st/dssat_st.odin)
+
+| ok | field | line | type | proposed unit | confidence | basis |
+| --- | --- | --- | --- | --- | --- | --- |
+| [ ] | [`Dssat_St.no_of_layers`](monica/modules/soil_temperature/dssat_st/dssat_st.odin#L22) | 22 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, dssat_st.odin |
+
+## `Monica_Soil_Temp` (monica/modules/soil_temperature/monica_soiltemp/monica_soiltemp.odin)
+
+| ok | field | line | type | proposed unit | confidence | basis |
+| --- | --- | --- | --- | --- | --- | --- |
+| [ ] | [`Monica_Soil_Temp.no_of_layers`](monica/modules/soil_temperature/monica_soiltemp/monica_soiltemp.odin#L26) | 26 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, monica_soiltemp.odin |
+
+## `Simplace` (monica/modules/soil_temperature/simplace/simplace.odin)
+
+| ok | field | line | type | proposed unit | confidence | basis |
+| --- | --- | --- | --- | --- | --- | --- |
+| [ ] | [`Simplace.no_of_layers`](monica/modules/soil_temperature/simplace/simplace.odin#L28) | 28 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, simplace.odin |
+
+## `Stics` (monica/modules/soil_temperature/stics/stics.odin)
+
+| ok | field | line | type | proposed unit | confidence | basis |
+| --- | --- | --- | --- | --- | --- | --- |
+| [ ] | [`Stics.no_of_layers`](monica/modules/soil_temperature/stics/stics.odin#L21) | 21 | `int` | `layer#` | high | number of soil layers n used to size/copy per-layer outputs, stics.odin |
 
 ## `Cultivation_Method` (monica/run/cultivation_method.odin)
 
@@ -859,11 +859,11 @@ The names link to the code (`python odin/tools/link_unit_proposals.py` refreshes
 | [ ] | [`Soil_Parameters.soil_nitrate`](monica/soil/soil_parameters.odin#L69) | 69 | `f64` | `kgN m-3` | high | JSON 'SoilNitrate', to_json 'kg NO3-N m-3'; Soil_Layer tag kgN m-3 |
 | [ ] | [`Soil_Parameters.soil_cn_ratio`](monica/soil/soil_parameters.odin#L70) | 70 | `f64` | `1` | high | JSON 'CN', a C:N ratio (dimensionless), like cn_ratio_aom_* tagged '1' |
 | [ ] | [`Soil_Parameters.soil_moisture_percent_fc`](monica/soil/soil_parameters.odin#L71) | 71 | `f64` | `%` | high | JSON 'SoilMoisturePercentFC' '% [0-100]'; used as fc*x/100 (soil_column.odin:151) |
-| [ ] | [`Soil_Parameters.thickness`](monica/soil/soil_parameters.odin#L73) | 73 | `f64` | `m` | high | JSON 'Thickness' converted to m via transform_if_not_meters |
-| [ ] | [`Soil_Parameters.soil_raw_density`](monica/soil/soil_parameters.odin#L80) | 80 | `f64` | `kg m-3` | high | JSON 'SoilRawDensity', to_json 'kg m-3'; /1000 -> g cm-3 in KA5 lookup |
-| [ ] | [`Soil_Parameters.soil_bulk_density`](monica/soil/soil_parameters.odin#L81) | 81 | `f64` | `kg m-3` | high | JSON 'SoilBulkDensity', to_json 'kg m-3'; Soil_Layer tag kg m-3 |
-| [ ] | [`Soil_Parameters.soil_organic_carbon`](monica/soil/soil_parameters.odin#L82) | 82 | `f64` | `kg kg-1` | high | JSON 'SoilOrganicCarbon' in %, always /100 (.PERCENT) on load; Soil_Layer tag kg kg-1 |
-| [ ] | [`Soil_Parameters.soil_organic_matter`](monica/soil/soil_parameters.odin#L83) | 83 | `f64` | `kg kg-1` | high | JSON 'SoilOrganicMatter', % converted on load; *100 -> % in KA5 lookup |
+| [ ] | [`Soil_Parameters.thickness`](monica/soil/soil_parameters.odin#L72) | 72 | `f64` | `m` | high | JSON 'Thickness' converted to m via transform_if_not_meters |
+| [ ] | [`Soil_Parameters.soil_raw_density`](monica/soil/soil_parameters.odin#L79) | 79 | `f64` | `kg m-3` | high | JSON 'SoilRawDensity', to_json 'kg m-3'; /1000 -> g cm-3 in KA5 lookup |
+| [ ] | [`Soil_Parameters.soil_bulk_density`](monica/soil/soil_parameters.odin#L80) | 80 | `f64` | `kg m-3` | high | JSON 'SoilBulkDensity', to_json 'kg m-3'; Soil_Layer tag kg m-3 |
+| [ ] | [`Soil_Parameters.soil_organic_carbon`](monica/soil/soil_parameters.odin#L81) | 81 | `f64` | `kg kg-1` | high | JSON 'SoilOrganicCarbon' in %, always /100 (.PERCENT) on load; Soil_Layer tag kg kg-1 |
+| [ ] | [`Soil_Parameters.soil_organic_matter`](monica/soil/soil_parameters.odin#L82) | 82 | `f64` | `kg kg-1` | high | JSON 'SoilOrganicMatter', % converted on load; *100 -> % in KA5 lookup |
 
 ## `Van_Genuchten_Params` (monica/soil/soil_pwp_fc_sat.odin)
 

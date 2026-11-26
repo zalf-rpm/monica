@@ -17,15 +17,18 @@
 // (plugin_module_info).
 package plugin
 
+import rp "../../../support/reflectpath"
 import "base:runtime"
 import "core:dynlib"
 import "core:fmt"
 import "core:os"
+import "core:path/filepath"
 import "core:strings"
 import "core:sync"
 
 // Changed whenever Module_Info or the meaning of its procedures changes.
-ABI_VERSION :: 1
+// 2: path_compile, path_read (output paths into a module's state).
+ABI_VERSION :: 2
 
 // The name every plugin exports: monica_module_plugin(&n) -> n Module_Infos.
 ENTRY_SYMBOL :: "monica_module_plugin"
@@ -33,6 +36,10 @@ Entry_Proc :: #type proc "c" (n: ^i32) -> [^]Module_Info
 
 // Paths of plugin libraries, separated like PATH, loaded by load_from_env.
 ENV_VAR :: "MONICA_MODULE_PLUGINS"
+
+// Added to a library path without an extension, so that one sim.json names
+// the same plugin on every platform.
+LIB_EXT :: ".dll" when ODIN_OS == .Windows else (".dylib" when ODIN_OS == .Darwin else ".so")
 
 // One module of a plugin.
 Module_Info :: struct {
@@ -51,7 +58,19 @@ Module_Info :: struct {
 	init:         proc "c" (instance: rawptr, input: rawptr),
 	step:         proc "c" (instance: rawptr, input, output: rawptr),
 	destroy:      proc "c" (instance: rawptr),
+	// an output path into the module's own state (compile_module_path):
+	// compiled once, nil and `out.error` set if it's wrong; read per value
+	path_compile: proc "c" (info: ^Module_Info, path: cstring, out: ^Path_Info) -> rawptr,
+	path_read:    proc "c" (instance: rawptr, path: rawptr, open_index: i32, value: ^f64) -> b8,
 	user:         rawptr, // the plugin's own (its Module_Entry)
+}
+
+// What path_compile tells about a path; strings owned by the plugin.
+Path_Info :: struct {
+	open:     b8, // it leaves an array open (a layer dimension)
+	has_unit: b8,
+	unit:     cstring,
+	error:    cstring,
 }
 
 // A plugin module made by MONICA: the Module union variant of a plugin module.
@@ -100,13 +119,18 @@ register_process :: proc(name: string, input_hash, output_hash: u64, builtin: pr
 	append(&state.processes, Process{name, input_hash, output_hash, builtin})
 }
 
-// Loads the plugin library at `path` and registers its modules. A path loaded
+// Loads the plugin library at `path` (without an extension: LIB_EXT added)
+// and registers its modules. A path loaded
 // before is not loaded again (its errors were reported then). Errors: the
 // library can't be loaded, has no monica_module_plugin, a module has another
 // ABI version, an unknown process, another layout, or the name of a built-in
 // or an already loaded module (that module is skipped, the others load).
 load :: proc(path: string, allocator := context.allocator) -> (errors: [dynamic]string) {
 	errors = make([dynamic]string, allocator)
+	path := path
+	if filepath.ext(path) == "" {
+		path = strings.concatenate({path, LIB_EXT}, context.temp_allocator)
+	}
 	sync.guard(&state.mutex)
 	for l in state.libraries {
 		if l == path {
@@ -179,23 +203,26 @@ load :: proc(path: string, allocator := context.allocator) -> (errors: [dynamic]
 			)
 			continue
 		}
-		dup := false
+		dup, same := false, false
 		for m in state.modules {
-			if m.process == process && m.name == name {
+			if m.info == info { 	// the same library under another path (e.g. MONICA_MODULE_PLUGINS and sim.json)
+				same = true
+			} else if m.process == process && m.name == name {
 				append(
 					&errors,
 					fmt.aprintf(
-						"Error: module plugin %q: %q was loaded already from %q",
+						"Error: module plugin %q: %q was loaded already from %q - drop one of the two (Modules.Plugins, %s)",
 						path,
 						name,
 						m.library,
+						ENV_VAR,
 						allocator = allocator,
 					),
 				)
 				dup = true
 			}
 		}
-		if dup {
+		if dup || same {
 			continue
 		}
 		context.allocator = runtime.heap_allocator()
@@ -371,4 +398,34 @@ hash_type :: proc(h: ^u64, ti: ^runtime.Type_Info) {
 		// numbers, booleans, strings: the type, plus size/align above
 		mix_str(h, fmt.tprint(ti.id))
 	}
+}
+
+// An output path into a module's own state, after "module.": the binding's
+// struct is `type`; a first segment naming it (Dssat_St in
+// module.Dssat_St.s.srftemp, as when modules were a union) is skipped.
+// MONICA compiles those of its built-in modules, a plugin those of its own.
+compile_module_path :: proc(type: typeid, path: string, allocator := context.allocator) -> (plan: ^rp.Path_Plan, err: string) {
+	rest := path
+	if named, ok := type_info_of(type).variant.(runtime.Type_Info_Named); ok {
+		if rest == named.name {
+			rest = ""
+		} else if strings.has_prefix(rest, named.name) && len(rest) > len(named.name) && rest[len(named.name)] == '.' {
+			rest = rest[len(named.name) + 1:]
+		}
+	}
+	if rest == "" {
+		return nil, fmt.aprintf("name a field of %v after %q", type, path, allocator = allocator)
+	}
+	compiled, cerr := rp.compile(type, rest, allocator)
+	if rp.failed(cerr) {
+		return nil, fmt.aprintf("%s (in %v)", cerr.msg, type, allocator = allocator)
+	}
+	plan = new(rp.Path_Plan, allocator)
+	plan^ = compiled
+	return plan, ""
+}
+
+// Reads a compiled module path on the module's struct at `data`.
+read_module_path :: proc(plan: ^rp.Path_Plan, data: rawptr, open_index: int) -> (f64, bool) {
+	return rp.resolve_f64(plan, any{data, plan.root}, open_index)
 }

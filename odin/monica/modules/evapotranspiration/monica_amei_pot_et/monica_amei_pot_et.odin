@@ -12,10 +12,11 @@
 //
 // Only a driver: it doesn't give the evaporation, transpiration and soil
 // water MONICA needs from its evapotranspiration (`integrated = false`).
-package evapotranspiration
+package et_monica_amei_pot_et
 
-import c2m "../crop2ml"
-import pet "../../../amei/Monica_AMEI_potential_Evapotranspiration"
+import etm ".."
+import c2m "../../crop2ml"
+import pet "../../../../amei/Monica_AMEI_potential_Evapotranspiration"
 
 Monica_Amei_Pot_Et :: struct {
 	c:     pet.Amei_Pot_Et_Component,
@@ -25,10 +26,10 @@ Monica_Amei_Pot_Et :: struct {
 	ex:    pet.Amei_Pot_Et_Exogenous,
 }
 
-make_monica_amei_pot_et :: proc(allocator: Allocator) -> Module {
+make_monica_amei_pot_et :: proc(allocator: etm.Allocator) -> etm.Module {
 	b := new(Monica_Amei_Pot_Et, allocator)
 	b.c = pet.make_amei_pot_et_component(allocator)
-	return b
+	return etm.Module{data = b, type = Monica_Amei_Pot_Et}
 }
 
 destroy_monica_amei_pot_et :: proc(b: ^Monica_Amei_Pot_Et, allocator := context.allocator) {
@@ -44,12 +45,12 @@ destroy_monica_amei_pot_et :: proc(b: ^Monica_Amei_Pot_Et, allocator := context.
 
 // The model has no init; its parameters are the height and the ET cap (MONICA's,
 // the generated component has no setter for it).
-monica_amei_pot_et_init :: proc(b: ^Monica_Amei_Pot_Et, in_: ^Input, allocator := context.allocator) {
+monica_amei_pot_et_init :: proc(b: ^Monica_Amei_Pot_Et, in_: ^etm.Input, allocator := context.allocator) {
 	pet.amei_pot_et_component_set_height_nn(&b.c, in_.height_nn)
 	b.c.potential_evapotranspiration.potential_evapotranspiration_cap = in_.max_potential_evapotranspiration
 }
 
-monica_amei_pot_et_step :: proc(b: ^Monica_Amei_Pot_Et, in_: ^Input, out: ^Output, allocator := context.allocator) {
+monica_amei_pot_et_step :: proc(b: ^Monica_Amei_Pot_Et, in_: ^etm.Input, out: ^etm.Output, allocator := context.allocator) {
 	ex := &b.ex
 	ex.mean_air_temperature = in_.tavg
 	ex.wind_speed = in_.wind
@@ -70,12 +71,13 @@ monica_amei_pot_et_step :: proc(b: ^Monica_Amei_Pot_Et, in_: ^Input, out: ^Outpu
 }
 
 // The table row (evapotranspiration.odin's `modules`)
-monica_amei_pot_et_entry :: Module_Entry {
+monica_amei_pot_et_entry :: etm.Module_Entry {
 	name       = "Monica_AMEI_potential_Evapotranspiration",
+	type       = Monica_Amei_Pot_Et,
 	make       = make_monica_amei_pot_et,
-	init       = proc(m: Module, in_: ^Input, a: Allocator) {monica_amei_pot_et_init(m.(^Monica_Amei_Pot_Et), in_, a)},
-	step       = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {monica_amei_pot_et_step(m.(^Monica_Amei_Pot_Et), in_, out, a)},
-	destroy    = proc(m: Module, a: Allocator) {destroy_monica_amei_pot_et(m.(^Monica_Amei_Pot_Et), a)},
+	init       = proc(m: etm.Module, in_: ^etm.Input, a: etm.Allocator) {monica_amei_pot_et_init((^Monica_Amei_Pot_Et)(m.data), in_, a)},
+	step       = proc(m: etm.Module, in_: ^etm.Input, out: ^etm.Output, a: etm.Allocator) {monica_amei_pot_et_step((^Monica_Amei_Pot_Et)(m.data), in_, out, a)},
+	destroy    = proc(m: etm.Module, a: etm.Allocator) {destroy_monica_amei_pot_et((^Monica_Amei_Pot_Et)(m.data), a)},
 	integrated = false,
 	inputs     = {
 		"tavg",

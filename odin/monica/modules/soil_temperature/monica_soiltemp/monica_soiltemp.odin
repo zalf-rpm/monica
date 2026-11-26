@@ -10,10 +10,11 @@
 //     used pwp + 0.25 * (fc - pwp) instead.
 //   - the damping factor is MONICA's 0.8 (core/soil_temperature.odin); the
 //     AMEI branch read it from its own parameter, which MONICA doesn't have
-package soil_temperature
+package st_monica_soiltemp
 
-import c2m "../crop2ml"
-import mst "../../../amei/Monica_SoilTemp"
+import stm ".."
+import c2m "../../crop2ml"
+import mst "../../../../amei/Monica_SoilTemp"
 
 // The temperature layers are MONICA's layers plus a ground and a bottom layer.
 Monica_Soil_Temp :: struct {
@@ -25,10 +26,10 @@ Monica_Soil_Temp :: struct {
 	no_of_layers:  int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_monica_soil_temp :: proc(allocator: Allocator) -> Module {
+make_monica_soil_temp :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Monica_Soil_Temp, allocator)
 	b.c = mst.make_soil_temperature_comp_component(allocator)
-	return b
+	return stm.Module{data = b, type = Monica_Soil_Temp}
 }
 
 destroy_monica_soil_temp :: proc(b: ^Monica_Soil_Temp, allocator := context.allocator) {
@@ -42,7 +43,7 @@ destroy_monica_soil_temp :: proc(b: ^Monica_Soil_Temp, allocator := context.allo
 	free(b)
 }
 
-monica_soil_temp_init :: proc(b: ^Monica_Soil_Temp, in_: ^Input, allocator := context.allocator) {
+monica_soil_temp_init :: proc(b: ^Monica_Soil_Temp, in_: ^stm.Input, allocator := context.allocator) {
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
 	c := &b.c
@@ -85,8 +86,8 @@ monica_soil_temp_init :: proc(b: ^Monica_Soil_Temp, in_: ^Input, allocator := co
 
 monica_soil_temp_step :: proc(
 	b: ^Monica_Soil_Temp,
-	in_: ^Input,
-	out: ^Output,
+	in_: ^stm.Input,
+	out: ^stm.Output,
 	allocator := context.allocator,
 ) {
 	monica_soil_temp_exogenous(b, in_)
@@ -97,7 +98,7 @@ monica_soil_temp_step :: proc(
 }
 
 @(private = "file")
-monica_soil_temp_exogenous :: proc(b: ^Monica_Soil_Temp, in_: ^Input) {
+monica_soil_temp_exogenous :: proc(b: ^Monica_Soil_Temp, in_: ^stm.Input) {
 	b.ex.tmin = in_.tmin
 	b.ex.tmax = in_.tmax
 	b.ex.globrad = in_.globrad
@@ -108,10 +109,11 @@ monica_soil_temp_exogenous :: proc(b: ^Monica_Soil_Temp, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-monica_soil_temp_entry :: Module_Entry {
+monica_soil_temp_entry :: stm.Module_Entry {
 	name    = "Monica_SoilTemp",
+	type    = Monica_Soil_Temp,
 	make    = make_monica_soil_temp,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {monica_soil_temp_init(m.(^Monica_Soil_Temp), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {monica_soil_temp_step(m.(^Monica_Soil_Temp), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_monica_soil_temp(m.(^Monica_Soil_Temp), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {monica_soil_temp_init((^Monica_Soil_Temp)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {monica_soil_temp_step((^Monica_Soil_Temp)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_monica_soil_temp((^Monica_Soil_Temp)(m.data), a)},
 }

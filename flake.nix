@@ -171,17 +171,24 @@
           for t in monica-run monica-zmq-server monica-zmq-proxy monica-capnp-server monica-capnp-fbp-component monica-module; do
             odin build cmd/$t -out:build/$t
           done
+          # the AMEI modules as a plugin library (plan-module-plugins.md)
+          odin build plugins/amei -build-mode:shared -out:build/amei.so
           runHook postBuild
         '';
         installPhase = ''
           runHook preInstall
           install -Dm755 build/monica-* -t $out/bin
+          install -Dm755 build/amei.so -t $out/lib/monica/plugins
           mkdir -p $out/share/monica
           cp -r support/capnp/shim/external/mas_capnproto_schemas/zalfmas_capnp_schemas $out/${schemaDir}
           # The default schema path is relative to the exe, which doesn't hold
           # in the store layout.
           for t in monica-capnp-server monica-capnp-fbp-component; do
             wrapProgram $out/bin/$t --set-default MONICA_CAPNP_SCHEMA_DIR $out/${schemaDir}
+          done
+          # the AMEI plugin for every run, as when its modules were built in
+          for t in $out/bin/monica-*; do
+            wrapProgram $t --set-default MONICA_MODULE_PLUGINS $out/lib/monica/plugins/amei.so
           done
           runHook postInstall
         '';

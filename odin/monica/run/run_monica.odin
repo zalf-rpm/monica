@@ -839,6 +839,7 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	{
 		errs := pl.load_from_env(allocator)
 		for path in env.params.sim_params.modules.plugins {
+			path := tl.fix_system_separator(tl.replace_env_vars(path, allocator), allocator)
 			for e in pl.load(path, allocator) {
 				append(&errs, e)
 			}

@@ -6,10 +6,11 @@
 // DSSAT_ST_standalone (dssat_st.odin, thicknesses rounded instead of
 // truncated), SW set anew every day; SNOW is MONICA's snow depth, DEPIR the
 // day's irrigation, BIOMAS the crop's above-ground biomass, MULCHMASS 0.
-package soil_temperature
+package st_dssat_epicst
 
-import c2m "../crop2ml"
-import epic "../../../amei/DSSAT_EPICST_standalone"
+import stm ".."
+import c2m "../../crop2ml"
+import epic "../../../../amei/DSSAT_EPICST_standalone"
 
 Dssat_Epicst :: struct {
 	c:            epic.Stemp_Epic_Component,
@@ -20,10 +21,10 @@ Dssat_Epicst :: struct {
 	no_of_layers: int `unit:"layer#" unit_guess:"high"`,
 }
 
-make_dssat_epicst :: proc(allocator: Allocator) -> Module {
+make_dssat_epicst :: proc(allocator: stm.Allocator) -> stm.Module {
 	b := new(Dssat_Epicst, allocator)
 	b.c = epic.make_stemp_epic_component(allocator)
-	return b
+	return stm.Module{data = b, type = Dssat_Epicst}
 }
 
 destroy_dssat_epicst :: proc(b: ^Dssat_Epicst, allocator := context.allocator) {
@@ -37,7 +38,7 @@ destroy_dssat_epicst :: proc(b: ^Dssat_Epicst, allocator := context.allocator) {
 	free(b)
 }
 
-dssat_epicst_init :: proc(b: ^Dssat_Epicst, in_: ^Input, allocator := context.allocator) {
+dssat_epicst_init :: proc(b: ^Dssat_Epicst, in_: ^stm.Input, allocator := context.allocator) {
 	n := len(in_.layer_thickness)
 	b.no_of_layers = n
 	c := &b.c
@@ -50,7 +51,7 @@ dssat_epicst_init :: proc(b: ^Dssat_Epicst, in_: ^Input, allocator := context.al
 	bd := make([]f64, n, context.temp_allocator)
 	depth := 0.0
 	for i in 0 ..< n {
-		dlayr[i] = thickness_cm(in_.layer_thickness[i])
+		dlayr[i] = stm.thickness_cm(in_.layer_thickness[i])
 		depth += dlayr[i]
 		ds[i] = depth
 		bd[i] = in_.bulk_density[i] / 1000.0 // kg m-3 -> g cm-3
@@ -66,7 +67,7 @@ dssat_epicst_init :: proc(b: ^Dssat_Epicst, in_: ^Input, allocator := context.al
 	epic.stemp_epic_component_init(c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 }
 
-dssat_epicst_step :: proc(b: ^Dssat_Epicst, in_: ^Input, out: ^Output, allocator := context.allocator) {
+dssat_epicst_step :: proc(b: ^Dssat_Epicst, in_: ^stm.Input, out: ^stm.Output, allocator := context.allocator) {
 	dssat_epicst_exogenous(b, in_)
 	epic.stemp_epic_component_set_sw(&b.c, in_.soil_moisture, allocator)
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
@@ -76,7 +77,7 @@ dssat_epicst_step :: proc(b: ^Dssat_Epicst, in_: ^Input, out: ^Output, allocator
 }
 
 @(private = "file")
-dssat_epicst_exogenous :: proc(b: ^Dssat_Epicst, in_: ^Input) {
+dssat_epicst_exogenous :: proc(b: ^Dssat_Epicst, in_: ^stm.Input) {
 	b.ex.tmin = in_.tmin
 	b.ex.tavg = in_.tavg
 	b.ex.tmax = in_.tmax
@@ -90,10 +91,11 @@ dssat_epicst_exogenous :: proc(b: ^Dssat_Epicst, in_: ^Input) {
 }
 
 // The table row (soil_temperature.odin's `modules`)
-dssat_epicst_entry :: Module_Entry {
+dssat_epicst_entry :: stm.Module_Entry {
 	name    = "DSSAT_EPICST_standalone",
+	type    = Dssat_Epicst,
 	make    = make_dssat_epicst,
-	init    = proc(m: Module, in_: ^Input, a: Allocator) {dssat_epicst_init(m.(^Dssat_Epicst), in_, a)},
-	step    = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {dssat_epicst_step(m.(^Dssat_Epicst), in_, out, a)},
-	destroy = proc(m: Module, a: Allocator) {destroy_dssat_epicst(m.(^Dssat_Epicst), a)},
+	init    = proc(m: stm.Module, in_: ^stm.Input, a: stm.Allocator) {dssat_epicst_init((^Dssat_Epicst)(m.data), in_, a)},
+	step    = proc(m: stm.Module, in_: ^stm.Input, out: ^stm.Output, a: stm.Allocator) {dssat_epicst_step((^Dssat_Epicst)(m.data), in_, out, a)},
+	destroy = proc(m: stm.Module, a: stm.Allocator) {destroy_dssat_epicst((^Dssat_Epicst)(m.data), a)},
 }

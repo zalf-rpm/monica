@@ -13,10 +13,11 @@
 //
 // Only a driver: it doesn't give the evaporation, transpiration and soil
 // water MONICA needs from its evapotranspiration (`integrated = false`).
-package evapotranspiration
+package et_monica_ref_et
 
-import c2m "../crop2ml"
-import ret "../../../amei/Monica_Reference_Evapotranspiration"
+import etm ".."
+import c2m "../../crop2ml"
+import ret "../../../../amei/Monica_Reference_Evapotranspiration"
 
 Monica_Ref_Et :: struct {
 	c:     ret.Amei_Ref_Et_Component,
@@ -26,10 +27,10 @@ Monica_Ref_Et :: struct {
 	ex:    ret.Amei_Ref_Et_Exogenous,
 }
 
-make_monica_ref_et :: proc(allocator: Allocator) -> Module {
+make_monica_ref_et :: proc(allocator: etm.Allocator) -> etm.Module {
 	b := new(Monica_Ref_Et, allocator)
 	b.c = ret.make_amei_ref_et_component(allocator)
-	return b
+	return etm.Module{data = b, type = Monica_Ref_Et}
 }
 
 destroy_monica_ref_et :: proc(b: ^Monica_Ref_Et, allocator := context.allocator) {
@@ -44,11 +45,11 @@ destroy_monica_ref_et :: proc(b: ^Monica_Ref_Et, allocator := context.allocator)
 }
 
 // The model has no init; its only parameter is the height.
-monica_ref_et_init :: proc(b: ^Monica_Ref_Et, in_: ^Input, allocator := context.allocator) {
+monica_ref_et_init :: proc(b: ^Monica_Ref_Et, in_: ^etm.Input, allocator := context.allocator) {
 	ret.amei_ref_et_component_set_height_nn(&b.c, in_.height_nn)
 }
 
-monica_ref_et_step :: proc(b: ^Monica_Ref_Et, in_: ^Input, out: ^Output, allocator := context.allocator) {
+monica_ref_et_step :: proc(b: ^Monica_Ref_Et, in_: ^etm.Input, out: ^etm.Output, allocator := context.allocator) {
 	ex := &b.ex
 	ex.mean_air_temperature = in_.tavg
 	ex.wind_speed = in_.wind
@@ -64,12 +65,13 @@ monica_ref_et_step :: proc(b: ^Monica_Ref_Et, in_: ^Input, out: ^Output, allocat
 }
 
 // The table row (evapotranspiration.odin's `modules`)
-monica_ref_et_entry :: Module_Entry {
+monica_ref_et_entry :: etm.Module_Entry {
 	name       = "Monica_Reference_Evapotranspiration",
+	type       = Monica_Ref_Et,
 	make       = make_monica_ref_et,
-	init       = proc(m: Module, in_: ^Input, a: Allocator) {monica_ref_et_init(m.(^Monica_Ref_Et), in_, a)},
-	step       = proc(m: Module, in_: ^Input, out: ^Output, a: Allocator) {monica_ref_et_step(m.(^Monica_Ref_Et), in_, out, a)},
-	destroy    = proc(m: Module, a: Allocator) {destroy_monica_ref_et(m.(^Monica_Ref_Et), a)},
+	init       = proc(m: etm.Module, in_: ^etm.Input, a: etm.Allocator) {monica_ref_et_init((^Monica_Ref_Et)(m.data), in_, a)},
+	step       = proc(m: etm.Module, in_: ^etm.Input, out: ^etm.Output, a: etm.Allocator) {monica_ref_et_step((^Monica_Ref_Et)(m.data), in_, out, a)},
+	destroy    = proc(m: etm.Module, a: etm.Allocator) {destroy_monica_ref_et((^Monica_Ref_Et)(m.data), a)},
 	integrated = false,
 	inputs     = {
 		"tavg",

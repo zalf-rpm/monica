@@ -28,6 +28,12 @@ EXE=build/monica-module
 [ "${OS:-}" = Windows_NT ] && EXE=$EXE.exe
 
 python tools/odinw.py build monica-run monica-module
+# the AMEI modules are a plugin library (plugins/amei, plan-module-plugins.md),
+# for monica-run and monica-module alike
+python tools/odinw.py build-plugin amei
+LIB=.so
+[ "${OS:-}" = Windows_NT ] && LIB=.dll
+export MONICA_MODULE_PLUGINS="$PWD/build/plugins/amei$LIB"
 mkdir -p "$W"
 
 "$EXE" from-sim ../installer/Hohenfinow2/sim-min.json "$W/h2.json"

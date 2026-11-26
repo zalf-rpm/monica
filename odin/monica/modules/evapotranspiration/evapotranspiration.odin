@@ -16,8 +16,9 @@
 // which also has to give the evaporation, transpiration and soil water.
 // Monica_Reference_Evapotranspiration is the same with only the ET0.
 //
-// A new module (R3): as in monica/modules/soil_temperature, its file with a
-// constant Module_Entry at the end, plus one line each in Module and `modules`.
+// A module (R3): as in monica/modules/soil_temperature, its package with a
+// constant Module_Entry at the end, built in by a line in
+// core/builtin_modules.odin or into a plugin library (plugins.odin).
 package evapotranspiration
 
 import pl "../plugin"
@@ -107,16 +108,17 @@ make_output :: proc(no_of_layers: int, allocator := context.allocator) -> Output
 	}
 }
 
-Module :: union {
-	^Monica_Et,
-	^Monica_Amei_Pot_Et,
-	^Monica_Ref_Et,
-	^pl.Instance, // a module from a plugin library (plugins.odin)
+// A module: a pointer to its binding's struct and that struct's type, as in
+// monica/modules/soil_temperature. A plugin's module is a ^pl.Instance.
+Module :: struct {
+	data: rawptr,
+	type: typeid,
 }
 
 // A module's table row, as in monica/modules/soil_temperature.
 Module_Entry :: struct {
 	name:    string, // as in sim.json and the Crop2ML package
+	type:    typeid, // the struct `make` makes
 	make:    proc(allocator: Allocator) -> Module,
 	// in_'s daily values are those of the first day: the modules' init reads
 	// them, as in the C++ AMEI adapters, which call init right before the
@@ -140,11 +142,28 @@ Module_Entry :: struct {
 	plugin:  ^pl.Module_Info,
 }
 
-@(rodata)
-modules := [?]Module_Entry {
-	monica_et_entry,
-	monica_amei_pot_et_entry,
-	monica_ref_et_entry,
+// The built-in modules, registered at startup (core/builtin_modules.odin).
+modules: [dynamic]Module_Entry
+
+// `e` is usually a constant (a binding's `..._entry ::`), whose slices
+// (inputs, outputs) are temporaries of the caller's frame: kept as copies.
+register_builtin :: proc(e: Module_Entry) {
+	context.allocator = runtime.heap_allocator()
+	if modules == nil {
+		modules = make([dynamic]Module_Entry)
+	}
+	clone :: proc(ss: []string) -> []string {
+		if ss == nil {
+			return nil
+		}
+		cs := make([]string, len(ss))
+		copy(cs, ss)
+		return cs
+	}
+	e := e
+	e.inputs = clone(e.inputs)
+	e.outputs = clone(e.outputs)
+	append(&modules, e)
 }
 
 // A built-in module, or one of a loaded plugin (plugins.odin).

@@ -11,6 +11,9 @@
     "Evapotranspiration modules: Monica_Evapotranspiration (not with FAO-56-Dual),",
     "Monica_AMEI_potential_Evapotranspiration (only ET0 and potential ET, driver only),",
     "Monica_Reference_Evapotranspiration (only ET0, driver only).",
+    "All but Monica_SoilTemp and Monica_Evapotranspiration are in the plugin library plugins/amei",
+    "(plan-module-plugins.md): 'pixi run python tools/odinw.py build-plugin amei' in odin/, then",
+    "Modules.Plugins below finds it when run from this directory (no extension: .so or .dll).",
     "Output columns given by path get the field's unit; 'unit' overrides it. 'calc' applies",
     "steps [op, operand] or [op] left to right; an operand is a number or another output.",
     "Operators: + - * / ^ % min max < <= > >= == != (1 or 0), neg abs sqrt exp ln log10 floor ceil."
@@ -36,7 +39,8 @@
       "Monica_Evapotranspiration",
       "Monica_AMEI_potential_Evapotranspiration",
       "Monica_Reference_Evapotranspiration"
-    ]
+    ],
+    "Plugins": ["../../odin/build/plugins/amei"]
   },
   "output": {
     "write-file?": true,

@@ -5,10 +5,14 @@ package test_broken_plugin
 
 import pl "../../../monica/modules/plugin"
 import stm "../../../monica/modules/soil_temperature"
+import st_dssat "../../../monica/modules/soil_temperature/dssat_st"
+import st_monica "../../../monica/modules/soil_temperature/monica_soiltemp"
 import "base:runtime"
 
 @(private = "file")
-dssat_st := stm.dssat_st_entry
+dssat_st := st_dssat.dssat_st_entry
+@(private = "file")
+monica_soiltemp := st_monica.monica_soil_temp_entry
 @(private = "file")
 infos: [5]pl.Module_Info
 
@@ -22,7 +26,7 @@ monica_module_plugin :: proc "c" (n: ^i32) -> [^]pl.Module_Info {
 		infos[1].process = "NoSuchProcess"
 		infos[2] = stm.plugin_module_info(&dssat_st, "Broken_Layout")
 		infos[2].input_hash += 1
-		infos[3] = stm.plugin_module_info(&dssat_st) // DSSAT_ST_standalone, a built-in name
+		infos[3] = stm.plugin_module_info(&monica_soiltemp) // Monica_SoilTemp, a built-in name
 		infos[4] = stm.plugin_module_info(&dssat_st, "Broken_Plugin_Good_Module")
 	}
 	n^ = len(infos)
