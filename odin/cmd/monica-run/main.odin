@@ -224,6 +224,11 @@ main :: proc() {
 	if tl.failure(merge_errs) {
 		os.exit(1)
 	}
+	// Odin only: switch on soil mineral N as rate/state (plan phase I) for
+	// comparison runs without editing the simulation's parameter files.
+	if os.get_env("MONICA_MINERAL_N_AS_RATES", a) == "1" {
+		env.params.soil_organic_mod_params.mineral_n_as_rates = true
+	}
 
 	out := run.run_monica(&env, a)
 	return_obj_outputs := run.env_return_obj_outputs(&env)

@@ -841,8 +841,19 @@ monica_model_general_step :: proc(model: ^Monica_Model, allocator := context.all
 		model.sim_params.dual_kc_method,
 	)
 
-	soil_organic_step(&model.soil_organic, tavg, precip, wind, model.crop_to_soil)
-	soil_transport_step(&model.soil_transport, model.crop_to_soil)
+	if model.soil_organic.mod_params.mineral_n_as_rates {
+		soil_n_step_as_rates(
+			&model.soil_organic,
+			&model.soil_transport,
+			tavg,
+			precip,
+			wind,
+			model.crop_to_soil,
+		)
+	} else {
+		soil_organic_step(&model.soil_organic, tavg, precip, wind, model.crop_to_soil)
+		soil_transport_step(&model.soil_transport, model.crop_to_soil)
+	}
 }
 
 // C++: void monica::monicamodel::cropStep(MonicaModel*)

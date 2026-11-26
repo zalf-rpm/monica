@@ -956,6 +956,9 @@ Where it would gain most:
    priority. Each process delivering its demand, and the N owner limiting and
    applying them, would turn that priority into a decision - and it is where
    MONICA and STICS variants are already swapped. It changes the results.
+   *Implemented behind the switch `mineral_n_as_rates` (off by default) in
+   `core/soil_mineral_n.odin`; the limiting rule and the measured divergence
+   are in plan-component-interfaces.md, phase I.*
 2. **Soil water within the day.** Infiltration, percolation, capillary rise,
    evaporation and transpiration change the water content in sequence. Mostly
    deliberate operator splitting, and the crop's transpiration is already a
