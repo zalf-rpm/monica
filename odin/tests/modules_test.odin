@@ -9,14 +9,21 @@ import "base:runtime"
 import "core:reflect"
 import "core:testing"
 import etm "../monica/modules/evapotranspiration"
+import pl "../monica/modules/plugin"
 import stm "../monica/modules/soil_temperature"
 
-// Every row complete, names unique, one row per union variant and each row
-// making its own variant.
+// Every row complete, names unique, one row per union variant (but the plugin
+// modules' ^pl.Instance, which has none) and each row making its own variant.
 @(private = "file")
 check_table :: proc(t: ^testing.T, table: string, module_type: typeid, rows: []$E, make_variant: proc(e: E) -> typeid) {
 	variants := runtime.type_info_base(type_info_of(module_type)).variant.(runtime.Type_Info_Union).variants
-	testing.expectf(t, len(rows) == len(variants), "%s: %d rows for %d union variants", table, len(rows), len(variants))
+	builtin := 0
+	for v in variants {
+		if v.id != ^pl.Instance {
+			builtin += 1
+		}
+	}
+	testing.expectf(t, len(rows) == builtin, "%s: %d rows for %d union variants", table, len(rows), builtin)
 	seen_names := make(map[string]bool, context.temp_allocator)
 	seen_variants := make(map[typeid]string, context.temp_allocator)
 	for &row in rows {
@@ -53,4 +60,39 @@ test_evapotranspiration_module_table :: proc(t: ^testing.T) {
 		defer e.destroy(m, context.allocator)
 		return reflect.union_variant_typeid(m)
 	})
+}
+
+// The layout hash plugins are checked with (plan-module-plugins.md): stable,
+// different for the two processes' interfaces, and changed by a renamed or
+// moved field or another field type.
+@(test)
+test_plugin_layout_hash :: proc(t: ^testing.T) {
+	testing.expect(t, pl.layout_hash(stm.Input) == pl.layout_hash(stm.Input))
+	testing.expect(t, pl.layout_hash(stm.Input) != pl.layout_hash(etm.Input))
+	testing.expect(t, pl.layout_hash(stm.Output) != pl.layout_hash(etm.Output))
+	// anonymous structs: only the fields differ, not a type name
+	a := pl.layout_hash(struct {
+			x: f64,
+			y: []f64,
+		})
+	testing.expect(t, a == pl.layout_hash(struct {
+			x: f64,
+			y: []f64,
+		}), "the same fields")
+	testing.expect(t, a != pl.layout_hash(struct {
+			x: f64,
+			z: []f64,
+		}), "renamed field")
+	testing.expect(t, a != pl.layout_hash(struct {
+			y: []f64,
+			x: f64,
+		}), "moved field")
+	testing.expect(t, a != pl.layout_hash(struct {
+			x: f32,
+			y: []f64,
+		}), "other field type")
+	testing.expect(t, a != pl.layout_hash(struct {
+			x: f64,
+			y: []f32,
+		}), "other element type")
 }

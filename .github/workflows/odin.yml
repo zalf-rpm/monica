@@ -173,6 +173,17 @@ jobs:
           name: suite-odin-${{ runner.os }}
           path: odin-results
 
+      # Modules from plugin libraries (plan-module-plugins.md), on Linux and
+      # Windows: the test plugins' modules give exactly their built-in twins'
+      # results, broken plugins are refused (tests/check_plugins.py).
+      - name: Module plugins
+        shell: bash
+        working-directory: monica/odin
+        run: |
+          pixi run python tools/odinw.py build-plugin test_modules test_broken
+          MONICA_PARAMETERS="$GITHUB_WORKSPACE/cpp/monica-parameters" \
+            pixi run python tests/check_plugins.py --build build --work build/check-plugins
+
       # Crop2ML modules (plan-crop2ml-modules.md): amei/ must be exactly what the
       # pinned PyCrop2ML generates from the pinned Crop2ML packages, and the
       # modules must give their generated Python's numbers (tests/check_modules.sh).

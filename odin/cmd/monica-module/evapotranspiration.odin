@@ -62,11 +62,8 @@ Et_Day :: struct {
 run_evapotranspiration :: proc(impl, input_path, out_path: string) -> (err: string) {
 	entry, ok := etm.find_module(impl)
 	if !ok {
-		names := make([dynamic]string, context.temp_allocator)
-		for e in etm.modules {
-			append(&names, e.name)
-		}
-		return fmt.aprintf("unknown impl %q (known: %s)", impl, strings.join(names[:], ", ", context.temp_allocator))
+		names := etm.module_names(context.temp_allocator)
+		return fmt.aprintf("unknown impl %q (known: %s)", impl, strings.join(names, ", ", context.temp_allocator))
 	}
 	in_, days, rerr := read_et_input(input_path, entry.inputs)
 	if rerr != "" {
@@ -123,7 +120,7 @@ run_evapotranspiration :: proc(impl, input_path, out_path: string) -> (err: stri
 	io.write_string(w, "\n")
 
 	out := etm.make_output(n)
-	m := entry.make(context.allocator)
+	m := etm.make_module(entry, context.allocator)
 	defer entry.destroy(m, context.allocator)
 	for &day, i in days {
 		in_.daily = day.daily

@@ -108,6 +108,32 @@ Crop2ML packages: integrated, they give MONICA's own results (checked by
 `installer/Hohenfinow2/sim-min-amei.json` is a complete example, with the
 output columns below.
 
+## Modules from plugin libraries
+
+A module doesn't have to be compiled into MONICA: it can come from a shared
+library (`.so`, `.dll`) loaded at startup, and then works like a built-in one -
+as a driver, integrated, standalone in `monica-module`
+(`plan-module-plugins.md`).
+
+```json
+"Modules": {
+  "SoilTemperatureDrivers": ["My_Soil_Temperature"],
+  "Plugins": ["build/plugins/my_modules.so"]
+}
+```
+
+or `MONICA_MODULE_PLUGINS=build/plugins/my_modules.so` (several separated
+like PATH), for every MONICA executable. Paths are relative to the working
+directory. A plugin is a package in `plugins/<name>/` (see
+`tests/plugins/test_modules/` for one with two modules), built with
+
+    pixi run python tools/odinw.py build-plugin <name>
+
+into `build/plugins/`, with the same Odin and from the same source tree as
+MONICA: a plugin built against another version of a process's `Input`/`Output`
+is refused, as is one whose module has a built-in module's name. For now,
+output paths reach a plugin module's `input` and `output`, not its own state.
+
 ## Getting the results out
 
 Output columns can name any value by path (`plan-reflective-outputs.md`), with

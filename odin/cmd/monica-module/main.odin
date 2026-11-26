@@ -45,6 +45,7 @@ package monica_module
 
 import "../../monica/core"
 import etm "../../monica/modules/evapotranspiration"
+import pl "../../monica/modules/plugin"
 import stm "../../monica/modules/soil_temperature"
 import p "../../monica/params"
 import "../../monica/run"
@@ -66,16 +67,16 @@ usage :: proc() {
 	fmt.eprintln("       monica-module from-sim <sim.json> <input.json>")
 	names := make([dynamic]string, context.temp_allocator)
 	append(&names, p.MODULE_IMPL_INTERNAL)
-	for e in stm.modules {
-		append(&names, e.name)
+	for n in stm.module_names(context.temp_allocator) {
+		append(&names, n)
 	}
 	fmt.eprintfln(
 		"SoilTemperature impls: %s",
 		strings.join(names[:], ", ", context.temp_allocator),
 	)
 	clear(&names)
-	for e in etm.modules {
-		append(&names, e.name)
+	for n in etm.module_names(context.temp_allocator) {
+		append(&names, n)
 	}
 	fmt.eprintfln(
 		"Evapotranspiration impls: %s",
@@ -85,6 +86,13 @@ usage :: proc() {
 
 main :: proc() {
 	args := os.args
+	// modules from plugin libraries (plan-module-plugins.md)
+	if errs := pl.load_from_env(); len(errs) > 0 {
+		for e in errs {
+			fmt.eprintln(e)
+		}
+		os.exit(1)
+	}
 	switch {
 	case len(args) >= 5 && args[1] == "run":
 		out_path := len(args) >= 6 ? args[5] : ""
@@ -199,7 +207,7 @@ run_soil_temperature :: proc(impl, input_path, out_path: string) -> (err: string
 	if !ok {
 		return fmt.aprintf("unknown impl %q", impl)
 	}
-	m := entry.make(context.allocator)
+	m := stm.make_module(entry, context.allocator)
 	defer entry.destroy(m, context.allocator)
 	for &day, i in days {
 		set_day(&in_, &day, static_moisture)

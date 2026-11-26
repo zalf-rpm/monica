@@ -20,6 +20,7 @@
 // constant Module_Entry at the end, plus one line each in Module and `modules`.
 package evapotranspiration
 
+import pl "../plugin"
 import "base:runtime"
 
 Allocator :: runtime.Allocator
@@ -110,6 +111,7 @@ Module :: union {
 	^Monica_Et,
 	^Monica_Amei_Pot_Et,
 	^Monica_Ref_Et,
+	^pl.Instance, // a module from a plugin library (plugins.odin)
 }
 
 // A module's table row, as in monica/modules/soil_temperature.
@@ -134,6 +136,8 @@ Module_Entry :: struct {
 	outputs: []string,
 	// whether it needs the soil profile (Input's per-layer arrays)
 	needs_layers: bool,
+	// a plugin module's (plugins.odin): make it with make_module, `make` is nil
+	plugin:  ^pl.Module_Info,
 }
 
 @(rodata)
@@ -143,12 +147,13 @@ modules := [?]Module_Entry {
 	monica_ref_et_entry,
 }
 
+// A built-in module, or one of a loaded plugin (plugins.odin).
 find_module :: proc(name: string) -> (Module_Entry, bool) {
 	for e in modules {
 		if e.name == name {
 			return e, true
 		}
 	}
-	return {}, false
+	return find_plugin_module(name)
 }
 

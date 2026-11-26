@@ -24,6 +24,7 @@ import jx "../../support/jsonx"
 import tl "../../support/tools"
 import core "../core"
 import mio "../io"
+import pl "../modules/plugin"
 import p "../params"
 import "core:strconv"
 import "core:strings"
@@ -832,7 +833,21 @@ run_monica :: proc(env: ^Env, allocator := context.allocator) -> mio.Output {
 	// NOTE(deviation): no C++ counterpart - sim.json's "Modules" section
 	// (plan-crop2ml-modules.md §1.4). An unknown implementation is refused here,
 	// for the same reasons as the soil profile above, before make_monica_model
-	// would have to.
+	// would have to. First the module plugin libraries (MONICA_MODULE_PLUGINS,
+	// Modules.Plugins; plan-module-plugins.md), whose modules the names may
+	// refer to.
+	{
+		errs := pl.load_from_env(allocator)
+		for path in env.params.sim_params.modules.plugins {
+			for e in pl.load(path, allocator) {
+				append(&errs, e)
+			}
+		}
+		if len(errs) > 0 {
+			out.errors = errs
+			return out
+		}
+	}
 	if errs := core.check_modules_config(
 		&env.params.sim_params.modules,
 		env.params.sim_params.dual_kc_method,

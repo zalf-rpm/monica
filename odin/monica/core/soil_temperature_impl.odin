@@ -139,11 +139,7 @@ check_modules_config :: proc(
 
 @(private = "file")
 soil_temperature_module_names :: proc(allocator := context.allocator) -> []string {
-	names := make([]string, len(stm.modules), allocator)
-	for e, i in stm.modules {
-		names[i] = e.name
-	}
-	return names
+	return stm.module_names(allocator)
 }
 
 @(private = "file")
@@ -152,8 +148,8 @@ soil_temperature_impl_names :: proc(allocator := context.allocator) -> []string 
 	for e in soil_temperature_impls {
 		append(&names, e.name)
 	}
-	for e in stm.modules {
-		append(&names, e.name)
+	for n in stm.module_names(context.temp_allocator) {
+		append(&names, n)
 	}
 	return names[:]
 }
@@ -309,7 +305,7 @@ make_soil_temperature_module :: proc(
 	m := new(Soil_Temperature_Module, allocator)
 	m.name = name
 	m.entry = entry
-	m.module = entry.make(allocator)
+	m.module = stm.make_module(entry, allocator)
 	soil_temperature_input_from_model(model, cpp, &m.input, allocator)
 	m.output = stm.make_output(len(m.input.layer_thickness), allocator)
 	return m

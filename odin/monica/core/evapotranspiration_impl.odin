@@ -76,7 +76,7 @@ make_evapotranspiration_module :: proc(
 	m := new(Evapotranspiration_Module, allocator)
 	m.name = name
 	m.entry = entry
-	m.module = entry.make(allocator)
+	m.module = etm.make_module(entry, allocator)
 	in_ := &m.input
 	in_.latitude = model.site_params.latitude
 	in_.height_nn = model.site_params.height_nn
@@ -269,10 +269,7 @@ check_evapotranspiration_config :: proc(
 	errs: ^[dynamic]string,
 	allocator := context.allocator,
 ) {
-	names := make([dynamic]string, context.temp_allocator)
-	for e in etm.modules {
-		append(&names, e.name)
-	}
+	names := etm.module_names(context.temp_allocator)
 	impl := mc.evapotranspiration.impl
 	if impl != "" && impl != p.MODULE_IMPL_INTERNAL {
 		if e, ok := etm.find_module(impl); !ok {

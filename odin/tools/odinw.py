@@ -636,6 +636,41 @@ def cmd_build(ns: argparse.Namespace) -> int:
     return 0
 
 
+# module plugin packages (plan-module-plugins.md): plugins/<name>/, and the
+# test plugins in tests/plugins/<name>/
+PLUGIN_DIRS = [ROOT / "plugins", ROOT / "tests" / "plugins"]
+
+
+def cmd_build_plugin(ns: argparse.Namespace) -> int:
+    """Build module plugin libraries (plugins/<name>/, tests/plugins/<name>/)
+    into build/plugins/:
+    shared libraries MONICA loads at startup (Modules.Plugins in sim.json, or
+    MONICA_MODULE_PLUGINS). Same flags as the binaries - cr_math linked
+    statically, no FMA in the module code - so a module gives the same bits as
+    a plugin and built in."""
+    ensure_cr_math()
+    found = {d.name: d for pd in PLUGIN_DIRS if pd.is_dir() for d in sorted(pd.iterdir()) if d.is_dir()}
+    names = ns.plugins or list(found)
+    out_dir = BUILD_DIR / "plugins"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        src = found.get(name)
+        if src is None:
+            die(f"unknown plugin {name!r} (known: {', '.join(found)})")
+        lib = out_dir / (name + (".dll" if IS_WINDOWS else ".so"))
+        args = ["build", src.relative_to(ROOT).as_posix(), "-build-mode:shared",
+                f"-out:{lib.relative_to(ROOT).as_posix()}"]
+        if ns.release:
+            args.append("-o:speed")
+        if linker_flags := _cr_math_linker_flags():
+            args.append(f"-extra-linker-flags:{' '.join(linker_flags)}")
+        args += ns.odin_args
+        if (rc := run_odin(args, ROOT)) != 0:
+            return rc
+        print(f"==> {lib}")
+    return 0
+
+
 def _vcpkg_toolchain() -> Path:
     """vcpkg supplies Cap'n Proto for the shim. Located the same way the rest of
     this script locates things: an explicit env var first, never a guess."""
@@ -1217,6 +1252,11 @@ def main() -> int:
         ),
     )
     p.set_defaults(fn=cmd_build)
+
+    p = sub.add_parser("build-plugin", help="build module plugin libraries (plugins/, tests/plugins/) into build/plugins/")
+    p.add_argument("plugins", nargs="*", help="default: all")
+    p.add_argument("--release", action="store_true", help="build with -o:speed")
+    p.set_defaults(fn=cmd_build_plugin)
 
 
     p = sub.add_parser(

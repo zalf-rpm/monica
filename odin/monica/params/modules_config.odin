@@ -6,8 +6,13 @@
 //     "SoilTemperature": {"impl": "internal", "mode": "integrated"},
 //     "SoilTemperatureDrivers": [],
 //     "Evapotranspiration": {"impl": "internal"},
-//     "EvapotranspirationDrivers": []
+//     "EvapotranspirationDrivers": [],
+//     "Plugins": ["build/plugins/libx.so"]
 //   }
+//
+// "Plugins": shared libraries with more modules (plan-module-plugins.md),
+// loaded before the names are checked; paths relative to the working
+// directory.
 //
 // Absent means MONICA's own implementations, exactly as without this section.
 // Only the shape is checked here; whether a name exists is the business of the
@@ -31,6 +36,7 @@ Modules_Config :: struct {
 	soil_temperature_drivers:   [dynamic]string,
 	evapotranspiration:         Module_Config,
 	evapotranspiration_drivers: [dynamic]string,
+	plugins:                    [dynamic]string, // module plugin libraries to load
 }
 
 // The names every process's table accepts for MONICA's own implementation and
@@ -66,6 +72,11 @@ modules_config_merge :: proc(mc: ^Modules_Config, j: jx.Value) -> tl.Errors {
 		module_config_merge(&mc.evapotranspiration, jx.get(j, "Evapotranspiration"), "Evapotranspiration"),
 	)
 	tl.append_errors(&res, drivers_merge(&mc.evapotranspiration_drivers, j, "EvapotranspirationDrivers"))
+	if v := jx.get(j, "Plugins"); !jx.is_null(v) && !jx.is_array(v) {
+		tl.append_error(&res, "Modules.Plugins: expected an array of library paths")
+	} else {
+		jx.set_string_vector(&mc.plugins, j, "Plugins")
+	}
 	return res
 }
 
@@ -111,7 +122,8 @@ modules_config_to_json :: proc(mc: ^Modules_Config, a: Allocator) -> (jx.Value, 
 	if mc.soil_temperature == {} &&
 	   len(mc.soil_temperature_drivers) == 0 &&
 	   mc.evapotranspiration == {} &&
-	   len(mc.evapotranspiration_drivers) == 0 {
+	   len(mc.evapotranspiration_drivers) == 0 &&
+	   len(mc.plugins) == 0 {
 		return nil, false
 	}
 	names :: proc(ns: [dynamic]string, a: Allocator) -> jx.Value {
@@ -130,6 +142,7 @@ modules_config_to_json :: proc(mc: ^Modules_Config, a: Allocator) -> (jx.Value, 
 			{"SoilTemperatureDrivers", names(mc.soil_temperature_drivers, a)},
 			{"Evapotranspiration", config(mc.evapotranspiration, a)},
 			{"EvapotranspirationDrivers", names(mc.evapotranspiration_drivers, a)},
+			{"Plugins", names(mc.plugins, a)},
 		),
 		true
 }

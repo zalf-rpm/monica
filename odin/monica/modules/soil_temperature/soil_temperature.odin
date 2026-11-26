@@ -13,6 +13,7 @@
 package soil_temperature
 
 import p "../../params"
+import pl "../plugin"
 import "base:runtime"
 
 Allocator :: runtime.Allocator
@@ -83,6 +84,7 @@ destroy_output :: proc(o: ^Output, allocator := context.allocator) {
 
 // One variant per module. The union, not a plain pointer, so that output paths
 // can reach a module's own state by its type (e.g. module.Dssat_St.s.srftemp).
+// A module from a plugin library is a ^pl.Instance (plugins.odin).
 Module :: union {
 	^Monica_Soil_Temp,
 	^Dssat_St,
@@ -93,6 +95,7 @@ Module :: union {
 	^Simplace,
 	^Sq,
 	^Stics,
+	^pl.Instance,
 }
 
 // A module's table row: its name and what MONICA calls. Each procedure gets the
@@ -109,6 +112,8 @@ Module_Entry :: struct {
 	// allocator of that step, so callers pass a lasting one for the first step.
 	step:    proc(m: Module, in_: ^Input, out: ^Output, allocator: Allocator),
 	destroy: proc(m: Module, allocator: Allocator),
+	// a plugin module's (plugins.odin): make it with make_module, `make` is nil
+	plugin:  ^pl.Module_Info,
 }
 
 @(rodata)
@@ -124,13 +129,14 @@ modules := [?]Module_Entry {
 	stics_entry,
 }
 
+// A built-in module, or one of a loaded plugin (plugins.odin).
 find_module :: proc(name: string) -> (Module_Entry, bool) {
 	for e in modules {
 		if e.name == name {
 			return e, true
 		}
 	}
-	return {}, false
+	return find_plugin_module(name)
 }
 
 // Whole centimetres, rounded; the C++ AMEI adapters truncated
