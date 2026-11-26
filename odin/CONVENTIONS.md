@@ -66,7 +66,8 @@ rounded*: every call returns the double nearest to the exact result, so every pl
 compiler gives bit-identical results. History: the port first used `core:c/libc` here, after a
 `pow(pow(x, 1/m) - 1, 1/n)` chain in `soilMoisturePF` diverged from the C++ in the last 2 ULP
 (phase 3, `plan-odin.md`) - but libc only matched the C++ on Windows, where both called the MSVC
-CRT. With `cr_math` on both sides, Odin and C++ can match on Windows and Linux.
+CRT. With `cr_math` on both sides, Odin and C++ can match on Windows and Linux. `cr-math.md`
+explains correct rounding and the "last bit" in more detail.
 
 What stays: `libc.sqrt`, `math.sqrt` and `libc.fabs` (IEEE 754 makes `sqrt` correctly rounded
 everywhere, and `core:math`'s is the intrinsic, the CPU's instruction; `fabs` is exact), and `core:math`'s non-transcendental helpers (`math.round`, `math.floor`,

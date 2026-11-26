@@ -6,6 +6,8 @@ in the Odin port. It replaces the rule in `odin/CONVENTIONS.md` §1
 
 ## Why
 
+(`odin/cr-math.md` explains correct rounding and the "last bit" in more detail.)
+
 The C++ MONICA now gets a test suite (`monica/tests/`, runs Hohenfinow2 and
 the 48 muencheberg_v140 simulations with any `monica-run` and compares
 outputs value by value). Its first runs showed:
