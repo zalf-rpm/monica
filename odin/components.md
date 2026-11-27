@@ -559,6 +559,7 @@ Input `Crop_Et0_In`:
 | `stomata_conductance_alpha` | `f64` | 1 | crop module parameters |  |  |
 | `reference_albedo` | `f64` | 0-1 | crop module parameters |  |  |
 | `latent_heat_of_vaporization` | `f64` | MJ kg-1 | crop module parameters |  | <= 0: MONICA's 0.408 |
+| `psychrometric_constant` | `f64` | kPa °C-1 | crop module parameters |  | <= 0: from the pressure |
 
 ## Water_Uptake
 
