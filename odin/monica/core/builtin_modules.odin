@@ -17,4 +17,6 @@ register_builtin_modules :: proc "contextless" () {
 	context = runtime.default_context()
 	stm.register_builtin(st_monica.monica_soil_temp_entry)
 	etm.register_builtin(et_monica.monica_et_entry)
+	// AMEI evapotranspiration exercise (evapotranspiration_internal.odin)
+	etm.register_builtin(internal_ref_et_entry)
 }

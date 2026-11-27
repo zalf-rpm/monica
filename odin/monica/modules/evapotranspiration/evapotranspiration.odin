@@ -39,7 +39,8 @@ Input :: struct {
 	max_potential_evapotranspiration: f64 `unit:"mm d-1"`, // the cap, 6.5 mm by default
 	stomata_conductance_alpha:        f64 `unit:"1"`, // MONICA's crop module parameters
 	saturation_beta:                  f64 `unit:"1"`,
-	// the FAO-56 ET0's λ, MONICA's crop module parameter; <= 0: MONICA's 0.408 = 1/2.45
+	// the FAO-56 ET0's λ, MONICA's crop module parameter (AMEI evapotranspiration
+	// exercise); <= 0: MONICA's 0.408 = 1/2.45
 	latent_heat_of_vaporization:      f64 `unit:"MJ kg-1"`,
 	layer_thickness:                  []f64 `unit:"m"`,
 	// daily too: MONICA's own reads them from the soil column every day, and
@@ -82,6 +83,10 @@ Daily :: struct {
 	saturated_vapor_pressure:           f64 `unit:"kPa"`,
 	stomata_resistance:                 f64 `unit:"s m-1"`,
 	net_radiation:                      f64 `unit:"MJ m-2"`,
+	// two more of them, for the AMEI evapotranspiration exercise, whose
+	// standardized inputs give them too; < 0: calculated by the module
+	saturated_vapor_pressure_slope:     f64 `unit:"kPa °C-1"`,
+	psychrometric_constant:             f64 `unit:"kPa °C-1"`,
 }
 
 // What MONICA's own evapotranspiration produces.

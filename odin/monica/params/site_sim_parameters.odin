@@ -670,9 +670,11 @@ Crop_Module_Parameters :: struct {
 	minimum_n_concentration_root:                           f64 `unit:"kg N kg DM-1" unit_guess:"high"`,
 	minimum_available_n:                                    f64 `unit:"kg m-2"`,
 	reference_albedo:                                       f64 `unit:"0-1" unit_guess:"high"`,
-	// The FAO-56 ET0's latent heat of vaporization λ (core/et0.odin); 0 (the
+	// The FAO-56 ET0's latent heat of vaporization λ and psychrometric constant
+	// (core/et0.odin), for the AMEI evapotranspiration exercise; 0 (the
 	// default): MONICA's constants (0.408 = 1/2.45, 0.000665 * pressure)
 	latent_heat_of_vaporization:                            f64 `unit:"MJ kg-1"`,
+	psychrometric_constant:                                 f64 `unit:"kPa °C-1"`,
 	stomata_conductance_alpha:                              f64 `unit:"1" unit_guess:"medium"`,
 	saturation_beta:                                        f64 `unit:"1" unit_guess:"medium"`,
 	growth_respiration_redux:                               f64 `unit:"0-1" unit_guess:"medium"`,
@@ -738,6 +740,7 @@ crop_module_parameters_merge :: proc(cmp: ^Crop_Module_Parameters, j: jx.Value) 
 	jx.set_double_value(&cmp.minimum_available_n, j, "MinimumAvailableN")
 	jx.set_double_value(&cmp.reference_albedo, j, "ReferenceAlbedo")
 	jx.set_double_value(&cmp.latent_heat_of_vaporization, j, "LatentHeatOfVaporization")
+	jx.set_double_value(&cmp.psychrometric_constant, j, "PsychrometricConstant")
 	jx.set_double_value(&cmp.stomata_conductance_alpha, j, "StomataConductanceAlpha")
 	jx.set_double_value(&cmp.saturation_beta, j, "SaturationBeta")
 	jx.set_double_value(&cmp.growth_respiration_redux, j, "GrowthRespirationRedux")

@@ -44,10 +44,11 @@ destroy_monica_ref_et :: proc(b: ^Monica_Ref_Et, allocator := context.allocator)
 	free(b)
 }
 
-// The model has no init; its parameters are the height and λ.
+// The model has no init; its parameters are the height and λ (<= 0: MONICA's
+// 0.408 and 0.000665 * pressure).
 monica_ref_et_init :: proc(b: ^Monica_Ref_Et, in_: ^etm.Input, allocator := context.allocator) {
 	ret.amei_ref_et_component_set_height_nn(&b.c, in_.height_nn)
-	ret.amei_ref_et_component_set_latent_heat_of_vaporization(&b.c, max(in_.latent_heat_of_vaporization, 0)) // <= 0: MONICA's constants
+	ret.amei_ref_et_component_set_latent_heat_of_vaporization(&b.c, max(in_.latent_heat_of_vaporization, 0))
 }
 
 monica_ref_et_step :: proc(b: ^Monica_Ref_Et, in_: ^etm.Input, out: ^etm.Output, allocator := context.allocator) {
@@ -59,6 +60,9 @@ monica_ref_et_step :: proc(b: ^Monica_Ref_Et, in_: ^etm.Input, out: ^etm.Output,
 	a.stomata_resistance = in_.stomata_resistance
 	a.net_radiation = in_.net_radiation
 	a.saturation_vapor_pressure_deficit = in_.saturated_vapor_pressure - in_.vapor_pressure
+	// < 0: the package calculates them, as MONICA does (AMEI ET exercise: given)
+	a.saturated_vapor_pressure_slope = in_.saturated_vapor_pressure_slope
+	a.psychrometric_constant = in_.psychrometric_constant
 	c2m.copy_state(&b.s1, &b.s, allocator) // the previous day's state, for `_t1` inputs
 	ret.amei_ref_et_component_calculate_model(&b.c, &b.s, &b.s1, &b.r, &b.a, &b.ex, allocator)
 	out.reference_evapotranspiration = a.reference_evapotranspiration
@@ -82,6 +86,8 @@ monica_ref_et_entry :: etm.Module_Entry {
 		"saturated_vapor_pressure",
 		"stomata_resistance",
 		"net_radiation",
+		"saturated_vapor_pressure_slope",
+		"psychrometric_constant",
 	},
 	outputs    = {"reference_evapotranspiration", "saturation_vapor_pressure_deficit"},
 }

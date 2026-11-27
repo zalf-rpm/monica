@@ -189,6 +189,8 @@ evapotranspiration_with_modules :: proc(
 	day.saturated_vapor_pressure = terms.saturated_vapour_pressure
 	day.stomata_resistance = terms.stomata_resistance
 	day.net_radiation = terms.net_radiation
+	day.saturated_vapor_pressure_slope = terms.saturated_vapour_pressure_slope
+	day.psychrometric_constant = terms.psychrometric_constant
 	gather :: proc(m: ^Evapotranspiration_Module, day: ^etm.Daily, sc: ^Soil_Column, cm: ^Crop_Module) {
 		m.input.daily = day^
 		for &l, i in sc.layers {

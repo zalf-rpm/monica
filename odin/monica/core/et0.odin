@@ -29,6 +29,8 @@ Et0_In :: struct {
 	// 0.408 = 1/λ, psychrometric constant 0.000665 * pressure); else 1/λ and
 	// FAO-56 eq. 8 with it (cp P / (ε λ))
 	latent_heat_of_vaporization: f64 `unit:"MJ kg-1" src:"crop module parameters"`,
+	// <= 0: from the pressure (height_nn) and λ; else this one
+	psychrometric_constant:      f64 `unit:"kPa °C-1" src:"crop module parameters"`,
 }
 
 // NOTE(deviation): the intermediates of an ET0 calculation that the
@@ -39,6 +41,68 @@ Et0_Terms :: struct {
 	saturated_vapour_pressure: f64 `unit:"kPa"`,
 	net_radiation:             f64 `unit:"MJ m-2"`,
 	stomata_resistance:        f64 `unit:"s m-1"`,
+	// the other inputs of fao56_penman_monteith
+	saturated_vapour_pressure_slope: f64 `unit:"kPa °C-1"`,
+	psychrometric_constant:          f64 `unit:"kPa °C-1"`,
+	latent_heat_of_vaporization:     f64 `unit:"MJ kg-1"`, // <= 0: MONICA's 0.408
+}
+
+// FAO-56's psychrometric constant [kPa °C-1] at `height_nn` [m]: MONICA's
+// 0.000665 * pressure without λ (<= 0), FAO-56 eq. 8 (cp P / (ε λ)) with one.
+fao56_psychrometric_constant :: proc(height_nn, latent_heat_of_vaporization: f64) -> f64 {
+	// Calculation of atmospheric pressure
+	atmospheric_pressure := 101.3 * cr_math.pow((293.0 - (0.0065 * height_nn)) / 293.0, 5.26)
+	if latent_heat_of_vaporization > 0 {
+		return 1.013e-3 * atmospheric_pressure / (0.622 * latent_heat_of_vaporization)
+	}
+	// Calculation of psychrometer constant
+	return 0.000665 * atmospheric_pressure
+}
+
+// Slope of saturation water vapour pressure-to-temperature relation [kPa °C-1]
+// (FAO-56 eq. 13) at the mean air temperature [°C].
+fao56_saturated_vapour_pressure_slope :: proc(mean_air_temperature: f64) -> f64 {
+	return(
+		(4098.0 *
+			(0.6108 *
+					cr_math.exp((17.27 * mean_air_temperature) / (mean_air_temperature + 237.3)))) /
+		((mean_air_temperature + 237.3) * (mean_air_temperature + 237.3))
+	)
+}
+
+// The wind speed at 2 m [m s-1] from one at `wind_speed_height` [m], at least
+// the 0.5 m s-1 FAO-56 allows for Penman-Monteith.
+fao56_wind_speed_2m :: proc(wind_speed, wind_speed_height: f64) -> f64 {
+	return max(0.5, wind_speed * (4.87 / cr_math.log(67.8 * wind_speed_height - 5.42)))
+}
+
+// The FAO-56 Penman-Monteith equation itself (eq. 3 with MONICA's
+// resistances), from its intermediates - what fao56_et0 calculates them for.
+// On its own for the AMEI evapotranspiration exercise, whose standardized
+// inputs give the intermediates (the internal evapotranspiration module,
+// evapotranspiration_internal.odin).
+fao56_penman_monteith :: proc(
+	terms: Et0_Terms,
+	mean_air_temperature, wind_speed_2m: f64,
+) -> (et0: f64) {
+	aerodynamic_resistance := 208.0 / wind_speed_2m
+	surface_resistance := terms.stomata_resistance / 1.44
+	saturation_deficit := terms.saturated_vapour_pressure - terms.vapour_pressure
+	slope := terms.saturated_vapour_pressure_slope
+	psy := terms.psychrometric_constant
+	// 0.408 = 1/2.45 (λ [MJ kg-1]), FAO-56's conversion of MJ m-2 to mm
+	inverse_lambda := terms.latent_heat_of_vaporization > 0 ? 1.0 / terms.latent_heat_of_vaporization : 0.408
+
+	// Penman-Monteith-Method FAO
+	et0 =
+		((inverse_lambda * slope * terms.net_radiation) +
+			(psy * (900.0 / (mean_air_temperature + 273.0)) * wind_speed_2m * saturation_deficit)) /
+		(slope + psy * (1.0 + (surface_resistance / aerodynamic_resistance)))
+
+	if et0 < 0.0 {
+		et0 = 0.0
+	}
+	return
 }
 
 // The actual and the saturated vapour pressure [kPa] - also what the crop's
@@ -71,36 +135,12 @@ fao56_et0 :: proc(input: Et0_In, stomata_resistance: f64) -> (et0: f64, terms: E
 	min_air_temperature := input.min_air_temperature
 	max_air_temperature := input.max_air_temperature
 
-	// Calculation of atmospheric pressure
-	atmospheric_pressure :=
-		101.3 * cr_math.pow((293.0 - (0.0065 * input.height_nn)) / 293.0, 5.26)
-
-	// Calculation of psychrometer constant: FAO-56 eq. 8 with λ, MONICA's
-	// simplification (λ = 2.45) without
 	psycrometer_constant :=
-		input.latent_heat_of_vaporization > 0 ? 1.013e-3 * atmospheric_pressure / (0.622 * input.latent_heat_of_vaporization) : 0.000665 * atmospheric_pressure
-	// 0.408 = 1/2.45, FAO-56's conversion of MJ m-2 to mm
-	inverse_lambda := input.latent_heat_of_vaporization > 0 ? 1.0 / input.latent_heat_of_vaporization : 0.408
+		input.psychrometric_constant > 0 ? input.psychrometric_constant : fao56_psychrometric_constant(input.height_nn, input.latent_heat_of_vaporization)
 
 	vapour_pressure, saturated_vapour_pressure := et0_vapour_pressures(input)
-	saturation_deficit := saturated_vapour_pressure - vapour_pressure
 
-	// Slope of saturation water vapour pressure-to-temperature relation
-	saturated_vapour_pressure_slope :=
-		(4098.0 *
-			(0.6108 *
-					cr_math.exp((17.27 * mean_air_temperature) / (mean_air_temperature + 237.3)))) /
-		((mean_air_temperature + 237.3) * (mean_air_temperature + 237.3))
-
-	// 0.5 minimum allowed windspeed for Penman-Monteith-Method FAO
-	wind_speed_2m := max(
-		0.5,
-		input.wind_speed * (4.87 / cr_math.log(67.8 * input.wind_speed_height - 5.42)),
-	)
-
-	aerodynamic_resistance := 208.0 / wind_speed_2m
-
-	surface_resistance := stomata_resistance / 1.44
+	saturated_vapour_pressure_slope := fao56_saturated_vapour_pressure_slope(mean_air_temperature)
 
 	clear_sky_shortwave_radiation :=
 		(0.75 + 0.00002 * input.height_nn) * input.extraterrestrial_radiation
@@ -122,25 +162,19 @@ fao56_et0 :: proc(input: Et0_In, stomata_resistance: f64) -> (et0: f64, terms: E
 				(1.35 * relative_shortwave_radiation - 0.35) *
 				(0.34 - 0.14 * libc.sqrt(vapour_pressure)))
 
-	// Penman-Monteith-Method FAO
-	et0 =
-		((inverse_lambda * saturated_vapour_pressure_slope * net_radiation) +
-			(psycrometer_constant *
-					(900.0 / (mean_air_temperature + 273.0)) *
-					wind_speed_2m *
-					saturation_deficit)) /
-		(saturated_vapour_pressure_slope +
-				psycrometer_constant * (1.0 + (surface_resistance / aerodynamic_resistance)))
-
-	if et0 < 0.0 {
-		et0 = 0.0
-	}
-
 	terms = Et0_Terms {
-		vapour_pressure           = vapour_pressure,
-		saturated_vapour_pressure = saturated_vapour_pressure,
-		net_radiation             = net_radiation,
-		stomata_resistance        = stomata_resistance,
+		vapour_pressure                 = vapour_pressure,
+		saturated_vapour_pressure       = saturated_vapour_pressure,
+		net_radiation                   = net_radiation,
+		stomata_resistance              = stomata_resistance,
+		saturated_vapour_pressure_slope = saturated_vapour_pressure_slope,
+		psychrometric_constant          = psycrometer_constant,
+		latent_heat_of_vaporization     = input.latent_heat_of_vaporization,
 	}
+	et0 = fao56_penman_monteith(
+		terms,
+		mean_air_temperature,
+		fao56_wind_speed_2m(input.wind_speed, input.wind_speed_height),
+	)
 	return
 }

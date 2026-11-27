@@ -23,8 +23,13 @@
 //   }
 //
 // Monica_AMEI_potential_Evapotranspiration and Monica_Reference_Evapotranspiration
-// need only HeightNN, and no Layers. All read "LatentHeatOfVaporization" λ [MJ kg-1]
-// (<= 0 or missing: MONICA's constants, 0.408 = 1/2.45).
+// need only HeightNN, and no Layers. Monica_Internal_Reference_Evapotranspiration
+// (MONICA's own ET0 equation, core/evapotranspiration_internal.odin) and
+// Monica_Reference_Evapotranspiration also read "LatentHeatOfVaporization" [MJ kg-1]
+// (<= 0 or missing: MONICA's 0.408 = 1/2.45) and the daily columns
+// saturated_vapor_pressure_slope and psychrometric_constant [kPa °C-1] (< 0 or
+// missing: calculated from tavg and from HeightNN and λ, as MONICA does; 0 is a
+// value - the standardized slope of very cold days, rounded).
 //
 // The daily CSV has a header row; columns by name: date (ISO), and the fields
 // of monica/modules/evapotranspiration's Daily (julian_day defaults to the
@@ -223,7 +228,7 @@ read_et_daily :: proc(path: string, no_of_layers: int, inputs: []string) -> (day
 		}
 	}
 	if len(missing) > 0 {
-		fmt.eprintfln("%s: no column for %s - 0", path, strings.join(missing[:], ", ", context.temp_allocator))
+		fmt.eprintfln("%s: no column for %s - 0 (saturated_vapor_pressure_slope, psychrometric_constant: calculated)", path, strings.join(missing[:], ", ", context.temp_allocator))
 	}
 	layer_cols :: proc(col: map[string]int, prefix: string, n: int) -> (cols: []int, err: string) {
 		if fmt.tprintf("%s_1", prefix) not_in col {
@@ -260,6 +265,9 @@ read_et_daily :: proc(path: string, no_of_layers: int, inputs: []string) -> (day
 		ok = ok && d.is_valid(day.date)
 		dy := &day.daily
 		dy.julian_day = int(d.julian_day(day.date))
+		// without a column: calculated by the module (< 0), not 0
+		dy.saturated_vapor_pressure_slope = -1
+		dy.psychrometric_constant = -1
 		// every field of Daily, by name
 		for f in reflect.struct_fields_zipped(etm.Daily) {
 			c, has := col[f.name]

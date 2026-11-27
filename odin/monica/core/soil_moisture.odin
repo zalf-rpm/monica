@@ -1275,6 +1275,7 @@ reference_evapotranspiration :: proc(
 			global_radiation = global_radiation,
 			reference_albedo = sm.crop_mod_params.reference_albedo,
 			latent_heat_of_vaporization = sm.crop_mod_params.latent_heat_of_vaporization,
+			psychrometric_constant = sm.crop_mod_params.psychrometric_constant,
 		},
 		STOMATA_RESISTANCE,
 	)
