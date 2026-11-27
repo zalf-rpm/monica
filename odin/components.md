@@ -558,6 +558,7 @@ Input `Crop_Et0_In`:
 | `saturation_beta` | `f64` | kPa | crop module parameters |  |  |
 | `stomata_conductance_alpha` | `f64` | 1 | crop module parameters |  |  |
 | `reference_albedo` | `f64` | 0-1 | crop module parameters |  |  |
+| `latent_heat_of_vaporization` | `f64` | MJ kg-1 | crop module parameters |  | <= 0: MONICA's 0.408 |
 
 ## Water_Uptake
 
