@@ -43,10 +43,11 @@ destroy_monica_amei_pot_et :: proc(b: ^Monica_Amei_Pot_Et, allocator := context.
 	free(b)
 }
 
-// The model has no init; its parameters are the height and the ET cap (MONICA's,
+// The model has no init; its parameters are the height, λ and the ET cap (MONICA's,
 // the generated component has no setter for it).
 monica_amei_pot_et_init :: proc(b: ^Monica_Amei_Pot_Et, in_: ^etm.Input, allocator := context.allocator) {
 	pet.amei_pot_et_component_set_height_nn(&b.c, in_.height_nn)
+	pet.amei_pot_et_component_set_latent_heat_of_vaporization(&b.c, max(in_.latent_heat_of_vaporization, 0)) // <= 0: MONICA's constants
 	b.c.potential_evapotranspiration.potential_evapotranspiration_cap = in_.max_potential_evapotranspiration
 }
 

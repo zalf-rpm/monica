@@ -44,9 +44,10 @@ destroy_monica_ref_et :: proc(b: ^Monica_Ref_Et, allocator := context.allocator)
 	free(b)
 }
 
-// The model has no init; its only parameter is the height.
+// The model has no init; its parameters are the height and λ.
 monica_ref_et_init :: proc(b: ^Monica_Ref_Et, in_: ^etm.Input, allocator := context.allocator) {
 	ret.amei_ref_et_component_set_height_nn(&b.c, in_.height_nn)
+	ret.amei_ref_et_component_set_latent_heat_of_vaporization(&b.c, max(in_.latent_heat_of_vaporization, 0)) // <= 0: MONICA's constants
 }
 
 monica_ref_et_step :: proc(b: ^Monica_Ref_Et, in_: ^etm.Input, out: ^etm.Output, allocator := context.allocator) {

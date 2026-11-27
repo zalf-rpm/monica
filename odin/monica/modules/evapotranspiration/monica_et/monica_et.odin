@@ -52,6 +52,7 @@ monica_et_init :: proc(b: ^Monica_Et, in_: ^etm.Input, allocator := context.allo
 	c := &b.c
 	et.et_component_set_latitude(c, in_.latitude)
 	et.et_component_set_height_nn(c, in_.height_nn)
+	et.et_component_set_latent_heat_of_vaporization(c, max(in_.latent_heat_of_vaporization, 0)) // <= 0: MONICA's constants
 	et.et_component_set_reference_albedo(c, in_.reference_albedo)
 	et.et_component_set_evaporation_zeta(c, in_.evaporation_zeta)
 	et.et_component_set_maximum_evaporation_impact_depth(c, in_.maximum_evaporation_impact_depth)

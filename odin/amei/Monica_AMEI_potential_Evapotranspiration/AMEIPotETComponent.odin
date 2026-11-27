@@ -32,6 +32,10 @@ amei_pot_et_component_set_height_nn :: proc(c: ^Amei_Pot_Et_Component, value: f6
 	c.reference_evapotranspiration.height_nn = value
 }
 
+amei_pot_et_component_set_latent_heat_of_vaporization :: proc(c: ^Amei_Pot_Et_Component, value: f64) {
+	c.reference_evapotranspiration.latent_heat_of_vaporization = value
+}
+
 amei_pot_et_component_calculate_model :: proc(c: ^Amei_Pot_Et_Component, s: ^Amei_Pot_Et_State, s1: ^Amei_Pot_Et_State, r: ^Amei_Pot_Et_Rate, a: ^Amei_Pot_Et_Auxiliary, ex: ^Amei_Pot_Et_Exogenous, allocator := context.allocator) {
 	context.allocator = allocator
 	saturation_vapor_pressure_deficit_calculate_model(&c.saturation_vapor_pressure_deficit, s, s1, r, a, ex)

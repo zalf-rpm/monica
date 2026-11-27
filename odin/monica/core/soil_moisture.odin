@@ -1274,6 +1274,7 @@ reference_evapotranspiration :: proc(
 			extraterrestrial_radiation = extraterrestrial_radiation,
 			global_radiation = global_radiation,
 			reference_albedo = sm.crop_mod_params.reference_albedo,
+			latent_heat_of_vaporization = sm.crop_mod_params.latent_heat_of_vaporization,
 		},
 		STOMATA_RESISTANCE,
 	)

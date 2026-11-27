@@ -77,6 +77,10 @@ et_component_set_carboxylation_pathway :: proc(c: ^Et_Component, value: int) {
 	c.stomata_resistance.carboxylation_pathway = value
 }
 
+et_component_set_latent_heat_of_vaporization :: proc(c: ^Et_Component, value: f64) {
+	c.reference_evapotranspiration.latent_heat_of_vaporization = value
+}
+
 et_component_set_evaporation_zeta :: proc(c: ^Et_Component, value: f64) {
 	c.evapotranspiration.evaporation_zeta = value
 }

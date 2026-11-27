@@ -29,6 +29,7 @@ Crop_Et0_In :: struct {
 	saturation_beta:                    f64 `unit:"kPa" src:"crop module parameters"`,
 	stomata_conductance_alpha:          f64 `unit:"1" src:"crop module parameters"`,
 	reference_albedo:                   f64 `unit:"0-1" src:"crop module parameters"`,
+	latent_heat_of_vaporization:        f64 `unit:"MJ kg-1" src:"crop module parameters"`, // <= 0: MONICA's 0.408
 }
 
 // Fills Crop_Et0_In from the crop (after the day's photosynthesis) and the weather.
@@ -52,6 +53,7 @@ crop_et0_in :: proc(
 		saturation_beta = cm.mod_params.saturation_beta,
 		stomata_conductance_alpha = cm.mod_params.stomata_conductance_alpha,
 		reference_albedo = cm.mod_params.reference_albedo,
+		latent_heat_of_vaporization = cm.mod_params.latent_heat_of_vaporization,
 	}
 }
 
@@ -77,6 +79,7 @@ crop_et0 :: proc(input: Crop_Et0_In) -> (et0: f64, terms: Et0_Terms) {
 		extraterrestrial_radiation = input.extraterrestrial_radiation,
 		global_radiation           = input.global_radiation,
 		reference_albedo           = input.reference_albedo,
+		latent_heat_of_vaporization = input.latent_heat_of_vaporization,
 	}
 	vapour_pressure, saturated_vapour_pressure := et0_vapour_pressures(et0_in)
 	return fao56_et0(et0_in, crop_stomata_resistance(input, saturated_vapour_pressure - vapour_pressure))

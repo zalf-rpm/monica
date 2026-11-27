@@ -25,6 +25,10 @@ Et0_In :: struct {
 	extraterrestrial_radiation: f64 `unit:"MJ m-2" src:"Radiation"`,
 	global_radiation:           f64 `unit:"MJ m-2" src:"weather"`,
 	reference_albedo:           f64 `unit:"0-1" src:"crop module parameters"`,
+	// <= 0: MONICA's constants, FAO-56's simplification for 20 °C (λ = 2.45 MJ kg-1:
+	// 0.408 = 1/λ, psychrometric constant 0.000665 * pressure); else 1/λ and
+	// FAO-56 eq. 8 with it (cp P / (ε λ))
+	latent_heat_of_vaporization: f64 `unit:"MJ kg-1" src:"crop module parameters"`,
 }
 
 // NOTE(deviation): the intermediates of an ET0 calculation that the
@@ -71,8 +75,12 @@ fao56_et0 :: proc(input: Et0_In, stomata_resistance: f64) -> (et0: f64, terms: E
 	atmospheric_pressure :=
 		101.3 * cr_math.pow((293.0 - (0.0065 * input.height_nn)) / 293.0, 5.26)
 
-	// Calculation of psychrometer constant
-	psycrometer_constant := 0.000665 * atmospheric_pressure
+	// Calculation of psychrometer constant: FAO-56 eq. 8 with λ, MONICA's
+	// simplification (λ = 2.45) without
+	psycrometer_constant :=
+		input.latent_heat_of_vaporization > 0 ? 1.013e-3 * atmospheric_pressure / (0.622 * input.latent_heat_of_vaporization) : 0.000665 * atmospheric_pressure
+	// 0.408 = 1/2.45, FAO-56's conversion of MJ m-2 to mm
+	inverse_lambda := input.latent_heat_of_vaporization > 0 ? 1.0 / input.latent_heat_of_vaporization : 0.408
 
 	vapour_pressure, saturated_vapour_pressure := et0_vapour_pressures(input)
 	saturation_deficit := saturated_vapour_pressure - vapour_pressure
@@ -116,7 +124,7 @@ fao56_et0 :: proc(input: Et0_In, stomata_resistance: f64) -> (et0: f64, terms: E
 
 	// Penman-Monteith-Method FAO
 	et0 =
-		((0.408 * saturated_vapour_pressure_slope * net_radiation) +
+		((inverse_lambda * saturated_vapour_pressure_slope * net_radiation) +
 			(psycrometer_constant *
 					(900.0 / (mean_air_temperature + 273.0)) *
 					wind_speed_2m *

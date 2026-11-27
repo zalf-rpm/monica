@@ -23,7 +23,8 @@
 //   }
 //
 // Monica_AMEI_potential_Evapotranspiration and Monica_Reference_Evapotranspiration
-// need only HeightNN, and no Layers.
+// need only HeightNN, and no Layers. All read "LatentHeatOfVaporization" λ [MJ kg-1]
+// (<= 0 or missing: MONICA's constants, 0.408 = 1/2.45).
 //
 // The daily CSV has a header row; columns by name: date (ISO), and the fields
 // of monica/modules/evapotranspiration's Daily (julian_day defaults to the
@@ -177,6 +178,7 @@ read_et_input :: proc(path: string, inputs: []string = nil) -> (in_: etm.Input, 
 	jx.set_double_value(&in_.max_potential_evapotranspiration, j, "MaxPotentialEvapotranspiration")
 	in_.stomata_conductance_alpha = jx.double_value(j, "StomataConductanceAlpha")
 	in_.saturation_beta = jx.double_value(j, "SaturationBeta")
+	in_.latent_heat_of_vaporization = jx.double_value(j, "LatentHeatOfVaporization")
 	layers := jx.array_items(jx.get(j, "Layers"))
 	n := len(layers)
 	in_.layer_thickness = make([]f64, n)

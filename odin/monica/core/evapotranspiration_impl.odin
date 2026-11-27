@@ -88,6 +88,7 @@ make_evapotranspiration_module :: proc(
 	in_.max_potential_evapotranspiration = smp.max_potential_evapotranspiration
 	in_.stomata_conductance_alpha = model.crop_mod_params.stomata_conductance_alpha
 	in_.saturation_beta = model.crop_mod_params.saturation_beta
+	in_.latent_heat_of_vaporization = model.crop_mod_params.latent_heat_of_vaporization
 	n := len(model.soil_column.layers)
 	in_.layer_thickness = make([]f64, n, allocator)
 	in_.permanent_wilting_point = make([]f64, n, allocator)

@@ -20,11 +20,13 @@ import cr_math "../../support/cr_math"
 //             * ShortDescription: Calculates the MONICA reference evapotranspiration
 Reference_Evapotranspiration :: struct {
 	height_nn: f64 `unit:"m"`, // height above sea level
+	latent_heat_of_vaporization: f64 `unit:"MJ/kg"`, // latent heat of vaporization lambda (0: MONICA's constants, 0.408 = 1/2.45 and psychrometric constant 0.000665 * pressure)
 }
 
 make_reference_evapotranspiration :: proc(allocator := context.allocator) -> (m: Reference_Evapotranspiration) {
 	context.allocator = allocator
 	m.height_nn = 0
+	m.latent_heat_of_vaporization = 0
 	return
 }
 
@@ -41,6 +43,15 @@ destroy_reference_evapotranspiration :: proc(m: ^Reference_Evapotranspiration) {
 //                           ** min : -9999
 //                           ** default : 0
 //                           ** unit : m
+//             * name: latent_heat_of_vaporization
+//                           ** description : latent heat of vaporization lambda (0: MONICA's constants, 0.408 = 1/2.45 and psychrometric constant 0.000665 * pressure)
+//                           ** inputtype : parameter
+//                           ** parametercategory : constant
+//                           ** datatype : DOUBLE
+//                           ** max : 10
+//                           ** min : 0
+//                           ** default : 0
+//                           ** unit : MJ/kg
 //             * name: mean_air_temperature
 //                           ** description : daily average air temperature
 //                           ** inputtype : variable
@@ -108,16 +119,26 @@ reference_evapotranspiration_calculate_model :: proc(m: ^Reference_Evapotranspir
 	atmospheric_pressure: f64
 	atmospheric_pressure = 101.3 * cr_math.pow((293.0 - 0.0065 * m.height_nn) / 293.0, f64(5.26))
 	psycrometer_constant: f64
-	psycrometer_constant = 0.000665 * atmospheric_pressure
+	if m.latent_heat_of_vaporization > 0.0 {
+		psycrometer_constant = 1.013e-3 * atmospheric_pressure / (0.622 * m.latent_heat_of_vaporization)
+	} else {
+		psycrometer_constant = 0.000665 * atmospheric_pressure
+	}
 	saturated_vapour_pressure_slope: f64
 	saturated_vapour_pressure_slope = 4098.0 * (0.6108 * cr_math.exp(17.27 * ex.mean_air_temperature / (ex.mean_air_temperature + 237.3))) / ((ex.mean_air_temperature + 237.3) * (ex.mean_air_temperature + 237.3))
+	inverse_lambda: f64
+	if m.latent_heat_of_vaporization > 0.0 {
+		inverse_lambda = 1.0 / m.latent_heat_of_vaporization
+	} else {
+		inverse_lambda = 0.408
+	}
 	wind_speed_2m: f64
 	wind_speed_2m = max(0.5, ex.wind_speed * (4.87 / cr_math.log(67.8 * ex.wind_speed_height - 5.42)))
 	aerodynamic_resistance: f64
 	aerodynamic_resistance = 208.0 / wind_speed_2m
 	surface_resistance: f64
 	surface_resistance = a.stomata_resistance / 1.44
-	a.reference_evapotranspiration = (0.408 * saturated_vapour_pressure_slope * a.net_radiation + psycrometer_constant * (900.0 / (ex.mean_air_temperature + 273.0)) * wind_speed_2m * a.saturation_vapor_pressure_deficit) / (saturated_vapour_pressure_slope + psycrometer_constant * (1.0 + surface_resistance / aerodynamic_resistance))
+	a.reference_evapotranspiration = (inverse_lambda * saturated_vapour_pressure_slope * a.net_radiation + psycrometer_constant * (900.0 / (ex.mean_air_temperature + 273.0)) * wind_speed_2m * a.saturation_vapor_pressure_deficit) / (saturated_vapour_pressure_slope + psycrometer_constant * (1.0 + surface_resistance / aerodynamic_resistance))
 	if a.reference_evapotranspiration < 0.0 {
 		a.reference_evapotranspiration = 0.0
 	}
